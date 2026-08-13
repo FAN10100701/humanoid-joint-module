@@ -13,7 +13,8 @@ if not exist "%GIT_EXE%" (
     exit /b 1
 )
 
-cd /d "%~dp0"
+rem 切换到上级目录（git 根目录），因为本脚本位于 _本地工具 子文件夹
+cd /d "%~dp0.."
 
 echo [1/3] Adding all changes...
 "%GIT_EXE%" add -A
