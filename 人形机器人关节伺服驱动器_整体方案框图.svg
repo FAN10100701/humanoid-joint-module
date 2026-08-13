@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 715" width="100%" height="auto" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <defs>
+    <marker id="aPwr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#16A34A"/></marker>
+    <marker id="aPwm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#6D28D9"/></marker>
+    <marker id="aFb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#EA580C"/></marker>
+    <marker id="aProt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#DC2626"/></marker>
+    <marker id="aComm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0284C7"/></marker>
+    <marker id="aDbg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#64748B"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1140" height="715" fill="#FFFFFF"/>
+  <text x="570" y="28" text-anchor="middle" font-size="22" font-weight="700" fill="#1E293B">人形机器人关节伺服驱动器 · 整体方案框图（Hdrive V1.1 对齐版）</text>
+
+  <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M 180 180 L 240 180" stroke="#16A34A" stroke-width="2.2" marker-end="url(#aPwr)"/>
+    <path d="M 420 165 L 435 165 L 435 290 L 480 290" stroke="#16A34A" stroke-width="2.2" marker-end="url(#aPwr)"/>
+    <path d="M 240 130 L 240 95 L 760 95 L 760 130" stroke="#16A34A" stroke-width="2.2" marker-end="url(#aPwr)"/>
+    <path d="M 180 310 L 240 310" stroke="#0284C7" stroke-width="2.2" marker-end="url(#aComm)"/>
+    <path d="M 420 310 L 450 310 L 450 345 L 480 345" stroke="#0284C7" stroke-width="2.2" marker-end="url(#aComm)"/>
+    <path d="M 180 570 L 240 570" stroke="#64748B" stroke-width="2" marker-end="url(#aDbg)"/>
+    <path d="M 420 570 L 465 570 L 465 415 L 480 415" stroke="#64748B" stroke-width="2" marker-end="url(#aDbg)"/>
+    <path d="M 660 300 L 675 300 L 675 180 L 720 180" stroke="#6D28D9" stroke-width="2.5" marker-end="url(#aPwm)"/>
+    <path d="M 810 230 L 810 260" stroke="#6D28D9" stroke-width="2.5" marker-end="url(#aPwm)"/>
+    <path d="M 900 310 L 930 310 L 930 375 L 960 375" stroke="#16A34A" stroke-width="2.2" marker-end="url(#aPwr)"/>
+    <path d="M 810 360 L 810 390" stroke="#EA580C" stroke-width="2" marker-end="url(#aFb)"/>
+    <path d="M 720 440 L 690 440 L 690 400 L 660 400" stroke="#EA580C" stroke-width="2" marker-end="url(#aFb)"/>
+    <path d="M 960 395 L 930 395 L 930 570 L 900 570" stroke="#EA580C" stroke-width="2" marker-end="url(#aFb)"/>
+    <path d="M 720 570 L 705 570 L 705 450 L 660 450" stroke="#EA580C" stroke-width="2" marker-end="url(#aFb)"/>
+    <path d="M 420 390 L 420 70 L 740 70 L 740 130" stroke="#DC2626" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#aProt)"/>
+    <path d="M 480 400 L 450 400 L 450 440 L 420 440" stroke="#EA580C" stroke-width="2" marker-end="url(#aFb)"/>
+  </g>
+
+  <g>
+    <rect x="40" y="152" width="140" height="56" rx="8" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.5"/>
+    <text x="110" y="178" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">直流电源输入</text>
+    <text x="110" y="196" text-anchor="middle" font-size="11" fill="#64748B">24V ~ 48V</text>
+    <rect x="40" y="282" width="140" height="56" rx="8" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.5"/>
+    <text x="110" y="308" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">RS485 总线接口</text>
+    <text x="110" y="326" text-anchor="middle" font-size="11" fill="#64748B">多关节级联</text>
+    <rect x="40" y="542" width="140" height="56" rx="8" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.5"/>
+    <text x="110" y="568" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">调试下载接口</text>
+    <text x="110" y="586" text-anchor="middle" font-size="11" fill="#64748B">SWD + USART1</text>
+  </g>
+
+  <g>
+    <rect x="240" y="130" width="180" height="100" rx="8" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.5"/>
+    <circle cx="406" cy="144" r="9" fill="#10B981"/><text x="406" y="148" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">★</text>
+    <text x="330" y="158" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">电源管理模块</text>
+    <text x="330" y="178" text-anchor="middle" font-size="11" fill="#64748B">48V母线·反接·EMI滤波</text>
+    <text x="330" y="198" text-anchor="middle" font-size="11" fill="#64748B">DC-DC 12V/5V 降压</text>
+    <text x="330" y="216" text-anchor="middle" font-size="11" fill="#64748B">LDO 3.3V 稳压</text>
+    <rect x="240" y="260" width="180" height="100" rx="8" fill="#F0F9FF" stroke="#0284C7" stroke-width="1.5"/>
+    <circle cx="406" cy="274" r="9" fill="#10B981"/><text x="406" y="278" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">★</text>
+    <text x="330" y="288" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">通信接口模块</text>
+    <text x="330" y="308" text-anchor="middle" font-size="11" fill="#64748B">RS485收发器(SP3485)</text>
+    <text x="330" y="328" text-anchor="middle" font-size="11" fill="#64748B">ESD防护·ID拨码</text>
+    <rect x="240" y="390" width="180" height="100" rx="8" fill="#FEF2F2" stroke="#DC2626" stroke-width="1.5"/>
+    <circle cx="406" cy="404" r="9" fill="#10B981"/><text x="406" y="408" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">★</text>
+    <text x="330" y="418" text-anchor="middle" font-size="14" font-weight="600" fill="#DC2626">硬件保护模块</text>
+    <text x="330" y="438" text-anchor="middle" font-size="11" fill="#64748B">过流·过压·欠压·过温</text>
+    <text x="330" y="458" text-anchor="middle" font-size="11" fill="#64748B">故障锁存·自动恢复</text>
+    <text x="330" y="478" text-anchor="middle" font-size="11" fill="#64748B">硬件关断 响应&lt;1μs</text>
+    <rect x="240" y="520" width="180" height="100" rx="8" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5"/>
+    <circle cx="406" cy="534" r="9" fill="#10B981"/><text x="406" y="538" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">★</text>
+    <text x="330" y="548" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">调试与状态指示</text>
+    <text x="330" y="568" text-anchor="middle" font-size="11" fill="#64748B">电源/运行/故障 LED</text>
+    <text x="330" y="588" text-anchor="middle" font-size="11" fill="#64748B">按键·USART1串口打印</text>
+  </g>
+
+  <g>
+    <rect x="480" y="260" width="180" height="230" rx="12" fill="#F5F3FF" stroke="#6D28D9" stroke-width="2.5"/>
+    <text x="570" y="305" text-anchor="middle" font-size="19" font-weight="700" fill="#5B21B6">主控 MCU</text>
+    <text x="570" y="327" text-anchor="middle" font-size="11" fill="#7C3AED">STM32G431CBU6</text>
+    <line x1="500" y1="340" x2="640" y2="340" stroke="#C4B5FD" stroke-width="1"/>
+    <text x="570" y="368" text-anchor="middle" font-size="13" font-weight="600" fill="#5B21B6">FOC 磁场定向控制</text>
+    <text x="570" y="388" text-anchor="middle" font-size="11" fill="#7C3AED">SVPWM · 三环闭环</text>
+    <line x1="500" y1="402" x2="640" y2="402" stroke="#C4B5FD" stroke-width="1"/>
+    <text x="570" y="430" text-anchor="middle" font-size="11" fill="#7C3AED">ADC采样 · 编码器解析</text>
+    <text x="570" y="450" text-anchor="middle" font-size="11" fill="#7C3AED">力矩解算 · 故障处理</text>
+    <text x="570" y="470" text-anchor="middle" font-size="11" fill="#7C3AED">看门狗 · 通信协议</text>
+  </g>
+
+  <g>
+    <rect x="720" y="130" width="180" height="100" rx="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+    <text x="810" y="158" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">栅极预驱模块</text>
+    <text x="810" y="178" text-anchor="middle" font-size="11" fill="#64748B">FD6288T·6路半桥</text>
+    <text x="810" y="198" text-anchor="middle" font-size="11" fill="#64748B">自举电路·死区控制</text>
+    <rect x="720" y="260" width="180" height="100" rx="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+    <circle cx="886" cy="274" r="9" fill="#10B981"/><text x="886" y="278" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">★</text>
+    <text x="810" y="288" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">三相全桥功率级</text>
+    <text x="810" y="308" text-anchor="middle" font-size="11" fill="#64748B">6×N-MOSFET·U/V/W</text>
+    <text x="810" y="328" text-anchor="middle" font-size="11" fill="#64748B">制动泄放电阻</text>
+    <text x="810" y="348" text-anchor="middle" font-size="11" fill="#64748B">再生制动能量吸收</text>
+    <rect x="720" y="390" width="180" height="100" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.5"/>
+    <circle cx="886" cy="404" r="9" fill="#10B981"/><text x="886" y="408" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">★</text>
+    <text x="810" y="418" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">信号采样模块</text>
+    <text x="810" y="438" text-anchor="middle" font-size="11" fill="#64748B">INA240/G431运放采样</text>
+    <text x="810" y="458" text-anchor="middle" font-size="11" fill="#64748B">3相电流·母线电压</text>
+    <text x="810" y="478" text-anchor="middle" font-size="11" fill="#64748B">功率管温度检测</text>
+    <rect x="720" y="520" width="180" height="100" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.5"/>
+    <circle cx="886" cy="534" r="9" fill="#10B981"/><text x="886" y="538" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">★</text>
+    <text x="810" y="548" text-anchor="middle" font-size="14" font-weight="600" fill="#1E293B">编码器接口</text>
+    <text x="810" y="568" text-anchor="middle" font-size="11" fill="#64748B">MT6701磁编码器</text>
+    <text x="810" y="588" text-anchor="middle" font-size="11" fill="#64748B">SPI/ABI·双编码器</text>
+    <text x="810" y="608" text-anchor="middle" font-size="11" fill="#64748B">应变片力矩传感器</text>
+  </g>
+
+  <g>
+    <rect x="960" y="315" width="150" height="120" rx="12" fill="#F1F5F9" stroke="#64748B" stroke-width="2"/>
+    <text x="1035" y="351" text-anchor="middle" font-size="16" font-weight="700" fill="#1E293B">三相无刷电机</text>
+    <text x="1035" y="373" text-anchor="middle" font-size="11" fill="#64748B">GIM6010-8 / GIM8108-8</text>
+    <text x="1035" y="393" text-anchor="middle" font-size="11" font-weight="600" fill="#DC2626">掉电自动抱闸防掉落</text>
+  </g>
+
+  <g>
+    <rect x="60" y="652" width="1020" height="52" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <line x1="86" y1="678" x2="124" y2="678" stroke="#6D28D9" stroke-width="2.5"/><text x="132" y="682" font-size="12" fill="#1E293B">PWM控制</text>
+    <line x1="226" y1="678" x2="264" y2="678" stroke="#EA580C" stroke-width="2"/><text x="272" y="682" font-size="12" fill="#1E293B">反馈采样</text>
+    <line x1="366" y1="678" x2="404" y2="678" stroke="#DC2626" stroke-width="2.5" stroke-dasharray="6 4"/><text x="412" y="682" font-size="12" fill="#1E293B">保护关断</text>
+    <line x1="506" y1="678" x2="544" y2="678" stroke="#0284C7" stroke-width="2.2"/><text x="552" y="682" font-size="12" fill="#1E293B">通信信号</text>
+    <line x1="646" y1="678" x2="684" y2="678" stroke="#16A34A" stroke-width="2.2"/><text x="692" y="682" font-size="12" fill="#1E293B">电源信号</text>
+    <line x1="786" y1="678" x2="824" y2="678" stroke="#64748B" stroke-width="2"/><text x="832" y="682" font-size="12" fill="#1E293B">调试信号</text>
+    <circle cx="926" cy="678" r="7" fill="#10B981"/><text x="926" y="681" text-anchor="middle" font-size="8" font-weight="700" fill="#FFFFFF">★</text>
+    <text x="940" y="682" font-size="12" fill="#1E293B">★ 功能增强/新增部分</text>
+  </g>
+</svg>
