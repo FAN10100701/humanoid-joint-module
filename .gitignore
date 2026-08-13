@@ -5,6 +5,9 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Trae IDE临时文件
+.trae-html-share-packages/
+
 # 编辑器
 .vscode/
 .idea/
