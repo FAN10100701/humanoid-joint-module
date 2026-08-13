@@ -207,13 +207,18 @@ body[data-theme="dark"] .simbox{background:linear-gradient(135deg,#101724 0%,#0c
 body[data-theme="dark"] .simbox canvas{background:#0a0e17;border-color:var(--rule)}
 
 /* ===== 底部功能栏（桌面端） ===== */
-.bottom-bar{position:fixed;left:0;right:0;bottom:0;height:44px;z-index:100;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 16px;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-top:1px solid var(--rule);border-radius:14px 14px 0 0;box-shadow:0 -2px 20px rgba(0,0,0,.06)}
-.bb-btn{border:1px solid var(--rule);background:rgba(255,255,255,.7);color:var(--muted);font-size:12px;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer;transition:.14s;font-family:inherit;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.bottom-bar{position:fixed;left:0;right:0;bottom:0;height:44px;z-index:100;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-top:1px solid var(--rule);border-radius:14px 14px 0 0;box-shadow:0 -2px 20px rgba(0,0,0,.06);overflow-x:auto;scrollbar-width:thin;flex-wrap:nowrap}
+.bb-btn{border:1px solid var(--rule);background:rgba(255,255,255,.7);color:var(--muted);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;transition:.14s;font-family:inherit;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
 .bb-btn:hover{color:var(--ink);background:#fff;box-shadow:var(--sh1)}
 .bb-btn.on{color:#fff;background:var(--accent);border-color:var(--accent)}
-.bb-sep{width:1px;height:20px;background:var(--rule);margin:0 6px}
+.bb-sep{width:1px;height:20px;background:var(--rule);margin:0 6px;flex-shrink:0}
+/* 场景切换下拉（底部栏内） */
+.bb-sel{border:1px solid var(--rule);background:rgba(255,255,255,.7);color:var(--ink);font-size:12px;font-weight:600;padding:5px 8px;border-radius:8px;cursor:pointer;font-family:inherit;outline:none;flex-shrink:0;max-width:180px}
+.bb-sel:hover{background:#fff;box-shadow:var(--sh1)}
+/* 性能状态（底部栏内） */
+.bb-perf{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;flex-shrink:0;padding:0 2px}
 /* 机型切换（底部栏内） */
-.bb-switch{display:flex;gap:2px;background:rgba(0,0,0,.04);border-radius:8px;padding:2px}
+.bb-switch{display:flex;gap:2px;background:rgba(0,0,0,.04);border-radius:8px;padding:2px;flex-shrink:0}
 .bb-opt{border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:.14s;font-family:inherit}
 .bb-opt:hover{color:var(--ink)}
 .bb-opt.on{background:#fff;color:var(--accent);box-shadow:var(--sh1)}
@@ -224,8 +229,10 @@ body[data-theme="dark"] .simbox canvas{background:#0a0e17;border-color:var(--rul
 body[data-theme="dark"] .bottom-bar{background:rgba(13,18,30,.88);border-top-color:var(--rule)}
 body[data-theme="dark"] .bb-btn{background:rgba(20,28,42,.7);border-color:var(--rule);color:var(--muted)}
 body[data-theme="dark"] .bb-btn:hover{color:var(--ink);background:rgba(30,40,60,.9)}
+body[data-theme="dark"] .bb-sel{background:rgba(20,28,42,.7);border-color:var(--rule);color:var(--ink)}
 body[data-theme="dark"] .bb-switch{background:rgba(255,255,255,.06)}
 body[data-theme="dark"] .bb-opt.on{background:rgba(30,40,60,.9);color:var(--accent)}
+body[data-theme="dark"] .bb-perf{color:var(--muted)}
 /* 移动端隐藏底部功能栏（使用原有btab） */
 @media(max-width:860px){
   .bottom-bar{display:none}
@@ -290,17 +297,30 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   </main>
   <aside class="det" id="det"><div class="din" id="dIn"></div>  </aside>
 </div>
-<!-- ===== 底部功能栏（桌面端） ===== -->
+<!-- ===== 底部功能栏（桌面端，玻璃拟态悬浮） ===== -->
 <div class="bottom-bar" id="bottomBar">
   <button class="bb-btn" id="bbReset" title="重置视角">🔄 重置视角</button>
-  <button class="bb-btn" id="bbWire" title="线框模式">🔲 线框模式</button>
+  <button class="bb-btn" id="bbWire" title="线框模式">🔲 线框</button>
   <button class="bb-btn" id="bbAnim" title="关节动画">▶ 关节动画</button>
   <button class="bb-btn" id="bbAutoRot" title="自动旋转">🔄 自动旋转</button>
   <div class="bb-sep"></div>
+  <button class="bb-btn" id="bbExplode" title="爆炸拆解 / 恢复装配">💥 爆炸拆解</button>
+  <button class="bb-btn" id="bbLabels" title="显示 / 隐藏零件名称标签">🏷️ 零件标签</button>
+  <button class="bb-btn" id="bbDemo" title="自动循环播放拆解 / 装配动画">▶️ 自动演示</button>
+  <div class="bb-sep"></div>
+  <select class="bb-sel" id="bbSceneSel" title="切换演示场景（关节模组 / 三种减速器拆解）">
+    <option value="">整机模型</option>
+    <option value="td_joint">关节模组拆解</option>
+    <option value="td_harmonic">谐波减速器拆解</option>
+    <option value="td_planetary">行星减速器拆解</option>
+    <option value="td_cycloidal">摆线RV减速器拆解</option>
+  </select>
   <div class="bb-switch" id="bbModelSwitch">
     <button class="bb-opt on" data-m="h1">宇树 H1</button>
     <button class="bb-opt" data-m="g1">宇树 G1</button>
   </div>
+  <div class="bb-sep"></div>
+  <div class="bb-perf" id="bbPerf" title="实时帧率与零件数量">📊 -- FPS · -- 件</div>
 </div>
 <div class="navbg" id="navbg"></div>
 <div class="drw mdl" id="drwModel">
@@ -640,6 +660,9 @@ function selectPart(key){
   dIn.innerHTML=h;
   // 拆解教学模块：进入/退出专属 3D 拆解场景
   if(d.td){if(window.enterTdScene)window.enterTdScene(key);}else{if(window.exitTdScene)window.exitTdScene();}
+  // 同步底部栏场景下拉框（侧边栏导航与下拉框状态保持一致）
+  var bbSceneSel=document.getElementById('bbSceneSel');
+  if(bbSceneSel)bbSceneSel.value=(key.indexOf('td_')===0)?key:'';
   // ADRC 页面：挂载 PI vs ADRC 交互仿真
   if(key==='adrc'){if(window.hookAdrcSim)window.hookAdrcSim();}
   // 3D高亮（选中部件发光，其他半透明）
@@ -727,6 +750,65 @@ function updateAutoRotBtn(on){
   btns.forEach(function(b){if(b)b.classList.toggle('on',autoRotateOn);});
 }
 
+/* ========== 爆炸拆解切换（底部栏，单向爆炸/装配动画） ========== */
+function toggleExplode(){
+  if(!window.Robot3D||!window.Robot3D.isTdActive())return;  /* 非拆解场景不响应 */
+  var exploded=window.Robot3D.toggleExplode();              /* 调用Robot3D内部实现 */
+  var bb=document.getElementById('bbExplode');
+  if(bb)bb.classList.toggle('on',exploded);
+}
+
+/* ========== 零件标签开关（底部栏，显示/隐藏拆解场景零件名称） ========== */
+function toggleLabels(){
+  if(!window.Robot3D)return;
+  var vis=window.Robot3D.toggleLabels();                    /* 调用Robot3D内部实现 */
+  var bb=document.getElementById('bbLabels');
+  if(bb)bb.classList.toggle('on',!vis);
+}
+
+/* ========== 自动演示切换（底部栏，自动循环拆解/装配） ========== */
+function toggleDemo(){
+  if(!window.Robot3D||!window.Robot3D.isTdActive())return;  /* 非拆解场景不响应 */
+  var on=window.Robot3D.toggleDemo();                       /* 调用Robot3D内部实现 */
+  var bb=document.getElementById('bbDemo');
+  if(bb)bb.classList.toggle('on',on);
+}
+
+/* ========== 场景切换下拉（底部栏：整机/关节模组/三种减速器） ========== */
+function onSceneSelChange(){
+  var sel=document.getElementById('bbSceneSel');
+  if(!sel)return;
+  var v=sel.value;
+  if(!v){
+    /* 切回整机模型：退出拆解场景并回到整体视图 */
+    if(window.exitTdScene)window.exitTdScene();
+    selectPart('whole');
+    return;
+  }
+  /* 进入对应拆解场景（selectPart 内部会调用 enterTdScene） */
+  selectPart(v);
+}
+
+/* ========== 性能状态显示（底部栏：实时FPS + 零件数量） ========== */
+var perfFrames=0,perfLastT=performance.now(); /* 帧计数与上次统计时间 */
+function updatePerf(){
+  perfFrames++;
+  var now=performance.now();
+  if(now-perfLastT>=1000){
+    var fps=Math.round(perfFrames*1000/(now-perfLastT));
+    perfFrames=0;perfLastT=now;
+    /* 统计当前场景零件(mesh)数量 */
+    var cnt=0;
+    if(window.Robot3D){
+      if(window.Robot3D.isTdActive()){cnt=window.Robot3D.tdMeshCount;}
+      else if(window.Robot3D.built){cnt=window.Robot3D.meshCount;}
+    }
+    var bb=document.getElementById('bbPerf');
+    if(bb)bb.textContent='📊 '+fps+' FPS · '+cnt+' 件';
+  }
+  requestAnimationFrame(updatePerf);
+}
+
 /* ========== 初始化（页面加载后立即进入3D模式） ========== */
 function init(){
   buildNav();
@@ -735,6 +817,12 @@ function init(){
   var bbWire=document.getElementById('bbWire');if(bbWire)bbWire.addEventListener('click',toggleWire);
   var bbAnim=document.getElementById('bbAnim');if(bbAnim)bbAnim.addEventListener('click',toggleJointAnim);
   var bbAutoRot=document.getElementById('bbAutoRot');if(bbAutoRot)bbAutoRot.addEventListener('click',toggleAutoRotate);
+  var bbExplode=document.getElementById('bbExplode');if(bbExplode)bbExplode.addEventListener('click',toggleExplode);
+  var bbLabels=document.getElementById('bbLabels');if(bbLabels)bbLabels.addEventListener('click',toggleLabels);
+  var bbDemo=document.getElementById('bbDemo');if(bbDemo)bbDemo.addEventListener('click',toggleDemo);
+  var bbSceneSel=document.getElementById('bbSceneSel');if(bbSceneSel)bbSceneSel.addEventListener('change',onSceneSelChange);
+  // 启动性能状态显示（实时FPS+零件数）
+  updatePerf();
   // 底部栏机型切换
   document.querySelectorAll('.bb-opt').forEach(function(b){
     b.addEventListener('click',function(){switchModel(b.dataset.m);});
@@ -865,6 +953,14 @@ let animTime=0;
 /* 加载进度提示条（舞台顶部 ldtip 元素） */
 function showLdtip(msg){var el=document.getElementById('ldtip');if(el){el.textContent=msg;el.classList.add('show');}}
 function hideLdtip(){var el=document.getElementById('ldtip');if(el)el.classList.remove('show');}
+
+/* 统计对象树中的Mesh数量（用于性能面板显示） */
+function countMeshes(root){
+  if(!root)return 0;
+  var cnt=0;
+  root.traverse(function(o){if(o.isMesh)cnt++;});
+  return cnt;
+}
 
 /* 把一个网格注册到部件分组（用于高亮/点击选中/聚焦） */
 function regMesh(msh,partKey){
@@ -1832,9 +1928,18 @@ function loop(){
   /* 拆解场景动画驱动：自动拆解（往返）与旋转展示 */
   if(tdActive){
     if(tdAutoOn){
-      tdExplodeT+=tdAutoDir*0.006;                 /* 每帧推进爆炸度 */
-      if(tdExplodeT>=1){tdExplodeT=1;tdAutoDir=-1;}/* 到顶反向 */
-      if(tdExplodeT<=0){tdExplodeT=0;tdAutoDir=1;} /* 到底反向 */
+      if(tdExplodeTarget!==null){
+        /* 单向爆炸/装配模式（底部栏"爆炸拆解"按钮）：朝目标爆炸度平滑移动，到达后停止 */
+        var step=0.012; /* 每帧爆炸度步进量 */
+        if(tdExplodeT<tdExplodeTarget){tdExplodeT=Math.min(tdExplodeTarget,tdExplodeT+step);}
+        else{tdExplodeT=Math.max(tdExplodeTarget,tdExplodeT-step);}
+        if(Math.abs(tdExplodeT-tdExplodeTarget)<0.002){tdExplodeT=tdExplodeTarget;tdAutoOn=false;tdExplodeTarget=null;}
+      }else{
+        /* 自动往返演示模式（"自动演示"按钮）：爆炸度到顶反向、到底反向 */
+        tdExplodeT+=tdAutoDir*0.006;                 /* 每帧推进爆炸度 */
+        if(tdExplodeT>=1){tdExplodeT=1;tdAutoDir=-1;}/* 到顶反向 */
+        if(tdExplodeT<=0){tdExplodeT=0;tdAutoDir=1;} /* 到底反向 */
+      }
       applyTdExplode(tdExplodeT);
       var rg=document.getElementById('exrng');if(rg)rg.value=Math.round(tdExplodeT*100);
     }
@@ -1949,7 +2054,8 @@ var tdActive=false;      /* 是否处于拆解场景模式 */
 var tdKey='';            /* 当前拆解模块键 */
 var tdParts=[];          /* 零件列表 {obj,base(装配位),dir(爆炸方向),dist(爆炸距离),id} */
 var tdExplodeT=0;        /* 当前爆炸度 0(装配)~1(完全拆解) */
-var tdAutoOn=false,tdAutoDir=1,tdSpinOn=false;
+var tdAutoOn=false,tdAutoDir=1,tdSpinOn=false,tdExplodeTarget=null;
+var labelsVisible=true;   /* 拆解场景零件标签是否可见（底部栏"零件标签"开关） */
 var tdSelId=null;        /* 当前选中的零件 id */
 var savedCam={min:55,max:200};  /* 进入拆解场景前保存的相机距离限制 */
 var tdCamSaved=false;    /* 标记相机限制是否已保存（拆解场景间直接切换时不重复保存） */
@@ -2498,7 +2604,40 @@ window.Robot3D={
   poseWaveHand:poseWaveHand,
   poseTpose:poseTpose,
   poseSquat:poseSquat,
-  setJointAngle:setJointAngle
+  setJointAngle:setJointAngle,
+  /* 零件数量统计（供底部栏性能显示使用） */
+  get meshCount(){return body3d?countMeshes(body3d):0;},
+  /* 拆解场景零件数量（供底部栏性能显示使用） */
+  get tdMeshCount(){return tdGroup?countMeshes(tdGroup):0;},
+  /* ===== 拆解场景控制（供底部栏按钮调用，内部变量在Robot3D作用域内） ===== */
+  isTdActive:function(){return tdActive;},
+  /* 爆炸拆解：单向爆炸/装配动画 */
+  toggleExplode:function(){
+    if(!tdActive)return false;
+    var exauto=document.getElementById('exauto');if(exauto)exauto.classList.remove('on');
+    tdAutoOn=true;
+    tdExplodeTarget=(tdExplodeT<0.5)?1:0;  /* 当前未爆炸则拆开，已爆炸则装配 */
+    return tdExplodeTarget===1;
+  },
+  /* 零件标签开关：返回切换后的可见状态 */
+  toggleLabels:function(){
+    labelsVisible=!labelsVisible;
+    if(tdGroup){
+      tdGroup.traverse(function(o){
+        if(o.userData&&o.userData.isLabel){o.visible=labelsVisible;}
+      });
+    }
+    return labelsVisible;
+  },
+  /* 自动演示：自动循环拆解/装配动画 */
+  toggleDemo:function(){
+    if(!tdActive)return false;
+    tdAutoOn=!tdAutoOn;
+    tdExplodeTarget=null;                  /* 清除单向目标，进入往返模式 */
+    var exauto=document.getElementById('exauto');if(exauto)exauto.classList.toggle('on',tdAutoOn);
+    if(tdAutoOn)tdAutoDir=1;
+    return tdAutoOn;
+  }
 };
 </script>
 <script>
