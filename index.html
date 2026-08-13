@@ -3,19 +3,39 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0;url=启动教学系统.html">
-<title>跳转中...</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人关节模组教学系统</title>
 <style>
-body{margin:0;padding:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0d1117;color:#e6edf3;font-family:"Microsoft YaHei",sans-serif}
-.box{text-align:center}
-.box a{color:#3b82f6;font-size:18px;text-decoration:none}
-.box p{color:#8b949e;margin-bottom:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;padding:0;display:flex;align-items:center;justify-content:center;height:100vh;background:radial-gradient(ellipse at 50% 40%,#1a2332 0%,#0d1117 60%);color:#e6edf3;font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif;overflow:hidden}
+.box{text-align:center;padding:40px}
+.spin{width:52px;height:52px;margin:0 auto 24px;border:4px solid rgba(59,130,246,.2);border-top-color:#3b82f6;border-radius:50%;animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.box h1{font-size:20px;font-weight:700;margin-bottom:10px;letter-spacing:.5px}
+.box p{color:#8b949e;font-size:14px;margin-bottom:20px}
+.box a{color:#3b82f6;font-size:15px;text-decoration:none;border-bottom:1px dashed #3b82f6;padding-bottom:2px}
+.box a:hover{color:#60a5fa}
+.hint{margin-top:28px;font-size:12px;color:#6b7280}
 </style>
+<script>
+/* 自动跳转到统一教学系统入口（处理中文路径编码，GitHub Pages 下可靠跳转） */
+(function(){
+  var target='启动教学系统.html';
+  /* 使用 encodeURI 对中文路径做标准编码，避免特殊字符导致跳转失败 */
+  var url=encodeURI(target);
+  /* 页面加载后立即跳转 */
+  window.location.replace(url);
+})();
+</script>
 </head>
 <body>
 <div class="box">
-  <p>正在跳转到统一教学系统...</p>
-  <p>如未自动跳转，请点击 <a href="启动教学系统.html">进入教学系统</a></p>
+  <div class="spin"></div>
+  <h1>正在载入教学系统...</h1>
+  <p>若未自动跳转，请点击下方链接</p>
+  <a href="启动教学系统.html">进入人形机器人关节模组教学系统 →</a>
+  <div class="hint">人形机器人关节模组 · 3D解剖知识系统</div>
 </div>
 </body>
 </html>
