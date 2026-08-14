@@ -19,22 +19,20 @@ body{margin:0;padding:0;display:flex;align-items:center;justify-content:center;h
 .hint{margin-top:28px;font-size:12px;color:#6b7280}
 </style>
 <script>
-/* 自动跳转到统一教学系统入口（处理中文路径编码，GitHub Pages 下可靠跳转） */
+/* 自动跳转到 3D 解剖拆解页面（旧版 2D 教学系统已删除）
+   使用 encodeURI 对中文路径做标准编码，避免特殊字符导致跳转失败 */
 (function(){
-  var target='启动教学系统.html';
-  /* 使用 encodeURI 对中文路径做标准编码，避免特殊字符导致跳转失败 */
-  var url=encodeURI(target);
-  /* 页面加载后立即跳转 */
-  window.location.replace(url);
+  var target='00_解剖式知识可视化/人形机器人解剖式知识可视化.html';
+  window.location.replace(encodeURI(target));
 })();
 </script>
 </head>
 <body>
 <div class="box">
   <div class="spin"></div>
-  <h1>正在载入教学系统...</h1>
+  <h1>正在载入 3D 解剖拆解系统...</h1>
   <p>若未自动跳转，请点击下方链接</p>
-  <a href="启动教学系统.html">进入人形机器人关节模组教学系统 →</a>
+  <a href="00_解剖式知识可视化/人形机器人解剖式知识可视化.html">进入宇树机器人 3D 解剖拆解页面 →</a>
   <div class="hint">人形机器人关节模组 · 3D解剖知识系统</div>
 </div>
 </body>

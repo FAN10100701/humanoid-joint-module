@@ -87,6 +87,19 @@ linear-gradient(90deg,rgba(0,50,120,.04) 1px,transparent 1px);background-size:40
 .ab:hover{color:var(--ink);border-color:var(--rule2)}.ab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .tip{font-size:11px;color:var(--faint);padding:8px 12px;background:rgba(0,102,204,.05);border-radius:8px;border-left:3px solid var(--accent);margin-bottom:16px;line-height:1.6}
 
+/* ===== 拆解零件详情卡片（点击零件后右侧弹出的详解卡片） ===== */
+#tdCard{position:relative;margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--rule2);background:linear-gradient(135deg,rgba(0,102,204,.07),rgba(0,102,204,.02));box-shadow:0 2px 10px rgba(0,0,0,.07)}
+#tdCard .tdc-head{display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(0,102,204,.09);border-bottom:1px solid var(--rule2)}
+#tdCard .tdc-ic{font-size:15px;line-height:1}
+#tdCard .tdc-name{font-size:12.5px;font-weight:700;color:var(--ink);flex:1;line-height:1.4}
+#tdCard .tdc-x{cursor:pointer;color:var(--muted);font-size:11px;padding:2px 7px;border-radius:5px;transition:.12s;white-space:nowrap}
+#tdCard .tdc-x:hover{color:var(--ink);background:rgba(0,0,0,.08)}
+#tdCard .tdc-body{padding:10px 12px;font-size:11.5px;line-height:1.75;color:var(--muted)}
+#tdCard .tdc-tag{display:inline-block;font-size:10px;padding:1px 9px;border-radius:10px;background:var(--accent);color:#fff;margin-bottom:7px;letter-spacing:.5px}
+body[data-theme="dark"] #tdCard{background:linear-gradient(135deg,rgba(59,155,255,.10),rgba(59,155,255,.03));box-shadow:0 2px 10px rgba(0,0,0,.35)}
+body[data-theme="dark"] #tdCard .tdc-head{background:rgba(59,155,255,.14)}
+body[data-theme="dark"] #tdCard .tdc-x:hover{background:rgba(255,255,255,.10)}
+
 /* ===== 主题：暗色 / 高对比 ===== */
 body[data-theme="dark"]{
   --bg1:#0a0e17;--bg2:#050810;--bg3:#101724;
@@ -273,7 +286,6 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <div class="logo"><span class="dot"></span>人形机器人关节模组 · 3D解剖知识系统</div>
   <div class="sep"></div>
   <div class="tbr">
-    <button class="vb home" id="btnHome" title="返回主页"><span class="ic">🏠</span>返回主页</button>
     <button class="vb theme" id="btnTheme"><span class="ic">🌗</span>主题</button>
   </div>
   <button class="ham" id="btnHam" title="导航菜单">☰</button>
@@ -826,10 +838,6 @@ function init(){
   // 底部栏机型切换
   document.querySelectorAll('.bb-opt').forEach(function(b){
     b.addEventListener('click',function(){switchModel(b.dataset.m);});
-  });
-  // 返回主页按钮
-  var btnHome=document.getElementById('btnHome');if(btnHome)btnHome.addEventListener('click',function(){
-    window.location.href='../启动教学系统.html';
   });
   // 移动端抽屉按钮绑定
   var bw2=document.getElementById('btnWire2');if(bw2)bw2.addEventListener('click',toggleWire);
@@ -1460,6 +1468,9 @@ function loadUrdfRobot(m){
   var token=++urdfToken;
   showLdtip('正在加载官方3D模型...');
   var parsed=null;
+  /* names 必须提升到函数作用域：后续 .then 回调需要访问它，
+     若在回调内用 var 声明，另一个回调访问会报 names is not defined */
+  var names=[];
   fetch(cfg.urdf)
     .then(function(r){if(!r.ok)throw new Error('URDF HTTP '+r.status);return r.text();})
     .then(function(txt){
@@ -1470,7 +1481,7 @@ function loadUrdfRobot(m){
         var f=parsed.links[k].mesh;
         if(f)need[f.split('/').pop()]=1;
       });
-      var names=Object.keys(need);
+      names=Object.keys(need);
       if(!names.length||!STLLoader)throw new Error('无STL网格或加载器未就绪');
       var loader=new STLLoader();
       /* 限并发 + 重试 + 失败容忍加载（修复：任一STL失败不再整体回退，缺个别零件仍显示官方模型） */
@@ -2130,8 +2141,9 @@ var TD_INFO={
   c_flange:{n:'输出法兰+曲柄销（参数化重建）',p:'输出端。曲柄销穿过摆线盘偏心孔，只提取公转分量输出——摆线盘的自转（=1个针齿角/圈）被滤除，实现大减速比。'}
 };
 
-/* 拆解场景材质（每个网格独立材质，保证点击高亮互不干扰） */
-function tdMat(color,metal,rough){return new THREE.MeshStandardMaterial({color:color,metalness:(metal==null)?0.55:metal,roughness:(rough==null)?0.4:rough});}
+/* 拆解场景材质（每个网格独立材质，保证点击高亮互不干扰）
+   【优化】默认半透明(opacity:0.92)：爆炸后零件前后重叠时也能透视看清后方零件 */
+function tdMat(color,metal,rough){return new THREE.MeshStandardMaterial({color:color,metalness:(metal==null)?0.55:metal,roughness:(rough==null)?0.4:rough,transparent:true,opacity:0.92});}
 
 /* 几何体居中（包围盒中心移到原点）并返回原尺寸 */
 function centerGeo(geo){
@@ -2274,11 +2286,18 @@ function buildTdFromDefs(defs,done){
     if(d.stl)stlJobs.push({g:g,mesh:m,url:d.stl,size:d.stlSize||24,id:d.id});
   });
   tdStack(items);
-  /* 爆炸方向：上半部分向上、下半部分向下，距离随远离中心递增 */
+  /* 【优化】爆炸方向：三维螺旋式展开，避免零件重叠遮挡
+     每个零件沿径向(XZ平面)旋转 + 轴向(Y轴)分层，距离随远离中心递增 */
   var mid=(items.length-1)/2;
   items.forEach(function(it,i){
     var dirY=(i<=mid)?1:-1;
-    addTdPart(it.obj,it.id,new THREE.Vector3(0,dirY,0),12+Math.abs(i-mid)*10);
+    var spread=10+Math.abs(i-mid)*8;
+    /* 径向偏移角度：根据 i 旋转，使零件在 XZ 平面错开 */
+    var angle=i*Math.PI*0.55;
+    var radialX=Math.sin(angle)*spread*0.3;
+    var radialZ=Math.cos(angle)*spread*0.3;
+    var dir=new THREE.Vector3(radialX,dirY*spread*0.7,radialZ).normalize();
+    addTdPart(it.obj,it.id,dir,spread);
   });
   /* 异步用真实开源 STL 替换对应参数化零件；全部失败也不影响场景可用性 */
   var pending=stlJobs.length;
@@ -2449,9 +2468,10 @@ function onTdPartClick(id){
     var sel=(p.id===id);
     p.obj.traverse(function(o){
       if(!o.isMesh)return;
+      /* 【优化】选中零件不透明+高亮发光；未选中更透明(0.35)弱化，避免遮挡干扰 */
       o.material.emissive.setHex(sel?accentHex:0x000000);
       o.material.emissiveIntensity=sel?0.5:0;
-      o.material.opacity=sel?1:0.45;
+      o.material.opacity=sel?1:0.35;
       o.material.transparent=!sel;
     });
   });
