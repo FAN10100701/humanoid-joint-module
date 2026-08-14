@@ -86,7 +86,9 @@ public static class StlSimplifier
             long a = cellId[t * 3], b = cellId[t * 3 + 1], c2 = cellId[t * 3 + 2];
             if (a == b && b == c2) continue; // fully collapsed, skip
             float[] pa = cellRep[a], pb = cellRep[b], pc = cellRep[c2];
-            outBytes.AddRange(BitConverter.GetBytes(0f)); // normal left zero (viewer recomputes)
+            outBytes.AddRange(BitConverter.GetBytes(0f)); // normal.x = 0
+            outBytes.AddRange(BitConverter.GetBytes(0f)); // normal.y = 0 (viewer recomputes)
+            outBytes.AddRange(BitConverter.GetBytes(0f)); // normal.z = 0
             outBytes.AddRange(BitConverter.GetBytes(pa[0])); outBytes.AddRange(BitConverter.GetBytes(pa[1])); outBytes.AddRange(BitConverter.GetBytes(pa[2]));
             outBytes.AddRange(BitConverter.GetBytes(pb[0])); outBytes.AddRange(BitConverter.GetBytes(pb[1])); outBytes.AddRange(BitConverter.GetBytes(pb[2]));
             outBytes.AddRange(BitConverter.GetBytes(pc[0])); outBytes.AddRange(BitConverter.GetBytes(pc[1])); outBytes.AddRange(BitConverter.GetBytes(pc[2]));
