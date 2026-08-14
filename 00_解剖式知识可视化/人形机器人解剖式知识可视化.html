@@ -384,17 +384,17 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
     <option value="td_cycloidal">摆线RV减速器拆解</option>
   </select>
   <div class="bb-switch" id="bbModelSwitch">
-    <button class="bb-opt on" data-m="x1">智元 X1</button>
-    <button class="bb-opt" data-m="h1">宇树 H1</button>
+    <button class="bb-opt" data-m="x1">智元 X1</button>
+  <button class="bb-opt on" data-m="h1">宇树 H1</button>
     <button class="bb-opt" data-m="g1">宇树 G1</button>
   </div>
   <button class="bb-btn" id="bbCompare" title="三机同屏对比（左 H1 / 中 G1 / 右 X1，按真实身高比例脚踩同一地面，关节动画与姿态同步）">🆚 三机同屏</button>
-  <select class="bb-sel" id="bbColorSel" title="切换机身配色方案（银白 / 纯白 / 金属色 / 原配色 / 半透明）">
-    <option value="silver">🎨 机身配色：银白</option>
-    <option value="white">🎨 机身配色：纯白</option>
-    <option value="metal">🎨 机身配色：金属色</option>
-    <option value="dark">🎨 机身配色：原配色</option>
-    <option value="ghost">🎨 机身配色：半透明</option>
+  <select class="bb-sel" id="bbColorSel" title="切换机身配色方案（原配色 / 银白 / 纯白 / 金属色 / 半透明）">
+<option value="dark">🎨 机身配色：原配色</option>
+<option value="silver">🎨 机身配色：银白</option>
+<option value="white">🎨 机身配色：纯白</option>
+<option value="metal">🎨 机身配色：金属色</option>
+<option value="ghost">🎨 机身配色：半透明</option>
   </select>
   <select class="bb-sel" id="bbEnvSel" title="切换环境背景（默认无环境；晴天/黄昏/展厅均为程序化生成，不增加加载时间）">
     <option value="none">🖼 环境：无(默认)</option>
@@ -407,8 +407,8 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
 </div>
 <div class="navbg" id="navbg"></div>
 <div class="drw mdl" id="drwModel">
-  <button class="vb on" data-m="x1">智元 X1</button>
-  <button class="vb" data-m="h1">宇树 H1</button>
+  <button class="vb" data-m="x1">智元 X1</button>
+  <button class="vb on" data-m="h1">宇树 H1</button>
   <button class="vb" data-m="g1">宇树 G1</button>
 </div>
 <div class="drw view" id="drwView">
@@ -439,10 +439,10 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   </select>
   <!-- 移动端机身配色选择（与桌面底部栏 bbColorSel 同步） -->
   <select class="vb" id="colorSel2">
-    <option value="silver">配色：银白(默认)</option>
+    <option value="dark">配色：原配色(默认)</option>
+    <option value="silver">配色：银白</option>
     <option value="white">配色：纯白</option>
     <option value="metal">配色：金属色</option>
-    <option value="dark">配色：原配色</option>
     <option value="ghost">配色：半透明</option>
   </select>
   <!-- 移动端环境背景选择（与桌面底部栏 bbEnvSel 同步） -->
@@ -464,7 +464,7 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
 <script>
 /* ========== 全局应用命名空间（纯3D模式，无2D SVG回退） ========== */
 (function(){
-var curM='x1',curP='whole';  /* 默认机型：智元灵犀 X1（用户指定默认） */
+var curM='h1',curP='whole';  /* 默认机型：宇树 H1（X1 模型库 56MB 太大拖慢首屏，H1 仅 7MB；X1 仍可手动切换） */
 
 /* ========== 机型参数 ========== */
 var MODELS={
@@ -1145,7 +1145,7 @@ function init(){
   var bcs=document.getElementById('bbColorSel'),cs2=document.getElementById('colorSel2');
   /* 恢复上次选择的配色方案并同步两个下拉的显示（3D侧启动时也会读同一 localStorage 键） */
   var savedColor=null;
-  try{savedColor=localStorage.getItem('robot-color');}catch(e){}
+  try{savedColor=localStorage.getItem('robot-color-v2');}catch(e){}   /* v2 键：默认配色改为原配色后旧记录作废 */
   if(bcs&&savedColor)bcs.value=savedColor;
   if(cs2&&savedColor)cs2.value=savedColor;
   function onColorChange(src){
@@ -1207,7 +1207,7 @@ let renderer, scene, camera, controls, body3d;
 let raf=null, built=false, active=false;
 /* partGroups: 部件键 -> 网格数组（真实 URDF 模型与回退模型统一用此结构） */
 let partGroups={};
-let currentModel='x1';  /* 默认机型：智元灵犀 X1（与 RobotApp 的 curM 保持一致） */
+let currentModel='h1';  /* 默认机型：宇树 H1（与 RobotApp 的 curM 保持一致；X1 库太大改手动切换） */
 let accentHex=0x2b8eff;
 /* 机型比例参数（官方URDF加载失败时的参数化回退模型整体比例） */
 const PROP={x1:{h:0.86,slim:0.92},h1:{h:1.0,slim:1.0},g1:{h:0.78,slim:1.05}};
@@ -1238,22 +1238,23 @@ let cameraInitMinDist=45;           /* 初始最小缩放距离 */
 let cameraInitMaxDist=220;          /* 初始最大缩放距离 */
 let RoomEnv=null;                   /* RoomEnvironment 环境贴图生成类（loadDeps 异步加载） */
 
-/* ==================== 机身配色方案系统（可切换：银白/纯白/金属/原配色/半透明） ====================
-   背景：原分部件配色金属度高且无环境贴图，整机观感偏黑；现默认银白并提供多种方案供选择 */
+/* ==================== 机身配色方案系统（可切换：原配色/银白/纯白/金属/半透明） ====================
+   背景：官方 STL 本身无颜色，分部件配色由页面 PART_COLORS 系统赋予；默认展示分部件"原配色"
+   （加载中即为该配色，不再被整体方案覆盖），银白等单色方案作为可选项 */
 const COLOR_SCHEMES={
-  /* 银白（默认）：明亮哑光银白铝合金，整体提亮 */
-  silver:{name:'银白(默认)', color:0xe8ecef, metal:0.65, rough:0.32, opacity:1.0,  depthWrite:true },
+  /* 原配色（默认）：恢复各部件初始材质（分部件配色：银白躯干+深灰关节+黑色橡胶手脚） */
+  dark:  {name:'原配色(默认)', color:null,     metal:null, rough:null, opacity:1.0,  depthWrite:true },
+  /* 银白：明亮哑光银白铝合金，整体提亮 */
+  silver:{name:'银白',         color:0xe8ecef, metal:0.65, rough:0.32, opacity:1.0,  depthWrite:true },
   /* 纯白：哑光树脂/3D打印白，几乎无金属反射 */
-  white: {name:'纯白',       color:0xffffff, metal:0.05, rough:0.55, opacity:1.0,  depthWrite:true },
+  white: {name:'纯白',         color:0xffffff, metal:0.05, rough:0.55, opacity:1.0,  depthWrite:true },
   /* 金属：高抛光电镀银，金属度拉满（需环境贴图才能体现光泽） */
-  metal: {name:'金属色',     color:0xb8bec6, metal:1.00, rough:0.18, opacity:1.0,  depthWrite:true },
-  /* 原配色：恢复各部件初始材质（深灰金属+黑色橡胶的分部件配色） */
-  dark:  {name:'原配色',     color:null,     metal:null, rough:null, opacity:1.0,  depthWrite:true },
+  metal: {name:'金属色',       color:0xb8bec6, metal:1.00, rough:0.18, opacity:1.0,  depthWrite:true },
   /* 半透明：教学"幽灵视图"，通透显示内部结构 */
-  ghost: {name:'半透明',     color:0xd8e4f0, metal:0.20, rough:0.30, opacity:0.45, depthWrite:false}
+  ghost: {name:'半透明',       color:0xd8e4f0, metal:0.20, rough:0.30, opacity:0.45, depthWrite:false}
 };
-let curScheme='silver';             /* 当前配色方案键（持久化到 localStorage） */
-curScheme=restoreColorScheme();     /* 启动时恢复上次选择的配色方案（无记录则默认银白） */
+let curScheme='dark';               /* 当前配色方案键（持久化到 localStorage） */
+curScheme=restoreColorScheme();     /* 启动时恢复上次选择的配色方案（无记录则默认原配色） */
 
 /* ==================== 环境背景预设系统（程序化生成，零外部下载，切换毫秒级） ====================
    默认"无环境"保持原始透明背景+网格地面；其余预设用 Canvas 渐变天空 + 柔和太阳 + 雾
@@ -1814,13 +1815,13 @@ function applyColorScheme(key){
     m.depthWrite=s.depthWrite;
     m.needsUpdate=true;
   });
-  try{localStorage.setItem('robot-color',key);}catch(e){}   /* 记住用户选择 */
+  try{localStorage.setItem('robot-color-v2',key);}catch(e){}   /* 记住用户选择（v2 键，与旧 robot-color 断开） */
 }
-/* 读取持久化的配色方案（页面启动时调用，非法值回退默认银白） */
+/* 读取持久化的配色方案（页面启动时调用，非法值回退默认原配色） */
 function restoreColorScheme(){
   var k=null;
-  try{k=localStorage.getItem('robot-color');}catch(e){}
-  if(!k||!COLOR_SCHEMES[k])k='silver';
+  try{k=localStorage.getItem('robot-color-v2');}catch(e){}
+  if(!k||!COLOR_SCHEMES[k])k='dark';
   return k;
 }
 
@@ -2215,6 +2216,21 @@ function loadUrdfRobot(m,done){
         }
       });
       names=Object.keys(need);
+      /* 【可调】大体积零件清单：这些零件排到最后加载——小零件先到位快速成型，
+         大零件（已减面，gz 后 0.4-1.1MB/个）在后台陆续补齐，不阻塞整机轮廓出现 */
+      var BIG_STL_LAST=[
+        'arm_r_wrist_a_ball.STL','arm_r_wrist_b_ball.STL',   /* X1 腕部滚动体（内部件，减面后仍最大） */
+        'lumber_yaw.STL','left_ankle_roll.STL','right_hip_pitch.STL',
+        'right_hip_roll.STL','left_hip_roll.STL','left_hip_pitch.STL',
+        'left_shoulder_pitch.STL','right_shoulder_pitch.STL','right_ankle_roll.STL',
+        'right_shoulder_yaw.STL','right_elbow_pitch.STL','left_elbow_pitch.STL',
+        'lumber_pitch.STL','left_shoulder_roll.STL','base_link_simple.STL',
+        'right_ankle_pitch.STL','left_ankle_pitch.STL','right_shoulder_roll.STL'
+      ];
+      names.sort(function(a,b){   /* 命中大文件清单的排到队列末尾 */
+        var ka=BIG_STL_LAST.indexOf(a)>=0?1:0,kb=BIG_STL_LAST.indexOf(b)>=0?1:0;
+        return ka-kb;
+      });
       if(!names.length||!STLLoader)throw new Error('无STL网格或加载器未就绪');
       /* 逐零件增量组装：先用占位几何把整机骨架立刻搭出来（正确缩放/站位），
          之后每个STL下载完成就替换进对应零件——机器人不再是"等全部下完才一次性出现" */
@@ -4302,6 +4318,16 @@ window.Robot3D={
     if(k==='Escape'){if(window.RobotApp)window.RobotApp.selectPart('whole');}
   });
 })();
+</script>
+<script>
+/* PWA Service Worker 注册：https/http 环境启用（本地 file:// 不支持自动跳过）。
+   效果：首次访问后全部模型 .gz 与库文件进入本地缓存，二次访问零网络下载秒开，
+   且断网后仍可完整离线浏览 3D 教学页。缓存策略与版本号见 sw.js。 */
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  navigator.serviceWorker.register('sw.js').catch(function(e){
+    console.warn('[SW] Service Worker 注册失败（不影响页面正常使用）:',e);
+  });
+}
 </script>
 </body></html>
 
