@@ -59,6 +59,7 @@
   <button class="tab" onclick="switchTab('foc', this)">🔄 FOC磁场定向控制</button>
   <button class="tab" onclick="switchTab('threeloop', this)">📊 三环闭环控制</button>
   <button class="tab" onclick="switchTab('harmonic', this)">⚙️ 谐波减速器原理</button>
+  <button class="tab" onclick="switchTab('planetary', this)">🪐 行星减速器原理</button>
 </div>
 
 <div class="canvas-area">
@@ -128,9 +129,10 @@ function updateInfo() {
     structure: '关节模组内部结构',
     foc: 'FOC磁场定向控制原理',
     threeloop: '三环闭环控制系统',
-    harmonic: '谐波减速器工作原理'
+    harmonic: '谐波减速器工作原理',
+    planetary: '行星减速器工作原理'
   };
-  const colors = { structure: '#3b82f6', foc: '#8b5cf6', threeloop: '#10b981', harmonic: '#f97316' };
+  const colors = { structure: '#3b82f6', foc: '#8b5cf6', threeloop: '#10b981', harmonic: '#f97316', planetary: '#06b6d4' };
   document.getElementById('infoTitleText').textContent = titles[currentTab];
   document.querySelector('.info-dot').style.background = colors[currentTab];
 
@@ -194,6 +196,21 @@ function updateInfo() {
       <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>波发生器(输入)</div>
       <div class="legend-item"><div class="legend-color" style="background:#f97316"></div>柔轮(输出)</div>
       <div class="legend-item"><div class="legend-color" style="background:#3b82f6"></div>刚轮(固定)</div>
+    `;
+  } else if (currentTab === 'planetary') {
+    infoGrid.innerHTML = `
+      <div class="info-item"><div class="info-label">太阳轮转速</div><div class="info-value" style="color:#ef4444">3000 rpm</div></div>
+      <div class="info-item"><div class="info-label">太阳轮齿数</div><div class="info-value" style="color:#f97316">12</div></div>
+      <div class="legend-item"></div>
+      <div class="info-item"><div class="info-label">内齿圈齿数</div><div class="info-value" style="color:#3b82f6">48</div></div>
+      <div class="info-item"><div class="info-label">减速比</div><div class="info-value" style="color:#10b981">1:5</div></div>
+    `;
+    infoDesc.textContent = '行星减速器四大核心部件：太阳轮（中心输入齿轮，接电机高速轴）、行星轮（3~6个，绕太阳轮公转的同时自转）、内齿圈（固定在壳体的内齿环）、行星架（连接各行星轮销轴，同轴输出低速大扭矩）。减速比 i = 1 + 内齿圈齿数/太阳轮齿数。多个行星轮把载荷均分到多条啮合路径，因此承载能力强、结构紧凑；低减速比（3~10）时反驱透明度极好，是人形机器人准直驱（QDD）关节的首选——小米 CyberGear 采用 3.5:1 单级行星，智元 PowerFlow 关节同为行星准直驱方案。';
+    legendPanel.innerHTML = `
+      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>太阳轮(输入)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#f97316"></div>行星轮×3</div>
+      <div class="legend-item"><div class="legend-color" style="background:#3b82f6"></div>内齿圈(固定)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#10b981"></div>行星架(输出)</div>
     `;
   }
 }
@@ -693,6 +710,162 @@ function drawHarmonic(t) {
   });
 }
 
+// ============ 行星减速器原理动画（新增） ============
+// 齿轮参数：太阳轮Zs=12、行星轮Zp=18、内齿圈Zr=Zs+2*Zp=48，减速比 i=1+Zr/Zs=5
+function drawPlanetary(t) {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // 背景网格（与其他页签一致）
+  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth=0.5;
+  for (let x=0;x<W;x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y=0;y<H;y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  const cx = W/2 - 100, cy = H/2;
+  const Zs=12, Zp=18, Zr=Zs+2*Zp;   // 齿数（模数相同，节圆半径比=齿数比）
+  const rs=30, rp=45, rr=rs+2*rp;   // 节圆半径(px)：中心距=rs+rp
+  const sunA = t * 2.0;                        // 太阳轮角速度(高速输入)
+  const carrierA = sunA * Zs/(Zs+Zr);          // 行星架角速度 = 输入/i (i=1+Zr/Zs=5)
+  const planetA = carrierA - (sunA-carrierA)*Zs/Zp; // 行星轮自转(相对世界系)
+
+  // ---- 内齿圈（蓝色，固定不动）----
+  ctx.fillStyle = '#1e3a8a';
+  ctx.beginPath(); ctx.arc(cx, cy, rr+16, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#3b82f6'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.arc(cx, cy, rr+16, 0, Math.PI*2); ctx.stroke();
+  // 内齿：从内壁向圆心方向的齿块
+  ctx.fillStyle = '#3b82f6';
+  for (let i=0;i<Zr;i++) {
+    const a = i * Math.PI*2/Zr;
+    const x = cx + Math.cos(a)*(rr+12);
+    const y = cy + Math.sin(a)*(rr+12);
+    ctx.save(); ctx.translate(x,y); ctx.rotate(a);
+    ctx.fillRect(-2.2,-8,4.4,9); // 内齿块
+    ctx.restore();
+  }
+
+  // ---- 行星架（绿色，低速同向输出，画在行星轮下方连接销轴）----
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(carrierA);
+  ctx.strokeStyle = '#10b981'; ctx.lineWidth=9; ctx.lineCap='round';
+  for (let k=0;k<3;k++) {
+    const a = k * Math.PI*2/3;
+    ctx.beginPath(); ctx.moveTo(0,0);
+    ctx.lineTo(Math.cos(a)*(rs+rp), Math.sin(a)*(rs+rp));
+    ctx.stroke();
+    // 行星销轴
+    ctx.fillStyle='#065f46';
+    ctx.beginPath();
+    ctx.arc(Math.cos(a)*(rs+rp), Math.sin(a)*(rs+rp), 8, 0, Math.PI*2);
+    ctx.fill();
+  }
+  // 行星架中心输出圆盘
+  ctx.fillStyle = '#065f46';
+  ctx.beginPath(); ctx.arc(0,0,17,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // ---- 行星轮×3（橙色，公转+自转）----
+  for (let k=0;k<3;k++) {
+    const a = carrierA + k * Math.PI*2/3;
+    const px = cx + Math.cos(a)*(rs+rp);
+    const py = cy + Math.sin(a)*(rs+rp);
+    ctx.save(); ctx.translate(px,py); ctx.rotate(planetA);
+    ctx.fillStyle = 'rgba(249,115,22,0.85)';
+    ctx.beginPath(); ctx.arc(0,0,rp-4,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#fdba74'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,rp-4,0,Math.PI*2); ctx.stroke();
+    // 行星轮外齿
+    ctx.fillStyle = '#fb923c';
+    for (let i=0;i<Zp;i++) {
+      const ga = i * Math.PI*2/Zp;
+      ctx.save(); ctx.rotate(ga);
+      ctx.fillRect(-2.4,-rp+1,4.8,6);
+      ctx.restore();
+    }
+    // 自转指示标记（辐条，让自转可见）
+    ctx.strokeStyle='#7c2d12'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-rp+8); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---- 太阳轮（红色，高速输入，最后画在中心最上层）----
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(sunA);
+  ctx.fillStyle = '#dc2626';
+  ctx.beginPath(); ctx.arc(0,0,rs-4,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#fca5a5'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(0,0,rs-4,0,Math.PI*2); ctx.stroke();
+  // 太阳轮外齿
+  ctx.fillStyle = '#ef4444';
+  for (let i=0;i<Zs;i++) {
+    const ga = i * Math.PI*2/Zs;
+    ctx.save(); ctx.rotate(ga);
+    ctx.fillRect(-3,-rs+1,6,7);
+    ctx.restore();
+  }
+  ctx.restore();
+  // 输入轴标识（不随旋转，覆盖在中心）
+  ctx.fillStyle = '#991b1b';
+  ctx.beginPath(); ctx.arc(cx,cy,11,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fca5a5'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('输入', cx, cy+4);
+
+  // ---- 输入/输出转速指示 ----
+  drawRotArrow(cx+165, cy-105, 25, '#ef4444', '输入(高速)');
+  ctx.save(); ctx.translate(cx+165, cy-105); ctx.rotate(sunA*0.35);
+  ctx.strokeStyle='#ef4444'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*1.3); ctx.stroke();
+  ctx.restore();
+  drawRotArrow(cx-160, cy+125, 25, '#10b981', '输出(低速同轴)');
+  ctx.save(); ctx.translate(cx-160, cy+125); ctx.rotate(carrierA*0.35);
+  ctx.strokeStyle='#10b981'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(0,0,18,Math.PI*0.3,Math.PI*1.8,true); ctx.stroke();
+  ctx.restore();
+  // 同轴输出轴（从中心向右下延伸的绿色轴，示意行星架输出）
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(carrierA);
+  ctx.strokeStyle='#10b981'; ctx.lineWidth=4; ctx.setLineDash([8,6]);
+  ctx.beginPath(); ctx.moveTo(rr+18,0); ctx.lineTo(rr+52,0); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // ---- 右侧原理说明面板 ----
+  const infoX = W - 220;
+  ctx.fillStyle = 'rgba(15,23,42,0.9)';
+  roundRect(ctx, infoX-20, cy-170, 230, 340, 10); ctx.fill();
+  ctx.strokeStyle = '#334155'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle = '#f8fafc'; ctx.font='bold 15px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('🪐 工作原理', infoX-5, cy-145);
+  ctx.font='12px sans-serif';
+  const lines = [
+    '',
+    '1. 太阳轮(红色)',
+    '   电机带动高速旋转',
+    '',
+    '2. 行星轮(橙色)×3',
+    '   绕太阳轮公转+自转',
+    '   载荷均分到多路啮合',
+    '',
+    '3. 内齿圈(蓝色)固定',
+    '   行星架(绿色)同轴输出',
+    '   减速比 i = 1 + Z圈/Z阳',
+    '   本例 1+48/12 = 5',
+    '',
+    '4. 特点:',
+    '   ✓ 扭矩大·多齿分担',
+    '   ✓ 同轴输出·紧凑',
+    '   ✓ 效率高(>97%)',
+    '   ✓ 低减速比反驱好',
+    '   ✗ 单级减速比小(3~10)',
+    '',
+    '案例: 小米CyberGear 3.5:1',
+    '      智元PowerFlow准直驱'
+  ];
+  lines.forEach((line,i) => {
+    if (line.startsWith('✓')) ctx.fillStyle = '#34d399';
+    else if (line.startsWith('✗')) ctx.fillStyle = '#f87171';
+    else if (line.startsWith('案例')) ctx.fillStyle = '#22d3ee';
+    else ctx.fillStyle = '#cbd5e1';
+    ctx.fillText(line, infoX-5, cy-125+i*16);
+  });
+}
+
 // ============ 辅助函数 ============
 function drawBlock(x,y,w,h,fill,stroke,text,tc) {
   ctx.fillStyle = fill;
@@ -739,6 +912,7 @@ function animate(now) {
   else if (currentTab === 'foc') drawFOC(animTime);
   else if (currentTab === 'threeloop') drawThreeLoop(animTime);
   else if (currentTab === 'harmonic') drawHarmonic(animTime);
+  else if (currentTab === 'planetary') drawPlanetary(animTime);
   requestAnimationFrame(animate);
 }
 

@@ -767,10 +767,122 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== 八、人形机器人整机 H1/G1/X1 按部位分类（配合3D解剖页使用） ===== -->
+  <div class="category">
+    <div class="cat-header" onclick="toggleCat(this)">
+      <span class="cat-icon">🤖</span>
+      <span class="cat-title">八、人形机器人整机 H1/G1/X1 按部位分类</span>
+      <span class="cat-count">3 台整机 · 15 个链接</span>
+      <span class="cat-toggle">▼</span>
+    </div>
+    <div class="cat-body">
+      <div class="tip-box" style="margin-bottom:16px">
+        💡 <b>使用方法：</b>配合「3D 解剖式知识可视化」页面对照学习——先在 3D 页选中某个部位（如膝关节/灵巧手），再来这里找对应机型的官方资料链接。所有链接均已核实可访问。
+      </div>
+
+      <h4 style="color:#6b21a8;margin:16px 0 10px 0">🐕 宇树 H1 · 全尺寸通用人形（1.80m / 47kg）</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;background:#fff;border-radius:10px;overflow:hidden">
+        <tr style="background:#ede9fe">
+          <th style="padding:10px 12px;text-align:left;width:110px">部位/维度</th>
+          <th style="padding:10px 12px;text-align:left">资料内容</th>
+          <th style="padding:10px 12px;text-align:left;width:210px">链接</th>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>整机+关节</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">官方产品页：身高180cm、M107关节电机（膝360N·m/髋220N·m）、3.3m/s、交叉滚子轴承参数表</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://www.unitree.com/cn/h1" target="_blank" rel="noopener" style="color:#3b82f6">unitree.com/cn/h1</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>头部感知</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">3D激光雷达（Live2/Mid360）+深度相机配置说明（产品页"360°深度感知"章节）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://www.unitree.com/cn/h1" target="_blank" rel="noopener" style="color:#3b82f6">同上 · 感知章节</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>手臂+灵巧手</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">h1_with_hand 官方URDF：双臂各4自由度+单手6自由度灵巧手完整建模（本站3D页同款模型）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://github.com/unitreerobotics/unitree_ros/blob/master/robots/h1_description/urdf/h1_with_hand.urdf" target="_blank" rel="noopener" style="color:#3b82f6">h1_with_hand.urdf</a></td>
+        </tr>
+      </table>
+
+      <h4 style="color:#6b21a8;margin:16px 0 10px 0">🐕 宇树 G1 · 紧凑型人形（1.32m / 23~43dof）</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;background:#fff;border-radius:10px;overflow:hidden">
+        <tr style="background:#ede9fe">
+          <th style="padding:10px 12px;text-align:left;width:110px">部位/维度</th>
+          <th style="padding:10px 12px;text-align:left">资料内容</th>
+          <th style="padding:10px 12px;text-align:left;width:210px">链接</th>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>整机参数</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">官方产品页：站高1320mm/折叠690mm、G1与G1-EDU对比、机械尺寸图</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://www.unitree.com/g1/" target="_blank" rel="noopener" style="color:#3b82f6">unitree.com/g1</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>腿部+腰部</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">开发者文档：单腿6自由度（髋3+膝1+踝2）、腰部1/3自由度两版本、23~43dof整机配置说明</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://support.unitree.com/home/zh/G1_developer" target="_blank" rel="noopener" style="color:#3b82f6">G1 开发者文档</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>全身URDF</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">官方URDF/MJCF版本总表：23dof/29dof/锁腰/带灵巧手各变体一表全览（含本站3D页用的 g1_29dof）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://github.com/unitreerobotics/unitree_ros/blob/master/robots/g1_description/README.md" target="_blank" rel="noopener" style="color:#3b82f6">g1_description README</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>手臂+灵巧手</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">29dof+Inspire灵巧手版URDF：臂部各8自由度+灵巧手完整关节定义</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://github.com/unitreerobotics/unitree_ros/blob/master/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf" target="_blank" rel="noopener" style="color:#3b82f6">g1_29dof_with_hand.urdf</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>版本识别</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">官方帮助文档：如何区分23/29自由度版本（观察小臂关节数量）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://serviceconsole.unitree.com/mobile/index.html#/help/011322" target="_blank" rel="noopener" style="color:#3b82f6">自由度区分方法</a></td>
+        </tr>
+      </table>
+
+      <h4 style="color:#6b21a8;margin:16px 0 10px 0">🦾 智元灵犀 X1 · 全栈开源人形（34dof）</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px;background:#fff;border-radius:10px;overflow:hidden">
+        <tr style="background:#ede9fe">
+          <th style="padding:10px 12px;text-align:left;width:110px">部位/维度</th>
+          <th style="padding:10px 12px;text-align:left">资料内容</th>
+          <th style="padding:10px 12px;text-align:left;width:210px">链接</th>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>全身结构</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">官方开源硬件仓库：整机图纸/全身零件STEP/装机SOP/工具清单（20250307最终版）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://github.com/AgibotTech/agibot_x1_hardware" target="_blank" rel="noopener" style="color:#3b82f6">agibot_x1_hardware</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>全身URDF</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">训练代码仓库 resources/robots/x1：官方URDF+MJCF模型（本站3D页已本地化并解放15个fixed关节为可动）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://github.com/AgibotTech/agibot_x1_train" target="_blank" rel="noopener" style="color:#3b82f6">agibot_x1_train</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>运动控制</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">官方推理部署代码：实机运动控制、策略部署（强化学习步态）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://github.com/AgibotTech/agibot_x1_infer" target="_blank" rel="noopener" style="color:#3b82f6">agibot_x1_infer</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>关节模组</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">PowerFlow QDD关节（PF86/PF52）3D拆解+原理详解（本站3D页"PowerFlow关节拆解"场景）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="../00_解剖式知识可视化/人形机器人解剖式知识可视化.html" style="color:#3b82f6">本站 3D 解剖页</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>官方资料总入口</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">智元开源文档站：全部开源资料索引（结构/代码/开发指南/网盘下载）</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://www.agibot.com.cn/DOCS/OS" target="_blank" rel="noopener" style="color:#3b82f6">agibot.com.cn/DOCS/OS</a></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><b>产品规格</b></td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0;color:#475569">智元官网 X1 产品页：整机规格与宣传资料</td>
+          <td style="padding:9px 12px;border-top:1px solid #e2e8f0"><a href="https://www.zhiyuan-robot.com/products/X1" target="_blank" rel="noopener" style="color:#3b82f6">X1 产品页</a></td>
+        </tr>
+      </table>
+    </div>
+  </div>
 </div>
 
 <div class="footer">
-  人形机器人关节模组学习资料库 · 2026-08-13更新 · 新增抖音短视频和名词释义章节<br>
+  人形机器人关节模组学习资料库 · 2026-08-14更新 · 新增抖音短视频和名词释义章节 · 新增 H1/G1/X1 按部位分类<br>
   提示：抖音链接为搜索入口，在抖音APP内打开搜索对应关键词即可找到相关视频
 </div>
 

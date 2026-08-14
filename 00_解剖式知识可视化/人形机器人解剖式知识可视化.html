@@ -25,15 +25,28 @@ body{background:radial-gradient(ellipse at 40% 30%,#fff 0%,var(--bg1) 50%,var(--
 .vb{border:1px solid var(--rule);background:rgba(255,255,255,.9);color:var(--muted);font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;transition:.14s;font-family:inherit;display:flex;align-items:center;gap:5px;font-weight:500}
 .vb:hover{color:var(--ink);background:#fff;box-shadow:var(--sh1)}.vb.on{color:#fff;background:var(--accent);border-color:var(--accent)}
 
-/* ===== 三栏布局（高度减去顶栏54px+底部栏44px） ===== */
-.app{display:grid;grid-template-columns:250px 1fr 360px;height:calc(100vh - 54px - 44px)}
+/* ===== 三栏布局（高度减去顶栏54px+底部栏44px） =====
+   列宽用 CSS 变量：侧边栏拖宽功能通过 JS 修改变量并持久化到 localStorage */
+:root{--nav-w:250px;--det-w:360px}   /* 左导航/右详情栏默认宽度（拖宽范围见 JS 宏 NAV_W_MIN/MAX、DET_W_MIN/MAX） */
+.app{display:grid;grid-template-columns:var(--nav-w) 1fr var(--det-w);height:calc(100vh - 54px - 44px)}
 /* 桌面端侧边栏收起：点击顶栏 ◀ ▶ 按钮切换（仅桌面生效，移动端走抽屉） */
 @media(min-width:861px){
-  body.nav-off .app{grid-template-columns:0 1fr 360px}
+  body.nav-off .app{grid-template-columns:0 1fr var(--det-w)}
   body.nav-off .nav{display:none}
-  body.det-off .app{grid-template-columns:250px 1fr 0}
+  body.det-off .app{grid-template-columns:var(--nav-w) 1fr 0}
   body.det-off .det{display:none}
+  body.nav-off .rz-nav,body.det-off .rz-det{display:none}   /* 收起的栏隐藏其拖宽把手 */
 }
+/* ===== 侧边栏拖宽把手（桌面端栏边缘，拖动调整栏宽） ===== */
+/* 三栏子项显式定位（新增把手子项后避免 grid 自动放置错乱） */
+.app>.nav{grid-column:1;grid-row:1}
+.app>.stg{grid-column:2;grid-row:1}
+.app>.det{grid-column:3;grid-row:1}
+.rz{position:relative;z-index:20;background:transparent;cursor:col-resize;user-select:none;-webkit-user-select:none;touch-action:none}
+.rz::after{content:'';position:absolute;top:50%;width:3px;height:34px;transform:translateY(-50%);border-radius:2px;background:var(--rule);transition:background .15s,height .15s}
+.rz:hover::after,.rz.drag::after{background:var(--accent);height:52px}   /* 悬停/拖拽时把手高亮变长 */
+.rz-nav{grid-column:1;grid-row:1;justify-self:end;width:7px;margin-right:-7px}   /* 贴在导航栏右缘 */
+.rz-det{grid-column:3;grid-row:1;justify-self:start;width:7px;margin-left:-7px}  /* 贴在详情栏左缘 */
 .nav{border-right:1px solid var(--rule);overflow-y:auto;padding:14px 10px;background:rgba(255,255,255,.4)}
 .nav::-webkit-scrollbar{width:3px}.nav::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
 .nt{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.8px;padding:6px 8px 10px}
@@ -49,6 +62,10 @@ body[data-theme="dark"] .nav-search{background:rgba(20,28,42,.7);color:var(--ink
 .nit{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted);transition:.12s;margin:1px 0}
 .nit:hover{background:rgba(0,0,0,.025);color:var(--ink)}.nit.on{background:var(--accent-g);color:var(--accent);font-weight:600}
 .nd{width:6px;height:6px;border-radius:50%;background:var(--faint);flex-shrink:0}.nit.on .nd{background:var(--accent);box-shadow:0 0 6px var(--accent-g)}
+/* 当前机型没有对应 3D 部件的导航项：降透明度并显示"无3D"角标，避免点击误导 */
+.nit.no3d{opacity:.5}
+.nit.no3d::after{content:'无3D';font-size:10px;line-height:1;color:var(--faint);border:1px solid var(--rule2);border-radius:8px;padding:2px 5px;margin-left:auto;flex-shrink:0}
+.nit.no3d:hover::after{color:var(--muted)}
 
 /* ===== 中央3D舞台 ===== */
 .stg{position:relative;overflow:hidden;background:
@@ -166,6 +183,7 @@ body[data-theme="dark"] .status{background:rgba(13,18,30,.8);border-color:var(--
   .tb{padding:0 12px;gap:10px}
   .tb .sep,.msw,.tbr{display:none}
   .ham{display:flex}
+  .rz{display:none!important}   /* 移动端走抽屉模式，隐藏桌面端拖宽把手 */
   .app{grid-template-columns:1fr;height:calc(100vh - 54px - 56px)}
   .stg{height:100%}
   .nav{position:fixed;left:0;top:54px;bottom:56px;width:80%;max-width:320px;z-index:95;background:var(--bg3);border-right:1px solid var(--rule);transform:translateX(-106%);transition:transform .28s cubic-bezier(.2,.8,.3,1);box-shadow:var(--sh2);padding-top:8px}
@@ -317,7 +335,8 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <button class="ham" id="btnHam" title="导航菜单">☰</button>
 </div>
 <div class="app">
-  <nav class="nav" id="nav"><div class="nt">系统导航</div><input class="nav-search" id="navSearch" placeholder="🔍 搜索部件 / 知识点…" autocomplete="off"><div id="navTree"></div></nav>
+<nav class="nav" id="nav"><div class="nt">系统导航</div><input class="nav-search" id="navSearch" placeholder="🔍 搜索部件 / 知识点…" autocomplete="off"><div id="navTree"></div></nav>
+<div class="rz rz-nav" id="rzNav" title="拖动调整导航栏宽度"></div>
   <main class="stg" id="stage">
     <div class="gbg"></div>
     <div class="sbd">机型：<b id="stageM">宇树 H1</b> · <span id="stageP">整机系统</span></div>
@@ -339,6 +358,7 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
     <div class="status" id="status"><span class="sdot"></span>实时仿真 · <b id="dof">19</b> DOF</div>
   </main>
   <aside class="det" id="det"><div class="din" id="dIn"></div>  </aside>
+<div class="rz rz-det" id="rzDet" title="拖动调整详情栏宽度"></div>
 </div>
 <!-- ===== 底部功能栏（桌面端，玻璃拟态悬浮） ===== -->
 <div class="bottom-bar" id="bottomBar">
@@ -350,23 +370,35 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <button class="bb-btn" id="bbExplode" title="爆炸拆解 / 恢复装配">💥 爆炸拆解</button>
   <button class="bb-btn" id="bbLabels" title="显示 / 隐藏零件名称标签">🏷️ 零件标签</button>
   <button class="bb-btn" id="bbDemo" title="自动循环播放拆解 / 装配动画">▶️ 自动演示</button>
+  <button class="bb-btn" id="bbSeq" title="按真实维修顺序逐个零件依次拆出再依次装回（拆解顺序动画）">🎬 顺序拆解</button>
   <div class="bb-sep"></div>
   <select class="bb-sel" id="bbSceneSel" title="切换演示场景（关节模组 / 三种减速器拆解）">
     <option value="">整机模型</option>
     <option value="td_joint">关节模组拆解</option>
+    <option value="td_powerflow">PowerFlow关节拆解(智元X1)</option>
     <option value="td_harmonic">谐波减速器拆解</option>
     <option value="td_planetary">行星减速器拆解</option>
     <option value="td_cycloidal">摆线RV减速器拆解</option>
   </select>
   <div class="bb-switch" id="bbModelSwitch">
-    <button class="bb-opt on" data-m="h1">宇树 H1</button>
+    <button class="bb-opt on" data-m="x1">智元 X1</button>
+    <button class="bb-opt" data-m="h1">宇树 H1</button>
     <button class="bb-opt" data-m="g1">宇树 G1</button>
   </div>
+  <button class="bb-btn" id="bbCompare" title="H1/G1 同屏对比（左 H1 右 G1 按真实身高比例显示，关节动画与姿态同步）">🆚 同屏对比</button>
+  <select class="bb-sel" id="bbColorSel" title="切换机身配色方案（银白 / 纯白 / 金属色 / 原配色 / 半透明）">
+    <option value="silver">🎨 机身配色：银白</option>
+    <option value="white">🎨 机身配色：纯白</option>
+    <option value="metal">🎨 机身配色：金属色</option>
+    <option value="dark">🎨 机身配色：原配色</option>
+    <option value="ghost">🎨 机身配色：半透明</option>
+  </select>
   <div class="bb-sep"></div>
   <div class="bb-perf" id="bbPerf" title="实时帧率与零件数量">📊 -- FPS · -- 件</div>
 </div>
 <div class="navbg" id="navbg"></div>
 <div class="drw mdl" id="drwModel">
+  <button class="vb on" data-m="x1">智元 X1</button>
   <button class="vb" data-m="h1">宇树 H1</button>
   <button class="vb" data-m="g1">宇树 G1</button>
 </div>
@@ -381,6 +413,29 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <button class="hb" id="zIn2">+</button>
   <button class="hb" id="zOut2">−</button>
   <button class="hb" id="zFit2">⤢</button>
+  <!-- 移动端拆解场景控制（桌面端这些功能在底部栏，移动端底部栏被底部标签栏取代） -->
+  <button class="vb" id="btnBackWhole2">返回整机</button>
+  <button class="vb" id="btnExplode2">爆炸拆解</button>
+  <button class="vb" id="btnDemo2">自动演示</button>
+  <button class="vb" id="btnSeq2">顺序拆解</button>
+  <button class="vb" id="btnLabels2">零件标签</button>
+  <button class="vb" id="btnCompare2">H1/G1 同屏对比</button>
+  <select class="vb" id="sceneSel2">
+    <option value="">场景：整机模型</option>
+    <option value="td_joint">场景：关节模组拆解</option>
+    <option value="td_powerflow">场景：PowerFlow关节拆解</option>
+    <option value="td_harmonic">场景：谐波减速器拆解</option>
+    <option value="td_planetary">场景：行星减速器拆解</option>
+    <option value="td_cycloidal">场景：摆线RV减速器拆解</option>
+  </select>
+  <!-- 移动端机身配色选择（与桌面底部栏 bbColorSel 同步） -->
+  <select class="vb" id="colorSel2">
+    <option value="silver">配色：银白(默认)</option>
+    <option value="white">配色：纯白</option>
+    <option value="metal">配色：金属色</option>
+    <option value="dark">配色：原配色</option>
+    <option value="ghost">配色：半透明</option>
+  </select>
 </div>
 <nav class="btab" id="btab">
   <button data-act="nav"><span class="ic">☰</span>导航</button>
@@ -393,23 +448,26 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
 <script>
 /* ========== 全局应用命名空间（纯3D模式，无2D SVG回退） ========== */
 (function(){
-var curM='h1',curP='whole';
+var curM='x1',curP='whole';  /* 默认机型：智元灵犀 X1（用户指定默认） */
 
 /* ========== 机型参数 ========== */
 var MODELS={
+x1:{name:'智元灵犀 X1',stage:'智元灵犀 X1 开源人形',
+intro:'<hl>智元灵犀 X1</hl>是智元机器人2024年10月发布的开源人形机器人，<hl>全栈开源</hl>整机结构设计（STEP图纸）、硬件原理图与BOM、训练仿真框架（agibot_x1_train），是当前<hl>最完整的开源人形机器人项目</hl>之一。身高约1.3m级，采用模块化可拆换设计（头部/手臂/腿部均可替换），全身采用自研<hl>PowerFlow 关节模组</hl>（准直驱+行星减速器方案，反驱透明度高）。本页加载官方 URDF+STL 实模，27个可动自由度（腿12+腰3+双臂12），其中腰3+双臂12关节由 fixed 改造解放为可动。',
+params:[['整机高度','~130 cm 级'],['自由度','27 (本页模型)'],['开源内容','结构+硬件+软件'],['关节模组','PowerFlow 准直驱'],['减速方案','行星减速器'],['腰部自由度','3 (yaw/roll/pitch)'],['仿真框架','agibot_x1_train'],['开源仓库','AgibotTech (GitHub)']]},
 h1:{name:'宇树 H1',stage:'宇树 H1 全尺寸人形',
 intro:'<hl>宇树 H1</hl>是宇树科技2023年底发布的全尺寸通用人形机器人，2025年央视春晚《秧BOT》同款。身高约180cm，自重约47kg，是<hl>中国首台能跑的全尺寸人形机器人</hl>，最高行走速度3.3m/s（发布时世界纪录）。全身19个自由度（H1-2升级为27自由度），采用自研M107关节模组，单关节峰值扭矩360Nm，扭矩密度达189Nm/kg，达到全球顶尖水平。',
 params:[['整机高度','~180 cm'],['整机自重','~47 kg'],['自由度','19 (H1-2: 27)'],['最高速度','3.3 m/s'],['电池容量','0.864 kWh / 67.2V'],['单关节峰值扭矩','360 Nm'],['关节扭矩密度','189 Nm/kg'],['持续负载能力','~15 kg']]},
 g1:{name:'宇树 G1',stage:'宇树 G1 量产人形',
 intro:'<hl>宇树 G1</hl>是宇树2024年发布的面向量产和教育科研的高性价比小型人形机器人，身高1.27m，自重约35kg，基础版23自由度（EDU版最高43自由度带灵巧手），起售价约9.9万元人民币，是<hl>全球首个万元级量产人形机器人</hl>。具备越障、上下楼梯、舞蹈、搬运物品、打拳击等能力，已在全球众多高校和实验室投入科研使用。',
-params:[['整机高度','127 cm'],['整机自重','~35 kg'],['自由度','23~43'],['最高速度','2 m/s'],['电池','9000mAh / 0.42kWh'],['膝峰值扭矩','90~120 Nm'],['起售价','¥9.9万起'],['重复定位精度','±0.02°']]}};
+params:[['整机高度','127~132 cm'],['整机自重','~35 kg'],['自由度','23~43'],['最高速度','2 m/s'],['电池','9000mAh / 0.42kWh'],['膝峰值扭矩','90~120 Nm'],['起售价','¥9.9万起'],['手臂重复定位','±0.02 mm']]}};
 
 /* ========== 知识库（大幅扩充） ========== */
 var DATA={
 whole:{title:'人形机器人整机系统',sub:'Humanoid Robot Full-Stack System',params:[],sections:[
 {h:'系统总览',p:'人形机器人是集<hl>机械结构、伺服驱动、实时控制、环境感知、AI决策</hl>于一体的极端复杂系统。从技术栈角度可分为三层：<hl>感知决策层</hl>（激光雷达+深度相机+IMU+算力平台运行SLAM/导航/大模型）、<hl>通信总线层</hl>（EtherCAT/CAN-FD实时工业以太网，周期≤1ms）、<hl>执行层</hl>（关节模组：无框力矩电机+谐波减速器+双编码器+FOC驱动器一体化）。'},
 {h:'核心矛盾与挑战',p:'人形机器人设计面临几大核心矛盾：①<hl>大扭矩 vs 轻重量</hl>——要支撑身体并跳跃，扭矩密度是核心指标；②<hl>高刚性 vs 高反驱</hl>——支撑需要刚性，碰撞检测和力控需要反驱透明；③<hl>高带宽 vs 低噪声</hl>——响应要快但不能振动；④<hl>高集成度 vs 可维护性</hl>——关节要小但要能修；⑤<hl>高算力 vs 低功耗</hl>——机载电池容量有限。'},
-{h:'全球技术格局',p:'人形机器人关节方案目前分为几大流派：①<hl>谐波减速+无框力矩电机</hl>（宇树/特斯拉Optimus/Figure，主流方案，扭矩密度最高）；②<hl>行星减速+高转速电机</hl>（部分工业方案，刚性高但反驱差）；③<hl>准直驱QDD</hl>（MIT Mini Cheetah开创，低减速比，反驱极透明但扭矩密度低，多用于四足）；④<hl>串联弹性SEA</hl>（传统双足如HRP/Atlas早期，力控好但带宽低）；⑤<hl>液压驱动</hl>（Boston Dynamics Atlas，功率密度极高但成本/噪声/维护问题突出）。'},
+{h:'全球技术格局',p:'人形机器人关节方案目前分为几大流派：①<hl>谐波减速+无框力矩电机</hl>（宇树/Figure 等主流方案，扭矩密度最高；特斯拉 Optimus 旋转关节用谐波、直线关节用行星滚柱丝杠，属混合方案）；②<hl>行星减速+高转速电机</hl>（部分工业方案，刚性高但反驱差）；③<hl>准直驱QDD</hl>（MIT Mini Cheetah开创，低减速比，反驱极透明但扭矩密度低，多用于四足）；④<hl>串联弹性SEA</hl>（传统双足如HRP/Atlas早期，力控好但带宽低）；⑤<hl>液压驱动</hl>（Boston Dynamics Atlas，功率密度极高但成本/噪声/维护问题突出）。'},
 {h:'供应链核心环节',p:'关节模组上游核心零部件：①<hl>谐波减速器</hl>（哈默纳科垄断~70%，国产绿的谐波/来福谐波替代）；②<hl>无框力矩电机</hl>（Kollmorgen/Allied Motion/T-Motor/国产昊志）；③<hl>磁编码器</hl>（RLS/ams-OSRAM/多摩川/国产瑞列格）；④<hl>驱动器芯片</hl>（TI/ST/英飞凌的MCU+栅极驱动+MOSFET）；⑤<hl>交叉滚子轴承</hl>（THK/IKO/国产洛轴）。整机集成的核心壁垒在于<hl>驱控算法（FOC+阻抗/导纳控制+全身MPC）</hl>和<hl>量产一致性</hl>。'}],
 vendors:[{n:'宇树科技 Unitree',r:'H1/G1/Go2',m:1},{n:'特斯拉 Tesla',r:'Optimus Gen-2'},{n:'Figure AI',r:'Figure 02'},{n:'波士顿动力',r:'Atlas (液压/电驱)'},{n:'优必选',r:'Walker X'},{n:'小米',r:'CyberOne'}]},
 
@@ -460,7 +518,7 @@ vendors:[{n:'宇树科技',r:'自研肘关',m:1},{n:'T-Motor',r:'AK60/AK70'},{n:
 wrist:{title:'腕关节与末端执行器',sub:'Wrist & End Effector',
 params:[['腕DOF','2~3'],['手DOF','6~20 (灵巧手)'],['腕峰值扭矩','8~20 Nm'],['指尖力','5~20 N/指'],['腕重复精度','±0.02°'],['末端负载','3~10 kg']],sections:[
 {h:'腕关节构型',p:'腕关节连接前臂和末端执行器（手/夹爪），通常具备2~3个自由度：①<hl>俯仰Pitch</hl>（上下摆腕±60°）；②<hl>偏摆Yaw</hl>（左右摆腕±40°）；③<hl>旋转Roll</hl>（前臂自转±180°，部分机型将这个自由度放在前臂末端）。腕关节空间极其紧凑，且距离末端负载最近，对重量和体积最敏感。多采用<hl>微型谐波减速器+扁平无框电机</hl>，或采用<hl>腱传动/绳索传动</hl>将电机后置到前臂，手腕处只有滑轮和腱线，可大幅减轻腕部重量。'},
-{h:'灵巧手技术',p:'人形机器人末端执行器主要有三类：①<hl>平行夹爪</hl>（2指）——结构简单可靠，成本低，适合工业抓取，但无法做精细操作；②<hl>三指/四指欠驱动手</hl>——通过少量电机（1-3个）配合腱绳和弹簧实现自适应抓取，结构简单但能抓取多种形状物体；③<hl>仿人灵巧手</hl>（5指6-20自由度）——如Shadow Hand（24DOF气动）、宇树Dex3（6DOF+12主动关节，重450g，指尖力5N）、特斯拉Optimus手（6DOF，11个自由度，可拿鸡蛋）。灵巧手核心难点是<hl>小空间内的驱动+传感+传动集成</hl>，以及<hl>触觉传感</hl>。'},
+{h:'灵巧手技术',p:'人形机器人末端执行器主要有三类：①<hl>平行夹爪</hl>（2指）——结构简单可靠，成本低，适合工业抓取，但无法做精细操作；②<hl>三指/四指欠驱动手</hl>——通过少量电机（1-3个）配合腱绳和弹簧实现自适应抓取，结构简单但能抓取多种形状物体；③<hl>仿人灵巧手</hl>（5指6-20自由度）——如Shadow Hand（24DOF气动）、宇树Dex3-1（7DOF三指，重710g）、特斯拉Optimus手（多指灵巧手，可拿鸡蛋）。灵巧手核心难点是<hl>小空间内的驱动+传感+传动集成</hl>，以及<hl>触觉传感</hl>。'},
 {h:'触觉传感',p:'要实现类人操作（如拿纸杯不捏碎、用钥匙开门、打字），机器人需要<hl>指尖触觉传感器</hl>。主流技术路线：①<hl>电容式</hl>（阵列电容变化测压力，分辨率高但易受电磁干扰）；②<hl>压阻式</hl>（导电橡胶/压阻材料，成本低但非线性和迟滞大）；③<hl>光学式</hl>（GelSight类，通过摄像头拍摄弹性体形变，精度极高但体积大）；④<hl>气压式</hl>（气压变化测接触力，柔性好但响应慢）。宇树Dex3灵巧手集成了指尖触觉传感器，可实现力控抓取。'},
 {h:'快换接口',p:'部分人形机器人手腕设计有<hl>工具快换接口</hl>（Tool Changer），可以自动切换夹爪、灵巧手、电动螺丝刀、吸盘等不同末端工具，扩展应用场景。快换接口需要集成：机械锁紧机构、电源触点（给末端工具供电）、通信总线（CAN/EtherCAT/USB）、气路接口（吸盘需要压缩空气）。'}],
 vendors:[{n:'宇树科技',r:'Dex3 灵巧手',m:1},{n:'Shadow Robot',r:'Shadow Dexterous Hand'},{n:'特斯拉',r:'Optimus 6DOF手'},{n:'因时机器人',r:'RH56DFX/RH8'},{n:'因时/帕西尼',r:'指尖触觉传感器'},{n:'GelSight',r:'光学触觉传感器'}]},
@@ -469,7 +527,7 @@ hip:{title:'髋关节',sub:'Hip Joint',
 params:[['自由度','3'],['峰值扭矩','120~360 Nm'],['最大转速','60~120 rpm'],['重量','1.0~1.8 kg'],['屈曲范围','−45°~+120°'],['轴承类型','交叉滚子/YRT']],sections:[
 {h:'核心地位',p:'髋关节是双腿与躯干的连接枢纽，是<hl>全身输出扭矩最大、负载要求最高</hl>的关节，直接决定了机器人的行走、跑步、跳跃能力。行走时单侧髋关节需要支撑整个人体重量（47-70kg）加上动态冲击载荷（跑步时地面冲击力可达体重2-3倍，即1000N以上），对输出扭矩、结构刚性、抗冲击能力要求极高。'},
 {h:'三自由度配置',p:'髋关节为球铰式3自由度，三个轴线正交交汇于髋臼中心：①<hl>屈伸Pitch</hl>（前后抬腿，行走主运动，范围−30°~+120°）；②<hl>内收外展Roll</hl>（侧摆腿，重心转移，范围±45°）；③<hl>内旋外旋Yaw</hl>（大腿自转，转向与步态调整，范围±30°）。三个自由度通常由三个独立的关节模组组成，其中屈伸自由度扭矩最大（使用M107级别关节），外展和旋转自由度扭矩稍小（使用M88级别关节）。'},
-{h:'宇树M107关节模组深度解析',p:'<hl>M107</hl>是宇树自研的旗舰级人形机器人关节，也是目前全球扭矩密度最高的人形机器人关节之一：①<hl>电机</hl>——定制无框力矩电机（外转子？不，内转子无框），峰值扭矩约4Nm（减速前），最高转速约6000rpm；②<hl>减速器</hl>——定制谐波减速器，减速比1:90左右，输出端峰值扭矩360Nm；③<hl>编码器</hl>——双17bit/19bit磁编码器（电机端+输出端），分辨率可达0.003°；④<hl>驱动器</hl>——FOC矢量控制板内置，支持力矩/速度/位置三闭环，电流环带宽2-5kHz；⑤<hl>结构</hl>——交叉滚子轴承承受倾覆力矩，中空走线设计。整重仅约1.9kg，扭矩密度高达<hl>189Nm/kg</hl>。'},
+{h:'宇树M107关节模组与H1关节扭矩',p:'<hl>M107</hl>是宇树自研的旗舰级人形机器人关节电机：最大扭矩<hl>360N·m</hl>，整重约<hl>1.9kg</hl>，扭矩密度<hl>189N·m/kg</hl>（全球顶尖水平），采用低惯量高速内转子永磁同步电机+定制谐波减速器+<hl>双编码器</hl>+中空走线设计。H1各关节极限扭矩（宇树官方数据）：<hl>膝关节约360N·m、髋关节约220N·m、踝关节约59N·m、手臂关节约75N·m</hl>。'},
 {h:'轴承与抗冲击',p:'髋关节轴承是关键安全部件。行走时地面冲击力通过腿部传递到髋关节，轴承需要同时承受：<hl>径向力</hl>（体重支撑，数百牛）、<hl>轴向力</hl>（侧向力，数十牛）、<hl>倾覆力矩</hl>（身体重心偏离关节中心时产生，可达100Nm以上）。普通球轴承无法同时承受这三种载荷，必须使用<hl>交叉滚子轴承</hl>（Crossed Roller Bearing）或<hl>YRT转台轴承</hl>，这类轴承的滚子呈90°交叉排列，可同时承受多方向大载荷，且具有极高的旋转精度和刚性。'}],
 vendors:[{n:'宇树科技',r:'M107 关节模组',m:1},{n:'哈默纳科',r:'SHG/SHF-25/32/40',m:1},{n:'绿的谐波',r:'LHSG/LHG大扭矩',m:1},{n:'THK/IKO',r:'CRBH/CRBF交叉滚子轴承'},{n:'T-Motor',r:'AK80/AK10大扭矩电机'}]},
 
@@ -497,9 +555,9 @@ params:[['尺寸','~26×12 cm(成人)'],['结构','平板/弹性足弓'],['足�
 vendors:[{n:'宇树科技',r:'自研足部结构',m:1},{n:'ATI/坤维',r:'六维力传感器'},{n:'巴斯夫 BASF',r:'聚氨酯弹性体'},{n:'3M',r:'橡胶防滑材料'}]},
 
 hand:{title:'柔性手部 · 末端执行器',sub:'Dexterous Hand & End Effector',
-params:[['类型','欠驱动/灵巧手'],['自由度','1~20 DOF'],['指尖力','5~30 N'],['重量','300~600 g'],['驱动方式','腱绳/直驱/连杆'],['触觉传感','电容/压阻/光学']],sections:[
+params:[['类型','欠驱动/灵巧手'],['自由度','1~20 DOF'],['指尖力','5~30 N'],['重量','300~710 g'],['驱动方式','腱绳/直驱/连杆'],['触觉传感','电容/压阻/光学']],sections:[
 {h:'手部技术路线对比',p:'人形机器人手部主要分为三类：①<hl>平行夹爪</hl>（2指1-2DOF）——结构简单、成本低、抓取力大，但只能做简单夹持；②<hl>欠驱动灵巧手</hl>（3-6DOF）——用少量电机通过腱绳+弹簧联动实现自适应抓取，能抓取多种形状物体，是当前量产人形机器人的主流方案（如宇树Dex3、特斯拉Optimus手）；③<hl>全驱动仿人灵巧手</hl>（10-20DOF）——每个关节独立驱动，可操作精细物体（打字、系鞋带），但成本高、控制复杂、可靠性低（如Shadow Hand 24DOF气动）。'},
-{h:'宇树Dex3灵巧手参数',p:'宇树Dex3是G1标配灵巧手：<hl>6个主动自由度</hl>（拇指2+食指1+中指1+无名指小指联动1+手腕？不对，实际是手指3+拇指3共6个主动电机驱动12个关节），重量约<hl>450g</hl>，指尖力约<hl>5N</hl>，指尖集成触觉传感器，支持力控抓取（可拿鸡蛋、纸杯不碎）。采用腱绳传动，电机后置在手腕处减轻手部重量。手部外壳为<hl>黑色哑光橡胶包胶</hl>（防滑、增加摩擦、保护被抓物体），指骨为铝合金+碳纤维复合材料。'},
+{h:'宇树Dex3-1灵巧手参数',p:'宇树Dex3-1是G1可选配的三指力控灵巧手：<hl>7个自由度</hl>（拇指3+食指2+中指2，7个关节=6个微型无刷力控关节直驱+1个齿轮传动），重量约<hl>710g</hl>，整手33个触觉传感器（9个阵列），指尖重复定位精度±2mm，最大负载约500g，支持力位混合控制（可拿鸡蛋、纸杯不碎）。采用腱绳传动，电机后置在手腕处减轻手部重量。手部外壳为<hl>黑色哑光橡胶包胶</hl>（防滑、增加摩擦、保护被抓物体），指骨为铝合金+碳纤维复合材料。'},
 {h:'触觉传感技术',p:'要实现精细操作，机器人需要触觉：①<hl>电容式触觉阵列</hl>（分辨率高，易受电磁干扰）；②<hl>压阻式</hl>（成本低，迟滞大）；③<hl>光学式GelSight</hl>（精度最高，体积大）；④<hl>气压/柔性电子皮肤</hl>（柔性好但响应慢）。触觉信息用于：检测接触、测量接触力、识别物体材质纹理、检测滑动（实现滑移检测自动加力）。'},
 {h:'快换与工具接口',p:'工业场景人形机器人手腕常配<hl>工具快换器</hl>（Tool Changer），可自动切换夹爪、吸盘、电动螺丝刀、焊枪等工具。快换接口集成：机械锁紧（钢珠锁紧机构）、电源（24V/48V）、通信（CAN/EtherCAT）、气路（真空吸盘需要）。未来家庭场景可能采用标准化接口，类似"机器人App Store"的工具生态。'}],
 vendors:[{n:'宇树科技',r:'Dex3 灵巧手',m:1},{n:'特斯拉',r:'Optimus 6DOF手'},{n:'Shadow Robot',r:'Shadow Dexterous Hand'},{n:'因时机器人',r:'RH56DFX/RH8D'},{n:'GelSight',r:'光学触觉传感器'},{n:'帕西尼 PSI',r:'电容触觉阵列'}]},
@@ -582,7 +640,8 @@ params:[['电流环','PI @2~5kHz'],['速度环','PI @200~500Hz'],['位置环','P
 {h:'速度环：PI 为主，机器人常用 PI+滤波',p:'速度环的被控对象是转动惯量 <code>J·dω/dt = T − T负载 − B·ω</code>，是<hl>积分环节</hL>，PI 的积分项保证转速无静差。工程要点：①<hl>速度反馈噪声</hl>——编码器位置差分测速噪声大，需加二阶低通滤波（截止频率约为速度环带宽的 3~5 倍）；②<hl>积分限幅+抗饱和</hl>（Anti-Windup）防止大误差时积分饱和引起超调振荡；③人形机器人腿部关节速度环常加入<hl>扭矩前馈</hl>（重力补偿/动力学模型前馈），等效于"PI+前馈"，可把跟踪误差降低一个数量级。'},
 {h:'位置环：PD + 前馈，刻意不用 I',p:'位置环几乎清一色采用 <hl>P 或 PD + 前馈</hl>，<hl>刻意不加积分项</hl>：①积分引入 90° 相位滞后，位置环带宽本来就受机械谐振限制（谐波柔轮/腿杆弹性会产生 100~300Hz 谐振），加 I 极易引发振荡；②关节的稳态保持力可由<hl>重力前馈</hL>和电流环积分承担，位置环无需自己消静差；③人形机器人全身控制下发的是 1kHz 位置+速度+扭矩前馈三元组（q_des, dq_des, τ_ff），位置环实际执行的是 <code>τ = Kp·(q_des−q) + Kd·(dq_des−dq) + τ_ff</code> 的<hl>阻抗控制</hl>形式——这正是 PD 结构。这也是宇树/特斯拉等整机厂关节接口的标准模式。'},
 {h:'什么时候用 ADRC',p:'<hl>ADRC（自抗扰控制）</hl>适合两类场景：①<hl>外部扰动大且变化剧烈</hl>——如腿足关节着地瞬间的地面冲击、手臂接触操作的接触力；②<hl>对象模型不准/强非线性</hl>——谐波减速器的非线性摩擦与柔轮迟滞、负载惯量随姿态大幅变化。ADRC 不依赖精确模型，把"模型不准+外部扰动"打包成<hl>总扰动</hl>，用扩张状态观测器 ESO 实时估计并前馈补偿，等效于给系统装了一个"扰动对消器"。工程上常见组合：<hl>位置环 ADRC + 速度/电流环 PI</hl>，或把 ESO 估计的总扰动同时用于碰撞检测（扰动突增即判定碰撞）。'},
-{h:'三环控制策略对比总表',p:'<table class="tbl"><tr><th>控制环</th><th>被控对象</th><th>常用策略</th><th>选型理由</th></tr><tr><td><b>电流环</b></td><td>RL 一阶电路</td><td><b>PI</b> + FOC解耦前馈</td><td>模型精确、噪声大，积分消静差，微分有害</td></tr><tr><td><b>速度环</b></td><td>转动惯量积分环节</td><td><b>PI</b> + 低通滤波 + 扭矩前馈</td><td>积分保证转速无静差，滤波抑制测速噪声</td></tr><tr><td><b>位置环</b></td><td>质量-弹簧(柔性)系统</td><td><b>PD + 前馈</b>（阻抗控制）</td><td>积分致谐振振荡，保持力靠重力前馈</td></tr><tr><td><b>位置环(重载)</b></td><td>强扰动/模型不准</td><td><b>ADRC</b>（ESO+PD）</td><td>总扰动实时估计补偿，抗冲击鲁棒</td></tr><tr><td><b>全身平衡</b></td><td>欠驱动多体系统</td><td>MPC/WBC 输出 τ_ff</td><td>预测未来轨迹，前馈给各关节 PD</td></tr></table>'}],
+{h:'三环控制策略对比总表',p:'<table class="tbl"><tr><th>控制环</th><th>被控对象</th><th>常用策略</th><th>选型理由</th></tr><tr><td><b>电流环</b></td><td>RL 一阶电路</td><td><b>PI</b> + FOC解耦前馈</td><td>模型精确、噪声大，积分消静差，微分有害</td></tr><tr><td><b>速度环</b></td><td>转动惯量积分环节</td><td><b>PI</b> + 低通滤波 + 扭矩前馈</td><td>积分保证转速无静差，滤波抑制测速噪声</td></tr><tr><td><b>位置环</b></td><td>质量-弹簧(柔性)系统</td><td><b>PD + 前馈</b>（阻抗控制）</td><td>积分致谐振振荡，保持力靠重力前馈</td></tr><tr><td><b>位置环(重载)</b></td><td>强扰动/模型不准</td><td><b>ADRC</b>（ESO+PD）</td><td>总扰动实时估计补偿，抗冲击鲁棒</td></tr><tr><td><b>全身平衡</b></td><td>欠驱动多体系统</td><td>MPC/WBC 输出 τ_ff</td><td>预测未来轨迹，前馈给各关节 PD</td></tr></table>'},
+{h:'交互仿真：位置控制 vs 阻抗控制（力控）',p:'场景：关节接到 <code>0.9 rad</code> 的位置阶跃指令，但 <code>0.55 rad</code> 处有一堵控制器"不知道"的刚性墙壁（模拟意外碰撞/接触装配）。<hl>位置控制</hl>用高刚度 PD（Kp=400）：自由空间跟踪又快又准，但撞墙瞬间产生巨大接触力尖峰，之后持续硬推墙壁（稳态接触力≈Kp×越墙指令距离）；<hl>阻抗控制</hl>用低刚度 PD（Kp=40）：自由空间跟踪稍慢、且接触后让步偏离目标，但接触力只有位置控制的约 <b>1/10</b> 且无尖峰——这正是人形机器人关节必须支持力控/阻抗模式的原因：<hl>碰撞安全与柔顺交互比极致位置精度更重要</hl>。'},{h:'力控仿真演示',p:'<div class="simbox" id="fcSimBox"><canvas id="fcCv" width="640" height="300"></canvas><div class="simlg"><span><i style="background:#8a94a4"></i>目标指令</span><span><i style="background:#2b8eff"></i>位置控制(刚性)</span><span><i style="background:#f0a73a"></i>阻抗控制(柔性)</span><span style="margin-left:auto;color:var(--faint)">上：关节角度 · 下：接触力</span></div><div class="anim-ctrl" style="margin-top:8px"><button class="ab on" id="fcRun">▶ 重新演示</button></div></div>'}],
 vendors:[{n:'宇树科技',r:'M107 三环伺服',m:1},{n:'韩京清(中科院)',r:'ADRC 理论创始'},{n:'高志强(克利夫兰州立)',r:'ESO 带宽参数化'},{n:'TI C2000',r:'FOC+ADRC 参考设计'},{n:'峰岹科技',r:'国产伺服控制芯片'}]},
 
 adrc:{title:'ADRC 自抗扰控制 · 推导与代码',sub:'Active Disturbance Rejection Control',
@@ -626,6 +685,14 @@ params:[['减速比','25:1 (齿差1)'],['针齿数','26 个滚柱针齿'],['零�
 {h:'RV vs 谐波：人形机器人怎么选',p:'RV 减速器<hl>抗冲击、寿命长、大扭矩</hl>，但体积重量大、有偏心振动需双盘对消。工业机器人大关节是 RV 的天下；人形机器人对<hl>扭矩密度</hl>极端敏感，主流选谐波。近年出现<hl>微型摆线/复合行星</hl>新路线（如特斯拉 Optimus 的部分关节），用摆线高刚性弥补谐波柔轮冲击寿命短板，值得持续关注。'}],
 vendors:[{n:'howtomechatronics',r:'R25开源摆线模型',m:1},{n:'纳博特斯克 Nabtesco',r:'RV减速器全球垄断者'},{n:'环动科技/中大力德',r:'国产RV减速器'}]},
 
+td_powerflow:{title:'PowerFlow 关节拆解 · 智元灵犀X1',sub:'AgiBot X1 PowerFlow QDD Joint · Teardown',td:1,scene:'powerflow',
+params:[['关节型号','PF86 / PF52 两款'],['结构形式','外转子无框电机+单级行星(准直驱QDD)'],['减速比','约 10:1 单级行星'],['反馈','双编码器(输出端绝对值+电机端)'],['走线','中空轴走线'],['接口','PF-Link 智能总线']],sections:[
+{h:'PowerFlow 是什么',p:'PowerFlow 是智元机器人（稚晖君团队）为灵犀 X1 自研的<hl>一体化关节模组</hl>，全机仅用两款就搭起 31 个自由度：<b>PF86</b>（86mm 法兰，髋/膝/肩等大关节）与 <b>PF52</b>（52mm，肘/腕/腰）。它是<hl>准直驱 QDD（Quasi-Direct-Drive）</hl>路线：外转子无框力矩电机 + 单级行星减速器，靠"电机大扭矩 + 低减速比"而不是"高减速比"来输出力矩。'},
+{h:'使用方法',p:'拖动<hl>「装配⇄拆解」滑杆</hl>沿轴向分离各零件；点击<hl>「🎬 顺序拆解」</hl>按钮可按下方拆解顺序表逐个零件依次拆出再装回；点击任意零件查看详解。行星减速五件套（输出轴/行星架/行星轮×6/太阳轮/内齿圈）复用专为小米 CyberGear 人形关节设计的<hl>真实开源 STL</hl>（AGIRobots 装配体，同为 QDD 准直驱方案）；其余零件（法兰/轴承/外转子/定子/双编码器/驱控板）按 PF86 结构参数化重建——智元开源的是 STEP 格式（浏览器只支持 STL），故采用此折中方案。'},
+{h:'拆解顺序总览（输出端 → 电机端）',p:'<table class="tbl"><tr><th>#</th><th>零件</th><th>功能</th></tr><tr><td>1</td><td><b>输出法兰</b></td><td>连接腿杆/臂杆，对外输出扭矩</td></tr><tr><td>2</td><td><b>输出轴</b></td><td>行星架低速输出端（真实开源件）</td></tr><tr><td>3</td><td><b>角接触轴承</b></td><td>承受径向+轴向载荷，中空走线让位</td></tr><tr><td>4</td><td><b>行星轮 ×6</b></td><td>均布载荷的核心（真实开源件）</td></tr><tr><td>5</td><td><b>行星架止转环</b></td><td>承载行星轮销轴（真实开源件）</td></tr><tr><td>6</td><td><b>太阳轮</b></td><td>中心输入齿轮，接电机轴（真实开源件）</td></tr><tr><td>7</td><td><b>内齿圈/外壳</b></td><td>固定齿圈，与壳体一体（真实开源件）</td></tr><tr><td>8</td><td><b>外转子</b></td><td>大直径环形磁钢，外转子无框电机</td></tr><tr><td>9</td><td><b>定子</b></td><td>绕组铁芯在内侧，灌封导热</td></tr><tr><td>10</td><td><b>输出端编码器</b></td><td>绝对式，直测关节真实输出角</td></tr><tr><td>11</td><td><b>电机端编码器</b></td><td>增量式，FOC 换相 + 速度环</td></tr><tr><td>12</td><td><b>PF-Link 驱控板</b></td><td>驱控一体 + PF-Link 智能接口</td></tr></table>'},
+{h:'QDD 准直驱 vs 谐波：两种路线',p:'PowerFlow（QDD 路线）用<hl>低减速比单级行星</hl>换取：①反驱透明——外力推关节时电机直接感知，力控无需力矩传感器；②抗冲击——6 行星均布刚性啮合，不像柔轮怕冲击疲劳；③低噪声低速波动。代价是电机必须做得又大又扁（外转子无框）才能在低减速比下输出足够力矩。<br><br>对照「关节模组拆解」场景的<hl>谐波路线</hl>：高减速比（80~120:1）带来高扭矩密度和零背隙，但反驱差、柔轮是疲劳寿命短板。宇树 M 系列是行星 QDD（与 PowerFlow 同路线），M107 谐波版则用于大负载髋膝——<hl>整机往往混搭两路线</hl>：腿足动态关节用 QDD，上肢精密操作用谐波。'}],
+vendors:[{n:'智元机器人 AgiBot',r:'PowerFlow PF86/PF52',m:1},{n:'GitHub AgibotTech',r:'agibot_x1_hardware 开源仓库',m:1},{n:'宇树 Unitree',r:'M系列行星QDD关节',m:1},{n:'小米',r:'CyberGear 关节电机'}]},
+
 /* ==== 关节模组BOM参数对比 ==== */
 bom:{title:'关节模组BOM选型对比',sub:'Actuator Module Comparison Table',
 params:[['对比型号','6款主流一体化关节'],['数据来源','公开Datasheet/社区实测'],['更新日期','2026-08']],sections:[
@@ -650,7 +717,7 @@ function buildNav(){
     {n:'上肢系统',k:'arm',i:[['肩关节','shoulder'],['肘关节','elbow'],['腕关节','wrist'],['灵巧手','hand']]},
     {n:'下肢系统',k:'leg',i:[['髋关节','hip'],['膝关节','knee'],['踝关节','ankle'],['足部','foot']]},
     {n:'核心技术',k:'tech',i:[['FOC驱动算法','foc'],['三环控制架构','loop'],['三环PI/PD/ADRC选型','triloop'],['ADRC推导+代码','adrc'],['控制算法演进','ctrl'],['谐波减速器','harmonic'],['编码器','encoder'],['通信总线','comm']]},
-    {n:'拆解教学',k:'td',i:[['关节模组拆解','td_joint'],['谐波减速器拆解','td_harmonic'],['行星减速器拆解','td_planetary'],['摆线RV减速器拆解','td_cycloidal']]},
+    {n:'拆解教学',k:'td',i:[['关节模组拆解(谐波)','td_joint'],['PowerFlow关节拆解(智元X1)','td_powerflow'],['谐波减速器拆解','td_harmonic'],['行星减速器拆解','td_planetary'],['摆线RV减速器拆解','td_cycloidal']]},
     {n:'选型参考',k:'ref',i:[['关节模组BOM对比','bom']]}
   ];
   navTree.innerHTML=G.map(function(g){
@@ -663,6 +730,21 @@ function buildNav(){
   });
   navTree.querySelectorAll('.nit').forEach(function(el){
     el.addEventListener('click',function(){selectPart(el.dataset.p);focusPart(el.dataset.p);});
+  });
+}
+
+/* ========== 导航"无3D部件"标注：检测当前机型部件分组，给没有 3D 模型的导航项打标记 ==========
+   背景：不同机型结构差异大（如智元 X1 无头部/颈部/灵巧手），点击这类导航项时 3D 场景
+   中没有对应高亮部件，容易误导；此函数在机型加载完成后按 partGroups 实测结果标注"无3D" */
+function updateNav3d(){
+  var pg=(window.Robot3D&&window.Robot3D.partGroups)||{};
+  /* 仅检查"实体部件类"导航项：整机总览/知识模块/拆解场景不参与标注 */
+  var partKeys=['head','sensor','neck','torso','waist','shoulder','elbow','wrist','hand','hip','knee','ankle','foot'];
+  document.querySelectorAll('#navTree .nit').forEach(function(el){
+    var k=el.dataset.p;
+    if(partKeys.indexOf(k)<0){el.classList.remove('no3d');return;}
+    var has=!!(pg[k]&&pg[k].length);
+    el.classList.toggle('no3d',!has);
   });
 }
 
@@ -723,6 +805,11 @@ function selectPart(key){
   if(techKeys.indexOf(key)>=0&&key.indexOf('td_')!==0){
     h='<div class="tip">💡 这是关节模组内部的核心技术知识模块，点击机器人对应部件可查看其具体结构设计。</div>'+h;
   }
+  // 无3D部件提示：当前机型没有该部件的 3D 模型（导航已标"无3D"），在说明面板顶部注明，避免误导
+  var navEl=document.querySelector('#navTree .nit[data-p="'+key+'"]');
+  if(navEl&&navEl.classList.contains('no3d')){
+    h='<div class="tip">📌 当前机型 <b>'+md.name+'</b> 没有该部件的 3D 模型（导航已标注「无3D」），以下为通用原理讲解。</div>'+h;
+  }
   dIn.innerHTML=h;
   // BOM选型对比页面：在面板底部追加"导出CSV"按钮，便于把参数表存成表格文件
   if(key==='bom'){
@@ -740,6 +827,8 @@ function selectPart(key){
   if(bbSceneSel)bbSceneSel.value=(key.indexOf('td_')===0)?key:'';
   // ADRC 页面：挂载 PI vs ADRC 交互仿真
   if(key==='adrc'){if(window.hookAdrcSim)window.hookAdrcSim();}
+  // 三环控制页面：挂载位置控制 vs 阻抗控制（力控）交互仿真
+  if(key==='triloop'){if(window.hookForceSim)window.hookForceSim();}
   // 3D高亮（选中部件发光，其他半透明）
   if(window.Robot3D&&window.Robot3D.highlight)window.Robot3D.highlight(key);
 }
@@ -773,7 +862,7 @@ function switchModel(m){
     if(b.dataset.m===m){b.classList.add('on');}else{b.classList.remove('on');}
   });
   document.getElementById('stageM').textContent=MODELS[m].name;
-  var dofMap={h1:'19',g1:'23~43'};
+  var dofMap={x1:'27',h1:'19',g1:'23~43'};
   var de=document.getElementById('dof'); if(de)de.textContent=dofMap[m]||'19';
   // 停止关节动画和线框模式
   if(window.Robot3D&&window.Robot3D.toggleAnimDemo){
@@ -846,6 +935,14 @@ function toggleDemo(){
   if(!window.Robot3D||!window.Robot3D.isTdActive())return;  /* 非拆解场景不响应 */
   var on=window.Robot3D.toggleDemo();                       /* 调用Robot3D内部实现 */
   var bb=document.getElementById('bbDemo');
+  if(bb)bb.classList.toggle('on',on);
+}
+
+/* ========== 顺序拆解动画切换（底部栏：按真实拆解顺序逐个拆出再逆序装回） ========== */
+function toggleSeq(){
+  if(!window.Robot3D||!window.Robot3D.isTdActive())return;  /* 非拆解场景不响应 */
+  var on=window.Robot3D.toggleSeq();                        /* 调用Robot3D内部实现 */
+  var bb=document.getElementById('bbSeq');
   if(bb)bb.classList.toggle('on',on);
 }
 
@@ -930,7 +1027,69 @@ function init(){
   var bbExplode=document.getElementById('bbExplode');if(bbExplode)bbExplode.addEventListener('click',toggleExplode);
   var bbLabels=document.getElementById('bbLabels');if(bbLabels)bbLabels.addEventListener('click',toggleLabels);
   var bbDemo=document.getElementById('bbDemo');if(bbDemo)bbDemo.addEventListener('click',toggleDemo);
+  var bbSeq=document.getElementById('bbSeq');if(bbSeq)bbSeq.addEventListener('click',toggleSeq);
+  // 绑定底部栏"H1/G1 同屏对比"按钮：切换对比布局，按钮高亮跟随开关状态
+  var bbCompare=document.getElementById('bbCompare');
+  if(bbCompare)bbCompare.addEventListener('click',function(){
+    if(!window.Robot3D||!window.Robot3D.toggleCompare)return;  /* 3D 引擎未就绪则忽略 */
+    var on=window.Robot3D.toggleCompare();   /* 返回切换后的对比开关状态 */
+    bbCompare.classList.toggle('on',on);
+  });
   var bbSceneSel=document.getElementById('bbSceneSel');if(bbSceneSel)bbSceneSel.addEventListener('change',onSceneSelChange);
+
+  /* ========== 侧边栏拖宽（桌面端）：拖动左右栏边缘把手调整栏宽 ========== */
+  /* 拖宽范围可调参数（调试用宏，单位 px） */
+  var NAV_W_MIN=180,NAV_W_MAX=460;   /* 左导航栏宽度范围 */
+  var DET_W_MIN=280,DET_W_MAX=620;   /* 右详情栏宽度范围 */
+  var rzNav=document.getElementById('rzNav'),rzDet=document.getElementById('rzDet');
+  /* 启动时恢复上次拖宽的栏宽（localStorage 持久化） */
+  try{
+    var sw=localStorage.getItem('robot-nav-w');if(sw)setSidebarW('nav',parseInt(sw,10));
+    var dw=localStorage.getItem('robot-det-w');if(dw)setSidebarW('det',parseInt(dw,10));
+  }catch(e){}
+  /* 设置栏宽：clamp 限幅后写入 CSS 变量并持久化 */
+  function setSidebarW(which,w){
+    if(isNaN(w))return;
+    if(which==='nav'){
+      w=Math.max(NAV_W_MIN,Math.min(NAV_W_MAX,w));
+      document.documentElement.style.setProperty('--nav-w',w+'px');
+      try{localStorage.setItem('robot-nav-w',w);}catch(e){}
+    }else{
+      w=Math.max(DET_W_MIN,Math.min(DET_W_MAX,w));
+      document.documentElement.style.setProperty('--det-w',w+'px');
+      try{localStorage.setItem('robot-det-w',w);}catch(e){}
+    }
+  }
+  /* 绑定拖拽：鼠标 + 触摸双通道，拖动中给把手加 drag 高亮类 */
+  bindRz(rzNav,'nav');bindRz(rzDet,'det');
+  function bindRz(el,which){
+    if(!el)return;
+    var startX=0,startW=0,dragging=false;
+    function down(x){dragging=true;startX=x;startW=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--'+which+'-w'),10)||0;el.classList.add('drag');document.body.style.cursor='col-resize';}
+    function move(x){
+      if(!dragging)return;
+      /* nav 把手向右拖=加宽；det 把手向左拖=加宽（x 减小），故 det 取负增量 */
+      var w=startW+((which==='nav')?(x-startX):(startX-x));
+      setSidebarW(which,w);
+    }
+    function up(){if(!dragging)return;dragging=false;el.classList.remove('drag');document.body.style.cursor='';}
+    el.addEventListener('mousedown',function(e){e.preventDefault();down(e.clientX);});
+    window.addEventListener('mousemove',function(e){move(e.clientX);});
+    window.addEventListener('mouseup',up);
+    el.addEventListener('touchstart',function(e){if(e.touches.length)down(e.touches[0].clientX);},{passive:true});
+    window.addEventListener('touchmove',function(e){if(dragging&&e.touches.length){move(e.touches[0].clientX);}},{passive:true});
+    window.addEventListener('touchend',up);
+  }
+  /* 拖宽改变布局后通知 3D 引擎重算画布尺寸 */
+  var rzTimer=null;
+  [rzNav,rzDet].forEach(function(el){
+    if(!el)return;
+    el.addEventListener('mousedown',function(){
+      var onMove=function(){clearTimeout(rzTimer);rzTimer=setTimeout(function(){if(window.Robot3D)window.Robot3D.onResize();},80);};
+      var onUp=function(){clearTimeout(rzTimer);if(window.Robot3D)window.Robot3D.onResize();window.removeEventListener('mousemove',onMove);window.removeEventListener('mouseup',onUp);};
+      window.addEventListener('mousemove',onMove);window.addEventListener('mouseup',onUp);
+    });
+  });
   // 启动性能状态显示（实时FPS+零件数）
   updatePerf();
   // 底部栏机型切换
@@ -948,6 +1107,39 @@ function init(){
   var zi2=document.getElementById('zIn2');if(zi2)zi2.addEventListener('click',function(){zoomCamera(0.83);});
   var zo2=document.getElementById('zOut2');if(zo2)zo2.addEventListener('click',function(){zoomCamera(1.2);});
   var zf2=document.getElementById('zFit2');if(zf2)zf2.addEventListener('click',resetView);
+  // 移动端拆解场景控制（对应桌面端底部栏按钮）：返回整机/爆炸/自动演示/顺序拆解/标签/场景切换
+  var bwh2=document.getElementById('btnBackWhole2');if(bwh2)bwh2.addEventListener('click',function(){selectPart('whole');});
+  var be2=document.getElementById('btnExplode2');if(be2)be2.addEventListener('click',toggleExplode);
+  var bd2=document.getElementById('btnDemo2');if(bd2)bd2.addEventListener('click',toggleDemo);
+  var bs2=document.getElementById('btnSeq2');if(bs2)bs2.addEventListener('click',toggleSeq);
+  var bl2=document.getElementById('btnLabels2');if(bl2)bl2.addEventListener('click',toggleLabels);
+  // 移动端抽屉"H1/G1 同屏对比"按钮：与底部栏 bbCompare 同一开关，高亮状态保持一致
+  var bc2=document.getElementById('btnCompare2');
+  if(bc2)bc2.addEventListener('click',function(){
+    if(!window.Robot3D||!window.Robot3D.toggleCompare)return;  /* 3D 引擎未就绪则忽略 */
+    var on=window.Robot3D.toggleCompare();   /* 返回切换后的对比开关状态 */
+    bc2.classList.toggle('on',on);           /* 移动端按钮高亮 */
+    var bcD=document.getElementById('bbCompare');if(bcD)bcD.classList.toggle('on',on);  /* 同步桌面端按钮 */
+  });
+  var ss2=document.getElementById('sceneSel2');if(ss2)ss2.addEventListener('change',function(){
+    if(!ss2.value){if(window.exitTdScene)window.exitTdScene();selectPart('whole');}
+    else{selectPart(ss2.value);}
+  });
+  // 机身配色切换：桌面底部栏与移动端抽屉两个下拉互相同步，选中项持久化到 localStorage
+  var bcs=document.getElementById('bbColorSel'),cs2=document.getElementById('colorSel2');
+  /* 恢复上次选择的配色方案并同步两个下拉的显示（3D侧启动时也会读同一 localStorage 键） */
+  var savedColor=null;
+  try{savedColor=localStorage.getItem('robot-color');}catch(e){}
+  if(bcs&&savedColor)bcs.value=savedColor;
+  if(cs2&&savedColor)cs2.value=savedColor;
+  function onColorChange(src){
+    var k=src.value;
+    if(window.Robot3D&&window.Robot3D.setColorScheme)window.Robot3D.setColorScheme(k);  /* 3D侧立即换色并写 localStorage */
+    if(bcs&&bcs!==src)bcs.value=k;   /* 同步另一个下拉的选中项 */
+    if(cs2&&cs2!==src)cs2.value=k;
+  }
+  if(bcs)bcs.addEventListener('change',function(){onColorChange(bcs);});
+  if(cs2)cs2.addEventListener('change',function(){onColorChange(cs2);});
   // 移动端机型切换
   document.querySelectorAll('#drwModel .vb').forEach(function(b){
     b.addEventListener('click',function(){switchModel(b.dataset.m);closeDrawers();});
@@ -970,6 +1162,7 @@ function init(){
 window.RobotApp={
   selectPart:selectPart, focusPart:focusPart, switchModel:switchModel,
   setWire:toggleWire, setAnim:toggleJointAnim, reset:resetView,
+  updateNav3d:updateNav3d,   /* 机型加载完成后由 Robot3D 回调，刷新导航"无3D"标注 */
   zoomBy:function(f){zoomCamera(f>1?0.83:1.2);},
   getCur:function(){return curP;}, getModel:function(){return curM;},
   DATA:DATA, MODELS:MODELS
@@ -983,16 +1176,27 @@ let renderer, scene, camera, controls, body3d;
 let raf=null, built=false, active=false;
 /* partGroups: 部件键 -> 网格数组（真实 URDF 模型与回退模型统一用此结构） */
 let partGroups={};
-let currentModel='h1';
+let currentModel='x1';  /* 默认机型：智元灵犀 X1（与 RobotApp 的 curM 保持一致） */
 let accentHex=0x2b8eff;
-/* 机型比例参数（已移除智元X1，仅保留宇树 H1/G1 官方开源模型） */
-const PROP={h1:{h:1.0,slim:1.0},g1:{h:0.78,slim:1.05}};
+/* 机型比例参数（官方URDF加载失败时的参数化回退模型整体比例） */
+const PROP={x1:{h:0.86,slim:0.92},h1:{h:1.0,slim:1.0},g1:{h:0.78,slim:1.05}};
 /* ===== 可调参数（宏定义，便于调试） ===== */
 const LABEL_FONT_SIZE=14;           /* 3D文字标签字号(px) */
 const LABEL_PADDING=6;              /* 标签内边距(px) */
 const LABEL_BG_COLOR='rgba(20,28,42,0.85)'; /* 标签背景色 */
 const LABEL_TEXT_COLOR='#ffffff';   /* 标签文字颜色 */
 const AUTO_ROTATE_SPEED=0.008;      /* 自动旋转速度 */
+/* ===== 拟人步态可调参数（关节动画：原地行走演示，全部单位弧度） ===== */
+const GAIT_PERIOD=2.6;      /* 步态周期(秒)：越大走得越慢 */
+const GAIT_SMOOTH=0.08;     /* 关节角向目标平滑系数(0~1)：越小动作越柔 */
+const GAIT_LEG_AMP=0.30;    /* 髋关节前后摆腿幅度 */
+const GAIT_KNEE_BASE=0.22;  /* 膝关节基础微屈角：行走中膝盖不锁死 */
+const GAIT_KNEE_AMP=0.30;   /* 膝关节摆动相附加屈膝幅度 */
+const GAIT_ANKLE_AMP=0.16;  /* 踝关节俯仰补偿幅度 */
+const GAIT_ARM_AMP=0.28;    /* 肩关节前后摆臂幅度 */
+const GAIT_ELBOW_BASE=0.22; /* 肘关节基础微屈角：摆臂自然屈肘 */
+const GAIT_ELBOW_AMP=0.10;  /* 肘关节随摆臂屈伸幅度 */
+const GAIT_WAIST_AMP=0.07;  /* 腰部偏航随动幅度 */
 const CAMERA_DEFAULT_DIST=105;      /* 默认相机距离 */
 let autoRotate=false;               /* 自动旋转开关 */
 let globalWireframe=false;          /* 全局线框模式 */
@@ -1001,13 +1205,32 @@ let cameraInitTarget=null;          /* 初始相机目标点 */
 let cameraInitPosition=null;        /* 初始相机位置 */
 let cameraInitMinDist=45;           /* 初始最小缩放距离 */
 let cameraInitMaxDist=220;          /* 初始最大缩放距离 */
+let RoomEnv=null;                   /* RoomEnvironment 环境贴图生成类（loadDeps 异步加载） */
+
+/* ==================== 机身配色方案系统（可切换：银白/纯白/金属/原配色/半透明） ====================
+   背景：原分部件配色金属度高且无环境贴图，整机观感偏黑；现默认银白并提供多种方案供选择 */
+const COLOR_SCHEMES={
+  /* 银白（默认）：明亮哑光银白铝合金，整体提亮 */
+  silver:{name:'银白(默认)', color:0xe8ecef, metal:0.65, rough:0.32, opacity:1.0,  depthWrite:true },
+  /* 纯白：哑光树脂/3D打印白，几乎无金属反射 */
+  white: {name:'纯白',       color:0xffffff, metal:0.05, rough:0.55, opacity:1.0,  depthWrite:true },
+  /* 金属：高抛光电镀银，金属度拉满（需环境贴图才能体现光泽） */
+  metal: {name:'金属色',     color:0xb8bec6, metal:1.00, rough:0.18, opacity:1.0,  depthWrite:true },
+  /* 原配色：恢复各部件初始材质（深灰金属+黑色橡胶的分部件配色） */
+  dark:  {name:'原配色',     color:null,     metal:null, rough:null, opacity:1.0,  depthWrite:true },
+  /* 半透明：教学"幽灵视图"，通透显示内部结构 */
+  ghost: {name:'半透明',     color:0xd8e4f0, metal:0.20, rough:0.30, opacity:0.45, depthWrite:false}
+};
+let curScheme='silver';             /* 当前配色方案键（持久化到 localStorage） */
+curScheme=restoreColorScheme();     /* 启动时恢复上次选择的配色方案（无记录则默认银白） */
 
 function loadDeps(cb){
   if(THREE){cb(true);return;}
-  /* 依次加载 three 核心 → 轨道控制器 → STL 加载器（加载官方 URDF 网格用） */
+  /* 依次加载 three 核心 → 轨道控制器 → STL 加载器（加载官方 URDF 网格用）→ 环境贴图生成器（修复金属材质发黑） */
   import('three').then(function(M){THREE=M;return import('three/addons/controls/OrbitControls.js');})
     .then(function(O){OrbitControls=O.OrbitControls;return import('three/addons/loaders/STLLoader.js');})
-    .then(function(S){STLLoader=S.STLLoader;cb(true);})
+    .then(function(S){STLLoader=S.STLLoader;return import('three/addons/environments/RoomEnvironment.js');})
+    .then(function(R){RoomEnv=R.RoomEnvironment;cb(true);})
     .catch(function(e){console.warn('[Robot3D] 引擎加载失败:',e);cb(false);});
 }
 /* ==================== 高保真PBR材质系统（航空级铝合金质感） ==================== */
@@ -1267,6 +1490,20 @@ function initThree(){
     userInteracted=true;
     if(tween){cancelAnimationFrame(tween);tween=null;}
   });
+  /* ==================== 环境贴图（修复金属材质发黑的关键） ====================
+     高金属度 PBR 材质的反射几乎全靠环境贴图(IBL)，仅靠方向光时整机会发黑发暗；
+     RoomEnvironment 程序化生成室内环境（无外部 HDR 下载），赋给 scene.environment 后
+     所有金属/银白材质立即获得真实反射光泽 */
+  const TONE_EXPOSURE=1.05;         /* 色调映射曝光：数值越大画面越亮（可调；环境亮度另由各材质 envMapIntensity 控制，r160 无 scene.environmentIntensity） */
+  try{
+    if(RoomEnv){
+      var pmrem=new THREE.PMREMGenerator(renderer);
+      scene.environment=pmrem.fromScene(new RoomEnv(),0.04).texture;
+      pmrem.dispose();
+    }
+  }catch(e){console.warn('[Robot3D] 环境贴图生成失败（金属可能偏暗）:',e);}
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;  /* 电影级色调映射：高光不过曝、暗部有细节 */
+  renderer.toneMappingExposure=TONE_EXPOSURE;
   /* ==================== 五光源布光系统（摄影棚级） ==================== */
   /* 环境光：整体基础照明，避免死黑 */
   var hemi=new THREE.HemisphereLight(0xddeeff,0x2a2f3f,0.85); scene.add(hemi);
@@ -1300,13 +1537,16 @@ function initThree(){
 var URDF_CFG={
   /* H1 使用带灵巧手版 URDF（含左右手 hand_link/hand_base_link/Link11~22 手指关节），补齐手部建模 */
   h1:{urdf:'models/h1/h1_with_hand.urdf',dir:'models/h1'},
-  g1:{urdf:'models/g1/g1_29dof.urdf',dir:'models/g1'}
+  g1:{urdf:'models/g1/g1_29dof.urdf',dir:'models/g1'},
+  /* X1 为智元官方开源 URDF（agibot_x1_train 仓库），STL 均已本地化到 models/x1 根目录；
+     腰3+双臂12 共15个关节已由 fixed 改造为 revolute，共 27 可动自由度 */
+  x1:{urdf:'models/x1/x1.urdf',dir:'models/x1'}
 };
 var urdfToken=0; /* 加载序号令牌：防止切换机型后旧的异步结果覆盖新模型 */
 
 function buildRobot(m){
-  /* 官方模型已缓存：直接复用缓存的完整组装结果(秒切，不重建不下载) */
-  if(urdfCache[m]&&urdfCache[m].wrap){
+  /* 官方模型已完整缓存：直接复用缓存的完整组装结果(秒切，不重建不下载) */
+  if(urdfCache[m]&&urdfCache[m].wrap&&urdfCache[m].complete){
     while(body3d.children.length) body3d.remove(body3d.children[0]);
     body3d.add(urdfCache[m].wrap);
     urdfJoints=urdfCache[m].joints;
@@ -1317,6 +1557,9 @@ function buildRobot(m){
     body3d.rotation.y=urdfCache[m].rotY;
     if(!tdActive)fitCameraToObject(body3d,userInteracted);
     if(window.RobotApp)highlight(window.RobotApp.getCur());
+    /* 刷新导航"无3D部件"标注（切换机型后 partGroups 已替换为新机型的） */
+    if(window.RobotApp&&window.RobotApp.updateNav3d)window.RobotApp.updateNav3d();
+    applyColorScheme(curScheme);   /* 缓存机型重新入场景后，重应用当前配色方案 */
     return;
   }
   while(body3d.children.length) body3d.remove(body3d.children[0]);
@@ -1327,6 +1570,7 @@ function buildRobot(m){
   /* 【性能优化】先立即构建参数化机器人"秒出"显示，再后台加载官方 STL 无缝替换。
      否则打开页面会空白等待大体积 STL（H1约16MB/G1约18MB）下载完，感知上"加载很慢" */
   buildFallbackRobot(m);
+  applyColorScheme(curScheme);   /* 参数化回退模型也应用当前配色方案 */
   fitCameraToObject(body3d);
   loadUrdfRobot(m);
 }
@@ -1340,7 +1584,8 @@ function linkToPart(ln){
   if(/torso|logo/.test(ln))return 'torso';
   if(/head/.test(ln))return 'head';
   if(/neck/.test(ln))return 'neck';
-  if(/waist|pelvis_contour|pelvis(?!_)/.test(ln))return 'waist';
+  /* X1 腰部 link 名为 lumber_yaw/roll/pitch，与宇树的 waist 命名统一归入腰部 */
+  if(/waist|lumber|pelvis_contour|pelvis(?!_)/.test(ln))return 'waist';
   /* 手臂关节 */
   if(/shoulder/.test(ln))return 'shoulder';
   if(/elbow/.test(ln))return 'elbow';
@@ -1352,6 +1597,8 @@ function linkToPart(ln){
   if(/hip/.test(ln))return 'hip';
   if(/knee/.test(ln))return 'knee';
   if(/ankle/.test(ln))return 'ankle';
+  /* X1 足部 link 名为 leg_l_toe_xxx / leg_r_toe_xxx，归入足部 */
+  if(/toe|foot/.test(ln))return 'foot';
   /* pelvis基础链接 */
   if(/pelvis/.test(ln))return 'waist';
   return 'torso';
@@ -1396,6 +1643,54 @@ function createPartMaterial(partKey){
     envMapIntensity: 1.2,
     side: THREE.DoubleSide
   });
+}
+
+/* ==================== 配色方案应用（遍历整机所有 mesh 切换材质外观） ====================
+   首次遇到每个 mesh 时把初始材质参数备份到 userData.origMat（"原配色"方案恢复用）；
+   线框副本(isWireframe)/标签(isLabel)不参与换色；拆解场景 tdGroup 不在 body3d 下不受影响 */
+function applyColorScheme(key){
+  var s=COLOR_SCHEMES[key];
+  if(!s||!body3d)return;
+  curScheme=key;
+  body3d.traverse(function(o){
+    var m=o.material;
+    if(!m||o.userData.isWireframe||o.userData.isLabel)return;  /* 跳过线框副本与零件标签 */
+    /* 首次备份初始材质（dark 方案恢复的数据源） */
+    if(!o.userData.origMat){
+      o.userData.origMat={
+        color:m.color.getHex(), metalness:m.metalness, roughness:m.roughness,
+        emissive:m.emissive?m.emissive.getHex():0,
+        emissiveIntensity:(m.emissiveIntensity==null)?1:m.emissiveIntensity
+      };
+    }
+    var om=o.userData.origMat;
+    if(key==='dark'){
+      /* 原配色方案：恢复构建时的分部件初始材质 */
+      m.color.setHex(om.color);
+      m.metalness=om.metalness;
+      m.roughness=om.roughness;
+      if(m.emissive){m.emissive.setHex(om.emissive);m.emissiveIntensity=om.emissiveIntensity;}
+    }else{
+      /* 其他方案：统一覆盖颜色/金属度/粗糙度 */
+      m.color.setHex(s.color);
+      m.metalness=s.metal;
+      m.roughness=s.rough;
+      if(m.emissive&&s!==COLOR_SCHEMES.silver){m.emissive.setHex(0);m.emissiveIntensity=0;}
+    }
+    /* 透明度参数（ghost 半透明 / 其他不透明），transparent 切换需 needsUpdate 才生效 */
+    m.transparent=s.opacity<1.0;
+    m.opacity=s.opacity;
+    m.depthWrite=s.depthWrite;
+    m.needsUpdate=true;
+  });
+  try{localStorage.setItem('robot-color',key);}catch(e){}   /* 记住用户选择 */
+}
+/* 读取持久化的配色方案（页面启动时调用，非法值回退默认银白） */
+function restoreColorScheme(){
+  var k=null;
+  try{k=localStorage.getItem('robot-color');}catch(e){}
+  if(!k||!COLOR_SCHEMES[k])k='silver';
+  return k;
 }
 
 /* 解析 URDF 文本：提取各 link 的视觉网格文件名与各 joint 的父子关系和位姿 */
@@ -1550,7 +1845,9 @@ function assembleUrdf(parsed,geos){
 var STL_MAX_RETRY=3;      /* 单个STL加载失败的最大重试次数 */
 var STL_CONCURRENCY=8;    /* 同时加载的STL数量：越大加载越快，但过高在线环境易被限流（本地加载建议8） */
 var STL_RETRY_DELAY=600;  /* 重试间隔基准值(ms)，逐次递增，减少瞬时网络抖动的影响 */
-function loadSTLsTolerant(dir,names,loader,onProgress){
+function loadSTLsTolerant(dir,names,loader,onProgress,onEach){
+  /* onEach(stlName,geo)：每个STL下载成功时立即回调一次，供"逐零件增量组装"就地替换零件，
+     让机器人边下边长出来，而不是等全部STL下完才一次性出现 */
   var success=[],idx=0,doneCnt=0; /* doneCnt：已完成（成功或失败）的STL数量，用于进度显示 */
   /* 加载单个STL：失败时按剩余次数重试，重试耗尽则容忍跳过（返回null，不中断整体） */
   function loadOne(n,retryLeft){
@@ -1572,7 +1869,10 @@ function loadSTLsTolerant(dir,names,loader,onProgress){
         if(idx>=names.length){resolve();return;}
         var n=names[idx++];
         loadOne(n,STL_MAX_RETRY).then(function(res){
-          if(res)success.push(res);
+          if(res){
+            success.push(res);
+            if(onEach)onEach(res.n,res.g);   /* 立即注入该零件，不等全部下载完 */
+          }
           doneCnt++; /* 每完成一个STL（含失败跳过）都累计一次进度 */
           if(onProgress)onProgress(doneCnt,names.length); /* 回调上报进度，供顶栏提示显示 */
           step();
@@ -1585,9 +1885,71 @@ function loadSTLsTolerant(dir,names,loader,onProgress){
   return Promise.all(workers).then(function(){return success;});
 }
 
+/* ===== 逐零件增量组装：占位 + 注入 + 骨架归一化 =====
+   目标：机器人"边下边长出来"，而不是等全部STL下载完才一次性出现。
+   流程：先用占位几何把整机骨架按正确缩放/站位搭出来 → 每个STL下载完成
+   就地注入替换对应零件 → 全部到位后由 applyUrdf 用精确几何做最终归一化。 */
+
+/* 占位几何：真实STL下载完成前，先用这个小方盒占位，让整机骨架立刻可见 */
+var PLACEHOLDER_SIZE=0.08;   /* 【可调】占位方盒边长(URDF米为单位，整机约1.8m)，越小越不易察觉 */
+function makePlaceholderGeo(){return new THREE.BoxGeometry(PLACEHOLDER_SIZE,PLACEHOLDER_SIZE,PLACEHOLDER_SIZE);}
+
+/* 在装配树上按 link 名查找对应分组（增量注入时定位要替换的零件） */
+function findLinkGroup(o,name){
+  if(o.name===name)return o;
+  if(o.children)for(var i=0;i<o.children.length;i++){
+    var r=findLinkGroup(o.children[i],name);
+    if(r)return r;
+  }
+  return null;
+}
+
+/* 把一个下载完成的STL几何注入到使用它的所有 link 分组，就地替换占位几何（并同步更新线框） */
+function injectMeshGeometry(wrapRoot,linkNames,geo){
+  if(!geo)return;
+  for(var k=0;k<linkNames.length;k++){
+    var g=findLinkGroup(wrapRoot,linkNames[k]);
+    if(!g)continue;
+    for(var i=0;i<g.children.length;i++){
+      var c=g.children[i];
+      if(c.isMesh&&c.userData.linkName===linkNames[k]){
+        c.geometry=geo;   /* 就地替换几何，保留该零件的变换/材质/线框挂载 */
+        if(c.userData.wireframe){
+          try{c.userData.wireframe.geometry=new THREE.EdgesGeometry(geo,30);}
+          catch(e){/* 某些几何体可能不支持EdgesGeometry，忽略即可 */}
+        }
+        return;
+      }
+    }
+  }
+}
+
+/* 用URDF关节骨架（各link分组的世界坐标原点）估算整机包围盒，无需等待全部STL，
+   用于在加载一开始就给出正确缩放/站位 */
+function skeletonBBox(wrap){
+  var b=new THREE.Box3(),v=new THREE.Vector3();
+  (function walk(o){
+    if(o.isGroup&&o.name&&o.name.indexOf('joint_')!==0){o.getWorldPosition(v);b.expandByPoint(v);}
+    var ch=o.children;if(ch)for(var i=0;i<ch.length;i++)walk(ch[i]);
+  })(wrap);
+  return b;
+}
+
+var ROBOT_TARGET_H=85;  /* 【可调】整机目标高度(场景单位)，与 applyUrdf 的几何归一化公式一致 */
+var FLOOR_Y=-54;        /* 【可调】地面高度(场景单位)，与 applyUrdf 一致 */
+/* 按骨架包围盒把整机缩放到 targetH 高、脚底落地、水平居中（缩放/站位公式与 applyUrdf 相同） */
+function normalizeFromSkeleton(body3d,wrap){
+  var b=skeletonBBox(wrap);
+  var s=ROBOT_TARGET_H/Math.max(0.001,b.max.y-b.min.y);
+  wrap.scale.set(s,s,s);
+  var b2=skeletonBBox(wrap);
+  body3d.position.set(-(b2.min.x+b2.max.x)/2,FLOOR_Y-b2.min.y,-(b2.min.z+b2.max.z)/2);
+}
+
 /* ===== 官方模型内存缓存 =====
-   已加载过的机型缓存 {parsed,list,names}，切换机型时直接复用组装，跳过重复下载+解析 STL，
-   解决"每次切换机型都要重新下载、又慢又卡"的问题。 */
+   已加载过的机型缓存 {wrap, joints, partGroups, root, pos, rotY, complete}，
+   complete 标记该机型是否已全部零件下载完成；未完成(complete:false 的占位骨架)
+   不会走"秒切缓存"，保证切换/对比时不会误用半成品 */
 var urdfCache={};
 
 /* 用已解析的 URDF + 已加载的 geometry 组装机器人到场景(首次加载与缓存复用共用此函数) */
@@ -1625,16 +1987,21 @@ function applyUrdf(m,parsed,list,names){
   showLdtip('官方模型加载完成'+(missing>0?('，'+missing+'个零件加载失败已跳过'):''));
   setTimeout(hideLdtip,1800);
   if(window.RobotApp)highlight(window.RobotApp.getCur());
+  /* 刷新导航"无3D部件"标注（新机型的 partGroups 已就绪） */
+  if(window.RobotApp&&window.RobotApp.updateNav3d)window.RobotApp.updateNav3d();
+  applyColorScheme(curScheme);   /* 官方模型组装完成后，应用当前配色方案 */
 }
 
-/* 异步加载官方 URDF+STL：成功替换回退模型；加载失败则保留回退模型并给出提示 */
-function loadUrdfRobot(m){
+/* 异步加载官方 URDF+STL：成功替换回退模型；加载失败则保留回退模型并给出提示
+   done：可选完成回调（同屏对比功能用它串行加载两机型；成功与失败都会回调） */
+function loadUrdfRobot(m,done){
   /* file:// 协议下浏览器CORS策略阻止加载本地STL/URDF文件，直接使用内置高保真模型 */
   if(window.__IS_FILE_PROTO__){
     showLdtip('离线模式：已加载内置模型（file:// 无法读取官方STL，请用"启动教学页面.bat"打开以显示官方模型）');
     setTimeout(hideLdtip,3000);
     hideLoading();         /* 隐藏中央加载指示（参数化模型已由 buildRobot 提前显示） */
     setTimeout(function(){fitCameraToObject(body3d);},100);
+    if(done)done();
     return;
   }
   var cfg=URDF_CFG[m];
@@ -1643,54 +2010,108 @@ function loadUrdfRobot(m){
     setTimeout(hideLdtip,2000);
     hideLoading();         /* 隐藏中央加载指示（参数化模型已由 buildRobot 提前显示） */
     setTimeout(function(){fitCameraToObject(body3d);},100);
+    if(done)done();
     return;
   }
-  /* 内存缓存命中：直接复用已加载的 parsed+list 组装，跳过重复下载解析(切换机型秒切) */
-  if(urdfCache[m]){
+  /* 内存缓存命中(且已完整加载)：直接复用已加载的整机组装结果，跳过重复下载解析(切换机型秒切)。
+     未完整加载(complete:false 的占位骨架)不命中，走下方增量加载流程重新补齐 */
+  if(urdfCache[m]&&urdfCache[m].wrap&&urdfCache[m].complete){
     var cc=urdfCache[m];
-    applyUrdf(m, cc.parsed, cc.list, cc.names);
+    while(body3d.children.length)body3d.remove(body3d.children[0]);
+    body3d.add(cc.wrap);
+    urdfJoints=cc.joints;
+    partGroups=cc.partGroups;
+    urdfRoot=cc.root;
+    body3d.scale.set(1,1,1);
+    body3d.position.copy(cc.pos);
+    body3d.rotation.y=cc.rotY;
+    if(!tdActive)fitCameraToObject(body3d,userInteracted);
+    if(window.RobotApp)highlight(window.RobotApp.getCur());
+    if(window.RobotApp&&window.RobotApp.updateNav3d)window.RobotApp.updateNav3d();
+    if(done)done();
     return;
   }
   var token=++urdfToken;
   showLdtip('正在加载官方3D模型...');
   showLoading('正在加载官方3D模型…',0); /* 显示中央加载指示+进度条（初始0%） */
+  /* parsed/names 必须提升到函数作用域：后续 .then 回调需要访问它们，
+     若在回调内用 var 声明，另一个回调访问会报 not defined */
   var parsed=null;
-  /* names 必须提升到函数作用域：后续 .then 回调需要访问它，
-     若在回调内用 var 声明，另一个回调访问会报 names is not defined */
   var names=[];
+  var fileToLinks={};   /* 网格文件名 -> 使用它的 link 名列表（供逐零件注入定位） */
+  var wrap=null;        /* 占位骨架：真实STL边下载边替换，实现"机器人边下边长出来" */
   fetch(cfg.urdf)
     .then(function(r){if(!r.ok)throw new Error('URDF HTTP '+r.status);return r.text();})
     .then(function(txt){
       parsed=parseUrdf(txt);
-      /* 收集需要加载的网格文件清单（去重） */
+      /* 收集需要加载的网格文件清单（去重）+ 建立 文件名 -> link 名 映射 */
       var need={};
       Object.keys(parsed.links).forEach(function(k){
         var f=parsed.links[k].mesh;
-        if(f)need[f.split('/').pop()]=1;
+        if(f){
+          var base=f.split('/').pop();
+          need[base]=1;
+          (fileToLinks[base]=fileToLinks[base]||[]).push(k);
+        }
       });
       names=Object.keys(need);
       if(!names.length||!STLLoader)throw new Error('无STL网格或加载器未就绪');
+      /* 逐零件增量组装：先用占位几何把整机骨架立刻搭出来（正确缩放/站位），
+         之后每个STL下载完成就替换进对应零件——机器人不再是"等全部下完才一次性出现" */
+      var placeholders={};
+      names.forEach(function(n){placeholders[n]=makePlaceholderGeo();});
+      var root=assembleUrdf(parsed,placeholders);
+      /* 复刻 applyUrdf 的坐标变换：URDF Z轴->场景Y轴，再绕Y使正面朝向相机 */
+      wrap=new THREE.Group();
+      var qx=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2);
+      var qy=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-Math.PI/2);
+      wrap.quaternion.copy(qy.multiply(qx));
+      wrap.add(root);
+      /* 清空回退模型，换上真实模型（此刻为占位骨架，随后零件逐个被精模替换） */
+      while(body3d.children.length)body3d.remove(body3d.children[0]);
+      body3d.scale.set(1,1,1);
+      body3d.rotation.y=-0.25;
+      body3d.add(wrap);
+      /* 用URDF骨架包围盒归一化尺度/站位（无需等全部STL，从第一步起就正确缩放） */
+      normalizeFromSkeleton(body3d,wrap);
+      /* 缓存占位骨架（complete:false），切换/对比不会误用半成品；
+         加载完成后 applyUrdf 会用精确几何归一化覆盖该缓存 */
+      urdfCache[m]={wrap:wrap,joints:urdfJoints,partGroups:partGroups,root:urdfRoot,pos:body3d.position.clone(),rotY:body3d.rotation.y,complete:false};
+      var dofEl=document.getElementById('dof');
+      if(dofEl){dofEl.textContent=Object.keys(urdfJoints).length;}
       var loader=new STLLoader();
-      /* 限并发 + 重试 + 失败容忍加载（修复：任一STL失败不再整体回退，缺个别零件仍显示官方模型）
-         第4个参数为进度回调：实时刷新"正在加载 (i/N)"提示，让用户知道没卡死 */
+      /* onProgress 刷新进度提示；onEach 每个STL下载完成立即注入对应零件 */
       return loadSTLsTolerant(cfg.dir, names, loader, function(done,total){
         showLdtip('正在加载官方3D模型 ('+done+'/'+total+')');
         showLoading('正在加载官方3D模型 ('+done+'/'+total+')', total>0?done/total:0); /* 同步刷新中央进度条 */
+      }, function(n,g){
+        if(token!==urdfToken)return;   /* 已切换机型则丢弃过期零件 */
+        injectMeshGeometry(wrap,fileToLinks[n],g);
       });
     })
     .then(function(list){
-      if(token!==urdfToken||currentModel!==m)return;  /* 已切换机型：丢弃过期结果 */
-      urdfCache[m]={parsed:parsed,list:list,names:names};  /* 存入内存缓存，切换机型时复用 */
+      /* 已切换机型：丢弃过期结果。例外：同屏对比预载(comparePreload)不改 currentModel，需放行 */
+      if(token!==urdfToken||(currentModel!==m&&comparePreload!==m))return;
+      /* 全部零件下载完成：交给 applyUrdf 用全部真实几何做精确归一化并正式上线
+         （含缓存、相机适配、自由度显示、减速器预载、提示等所有收尾逻辑） */
       applyUrdf(m, parsed, list, names);
+      if(urdfCache[m])urdfCache[m].complete=true;   /* 标记完成，后续切换走秒切缓存 */
+      if(comparePreload===m){comparePreload='';}
+      if(done)done();
     })
     .catch(function(e){
       if(token!==urdfToken)return;
+      if(comparePreload===m){comparePreload='';}
       console.warn('[Robot3D] 官方模型加载失败，使用内置高保真模型:',e);
       var msg=(e&&e.message)?e.message:String(e);
       showLdtip('官方模型加载失败，已用内置模型 ('+msg+')');
       setTimeout(hideLdtip,4000);
-      hideLoading();         /* 隐藏中央加载指示（参数化模型已由 buildRobot 提前显示，失败则保留它） */
+      /* 失败时清掉占位骨架，换回美观的内置参数化模型 */
+      while(body3d.children.length)body3d.remove(body3d.children[0]);
+      buildFallbackRobot(m);
+      hideLoading();         /* 隐藏中央加载指示 */
       setTimeout(function(){fitCameraToObject(body3d);},100);
+      if(done)done();
     });
 }
 
@@ -2077,6 +2498,22 @@ function highlight(key){
     }
   });
   if(active && key!=='whole' && !isTech)focusOn(key);
+  schemeOpacityTouchup();   /* 半透明配色下恢复方案透明参数（部件发光高亮保留） */
+}
+
+/* 半透明(ghost)配色与高亮功能的兼容修正：
+   highlight/highlightLink 会按选中逻辑改写 opacity/transparent/depthWrite，
+   若当前配色方案为半透明，则遍历后统一恢复方案透明参数（发光高亮不受影响） */
+function schemeOpacityTouchup(){
+  var s=COLOR_SCHEMES[curScheme];
+  if(!s||s.opacity>=1.0||!body3d)return;   /* 不透明方案无需修正 */
+  body3d.traverse(function(o){
+    if(o.isMesh&&!o.userData.isWireframe&&o.material){
+      o.material.transparent=true;
+      o.material.opacity=s.opacity;
+      o.material.depthWrite=s.depthWrite;
+    }
+  });
 }
 
 /* 精确高亮单个具体部件（按 linkName）：3D 点击时只亮被点中的那个关节，而不是整组一起亮 */
@@ -2106,6 +2543,7 @@ function highlightLink(linkName){
       }
     }
   });
+  schemeOpacityTouchup();   /* 半透明配色下恢复方案透明参数（被点部件发光高亮保留） */
   return matched;
 }
 
@@ -2166,8 +2604,93 @@ function setModel(m){
   currentModel=m;
   if(!built)return;
   animDemo=false;  /* 切换机型时停止动画演示 */
+  if(compareMode){  /* 对比模式中切机型：退出对比模式（开关+布局），并复位按钮高亮 */
+    compareMode=false;
+    exitCompareLayout();
+    var bc=document.getElementById('bbCompare');if(bc)bc.classList.remove('on');
+  }
   buildRobot(m);
   if(window.RobotApp)highlight(window.RobotApp.getCur());
+}
+
+/* ==================== H1/G1 同屏对比模式 ====================
+   把宇树 H1(1.8m级)与 G1(1.32m级)两台官方模型并排放置，按真实相对比例显示，
+   关节动画/姿态预设自动同步驱动两机（同名归一化关节同时动），
+   直观对比体型、自由度布局与关节构型差异。 */
+var compareMode=false;      /* 同屏对比模式开关 */
+var comparePreload='';      /* 正在为对比预载的机型（放行 loadUrdfRobot 的 currentModel 守卫） */
+/* 对比布局可调参数（调试用宏） */
+var CMP_GAP=30;             /* 两机型水平间距的一半(场景单位)：H1 在 -CMP_GAP，G1 在 +CMP_GAP */
+var CMP_H1_HEIGHT=1.80;     /* H1 官方身高(m)：作为比例基准 */
+function toggleCompare(){
+  if(!built)return false;
+  if(tdActive)return false;  /* 拆解场景中不开对比（舞台被拆解场景占用） */
+  compareMode=!compareMode;
+  if(compareMode)enterCompare();
+  else exitCompareLayout();
+  return compareMode;
+}
+/* 进入对比：确保 H1/G1 都已加载(串行预载)，然后并排布局 */
+function enterCompare(){
+  var need=[];
+  if(!(urdfCache.h1&&urdfCache.h1.wrap&&urdfCache.h1.complete))need.push('h1');
+  if(!(urdfCache.g1&&urdfCache.g1.wrap&&urdfCache.g1.complete))need.push('g1');
+  if(!need.length){layoutCompare();return;}
+  /* 串行加载缺失机型（loadUrdfRobot 内部 applyUrdf 会临时切显示，最后 layoutCompare 统一布局） */
+  showLdtip('正在加载 H1/G1 对比模型…');
+  (function loadNext(){
+    var m=need.shift();
+    comparePreload=m;                     /* 放行 loadUrdfRobot 的 currentModel 守卫 */
+    loadUrdfRobot(m,function(){
+      if(need.length){loadNext();return;}
+      if(compareMode)layoutCompare();     /* 全部就绪：布局（若期间用户已关对比则不布局） */
+    });
+  })();
+}
+/* 并排布局：H1 左 / G1 右，按真实身高比例(H1 85 单位基准)缩放，脚落地+相机适配 */
+function layoutCompare(){
+  var cH=urdfCache.h1,cG=urdfCache.g1;
+  if(!cH||!cH.wrap||!cG||!cG.wrap){
+    /* 有机型加载失败（无wrap缓存）：退出对比模式并复位按钮，恢复单机显示，避免按钮卡在高亮 */
+    compareMode=false;
+    var bcf=document.getElementById('bbCompare');if(bcf)bcf.classList.remove('on');
+    var bc2f=document.getElementById('btnCompare2');if(bc2f)bc2f.classList.remove('on');
+    showLdtip('对比模型加载失败，请检查网络后重试');
+    setTimeout(hideLdtip,2600);
+    buildRobot(currentModel);
+    return;
+  }
+  while(body3d.children.length)body3d.remove(body3d.children[0]);
+  /* 保存 G1 原始缩放（applyUrdf 的 85 高度归一化值），退出对比时恢复 */
+  if(!cG.wrap.userData.savedScale)cG.wrap.userData.savedScale=cG.wrap.scale.clone();
+  /* 真实相对比例：两机用同一绝对比例(H1=85 单位)，G1 显示高度=1.32/1.80×85 */
+  var s=cH.wrap.scale.x;
+  cG.wrap.scale.set(s,s,s);
+  cH.wrap.position.set(-CMP_GAP,0,0);   /* H1 居左 */
+  cG.wrap.position.set(CMP_GAP,0,0);    /* G1 居右 */
+  body3d.add(cH.wrap);
+  body3d.add(cG.wrap);
+  body3d.scale.set(1,1,1);
+  body3d.rotation.y=-0.25;
+  /* 整体落地(脚底 y=-54)+水平居中 */
+  var b=new THREE.Box3().setFromObject(body3d);
+  body3d.position.set(-(b.min.x+b.max.x)/2,-54-b.min.y,-(b.min.z+b.max.z)/2);
+  fitCameraToObject(body3d);
+  applyColorScheme(curScheme);   /* 两台机型都挂在 body3d 下，遍历即可统一换色 */
+  showLdtip('同屏对比：左 H1(~1.80m) · 右 G1(~1.32m)，关节动画已同步；再点一次退出');
+  setTimeout(hideLdtip,3200);
+  /* 关节零位复位，避免单机型动画残留角度 */
+  resetAllJoints();
+}
+/* 退出对比：恢复两 wrap 的位置/缩放，重建当前机型单机显示 */
+function exitCompareLayout(){
+  var cH=urdfCache.h1,cG=urdfCache.g1;
+  if(cH&&cH.wrap)cH.wrap.position.set(0,0,0);
+  if(cG&&cG.wrap){
+    cG.wrap.position.set(0,0,0);
+    if(cG.wrap.userData.savedScale)cG.wrap.scale.copy(cG.wrap.userData.savedScale);
+  }
+  buildRobot(currentModel);   /* 缓存命中路径恢复单机型显示与相机 */
 }
 
 var ray, ptr;
@@ -2210,8 +2733,14 @@ function onClick(e){
 }
 
 function loop(){
-  /* 拆解场景动画驱动：自动拆解（往返）与旋转展示 */
+  /* 拆解场景动画驱动：顺序拆解动画 > 自动拆解（往返/单向）> 旋转展示 */
   if(tdActive){
+    if(tdSeqOn){
+      /* 顺序拆解动画：按真实拆解顺序逐个零件飞出→停顿→逆序装回，循环播放 */
+      tdSeqT+=TD_SEQ_STEP;
+      var prog=applyTdExplodeSeq(tdSeqT);
+      var rgS=document.getElementById('exrng');if(rgS)rgS.value=Math.round(prog*100);
+    }
     if(tdAutoOn){
       if(tdExplodeTarget!==null){
         /* 单向爆炸/装配模式（底部栏"爆炸拆解"按钮）：朝目标爆炸度平滑移动，到达后停止 */
@@ -2234,32 +2763,45 @@ function loop(){
   if(!tdActive&&autoRotate&&body3d){
     body3d.rotation.y+=AUTO_ROTATE_SPEED;
   }
-  /* 整机关节动画演示（非拆解模式） */
+  /* 整机关节动画演示（非拆解模式）：拟人原地步态 */
   if(!tdActive&&animDemo&&urdfRoot){
     animTime+=0.016;
-    /* 波浪式关节运动：左右对称，正弦叠加，自然步态感 */
-    Object.keys(urdfJoints).forEach(function(jn,idx){
+    /* 拟人步态：左右腿相位差π，手臂与同侧腿反相摆动，膝/踝随动补偿；
+       所有目标角经 setJointAngle 二次夹紧在关节限位内，平滑系数保证无跳变 */
+    var gaitPhase=animTime*2*Math.PI/GAIT_PERIOD; /* 左腿相位基准 */
+    Object.keys(urdfJoints).forEach(function(jn){
       var j=urdfJoints[jn];
       if(!j||!j.group)return;
-      var phase=idx*0.35;
-      var isLeft=/left/i.test(jn);
-      var isRight=/right/i.test(jn);
-      var amp=0;
-      /* 不同关节类型赋予不同振幅 */
-      if(/shoulder_pitch/i.test(jn))amp=0.35;
-      else if(/shoulder_roll/i.test(jn))amp=0.15;
-      else if(/elbow/i.test(jn))amp=0.4;
-      else if(/hip_pitch/i.test(jn))amp=0.3;
-      else if(/hip_roll/i.test(jn))amp=0.12;
-      else if(/knee/i.test(jn))amp=0.45;
-      else if(/ankle/i.test(jn))amp=0.2;
-      else if(/waist/i.test(jn))amp=0.08;
-      if(amp>0){
-        var sign=isLeft?1:(isRight?-1:0);
-        var ang=Math.sin(animTime*1.2+phase)*amp*0.5;
-        if(isRight)ang=-ang;
-        setJointAngle(jn,ang);
+      var nf=normJoint(jn);
+      if(!nf.type)return;
+      /* 左侧相位φ，右侧相位φ+π（左右腿/臂交替），中央(腰)相位φ */
+      var ph=(nf.side==='r')?gaitPhase+Math.PI:gaitPhase;
+      var tgt=null;
+      switch(nf.type){
+        /* 下肢：摆腿-屈膝-蹬地踝补偿，构成行走主循环 */
+        case 'hip_pitch':   tgt=Math.sin(ph)*GAIT_LEG_AMP; break;                      /* 髋前后摆腿 */
+        case 'knee':        tgt=GAIT_KNEE_BASE+GAIT_KNEE_AMP*0.5*(1+Math.sin(ph+1.5)); break; /* 摆动相屈膝 */
+        case 'ankle_pitch': tgt=-Math.sin(ph+2.1)*GAIT_ANKLE_AMP; break;              /* 踝俯仰补偿 */
+        case 'ankle_roll':  tgt=0.05*Math.sin(ph); break;                              /* 踝微侧摆 */
+        case 'hip_roll':    tgt=0.05*Math.sin(ph); break;                              /* 髋微侧摆(重心转移) */
+        case 'hip_yaw':     tgt=0.04*Math.sin(ph); break;                              /* 髋微内旋 */
+        /* 上肢：手臂与同侧腿反相摆动（自然行走姿态），肘部微屈随动 */
+        case 'shoulder_pitch': tgt=Math.sin(ph+Math.PI)*GAIT_ARM_AMP; break;           /* 摆臂 */
+        case 'shoulder_roll':  tgt=(nf.side==='l'?1:-1)*0.06; break;                   /* 自然小外张 */
+        case 'shoulder_yaw':   tgt=0.03*Math.sin(ph+Math.PI); break;                   /* 肩微内旋 */
+        case 'elbow':       tgt=GAIT_ELBOW_BASE+GAIT_ELBOW_AMP*0.5*(1+Math.sin(ph+Math.PI)); break; /* 屈肘随动 */
+        case 'elbow_yaw':   tgt=0.05*Math.sin(ph); break;                              /* 前臂微旋 */
+        /* 躯干：腰部随步态轻微扭转/起伏，增强拟人感 */
+        case 'waist_yaw':   tgt=Math.sin(gaitPhase)*GAIT_WAIST_AMP; break;             /* 腰随摆臂反扭 */
+        case 'waist_pitch': tgt=0.04*Math.sin(2*gaitPhase); break;                     /* 步频两倍轻微起伏 */
+        case 'waist_roll':  tgt=0.03*Math.sin(gaitPhase); break;                       /* 腰微侧倾 */
+        /* wrist / hand 不参与步态，保持零位 */
       }
+      if(tgt===null)return;
+      /* 惯性平滑：关节角从当前值向目标渐进过渡，杜绝硬切跳变 */
+      if(j.gaitCur===undefined)j.gaitCur=0;
+      j.gaitCur+=(tgt-j.gaitCur)*GAIT_SMOOTH;
+      setJointAngle(jn,j.gaitCur);
     });
   }
   controls.update();
@@ -2270,9 +2812,66 @@ function resume(){if(!built||raf)return;loop();}
 function pause(){if(raf){cancelAnimationFrame(raf);raf=null;}}
 
 /* ==================== 关节控制系统 ==================== */
-/* 设置单个关节角度（弧度，相对于零位） */
+/* 关节名归一化：把 X1/H1/G1 三种机型的关节命名（urdfJoints 键=URDF child link 名）
+   统一映射为 {side:'l'|'r'|'c', type:'部位_自由度'}，拟人步态与姿态预设均基于
+   归一化结果驱动，任一机型缺失的关节自动跳过（找不到就不动，绝不报错） */
+function normJoint(jn){
+  /* 侧别：X1/H1/G1 均以 left_/right_ 前缀区分左右，H1手指用 L_/R_ 前缀 */
+  var side=/^left|^l_/.test(jn)?'l':(/^right|^r_/.test(jn)?'r':'c');
+  var t=null;
+  if(/shoulder_pitch/.test(jn))t='shoulder_pitch';
+  else if(/shoulder_roll/.test(jn))t='shoulder_roll';
+  else if(/shoulder_yaw/.test(jn))t='shoulder_yaw';
+  else if(/elbow_yaw/.test(jn))t='elbow_yaw';        /* X1 前臂旋转 */
+  else if(/elbow/.test(jn))t='elbow';                /* H1/G1 单肘关节 */
+  else if(/wrist/.test(jn))t='wrist';
+  else if(/hip_pitch/.test(jn))t='hip_pitch';
+  else if(/hip_roll/.test(jn))t='hip_roll';
+  else if(/hip_yaw/.test(jn))t='hip_yaw';
+  else if(/knee/.test(jn))t='knee';
+  else if(/ankle_roll/.test(jn))t='ankle_roll';
+  else if(/ankle/.test(jn))t='ankle_pitch';          /* H1 为单踝关节 */
+  else if(/lumber_yaw|waist_yaw/.test(jn))t='waist_yaw';
+  else if(/lumber_roll|waist_roll/.test(jn))t='waist_roll';
+  else if(/lumber_pitch|waist_pitch/.test(jn))t='waist_pitch';
+  else if(/torso/.test(jn))t=(currentModel==='h1')?'waist_yaw':'waist_pitch'; /* H1的torso关节为偏航(yaw)，G1的torso_link为俯仰(pitch) */
+  else if(/hand|thumb|index|middle|ring|pinky/.test(jn))t='hand';
+  return {side:side,type:t};
+}
+/* 按归一化特征反查关节名（side:'l'|'r'|'c'，type 同上），找不到返回 null */
+function findJ(side,type){
+  for(var jn in urdfJoints){
+    var nf=normJoint(jn);
+    if(nf.side===side&&nf.type===type)return jn;
+  }
+  return null;
+}
+/* 按归一化特征设置关节角度（姿态预设用，兼容三机型命名） */
+function setPose(side,type,angRad){
+  var jn=findJ(side,type);
+  if(jn)setJointAngle(jn,angRad);
+}
+/* 设置单个关节角度（弧度，相对于零位）
+   同屏对比模式下额外驱动另一机型的等效关节（按归一化特征 side+type 匹配），
+   实现两机步态动画与姿态预设的镜像同步 */
 function setJointAngle(jointName,angleRad){
-  var j=urdfJoints[jointName];
+  applyJointAngle(urdfJoints,jointName,angleRad);   /* 当前查询机型关节表 */
+  if(compareMode){
+    ['h1','g1'].forEach(function(k){                /* 对比中的两台机型 */
+      var jm=urdfCache[k]&&urdfCache[k].joints;
+      if(!jm||jm===urdfJoints)return;               /* 未加载或即当前查询机型则跳过 */
+      var nf=normJoint(jointName);
+      if(!nf.type)return;                           /* 无法归一化的关节不同步 */
+      for(var jn in jm){                            /* 在另一机型找等效关节 */
+        var nf2=normJoint(jn);
+        if(nf2.side===nf.side&&nf2.type===nf.type){applyJointAngle(jm,jn,angleRad);return;}
+      }
+    });
+  }
+}
+/* 对指定机型关节表设置单个关节角度（setJointAngle 的实际执行体，可复用到任意机型） */
+function applyJointAngle(map,jointName,angleRad){
+  var j=map[jointName];
   if(!j||!j.group||!j.zero)return;
   /* 夹紧到限位范围内 */
   var a=Math.max(j.min,Math.min(j.max,angleRad));
@@ -2284,14 +2883,28 @@ function setJointAngle(jointName,angleRad){
   var dq=new THREE.Quaternion().setFromAxisAngle(axis,a);
   j.group.quaternion.copy(j.zero).multiply(dq);
 }
-/* 复位所有关节到零位（标准站立姿态） */
+/* 复位所有关节到零位（标准站立姿态）
+   对比模式下连另一机型一起复位，避免退出对比时残留动画角度 */
 function resetAllJoints(){
   animDemo=false;
   var btn=document.getElementById('btnAnim2');
   if(btn)btn.classList.remove('active');
-  Object.keys(urdfJoints).forEach(function(jn){
-    var j=urdfJoints[jn];
-    if(j&&j.group&&j.zero)j.group.quaternion.copy(j.zero);
+  resetJointMap(urdfJoints);                        /* 当前查询机型 */
+  if(compareMode){                                  /* 对比模式：另一机型同步复位 */
+    ['h1','g1'].forEach(function(k){
+      var jm=urdfCache[k]&&urdfCache[k].joints;
+      if(jm&&jm!==urdfJoints)resetJointMap(jm);
+    });
+  }
+}
+/* 复位指定机型关节表内全部关节到零位（resetAllJoints 的实际执行体） */
+function resetJointMap(map){
+  Object.keys(map).forEach(function(jn){
+    var j=map[jn];
+    if(j){
+      j.gaitCur=0; /* 清除步态平滑残留角度，下次动画从零位渐入 */
+      if(j.group&&j.zero)j.group.quaternion.copy(j.zero);
+    }
   });
 }
 /* 切换动画演示开关 */
@@ -2301,35 +2914,37 @@ function toggleAnimDemo(){
   if(btn)btn.classList.toggle('active',animDemo);
   if(!animDemo)resetAllJoints();
 }
-/* 姿态预设：举手礼 */
+/* 姿态预设：举手礼（左臂前举过头，右臂自然下垂）
+   角度经 setJointAngle 自动夹紧在各机型关节限位内 */
 function poseWaveHand(){
   resetAllJoints();
   setTimeout(function(){
-    setJointAngle('left_shoulder_pitch_link',-1.2);
-    setJointAngle('left_shoulder_roll_link',0.3);
-    setJointAngle('left_elbow_link',0.8);
-    setJointAngle('right_shoulder_pitch_link',0.1);
-    setJointAngle('right_elbow_link',0.1);
+    setPose('l','shoulder_pitch',-1.7); /* 左臂前举过头 */
+    setPose('l','shoulder_roll',0.25);  /* 肩微外展 */
+    setPose('l','elbow',0.9);           /* 屈肘行礼 */
+    setPose('r','shoulder_pitch',0.1);  /* 右臂自然下垂微后摆 */
+    setPose('r','elbow',0.15);          /* 右肘微屈 */
   },50);
 }
-/* 姿态预设：大字站立 */
+/* 姿态预设：大字站立（双臂水平外展） */
 function poseTpose(){
   resetAllJoints();
   setTimeout(function(){
-    setJointAngle('left_shoulder_roll_link',1.4);
-    setJointAngle('right_shoulder_roll_link',-1.4);
+    setPose('l','shoulder_roll',1.5);   /* 左臂外展(正向外展) */
+    setPose('r','shoulder_roll',-1.5);  /* 右臂外展(负向外展) */
+    setPose('l','elbow',0.1);           /* 双肘伸直微屈 */
+    setPose('r','elbow',0.1);
   },50);
 }
-/* 姿态预设：半蹲 */
+/* 姿态预设：半蹲（屈髋屈膝+踝背伸+双臂前平举配重） */
 function poseSquat(){
   resetAllJoints();
   setTimeout(function(){
-    setJointAngle('left_hip_pitch_link',0.5);
-    setJointAngle('right_hip_pitch_link',0.5);
-    setJointAngle('left_knee_link',-0.9);
-    setJointAngle('right_knee_link',-0.9);
-    setJointAngle('left_ankle_link',0.4);
-    setJointAngle('right_ankle_link',0.4);
+    setPose('l','hip_pitch',0.5);setPose('r','hip_pitch',0.5);     /* 屈髋 */
+    setPose('l','knee',0.9);setPose('r','knee',0.9);               /* 屈膝 */
+    setPose('l','ankle_pitch',0.4);setPose('r','ankle_pitch',0.4); /* 踝背伸保持全脚掌着地 */
+    setPose('l','shoulder_pitch',-0.5);setPose('r','shoulder_pitch',-0.5); /* 双臂前平举 */
+    setPose('l','elbow',0.3);setPose('r','elbow',0.3);             /* 微屈肘 */
   },50);
 }
 
@@ -2340,6 +2955,11 @@ var tdKey='';            /* 当前拆解模块键 */
 var tdParts=[];          /* 零件列表 {obj,base(装配位),dir(爆炸方向),dist(爆炸距离),id} */
 var tdExplodeT=0;        /* 当前爆炸度 0(装配)~1(完全拆解) */
 var tdAutoOn=false,tdAutoDir=1,tdSpinOn=false,tdExplodeTarget=null;
+/* 顺序拆解动画状态：tdSeqOn=开关；tdSeqT=动画进度(零件个数为单位，0~n 拆解、n~2n+停顿 装配) */
+var tdSeqOn=false,tdSeqT=0;
+/* 顺序拆解可调参数（调试用宏） */
+var TD_SEQ_STEP=0.022;      /* 每帧推进的顺序动画进度（零件个/帧），0.022≈每零件0.75秒@60fps */
+var TD_SEQ_HOLD=1.6;        /* 全部拆出后停顿时长（零件个单位），便于观察完整爆炸态 */
 var labelsVisible=true;   /* 拆解场景零件标签是否可见（底部栏"零件标签"开关） */
 var tdSelId=null;        /* 当前选中的零件 id */
 var savedCam={min:55,max:200};  /* 进入拆解场景前保存的相机距离限制 */
@@ -2384,7 +3004,19 @@ var TD_INFO={
   c_input:{n:'输入轴（真实开源件）',p:'连接电机与偏心轴的高速输入端。'},
   c_ring2:{n:'隔环 2（真实开源件）',p:'装配在轴上的定位隔环，保证轴向间隙。'},
   c_ring3:{n:'隔环 3（真实开源件）',p:'装配在轴上的定位隔环，保证轴向间隙。'},
-  c_motor:{n:'电机安装座（真实开源件）',p:'NEMA17 步进电机安装座，把电机固定到减速器输入侧。'}
+  c_motor:{n:'电机安装座（真实开源件）',p:'NEMA17 步进电机安装座，把电机固定到减速器输入侧。'},
+  pf_flange:{n:'输出法兰',p:'PF86 对外输出接口（86mm 法兰标准），连接腿杆/臂杆。带止口定位+螺栓孔圈，中空结构让线缆从轴心穿过（中空走线）。'},
+  pf_output:{n:'行星输出轴（真实开源件）',p:'行星架低速输出端，把行星轮公转汇聚成低速大扭矩输出。来自专为小米 CyberGear 人形关节设计的开源装配体（同为 QDD 准直驱方案）。'},
+  pf_bearing:{n:'角接触轴承',p:'QDD 关节主轴承。低减速比意味着电机会"感受"到外部冲击，轴承需承受径向+轴向复合载荷；中空内径走线。'},
+  pf_planet:{n:'行星轮 ×6（真实开源件）',p:'六个行星轮每 60° 均布，把载荷均分到多条啮合路径——QDD 关节抗冲击能力的关键。QDD 减速比低（约 10:1），单级即可，无多级背隙累积。'},
+  pf_carrier:{n:'行星架止转环（真实开源件）',p:'承载行星轮销轴并连接输出轴。QDD 低速端扭矩仍达数百 Nm，行星架是刚性最敏感零件。'},
+  pf_sun:{n:'太阳轮（真实开源件）',p:'中心输入齿轮，直接压在电机轴上。减速比 i = 1 + Z圈/Z阳，太阳轮齿数决定减速比。'},
+  pf_ring:{n:'内齿圈/外壳（真实开源件）',p:'固定内齿圈，与关节壳体一体。QDD 关节的内齿圈常作为外壳主体，缩短轴向尺寸。'},
+  pf_rotor:{n:'外转子（环形磁钢）',p:'外转子无框力矩电机的转子：大直径环形磁钢阵列，"又大又扁"是 QDD 的标志——电机本体的扭矩 ∝ 半径²，大直径弥补低减速比的扭矩损失。'},
+  pf_stator:{n:'定子（绕组铁芯）',p:'绕组铁芯位于转子内侧，灌封导热胶后紧贴壳体散热。QDD 关节持续电流大，定子温升直接决定持续扭矩。'},
+  pf_enc_out:{n:'输出端编码器（绝对值）',p:'直测关节真实输出角，绝对式——上电即知关节位置，无需回零。低减速比背隙小，但输出端编码器仍能消除残余背隙误差。'},
+  pf_enc_mot:{n:'电机端编码器',p:'高速端增量式编码器，为 FOC 提供换相信号 + 速度环反馈。与输出端编码器构成双编码器架构。'},
+  pf_pcb:{n:'PF-Link 驱控板',p:'驱控一体板：MCU + 栅驱 + MOSFET + 电流采样，集成 PF-Link 智能接口——智元自定义的关节总线，单线级联供电+通信，简化整机布线。'}
 };
 
 /* 拆解场景材质（每个网格独立材质，保证点击高亮互不干扰）
@@ -2512,6 +3144,32 @@ function applyTdExplode(t){
   tdParts.forEach(function(p){
     p.obj.position.copy(p.base).addScaledVector(p.dir,p.dist*t);
   });
+}
+
+/* 应用顺序拆解动画进度 s（单位=零件个数）：
+   拆解段 s∈[0,n]   ——零件 i 依次飞出：t_i = clamp(s-i,0,1)（按加入顺序=真实拆解顺序）；
+   停顿段 s∈[n,n+H] ——全部保持完全拆解；
+   装配段 s>n+H     ——装配是拆解的逆序：后拆的先装回，t_i = clamp((n-i)-(s-n-H),0,1)。
+   返回当前"整体完成度"(0~1) 用于同步滑杆显示 */
+function applyTdExplodeSeq(s){
+  var n=tdParts.length;
+  if(!n)return 0;
+  var hold=n+TD_SEQ_HOLD;
+  var total=hold+n;
+  if(s>=total){s=0;}   /* 一轮拆+装结束：回到起点循环 */
+  var a;
+  if(s<=n){a=s;}                       /* 拆解段 */
+  else if(s<=hold){a=n;}               /* 停顿段 */
+  else{a=hold+n-s;}                    /* 装配段（整体进度回落） */
+  tdParts.forEach(function(p,i){
+    var t;
+    if(s<=n){t=Math.max(0,Math.min(1,s-i));}                    /* 逐个飞出 */
+    else if(s<=hold){t=1;}                                      /* 保持全拆 */
+    else{t=Math.max(0,Math.min(1,(n-i)-(s-hold)));}             /* 逆序装回 */
+    p.obj.position.copy(p.base).addScaledVector(p.dir,p.dist*t);
+  });
+  tdExplodeT=a/n;      /* 同步整体爆炸度，供滑杆/按钮状态判断 */
+  return a/n;
 }
 
 /* 通用拆解场景构建器：defs=[{id,h,mk(零件工厂),stl?(真实STL路径),stlSize?(目标尺寸)}] */
@@ -2671,6 +3329,7 @@ function tdLoadAxis(url,axis,cb,color){
 
 /* 同轴装配通用构建器：加载真实 STL → 厚度轴转正 → 同轴/轴向装配 → 沿 Y 轴爆炸
    每个零件需提供：file(路径)、axis(厚度轴)、yBase(装配态中心Y)、yExp(爆炸态中心Y)、color(颜色)。
+   可选 orbit/count：需绕 Y 轴均布多份的零件（如行星轮×6）。
    同心零件(刚轮/柔轮/波发生器)在 yBase 处嵌套(半径不同、Y 重叠)，爆炸时沿 Y 分离到 yExp。 */
 function buildTdCoaxial(parts,done){
   var items=[];
@@ -2684,7 +3343,22 @@ function buildTdCoaxial(parts,done){
     /* 异步加载真实 STL；失败则留空(场景其余零件仍可用) */
     (function(pid,pobj){
       tdLoadAxis(pobj.file,pobj.axis,function(msh){
-        if(msh){msh.userData.tdId=pid;g.add(msh);}
+        if(msh){
+          msh.userData.tdId=pid;
+          if(pobj.orbit&&pobj.count){
+            /* 均布零件（行星轮）：count 个绕 Y 轴均布，公转半径 orbit(真实 mm) */
+            var grp=new THREE.Group();
+            for(var i=0;i<pobj.count;i++){
+              var a=i*Math.PI*2/pobj.count;
+              var cl=msh.clone();
+              cl.position.set(Math.cos(a)*pobj.orbit,0,Math.sin(a)*pobj.orbit);
+              grp.add(cl);
+            }
+            g.add(grp);
+          }else{
+            g.add(msh);
+          }
+        }
         if(--pending===0)finish();
       },pobj.color);
     })(p.id,p);
@@ -2777,6 +3451,83 @@ function buildTdCycloidal(done){
   buildTdCoaxial(parts,done);
 }
 
+/* 场景5：智元灵犀X1 PowerFlow 关节（QDD 准直驱：外转子无框电机+单级行星+双编码器）
+   行星减速五件套复用 CyberGear 开源装配体真实 STL（同为 QDD 关节方案）；
+   法兰/轴承/外转子/定子/双编码器/驱控板按 PF86 结构参数化重建。
+   yBase=装配态中心Y；yExp=爆炸态中心Y；零件数组顺序 = 拆解顺序动画顺序（输出端→电机端）。 */
+function buildTdPowerflow(done){
+  var parts=[
+    /* 拆解1：输出法兰（参数化：中空走线盘） */
+    {id:'pf_flange', para:function(){return new THREE.Mesh(new THREE.CylinderGeometry(34,34,3.5,48),tdMat(0xd8dee8,0.7,0.3));}, yBase:-30, yExp:-52},
+    /* 拆解2：行星输出轴（真实STL，厚度轴Y） */
+    {id:'pf_output', file:'models/planetary_cybergear/OutputShaft.stl', axis:'y', color:0xc8cfd9, yBase:-20, yExp:-38},
+    /* 拆解3：角接触轴承（参数化：大孔径环，中空走线让位） */
+    {id:'pf_bearing', para:function(){return new THREE.Mesh(new THREE.TorusGeometry(30,3,16,48),tdMat(0xb8c0cc));}, yBase:-12, yExp:-26},
+    /* 拆解4~7：行星减速组（真实STL，同心共面啮合；行星轮6个绕Y均布） */
+    {id:'pf_planet', file:'models/planetary_cybergear/PlanetGear.stl', axis:'z', color:0xb8c0cc, orbit:CYBER_ORBIT, count:6, yBase:-2, yExp:-14},
+    {id:'pf_carrier',file:'models/planetary_cybergear/CareerReception.stl', axis:'z', color:0x9aa4b2, yBase:-2, yExp:-8},
+    {id:'pf_sun',    file:'models/planetary_cybergear/SunGear.stl', axis:'z', color:0xffd479, yBase:-2, yExp:4},
+    {id:'pf_ring',   file:'models/planetary_cybergear/RingGear.stl', axis:'z', color:0x8a94a4, yBase:-2, yExp:12},
+    /* 拆解8：外转子（参数化：大直径环形磁钢，QDD标志——又大又扁） */
+    {id:'pf_rotor', para:function(){var m=new THREE.Mesh(new THREE.TorusGeometry(27,5,18,48),tdMat(0x3a404c));m.rotation.x=Math.PI/2;return m;}, yBase:9, yExp:26},
+    /* 拆解9：定子（参数化：绕组铁芯在转子内侧，同心嵌套） */
+    {id:'pf_stator', para:function(){return new THREE.Mesh(new THREE.CylinderGeometry(21,21,9,48),tdMat(0xb0763a,0.2,0.7));}, yBase:9, yExp:38},
+    /* 拆解10~11：双编码器（参数化：输出端绝对值+电机端增量） */
+    {id:'pf_enc_out', para:function(){return new THREE.Mesh(new THREE.CylinderGeometry(15,15,1.6,48),tdMat(0x2f6db3,0.4,0.5));}, yBase:15, yExp:48},
+    {id:'pf_enc_mot', para:function(){return new THREE.Mesh(new THREE.CylinderGeometry(10,10,1.4,48),tdMat(0x2f6db3,0.4,0.5));}, yBase:19, yExp:58},
+    /* 拆解12：PF-Link 驱控板（参数化：驱控一体电路板） */
+    {id:'pf_pcb', para:function(){return new THREE.Mesh(new THREE.BoxGeometry(26,1.8,20),tdMat(0x2e7d4f,0.2,0.7));}, yBase:25, yExp:68}
+  ];
+  var items=[],pending=parts.length;
+  parts.forEach(function(p){
+    var g=new THREE.Group();
+    var partName=(TD_INFO[p.id]&&TD_INFO[p.id].n)?TD_INFO[p.id].n:p.id;
+    var label=createPartLabel(partName,new THREE.Vector3(0,0,0));
+    if(label){label.position.set(TD_LBL_X,0,0);label.userData.tdLabelFor=p.id;g.add(label);}
+    items.push({obj:g,id:p.id,yBase:p.yBase,yExp:p.yExp});
+    if(p.para){
+      /* 参数化零件：立即创建（真实STL失败时的回退也是它，这里直接做主体） */
+      var m=p.para();
+      m.castShadow=true;m.receiveShadow=true;
+      m.userData.tdId=p.id;
+      g.add(m);
+      if(--pending===0)finish();
+    }else{
+      /* 真实 STL：异步加载并转正厚度轴；失败则该零件只有标签（场景仍可用） */
+      tdLoadAxis(p.file,p.axis,function(msh){
+        if(msh){
+          msh.userData.tdId=p.id;
+          if(p.orbit&&p.count){
+            /* 行星轮×6 绕 Y 轴均布，公转半径 CYBER_ORBIT(真实 mm) */
+            var grp=new THREE.Group();
+            for(var i=0;i<p.count;i++){
+              var a=i*Math.PI*2/p.count;
+              var cl=msh.clone();
+              cl.position.set(Math.cos(a)*p.orbit,0,Math.sin(a)*p.orbit);
+              grp.add(cl);
+            }
+            g.add(grp);
+          }else{
+            g.add(msh);
+          }
+        }
+        if(--pending===0)finish();
+      },p.color);
+    }
+  });
+  function finish(){
+    /* 装配态：行星组同心共面在 yBase，电机/编码器沿 Y 堆叠，转子/定子同心嵌套 */
+    items.forEach(function(it){it.obj.position.set(0,it.yBase,0);});
+    /* 爆炸态：纯轴向(沿 Y)上下分离，方向由 yExp 相对 yBase 的符号决定 */
+    items.forEach(function(it){
+      var dy=it.yExp-it.yBase;
+      var dir=new THREE.Vector3(0,Math.sign(dy)||1,0);
+      addTdPart(it.obj,it.id,dir,Math.abs(dy));
+    });
+    done();
+  }
+}
+
 /* 拆解场景归一化：整体缩放到合适大小并居中到相机焦点 (0,-15,0) */
 function normalizeTd(){
   if(!tdGroup)return;
@@ -2803,6 +3554,7 @@ function normalizeTd(){
 /* 清理拆解场景（释放显存），可重复调用无副作用 */
 function cleanupTdGroup(){
   tdAutoOn=false;tdSpinOn=false;tdSelId=null;
+  tdSeqOn=false;tdSeqT=0;   /* 顺序拆解动画复位 */
   if(tdGroup){
     tdGroup.traverse(function(o){
       if(o.isMesh){
@@ -2820,6 +3572,12 @@ function buildTdScene(key,sceneName){
   if(tdActive&&tdKey===key&&tdGroup)return;  /* 同一场景重复进入直接返回 */
   cleanupTdGroup();
   tdKey=key;tdActive=true;
+  /* 对比模式与拆解场景互斥（舞台只能给一方）：进入拆解前先退出对比并复位按钮 */
+  if(compareMode){
+    compareMode=false;
+    var bc=document.getElementById('bbCompare');if(bc)bc.classList.remove('on');
+    exitCompareLayout();   /* 恢复单机型布局，body3d 随后由拆解场景隐藏 */
+  }
   tdGroup=new THREE.Group();
   scene.add(tdGroup);
   body3d.visible=false;                       /* 隐藏机器人，舞台让给拆解场景 */
@@ -2827,9 +3585,11 @@ function buildTdScene(key,sceneName){
   var rg=document.getElementById('exrng');if(rg)rg.value=0;
   var ea=document.getElementById('exauto');if(ea)ea.classList.remove('on');
   var es=document.getElementById('exspin');if(es)es.classList.remove('on');
+  var bs=document.getElementById('bbSeq');if(bs)bs.classList.remove('on');  /* 顺序拆解按钮复位 */
   showLdtip('正在构建拆解场景（加载开源零件模型）…');
   var done=function(){normalizeTd();hideLdtip();};
   if(sceneName==='joint')buildTdJoint(done);
+  else if(sceneName==='powerflow')buildTdPowerflow(done);
   else if(sceneName==='harmonic')buildTdHarmonic(done);
   else if(sceneName==='planetary')buildTdPlanetary(done);
   else if(sceneName==='cycloidal')buildTdCycloidal(done);
@@ -2909,6 +3669,8 @@ var exrngEl=document.getElementById('exrng');
 if(exrngEl)exrngEl.addEventListener('input',function(){
   if(!tdActive)return;
   tdAutoOn=false;
+  tdSeqOn=false;   /* 手动拖滑杆时退出顺序拆解动画 */
+  var bsq=document.getElementById('bbSeq');if(bsq)bsq.classList.remove('on');
   var ea=document.getElementById('exauto');if(ea)ea.classList.remove('on');
   applyTdExplode(exrngEl.value/100);
 });
@@ -2917,7 +3679,11 @@ if(exautoEl)exautoEl.addEventListener('click',function(){
   if(!tdActive)return;
   tdAutoOn=!tdAutoOn;
   exautoEl.classList.toggle('on',tdAutoOn);
-  if(tdAutoOn)tdAutoDir=1;
+  if(tdAutoOn){
+    tdAutoDir=1;
+    tdSeqOn=false;   /* 与顺序拆解互斥 */
+    var bsq=document.getElementById('bbSeq');if(bsq)bsq.classList.remove('on');
+  }
 });
 var exspinEl=document.getElementById('exspin');
 if(exspinEl)exspinEl.addEventListener('click',function(){
@@ -3038,6 +3804,120 @@ window.hookAdrcSim=function(){
   run();
 };
 
+/* ==================== 力控仿真页面：位置控制 vs 阻抗控制（碰撞墙壁对比） ====================
+   场景：关节收到越过墙壁的目标指令，对比高刚度位置控制与低刚度阻抗控制的
+   接触力表现——演示人形机器人为什么需要力控/柔顺控制模式。 */
+window.hookForceSim=function(){
+  var cv=document.getElementById('fcCv');
+  if(!cv||!cv.getContext)return;
+  var ctx=cv.getContext('2d');
+  var btn=document.getElementById('fcRun');
+  var rafId=null;
+
+  /* 仿真可调参数（调试用宏，归一化单关节模型 J=1） */
+  var DT=0.001,T_END=4.0;      /* 控制周期1ms；总仿真时长4s */
+  var R_T=0.3,R_DES=0.9;       /* 0.3s 施加阶跃指令 0.9rad（越过墙壁） */
+  var Q_WALL=0.55;             /* 墙壁位置(rad)：控制器"不知道"的刚性环境 */
+  var K_ENV=4000,B_ENV=8;      /* 环境刚度/阻尼（接触弹簧-阻尼模型） */
+  var KP_POS=400,KD_POS=25;    /* 位置控制：高刚度PD（自由空间跟踪快而准） */
+  var KP_IMP=40,KD_IMP=8;      /* 阻抗控制：低刚度PD（柔顺安全） */
+  var TAU_MAX=400;             /* 关节扭矩限幅（两种控制相同） */
+  var F_MAX=500;               /* 接触力绘图上限（超出截断显示） */
+
+  /* 单关节被控对象：q'' = τ − b·q' − F_env，返回接触环境反作用力 */
+  function plantStep(st,tau){
+    var fe=0;
+    if(st.q>Q_WALL)fe=K_ENV*(st.q-Q_WALL)+B_ENV*st.v;  /* 接触弹簧-阻尼 */
+    if(fe<0)fe=0;                                       /* 墙壁只压不拉（非粘性接触） */
+    var acc=tau-0.8*st.v-fe;                            /* 关节自身粘滞阻尼0.8 */
+    st.v+=acc*DT;st.q+=st.v*DT;
+    return fe;
+  }
+  /* PD 控制律：位置控制与阻抗控制共用同一结构，区别只在刚度/阻尼参数 */
+  function makePD(kp,kd){
+    return function(r,q,v){
+      var u=kp*(r-q)+kd*(0-v);
+      if(u>TAU_MAX)u=TAU_MAX;if(u<-TAU_MAX)u=-TAU_MAX;  /* 扭矩限幅 */
+      return u;
+    };
+  }
+  /* 跑一遍完整仿真（两个控制器各驱动一份相同对象），每 6 步(约100Hz)采样一次 */
+  function simulate(){
+    var posC=makePD(KP_POS,KD_POS),impC=makePD(KP_IMP,KD_IMP);
+    var stP={q:0,v:0},stI={q:0,v:0};                    /* 两份独立对象状态 */
+    var out={t:[],r:[],qp:[],qi:[],fp:[],fi:[]};
+    var n=Math.round(T_END/DT);
+    for(var k=0;k<n;k++){
+      var t=k*DT;
+      var r=(t>=R_T)?R_DES:0;
+      var fp=plantStep(stP,posC(r,stP.q,stP.v));        /* 位置控制：返回接触力 */
+      var fi=plantStep(stI,impC(r,stI.q,stI.v));        /* 阻抗控制：返回接触力 */
+      if(k%6===0){
+        out.t.push(t);out.r.push(r);
+        out.qp.push(stP.q);out.qi.push(stI.q);
+        out.fp.push(fp);out.fi.push(fi);
+      }
+    }
+    return out;
+  }
+  var data=simulate();
+
+  /* 绘制曲线（prog: 0~1 渐进绘制进度）：上窗格=关节角度，下窗格=接触力 */
+  function draw(prog){
+    var W=cv.width,H=cv.height,padL=34,padR=10,padT=12,padB=22;
+    var hTop=150,hBot0=178,hBot1=H-padB;                 /* 上/下窗格边界 */
+    var qMin=-0.05,qMax=1.05;                            /* 角度窗格值域 */
+    function X(t){return padL+(W-padL-padR)*t/T_END;}
+    function YQ(v){return hTop-(hTop-padT)*(v-qMin)/(qMax-qMin);}
+    function YF(v){return hBot1-(hBot1-hBot0)*Math.min(v,F_MAX)/F_MAX;}
+    ctx.clearRect(0,0,W,H);
+    /* 网格与坐标轴 */
+    ctx.strokeStyle='rgba(138,148,164,.22)';ctx.lineWidth=1;
+    ctx.font='9px sans-serif';ctx.fillStyle='#8a94a4';
+    for(var gv=0;gv<=1.01;gv+=0.25){ctx.beginPath();ctx.moveTo(padL,YQ(gv));ctx.lineTo(W-padR,YQ(gv));ctx.stroke();ctx.fillText(gv.toFixed(2),6,YQ(gv)+3);}
+    for(var gf=0;gf<=F_MAX+1;gf+=100){ctx.beginPath();ctx.moveTo(padL,YF(gf));ctx.lineTo(W-padR,YF(gf));ctx.stroke();ctx.fillText(gf,padL+2,YF(gf)-2);}
+    for(var gt=0;gt<=4;gt++){ctx.beginPath();ctx.moveTo(X(gt),padT);ctx.lineTo(X(gt),hBot1);ctx.stroke();ctx.fillText(gt+'s',X(gt)-6,H-8);}
+    /* 墙壁位置标记线（红色虚线，仅角度窗格） */
+    ctx.strokeStyle='rgba(240,80,80,.7)';ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(X(0),YQ(Q_WALL));ctx.lineTo(W-padR,YQ(Q_WALL));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(240,80,80,.95)';ctx.fillText('墙壁 0.55rad',X(0)+6,YQ(Q_WALL)-4);
+    /* 窗格标题 */
+    ctx.fillStyle='#8a94a4';ctx.fillText('关节角度 (rad)',padL+4,padT+10);
+    ctx.fillText('接触力 (归一化)',padL+4,hBot0+10);
+    var N=Math.max(2,Math.floor(data.t.length*prog));
+    function line(mapY,arr,color,w,dash){
+      ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash(dash||[]);
+      ctx.beginPath();
+      for(var i=0;i<N;i++){
+        var x=X(data.t[i]),y=mapY(arr[i]);
+        if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+      }
+      ctx.stroke();ctx.setLineDash([]);
+    }
+    /* 上窗格：目标指令 + 两种控制的关节轨迹 */
+    line(YQ,data.r,'#8a94a4',1.2,[5,4]);  /* 目标指令（灰虚线） */
+    line(YQ,data.qp,'#2b8eff',1.8);       /* 位置控制轨迹（蓝） */
+    line(YQ,data.qi,'#f0a73a',1.8);       /* 阻抗控制轨迹（橙） */
+    /* 下窗格：两种控制的接触力 */
+    line(YF,data.fp,'#2b8eff',1.8);       /* 位置控制接触力（蓝） */
+    line(YF,data.fi,'#f0a73a',1.8);       /* 阻抗控制接触力（橙） */
+  }
+  /* 重新演示：渐进绘制 2.2 秒 */
+  function run(){
+    if(rafId)cancelAnimationFrame(rafId);
+    data=simulate();
+    var t0=performance.now(),DUR=2200;
+    function step(now){
+      var p=Math.min(1,(now-t0)/DUR);
+      draw(p);
+      if(p<1)rafId=requestAnimationFrame(step);else rafId=null;
+    }
+    rafId=requestAnimationFrame(step);
+  }
+  if(btn)btn.addEventListener('click',run);
+  run();
+};
+
 window.Robot3D={
   get built(){return built;}, get active(){return active;},
   enable:function(cb){
@@ -3069,16 +3949,22 @@ window.Robot3D={
   poseTpose:poseTpose,
   poseSquat:poseSquat,
   setJointAngle:setJointAngle,
+  toggleCompare:toggleCompare,   /* H1/G1 同屏对比开关（供底部栏按钮调用） */
+  setColorScheme:applyColorScheme, /* 机身配色方案切换（供底部栏/移动端抽屉下拉调用） */
   /* 零件数量统计（供底部栏性能显示使用） */
   get meshCount(){return body3d?countMeshes(body3d):0;},
   /* 拆解场景零件数量（供底部栏性能显示使用） */
   get tdMeshCount(){return tdGroup?countMeshes(tdGroup):0;},
+  /* 当前机型部件分组（供 RobotApp.updateNav3d 读取，导航"无3D"标注的数据源） */
+  get partGroups(){return partGroups;},
   /* ===== 拆解场景控制（供底部栏按钮调用，内部变量在Robot3D作用域内） ===== */
   isTdActive:function(){return tdActive;},
   /* 爆炸拆解：单向爆炸/装配动画 */
   toggleExplode:function(){
     if(!tdActive)return false;
     var exauto=document.getElementById('exauto');if(exauto)exauto.classList.remove('on');
+    tdSeqOn=false;   /* 与顺序拆解互斥 */
+    var bsq=document.getElementById('bbSeq');if(bsq)bsq.classList.remove('on');
     tdAutoOn=true;
     tdExplodeTarget=(tdExplodeT<0.5)?1:0;  /* 当前未爆炸则拆开，已爆炸则装配 */
     return tdExplodeTarget===1;
@@ -3099,8 +3985,28 @@ window.Robot3D={
     tdAutoOn=!tdAutoOn;
     tdExplodeTarget=null;                  /* 清除单向目标，进入往返模式 */
     var exauto=document.getElementById('exauto');if(exauto)exauto.classList.toggle('on',tdAutoOn);
-    if(tdAutoOn)tdAutoDir=1;
+    if(tdAutoOn){
+      tdAutoDir=1;
+      tdSeqOn=false;                       /* 与顺序拆解互斥 */
+      var bsq=document.getElementById('bbSeq');if(bsq)bsq.classList.remove('on');
+    }
     return tdAutoOn;
+  },
+  /* 顺序拆解动画：按真实拆解顺序逐个零件依次拆出→停顿→逆序装回，循环播放 */
+  toggleSeq:function(){
+    if(!tdActive)return false;
+    tdSeqOn=!tdSeqOn;
+    if(tdSeqOn){
+      tdSeqT=0;                            /* 从装配态开始新一轮 */
+      tdAutoOn=false;                      /* 与自动拆解/爆炸互斥 */
+      tdExplodeTarget=null;
+      var exauto=document.getElementById('exauto');if(exauto)exauto.classList.remove('on');
+      var bbx=document.getElementById('bbExplode');if(bbx)bbx.classList.remove('on');
+    }else{
+      applyTdExplode(0);                   /* 关闭时归位到装配态 */
+      var rg2=document.getElementById('exrng');if(rg2)rg2.value=0;
+    }
+    return tdSeqOn;
   }
 };
 </script>
