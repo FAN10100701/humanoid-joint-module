@@ -74,11 +74,11 @@ linear-gradient(90deg,rgba(0,50,120,.04) 1px,transparent 1px);background-size:40
 .din{padding:20px 18px}
 .crumb{font-size:11px;color:var(--faint);margin-bottom:10px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}.crumb b{color:var(--muted);font-weight:500}.crumb .arr{color:var(--rule2)}
 .dt1{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:3px;line-height:1.2;color:var(--ink)}
-.dt2{font-size:12.5px;color:var(--muted);margin-bottom:18px;font-family:var(--mono);letter-spacing:.3px}
+.dt2{font-size:12.5px;color:var(--muted);margin-bottom:18px;letter-spacing:.3px}
 .pg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:20px}
 .pc{background:var(--bg3);border:1px solid var(--rule);border-radius:9px;padding:10px 12px;transition:.2s}
 .pc:hover{border-color:var(--accent-g);box-shadow:0 0 0 3px var(--accent-g)}
-.pv{font-size:17px;font-weight:800;color:var(--accent);font-family:var(--mono);letter-spacing:-.2px;line-height:1.1}
+.pv{font-size:17px;font-weight:800;color:var(--accent);letter-spacing:-.2px;line-height:1.1}
 .pk{font-size:10.5px;color:var(--faint);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .sec{margin-bottom:20px}
 .sh{font-size:11px;font-weight:800;color:var(--faint);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px;display:flex;align-items:center;gap:7px}
@@ -2563,21 +2563,55 @@ function buildTdFromDefs(defs,done){
   });
 }
 
-/* 场景1：一体化关节模组（10 个核心零件，谐波三件套为真实开源 STL） */
+/* 场景1：一体化关节模组（10 个核心零件，谐波三件套为真实开源 STL）
+   同心装配：柔轮/波发生器/刚轮、转子/定子同心嵌套，法兰/轴承/编码器/PCB 沿轴堆叠。
+   爆炸为纯轴向上下分离，不再用旧版"堆叠+螺旋"导致装配松散、爆炸乱飞。 */
 function buildTdJoint(done){
   var defs=[
-    {id:'j_flange', h:3,  mk:function(){return new THREE.Mesh(new THREE.CylinderGeometry(13,13,2.6,48),tdMat(0xd8dee8,0.7,0.3));}},
-    {id:'j_bearing',h:4.5,mk:fbRing(10.5,1.9,0xb8c0cc)},
-    {id:'j_cs',     h:6,  mk:fbRing(11,2.4),stl:'models/harmonic_htm/CircularSpline.STL',stlSize:26,stlAxis:'x'},
-    {id:'j_fs',     h:8,  mk:fbCyl(9.5,7),stl:'models/harmonic_htm/FlexSpline.STL',stlSize:26,stlAxis:'x'},
-    {id:'j_wg',     h:5,  mk:function(){var m=new THREE.Mesh(new THREE.CylinderGeometry(7,7,3.5,48),tdMat(0x8a94a4));m.scale.x=1.35;return m;},stl:'models/harmonic_htm/WaveGenerator.STL',stlSize:22,stlAxis:'z'},
-    {id:'j_enc_out',h:1.5,mk:fbCyl(9,1,0x2f6db3)},
-    {id:'j_rotor',  h:9,  mk:fbCyl(7.5,9,0x3a404c)},
-    {id:'j_stator', h:11, mk:fbCyl(11.5,10.5,0xb0763a)},
-    {id:'j_enc_mot',h:1.5,mk:fbCyl(6,1,0x2f6db3)},
-    {id:'j_pcb',    h:2.5,mk:function(){return new THREE.Mesh(new THREE.BoxGeometry(19,1.6,13),tdMat(0x2e7d4f,0.2,0.7));}}
+    {id:'j_flange', yBase:-30, yExp:-45, mk:function(){return new THREE.Mesh(new THREE.CylinderGeometry(13,13,2.6,48),tdMat(0xd8dee8,0.7,0.3));}},
+    {id:'j_bearing',yBase:-22, yExp:-34, mk:fbRing(10.5,1.9,0xb8c0cc)},
+    {id:'j_fs',     yBase:-12, yExp:-24, mk:fbCyl(9.5,7),stl:'models/harmonic_htm/FlexSpline.STL',stlSize:26,stlAxis:'x'},
+    {id:'j_wg',     yBase:-8,  yExp:-14, mk:function(){var m=new THREE.Mesh(new THREE.CylinderGeometry(7,7,3.5,48),tdMat(0x8a94a4));m.scale.x=1.35;return m;},stl:'models/harmonic_htm/WaveGenerator.STL',stlSize:22,stlAxis:'z'},
+    {id:'j_cs',     yBase:-6,  yExp:-2,  mk:fbRing(11,2.4),stl:'models/harmonic_htm/CircularSpline.STL',stlSize:26,stlAxis:'x'},
+    {id:'j_enc_out',yBase:2,   yExp:8,   mk:fbCyl(9,1,0x2f6db3)},
+    {id:'j_rotor',  yBase:12,  yExp:20,  mk:fbCyl(7.5,9,0x3a404c)},
+    {id:'j_stator', yBase:12,  yExp:34,  mk:fbCyl(11.5,10.5,0xb0763a)},
+    {id:'j_enc_mot',yBase:22,  yExp:42,  mk:fbCyl(6,1,0x2f6db3)},
+    {id:'j_pcb',    yBase:28,  yExp:52,  mk:function(){return new THREE.Mesh(new THREE.BoxGeometry(19,1.6,13),tdMat(0x2e7d4f,0.2,0.7));}}
   ];
-  buildTdFromDefs(defs,done);
+  var items=[],stlJobs=[];
+  defs.forEach(function(d){
+    var g=new THREE.Group();
+    var m=d.mk();
+    if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}
+    g.add(m);
+    var partName=(TD_INFO[d.id]&&TD_INFO[d.id].n)?TD_INFO[d.id].n:d.id;
+    var label=createPartLabel(partName,new THREE.Vector3(0,0,0));
+    if(label){label.position.set(20,0,0);label.userData.tdLabelFor=d.id;g.add(label);}
+    items.push({obj:g,id:d.id,yBase:d.yBase,yExp:d.yExp});
+    if(d.stl)stlJobs.push({g:g,mesh:m,url:d.stl,size:d.stlSize||24,id:d.id,axis:d.stlAxis});
+  });
+  /* 装配态：同心零件在各自 yBase 嵌套，轴向零件沿 Y 堆叠 */
+  items.forEach(function(it){it.obj.position.set(0,it.yBase,0);});
+  /* 爆炸态：纯轴向(沿 Y)上下分离，整齐不散乱 */
+  items.forEach(function(it){
+    var dy=it.yExp-it.yBase;
+    var dir=new THREE.Vector3(0,Math.sign(dy)||1,0);
+    addTdPart(it.obj,it.id,dir,Math.abs(dy));
+  });
+  /* 异步用真实 STL 替换谐波三件套参数化替身；失败也不影响场景可用 */
+  var pending=stlJobs.length;
+  if(!pending){done();return;}
+  stlJobs.forEach(function(job){
+    tdLoadSTL(job.url,job.size,function(msh){
+      if(msh){
+        msh.userData.tdId=job.id;
+        job.g.remove(job.mesh);
+        job.g.add(msh);
+      }
+      if(--pending===0)done();
+    },job.axis);
+  });
 }
 
 /* 场景2：谐波减速器（10 个零件全部为 howtomechatronics 开源 SolidWorks 真实 STL）
