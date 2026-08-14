@@ -135,6 +135,11 @@ function Handle-Request($client) {
 }
 
 # ==================== 启动服务器 ====================
+# 【修复】启动前清理残留的 server.ps1 进程：用户多次双击 .bat 会残留多个旧进程，
+#   旧进程占用 8000 端口导致浏览器一直访问旧代码(缓存等新改动不生效)。清理后再启动。
+Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object {
+    $_.CommandLine -match 'server\.ps1' -and $_.ProcessId -ne $PID
+} | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 try {
     $port = Find-FreePort
     $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Parse($BIND_IP), $port)

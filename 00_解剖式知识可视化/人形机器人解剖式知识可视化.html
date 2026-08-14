@@ -1571,6 +1571,46 @@ function loadSTLsTolerant(dir,names,loader,onProgress){
   return Promise.all(workers).then(function(){return success;});
 }
 
+/* ===== 官方模型内存缓存 =====
+   已加载过的机型缓存 {parsed,list,names}，切换机型时直接复用组装，跳过重复下载+解析 STL，
+   解决"每次切换机型都要重新下载、又慢又卡"的问题。 */
+var urdfCache={};
+
+/* 用已解析的 URDF + 已加载的 geometry 组装机器人到场景(首次加载与缓存复用共用此函数) */
+function applyUrdf(m,parsed,list,names){
+  var geos={};
+  list.forEach(function(it){geos[it.n]=it.g;});
+  var missing=(names?names.length:0)-Object.keys(geos).length;
+  /* 清空回退模型，换上真实模型 */
+  while(body3d.children.length)body3d.remove(body3d.children[0]);
+  partGroups={};
+  body3d.scale.set(1,1,1); /* 复位缩放：清除回退模型遗留的机型比例 */
+  var root=assembleUrdf(parsed,geos);
+  /* URDF 为 Z 轴朝上、场景为 Y 轴朝上：绕X转-90°立起，再绕Y转-90°使正面朝向相机 */
+  var wrap=new THREE.Group();
+  var qx=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2);
+  var qy=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-Math.PI/2);
+  wrap.quaternion.copy(qy.multiply(qx));
+  wrap.add(root);
+  body3d.add(wrap);
+  body3d.rotation.y=-0.25;
+  /* 归一化：整机高度缩放到 85 场景单位、脚底落在地面 y=-54、水平居中 */
+  var b=new THREE.Box3().setFromObject(body3d);
+  var s=85/Math.max(0.001,b.max.y-b.min.y);
+  wrap.scale.set(s,s,s);
+  var b2=new THREE.Box3().setFromObject(body3d);
+  body3d.position.set(-(b2.min.x+b2.max.x)/2,-54-b2.min.y,-(b2.min.z+b2.max.z)/2);
+  /* 更新自由度显示 */
+  var dofEl=document.getElementById('dof');
+  if(dofEl){dofEl.textContent=Object.keys(urdfJoints).length;}
+  if(!tdActive)fitCameraToObject(body3d,userInteracted);
+  hideLoading();
+  preloadReducers(2500);
+  showLdtip('官方模型加载完成'+(missing>0?('，'+missing+'个零件加载失败已跳过'):''));
+  setTimeout(hideLdtip,1800);
+  if(window.RobotApp)highlight(window.RobotApp.getCur());
+}
+
 /* 异步加载官方 URDF+STL：成功替换回退模型；加载失败则保留回退模型并给出提示 */
 function loadUrdfRobot(m){
   /* file:// 协议下浏览器CORS策略阻止加载本地STL/URDF文件，直接使用内置高保真模型 */
@@ -1587,6 +1627,12 @@ function loadUrdfRobot(m){
     setTimeout(hideLdtip,2000);
     hideLoading();         /* 隐藏中央加载指示（参数化模型已由 buildRobot 提前显示） */
     setTimeout(function(){fitCameraToObject(body3d);},100);
+    return;
+  }
+  /* 内存缓存命中：直接复用已加载的 parsed+list 组装，跳过重复下载解析(切换机型秒切) */
+  if(urdfCache[m]){
+    var cc=urdfCache[m];
+    applyUrdf(m, cc.parsed, cc.list, cc.names);
     return;
   }
   var token=++urdfToken;
@@ -1618,41 +1664,8 @@ function loadUrdfRobot(m){
     })
     .then(function(list){
       if(token!==urdfToken||currentModel!==m)return;  /* 已切换机型：丢弃过期结果 */
-      var geos={};
-      list.forEach(function(it){geos[it.n]=it.g;});
-      var missing=names.length-Object.keys(geos).length;
-      /* 清空回退模型，换上真实模型 */
-      while(body3d.children.length)body3d.remove(body3d.children[0]);
-      partGroups={};
-      body3d.scale.set(1,1,1); /* 复位缩放：清除回退模型遗留的机型比例（如G1的0.78/1.05），避免官方模型被压扁拉宽 */
-      var root=assembleUrdf(parsed,geos);
-      /* URDF 为 Z 轴朝上、场景为 Y 轴朝上：绕X转-90°立起，再绕Y转-90°使正面朝向相机 */
-      var wrap=new THREE.Group();
-      var qx=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2);
-      var qy=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-Math.PI/2);
-      wrap.quaternion.copy(qy.multiply(qx));
-      wrap.add(root);
-      body3d.add(wrap);
-      body3d.rotation.y=-0.25;
-      /* 归一化：整机高度缩放到 85 场景单位、脚底落在地面 y=-54、水平居中 */
-      var b=new THREE.Box3().setFromObject(body3d);
-      var s=85/Math.max(0.001,b.max.y-b.min.y);
-      wrap.scale.set(s,s,s);
-      var b2=new THREE.Box3().setFromObject(body3d);
-      body3d.position.set(-(b2.min.x+b2.max.x)/2,-54-b2.min.y,-(b2.min.z+b2.max.z)/2);
-      /* 更新自由度显示 */
-      var dofEl=document.getElementById('dof');
-      if(dofEl){
-        var activeJoints=Object.keys(urdfJoints).length;
-        dofEl.textContent=activeJoints;
-      }
-      /* 自动调整相机以适配整个机器人模型（拆解场景中跳过；用户已拖动视角则只保存参数不抢视角） */
-      if(!tdActive)fitCameraToObject(body3d,userInteracted);
-      hideLoading(); /* 官方模型加载完成：隐藏中央加载指示 */
-      preloadReducers(2500); /* 后台预取减速器STL到缓存，进入拆解场景秒开 */
-      showLdtip('官方模型加载完成'+(missing>0?('，'+missing+'个零件加载失败已跳过'):''));
-      setTimeout(hideLdtip,1800);
-      if(window.RobotApp)highlight(window.RobotApp.getCur());
+      urdfCache[m]={parsed:parsed,list:list,names:names};  /* 存入内存缓存，切换机型时复用 */
+      applyUrdf(m, parsed, list, names);
     })
     .catch(function(e){
       if(token!==urdfToken)return;
