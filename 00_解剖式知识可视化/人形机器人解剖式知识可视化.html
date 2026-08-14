@@ -600,10 +600,10 @@ vendors:[{n:'韩京清',r:'自抗扰控制 ADRC 创始人',m:1},{n:'高志强 Zh
 /* ==== 拆解教学模块 ==== */
 td_joint:{title:'关节模组拆解 · 一体化执行器',sub:'Joint Module Teardown · Exploded View',td:1,scene:'joint',
 params:[['结构形式','无框电机+谐波+双编码器'],['典型直径','φ80~110 mm'],['典型长度','80~120 mm'],['整重','1.0~2.0 kg'],['峰值扭矩','90~360 Nm'],['拆解零件','10 个核心部件']],sections:[
-{h:'使用方法',p:'本页面为<hl>交互式 3D 拆解教学</hl>：拖动舞台下方<hl>「装配⇄拆解」滑杆</hl>可无级控制爆炸程度，点击「自动拆解」观看动画；<hl>点击任意零件</hl>在右侧查看该零件的结构与功能详解。谐波减速器三件套采用开源社区真实 3D 打印谐波模型（波发生器/柔轮/刚轮），其余零件按宇树 M107 类一体化关节的典型布局参数化重建。'},
+{h:'使用方法',p:'本页面为<hl>交互式 3D 拆解教学</hl>：拖动舞台下方<hl>「装配⇄拆解」滑杆</hl>可无级控制爆炸程度，点击「自动拆解」观看动画；<hl>点击任意零件</hl>在右侧查看该零件的结构与功能详解。谐波减速器三件套采用 howtomechatronics 开源真实 STL 模型（波发生器/柔轮/刚轮），其余零件（轴承/转子/定子/编码器/驱动板）按宇树 M107 类一体化关节的典型布局参数化重建，因为宇树未开源 M107 的 CAD 图纸。'},
 {h:'拆解顺序总览（由输出端到电机端）',p:'<table class="tbl"><tr><th>#</th><th>零件</th><th>功能</th></tr><tr><td>1</td><td><b>输出法兰</b></td><td>连接机械臂/腿杆，对外输出扭矩</td></tr><tr><td>2</td><td><b>交叉滚子轴承</b></td><td>承受径向+轴向+倾覆力矩的主轴承</td></tr><tr><td>3</td><td><b>刚轮 Circular Spline</b></td><td>内齿圈，固定于壳体，比柔轮多2齿</td></tr><tr><td>4</td><td><b>柔轮 Flexspline</b></td><td>弹性杯形齿轮，输出端，疲劳关键件</td></tr><tr><td>5</td><td><b>波发生器 Wave Generator</b></td><td>椭圆凸轮+柔性轴承，电机输入端</td></tr><tr><td>6</td><td><b>电机转子</b></td><td>永磁体阵列，无框设计直接装入壳体</td></tr><tr><td>7</td><td><b>电机定子</b></td><td>绕组铁芯，发热主要来源</td></tr><tr><td>8</td><td><b>输出端编码器</b></td><td>测关节真实输出角，消除背隙误差</td></tr><tr><td>9</td><td><b>电机端编码器</b></td><td>测电机高速轴角，FOC换相+速度环</td></tr><tr><td>10</td><td><b>FOC 驱动板</b></td><td>MCU+栅驱+MOS+电流采样，驱控一体</td></tr></table>'},
 {h:'装配要点',p:'谐波三件套的装配是关节制造的核心工艺：波发生器装入柔轮时需专用工装防止柔轮局部过载；刚轮与柔轮的<hl>齿侧啮合区</hl>需涂专用润滑脂（谐波专用二硫化钼脂）；交叉滚子轴承需<hl>预紧</hL>（负游隙）以保证刚性；双编码器的安装同心度要求 ±0.02mm 以内，否则角度纹波会直接耦合进电流环引起啸叫。'}],
-vendors:[{n:'宇树科技',r:'M107 一体化关节',m:1},{n:'哈默纳科',r:'谐波三件套'},{n:'THK/IKO',r:'交叉滚子轴承'},{n:'HasslerEngineering',r:'开源谐波3D模型'}]},
+vendors:[{n:'宇树科技',r:'M107 一体化关节',m:1},{n:'哈默纳科',r:'谐波三件套'},{n:'THK/IKO',r:'交叉滚子轴承'},{n:'howtomechatronics',r:'开源谐波3D模型'}]},
 
 td_harmonic:{title:'谐波减速器拆解',sub:'Harmonic Drive · Part-by-Part Explode',td:1,scene:'harmonic',
 params:[['减速比','25:1 (齿差2)'],['齿数','刚轮52 / 柔轮50'],['零件数','10 个真实零件'],['素材来源','howtomechatronics开源SolidWorks'],['输入','波发生器(高速)'],['输出','柔轮(低速反向)']],sections:[
@@ -1309,8 +1309,10 @@ function buildRobot(m){
   body3d.scale.set(1,1,1);      /* 复位变换，避免上一机型残留 */
   body3d.position.set(0,0,0);
   body3d.rotation.y=-0.25;      /* 复位初始朝向，避免上一机型残留 */
-  /* 不再先放参数化回退模型：改为先显示加载进度，官方模型一加载成功就直接显示官方机器人，
-     避免"丑回退模型"先闪现再被替换（仅当官方模型加载失败时才构建回退模型兜底） */
+  /* 【性能优化】先立即构建参数化机器人"秒出"显示，再后台加载官方 STL 无缝替换。
+     否则打开页面会空白等待大体积 STL（H1约16MB/G1约18MB）下载完，感知上"加载很慢" */
+  buildFallbackRobot(m);
+  fitCameraToObject(body3d);
   loadUrdfRobot(m);
 }
 
@@ -1568,8 +1570,7 @@ function loadUrdfRobot(m){
   if(window.__IS_FILE_PROTO__){
     showLdtip('离线模式：已加载内置模型（file:// 无法读取官方STL，请用"启动教学页面.bat"打开以显示官方模型）');
     setTimeout(hideLdtip,3000);
-    buildFallbackRobot(m); /* 官方模型读不到时构建回退模型兜底 */
-    hideLoading();         /* 隐藏中央加载指示 */
+    hideLoading();         /* 隐藏中央加载指示（参数化模型已由 buildRobot 提前显示） */
     setTimeout(function(){fitCameraToObject(body3d);},100);
     return;
   }
@@ -1577,8 +1578,7 @@ function loadUrdfRobot(m){
   if(!cfg||!window.fetch){
     showLdtip('使用内置高保真模型');
     setTimeout(hideLdtip,2000);
-    buildFallbackRobot(m); /* 无fetch能力时构建回退模型兜底 */
-    hideLoading();         /* 隐藏中央加载指示 */
+    hideLoading();         /* 隐藏中央加载指示（参数化模型已由 buildRobot 提前显示） */
     setTimeout(function(){fitCameraToObject(body3d);},100);
     return;
   }
@@ -1642,6 +1642,7 @@ function loadUrdfRobot(m){
       /* 自动调整相机以适配整个机器人模型（拆解场景中跳过；用户已拖动视角则只保存参数不抢视角） */
       if(!tdActive)fitCameraToObject(body3d,userInteracted);
       hideLoading(); /* 官方模型加载完成：隐藏中央加载指示 */
+      preloadReducers(2500); /* 后台预取减速器STL到缓存，进入拆解场景秒开 */
       showLdtip('官方模型加载完成'+(missing>0?('，'+missing+'个零件加载失败已跳过'):''));
       setTimeout(hideLdtip,1800);
       if(window.RobotApp)highlight(window.RobotApp.getCur());
@@ -1652,10 +1653,45 @@ function loadUrdfRobot(m){
       var msg=(e&&e.message)?e.message:String(e);
       showLdtip('官方模型加载失败，已用内置模型 ('+msg+')');
       setTimeout(hideLdtip,4000);
-      buildFallbackRobot(m); /* 加载失败才构建回退模型兜底，避免一开始就显示"丑模型" */
-      hideLoading();         /* 隐藏中央加载指示 */
+      hideLoading();         /* 隐藏中央加载指示（参数化模型已由 buildRobot 提前显示，失败则保留它） */
       setTimeout(function(){fitCameraToObject(body3d);},100);
     });
+}
+
+/* ===== 减速器 STL 预加载（性能优化） =====
+   机器人模型加载完成后，后台空闲时把三种减速器拆解场景的 STL 预取到浏览器 HTTP 缓存，
+   这样用户点击进入拆解场景时秒开，不用现场下载大体积 STL（摆线约14MB、谐波约4.5MB）。 */
+var REDUCER_STL=[
+  'models/planetary_cybergear/Back.stl','models/planetary_cybergear/CareerReception.stl',
+  'models/planetary_cybergear/Front.stl','models/planetary_cybergear/InputShaft.stl',
+  'models/planetary_cybergear/OutputShaft.stl','models/planetary_cybergear/PlanetGear.stl',
+  'models/planetary_cybergear/RingGear.stl','models/planetary_cybergear/SunGear.stl',
+  'models/harmonic_htm/CircularSpline.STL','models/harmonic_htm/Coupler.STL',
+  'models/harmonic_htm/FlexSpline.STL','models/harmonic_htm/Housing.STL',
+  'models/harmonic_htm/HousingBottom.STL','models/harmonic_htm/InputShaft.STL',
+  'models/harmonic_htm/MotorMount.STL','models/harmonic_htm/OutputShaft.STL',
+  'models/harmonic_htm/SupportShaft.STL','models/harmonic_htm/WaveGenerator.STL',
+  'models/cycloidal_htm/BaseHousing.STL','models/cycloidal_htm/CycloidalDisk.STL',
+  'models/cycloidal_htm/DistanceRing2.STL','models/cycloidal_htm/DistanceRing3.STL',
+  'models/cycloidal_htm/EccentricShaft.STL','models/cycloidal_htm/HousingLid.STL',
+  'models/cycloidal_htm/InputShaft.STL','models/cycloidal_htm/MotorMount.STL',
+  'models/cycloidal_htm/OutputShaft.STL','models/cycloidal_htm/RollerBushingRing.STL'
+];
+var reducerPreloadDone=false;   /* 预加载只执行一次，避免重复下载 */
+function preloadReducers(delay){
+  if(reducerPreloadDone)return;
+  reducerPreloadDone=true;
+  /* 延迟 N 秒：等首屏机器人稳定后再后台预取，避免与机器人模型下载抢带宽 */
+  setTimeout(function(){
+    var i=0;
+    function next(){
+      if(i>=REDUCER_STL.length)return;
+      var u=REDUCER_STL[i++];
+      /* 预取到 HTTP 缓存(不解析、不占显存)，真正进入拆解场景时 STLLoader 命中缓存秒开 */
+      fetch(u).then(next,next);
+    }
+    next();
+  },delay||3000);
 }
 
 /* 相机自动适配目标物体 */
@@ -2277,9 +2313,9 @@ var tdCamSaved=false;    /* 标记相机限制是否已保存（拆解场景间�
 var TD_INFO={
   j_flange:{n:'输出法兰',p:'连接机械臂/腿杆的对外输出接口，把减速器的低速大扭矩输出传递出去。通常带止口定位+螺栓孔圈，与交叉滚子轴承外圈紧固。'},
   j_bearing:{n:'交叉滚子轴承',p:'关节主轴承。滚子呈 90° 交叉排列，单个轴承即可同时承受径向力、轴向力和倾覆力矩，替代传统双轴承方案，大幅缩短轴向尺寸。'},
-  j_cs:{n:'刚轮 Circular Spline（真实开源件）',p:'谐波减速器的刚性内齿圈，固定于壳体，齿数比柔轮多 2 个。本零件为开源 3D 打印谐波减速器项目的真实模型。'},
-  j_fs:{n:'柔轮 Flexspline（真实开源件）',p:'薄壁杯形弹性外齿轮，即关节输出端。每转一圈反复弹性变形，疲劳寿命是谐波的核心指标。本零件为开源真实模型。'},
-  j_wg:{n:'波发生器 Wave Generator（真实开源件）',p:'椭圆凸轮+柔性轴承，装在电机高速轴上，把柔轮撑成椭圆并与刚轮啮合。本零件为开源真实模型。'},
+  j_cs:{n:'刚轮 Circular Spline（真实开源件）',p:'谐波减速器的刚性内齿圈，固定于壳体，齿数比柔轮多 2 个。本零件来自 howtomechatronics 开源 SolidWorks 模型的真实 STL。'},
+  j_fs:{n:'柔轮 Flexspline（真实开源件）',p:'薄壁杯形弹性外齿轮，即关节输出端。每转一圈反复弹性变形，疲劳寿命是谐波的核心指标。本零件来自 howtomechatronics 开源模型。'},
+  j_wg:{n:'波发生器 Wave Generator（真实开源件）',p:'椭圆凸轮+柔性轴承，装在电机高速轴上，把柔轮撑成椭圆并与刚轮啮合。本零件来自 howtomechatronics 开源模型。'},
   j_enc_out:{n:'输出端编码器',p:'直接测量关节真实输出角（绝对式），从根源上消除谐波减速器背隙带来的角度误差，是双编码器关节设计的关键一环。'},
   j_rotor:{n:'电机转子',p:'永磁体阵列（表贴/Halbach），无框设计直接压入壳体。与定子共同产生扭矩，是关节的动力源。'},
   j_stator:{n:'电机定子',p:'绕组铁芯，关节发热的主要来源。需灌封导热处理，并埋 NTC 热敏电阻监测温度，防止磁钢过热退磁。'},
@@ -2513,16 +2549,17 @@ function buildTdJoint(done){
    axis=该 STL 的厚度轴(见 tdLoadAxis)；yBase=装配态中心Y；yExp=爆炸态中心Y。 */
 function buildTdHarmonic(done){
   var parts=[
-    {id:'h_output', file:'models/harmonic_htm/OutputShaft.STL',    axis:'y', yBase:-26, yExp:-46, color:0xc8cfd9},
-    {id:'h_base',   file:'models/harmonic_htm/HousingBottom.STL',  axis:'z', yBase:-15, yExp:-34, color:0x9aa4b2},
-    {id:'h_fs',     file:'models/harmonic_htm/FlexSpline.STL',     axis:'x', yBase:-4,  yExp:-22, color:0xb8c0cc},
-    {id:'h_wg',     file:'models/harmonic_htm/WaveGenerator.STL',  axis:'z', yBase:-2,  yExp:-10, color:0xffd479},
-    {id:'h_cs',     file:'models/harmonic_htm/CircularSpline.STL', axis:'x', yBase:4,   yExp:10,  color:0x8a94a4},
-    {id:'h_support',file:'models/harmonic_htm/SupportShaft.STL',   axis:'z', yBase:12,  yExp:22,  color:0x9aa4b2},
-    {id:'h_housing',file:'models/harmonic_htm/Housing.STL',        axis:'z', yBase:17,  yExp:34,  color:0x9aa4b2},
-    {id:'h_input',  file:'models/harmonic_htm/InputShaft.STL',     axis:'y', yBase:30,  yExp:46,  color:0x8a94a4},
-    {id:'h_coupler',file:'models/harmonic_htm/Coupler.STL',        axis:'y', yBase:40,  yExp:58,  color:0xc8cfd9},
-    {id:'h_motor',  file:'models/harmonic_htm/MotorMount.STL',     axis:'y', yBase:52,  yExp:72,  color:0x9aa4b2}
+    {id:'h_output', file:'models/harmonic_htm/OutputShaft.STL',    axis:'y', yBase:-28, yExp:-44, color:0xc8cfd9},
+    {id:'h_base',   file:'models/harmonic_htm/HousingBottom.STL',  axis:'z', yBase:-19, yExp:-34, color:0x9aa4b2},
+    /* 柔轮：杯体(高30mm)下沉到刚轮(高17mm)下方，让杯体外壁露出可见；杯口上沿与刚轮下沿少量重叠示意啮合 */
+    {id:'h_fs',     file:'models/harmonic_htm/FlexSpline.STL',     axis:'x', yBase:-9,  yExp:-24, color:0x7aa7ff},
+    {id:'h_wg',     file:'models/harmonic_htm/WaveGenerator.STL',  axis:'z', yBase:-5,  yExp:-14, color:0xffd479},
+    {id:'h_cs',     file:'models/harmonic_htm/CircularSpline.STL', axis:'x', yBase:9,   yExp:18,  color:0x8a94a4},
+    {id:'h_support',file:'models/harmonic_htm/SupportShaft.STL',   axis:'z', yBase:19,  yExp:30,  color:0x9aa4b2},
+    {id:'h_housing',file:'models/harmonic_htm/Housing.STL',        axis:'z', yBase:27,  yExp:42,  color:0x9aa4b2},
+    {id:'h_input',  file:'models/harmonic_htm/InputShaft.STL',     axis:'y', yBase:39,  yExp:52,  color:0x8a94a4},
+    {id:'h_coupler',file:'models/harmonic_htm/Coupler.STL',        axis:'y', yBase:49,  yExp:62,  color:0xc8cfd9},
+    {id:'h_motor',  file:'models/harmonic_htm/MotorMount.STL',     axis:'y', yBase:61,  yExp:74,  color:0x9aa4b2}
   ];
   buildTdCoaxial(parts,done);
 }
@@ -2532,27 +2569,7 @@ function buildTdHarmonic(done){
    人形机器人关节电机设计），保持真实比例，取代旧版"不同来源混搭+独立缩放"造成的重合错乱。 */
 
 /* ---- 行星减速器可调参数（调试用宏） ---- */
-var CYBER_REF_MAX=79.85;   /* 最大零件（内齿圈）实测外径(mm)，作为统一缩放基准 */
-var CYBER_TARGET=34;       /* 内齿圈在场景中的目标直径（单位），越大整体占屏越大 */
-var CYBER_SCALE=CYBER_TARGET/CYBER_REF_MAX;  /* 统一倍率：所有零件同倍缩放，保持真实比例 */
-var CYBER_ORBIT=21;        /* 行星轮公转半径(mm，缩放前)，6 个行星轮绕太阳均布 */
-var CYBER_GAP=2.5;         /* 装配态相邻零件间隙(mm，缩放前)，避免重叠 */
-
-/* 加载单个真实 STL：居中 + 绕X轴转-90°(零件厚度 Z→Y，与谐波场景一致) + 统一倍率缩放 */
-function tdLoadScaled(url,scale,cb,color){
-  if(!STLLoader){cb(null);return;}
-  var loader=new STLLoader();
-  loader.load(url,function(geo){
-    try{
-      centerGeo(geo);                       /* 把几何包围盒中心平移到原点 */
-      var msh=new THREE.Mesh(geo,tdMat(color||0xc8cfd9));
-      msh.rotation.x=-Math.PI/2;            /* 绕 X 轴转 -90°：使零件厚度方向 Z→Y */
-      msh.scale.set(scale,scale,scale);     /* 统一倍率，保持真实比例 */
-      msh.castShadow=true;msh.receiveShadow=true;
-      cb(msh);
-    }catch(e){cb(null);}
-  },undefined,function(){cb(null);});
-}
+var CYBER_ORBIT=21;        /* 行星轮公转半径(mm)：6 个行星轮绕太阳轮均布的中心距 */
 
 /* ===== 谐波/摆线减速器：howtomechatronics 开源 SolidWorks 真实模型（同轴装配） =====
    全部零件来自 howtomechatronics.com 的 R25 减速器教程（25:1，外壳直径 95mm），
@@ -2618,14 +2635,15 @@ function buildTdCoaxial(parts,done){
 /* 场景3：CyberGear 单级行星减速器（8 个零件全部为来自同一装配体的真实开源 STL） */
 function buildTdPlanetary(done){
   var parts=[
-    {id:'p_back',   file:'models/planetary_cybergear/Back.stl',            thick:6.78,  color:0x9aa4b2},
-    {id:'p_ring',   file:'models/planetary_cybergear/RingGear.stl',        thick:22,    color:0x8a94a4},
-    {id:'p_planet', file:'models/planetary_cybergear/PlanetGear.stl',      thick:11.78, color:0xb8c0cc, orbit:CYBER_ORBIT, count:6},
-    {id:'p_sun',    file:'models/planetary_cybergear/SunGear.stl',         thick:11.78, color:0xffd479},
-    {id:'p_carrier',file:'models/planetary_cybergear/CareerReception.stl', thick:4,     color:0x9aa4b2},
-    {id:'p_output', file:'models/planetary_cybergear/OutputShaft.stl',     thick:11,    color:0xc8cfd9},
-    {id:'p_input',  file:'models/planetary_cybergear/InputShaft.stl',      thick:9,     color:0x8a94a4},
-    {id:'p_front',  file:'models/planetary_cybergear/Front.stl',           thick:9.44,  color:0x9aa4b2}
+    {id:'p_output', file:'models/planetary_cybergear/OutputShaft.stl',     yBase:-18, yExp:-36, color:0xc8cfd9},
+    {id:'p_back',   file:'models/planetary_cybergear/Back.stl',            yBase:-10, yExp:-26, color:0x9aa4b2},
+    {id:'p_carrier',file:'models/planetary_cybergear/CareerReception.stl', yBase:-3,  yExp:-12, color:0x9aa4b2},
+    /* 齿轮组：太阳轮/行星轮/内齿圈同心共面(同一 Y 高度啮合)，不再沿轴堆叠，装配更紧凑 */
+    {id:'p_ring',   file:'models/planetary_cybergear/RingGear.stl',        yBase:0,   yExp:16,  color:0x8a94a4},
+    {id:'p_planet', file:'models/planetary_cybergear/PlanetGear.stl',      yBase:0,   yExp:-4,  color:0xb8c0cc, orbit:CYBER_ORBIT, count:6},
+    {id:'p_sun',    file:'models/planetary_cybergear/SunGear.stl',         yBase:0,   yExp:8,   color:0xffd479},
+    {id:'p_front',  file:'models/planetary_cybergear/Front.stl',           yBase:10,  yExp:26,  color:0x9aa4b2},
+    {id:'p_input',  file:'models/planetary_cybergear/InputShaft.stl',      yBase:18,  yExp:36,  color:0x8a94a4}
   ];
   var items=[];
   var pending=parts.length;
@@ -2633,20 +2651,20 @@ function buildTdPlanetary(done){
     var g=new THREE.Group();
     var partName=(TD_INFO[p.id]&&TD_INFO[p.id].n)?TD_INFO[p.id].n:p.id;
     var label=createPartLabel(partName,new THREE.Vector3(0,0,0));
-    if(label){label.position.set(18,0,0);label.userData.tdLabelFor=p.id;g.add(label);}
-    items.push({obj:g,thick:p.thick,id:p.id});
-    /* 异步加载真实 STL；失败则不替换（场景仍可用） */
+    if(label){label.position.set(TD_LBL_X,0,0);label.userData.tdLabelFor=p.id;g.add(label);}
+    items.push({obj:g,id:p.id,yBase:p.yBase,yExp:p.yExp});
+    /* 异步加载真实 STL；行星零件厚度轴均为 Z，用 tdLoadAxis 转正到 Y，保持真实 mm 比例 */
     (function(pid,pobj){
-      tdLoadScaled(pobj.file,CYBER_SCALE,function(msh){
+      tdLoadAxis(pobj.file,'z',function(msh){
         if(msh){
           msh.userData.tdId=pid;
           if(pobj.orbit&&pobj.count){
-            /* 行星轮：6 个绕 Y 轴均布，公转半径 CYBER_ORBIT */
+            /* 行星轮：6 个绕 Y 轴均布，公转半径 CYBER_ORBIT(真实 mm) */
             var grp=new THREE.Group();
             for(var i=0;i<pobj.count;i++){
               var a=i*Math.PI*2/pobj.count;
               var cl=msh.clone();
-              cl.position.set(Math.cos(a)*pobj.orbit*CYBER_SCALE,0,Math.sin(a)*pobj.orbit*CYBER_SCALE);
+              cl.position.set(Math.cos(a)*pobj.orbit,0,Math.sin(a)*pobj.orbit);
               grp.add(cl);
             }
             g.add(grp);
@@ -2659,24 +2677,13 @@ function buildTdPlanetary(done){
     })(p.id,p);
   });
   function finish(){
-    /* 沿 Y 轴按真实厚度堆叠（装配态不重叠），间隙 CYBER_GAP */
-    var gap=CYBER_GAP*CYBER_SCALE;
-    var total=0;items.forEach(function(it){total+=it.thick;});
-    total+=gap*(items.length-1);
-    var y=total/2;
+    /* 装配态：齿轮组同心共面在各自 yBase，前后盖/轴在两侧沿 Y 堆叠 */
+    items.forEach(function(it){it.obj.position.set(0,it.yBase,0);});
+    /* 爆炸态：纯轴向(沿 Y)上下分离，整齐不散乱 */
     items.forEach(function(it){
-      y-=it.thick/2;
-      it.obj.position.set(0,y,0);
-      y-=it.thick/2+gap;
-    });
-    /* 爆炸方向：三维螺旋式展开，避免零件重叠遮挡 */
-    var mid=(items.length-1)/2;
-    items.forEach(function(it,i){
-      var dirY=(i<=mid)?1:-1;
-      var spread=12+Math.abs(i-mid)*8;
-      var angle=i*Math.PI*0.55;
-      var dir=new THREE.Vector3(Math.sin(angle)*spread*0.3,dirY*spread*0.7,Math.cos(angle)*spread*0.3).normalize();
-      addTdPart(it.obj,it.id,dir,spread);
+      var dy=it.yExp-it.yBase;
+      var dir=new THREE.Vector3(0,Math.sign(dy)||1,0);
+      addTdPart(it.obj,it.id,dir,Math.abs(dy));
     });
     done();
   }

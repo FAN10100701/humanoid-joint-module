@@ -120,7 +120,14 @@ function Handle-Request($client) {
     if (-not $ctype) { $ctype = 'application/octet-stream' }
 
     # 写响应头（Connection: close 简化处理，不保持长连接）
-    $head = "HTTP/1.1 200 OK`r`nContent-Type: $ctype`r`nContent-Length: $($bytes.Length)`r`nCache-Control: no-cache`r`nConnection: close`r`n`r`n"
+    # 【性能优化】缓存策略：模型/URDF 等大体积静态资源返回 max-age 让浏览器缓存，
+    #   重复加载(切场景/刷新/切机型)时直接从本地缓存秒开，不再重复下载；代码文件不缓存便于调试
+    if ($ext -in '.stl', '.urdf') {
+        $cache = 'Cache-Control: max-age=86400'
+    } else {
+        $cache = 'Cache-Control: no-cache'
+    }
+    $head = "HTTP/1.1 200 OK`r`nContent-Type: $ctype`r`nContent-Length: $($bytes.Length)`r`n$cache`r`nConnection: close`r`n`r`n"
     $hb = [System.Text.Encoding]::ASCII.GetBytes($head)
     $stream.Write($hb, 0, $hb.Length)
     $stream.Write($bytes, 0, $bytes.Length)
