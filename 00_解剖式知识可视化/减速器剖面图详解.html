@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三种减速器 · 剖面结构与原理图解</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#f5f7fa 0%,#e8ecf3 100%);min-height:100vh;padding:28px 18px 60px;color:#1a2332;font-family:"Microsoft YaHei","PingFang SC",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto}
+header{text-align:center;margin-bottom:26px}
+header h1{font-size:26px;font-weight:800;letter-spacing:.5px}
+header p{color:#5a6a85;font-size:14px;margin-top:6px}
+a.back{display:inline-block;margin:10px 0 20px;color:#2563eb;font-size:13px;text-decoration:none;border:1px solid #2563eb;padding:5px 14px;border-radius:8px}
+a.back:hover{background:#2563eb;color:#fff}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.06);padding:26px;margin-bottom:24px}
+.card h2{font-size:19px;font-weight:800;margin-bottom:4px;color:#0f172a}
+.card .sub{font-size:12px;color:#8a94a4;margin-bottom:16px;letter-spacing:.5px}
+.svgbox{display:flex;justify-content:center;padding:6px 0 2px}
+.svgbox svg{max-width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+.lg{font-size:12px;color:#475569;display:flex;align-items:center;gap:6px;background:#f1f5f9;border:1px solid #e2e8f0;padding:4px 10px;border-radius:8px}
+.lg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.desc{margin-top:14px;font-size:13.5px;color:#475569;line-height:1.85;background:#f8fafc;border-left:3px solid #2563eb;padding:12px 14px;border-radius:0 8px 8px 0}
+.desc b{color:#0f172a}
+.foot{text-align:center;color:#8a94a4;font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>三种减速器 · 剖面结构与原理图解</h1>
+    <p>谐波 / 行星 / 摆线RV —— 认识核心零件与传动关系</p>
+  </header>
+  <a class="back" href="javascript:history.back()">← 返回</a>
+
+  <!-- 谐波 -->
+  <div class="card">
+    <h2>一、谐波减速器（Harmonic Drive）</h2>
+    <div class="sub">STRAIN WAVE GEAR · 齿差2 · 同轴输入输出</div>
+    <div class="svgbox">
+      <svg viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+        <!-- 刚轮（外圈内齿） -->
+        <circle cx="210" cy="150" r="108" fill="#e8edf5" stroke="#5b6472" stroke-width="3"/>
+        <circle cx="210" cy="150" r="96" fill="none" stroke="#8a94a4" stroke-width="2"/>
+        <!-- 内齿 -->
+        <g fill="#6b7686">
+          <rect x="208" y="42" width="4" height="9" rx="1"/>
+          <rect x="206" y="258" width="4" height="9" rx="1"/>
+          <rect x="102" y="148" width="4" height="9" rx="1" transform="rotate(90 104 152)"/>
+          <rect x="314" y="148" width="4" height="9" rx="1" transform="rotate(90 316 152)"/>
+        </g>
+        <!-- 柔轮（椭圆变形薄壁，外齿） -->
+        <ellipse cx="210" cy="150" rx="80" ry="44" fill="#f5c66a" fill-opacity="0.9" stroke="#b8860b" stroke-width="3"/>
+        <ellipse cx="210" cy="150" rx="88" ry="52" fill="none" stroke="#e0a92e" stroke-width="2" stroke-dasharray="3 3"/>
+        <!-- 波发生器（椭圆凸轮 + 柔性轴承） -->
+        <ellipse cx="210" cy="150" rx="64" ry="28" fill="#7cb3f0" stroke="#2563eb" stroke-width="3"/>
+        <ellipse cx="210" cy="150" rx="50" ry="18" fill="#3b82f6" opacity="0.5"/>
+        <!-- 输入轴 -->
+        <circle cx="210" cy="150" r="10" fill="#0f172a"/>
+        <!-- 啮合点标注 -->
+        <circle cx="210" cy="98" r="5" fill="#dc2626"/>
+        <circle cx="210" cy="202" r="5" fill="#dc2626"/>
+        <!-- 引线与标签 -->
+        <g font-size="12" fill="#334155">
+          <line x1="318" y1="150" x2="360" y2="118" stroke="#5b6472" stroke-width="1"/>
+          <text x="362" y="122">刚轮 Circular Spline</text>
+          <text x="362" y="136" font-size="10" fill="#8a94a4">刚性内齿圈 · 齿数比柔轮多2</text>
+
+          <line x1="210" y1="70" x2="210" y2="34" stroke="#b8860b" stroke-width="1"/>
+          <text x="216" y="38">柔轮 Flexspline</text>
+          <text x="216" y="52" font-size="10" fill="#8a94a4">薄壁弹性外齿 · 输出端</text>
+
+          <line x1="146" y1="150" x2="60" y2="120" stroke="#2563eb" stroke-width="1"/>
+          <text x="14" y="110">波发生器 Wave Generator</text>
+          <text x="14" y="124" font-size="10" fill="#8a94a4">椭圆凸轮+柔性轴承 · 输入端</text>
+        </g>
+        <!-- 啮合点说明 -->
+        <g font-size="11" fill="#dc2626">
+          <line x1="210" y1="98" x2="240" y2="82" stroke="#dc2626" stroke-width="1"/>
+          <text x="244" y="86">啮合区（长轴两端）</text>
+        </g>
+      </svg>
+    </div>
+    <div class="legend">
+      <span class="lg"><i style="background:#5b6472"></i>刚轮（固定）</span>
+      <span class="lg"><i style="background:#f5c66a"></i>柔轮（输出）</span>
+      <span class="lg"><i style="background:#3b82f6"></i>波发生器（输入）</span>
+    </div>
+    <div class="desc">椭圆<b>波发生器</b>把<b>柔轮</b>撑成椭圆，长轴两端与<b>刚轮</b>内齿啮合。刚轮比柔轮多 2 个齿，波发生器每转一圈，柔轮反向转过 2 齿；柔轮 200 齿则减速比 <b>100:1</b>。特点：同轴、零背隙、扭矩密度极高；缺点是柔轮反复弹性变形，是疲劳寿命关键件。</div>
+  </div>
+
+  <!-- 行星 -->
+  <div class="card">
+    <h2>二、行星减速器（Planetary Gearbox）</h2>
+    <div class="sub">EPICYCLIC · i = 1 + Z环/Z阳（内齿圈固定）</div>
+    <div class="svgbox">
+      <svg viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+        <!-- 内齿圈（外圈，固定） -->
+        <circle cx="210" cy="150" r="110" fill="#e8edf5" stroke="#5b6472" stroke-width="3"/>
+        <g fill="#6b7686">
+          <rect x="208" y="40" width="5" height="10" rx="1"/>
+          <rect x="208" y="250" width="5" height="10" rx="1"/>
+          <rect x="100" y="148" width="5" height="10" rx="1" transform="rotate(90 102 152)"/>
+          <rect x="315" y="148" width="5" height="10" rx="1" transform="rotate(90 317 152)"/>
+        </g>
+        <!-- 行星轮 ×3 -->
+        <g>
+          <circle cx="210" cy="66" r="30" fill="#f5c66a" stroke="#b8860b" stroke-width="2.5"/>
+          <circle cx="150" cy="185" r="30" fill="#f5c66a" stroke="#b8860b" stroke-width="2.5"/>
+          <circle cx="270" cy="185" r="30" fill="#f5c66a" stroke="#b8860b" stroke-width="2.5"/>
+        </g>
+        <!-- 太阳轮（中心，输入） -->
+        <circle cx="210" cy="150" r="38" fill="#7cb3f0" stroke="#2563eb" stroke-width="3"/>
+        <!-- 行星架（输出） -->
+        <g stroke="#0f172a" stroke-width="2" fill="none">
+          <line x1="210" y1="150" x2="210" y2="66"/>
+          <line x1="210" y1="150" x2="150" y2="185"/>
+          <line x1="210" y1="150" x2="270" y2="185"/>
+        </g>
+        <circle cx="210" cy="150" r="8" fill="#0f172a"/>
+        <!-- 引线与标签 -->
+        <g font-size="12" fill="#334155">
+          <line x1="210" y1="28" x2="210" y2="12" stroke="#2563eb" stroke-width="1"/>
+          <text x="120" y="16">太阳轮（输入 · 高速）</text>
+
+          <line x1="270" y1="185" x2="360" y2="170" stroke="#b8860b" stroke-width="1"/>
+          <text x="362" y="166">行星轮 ×3</text>
+          <text x="362" y="180" font-size="10" fill="#8a94a4">既自转又公转 · 均布载荷</text>
+
+          <line x1="320" y1="150" x2="360" y2="230" stroke="#5b6472" stroke-width="1"/>
+          <text x="362" y="234">内齿圈（固定）</text>
+
+          <line x1="150" y1="185" x2="60" y2="220" stroke="#0f172a" stroke-width="1"/>
+          <text x="14" y="224">行星架（输出 · 低速）</text>
+        </g>
+      </svg>
+    </div>
+    <div class="legend">
+      <span class="lg"><i style="background:#2563eb"></i>太阳轮（输入）</span>
+      <span class="lg"><i style="background:#f5c66a"></i>行星轮 ×3</span>
+      <span class="lg"><i style="background:#5b6472"></i>内齿圈（固定）</span>
+      <span class="lg"><i style="background:#0f172a"></i>行星架（输出）</span>
+    </div>
+    <div class="desc">内齿圈固定时，减速比 <b>i = 1 + Z环/Z阳</b>。例如太阳轮 20 齿、内齿圈 60 齿，则 i = 1+60/20 = <b>4:1</b>。特点：刚性好、效率高（90%+）、抗冲击；单级减速比小，多级串联背隙累积，故人形大关节多用谐波，踝/腕/手等小关节用微型行星。</div>
+  </div>
+
+  <!-- 摆线 -->
+  <div class="card">
+    <h2>三、摆线RV减速器（Cycloidal / RV）</h2>
+    <div class="sub">CYCLOIDAL · 齿差1 · 减速比 = 针齿数</div>
+    <div class="svgbox">
+      <svg viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+        <!-- 针齿圈（外圈圆柱销，固定） -->
+        <circle cx="210" cy="150" r="108" fill="none" stroke="#5b6472" stroke-width="3"/>
+        <g fill="#8a94a4">
+          <circle cx="210" cy="42" r="7"/><circle cx="238" cy="43" r="7"/><circle cx="266" cy="46" r="7"/>
+          <circle cx="292" cy="52" r="7"/><circle cx="316" cy="60" r="7"/>
+          <circle cx="210" cy="258" r="7"/><circle cx="182" cy="257" r="7"/><circle cx="154" cy="254" r="7"/>
+          <circle cx="128" cy="248" r="7"/><circle cx="104" cy="240" r="7"/>
+          <circle cx="316" cy="150" r="7"/><circle cx="316" cy="180" r="7"/><circle cx="316" cy="210" r="7"/>
+          <circle cx="104" cy="150" r="7"/><circle cx="104" cy="120" r="7"/><circle cx="104" cy="90" r="7"/>
+        </g>
+        <!-- 摆线盘（轮廓用波浪形简化表示） -->
+        <path d="M210 62 C 268 62 306 100 306 150 C 306 200 268 238 210 238 C 152 238 114 200 114 150 C 114 100 152 62 210 62 Z"
+              fill="#f5c66a" fill-opacity="0.9" stroke="#b8860b" stroke-width="3"/>
+        <!-- 摆线齿廓示意（外圈波浪） -->
+        <circle cx="210" cy="150" r="74" fill="none" stroke="#e0a92e" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <!-- 偏心轴（输入） -->
+        <circle cx="196" cy="150" r="16" fill="#7cb3f0" stroke="#2563eb" stroke-width="3"/>
+        <circle cx="196" cy="150" r="6" fill="#0f172a"/>
+        <!-- 曲柄销输出孔（3个） -->
+        <g fill="#0f172a" opacity="0.8">
+          <circle cx="210" cy="98" r="6"/>
+          <circle cx="165" cy="195" r="6"/>
+          <circle cx="255" cy="195" r="6"/>
+        </g>
+        <!-- 引线与标签 -->
+        <g font-size="12" fill="#334155">
+          <line x1="196" y1="134" x2="196" y2="108" stroke="#2563eb" stroke-width="1"/>
+          <text x="202" y="112">偏心轴（输入）</text>
+
+          <line x1="278" y1="110" x2="360" y2="80" stroke="#b8860b" stroke-width="1"/>
+          <text x="362" y="84">摆线盘 Cycloid Disc</text>
+          <text x="362" y="98" font-size="10" fill="#8a94a4">外廓为摆线曲线 · 齿数=针齿数−1</text>
+
+          <line x1="316" y1="60" x2="360" y2="30" stroke="#5b6472" stroke-width="1"/>
+          <text x="362" y="34">针齿圈（固定圆柱销）</text>
+
+          <line x1="165" y1="195" x2="60" y2="240" stroke="#0f172a" stroke-width="1"/>
+          <text x="14" y="244">曲柄销孔（输出法兰）</text>
+        </g>
+      </svg>
+    </div>
+    <div class="legend">
+      <span class="lg"><i style="background:#2563eb"></i>偏心轴（输入）</span>
+      <span class="lg"><i style="background:#f5c66a"></i>摆线盘</span>
+      <span class="lg"><i style="background:#8a94a4"></i>针齿（固定）</span>
+      <span class="lg"><i style="background:#0f172a"></i>曲柄销（输出）</span>
+    </div>
+    <div class="desc">偏心轴每转一圈，<b>摆线盘</b>反向转过一个针齿角度（齿差 1 传动），减速比 = <b>针齿数</b>。摆线盘与针齿是<b>滚动接触</b>且约一半针齿同时承载，因此<b>抗冲击能力远超谐波</b>、寿命长，但体积重量更大、有偏心振动（需双盘对消）。工业机器人（KUKA/发那科）大关节多用 RV。</div>
+  </div>
+
+  <div class="foot">注：本图为教学示意剖面，重点展示零件组成与传动关系，非等比例工程图。</div>
+</div>
+</body>
+</html>

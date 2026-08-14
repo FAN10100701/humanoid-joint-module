@@ -128,21 +128,31 @@ function Handle-Request($client) {
 }
 
 # ==================== 启动服务器 ====================
-$port = Find-FreePort
-$listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Parse($BIND_IP), $port)
-$listener.Start()
+try {
+    $port = Find-FreePort
+    $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Parse($BIND_IP), $port)
+    $listener.Start()
+} catch {
+    Write-Host ''
+    Write-Host '  [错误] 无法启动本地服务器，原因：' -ForegroundColor Red
+    Write-Host "  $($_.Exception.Message)" -ForegroundColor Yellow
+    Write-Host '  请检查：防火墙是否拦截、端口是否被占用，或改用 Chrome/Edge 浏览器。' -ForegroundColor DarkGray
+    Write-Host ''
+    exit 1
+}
 
-$url = "http://localhost:$port/$ENTRY"
+# 用 127.0.0.1 而不是 localhost：避免个别电脑上 localhost 被解析成 IPv6 导致浏览器连不上
+$url = "http://127.0.0.1:$port/"
 Write-Host ''
 Write-Host '======================================================' -ForegroundColor Cyan
 Write-Host '  本地教学服务器已启动' -ForegroundColor Green
-Write-Host "  地址: $url" -ForegroundColor White
-Write-Host '  现在即可看到宇树官方 H1 / G1 真实模型（本地秒加载）' -ForegroundColor DarkGray
+Write-Host "  主页地址: $url" -ForegroundColor White
+Write-Host '  已打开「学习系统主页」，从主页可进入 3D 官方模型及各学习页面' -ForegroundColor DarkGray
 Write-Host '  关闭本窗口 或 按 Ctrl+C 停止服务器' -ForegroundColor DarkGray
 Write-Host '======================================================' -ForegroundColor Cyan
 Write-Host ''
 
-# 自动在默认浏览器中打开页面
+# 自动在默认浏览器中打开主页（学习系统总导航）
 try { Start-Process $url } catch { }
 
 # 主循环：持续接收并处理请求，直到用户关闭窗口/Ctrl+C

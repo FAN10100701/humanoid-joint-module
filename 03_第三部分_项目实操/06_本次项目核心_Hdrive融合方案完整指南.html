@@ -83,25 +83,29 @@
   <div class="step-box">
     <div class="step-title"><span class="step-num">2</span>现有4页原理图绘制指南</div>
 
-    <h3><span class="tag-modify">第1页：电源</span> 修复Hdrive两个核心bug</h3>
-    <p>Hdrive原bug：R49阻值错误导致TLV431发烫、AGND/GND连接不合理，按以下电路修改：</p>
-    <h4>👉 选DRV8323RS（推荐）：直接废掉TLV431和外置DCDC</h4>
-    <div class="code-block">电源输入链路（从接口往后）：
-1. 电源接口（XT30或GH1.25-2P）→ 2A自恢复保险丝
-2. → PMOS防反接（AO3401：S接输入+，D接后级，G经10k接输入-）
-3. → TVS管 SMBJ33CA（24V系统），并联在正负极，吸收浪涌
-4. → 母线大电容：2×220μF 35V电解 + 3×100nF陶瓷，<b>必须紧贴DRV8323和MOS半桥</b>
-5. DRV8323内置Buck直接出5V（电感10μH 2A），再经AMS1117-3.3出3.3V给MCU
+    <h3><span class="tag-modify">第1页：电源</span> 修复Hdrive两个核心bug（已更正）</h3>
+    <p>Hdrive原bug：R49阻值错误导致TLV431发烫、AGND/GND连接不合理。第一版改用<b>DRV8323R</b>（注意带R），从根源废掉TLV431和外部DCDC，按以下链路改：</p>
+    <h4>👉 选DRV8323R（第一版推荐）：内置Buck + 电荷泵，绕开原版电源Bug</h4>
+    <div class="code-block">电源输入链路（从接口往后，24V/25A，适配GIM6010-8_24）：
+1. 电源接口：XT30（30A）或大电流接线端子。⚠️不要用GH1.25（单脚仅~1A），25A堵转会烧
+2. → 保险丝：自恢复PPTC约30A，或一次性保险丝30A。⚠️原文档写"2A"是错的，25A堵转瞬间就跳闸
+3. → 防反接：第一版靠XT30防呆插头即可，不做25A有源防反接。⚠️AO3401(SOT-23，~4A)扛不住25A主回路；确需防反接用大封装PMOS(如IRF4905)或理想二极管控制器(LM74700+N-MOS)
+4. → TVS：SMBJ33CA（24V系统），并联在正负极，吸收浪涌
+5. → 母线大电容：2×470μF 50V电解 + 2×10μF X7R + 3×100nF陶瓷，<b>紧贴DRV8323R和MOS半桥</b>（25A峰值建议电解≥470μF、耐压50V）
+6. DRV8323R内置Buck(LMR16006X，600mA)直接出5V（电感约10μH，按datasheet），再经AMS1117-3.3出3.3V给MCU
+7. ⚠️栅极驱动电源：DRV8323R高侧用<b>内置电荷泵</b>、低侧用内置线性稳压，<b>无需外接12V栅极电源，也没有每相BOOT/SH自举电容</b>——这是它和FD6288最大的区别
 
 必须加的采样：
-- 母线电压采样：VBUS→100kΩ→2.2kΩ→GND，分压点接ADC，并联10nF滤波
+- 母线电压采样：VBUS→100kΩ→2.2kΩ→GND，分压点接ADC，并联10nF滤波（24V分压后约0.5V，量程充足）
 - NTC温度：3.3V→10kΩ→NTC(10k 3950)→GND，分压点接ADC，NTC贴MOS旁边
+- VDDA模拟电源：3.3V经磁珠/10Ω电阻后加10μF+100nF到VSSA，与数字3.3V隔离，保证ADC精度
     </div>
-    <h4>👉 选FD6288：必须修复3个问题</h4>
+    <h4>👉 选FD6288（第二版压成本）：需自备12V栅极电源</h4>
     <ul>
-      <li>R49阻值统一为1kΩ，不要用0R或100R</li>
-      <li>AGND/PGND在电流采样电阻位置用1206封装0Ω电阻单点连接，其他地方共地</li>
-      <li>DCDC换成MP1584出5V，不要用TLV431方案</li>
+      <li>R49阻值统一为1kΩ，不要用0R或100R（原版此bug让TLV431发烫）</li>
+      <li>AGND/PGND在电流采样电阻位置用1206封装0Ω电阻单点连接，其他地方共地（原版用0603的R1连接会发热、地电位漂移）</li>
+      <li>DCDC：MP1584出<b>12V</b>给FD6288栅极驱动（VCC 5~20V，12V驱动更充分），再MP2451/AMS1117出5V→3.3V</li>
+      <li>FD6288每相需要BOOT/SH自举电容(0.1~1μF X7R)+自举二极管，这是FD6288的拓扑，与DRV8323完全不同</li>
     </ul>
 
     <h3><span class="tag-keep">第2页：主控</span> STM32G431最小系统</h3>

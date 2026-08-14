@@ -30,6 +30,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#fff 0%,var(--bg1) 50%,var(--
 .nav{border-right:1px solid var(--rule);overflow-y:auto;padding:14px 10px;background:rgba(255,255,255,.4)}
 .nav::-webkit-scrollbar{width:3px}.nav::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
 .nt{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.8px;padding:6px 8px 10px}
+/* 导航搜索框：快速定位部件/知识点 */
+.nav-search{width:100%;margin:0 0 8px;padding:7px 10px;border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.7);color:var(--ink);font-size:12.5px;font-family:inherit;outline:none}
+.nav-search:focus{border-color:var(--accent)}
+body[data-theme="dark"] .nav-search{background:rgba(20,28,42,.7);color:var(--ink)}
 .ng{margin-bottom:2px}
 .ngh{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:600;transition:.12s}
 .ngh:hover{background:rgba(0,0,0,.03)}.ngh .cv{width:12px;height:12px;color:var(--faint);transition:transform .18s;flex-shrink:0}
@@ -188,6 +192,17 @@ body[data-theme="dark"] .exbar{background:rgba(13,18,30,.85);border-color:var(--
 .ldtip.show{display:block}
 body[data-theme="dark"] .ldtip{background:rgba(13,18,30,.85);border-color:var(--rule)}
 
+/* ===== 3D 舞台中央加载指示（加载官方模型时显示，避免中间空屏） ===== */
+.load-box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:11;display:none;flex-direction:column;align-items:center;gap:13px;padding:26px 32px;border-radius:16px;background:rgba(255,255,255,.93);border:1px solid var(--rule);box-shadow:var(--sh2)}
+.load-box.show{display:flex}
+.load-spin{width:44px;height:44px;border:4px solid rgba(0,102,204,.15);border-top-color:var(--accent);border-radius:50%;animation:lspin 1s linear infinite}
+@keyframes lspin{to{transform:rotate(360deg)}}
+.load-text{font-size:13px;font-weight:600;color:var(--muted);text-align:center;max-width:320px}
+.load-bar{width:220px;height:6px;border-radius:3px;background:rgba(0,0,0,.06);overflow:hidden}
+.load-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+body[data-theme="dark"] .load-box{background:rgba(13,18,30,.9);border-color:var(--rule)}
+body[data-theme="dark"] .load-bar{background:rgba(255,255,255,.08)}
+
 /* ===== 代码块 ===== */
 .cb{background:#0d1420;color:#d7e2f0;border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:12px 14px;font-family:var(--mono);font-size:11px;line-height:1.65;overflow-x:auto;margin:8px 0 12px;white-space:pre;tab-size:4}
 .cb .cm{color:#6b8db5}.cb .kw{color:#7fb4ff}.cb .fn{color:#ffd479}.cb .num{color:#8ce99a}
@@ -293,13 +308,18 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <button class="ham" id="btnHam" title="导航菜单">☰</button>
 </div>
 <div class="app">
-  <nav class="nav" id="nav"><div class="nt">系统导航</div><div id="navTree"></div></nav>
+  <nav class="nav" id="nav"><div class="nt">系统导航</div><input class="nav-search" id="navSearch" placeholder="🔍 搜索部件 / 知识点…" autocomplete="off"><div id="navTree"></div></nav>
   <main class="stg" id="stage">
     <div class="gbg"></div>
     <div class="sbd">机型：<b id="stageM">宇树 H1</b> · <span id="stageP">整机系统</span></div>
     <canvas id="webgl"></canvas>
     <div class="view-label" id="webglLbl">拖拽旋转 · 滚轮缩放 · 点击部件查看详情</div>
     <div class="ldtip" id="ldtip">正在初始化 3D 引擎…</div>
+    <div class="load-box show" id="loadBox">
+      <div class="load-spin"></div>
+      <div class="load-text" id="loadText">正在加载官方3D模型…</div>
+      <div class="load-bar"><i id="loadBarFill"></i></div>
+    </div>
     <div class="exbar" id="exbar">
       <span>装配</span>
       <input type="range" id="exrng" min="0" max="100" value="0" title="爆炸度">
@@ -639,6 +659,29 @@ function buildNav(){
 
 /* ========== 部件选中与详情面板（纯3D模式） ========== */
 var dIn=document.getElementById('dIn');
+
+/* 导出当前 BOM 对比表格为 CSV 文件（供 Excel/WPS 打开） */
+function exportBomCsv(){
+  var tbl=document.querySelector('.tbl.bom');
+  if(!tbl){alert('请先打开「选型参考 → 关节模组BOM对比」页面');return;}
+  var lines=[];
+  tbl.querySelectorAll('tr').forEach(function(tr){
+    var vals=[];
+    tr.querySelectorAll('th,td').forEach(function(c){
+      var t=c.innerText.replace(/"/g,'""').replace(/\s+/g,' ').trim();
+      vals.push('"'+t+'"');
+    });
+    lines.push(vals.join(','));
+  });
+  var csv='\ufeff'+lines.join('\r\n');  /* \ufeff BOM 让 Excel 正确识别中文 */
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='关节模组BOM对比.csv';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+}
+
 function selectPart(key){
   curP=key;
   // 导航高亮
@@ -672,6 +715,15 @@ function selectPart(key){
     h='<div class="tip">💡 这是关节模组内部的核心技术知识模块，点击机器人对应部件可查看其具体结构设计。</div>'+h;
   }
   dIn.innerHTML=h;
+  // BOM选型对比页面：在面板底部追加"导出CSV"按钮，便于把参数表存成表格文件
+  if(key==='bom'){
+    var eb=document.createElement('button');
+    eb.className='bb-btn';
+    eb.textContent='📥 导出 BOM 为 CSV';
+    eb.style.marginTop='6px';
+    eb.addEventListener('click',exportBomCsv);
+    dIn.appendChild(eb);
+  }
   // 拆解教学模块：进入/退出专属 3D 拆解场景
   if(d.td){if(window.enterTdScene)window.enterTdScene(key);}else{if(window.exitTdScene)window.exitTdScene();}
   // 同步底部栏场景下拉框（侧边栏导航与下拉框状态保持一致）
@@ -826,6 +878,22 @@ function updatePerf(){
 /* ========== 初始化（页面加载后立即进入3D模式） ========== */
 function init(){
   buildNav();
+  // 绑定导航搜索框：输入即过滤导航项，点击匹配项即可定位到对应部件/知识点
+  var navSearch=document.getElementById('navSearch');
+  if(navSearch)navSearch.addEventListener('input',function(){
+    var q=navSearch.value.trim().toLowerCase();
+    var navTree=document.getElementById('navTree');
+    navTree.querySelectorAll('.nit').forEach(function(el){
+      var show=!q||el.textContent.toLowerCase().indexOf(q)>=0;
+      el.style.display=show?'':'none';
+      if(show&&q)el.parentElement.parentElement.classList.add('open'); /* 展开匹配项所在分组 */
+    });
+    navTree.querySelectorAll('.ng').forEach(function(g){
+      var any=false;
+      g.querySelectorAll('.nit').forEach(function(n){if(n.style.display!=='none')any=true;});
+      g.style.display=any?'':'none';
+    });
+  });
   // 绑定顶栏"学习首页"按钮：跳转回主界面 index.html（可导航到其它学习页面）
   var btnIndex=document.getElementById('btnIndex');
   if(btnIndex)btnIndex.addEventListener('click',function(){window.location.href='../index.html';});
@@ -906,6 +974,7 @@ const AUTO_ROTATE_SPEED=0.008;      /* 自动旋转速度 */
 const CAMERA_DEFAULT_DIST=105;      /* 默认相机距离 */
 let autoRotate=false;               /* 自动旋转开关 */
 let globalWireframe=false;          /* 全局线框模式 */
+let userInteracted=false;           /* 用户是否已拖动过视角：用于避免加载完成后相机被强行复位 */
 let cameraInitTarget=null;          /* 初始相机目标点 */
 let cameraInitPosition=null;        /* 初始相机位置 */
 let cameraInitMinDist=45;           /* 初始最小缩放距离 */
@@ -964,6 +1033,16 @@ let animTime=0;
 /* 加载进度提示条（舞台顶部 ldtip 元素） */
 function showLdtip(msg){var el=document.getElementById('ldtip');if(el){el.textContent=msg;el.classList.add('show');}}
 function hideLdtip(){var el=document.getElementById('ldtip');if(el)el.classList.remove('show');}
+
+/* 舞台中央加载指示（加载官方模型时显示，避免中间空屏）
+   showLoading(text, prog)：prog 为 0~1 的进度（可省略，只更新文字）
+   hideLoading()：隐藏中央加载指示 */
+function showLoading(text,prog){
+  var box=document.getElementById('loadBox');if(box)box.classList.add('show');
+  var t=document.getElementById('loadText');if(t&&text!=null)t.textContent=text;
+  var bar=document.getElementById('loadBarFill');if(bar&&prog!=null)bar.style.width=Math.round(prog*100)+'%';
+}
+function hideLoading(){var box=document.getElementById('loadBox');if(box)box.classList.remove('show');}
 
 /* 统计对象树中的Mesh数量（用于性能面板显示） */
 function countMeshes(root){
@@ -1161,6 +1240,11 @@ function initThree(){
   controls.minDistance=45; controls.maxDistance=220;
   controls.target.set(0,-15,0);
   controls.enablePan=false;
+  /* 监听用户开始拖动：①标记已交互，避免加载完成后相机被强行复位；②取消进行中的聚焦动画，避免视角被拉回 */
+  controls.addEventListener('start',function(){
+    userInteracted=true;
+    if(tween){cancelAnimationFrame(tween);tween=null;}
+  });
   /* ==================== 五光源布光系统（摄影棚级） ==================== */
   /* 环境光：整体基础照明，避免死黑 */
   var hemi=new THREE.HemisphereLight(0xddeeff,0x2a2f3f,0.85); scene.add(hemi);
@@ -1463,6 +1547,7 @@ function loadUrdfRobot(m){
     showLdtip('离线模式：已加载内置模型（file:// 无法读取官方STL，请用"启动教学页面.bat"打开以显示官方模型）');
     setTimeout(hideLdtip,3000);
     buildFallbackRobot(m); /* 官方模型读不到时构建回退模型兜底 */
+    hideLoading();         /* 隐藏中央加载指示 */
     setTimeout(function(){fitCameraToObject(body3d);},100);
     return;
   }
@@ -1471,11 +1556,13 @@ function loadUrdfRobot(m){
     showLdtip('使用内置高保真模型');
     setTimeout(hideLdtip,2000);
     buildFallbackRobot(m); /* 无fetch能力时构建回退模型兜底 */
+    hideLoading();         /* 隐藏中央加载指示 */
     setTimeout(function(){fitCameraToObject(body3d);},100);
     return;
   }
   var token=++urdfToken;
   showLdtip('正在加载官方3D模型...');
+  showLoading('正在加载官方3D模型…',0); /* 显示中央加载指示+进度条（初始0%） */
   var parsed=null;
   /* names 必须提升到函数作用域：后续 .then 回调需要访问它，
      若在回调内用 var 声明，另一个回调访问会报 names is not defined */
@@ -1497,6 +1584,7 @@ function loadUrdfRobot(m){
          第4个参数为进度回调：实时刷新"正在加载 (i/N)"提示，让用户知道没卡死 */
       return loadSTLsTolerant(cfg.dir, names, loader, function(done,total){
         showLdtip('正在加载官方3D模型 ('+done+'/'+total+')');
+        showLoading('正在加载官方3D模型 ('+done+'/'+total+')', total>0?done/total:0); /* 同步刷新中央进度条 */
       });
     })
     .then(function(list){
@@ -1529,8 +1617,9 @@ function loadUrdfRobot(m){
         var activeJoints=Object.keys(urdfJoints).length;
         dofEl.textContent=activeJoints;
       }
-      /* 自动调整相机以适配整个机器人模型（若正处于拆解场景则跳过，避免抢占拆解场景的取景） */
-      if(!tdActive)fitCameraToObject(body3d);
+      /* 自动调整相机以适配整个机器人模型（拆解场景中跳过；用户已拖动视角则只保存参数不抢视角） */
+      if(!tdActive)fitCameraToObject(body3d,userInteracted);
+      hideLoading(); /* 官方模型加载完成：隐藏中央加载指示 */
       showLdtip('官方模型加载完成'+(missing>0?('，'+missing+'个零件加载失败已跳过'):''));
       setTimeout(hideLdtip,1800);
       if(window.RobotApp)highlight(window.RobotApp.getCur());
@@ -1542,12 +1631,13 @@ function loadUrdfRobot(m){
       showLdtip('官方模型加载失败，已用内置模型 ('+msg+')');
       setTimeout(hideLdtip,4000);
       buildFallbackRobot(m); /* 加载失败才构建回退模型兜底，避免一开始就显示"丑模型" */
+      hideLoading();         /* 隐藏中央加载指示 */
       setTimeout(function(){fitCameraToObject(body3d);},100);
     });
 }
 
 /* 相机自动适配目标物体 */
-function fitCameraToObject(obj){
+function fitCameraToObject(obj,skipApply){
   if(!obj)return;
   var bFull=new THREE.Box3().setFromObject(obj);
   if(bFull.isEmpty())return;
@@ -1561,6 +1651,8 @@ function fitCameraToObject(obj){
   cameraInitPosition=new THREE.Vector3(cFull.x+dist*0.3,cFull.y-dist*0.2,cFull.z+dist*0.9);
   cameraInitMinDist=dist*0.4;
   cameraInitMaxDist=dist*4;
+  /* 若用户已拖动过视角则只保存参数、不动相机，避免把用户视角强行拉回 */
+  if(skipApply)return;
   controls.target.copy(cFull);
   camera.position.copy(cameraInitPosition);
   controls.minDistance=cameraInitMinDist;
@@ -1893,6 +1985,36 @@ function highlight(key){
   if(active && key!=='whole' && !isTech)focusOn(key);
 }
 
+/* 精确高亮单个具体部件（按 linkName）：3D 点击时只亮被点中的那个关节，而不是整组一起亮 */
+function highlightLink(linkName){
+  if(!built)return;
+  if(tdActive)return;
+  var matched=false;
+  body3d.traverse(function(o){
+    if(o.isMesh && !o.userData.isWireframe){
+      if(o.userData.linkName===linkName){
+        matched=true;
+        /* 被点击的具体部件：发光高亮 */
+        o.material.emissive.setHex(accentHex);
+        o.material.emissiveIntensity = 0.5;
+        o.material.opacity = 1.0;
+        o.material.transparent = false;
+        o.material.depthWrite = true;
+        if(o.userData.wireframe){o.userData.wireframe.material.opacity = 0.0;}
+      }else{
+        /* 其余部件：半透明弱化 + 线框 */
+        o.material.emissive.setHex(0x000000);
+        o.material.emissiveIntensity = 0.0;
+        o.material.opacity = 0.12;
+        o.material.transparent = true;
+        o.material.depthWrite = false;
+        if(o.userData.wireframe){o.userData.wireframe.material.opacity = 0.25;o.userData.wireframe.material.color.setHex(0x7a9cc6);}
+      }
+    }
+  });
+  return matched;
+}
+
 var tween=null;
 function focusOn(key){
   if(!built)return;
@@ -1983,7 +2105,12 @@ function onClick(e){
   /* 沿父链查找部件键（真实 URDF 模型的网格带 userData.partKey 标记） */
   var o=hits[0].object;
   while(o){
-    if(o.userData&&o.userData.partKey){if(window.RobotApp)window.RobotApp.selectPart(o.userData.partKey);return;}
+    if(o.userData&&o.userData.partKey){
+      if(window.RobotApp)window.RobotApp.selectPart(o.userData.partKey);
+      /* 精确高亮被点击的那个具体关节（否则点击髋关节会左右腿一起亮） */
+      if(o.userData.linkName&&window.Robot3D&&window.Robot3D.highlightLink)window.Robot3D.highlightLink(o.userData.linkName);
+      return;
+    }
     o=o.parent;
   }
 }
@@ -2661,8 +2788,8 @@ window.Robot3D={
   enable:function(cb){
     if(built){active=true;resume();onResize();if(cb)cb(true);return;}
     loadDeps(function(ok){
-      if(!ok){if(cb)cb(false);return;}
-      try{ initThree(); }catch(e){ console.warn('[Robot3D] 初始化失败:',e); if(cb)cb(false); return; }
+      if(!ok){hideLoading();if(cb)cb(false);return;}
+      try{ initThree(); }catch(e){ console.warn('[Robot3D] 初始化失败:',e); hideLoading(); if(cb)cb(false); return; }
       active=true;
       resume();
       if(cb)cb(true);
@@ -2671,6 +2798,7 @@ window.Robot3D={
   disable:function(){active=false;pause();},
   pause:pause, resume:resume,
   highlight:highlight, focusOn:focusOn, setModel:setModel, applyTheme:applyTheme,
+  highlightLink:highlightLink,
   /* 视角与模式控制 */
   resetView:resetView,
   setWireframe:setWireframe,
