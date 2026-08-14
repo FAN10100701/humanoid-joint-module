@@ -2,7 +2,7 @@
   "name": "人形机器人关节模组教学系统",
   "short_name": "关节模组教学",
   "description": "人形机器人关节模组交互式3D解剖知识系统",
-  "start_url": "./启动教学系统.html",
+  "start_url": "../人形机器人解剖式知识可视化.html",
   "display": "standalone",
   "background_color": "#0d1117",
   "theme_color": "#0066cc",
