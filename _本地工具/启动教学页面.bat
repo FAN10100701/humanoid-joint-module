@@ -1,10 +1,18 @@
-﻿@echo off
-chcp 65001 >nul
+@echo off
 rem ============================================================
-rem 人形机器人3D解剖页面 - 一键启动
-rem 双击本文件：启动本地HTTP服务器并自动打开3D解剖拆解页面
-rem 注意：不要直接双击 html 文件，否则 Three.js 无法加载本地模型
+rem Humanoid Robot 3D Anatomy - One Click Launcher
+rem Double click this file: start local http server and open
+rem the 3D anatomy page in your default browser automatically.
+rem NOTE: the html MUST be served over http. Local URDF/STL
+rem models and the local Three.js engine cannot be loaded
+rem under file:// protocol (double-clicking the html fails).
 rem ============================================================
-title 人形机器人3D解剖 - 本地服务器
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\00_解剖式知识可视化\server.ps1"
+title Humanoid Robot 3D Anatomy - Local Server
+for /d %%D in ("%~dp0..\00_*") do set "SRV=%%D\server.ps1"
+if not exist "%SRV%" (
+    echo [ERROR] server.ps1 not found. Please check the "00_..." folder exists.
+    pause
+    exit /b 1
+)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SRV%"
 pause
