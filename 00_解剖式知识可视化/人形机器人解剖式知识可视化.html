@@ -1298,7 +1298,8 @@ function initThree(){
 /* ================= 机器人构建：优先官方 URDF+STL 真实模型，失败自动回退参数化模型 ================= */
 /* 官方开源模型资源配置（宇树 unitree_ros 仓库的 URDF + 网格 STL，已随页面本地化存放） */
 var URDF_CFG={
-  h1:{urdf:'models/h1/h1.urdf',dir:'models/h1'},
+  /* H1 使用带灵巧手版 URDF（含左右手 hand_link/hand_base_link/Link11~22 手指关节），补齐手部建模 */
+  h1:{urdf:'models/h1/h1_with_hand.urdf',dir:'models/h1'},
   g1:{urdf:'models/g1/g1_29dof.urdf',dir:'models/g1'}
 };
 var urdfToken=0; /* 加载序号令牌：防止切换机型后旧的异步结果覆盖新模型 */
@@ -1331,6 +1332,8 @@ function linkToPart(ln){
   if(/elbow/.test(ln))return 'elbow';
   if(/wrist/.test(ln))return 'wrist';
   if(/rubber_hand|hand/.test(ln))return 'hand';
+  /* 灵巧手手指关节：H1带手版的 _thumb_/_index_/_middle_/_ring_/_pinky_ 手指 link 也归入手部 */
+  if(/_thumb_|_index_|_middle_|_ring_|_pinky_/.test(ln))return 'hand';
   /* 腿部关节 */
   if(/hip/.test(ln))return 'hip';
   if(/knee/.test(ln))return 'knee';
@@ -1389,7 +1392,11 @@ function parseUrdf(xmlText){
     var name=l.getAttribute('name')||'';
     var vis=l.getElementsByTagName('visual')[0];           /* 只取 visual 网格，忽略 collision */
     var meshEl=vis?vis.getElementsByTagName('mesh')[0]:null;
-    links[name]={mesh:meshEl?meshEl.getAttribute('filename'):null};
+    var fn=meshEl?meshEl.getAttribute('filename'):null;
+    /* 官方 URDF 常同时提供 .dae 和 .STL 双格式；本系统用 STLLoader 统一加载 .STL，
+       把 .dae 引用替换成 .STL，避免加载 .dae 导致 404 */
+    if(fn)fn=fn.replace(/\.dae$/i,'.STL');
+    links[name]={mesh:fn};
   });
   var joints=[];
   Array.prototype.forEach.call(doc.getElementsByTagName('joint'),function(j){
