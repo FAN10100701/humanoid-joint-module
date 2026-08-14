@@ -27,6 +27,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#fff 0%,var(--bg1) 50%,var(--
 
 /* ===== 三栏布局（高度减去顶栏54px+底部栏44px） ===== */
 .app{display:grid;grid-template-columns:250px 1fr 360px;height:calc(100vh - 54px - 44px)}
+/* 桌面端侧边栏收起：点击顶栏 ◀ ▶ 按钮切换（仅桌面生效，移动端走抽屉） */
+@media(min-width:861px){
+  body.nav-off .app{grid-template-columns:0 1fr 360px}
+  body.nav-off .nav{display:none}
+  body.det-off .app{grid-template-columns:250px 1fr 0}
+  body.det-off .det{display:none}
+}
 .nav{border-right:1px solid var(--rule);overflow-y:auto;padding:14px 10px;background:rgba(255,255,255,.4)}
 .nav::-webkit-scrollbar{width:3px}.nav::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
 .nt{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.8px;padding:6px 8px 10px}
@@ -301,6 +308,8 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <div class="logo"><span class="dot"></span>人形机器人关节模组 · 3D解剖知识系统</div>
   <div class="sep"></div>
   <div class="tbr">
+    <button class="vb" id="btnNavToggle" title="收起/展开左侧导航">◀</button>
+    <button class="vb" id="btnDetToggle" title="收起/展开右侧详情">▶</button>
     <button class="vb" id="btnIndex" title="返回学习首页（主界面）"><span class="ic">📚</span>学习首页</button>
     <button class="vb home" id="btnHome" title="返回整机总览"><span class="ic">🏠</span>整机总览</button>
     <button class="vb theme" id="btnTheme"><span class="ic">🌗</span>主题</button>
@@ -897,6 +906,19 @@ function init(){
   // 绑定顶栏"学习首页"按钮：跳转回主界面 index.html（可导航到其它学习页面）
   var btnIndex=document.getElementById('btnIndex');
   if(btnIndex)btnIndex.addEventListener('click',function(){window.location.href='../index.html';});
+  // 绑定侧边栏收起/展开按钮（桌面端）
+  var btnNavToggle=document.getElementById('btnNavToggle');
+  if(btnNavToggle)btnNavToggle.addEventListener('click',function(){
+    var off=document.body.classList.toggle('nav-off');
+    btnNavToggle.textContent=off?'▶':'◀';
+    if(window.Robot3D)window.Robot3D.onResize();
+  });
+  var btnDetToggle=document.getElementById('btnDetToggle');
+  if(btnDetToggle)btnDetToggle.addEventListener('click',function(){
+    var off=document.body.classList.toggle('det-off');
+    btnDetToggle.textContent=off?'◀':'▶';
+    if(window.Robot3D)window.Robot3D.onResize();
+  });
   // 绑定顶栏"返回整机"按钮：无论当前在拆解场景还是选中某部件，一键回到整机总览
   var btnHome=document.getElementById('btnHome');
   if(btnHome)btnHome.addEventListener('click',function(){selectPart('whole');resetView();});
@@ -2796,7 +2818,7 @@ window.Robot3D={
     });
   },
   disable:function(){active=false;pause();},
-  pause:pause, resume:resume,
+  pause:pause, resume:resume, onResize:onResize,
   highlight:highlight, focusOn:focusOn, setModel:setModel, applyTheme:applyTheme,
   highlightLink:highlightLink,
   /* 视角与模式控制 */
