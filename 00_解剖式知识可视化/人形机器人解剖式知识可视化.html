@@ -1988,7 +1988,7 @@ function stlGeoSmart(url){
     return new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
   }).then(function(buf){
     if(!_stlParseLoader)_stlParseLoader=new STLLoader();
-    return _stlParseLoader.parse(buf);          /* 解压出的原始 STL 字节 → 三角网格几何体 */
+    return ensureNormals(_stlParseLoader.parse(buf));  /* 解压出的 STL 字节 → 几何体（并保证法线有效） */
   }).catch(function(){
     return stlGeoFallback(url);                 /* 任何环节失败：回退原始未压缩 STL */
   });
@@ -1997,8 +1997,20 @@ function stlGeoSmart(url){
 function stlGeoFallback(url){
   return new Promise(function(res,rej){
     if(!STLLoader){rej(new Error('STLLoader 未就绪'));return;}
-    new STLLoader().load(url,function(g){res(g);},undefined,function(e){rej(e);});
+    new STLLoader().load(url,function(g){res(ensureNormals(g));},undefined,function(e){rej(e);});
   });
+}
+/* 法线保底：STL 文件自带的法线字段若全为零（如工具生成/减面时未算法线），
+   光照计算会得到全黑零件——检测到全零时按三角形顶点自动重算法线 */
+function ensureNormals(geo){
+  try{
+    var n=geo&&geo.attributes&&geo.attributes.normal;
+    if(!n||!n.array||!n.array.length)return geo;
+    var a=n.array,i;
+    for(i=0;i<a.length;i++){ if(Math.abs(a[i])>1e-6)break; }   /* 扫到第一个非零分量即认为法线有效 */
+    if(i>=a.length)geo.computeVertexNormals();                 /* 全零：按顶点重新计算法线 */
+  }catch(e){/* 法线检测失败不影响加载 */}
+  return geo;
 }
 
 /* 限并发 + 重试 + 失败容忍的STL加载器：个别文件加载失败时跳过该零件，不中断整体加载 */

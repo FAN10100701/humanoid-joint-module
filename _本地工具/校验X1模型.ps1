@@ -36,6 +36,15 @@ foreach ($f in (Get-ChildItem $x1 -File | Where-Object { $_.Extension -match '^\
         if ($minx -ne [double]::MaxValue -and ($maxx - $minx -gt 10 -or $maxy - $miny -gt 10 -or $maxz - $minz -gt 10)) {
             $issues += ("suspicious bbox " + [math]::Round($maxx-$minx,3) + "x" + [math]::Round($maxy-$miny,3) + "x" + [math]::Round($maxz-$minz,3))
         }
+        # 4. normal check: first 5 triangles must have non-zero face normals
+        $zeroNorm = 0
+        $nCheck = [Math]::Min(5, [int]$triRead)
+        for ($t = 0; $t -lt $nCheck; $t++) {
+            $off = 84 + $t * 50
+            $n1 = [BitConverter]::ToSingle($bytes, $off); $n2 = [BitConverter]::ToSingle($bytes, $off+4); $n3 = [BitConverter]::ToSingle($bytes, $off+8)
+            if ([Math]::Abs($n1) + [Math]::Abs($n2) + [Math]::Abs($n3) -lt 1e-6) { $zeroNorm++ }
+        }
+        if ($zeroNorm -eq $nCheck -and $nCheck -gt 0) { $issues += "all sampled face normals are zero" }
     }
     # 3. gz consistency: decompress .gz and compare byte-for-byte
     $gz = $f.FullName + '.gz'
