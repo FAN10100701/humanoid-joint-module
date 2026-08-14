@@ -1,0 +1,1 @@
+arm_r_wrist_a_ball.STL
