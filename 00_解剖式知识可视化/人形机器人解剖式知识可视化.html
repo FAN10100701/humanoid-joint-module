@@ -1971,6 +1971,35 @@ function assembleUrdf(parsed,geos){
   return robotRoot;
 }
 
+/* ===== 压缩 STL 智能加载（网络提速核心） =====
+   服务器上每个 STL 都配有同名 .gz 压缩版（整个模型库 77MB 压到 28MB，传输量省 63%）。
+   优先 fetch .gz + 浏览器内置 DecompressionStream 流式解压（Chrome80+/Edge80+/Safari16.4+），
+   浏览器不支持或 .gz 请求失败时自动回退原始未压缩 STL（兜底，页面永远可用）。
+   返回 Promise<BufferGeometry>，失败时 reject 由调用方处理。 */
+var GZ_STL_ENABLE=true;    /* 【可调】压缩加载总开关：false 时全部走原始 STL（排查问题时用） */
+var _stlParseLoader=null;  /* 共享的 STLLoader 实例（只用其 parse 方法解析解压后的字节） */
+function stlGeoSmart(url){
+  /* 浏览器不支持 fetch/DecompressionStream：直接走原始 STL 的 XHR 加载 */
+  if(!GZ_STL_ENABLE||!window.fetch||!window.DecompressionStream)return stlGeoFallback(url);
+  return fetch(url+'.gz').then(function(r){
+    if(!r.ok)throw new Error('gz '+r.status);   /* .gz 不存在(404)等：转入回退 */
+    /* 流式解压：用 Response 包住解压流再取 ArrayBuffer，避免整个压缩块重复占内存 */
+    return new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  }).then(function(buf){
+    if(!_stlParseLoader)_stlParseLoader=new STLLoader();
+    return _stlParseLoader.parse(buf);          /* 解压出的原始 STL 字节 → 三角网格几何体 */
+  }).catch(function(){
+    return stlGeoFallback(url);                 /* 任何环节失败：回退原始未压缩 STL */
+  });
+}
+/* 回退路径：直接加载原始未压缩 STL（STLLoader 内部走 XHR，老浏览器兼容） */
+function stlGeoFallback(url){
+  return new Promise(function(res,rej){
+    if(!STLLoader){rej(new Error('STLLoader 未就绪'));return;}
+    new STLLoader().load(url,function(g){res(g);},undefined,function(e){rej(e);});
+  });
+}
+
 /* 限并发 + 重试 + 失败容忍的STL加载器：个别文件加载失败时跳过该零件，不中断整体加载 */
 /* 【可调参数】单个STL失败重试次数、并发加载数、重试间隔 */
 var STL_MAX_RETRY=3;      /* 单个STL加载失败的最大重试次数 */
@@ -1980,11 +2009,10 @@ function loadSTLsTolerant(dir,names,loader,onProgress,onEach){
   /* onEach(stlName,geo)：每个STL下载成功时立即回调一次，供"逐零件增量组装"就地替换零件，
      让机器人边下边长出来，而不是等全部STL下完才一次性出现 */
   var success=[],idx=0,doneCnt=0; /* doneCnt：已完成（成功或失败）的STL数量，用于进度显示 */
-  /* 加载单个STL：失败时按剩余次数重试，重试耗尽则容忍跳过（返回null，不中断整体） */
+  /* 加载单个STL（优先 .gz 压缩版）：失败时按剩余次数重试，重试耗尽则容忍跳过（返回null，不中断整体） */
   function loadOne(n,retryLeft){
-    return new Promise(function(res,rej){
-      loader.load(dir+'/'+n,function(g){res({n:n,g:g});},undefined,function(e){rej(e);});
-    }).catch(function(e){
+    return stlGeoSmart(dir+'/'+n).then(function(g){return {n:n,g:g};})
+    .catch(function(e){
       if(retryLeft>0){
         return new Promise(function(r){setTimeout(r,STL_RETRY_DELAY*(STL_MAX_RETRY-retryLeft+1));})
           .then(function(){return loadOne(n,retryLeft-1);});
@@ -2276,8 +2304,9 @@ function preloadReducers(delay){
     function next(){
       if(i>=REDUCER_STL.length)return;
       var u=REDUCER_STL[i++];
-      /* 预取到 HTTP 缓存(不解析、不占显存)，真正进入拆解场景时 STLLoader 命中缓存秒开 */
-      fetch(u).then(next,next);
+      /* 预取到 HTTP 缓存(不解析、不占显存)，真正进入拆解场景时命中缓存秒开。
+         优先预取 .gz 压缩版（正式加载 stlGeoSmart 也优先 .gz），无压缩版再预取原始版 */
+      fetch(u+'.gz').then(function(r){if(r.ok)return r;return fetch(u);},function(){return fetch(u);}).then(next,next);
     }
     next();
   },delay||3000);
@@ -2315,7 +2344,9 @@ function preloadRobots(delay){
         var list=Object.keys(stls),i=0;
         (function next(){                 /* 逐个串行预取：不与任何前台下载抢并发 */
           if(i>=list.length)return nextRobot(ki+1);
-          fetch(cfg.dir+'/'+list[i++]).then(next,next);   /* 预取到 HTTP 缓存即可，失败忽略继续 */
+          var u=cfg.dir+'/'+list[i++];
+          /* 优先预取 .gz 压缩版（正式加载 stlGeoSmart 也优先 .gz），无压缩版再预取原始版 */
+          fetch(u+'.gz').then(function(r){if(r.ok)return r;return fetch(u);},function(){return fetch(u);}).then(next,next);   /* 预取到 HTTP 缓存即可，失败忽略继续 */
         })();
       }).catch(function(){nextRobot(ki+1);});
     })(0);
@@ -3226,8 +3257,7 @@ function centerGeo(geo){
    axis：可选，原始 STL 的厚度轴（'x'/'y'/'z'），传入则先把厚度轴旋转对齐到 Y 再缩放 */
 function tdLoadSTL(url,size,cb,axis){
   if(!STLLoader){cb(null);return;}
-  var loader=new STLLoader();
-  loader.load(url,function(geo){
+  stlGeoSmart(url).then(function(geo){   /* 优先 .gz 压缩版，失败自动回退原始 STL */
     try{
       var s=centerGeo(geo);
       var k=size/Math.max(s.x,s.y,s.z,0.001);  /* 等比缩放到目标尺寸 */
@@ -3238,7 +3268,7 @@ function tdLoadSTL(url,size,cb,axis){
       msh.castShadow=true;msh.receiveShadow=true;
       cb(msh);
     }catch(e){cb(null);}
-  },undefined,function(){cb(null);});
+  }).catch(function(){cb(null);});   /* 压缩版与原始版都失败：交回退零件 */
 }
 
 /* 参数化回退零件工厂：圆柱 / 立环（轴线竖直） */
@@ -3501,8 +3531,7 @@ var TD_LBL_X=55;        /* 零件文字标签的 X 偏移(mm)：须大于最大�
    为什么需要：SolidWorks 各零件导出 STL 时坐标系取向不一致，需逐个转正才能同轴装配。 */
 function tdLoadAxis(url,axis,cb,color){
   if(!STLLoader){cb(null);return;}
-  var loader=new STLLoader();
-  loader.load(url,function(geo){
+  stlGeoSmart(url).then(function(geo){   /* 优先 .gz 压缩版，失败自动回退原始 STL */
     try{
       centerGeo(geo);                              /* 包围盒中心平移到原点 */
       var msh=new THREE.Mesh(geo,tdMat(color||0xc8cfd9));
@@ -3512,7 +3541,7 @@ function tdLoadAxis(url,axis,cb,color){
       msh.castShadow=true;msh.receiveShadow=true;
       cb(msh);
     }catch(e){cb(null);}
-  },undefined,function(){cb(null);});
+  }).catch(function(){cb(null);});   /* 压缩版与原始版都失败：交回退零件 */
 }
 
 /* 同轴装配通用构建器：加载真实 STL → 厚度轴转正 → 同轴/轴向装配 → 沿 Y 轴爆炸
