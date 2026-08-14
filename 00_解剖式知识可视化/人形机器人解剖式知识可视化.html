@@ -286,6 +286,8 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <div class="logo"><span class="dot"></span>人形机器人关节模组 · 3D解剖知识系统</div>
   <div class="sep"></div>
   <div class="tbr">
+    <button class="vb" id="btnIndex" title="返回学习首页（主界面）"><span class="ic">📚</span>学习首页</button>
+    <button class="vb home" id="btnHome" title="返回整机总览"><span class="ic">🏠</span>整机总览</button>
     <button class="vb theme" id="btnTheme"><span class="ic">🌗</span>主题</button>
   </div>
   <button class="ham" id="btnHam" title="导航菜单">☰</button>
@@ -824,6 +826,12 @@ function updatePerf(){
 /* ========== 初始化（页面加载后立即进入3D模式） ========== */
 function init(){
   buildNav();
+  // 绑定顶栏"学习首页"按钮：跳转回主界面 index.html（可导航到其它学习页面）
+  var btnIndex=document.getElementById('btnIndex');
+  if(btnIndex)btnIndex.addEventListener('click',function(){window.location.href='../index.html';});
+  // 绑定顶栏"返回整机"按钮：无论当前在拆解场景还是选中某部件，一键回到整机总览
+  var btnHome=document.getElementById('btnHome');
+  if(btnHome)btnHome.addEventListener('click',function(){selectPart('whole');resetView();});
   // 绑定底部栏按钮
   var bbReset=document.getElementById('bbReset');if(bbReset)bbReset.addEventListener('click',resetView);
   var bbWire=document.getElementById('bbWire');if(bbWire)bbWire.addEventListener('click',toggleWire);
@@ -854,13 +862,8 @@ function init(){
   document.querySelectorAll('#drwModel .vb').forEach(function(b){
     b.addEventListener('click',function(){switchModel(b.dataset.m);closeDrawers();});
   });
-  // 点击舞台空白处取消选中
-  var stageEl=document.getElementById('stage');
-  stageEl.addEventListener('click',function(e){
-    if(e.target===stageEl||e.target.tagName==='CANVAS'||e.target.classList.contains('gbg')){
-      selectPart('whole');resetView();
-    }
-  });
+  // 点击舞台空白处取消选中的逻辑已移到3D模块的 onClick 中处理：
+  // 那里有拖动位移阈值判断，可避免"拖动旋转视角后松开"被误判为点击而重置视角
   // 立即初始化3D引擎（不等按钮点击，不等延迟）
   if(window.Robot3D){
     window.Robot3D.enable(function(ok){
@@ -1199,9 +1202,9 @@ function buildRobot(m){
   partGroups={};
   body3d.scale.set(1,1,1);      /* 复位变换，避免上一机型残留 */
   body3d.position.set(0,0,0);
-  /* 先放参数化回退模型：无论真实模型能否加载，画面永远有内容（不卡死、不白屏） */
-  buildFallbackRobot(m);
-  /* 异步加载官方 URDF+STL 真实模型，成功后无缝替换回退模型 */
+  body3d.rotation.y=-0.25;      /* 复位初始朝向，避免上一机型残留 */
+  /* 不再先放参数化回退模型：改为先显示加载进度，官方模型一加载成功就直接显示官方机器人，
+     避免"丑回退模型"先闪现再被替换（仅当官方模型加载失败时才构建回退模型兜底） */
   loadUrdfRobot(m);
 }
 
@@ -1416,10 +1419,10 @@ function assembleUrdf(parsed,geos){
 /* 限并发 + 重试 + 失败容忍的STL加载器：个别文件加载失败时跳过该零件，不中断整体加载 */
 /* 【可调参数】单个STL失败重试次数、并发加载数、重试间隔 */
 var STL_MAX_RETRY=3;      /* 单个STL加载失败的最大重试次数 */
-var STL_CONCURRENCY=4;    /* 同时加载的STL数量：过高易被CDN/服务器限流，过低加载变慢 */
+var STL_CONCURRENCY=8;    /* 同时加载的STL数量：越大加载越快，但过高在线环境易被限流（本地加载建议8） */
 var STL_RETRY_DELAY=600;  /* 重试间隔基准值(ms)，逐次递增，减少瞬时网络抖动的影响 */
-function loadSTLsTolerant(dir,names,loader){
-  var success=[],idx=0;
+function loadSTLsTolerant(dir,names,loader,onProgress){
+  var success=[],idx=0,doneCnt=0; /* doneCnt：已完成（成功或失败）的STL数量，用于进度显示 */
   /* 加载单个STL：失败时按剩余次数重试，重试耗尽则容忍跳过（返回null，不中断整体） */
   function loadOne(n,retryLeft){
     return new Promise(function(res,rej){
@@ -1439,7 +1442,12 @@ function loadSTLsTolerant(dir,names,loader){
       (function step(){
         if(idx>=names.length){resolve();return;}
         var n=names[idx++];
-        loadOne(n,STL_MAX_RETRY).then(function(res){if(res)success.push(res);step();});
+        loadOne(n,STL_MAX_RETRY).then(function(res){
+          if(res)success.push(res);
+          doneCnt++; /* 每完成一个STL（含失败跳过）都累计一次进度 */
+          if(onProgress)onProgress(doneCnt,names.length); /* 回调上报进度，供顶栏提示显示 */
+          step();
+        });
       })();
     });
   }
@@ -1452,9 +1460,9 @@ function loadSTLsTolerant(dir,names,loader){
 function loadUrdfRobot(m){
   /* file:// 协议下浏览器CORS策略阻止加载本地STL/URDF文件，直接使用内置高保真模型 */
   if(window.__IS_FILE_PROTO__){
-    showLdtip('离线模式：内置高保真模型');
-    setTimeout(hideLdtip,2000);
-    /* 自动调整相机适配内置模型 */
+    showLdtip('离线模式：已加载内置模型（file:// 无法读取官方STL，请用"启动教学页面.bat"打开以显示官方模型）');
+    setTimeout(hideLdtip,3000);
+    buildFallbackRobot(m); /* 官方模型读不到时构建回退模型兜底 */
     setTimeout(function(){fitCameraToObject(body3d);},100);
     return;
   }
@@ -1462,6 +1470,7 @@ function loadUrdfRobot(m){
   if(!cfg||!window.fetch){
     showLdtip('使用内置高保真模型');
     setTimeout(hideLdtip,2000);
+    buildFallbackRobot(m); /* 无fetch能力时构建回退模型兜底 */
     setTimeout(function(){fitCameraToObject(body3d);},100);
     return;
   }
@@ -1484,8 +1493,11 @@ function loadUrdfRobot(m){
       names=Object.keys(need);
       if(!names.length||!STLLoader)throw new Error('无STL网格或加载器未就绪');
       var loader=new STLLoader();
-      /* 限并发 + 重试 + 失败容忍加载（修复：任一STL失败不再整体回退，缺个别零件仍显示官方模型） */
-      return loadSTLsTolerant(cfg.dir, names, loader);
+      /* 限并发 + 重试 + 失败容忍加载（修复：任一STL失败不再整体回退，缺个别零件仍显示官方模型）
+         第4个参数为进度回调：实时刷新"正在加载 (i/N)"提示，让用户知道没卡死 */
+      return loadSTLsTolerant(cfg.dir, names, loader, function(done,total){
+        showLdtip('正在加载官方3D模型 ('+done+'/'+total+')');
+      });
     })
     .then(function(list){
       if(token!==urdfToken||currentModel!==m)return;  /* 已切换机型：丢弃过期结果 */
@@ -1495,6 +1507,7 @@ function loadUrdfRobot(m){
       /* 清空回退模型，换上真实模型 */
       while(body3d.children.length)body3d.remove(body3d.children[0]);
       partGroups={};
+      body3d.scale.set(1,1,1); /* 复位缩放：清除回退模型遗留的机型比例（如G1的0.78/1.05），避免官方模型被压扁拉宽 */
       var root=assembleUrdf(parsed,geos);
       /* URDF 为 Z 轴朝上、场景为 Y 轴朝上：绕X转-90°立起，再绕Y转-90°使正面朝向相机 */
       var wrap=new THREE.Group();
@@ -1516,8 +1529,8 @@ function loadUrdfRobot(m){
         var activeJoints=Object.keys(urdfJoints).length;
         dofEl.textContent=activeJoints;
       }
-      /* 自动调整相机以适配整个机器人模型 */
-      fitCameraToObject(body3d);
+      /* 自动调整相机以适配整个机器人模型（若正处于拆解场景则跳过，避免抢占拆解场景的取景） */
+      if(!tdActive)fitCameraToObject(body3d);
       showLdtip('官方模型加载完成'+(missing>0?('，'+missing+'个零件加载失败已跳过'):''));
       setTimeout(hideLdtip,1800);
       if(window.RobotApp)highlight(window.RobotApp.getCur());
@@ -1528,6 +1541,7 @@ function loadUrdfRobot(m){
       var msg=(e&&e.message)?e.message:String(e);
       showLdtip('官方模型加载失败，已用内置模型 ('+msg+')');
       setTimeout(hideLdtip,4000);
+      buildFallbackRobot(m); /* 加载失败才构建回退模型兜底，避免一开始就显示"丑模型" */
       setTimeout(function(){fitCameraToObject(body3d);},100);
     });
 }
@@ -1959,7 +1973,13 @@ function onClick(e){
     return;
   }
   var hits=ray.intersectObjects(body3d.children,true);
-  if(!hits.length)return;
+  if(!hits.length){
+    /* 点击空白处（未命中任何部件）：取消选中并回到整机总览。
+       本函数开头已有位移阈值判断，拖动视角后松开不会走到这里，避免误重置 */
+    if(window.RobotApp)window.RobotApp.selectPart('whole');
+    if(window.Robot3D)window.Robot3D.resetView();
+    return;
+  }
   /* 沿父链查找部件键（真实 URDF 模型的网格带 userData.partKey 标记） */
   var o=hits[0].object;
   while(o){
@@ -2454,9 +2474,17 @@ window.exitTdScene=function(){
   hideLdtip();
   if(body3d)body3d.visible=true;
   if(built){
-    controls.minDistance=savedCam.min;controls.maxDistance=savedCam.max;
-    controls.target.set(0,-15,0);
-    camera.position.set(0,-15,105);
+    /* 恢复相机：优先回到整机适配时保存的初始视角（官方模型加载完成时由fitCameraToObject保存） */
+    if(cameraInitTarget&&cameraInitPosition){
+      controls.target.copy(cameraInitTarget);
+      camera.position.copy(cameraInitPosition);
+      controls.minDistance=cameraInitMinDist;
+      controls.maxDistance=cameraInitMaxDist;
+    }else{
+      controls.minDistance=savedCam.min;controls.maxDistance=savedCam.max;
+      controls.target.set(0,-15,0);
+      camera.position.set(0,-15,105);
+    }
   }
   tdCamSaved=false;  /* 复位标记：下次进入拆解场景重新保存相机限制 */
 };

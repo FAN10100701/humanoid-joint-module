@@ -1,95 +1,164 @@
-﻿# =============================================================
-# 人形机器人解剖式知识可视化 · 本地静态服务器
-# 说明：页面通过 fetch 加载本地 URDF/STL 模型，浏览器禁止在
-#       file:// 协议下读取本地文件，因此必须通过 http 访问页面。
-# 用法：直接运行同目录下的【启动教学页面.bat】即可。
-# 注意：本文件必须保存为 UTF-8 带 BOM 编码，否则 PowerShell 5
-#       会按 GBK 解析中文导致脚本解析失败（服务器无法启动）。
-# =============================================================
+﻿# ============================================================
+# 本地 HTTP 静态服务器（供 _本地工具\启动教学页面.bat 调用）
+# ------------------------------------------------------------
+# 作用：在本地启动一个极简静态文件服务器，让浏览器通过
+#       http:// 协议访问 3D 解剖页面。
+# 为什么需要它：
+#       file:// 协议下浏览器禁止 fetch 本地文件，官方 URDF/STL
+#       模型和本地 Three.js 都无法加载，只能显示"内置回退丑模型"。
+#       通过本服务器用 http 访问后，即可秒开官方宇树模型。
+# 无依赖：只用 PowerShell 自带的 TcpListener 实现，无需安装任何东西。
+# ============================================================
 
 $ErrorActionPreference = 'Stop'
 
-# 【可调参数】服务端口号（如被占用可改成其他 1024~65535 的值）
-$Port = 8323
-# 【可调参数】默认首页文件名
-$DefaultPage = '人形机器人解剖式知识可视化.html'
+# ==================== 可调参数（调试用） ====================
+$PORT_START = 8000        # 起始端口，被占用则自动 +1 重试
+$PORT_MAX   = 8020        # 最大尝试端口
+$BIND_IP    = '127.0.0.1' # 只监听本机回环地址，不对外暴露，安全
+# ============================================================
 
-# 网站根目录 = 本脚本所在目录
-$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Prefix = "http://localhost:$Port/"
+# 站点根目录：本脚本上一级目录（即整个项目根目录）
+# 这样既能访问 00_解剖式知识可视化/，也能访问根目录的 index.html
+$ROOT = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add($Prefix)
-try {
-    $listener.Start()
-} catch {
-    Write-Host "端口 $Port 启动失败（可能被占用），请修改脚本顶部的 Port 参数后重试。" -ForegroundColor Red
-    Read-Host '按回车退出'
-    exit 1
-}
+# 目标入口页面（相对 ROOT 的路径，含中文需保持与文件名一致）
+$ENTRY = '00_解剖式知识可视化/人形机器人解剖式知识可视化.html'
 
-Write-Host '==============================================' -ForegroundColor Cyan
-Write-Host ' 人形机器人解剖式知识可视化 · 本地服务器已启动' -ForegroundColor Cyan
-Write-Host (" 访问地址: {0}{1}" -f $Prefix, $DefaultPage) -ForegroundColor Yellow
-Write-Host ' 关闭本窗口即停止服务' -ForegroundColor Cyan
-Write-Host '==============================================' -ForegroundColor Cyan
-
-# 自动打开默认浏览器访问首页
-Start-Process ($Prefix + $DefaultPage)
-
-# MIME 类型表（STL/URDF/GLB 为 3D 模型与机器人描述文件）
-$Mime = @{
+# MIME 类型表：按扩展名返回正确 Content-Type
+# （ES 模块 .js/.mjs 必须是 JavaScript MIME，否则浏览器拒绝加载）
+$MIME = @{
     '.html' = 'text/html; charset=utf-8'
-    '.css'  = 'text/css; charset=utf-8'
+    '.htm'  = 'text/html; charset=utf-8'
     '.js'   = 'application/javascript; charset=utf-8'
+    '.mjs'  = 'application/javascript; charset=utf-8'
+    '.css'  = 'text/css; charset=utf-8'
     '.json' = 'application/json; charset=utf-8'
-    '.stl'  = 'model/stl'
-    '.urdf' = 'text/xml; charset=utf-8'
-    '.glb'  = 'model/gltf-binary'
-    '.png'  = 'image/png'
-    '.jpg'  = 'image/jpeg'
-    '.jpeg' = 'image/jpeg'
-    '.gif'  = 'image/gif'
     '.svg'  = 'image/svg+xml'
+    '.png'  = 'image/png'
     '.ico'  = 'image/x-icon'
+    '.stl'  = 'application/octet-stream'
+    '.urdf' = 'text/xml; charset=utf-8'
+    '.md'   = 'text/markdown; charset=utf-8'
+    '.txt'  = 'text/plain; charset=utf-8'
 }
 
-# 主循环：逐个处理 HTTP 请求（单线程顺序处理，教学场景足够）
-while ($listener.IsListening) {
-    $ctx = $listener.GetContext()
-    $req = $ctx.Request
-    $resp = $ctx.Response
-    try {
-        # URL 解码并规范化路径（StartsWith 校验防止 ../ 越权访问）
-        $raw = [System.Uri]::UnescapeDataString($req.Url.AbsolutePath)
-        if ($raw -eq '/' -or $raw -eq '') { $raw = '/' + $DefaultPage }
-        $rel = $raw.TrimStart('/').Replace('/', '\')
-        $full = [System.IO.Path]::GetFullPath((Join-Path $Root $rel))
-        if ($full.StartsWith($Root) -and (Test-Path $full -PathType Leaf)) {
-            $ext = [System.IO.Path]::GetExtension($full).ToLower()
-            $ct = if ($Mime.ContainsKey($ext)) { $Mime[$ext] } else { 'application/octet-stream' }
-            $bytes = [System.IO.File]::ReadAllBytes($full)
-            $resp.StatusCode = 200
-            $resp.ContentType = $ct
-            $resp.ContentLength64 = $bytes.Length
-            # 缓存策略：html 页面禁止缓存（保证修改后刷新立即生效）；
-            # 模型/引擎等大文件允许缓存 1 小时，加快二次加载
-            if ($ext -eq '.html') {
-                $resp.AddHeader('Cache-Control', 'no-cache')
-            } else {
-                $resp.AddHeader('Cache-Control', 'public, max-age=3600')
-            }
-            $resp.OutputStream.Write($bytes, 0, $bytes.Length)
-        } else {
-            # 文件不存在：返回 404（页面会自动回退到参数化模型，不会卡死）
-            $msg = [System.Text.Encoding]::UTF8.GetBytes('404 Not Found: ' + $raw)
-            $resp.StatusCode = 404
-            $resp.ContentType = 'text/plain; charset=utf-8'
-            $resp.OutputStream.Write($msg, 0, $msg.Length)
+# 找到一个可用端口（从 PORT_START 开始逐个尝试）
+function Find-FreePort {
+    for ($p = $PORT_START; $p -le $PORT_MAX; $p++) {
+        $l = $null
+        try {
+            $l = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Parse($BIND_IP), $p)
+            $l.Start()
+            $l.Stop()
+            return $p
+        } catch {
+            # 端口被占用，尝试下一个
         }
+    }
+    throw "无法在 $PORT_START ~ $PORT_MAX 之间找到可用端口，请关闭占用端口的程序后重试"
+}
+
+# 写一个简单的 404 响应
+function Write-NotFound($stream) {
+    $body = [System.Text.Encoding]::UTF8.GetBytes('<h1>404 Not Found</h1>')
+    $head = "HTTP/1.1 404 Not Found`r`nContent-Type: text/html; charset=utf-8`r`nContent-Length: $($body.Length)`r`nConnection: close`r`n`r`n"
+    $hb = [System.Text.Encoding]::ASCII.GetBytes($head)
+    $stream.Write($hb, 0, $hb.Length)
+    $stream.Write($body, 0, $body.Length)
+    $stream.Flush()
+}
+
+# 处理单个连接：解析请求行 -> 映射到本地文件 -> 返回内容
+function Handle-Request($client) {
+    $stream = $client.GetStream()
+    $stream.ReadTimeout = 5000
+    $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::ASCII, $false, 8192, $true)
+
+    # 读取请求行，形如：GET /path HTTP/1.1
+    $requestLine = $reader.ReadLine()
+    if (-not $requestLine) { return }
+
+    # 跳过剩余请求头，直到空行
+    while ($true) {
+        $line = $reader.ReadLine()
+        if ($line -eq '' -or $line -eq $null) { break }
+    }
+
+    $parts = $requestLine -split ' '
+    if ($parts.Count -lt 2) { return }
+    $rawPath = $parts[1]
+
+    # 去掉查询字符串（? 后面的部分）
+    $q = $rawPath.IndexOf('?')
+    if ($q -ge 0) { $rawPath = $rawPath.Substring(0, $q) }
+
+    # URL 解码（处理中文文件名，如 人形机器人解剖式知识可视化.html）
+    $decoded = [System.Uri]::UnescapeDataString($rawPath)
+
+    # 访问根路径时返回主页 index.html（学习系统主界面，可导航到其它页面）
+    if ($decoded -eq '/') { $decoded = '/index.html' }
+
+    # 防止路径穿越攻击：把相对路径拼到 ROOT 后再规范化，必须仍在 ROOT 内
+    $rel = $decoded.TrimStart('/').Replace('/', '\')
+    $full = [System.IO.Path]::GetFullPath((Join-Path $ROOT $rel))
+    if (-not $full.StartsWith($ROOT, [System.StringComparison]::OrdinalIgnoreCase)) {
+        Write-NotFound $stream
+        return
+    }
+
+    # 文件不存在则返回 404
+    if (-not (Test-Path $full -PathType Leaf)) {
+        Write-NotFound $stream
+        return
+    }
+
+    # 读取文件全部字节
+    $bytes = [System.IO.File]::ReadAllBytes($full)
+    $ext = [System.IO.Path]::GetExtension($full).ToLower()
+    $ctype = $MIME[$ext]
+    if (-not $ctype) { $ctype = 'application/octet-stream' }
+
+    # 写响应头（Connection: close 简化处理，不保持长连接）
+    $head = "HTTP/1.1 200 OK`r`nContent-Type: $ctype`r`nContent-Length: $($bytes.Length)`r`nCache-Control: no-cache`r`nConnection: close`r`n`r`n"
+    $hb = [System.Text.Encoding]::ASCII.GetBytes($head)
+    $stream.Write($hb, 0, $hb.Length)
+    $stream.Write($bytes, 0, $bytes.Length)
+    $stream.Flush()
+}
+
+# ==================== 启动服务器 ====================
+$port = Find-FreePort
+$listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Parse($BIND_IP), $port)
+$listener.Start()
+
+$url = "http://localhost:$port/$ENTRY"
+Write-Host ''
+Write-Host '======================================================' -ForegroundColor Cyan
+Write-Host '  本地教学服务器已启动' -ForegroundColor Green
+Write-Host "  地址: $url" -ForegroundColor White
+Write-Host '  现在即可看到宇树官方 H1 / G1 真实模型（本地秒加载）' -ForegroundColor DarkGray
+Write-Host '  关闭本窗口 或 按 Ctrl+C 停止服务器' -ForegroundColor DarkGray
+Write-Host '======================================================' -ForegroundColor Cyan
+Write-Host ''
+
+# 自动在默认浏览器中打开页面
+try { Start-Process $url } catch { }
+
+# 主循环：持续接收并处理请求，直到用户关闭窗口/Ctrl+C
+while ($true) {
+    $client = $null
+    try {
+        $client = $listener.AcceptTcpClient()
     } catch {
-        try { $resp.StatusCode = 500 } catch {}
+        # 服务器被停止（窗口关闭），退出循环
+        break
+    }
+    try {
+        Handle-Request $client
+    } catch {
+        # 单个请求出错不影响服务器整体运行，忽略即可
     } finally {
-        $resp.Close()
+        if ($client) { $client.Close() }
     }
 }
