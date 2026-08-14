@@ -162,6 +162,16 @@ body[data-theme="dark"] .logo .dot{box-shadow:0 0 14px var(--accent-g),0 0 0 3px
 #webglLbl{position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:8;font-size:11px;color:var(--faint);font-weight:500;letter-spacing:.5px;display:block}
 #webglLbl b{color:var(--accent)}
 
+/* ===== 3D 启动遮罩（手机白屏修复）=====
+   纯 HTML/CSS 渲染：不依赖 module 脚本，页面一解析就立即可见；
+   module 脚本启动成功后由 JS 隐藏；老内核/断网时由看门狗升级为排查提示 */
+#bootOv{position:absolute;inset:0;z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg3)}
+#bootOv .spin{width:38px;height:38px;border-radius:50%;border:3px solid rgba(0,102,204,.16);border-top-color:var(--accent);animation:bootSpin .9s linear infinite}
+@keyframes bootSpin{to{transform:rotate(360deg)}}
+#bootTxt{font-size:13px;color:var(--muted);text-align:center;line-height:1.8;padding:0 30px}
+#bootTxt .sub{font-size:11px;color:var(--faint)}
+body[data-theme="dark"] #bootOv{background:rgba(13,18,30,.6)}
+
 /* ===== 实时状态胶囊 ===== */
 .status{position:absolute;right:18px;top:56px;z-index:10;display:flex;align-items:center;gap:7px;padding:6px 13px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,255,255,.9);border:1px solid var(--rule);color:var(--muted);box-shadow:var(--sh1);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .status b{color:var(--ink)}
@@ -323,6 +333,36 @@ body[data-theme="dark"] .bb-perf{color:var(--muted)}
 <script>
 /* 检测是否为 file:// 协议：file:// 下 STL/URDF 文件无法通过fetch加载，使用内置参数化模型 */
 window.__IS_FILE_PROTO__=location.protocol==='file:';
+/* 【手机白屏修复】3D 启动自检：模块脚本(含全部进度条代码)未启动前页面无任何进度反馈，
+   按两种失败分别给出明确提示，替代"转圈无响应"的无反馈状态：
+   ① 内核过旧（不支持 importmap/ES 模块）→ 同步立即提示（微信/QQ 内置浏览器常见）
+   ② 网络过慢/中断 → 看门狗超时后提示 */
+var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本超时仍未启动则显示网络排查提示 */
+(function(){
+  function bootFail(html){   /* 启动遮罩升级为排查提示：停转圈 + 换文案 */
+    var o=document.getElementById('bootOv');
+    if(!o)return;
+    var s=o.querySelector('.spin');if(s)s.style.display='none';
+    var t=document.getElementById('bootTxt');if(t)t.innerHTML=html;
+  }
+  /* 同步特性检测：HTMLScriptElement.supports('importmap') 为官方标准检测方式 */
+  var impOk=false;
+  try{impOk=!!(window.HTMLScriptElement&&HTMLScriptElement.supports&&HTMLScriptElement.supports('importmap'));}catch(e){}
+  /* 本脚本位于 bootOv 元素之前：DOM 操作必须等解析完成（DOMContentLoaded）后再执行 */
+  function runBootCheck(){
+    if(!impOk){
+      bootFail('当前浏览器内核过旧，不支持 3D 所需的 ES 模块特性。<br>请改用 <b>系统浏览器</b> 或最新版 <b>Chrome / Safari / Edge</b> 打开本页<br><span class="sub">（微信/QQ 内置浏览器常见：可点右上角"…"选择"在浏览器打开"）</span>');
+      return;   /* 内核不支持：无需再等网络看门狗 */
+    }
+    /* 内核支持但迟迟未启动：网络过慢/中断（或本地 file:// 双击打开） */
+    setTimeout(function(){
+      if(window.__3D_BOOT_OK__)return;   /* 模块已启动：正常流程，无事发生 */
+      bootFail('3D 引擎启动超时（网络较慢或中断）。<br>请检查网络后<b>刷新重试</b>，首次访问需下载约 1~5MB。<br><span class="sub">（若为本地双击打开的 file:// 页面，请改用 _本地工具 目录下的"启动教学页面.bat"）</span>');
+    },BOOT_WATCHDOG_MS);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',runBootCheck);
+  else runBootCheck();
+})();
 </script>
 <div class="tb">
   <div class="logo"><span class="dot"></span>人形机器人关节模组 · 3D解剖知识系统</div>
@@ -343,6 +383,8 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
     <div class="gbg"></div>
     <div class="sbd">机型：<b id="stageM">宇树 H1</b> · <span id="stageP">整机系统</span></div>
     <canvas id="webgl"></canvas>
+    <!-- 3D 启动遮罩：进页面立即显示（纯CSS无JS依赖），模块脚本启动后自动隐藏；手机慢网/老内核不再白屏无提示 -->
+    <div id="bootOv"><div class="spin"></div><div id="bootTxt">正在加载 3D 引擎与模型…<br><span class="sub">首次访问需下载约 1~5MB，请稍候</span></div></div>
     <div class="view-label" id="webglLbl">拖拽旋转 · 滚轮缩放 · 点击部件查看详情</div>
     <div class="ldtip" id="ldtip">正在初始化 3D 引擎…</div>
     <div class="load-box show" id="loadBox">
@@ -1202,6 +1244,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 }());
 </script>
 <script type="module">
+/* 【手机白屏修复】模块已启动：①通知启动自检看门狗（不再触发超时提示）
+   ②隐藏启动遮罩，此后加载进度由模块内中央加载框 showLoading 接管显示 */
+window.__3D_BOOT_OK__=true;
+(function(){var o=document.getElementById('bootOv');if(o)o.style.display='none';})();
 let THREE, OrbitControls, STLLoader=null, DRACOLoader=null, _dracoLoader=null;
 let renderer, scene, camera, controls, body3d;
 let raf=null, built=false, active=false;
@@ -1597,7 +1643,16 @@ function orbit3D(dx,dy){
 
 function initThree(){
   var canvas=document.getElementById('webgl');
-  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+  try{
+    renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+  }catch(e){
+    /* 【手机白屏修复】WebGL 创建失败（部分手机/浏览器无硬件加速）：显式提示原因与解决办法，
+       并重新显示启动遮罩承载提示文案，而非留一张空白画布 */
+    var _o=document.getElementById('bootOv'),_t=document.getElementById('bootTxt');
+    if(_o){_o.style.display='flex';var _s=_o.querySelector('.spin');if(_s)_s.style.display='none';}
+    if(_t)_t.innerHTML='当前设备/浏览器不支持 WebGL，无法显示 3D 模型。<br>请尝试：<b>系统浏览器</b>、最新版 Chrome/Safari，或在电脑上打开。';
+    throw e;   /* 继续上抛终止后续初始化，避免渲染器空引用连环报错 */
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;  /* 电影级色调映射：真实金属反光 */
