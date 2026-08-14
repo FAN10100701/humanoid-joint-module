@@ -265,6 +265,8 @@ body[data-theme="dark"] .simbox canvas{background:#0a0e17;border-color:var(--rul
 .bb-btn:hover{color:var(--ink);background:#fff;box-shadow:var(--sh1)}
 .bb-btn.on{color:#fff;background:var(--accent);border-color:var(--accent)}
 .bb-sep{width:1px;height:20px;background:var(--rule);margin:0 6px;flex-shrink:0}
+/* 拆解专属按钮/分隔线：仅拆解场景显示（JS 给 #bottomBar 加 .td-on），整机模式收起防拥挤 */
+#bottomBar:not(.td-on) .td-only{display:none}
 /* 场景切换下拉（底部栏内） */
 .bb-sel{border:1px solid var(--rule);background:rgba(255,255,255,.7);color:var(--ink);font-size:12px;font-weight:600;padding:5px 8px;border-radius:8px;cursor:pointer;font-family:inherit;outline:none;flex-shrink:0;max-width:180px}
 .bb-sel:hover{background:#fff;box-shadow:var(--sh1)}
@@ -367,11 +369,12 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <button class="bb-btn" id="bbAnim" title="关节动画">▶ 关节动画</button>
   <button class="bb-btn" id="bbAutoRot" title="自动旋转">🔄 自动旋转</button>
   <div class="bb-sep"></div>
-  <button class="bb-btn" id="bbExplode" title="爆炸拆解 / 恢复装配">💥 爆炸拆解</button>
-  <button class="bb-btn" id="bbLabels" title="显示 / 隐藏零件名称标签">🏷️ 零件标签</button>
-  <button class="bb-btn" id="bbDemo" title="自动循环播放拆解 / 装配动画">▶️ 自动演示</button>
-  <button class="bb-btn" id="bbSeq" title="按真实维修顺序逐个零件依次拆出再依次装回（拆解顺序动画）">🎬 顺序拆解</button>
-  <div class="bb-sep"></div>
+  <!-- 拆解 4 按钮(.td-only)：仅拆解场景显示（JS 切 bottomBar 的 td-on 类），整机模式自动收起防拥挤 -->
+  <button class="bb-btn td-only" id="bbExplode" title="爆炸拆解 / 恢复装配">💥 爆炸拆解</button>
+  <button class="bb-btn td-only" id="bbLabels" title="显示 / 隐藏零件名称标签">🏷️ 零件标签</button>
+  <button class="bb-btn td-only" id="bbDemo" title="自动循环播放拆解 / 装配动画">▶️ 自动演示</button>
+  <button class="bb-btn td-only" id="bbSeq" title="按真实维修顺序逐个零件依次拆出再依次装回（拆解顺序动画）">🎬 顺序拆解</button>
+  <div class="bb-sep td-only"></div>
   <select class="bb-sel" id="bbSceneSel" title="切换演示场景（关节模组 / 三种减速器拆解）">
     <option value="">整机模型</option>
     <option value="td_joint">关节模组拆解</option>
@@ -385,13 +388,19 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
     <button class="bb-opt" data-m="h1">宇树 H1</button>
     <button class="bb-opt" data-m="g1">宇树 G1</button>
   </div>
-  <button class="bb-btn" id="bbCompare" title="H1/G1 同屏对比（左 H1 右 G1 按真实身高比例显示，关节动画与姿态同步）">🆚 同屏对比</button>
+  <button class="bb-btn" id="bbCompare" title="三机同屏对比（左 H1 / 中 G1 / 右 X1，按真实身高比例脚踩同一地面，关节动画与姿态同步）">🆚 三机同屏</button>
   <select class="bb-sel" id="bbColorSel" title="切换机身配色方案（银白 / 纯白 / 金属色 / 原配色 / 半透明）">
     <option value="silver">🎨 机身配色：银白</option>
     <option value="white">🎨 机身配色：纯白</option>
     <option value="metal">🎨 机身配色：金属色</option>
     <option value="dark">🎨 机身配色：原配色</option>
     <option value="ghost">🎨 机身配色：半透明</option>
+  </select>
+  <select class="bb-sel" id="bbEnvSel" title="切换环境背景（默认无环境；晴天/黄昏/展厅均为程序化生成，不增加加载时间）">
+    <option value="none">🖼 环境：无(默认)</option>
+    <option value="sky">🖼 环境：晴天自然光</option>
+    <option value="sunset">🖼 环境：黄昏暖光</option>
+    <option value="studio">🖼 环境：展厅</option>
   </select>
   <div class="bb-sep"></div>
   <div class="bb-perf" id="bbPerf" title="实时帧率与零件数量">📊 -- FPS · -- 件</div>
@@ -419,7 +428,7 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
   <button class="vb" id="btnDemo2">自动演示</button>
   <button class="vb" id="btnSeq2">顺序拆解</button>
   <button class="vb" id="btnLabels2">零件标签</button>
-  <button class="vb" id="btnCompare2">H1/G1 同屏对比</button>
+  <button class="vb" id="btnCompare2">三机同屏对比</button>
   <select class="vb" id="sceneSel2">
     <option value="">场景：整机模型</option>
     <option value="td_joint">场景：关节模组拆解</option>
@@ -435,6 +444,13 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
     <option value="metal">配色：金属色</option>
     <option value="dark">配色：原配色</option>
     <option value="ghost">配色：半透明</option>
+  </select>
+  <!-- 移动端环境背景选择（与桌面底部栏 bbEnvSel 同步） -->
+  <select class="vb" id="envSel2">
+    <option value="none">环境：无(默认)</option>
+    <option value="sky">环境：晴天自然光</option>
+    <option value="sunset">环境：黄昏暖光</option>
+    <option value="studio">环境：展厅</option>
   </select>
 </div>
 <nav class="btab" id="btab">
@@ -1140,6 +1156,21 @@ function init(){
   }
   if(bcs)bcs.addEventListener('change',function(){onColorChange(bcs);});
   if(cs2)cs2.addEventListener('change',function(){onColorChange(cs2);});
+  // 环境背景切换：桌面底部栏与移动端抽屉两个下拉互相同步，选中项持久化到 localStorage
+  var bes=document.getElementById('bbEnvSel'),es2=document.getElementById('envSel2');
+  /* 恢复上次选择的环境预设并同步两个下拉的显示（3D侧启动时也会读同一 localStorage 键） */
+  var savedEnv=null;
+  try{savedEnv=localStorage.getItem('robot-env');}catch(e){}
+  if(bes&&savedEnv)bes.value=savedEnv;
+  if(es2&&savedEnv)es2.value=savedEnv;
+  function onEnvChange(src){
+    var k=src.value;
+    if(window.Robot3D&&window.Robot3D.setEnvPreset)window.Robot3D.setEnvPreset(k);  /* 3D侧立即切换并写 localStorage */
+    if(bes&&bes!==src)bes.value=k;   /* 同步另一个下拉的选中项 */
+    if(es2&&es2!==src)es2.value=k;
+  }
+  if(bes)bes.addEventListener('change',function(){onEnvChange(bes);});
+  if(es2)es2.addEventListener('change',function(){onEnvChange(es2);});
   // 移动端机型切换
   document.querySelectorAll('#drwModel .vb').forEach(function(b){
     b.addEventListener('click',function(){switchModel(b.dataset.m);closeDrawers();});
@@ -1223,6 +1254,100 @@ const COLOR_SCHEMES={
 };
 let curScheme='silver';             /* 当前配色方案键（持久化到 localStorage） */
 curScheme=restoreColorScheme();     /* 启动时恢复上次选择的配色方案（无记录则默认银白） */
+
+/* ==================== 环境背景预设系统（程序化生成，零外部下载，切换毫秒级） ====================
+   默认"无环境"保持原始透明背景+网格地面；其余预设用 Canvas 渐变天空 + 柔和太阳 + 雾
+   + 实体地面 + 灯光色温微调，营造"简单好看、稍微真实"的自然光/展厅氛围 */
+let lightHemi=null,lightKey=null,lightFill=null;  /* 环境预设要调色的光源引用（initThree 赋值） */
+let grid3d=null,gnd3d=null,gndShadowMat=null;     /* 地面网格/地面实体/透明阴影材质引用 */
+let LIGHT_INIT=null;                              /* 主光+环境光初始参数（切回无环境时恢复） */
+let curEnv='none';                                /* 当前环境预设键（持久化到 localStorage） */
+/* 环境预设可调参数（调试用宏） */
+const ENV_PRESETS={
+  /* 无环境（默认）：透明背景 + 网格地面 + 原五光源，即历史默认观感 */
+  none:  {name:'无环境(默认)'},
+  /* 晴天自然光：天蓝→暖白渐变 + 太阳光晕 + 草地色地面 + 轻雾 */
+  sky:   {name:'晴天自然光', stops:['#5fb2f0','#a8d8f8','#eef4e2'], sun:[0.68,0.16],
+          fog:{color:0xdcecf8,near:160,far:520}, ground:0x8faa76, groundRough:0.95,
+          keyColor:0xfff2dc, keyInt:1.35, keyPos:[30,42,20], hemiSky:0xbfe0ff, hemiInt:0.7},
+  /* 黄昏暖光：橙金→暮紫渐变 + 低角度暖阳 + 暖沙色地面 + 中等雾 */
+  sunset:{name:'黄昏暖光', stops:['#f7b26a','#f4845f','#4a3a5e'], sun:[0.3,0.22],
+          fog:{color:0xe8b48c,near:140,far:480}, ground:0x9a7f66, groundRough:0.9,
+          keyColor:0xffb070, keyInt:1.5, keyPos:[-38,18,12], hemiSky:0xffc9a0, hemiInt:0.55},
+  /* 展厅：深灰渐变背景 + 深色地板 + 白光主灯（机器人类产品发布氛围） */
+  studio:{name:'展厅', stops:['#3a4048','#23272e','#171a1f'], sun:null,
+          fog:{color:0x23272e,near:180,far:560}, ground:0x2c3036, groundRough:0.35,
+          keyColor:0xffffff, keyInt:1.6, keyPos:[16,45,26], hemiSky:0x9aa8b8, hemiInt:0.5}
+};
+/* 生成渐变天空 Canvas 纹理：stops 为从上到下的颜色数组，sun 为可选太阳光晕位置[x,y](0~1) */
+function makeSkyTexture(stops,sun){
+  var cv=document.createElement('canvas');cv.width=64;cv.height=256;   /* 窄条即可，纵向渐变横向均匀 */
+  var ctx=cv.getContext('2d');
+  var g=ctx.createLinearGradient(0,0,0,256);
+  for(var i=0;i<stops.length;i++)g.addColorStop(i/(stops.length-1),stops[i]);
+  ctx.fillStyle=g;ctx.fillRect(0,0,64,256);
+  if(sun){   /* 太阳光晕：径向渐变白核+暖晕，叠在天空上部 */
+    var sx=sun[0]*64,sy=sun[1]*256;
+    var rg=ctx.createRadialGradient(sx,sy,2,sx,sy,42);
+    rg.addColorStop(0,'rgba(255,250,230,0.95)');
+    rg.addColorStop(0.35,'rgba(255,230,170,0.45)');
+    rg.addColorStop(1,'rgba(255,220,150,0)');
+    ctx.fillStyle=rg;ctx.fillRect(0,0,64,256);
+  }
+  var tex=new THREE.CanvasTexture(cv);
+  tex.colorSpace=THREE.SRGBColorSpace;
+  return tex;
+}
+/* 应用环境预设：切换背景/雾/地面/灯光；幂等可重复调用 */
+function applyEnvPreset(key){
+  var p=ENV_PRESETS[key];
+  if(!p)return;
+  curEnv=key;
+  if(!scene)return;                       /* 3D 引擎未初始化（如直接打开页面未启用3D） */
+  if(key==='none'){
+    /* 无环境：恢复历史默认观感 */
+    scene.background=null;
+    scene.fog=null;
+    if(grid3d)grid3d.visible=true;
+    if(gnd3d){gnd3d.material=gndShadowMat;}          /* 恢复透明阴影地面 */
+    if(lightKey&&LIGHT_INIT){
+      lightKey.color.setHex(LIGHT_INIT.color);lightKey.intensity=LIGHT_INIT.intensity;
+      lightKey.position.copy(LIGHT_INIT.pos);
+      if(lightHemi){lightHemi.color.setHex(LIGHT_INIT.hemiSky);lightHemi.groundColor.setHex(LIGHT_INIT.hemiGnd);lightHemi.intensity=LIGHT_INIT.hemiInt;}
+    }
+  }else{
+    /* 有环境：渐变天空背景 + 雾 + 实体地面 + 灯光色温调整 */
+    if(!p._tex)p._tex=makeSkyTexture(p.stops,p.sun);   /* 天空纹理每预设只生成一次并缓存 */
+    scene.background=p._tex;
+    scene.fog=new THREE.Fog(p.fog.color,p.fog.near,p.fog.far);
+    if(grid3d)grid3d.visible=false;                    /* 实体地面下隐藏网格 */
+    if(gnd3d){
+      if(!gnd3d.userData.envMat){                      /* 首次创建实体地面材质并缓存复用 */
+        gnd3d.userData.envMat={};
+      }
+      var em=gnd3d.userData.envMat[key];
+      if(!em){                                         /* 每个预设的地面材质只创建一次 */
+        em=new THREE.MeshStandardMaterial({color:p.ground,roughness:p.groundRough,metalness:0.0});
+        gnd3d.userData.envMat[key]=em;
+      }
+      gnd3d.material=em;                               /* ShadowMaterial 与实体材质来回切换 */
+    }
+    if(lightKey){
+      lightKey.color.setHex(p.keyColor);lightKey.intensity=p.keyInt;
+      lightKey.position.set(p.keyPos[0],p.keyPos[1],p.keyPos[2]);
+    }
+    if(lightHemi){lightHemi.color.setHex(p.hemiSky);lightHemi.intensity=p.hemiInt;}
+  }
+  try{localStorage.setItem('robot-env',key);}catch(e){}   /* 记住用户选择 */
+}
+/* 读取持久化的环境预设（页面启动时调用，非法值回退默认无环境） */
+function restoreEnvPreset(){
+  var k=null;
+  try{k=localStorage.getItem('robot-env');}catch(e){}
+  if(!k||!ENV_PRESETS[k])k='none';
+  return k;
+}
+curEnv=restoreEnvPreset();           /* 启动时恢复上次选择的环境预设（无记录则默认无环境） */
 
 function loadDeps(cb){
   if(THREE){cb(true);return;}
@@ -1504,25 +1629,31 @@ function initThree(){
   }catch(e){console.warn('[Robot3D] 环境贴图生成失败（金属可能偏暗）:',e);}
   renderer.toneMapping=THREE.ACESFilmicToneMapping;  /* 电影级色调映射：高光不过曝、暗部有细节 */
   renderer.toneMappingExposure=TONE_EXPOSURE;
-  /* ==================== 五光源布光系统（摄影棚级） ==================== */
+  /* ==================== 五光源布光系统（摄影棚级） ====================
+     光源引用保存到模块级变量（lightHemi/lightKey/lightFill），供环境预设切换时调色 */
   /* 环境光：整体基础照明，避免死黑 */
-  var hemi=new THREE.HemisphereLight(0xddeeff,0x2a2f3f,0.85); scene.add(hemi);
+  var hemi=new THREE.HemisphereLight(0xddeeff,0x2a2f3f,0.85); scene.add(hemi); lightHemi=hemi;
   /* 主光（Key Light）：右前上方，投射阴影 */
   var key=new THREE.DirectionalLight(0xffffff,1.25); key.position.set(22,35,28); key.castShadow=true;
   key.shadow.camera.left=-70;key.shadow.camera.right=70;key.shadow.camera.top=70;key.shadow.camera.bottom=-70;
   key.shadow.camera.near=1;key.shadow.camera.far=300;key.shadow.mapSize.set(2048,2048);
   key.shadow.bias=-0.0005;
-  scene.add(key);
+  scene.add(key); lightKey=key;
+  /* 保存主光初始参数，"无环境"预设恢复用 */
+  LIGHT_INIT={color:key.color.getHex(),intensity:key.intensity,pos:key.position.clone(),
+              hemiSky:hemi.color.getHex(),hemiGnd:hemi.groundColor.getHex(),hemiInt:hemi.intensity};
   /* 补光（Fill Light）：左前下方，冷蓝色调，消除硬阴影 */
-  var fill=new THREE.DirectionalLight(0x88aaff,0.45); fill.position.set(-25,5,-18); scene.add(fill);
+  var fill=new THREE.DirectionalLight(0x88aaff,0.45); fill.position.set(-25,5,-18); scene.add(fill); lightFill=fill;
   /* 轮廓光（Rim Light）：后方，勾勒金属边缘高光 */
   var rim=new THREE.DirectionalLight(0x4488ff,0.6); rim.position.set(0,15,-35); scene.add(rim);
   /* 顶光：垂直向下，照亮肩部和头部顶面 */
   var top=new THREE.DirectionalLight(0xffffff,0.35); top.position.set(0,50,0); scene.add(top);
   /* 地面网格和阴影接收 */
-  var grid=new THREE.GridHelper(90,45,0x2b8eff,0x1e2a3f); grid.material.opacity=0.18; grid.material.transparent=true; grid.position.y=-54; scene.add(grid);
-  var gmat=new THREE.ShadowMaterial({opacity:0.32}); var gnd=new THREE.Mesh(new THREE.PlaneGeometry(150,150),gmat); gnd.rotation.x=-Math.PI/2; gnd.position.y=-54.1; gnd.receiveShadow=true; scene.add(gnd);
+  var grid=new THREE.GridHelper(90,45,0x2b8eff,0x1e2a3f); grid.material.opacity=0.18; grid.material.transparent=true; grid.position.y=-54; scene.add(grid); grid3d=grid;
+  var gmat=new THREE.ShadowMaterial({opacity:0.32}); var gnd=new THREE.Mesh(new THREE.PlaneGeometry(150,150),gmat); gnd.rotation.x=-Math.PI/2; gnd.position.y=-54.1; gnd.receiveShadow=true; scene.add(gnd); gnd3d=gnd;
+  gndShadowMat=gmat;   /* 保存透明阴影材质，"无环境"预设恢复用 */
   body3d=new THREE.Group(); scene.add(body3d);
+  applyEnvPreset(curEnv);   /* 启动时应用上次选择的环境预设（默认无环境=原始观感） */
   buildRobot(currentModel);
   ray=new THREE.Raycaster(); ptr=new THREE.Vector2();
   canvas.addEventListener('pointerdown',onDown);
@@ -1843,7 +1974,7 @@ function assembleUrdf(parsed,geos){
 /* 限并发 + 重试 + 失败容忍的STL加载器：个别文件加载失败时跳过该零件，不中断整体加载 */
 /* 【可调参数】单个STL失败重试次数、并发加载数、重试间隔 */
 var STL_MAX_RETRY=3;      /* 单个STL加载失败的最大重试次数 */
-var STL_CONCURRENCY=8;    /* 同时加载的STL数量：越大加载越快，但过高在线环境易被限流（本地加载建议8） */
+var STL_CONCURRENCY=12;   /* 【可调】同时加载的STL数量：越大加载越快。GitHub Pages/gitee.io均为HTTP/2多路复用，12安全；若目标服务器为HTTP/1.1建议改回6-8 */
 var STL_RETRY_DELAY=600;  /* 重试间隔基准值(ms)，逐次递增，减少瞬时网络抖动的影响 */
 function loadSTLsTolerant(dir,names,loader,onProgress,onEach){
   /* onEach(stlName,geo)：每个STL下载成功时立即回调一次，供"逐零件增量组装"就地替换零件，
@@ -1984,6 +2115,7 @@ function applyUrdf(m,parsed,list,names){
   if(!tdActive)fitCameraToObject(body3d,userInteracted);
   hideLoading();
   preloadReducers(2500);
+  preloadRobots(PRELOAD_ROBOTS_DELAY);   /* 后台预取三机同屏机型到 HTTP 缓存，点对比按钮时秒开 */
   showLdtip('官方模型加载完成'+(missing>0?('，'+missing+'个零件加载失败已跳过'):''));
   setTimeout(hideLdtip,1800);
   if(window.RobotApp)highlight(window.RobotApp.getCur());
@@ -2149,6 +2281,45 @@ function preloadReducers(delay){
     }
     next();
   },delay||3000);
+}
+
+/* ===== 三机同屏机型预加载（速度优化） =====
+   首屏机器人加载完成后，后台空闲时把三台机型的 URDF+STL 预取到浏览器 HTTP 缓存，
+   用户点"三机同屏"时全部命中缓存接近秒开（否则首次需现场串行下载 3 台共百余个 STL，
+   每台 16-18MB，慢网络下需数十秒）。纯 fetch 预取（不解析几何、不占显存），
+   与减速器预载 preloadReducers 同一套零风险机制。 */
+var PRELOAD_ROBOTS_DELAY=9000;  /* 【可调】机型预载延迟(ms)：排在减速器预载(约2.5s后)之后开始，避免抢首屏带宽 */
+var robotsPreloadDone=false;    /* 预加载只执行一次，避免重复下载 */
+function preloadRobots(delay){
+  if(robotsPreloadDone)return;
+  robotsPreloadDone=true;
+  /* file:// 协议下 fetch 不可用；老浏览器无 fetch 时跳过（正式加载有参数化模型兜底） */
+  if(window.__IS_FILE_PROTO__||!window.fetch)return;
+  setTimeout(function(){
+    var keys=Object.keys(URDF_CFG);   /* x1/h1/g1 三台全预取，保证三机同屏三台全部命中缓存 */
+    (function nextRobot(ki){
+      if(ki>=keys.length)return;
+      var cfg=URDF_CFG[keys[ki]];
+      /* 先取 URDF 文本，用与 parseUrdf/loadUrdfRobot 完全相同的规则
+         (DOMParser 解析 + .dae→.STL 替换 + visual 网格 + 取 basename)提取 STL 文件名，
+         保证预取的 URL 与正式加载请求的 URL 一致，HTTP 缓存才能命中 */
+      fetch(cfg.urdf).then(function(r){return r.ok?r.text():'';}).then(function(txt){
+        if(!txt)return nextRobot(ki+1);   /* URDF 获取失败：跳过该机型继续下一台 */
+        var stls={};
+        var doc=new DOMParser().parseFromString(txt,'application/xml');
+        Array.prototype.forEach.call(doc.getElementsByTagName('visual'),function(vis){
+          var meshEl=vis.getElementsByTagName('mesh')[0];       /* 只取 visual 网格，忽略 collision，与 parseUrdf 一致 */
+          var fn=meshEl?meshEl.getAttribute('filename'):null;
+          if(fn)stls[fn.replace(/\.dae$/i,'.STL').split('/').pop()]=1;
+        });
+        var list=Object.keys(stls),i=0;
+        (function next(){                 /* 逐个串行预取：不与任何前台下载抢并发 */
+          if(i>=list.length)return nextRobot(ki+1);
+          fetch(cfg.dir+'/'+list[i++]).then(next,next);   /* 预取到 HTTP 缓存即可，失败忽略继续 */
+        })();
+      }).catch(function(){nextRobot(ki+1);});
+    })(0);
+  },delay||PRELOAD_ROBOTS_DELAY);
 }
 
 /* 相机自动适配目标物体 */
@@ -2613,15 +2784,17 @@ function setModel(m){
   if(window.RobotApp)highlight(window.RobotApp.getCur());
 }
 
-/* ==================== H1/G1 同屏对比模式 ====================
-   把宇树 H1(1.8m级)与 G1(1.32m级)两台官方模型并排放置，按真实相对比例显示，
-   关节动画/姿态预设自动同步驱动两机（同名归一化关节同时动），
+/* ==================== X1/H1/G1 三机同屏对比模式 ====================
+   把智元 X1(1.30m级)、宇树 H1(1.8m级)、宇树 G1(1.32m级)三台官方模型并排放置，
+   按真实相对比例显示（URDF 均为米单位真实尺寸，用同一绝对缩放即得真实身高比），
+   关节动画/姿态预设自动同步驱动三机（同名归一化关节同时动），
    直观对比体型、自由度布局与关节构型差异。 */
 var compareMode=false;      /* 同屏对比模式开关 */
 var comparePreload='';      /* 正在为对比预载的机型（放行 loadUrdfRobot 的 currentModel 守卫） */
 /* 对比布局可调参数（调试用宏） */
-var CMP_GAP=30;             /* 两机型水平间距的一半(场景单位)：H1 在 -CMP_GAP，G1 在 +CMP_GAP */
-var CMP_H1_HEIGHT=1.80;     /* H1 官方身高(m)：作为比例基准 */
+var CMP_ORDER=['h1','g1','x1'];  /* 左→右排列顺序（按身高 1.80 / 1.32 / 1.30 从高到低） */
+var CMP_NAMES={x1:'X1(~1.30m)',h1:'H1(~1.80m)',g1:'G1(~1.32m)'};  /* 各机对比标签 */
+var CMP_GAP=32;             /* 相邻机型水平间距(场景单位)：H1 在 -CMP_GAP，G1 居中，X1 在 +CMP_GAP */
 function toggleCompare(){
   if(!built)return false;
   if(tdActive)return false;  /* 拆解场景中不开对比（舞台被拆解场景占用） */
@@ -2630,14 +2803,15 @@ function toggleCompare(){
   else exitCompareLayout();
   return compareMode;
 }
-/* 进入对比：确保 H1/G1 都已加载(串行预载)，然后并排布局 */
+/* 进入对比：确保三台机型都已加载(串行预载)，然后并排布局 */
 function enterCompare(){
   var need=[];
-  if(!(urdfCache.h1&&urdfCache.h1.wrap&&urdfCache.h1.complete))need.push('h1');
-  if(!(urdfCache.g1&&urdfCache.g1.wrap&&urdfCache.g1.complete))need.push('g1');
+  CMP_ORDER.forEach(function(k){
+    if(!(urdfCache[k]&&urdfCache[k].wrap&&urdfCache[k].complete))need.push(k);
+  });
   if(!need.length){layoutCompare();return;}
   /* 串行加载缺失机型（loadUrdfRobot 内部 applyUrdf 会临时切显示，最后 layoutCompare 统一布局） */
-  showLdtip('正在加载 H1/G1 对比模型…');
+  showLdtip('正在加载三机对比模型（首次需下载，之后秒开）…');
   (function loadNext(){
     var m=need.shift();
     comparePreload=m;                     /* 放行 loadUrdfRobot 的 currentModel 守卫 */
@@ -2647,10 +2821,14 @@ function enterCompare(){
     });
   })();
 }
-/* 并排布局：H1 左 / G1 右，按真实身高比例(H1 85 单位基准)缩放，脚落地+相机适配 */
+/* 并排布局：三台按真实身高比例(H1=85 单位基准)缩放，每台脚底分别落到同一地面 y=-54 + 相机适配 */
 function layoutCompare(){
-  var cH=urdfCache.h1,cG=urdfCache.g1;
-  if(!cH||!cH.wrap||!cG||!cG.wrap){
+  var caches=[],fail=false;
+  CMP_ORDER.forEach(function(k){
+    var c=urdfCache[k];
+    if(!c||!c.wrap)fail=true;else caches.push({key:k,c:c});
+  });
+  if(fail){
     /* 有机型加载失败（无wrap缓存）：退出对比模式并复位按钮，恢复单机显示，避免按钮卡在高亮 */
     compareMode=false;
     var bcf=document.getElementById('bbCompare');if(bcf)bcf.classList.remove('on');
@@ -2661,35 +2839,45 @@ function layoutCompare(){
     return;
   }
   while(body3d.children.length)body3d.remove(body3d.children[0]);
-  /* 保存 G1 原始缩放（applyUrdf 的 85 高度归一化值），退出对比时恢复 */
-  if(!cG.wrap.userData.savedScale)cG.wrap.userData.savedScale=cG.wrap.scale.clone();
-  /* 真实相对比例：两机用同一绝对比例(H1=85 单位)，G1 显示高度=1.32/1.80×85 */
-  var s=cH.wrap.scale.x;
-  cG.wrap.scale.set(s,s,s);
-  cH.wrap.position.set(-CMP_GAP,0,0);   /* H1 居左 */
-  cG.wrap.position.set(CMP_GAP,0,0);    /* G1 居右 */
-  body3d.add(cH.wrap);
-  body3d.add(cG.wrap);
+  /* 以 H1 的单机归一化缩放为统一绝对比例（H1 显示高度=85 单位，其余机型按真实身高等比） */
+  var sH=urdfCache.h1.wrap.scale.x;
+  caches.forEach(function(it,i){
+    var w=it.c.wrap;
+    /* 保存单机原始缩放（applyUrdf 的 85 高度归一化值），退出对比时恢复 */
+    if(!w.userData.savedScale)w.userData.savedScale=w.scale.clone();
+    w.scale.set(sH,sH,sH);
+    /* 三台水平槽位：左(-CMP_GAP) / 中(0) / 右(+CMP_GAP) */
+    w.position.set((i-1)*CMP_GAP,0,0);
+    body3d.add(w);
+  });
   body3d.scale.set(1,1,1);
+  body3d.position.set(0,0,0);
   body3d.rotation.y=-0.25;
-  /* 整体落地(脚底 y=-54)+水平居中 */
+  /* 关键修复：每台分别计算包围盒把各自脚底落到 y=-54（旧算法用整体包围盒，
+     矮机型脚底会悬空；单机落地与旋转无关——绕 y 轴旋转不改变高度） */
+  caches.forEach(function(it){
+    var bb=new THREE.Box3().setFromObject(it.c.wrap);   /* wrap 当前 position.y=0 时的高度范围 */
+    it.c.wrap.position.y=-54-bb.min.y;                  /* 脚底贴地：整体上移到地面 */
+  });
+  /* 总包围盒只做水平居中（y 已各自落地，body3d.position.y 保持 0） */
   var b=new THREE.Box3().setFromObject(body3d);
-  body3d.position.set(-(b.min.x+b.max.x)/2,-54-b.min.y,-(b.min.z+b.max.z)/2);
+  body3d.position.set(-(b.min.x+b.max.x)/2,0,-(b.min.z+b.max.z)/2);
   fitCameraToObject(body3d);
-  applyColorScheme(curScheme);   /* 两台机型都挂在 body3d 下，遍历即可统一换色 */
-  showLdtip('同屏对比：左 H1(~1.80m) · 右 G1(~1.32m)，关节动画已同步；再点一次退出');
-  setTimeout(hideLdtip,3200);
+  applyColorScheme(curScheme);   /* 三台机型都挂在 body3d 下，遍历即可统一换色 */
+  showLdtip('三机同屏：左 '+CMP_NAMES[CMP_ORDER[0]]+' · 中 '+CMP_NAMES[CMP_ORDER[1]]+' · 右 '+CMP_NAMES[CMP_ORDER[2]]+'（按真实身高比例，脚踩同一地面），关节动画已同步；再点一次退出');
+  setTimeout(hideLdtip,3600);
   /* 关节零位复位，避免单机型动画残留角度 */
   resetAllJoints();
 }
-/* 退出对比：恢复两 wrap 的位置/缩放，重建当前机型单机显示 */
+/* 退出对比：恢复各 wrap 的位置/缩放，重建当前机型单机显示 */
 function exitCompareLayout(){
-  var cH=urdfCache.h1,cG=urdfCache.g1;
-  if(cH&&cH.wrap)cH.wrap.position.set(0,0,0);
-  if(cG&&cG.wrap){
-    cG.wrap.position.set(0,0,0);
-    if(cG.wrap.userData.savedScale)cG.wrap.scale.copy(cG.wrap.userData.savedScale);
-  }
+  CMP_ORDER.forEach(function(k){
+    var c=urdfCache[k];
+    if(c&&c.wrap){
+      c.wrap.position.set(0,0,0);
+      if(c.wrap.userData.savedScale)c.wrap.scale.copy(c.wrap.userData.savedScale);
+    }
+  });
   buildRobot(currentModel);   /* 缓存命中路径恢复单机型显示与相机 */
 }
 
@@ -2857,12 +3045,12 @@ function setPose(side,type,angRad){
 function setJointAngle(jointName,angleRad){
   applyJointAngle(urdfJoints,jointName,angleRad);   /* 当前查询机型关节表 */
   if(compareMode){
-    ['h1','g1'].forEach(function(k){                /* 对比中的两台机型 */
+    CMP_ORDER.forEach(function(k){                  /* 对比中的三台机型 */
       var jm=urdfCache[k]&&urdfCache[k].joints;
       if(!jm||jm===urdfJoints)return;               /* 未加载或即当前查询机型则跳过 */
       var nf=normJoint(jointName);
       if(!nf.type)return;                           /* 无法归一化的关节不同步 */
-      for(var jn in jm){                            /* 在另一机型找等效关节 */
+      for(var jn in jm){                            /* 在其他机型找等效关节 */
         var nf2=normJoint(jn);
         if(nf2.side===nf.side&&nf2.type===nf.type){applyJointAngle(jm,jn,angleRad);return;}
       }
@@ -2890,8 +3078,8 @@ function resetAllJoints(){
   var btn=document.getElementById('btnAnim2');
   if(btn)btn.classList.remove('active');
   resetJointMap(urdfJoints);                        /* 当前查询机型 */
-  if(compareMode){                                  /* 对比模式：另一机型同步复位 */
-    ['h1','g1'].forEach(function(k){
+  if(compareMode){                                  /* 对比模式：其他机型同步复位 */
+    CMP_ORDER.forEach(function(k){
       var jm=urdfCache[k]&&urdfCache[k].joints;
       if(jm&&jm!==urdfJoints)resetJointMap(jm);
     });
@@ -3581,6 +3769,7 @@ function buildTdScene(key,sceneName){
   tdGroup=new THREE.Group();
   scene.add(tdGroup);
   body3d.visible=false;                       /* 隐藏机器人，舞台让给拆解场景 */
+  var bbTd=document.getElementById('bottomBar');if(bbTd)bbTd.classList.add('td-on');  /* 显示拆解专属按钮 */
   var bar=document.getElementById('exbar');if(bar)bar.classList.add('show');
   var rg=document.getElementById('exrng');if(rg)rg.value=0;
   var ea=document.getElementById('exauto');if(ea)ea.classList.remove('on');
@@ -3611,6 +3800,7 @@ window.enterTdScene=function(key){
 window.exitTdScene=function(){
   if(!tdActive&&!tdGroup)return;
   tdActive=false;tdKey='';
+  var bbTdX=document.getElementById('bottomBar');if(bbTdX)bbTdX.classList.remove('td-on');  /* 收起拆解专属按钮 */
   var bar=document.getElementById('exbar');if(bar)bar.classList.remove('show');
   cleanupTdGroup();
   hideLdtip();
@@ -3951,6 +4141,7 @@ window.Robot3D={
   setJointAngle:setJointAngle,
   toggleCompare:toggleCompare,   /* H1/G1 同屏对比开关（供底部栏按钮调用） */
   setColorScheme:applyColorScheme, /* 机身配色方案切换（供底部栏/移动端抽屉下拉调用） */
+  setEnvPreset:applyEnvPreset,     /* 环境背景预设切换（供底部栏/移动端抽屉下拉调用） */
   /* 零件数量统计（供底部栏性能显示使用） */
   get meshCount(){return body3d?countMeshes(body3d):0;},
   /* 拆解场景零件数量（供底部栏性能显示使用） */
