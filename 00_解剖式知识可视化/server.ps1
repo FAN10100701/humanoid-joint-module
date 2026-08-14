@@ -164,8 +164,19 @@ Write-Host '  关闭本窗口 或 按 Ctrl+C 停止服务器' -ForegroundColor D
 Write-Host '======================================================' -ForegroundColor Cyan
 Write-Host ''
 
-# 自动在默认浏览器中打开主页（学习系统总导航）
-try { Start-Process $url } catch { }
+# 自动打开浏览器：优先用 Chrome（用户反馈 Edge 对本地 http 有兼容问题），回退默认浏览器。
+# 打开 3D 解剖页（核心页面），路径含中文需做 URL 编码。
+$target = "http://127.0.0.1:$port/" + [System.Uri]::EscapeUriString($ENTRY)
+$chromeCandidates = @(
+    "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+    "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+    "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
+)
+$chrome = $chromeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+try {
+    if ($chrome) { Start-Process $chrome $target }
+    else { Start-Process $target }
+} catch { }
 
 # 主循环：持续接收并处理请求，直到用户关闭窗口/Ctrl+C
 while ($true) {
