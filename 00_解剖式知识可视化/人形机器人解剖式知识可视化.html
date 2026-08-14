@@ -606,25 +606,25 @@ params:[['结构形式','无框电机+谐波+双编码器'],['典型直径','φ8
 vendors:[{n:'宇树科技',r:'M107 一体化关节',m:1},{n:'哈默纳科',r:'谐波三件套'},{n:'THK/IKO',r:'交叉滚子轴承'},{n:'HasslerEngineering',r:'开源谐波3D模型'}]},
 
 td_harmonic:{title:'谐波减速器拆解',sub:'Harmonic Drive · Part-by-Part Explode',td:1,scene:'harmonic',
-params:[['减速比','100:1 (齿差2)'],['零件数','3 核心 + 壳体'],['素材来源','开源3D打印谐波模型'],['输入','波发生器(高速)'],['输出','柔轮(低速反向)'],['同时啮合齿','15%~25%']],sections:[
-{h:'使用方法',p:'拖动<hl>「装配⇄拆解」滑杆</hL>逐层分离零件，点击零件查看详解。本模块使用 GitHub 开源 3D 打印谐波减速器项目（HasslerEngineering）的<hl>真实 STL 模型</hl>：波发生器、柔轮、刚轮、壳体均为独立零件文件，可完整还原装配关系。'},
-{h:'零件清单与传动链',p:'<table class="tbl"><tr><th>零件</th><th>角色</th><th>转速关系</th></tr><tr><td><b>波发生器</b></td><td>椭圆凸轮+柔性轴承</td><td>输入，高速 n₁</td></tr><tr><td><b>柔轮</b></td><td>薄壁弹性外齿轮(少2齿)</td><td>输出，n₂ = −n₁·(Z柔/2)</td></tr><tr><td><b>刚轮</b></td><td>刚性内齿圈(多2齿)</td><td>固定，0</td></tr><tr><td><b>壳体/端盖</b></td><td>支撑与密封</td><td>固定</td></tr></table>传动链：电机轴 → 波发生器 → 柔轮弹性变形啮合 → 柔轮法兰输出。减速比 = 柔轮齿数 ÷ 齿差(2)，例如柔轮 200 齿则减速比 100:1，输出方向与输入<hl>相反</hl>。'},
-{h:'观察要点',p:'拆解时重点观察：①柔轮开口端的<hl>外齿</hl>与刚轮<hl>内齿</hl>的齿形差异（柔轮齿略小以便弹性啮合）；②波发生器的<hl>椭圆轮廓</hl>与柔性轴承的薄壁结构；③柔轮杯底法兰即为输出端——它既要传递扭矩又要反复弹性变形，是<hl>疲劳寿命的决定性零件</hl>（材料通常为特种不锈钢/钛合金，热处理工艺是各厂商核心机密）。'}],
-vendors:[{n:'HasslerEngineering',r:'开源3D打印谐波模型',m:1},{n:'哈默纳科',r:'CSG/SHF 工业谐波'},{n:'绿的谐波',r:'国产谐波龙头'}]},
+params:[['减速比','25:1 (齿差2)'],['齿数','刚轮52 / 柔轮50'],['零件数','10 个真实零件'],['素材来源','howtomechatronics开源SolidWorks'],['输入','波发生器(高速)'],['输出','柔轮(低速反向)']],sections:[
+{h:'使用方法',p:'拖动<hl>「装配⇄拆解」滑杆</hl>沿轴向分离各零件，点击零件查看详解。本场景采用 howtomechatronics（Dejan）的 R25 谐波减速器教程的<hl>全部 10 个真实 STL 零件</hl>（同一 SolidWorks 装配体、单位一致），刚轮52齿+柔轮50齿，外壳直径 95mm，保持真实比例与正确同心嵌套，不再出现旧版混搭模型的重合错乱。'},
+{h:'零件清单与传动链',p:'<table class="tbl"><tr><th>零件</th><th>角色</th><th>转速关系</th></tr><tr><td><b>波发生器</b></td><td>椭圆凸轮</td><td>输入，高速 n₁</td></tr><tr><td><b>柔轮</b></td><td>薄壁弹性外齿轮(50齿)</td><td>输出，反向</td></tr><tr><td><b>刚轮</b></td><td>刚性内齿圈(52齿)</td><td>固定</td></tr><tr><td><b>壳体/端盖/轴/电机座</b></td><td>支撑与密封</td><td>固定</td></tr></table>传动链：电机轴 → 输入轴 → 波发生器 → 柔轮弹性变形啮合 → 柔轮杯底法兰输出。<hl>减速比 = 柔轮齿数 ÷ 齿差 = 50÷2 = 25:1</hl>，输出方向与输入相反。'},
+{h:'观察要点',p:'拆解时重点观察：①柔轮开口端的<hl>外齿</hl>与刚轮<hl>内齿</hl>的齿形差异（柔轮齿略小以便弹性啮合）；②波发生器的<hl>椭圆轮廓</hl>（长轴比柔轮内壁大 3.2mm、短轴小 3.2mm，两侧各排 3 个轴承）；③柔轮杯底法兰即为输出端——它既要传递扭矩又要反复弹性变形，是<hl>疲劳寿命的决定性零件</hl>。'}],
+vendors:[{n:'howtomechatronics',r:'R25开源谐波模型',m:1},{n:'哈默纳科',r:'CSG/SHF 工业谐波'},{n:'绿的谐波',r:'国产谐波龙头'}]},
 
 td_planetary:{title:'行星减速器拆解',sub:'Planetary Gearbox · Part-by-Part Explode',td:1,scene:'planetary',
-params:[['减速比','3:1~10:1 /级'],['零件数','太阳轮+3行星+内齿圈+行星架'],['素材来源','开源行星齿轮箱STL'],['效率','90%~97% /级'],['特点','刚性高/可多级串联'],['人形应用','踝/腕/手部小关节']],sections:[
-{h:'使用方法',p:'拖动<hl>「装配⇄拆解」滑杆</hl>沿轴向分离各级零件，点击零件查看详解。太阳轮与内齿圈采用 GitHub 开源行星齿轮箱项目（Erhannis/gearbox）的<hl>真实 STL 模型</hl>，行星轮与行星架按标准齿形参数化生成，保证啮合关系正确演示。'},
-{h:'零件清单与传动链',p:'<table class="tbl"><tr><th>零件</th><th>角色</th><th>说明</th></tr><tr><td><b>太阳轮</b></td><td>中心输入齿轮</td><td>接电机轴，高速</td></tr><tr><td><b>行星轮 ×3</b></td><td>中间惰轮</td><td>既自转又公转，均布载荷</td></tr><tr><td><b>内齿圈</b></td><td>外圈内齿，固定</td><td>与壳体一体或锁死</td></tr><tr><td><b>行星架</b></td><td>携带行星轮公转</td><td>输出端，低速大扭矩</td></tr></table>传动比公式（内齿圈固定）：<code>i = 1 + Z圈/Z阳</code>。例如太阳轮 20 齿、内齿圈 60 齿，则 i = 1+60/20 = <hl>4:1</hl>。单级减速比小是人行的特点，工业上常 3~4 级串联做到 100:1 以上（但背隙也随之累积）。'},
+params:[['减速比','3.5:1 (单级)'],['零件数','太阳轮+6行星轮+内齿圈+行星架'],['素材来源','CyberGear开源SolidWorks模型'],['效率','90%~97% /级'],['特点','刚性高/6行星均布'],['人形应用','小米CyberGear关节电机']],sections:[
+{h:'使用方法',p:'拖动<hl>「装配⇄拆解」滑杆</hl>沿轴向分离各零件，点击零件查看详解。本场景采用专为小米 CyberGear（人形机器人关节电机）设计的开源 SolidWorks 装配体（AGIRobots/PlanetarGear-3.5xReducer）的<hl>全部真实 STL 零件</hl>，8 个零件来自同一装配体、保持真实比例，啮合关系正确，不再出现旧版混搭模型的重合错乱。'},
+{h:'零件清单与传动链',p:'<table class="tbl"><tr><th>零件</th><th>角色</th><th>说明</th></tr><tr><td><b>太阳轮</b></td><td>中心输入齿轮</td><td>接电机轴，高速</td></tr><tr><td><b>行星轮 ×6</b></td><td>中间惰轮</td><td>每 60° 均布，既自转又公转，均布载荷</td></tr><tr><td><b>内齿圈</b></td><td>外圈内齿，固定</td><td>与外壳一体</td></tr><tr><td><b>行星架</b></td><td>携带行星轮公转</td><td>输出端，低速大扭矩</td></tr></table>传动比公式（内齿圈固定）：<code>i = 1 + Z圈/Z阳</code>。CyberGear 取 3.5:1。单级减速比小是行星减速器的特点，工业上常 3~4 级串联做到 100:1 以上（但背隙也随之累积）。'},
 {h:'与人形机器人的关系',p:'行星减速器<hl>刚性高、效率高(90%+)、抗冲击好</hl>，但单级减速比小、多级串联后背隙大、反驱性差，因此人形机器人大关节（髋膝）多用谐波，而<hl>踝部侧倾、手腕、手指</hl>等需要高刚性抗冲击且精度要求稍低的场合会用微型行星减速箱（如 Maxon GP 系列）。准直驱 QDD 方案（宇树四足）则用<hl>单级 4~10:1 行星</hl>换取极致反驱透明度。'}],
-vendors:[{n:'Erhannis',r:'开源行星齿轮箱STL',m:1},{n:'Maxon',r:'GP系列微型行星'},{n:'Neugart',r:'精密行星减速箱'}]},
+vendors:[{n:'AGIRobots',r:'CyberGear开源行星齿轮箱',m:1},{n:'小米',r:'CyberGear人形关节电机',m:1},{n:'Maxon',r:'GP系列微型行星'},{n:'Neugart',r:'精密行星减速箱'}]},
 
 td_cycloidal:{title:'摆线 RV 减速器拆解',sub:'Cycloidal / RV Reducer · Explode',td:1,scene:'cycloidal',
-params:[['减速比','30:1~180:1'],['核心件','摆线盘+针齿+偏心轴'],['素材来源','开源RV减速器STL'],['效率','85%~92%'],['抗冲击','极强(多齿同时接触)'],['典型应用','工业机器人大关节']],sections:[
-{h:'使用方法',p:'拖动<hl>「装配⇄拆解」滑杆</hl>分离各零件，点击零件查看详解。摆线盘采用 GitHub 开源 RV 减速器项目（JelmerV/RV-Reducer）的<hl>真实 STL 模型</hl>（3D 打印版），输入齿轮、偏心轴、针齿圈与输出法兰按典型 RV 结构参数化重建。'},
-{h:'零件清单与传动链',p:'<table class="tbl"><tr><th>零件</th><th>角色</th><th>说明</th></tr><tr><td><b>输入齿轮</b></td><td>一级直齿减速</td><td>电机轴→偏心轴，第一级减速</td></tr><tr><td><b>偏心轴</b></td><td>曲柄输入</td><td>偏心量 e 驱动摆线盘摆动</td></tr><tr><td><b>摆线盘</b></td><td>核心传动件</td><td>外廓为摆线曲线，齿数=针齿数−1</td></tr><tr><td><b>针齿圈</b></td><td>固定针轮</td><td>壳体上一圈圆柱销，与摆线盘啮合</td></tr><tr><td><b>输出法兰+曲柄销</b></td><td>输出端</td><td>穿过摆线盘偏心孔，只取公转分量</td></tr></table>原理：偏心轴每转一圈，摆线盘反向<hl>转过一个针齿的角度</hl>（齿差1传动），减速比 = 针齿数。摆线盘与针齿是<hl>滚动接触且约一半针齿同时承载</hl>，因此抗冲击能力远超谐波。'},
-{h:'RV vs 谐波：人形机器人怎么选',p:'RV 减速器<hl>抗冲击、寿命长、大扭矩</hl>，但体积重量大（同扭矩下比谐波重 30~50%）、有偏心振动需双盘对消。工业机器人（KUKA/发那科）大关节是 RV 的天下；人形机器人对<hl>扭矩密度</hl>极端敏感，因此主流选谐波。但近年出现<hl>微型摆线/复合行星</hl>新路线（如特斯拉 Optimus 的部分直线关节、一些国产关节的"行星+摆线"复合方案），用摆线的高刚性弥补谐波柔轮的冲击寿命短板，值得持续关注。'}],
-vendors:[{n:'JelmerV',r:'开源3D打印RV减速器',m:1},{n:'纳博特斯克 Nabtesco',r:'RV减速器全球垄断者'},{n:'环动科技/中大力德',r:'国产RV减速器'}]},
+params:[['减速比','25:1 (齿差1)'],['针齿数','26 个滚柱针齿'],['零件数','10 个真实零件'],['素材来源','howtomechatronics开源SolidWorks'],['抗冲击','极强(多齿同时接触)'],['外壳直径','95mm']],sections:[
+{h:'使用方法',p:'拖动<hl>「装配⇄拆解」滑杆</hl>沿轴向分离各零件，点击零件查看详解。本场景采用 howtomechatronics（Dejan）的 R25 摆线减速器教程的<hl>全部 10 个真实 STL 零件</hl>（同一 SolidWorks 装配体、单位一致），26 针齿 + 摆线盘，外壳直径 95mm，保持真实比例与正确同心嵌套，不再出现旧版参数化重建的失真。'},
+{h:'零件清单与传动链',p:'<table class="tbl"><tr><th>零件</th><th>角色</th><th>说明</th></tr><tr><td><b>偏心轴</b></td><td>曲柄输入</td><td>偏心量 e=0.75mm 驱动摆线盘摆动</td></tr><tr><td><b>摆线盘</b></td><td>核心传动件</td><td>外廓为摆线曲线，齿数=针齿数−1</td></tr><tr><td><b>基座外壳</b></td><td>固定针轮</td><td>内壁均布 26 个滚柱针齿</td></tr><tr><td><b>输出轴</b></td><td>输出端</td><td>输出销只提取公转分量</td></tr></table>原理：偏心轴每转一圈，摆线盘反向<hl>转过一个针齿的角度</hl>（齿差1传动），<hl>减速比 = 针齿数 = 26</hl>。摆线盘与针齿是<hl>滚动接触且约一半针齿同时承载</hl>，因此抗冲击能力远超谐波。'},
+{h:'RV vs 谐波：人形机器人怎么选',p:'RV 减速器<hl>抗冲击、寿命长、大扭矩</hl>，但体积重量大、有偏心振动需双盘对消。工业机器人大关节是 RV 的天下；人形机器人对<hl>扭矩密度</hl>极端敏感，主流选谐波。近年出现<hl>微型摆线/复合行星</hl>新路线（如特斯拉 Optimus 的部分关节），用摆线高刚性弥补谐波柔轮冲击寿命短板，值得持续关注。'}],
+vendors:[{n:'howtomechatronics',r:'R25开源摆线模型',m:1},{n:'纳博特斯克 Nabtesco',r:'RV减速器全球垄断者'},{n:'环动科技/中大力德',r:'国产RV减速器'}]},
 
 /* ==== 关节模组BOM参数对比 ==== */
 bom:{title:'关节模组BOM选型对比',sub:'Actuator Module Comparison Table',
@@ -2285,29 +2285,34 @@ var TD_INFO={
   j_stator:{n:'电机定子',p:'绕组铁芯，关节发热的主要来源。需灌封导热处理，并埋 NTC 热敏电阻监测温度，防止磁钢过热退磁。'},
   j_enc_mot:{n:'电机端编码器',p:'装在电机高速轴上，为 FOC 提供换相信号，同时作为速度环反馈。分辨率通常 14~19 位。'},
   j_pcb:{n:'FOC 驱动板',p:'集成 MCU + 栅极驱动 + MOSFET + 电流采样 + CAN/RS485 通信的驱控一体电路板，紧贴电机安装，执行三环控制算法。'},
-  h_motor_cover:{n:'电机端盖（真实开源件）',p:'谐波输入侧端盖，封闭壳体并支撑输入轴。来自开源 3D 打印谐波减速器项目。'},
-  h_coupler:{n:'输入轴联轴器（真实开源件）',p:'连接电机轴与波发生器的联轴器，允许少量安装偏心。来自开源项目真实模型。'},
-  h_wg_top:{n:'波发生器·上（真实开源件）',p:'椭圆凸轮的上半部分，与下半部分组合夹持柔性轴承。来自开源项目真实模型。'},
-  h_wg_bottom:{n:'波发生器·下（真实开源件）',p:'椭圆凸轮的下半部分。上下两半组合形成完整椭圆轮廓，撑开柔轮。来自开源项目真实模型。'},
-  h_fs:{n:'柔轮（真实开源件）',p:'开口杯形弹性齿轮，杯底法兰为输出端。观察开口端的外齿齿形——它是疲劳寿命的决定性零件。'},
-  h_cs:{n:'刚轮（真实开源件）',p:'刚性内齿圈，齿数=柔轮+2。拆解时重点对比内齿与柔轮外齿的齿形差异。'},
-  h_centering:{n:'定位环（真实开源件）',p:'保证柔轮与刚轮同心的定位零件，装配精度直接影响啮合质量。'},
-  h_housing:{n:'壳体（真实开源件）',p:'谐波减速器主壳体，容纳刚轮并承受反扭矩。'},
-  h_base:{n:'刚性底座（真实开源件）',p:'整个减速器的安装底座，与机器人关节壳体对接。'},
-  p_shaft:{n:'输出轴（真实开源件）',p:'两级行星减速的输出轴。来自开源行星齿轮箱项目的真实 STL 模型。'},
-  p_small_sun:{n:'一级太阳轮（真实开源件）',p:'第一级减速的中心输入齿轮，接电机高速轴。来自开源项目真实模型。'},
-  p_planets1:{n:'一级行星轮×3+行星架（参数化重建）',p:'三个行星轮均布 120°，既自转又公转，把载荷均分到三条啮合路径；下方圆盘为行星架（输出端）。'},
-  p_small_ring:{n:'一级内齿圈（真实开源件）',p:'第一级外圈内齿，通常固定不转。传动比 i = 1 + Z圈/Z阳。'},
-  p_large_sun:{n:'二级太阳轮（真实开源件）',p:'第二级中心齿轮，与一级行星架同轴串联输入。多级串联可获得更大减速比，但背隙也随之累积。'},
-  p_planets2:{n:'二级行星轮×3+行星架（参数化重建）',p:'第二级行星轮组。两级串联是工业行星减速箱的典型做法（单级仅 3~10:1）。'},
-  p_large_ring:{n:'二级内齿圈（真实开源件）',p:'第二级外圈内齿。观察两级内齿圈的直径差异——第二级更大以容纳更大减速比。'},
-  p_sheath:{n:'外壳套管（真实开源件）',p:'行星减速箱的外壳，容纳两级齿轮系并承受反扭矩。'},
-  c_pinion:{n:'输入直齿轮（真实开源件）',p:'RV 减速器第一级直齿减速的小齿轮，接电机轴。来自开源 RV 减速器项目的真实 STL 模型。'},
-  c_ecc:{n:'偏心轴（参数化重建）',p:'曲柄输入轴，偏心量 e 驱动摆线盘摆动。注意观察轴上的偏心凸轮——这是 RV 传动的核心几何。'},
-  c_disk:{n:'摆线盘（真实开源件）',p:'RV 的核心传动件，外廓为摆线曲线，齿数=针齿数−1。偏心轴每转一圈，摆线盘反向转过一个针齿的角度（齿差1传动）。'},
-  c_pins:{n:'针齿圈（参数化重建）',p:'固定在壳体上的一圈圆柱销，与摆线盘啮合。约一半针齿同时承载，因此 RV 抗冲击能力远超谐波。'},
-  c_ring:{n:'壳体大齿轮（真实开源件）',p:'RV 减速器的壳体/齿圈部件。来自开源项目真实模型。'},
-  c_flange:{n:'输出法兰+曲柄销（参数化重建）',p:'输出端。曲柄销穿过摆线盘偏心孔，只提取公转分量输出——摆线盘的自转（=1个针齿角/圈）被滤除，实现大减速比。'}
+  h_output:{n:'输出轴（真实开源件）',p:'谐波减速器低速输出端，与柔轮杯底相连。来自 howtomechatronics R25 开源 SolidWorks 模型。'},
+  h_base:{n:'外壳底盖（真实开源件）',p:'封闭减速器输出侧，支撑柔轮杯底并固定输出轴。来自 howtomechatronics R25 开源模型。'},
+  h_fs:{n:'柔轮 Flexspline（真实开源件）',p:'薄壁开口杯形弹性外齿轮(50齿)，杯底为输出端，开口端外齿与刚轮内齿啮合。它是疲劳寿命的决定性零件。'},
+  h_wg:{n:'波发生器 Wave Generator（真实开源件）',p:'椭圆凸轮，把柔轮撑成椭圆与刚轮啮合。输入每转一圈，柔轮与刚轮错开 2 个齿，实现 i=齿数/2=25:1。'},
+  h_cs:{n:'刚轮 Circular Spline（真实开源件）',p:'刚性内齿圈(52齿)，固定于壳体，齿数比柔轮多 2。拆解时重点对比内齿与柔轮外齿的齿形差异。'},
+  h_support:{n:'波发生器支撑轴（真实开源件）',p:'支撑波发生器并连接输入轴，把电机高速旋转传递给椭圆凸轮。'},
+  h_housing:{n:'壳体（真实开源件）',p:'谐波减速器主壳体(外径95mm)，容纳刚轮并承受反扭矩。'},
+  h_input:{n:'输入轴（真实开源件）',p:'连接电机与波发生器的高速输入端。'},
+  h_coupler:{n:'6mm 联轴器（真实开源件）',p:'连接电机轴与输入轴的 6mm 轴孔联轴器。'},
+  h_motor:{n:'电机安装座（真实开源件）',p:'NEMA17 步进电机安装座，把电机固定到减速器输入侧。'},
+  p_back:{n:'后盖（真实开源件）',p:'CyberGear 行星减速箱的后盖，封闭齿轮腔并承受反扭矩。来自专为小米 CyberGear（人形机器人关节电机）设计的开源 SolidWorks 装配体。'},
+ p_ring:{n:'内齿圈/外壳（真实开源件）',p:'外圈内齿，通常固定不转，是行星传动比公式 i = 1 + Z圈/Z阳 的分母。CyberGear 采用 3.5:1 单级减速。'},
+ p_planet:{n:'行星轮 ×6（真实开源件）',p:'六个行星轮绕太阳轮每 60° 均布，既自转又公转，把载荷均分到多条啮合路径，抗冲击、噪声低。'},
+ p_sun:{n:'太阳轮（真实开源件）',p:'中心输入齿轮，接电机高速轴。CyberGear 电机端经太阳轮驱动行星轮组。'},
+ p_carrier:{n:'行星架止转环（真实开源件）',p:'承载行星轮并与输出轴相连，把行星轮的公转转化为输出的低速大扭矩。'},
+ p_output:{n:'输出轴（真实开源件）',p:'行星减速器的低速大扭矩输出端，连接机器人关节。'},
+ p_input:{n:'输入轴（真实开源件）',p:'连接电机与太阳轮的高速输入端。'},
+ p_front:{n:'前盖（真实开源件）',p:'减速箱前盖，与后盖共同封闭齿轮腔。'},
+  c_output:{n:'输出轴（真实开源件）',p:'摆线减速器低速输出端，带输出销把摆线盘公转转化为输出。来自 howtomechatronics R25 开源 SolidWorks 模型。'},
+  c_base:{n:'基座外壳（真实开源件）',p:'内壁均布 26 个滚柱针齿的外壳，是摆线减速器的固定齿圈。'},
+  c_disk:{n:'摆线盘（真实开源件）',p:'外廓为摆线曲线的核心传动件，齿数=针齿数−1。偏心轴每转一圈，摆线盘反向转过一个针齿角度，实现 25:1 减速。'},
+  c_rollers:{n:'滚柱衬套隔环（真实开源件）',p:'定位 26 个滚柱针齿的隔环，保证针齿在壳体内等距分布。'},
+  c_lid:{n:'外壳盖（真实开源件）',p:'封闭减速器输入侧，支撑输入轴与偏心轴。'},
+  c_ecc:{n:'偏心轴（真实开源件）',p:'带偏心凸轮的曲柄输入轴，偏心量 e 驱动摆线盘摆动。注意观察轴上的偏心凸轮——这是摆线传动的核心几何。'},
+  c_input:{n:'输入轴（真实开源件）',p:'连接电机与偏心轴的高速输入端。'},
+  c_ring2:{n:'隔环 2（真实开源件）',p:'装配在轴上的定位隔环，保证轴向间隙。'},
+  c_ring3:{n:'隔环 3（真实开源件）',p:'装配在轴上的定位隔环，保证轴向间隙。'},
+  c_motor:{n:'电机安装座（真实开源件）',p:'NEMA17 步进电机安装座，把电机固定到减速器输入侧。'}
 };
 
 /* 拆解场景材质（每个网格独立材质，保证点击高亮互不干扰）
@@ -2325,8 +2330,9 @@ function centerGeo(geo){
   return s;
 }
 
-/* 加载单个真实 STL 零件并缩放到指定尺寸；失败回调 null 由调用方换参数化零件 */
-function tdLoadSTL(url,size,cb){
+/* 加载单个真实 STL 零件并缩放到指定尺寸；失败回调 null 由调用方换参数化零件
+   axis：可选，原始 STL 的厚度轴（'x'/'y'/'z'），传入则先把厚度轴旋转对齐到 Y 再缩放 */
+function tdLoadSTL(url,size,cb,axis){
   if(!STLLoader){cb(null);return;}
   var loader=new STLLoader();
   loader.load(url,function(geo){
@@ -2334,6 +2340,8 @@ function tdLoadSTL(url,size,cb){
       var s=centerGeo(geo);
       var k=size/Math.max(s.x,s.y,s.z,0.001);  /* 等比缩放到目标尺寸 */
       var msh=new THREE.Mesh(geo,tdMat(0xc8cfd9));
+      if(axis==='x')msh.rotation.z=-Math.PI/2;   /* 厚度 X→Y */
+      else if(axis==='z')msh.rotation.x=Math.PI/2;/* 厚度 Z→Y */
       msh.scale.set(k,k,k);
       msh.castShadow=true;msh.receiveShadow=true;
       cb(msh);
@@ -2452,7 +2460,7 @@ function buildTdFromDefs(defs,done){
       g.add(label);
     }
     items.push({obj:g,h:d.h,id:d.id});
-    if(d.stl)stlJobs.push({g:g,mesh:m,url:d.stl,size:d.stlSize||24,id:d.id});
+    if(d.stl)stlJobs.push({g:g,mesh:m,url:d.stl,size:d.stlSize||24,id:d.id,axis:d.stlAxis});
   });
   tdStack(items);
   /* 【优化】爆炸方向：三维螺旋式展开，避免零件重叠遮挡
@@ -2479,7 +2487,7 @@ function buildTdFromDefs(defs,done){
         job.g.add(msh);           /* 换上真实模型 */
       }
       if(--pending===0)done();
-    });
+    },job.axis);
   });
 }
 
@@ -2488,9 +2496,9 @@ function buildTdJoint(done){
   var defs=[
     {id:'j_flange', h:3,  mk:function(){return new THREE.Mesh(new THREE.CylinderGeometry(13,13,2.6,48),tdMat(0xd8dee8,0.7,0.3));}},
     {id:'j_bearing',h:4.5,mk:fbRing(10.5,1.9,0xb8c0cc)},
-    {id:'j_cs',     h:6,  mk:fbRing(11,2.4),stl:'models/harmonic/Circular_Spline.STL',stlSize:26},
-    {id:'j_fs',     h:8,  mk:fbCyl(9.5,7),stl:'models/harmonic/Flex_Spline.STL',stlSize:26},
-    {id:'j_wg',     h:5,  mk:function(){var m=new THREE.Mesh(new THREE.CylinderGeometry(7,7,3.5,48),tdMat(0x8a94a4));m.scale.x=1.35;return m;},stl:'models/harmonic/Wave_Generator_Top.STL',stlSize:22},
+    {id:'j_cs',     h:6,  mk:fbRing(11,2.4),stl:'models/harmonic_htm/CircularSpline.STL',stlSize:26,stlAxis:'x'},
+    {id:'j_fs',     h:8,  mk:fbCyl(9.5,7),stl:'models/harmonic_htm/FlexSpline.STL',stlSize:26,stlAxis:'x'},
+    {id:'j_wg',     h:5,  mk:function(){var m=new THREE.Mesh(new THREE.CylinderGeometry(7,7,3.5,48),tdMat(0x8a94a4));m.scale.x=1.35;return m;},stl:'models/harmonic_htm/WaveGenerator.STL',stlSize:22,stlAxis:'z'},
     {id:'j_enc_out',h:1.5,mk:fbCyl(9,1,0x2f6db3)},
     {id:'j_rotor',  h:9,  mk:fbCyl(7.5,9,0x3a404c)},
     {id:'j_stator', h:11, mk:fbCyl(11.5,10.5,0xb0763a)},
@@ -2500,48 +2508,196 @@ function buildTdJoint(done){
   buildTdFromDefs(defs,done);
 }
 
-/* 场景2：谐波减速器（9 个零件全部为真实开源 STL） */
+/* 场景2：谐波减速器（10 个零件全部为 howtomechatronics 开源 SolidWorks 真实 STL）
+   同轴装配：柔轮/波发生器/刚轮/壳体同心嵌套，输入输出轴与电机座沿轴堆叠，保持真实比例。
+   axis=该 STL 的厚度轴(见 tdLoadAxis)；yBase=装配态中心Y；yExp=爆炸态中心Y。 */
 function buildTdHarmonic(done){
-  var defs=[
-    {id:'h_motor_cover',h:4, mk:fbRing(12,2.5),stl:'models/harmonic/Motor_Cover.STL',stlSize:24},
-    {id:'h_coupler',   h:5, mk:fbCyl(4,5),stl:'models/harmonic/Shaft_coupler.STL',stlSize:16},
-    {id:'h_wg_top',    h:4, mk:fbCyl(8,3),stl:'models/harmonic/Wave_Generator_Top.STL',stlSize:22},
-    {id:'h_wg_bottom', h:4, mk:fbCyl(8,3),stl:'models/harmonic/Wave_Generator_Bottom.STL',stlSize:22},
-    {id:'h_fs',        h:9, mk:fbCyl(10,8),stl:'models/harmonic/Flex_Spline.STL',stlSize:26},
-    {id:'h_cs',        h:6, mk:fbRing(11,2.5),stl:'models/harmonic/Circular_Spline.STL',stlSize:26},
-    {id:'h_centering', h:2, mk:fbRing(9,1.2),stl:'models/harmonic/Centering_Ring.STL',stlSize:20},
-    {id:'h_housing',   h:10,mk:fbCyl(13,10),stl:'models/harmonic/Housing.STL',stlSize:28},
-    {id:'h_base',      h:4, mk:fbCyl(14,3),stl:'models/harmonic/Rigit_Base.STL',stlSize:28}
+  var parts=[
+    {id:'h_output', file:'models/harmonic_htm/OutputShaft.STL',    axis:'y', yBase:-26, yExp:-46, color:0xc8cfd9},
+    {id:'h_base',   file:'models/harmonic_htm/HousingBottom.STL',  axis:'z', yBase:-15, yExp:-34, color:0x9aa4b2},
+    {id:'h_fs',     file:'models/harmonic_htm/FlexSpline.STL',     axis:'x', yBase:-4,  yExp:-22, color:0xb8c0cc},
+    {id:'h_wg',     file:'models/harmonic_htm/WaveGenerator.STL',  axis:'z', yBase:-2,  yExp:-10, color:0xffd479},
+    {id:'h_cs',     file:'models/harmonic_htm/CircularSpline.STL', axis:'x', yBase:4,   yExp:10,  color:0x8a94a4},
+    {id:'h_support',file:'models/harmonic_htm/SupportShaft.STL',   axis:'z', yBase:12,  yExp:22,  color:0x9aa4b2},
+    {id:'h_housing',file:'models/harmonic_htm/Housing.STL',        axis:'z', yBase:17,  yExp:34,  color:0x9aa4b2},
+    {id:'h_input',  file:'models/harmonic_htm/InputShaft.STL',     axis:'y', yBase:30,  yExp:46,  color:0x8a94a4},
+    {id:'h_coupler',file:'models/harmonic_htm/Coupler.STL',        axis:'y', yBase:40,  yExp:58,  color:0xc8cfd9},
+    {id:'h_motor',  file:'models/harmonic_htm/MotorMount.STL',     axis:'y', yBase:52,  yExp:72,  color:0x9aa4b2}
   ];
-  buildTdFromDefs(defs,done);
+  buildTdCoaxial(parts,done);
 }
 
-/* 场景3：两级行星减速器（太阳轮/内齿圈/轴/壳体为真实开源 STL，行星轮组参数化） */
+/* ===== 行星减速器：CyberGear 单级行星齿轮箱（真实开源 SolidWorks 模型） =====
+   全部零件来自同一开源装配体（AGIRobots/PlanetarGear-3.5xReducer，专为小米 CyberGear
+   人形机器人关节电机设计），保持真实比例，取代旧版"不同来源混搭+独立缩放"造成的重合错乱。 */
+
+/* ---- 行星减速器可调参数（调试用宏） ---- */
+var CYBER_REF_MAX=79.85;   /* 最大零件（内齿圈）实测外径(mm)，作为统一缩放基准 */
+var CYBER_TARGET=34;       /* 内齿圈在场景中的目标直径（单位），越大整体占屏越大 */
+var CYBER_SCALE=CYBER_TARGET/CYBER_REF_MAX;  /* 统一倍率：所有零件同倍缩放，保持真实比例 */
+var CYBER_ORBIT=21;        /* 行星轮公转半径(mm，缩放前)，6 个行星轮绕太阳均布 */
+var CYBER_GAP=2.5;         /* 装配态相邻零件间隙(mm，缩放前)，避免重叠 */
+
+/* 加载单个真实 STL：居中 + 绕X轴转-90°(零件厚度 Z→Y，与谐波场景一致) + 统一倍率缩放 */
+function tdLoadScaled(url,scale,cb,color){
+  if(!STLLoader){cb(null);return;}
+  var loader=new STLLoader();
+  loader.load(url,function(geo){
+    try{
+      centerGeo(geo);                       /* 把几何包围盒中心平移到原点 */
+      var msh=new THREE.Mesh(geo,tdMat(color||0xc8cfd9));
+      msh.rotation.x=-Math.PI/2;            /* 绕 X 轴转 -90°：使零件厚度方向 Z→Y */
+      msh.scale.set(scale,scale,scale);     /* 统一倍率，保持真实比例 */
+      msh.castShadow=true;msh.receiveShadow=true;
+      cb(msh);
+    }catch(e){cb(null);}
+  },undefined,function(){cb(null);});
+}
+
+/* ===== 谐波/摆线减速器：howtomechatronics 开源 SolidWorks 真实模型（同轴装配） =====
+   全部零件来自 howtomechatronics.com 的 R25 减速器教程（25:1，外壳直径 95mm），
+   谐波=刚轮52齿+柔轮50齿，摆线=26针齿+摆线盘，同属同一 SolidWorks 装配体、单位一致(mm)。
+   本套函数把"厚度轴各异的 STL"统一旋转对齐到 Y 轴，再按真实比例同轴装配+沿 Y 爆炸，
+   取代旧版"独立缩放+假堆叠"造成的重合错乱。 */
+
+/* ---- 同轴装配可调参数（调试用宏） ---- */
+var TD_LBL_X=55;        /* 零件文字标签的 X 偏移(mm)：须大于最大零件半径(约47.5)，让标签落在零件外侧 */
+
+/* 加载单个 STL 并把"厚度轴"旋转对齐到 Y 轴（不缩放，保持真实 mm 比例）
+   axis：原始 STL 中厚度/旋转轴所在的轴（'x'/'y'/'z'）。例如圆盘厚度在 X 轴则传 'x'。
+   为什么需要：SolidWorks 各零件导出 STL 时坐标系取向不一致，需逐个转正才能同轴装配。 */
+function tdLoadAxis(url,axis,cb,color){
+  if(!STLLoader){cb(null);return;}
+  var loader=new STLLoader();
+  loader.load(url,function(geo){
+    try{
+      centerGeo(geo);                              /* 包围盒中心平移到原点 */
+      var msh=new THREE.Mesh(geo,tdMat(color||0xc8cfd9));
+      if(axis==='x')msh.rotation.z=-Math.PI/2;     /* 厚度 X→Y：绕 Z 轴转 -90° */
+      else if(axis==='z')msh.rotation.x=Math.PI/2; /* 厚度 Z→Y：绕 X 轴转 +90° */
+      /* axis==='y' 无需旋转 */
+      msh.castShadow=true;msh.receiveShadow=true;
+      cb(msh);
+    }catch(e){cb(null);}
+  },undefined,function(){cb(null);});
+}
+
+/* 同轴装配通用构建器：加载真实 STL → 厚度轴转正 → 同轴/轴向装配 → 沿 Y 轴爆炸
+   每个零件需提供：file(路径)、axis(厚度轴)、yBase(装配态中心Y)、yExp(爆炸态中心Y)、color(颜色)。
+   同心零件(刚轮/柔轮/波发生器)在 yBase 处嵌套(半径不同、Y 重叠)，爆炸时沿 Y 分离到 yExp。 */
+function buildTdCoaxial(parts,done){
+  var items=[];
+  var pending=parts.length;
+  parts.forEach(function(p){
+    var g=new THREE.Group();
+    var partName=(TD_INFO[p.id]&&TD_INFO[p.id].n)?TD_INFO[p.id].n:p.id;
+    var label=createPartLabel(partName,new THREE.Vector3(0,0,0));
+    if(label){label.position.set(TD_LBL_X,0,0);label.userData.tdLabelFor=p.id;g.add(label);}
+    items.push({obj:g,id:p.id,yBase:p.yBase,yExp:p.yExp});
+    /* 异步加载真实 STL；失败则留空(场景其余零件仍可用) */
+    (function(pid,pobj){
+      tdLoadAxis(pobj.file,pobj.axis,function(msh){
+        if(msh){msh.userData.tdId=pid;g.add(msh);}
+        if(--pending===0)finish();
+      },pobj.color);
+    })(p.id,p);
+  });
+  function finish(){
+    /* 装配态：同心零件在各自 yBase 嵌套，轴向零件沿 Y 堆叠 */
+    items.forEach(function(it){it.obj.position.set(0,it.yBase,0);});
+    /* 爆炸态：每个零件沿 Y 分离到 yExp，方向由 yExp 相对 yBase 的符号决定 */
+    items.forEach(function(it){
+      var dy=it.yExp-it.yBase;
+      var dir=new THREE.Vector3(0,Math.sign(dy)||1,0);
+      addTdPart(it.obj,it.id,dir,Math.abs(dy));
+    });
+    done();
+  }
+}
+
+/* 场景3：CyberGear 单级行星减速器（8 个零件全部为来自同一装配体的真实开源 STL） */
 function buildTdPlanetary(done){
-  var defs=[
-    {id:'p_shaft',     h:10,mk:fbCyl(2.5,10,0xd8dee8),stl:'models/planetary/shaft.stl',stlSize:26},
-    {id:'p_small_sun', h:5, mk:fbCyl(5,5,0xffd479),stl:'models/planetary/small_sun.stl',stlSize:18},
-    {id:'p_planets1',  h:6, mk:mkPlanets(8.5,2.6,3)},
-    {id:'p_small_ring',h:6, mk:fbRing(12,2.5),stl:'models/planetary/small_ring.stl',stlSize:26},
-    {id:'p_large_sun', h:6, mk:fbCyl(6,6,0xffd479),stl:'models/planetary/large_sun.stl',stlSize:20},
-    {id:'p_planets2',  h:7, mk:mkPlanets(10,3,3)},
-    {id:'p_large_ring',h:7, mk:fbRing(14,3),stl:'models/planetary/large_ring.stl',stlSize:30},
-    {id:'p_sheath',    h:12,mk:fbCyl(15,12,0x7a8596),stl:'models/planetary/sheath.stl',stlSize:30}
+  var parts=[
+    {id:'p_back',   file:'models/planetary_cybergear/Back.stl',            thick:6.78,  color:0x9aa4b2},
+    {id:'p_ring',   file:'models/planetary_cybergear/RingGear.stl',        thick:22,    color:0x8a94a4},
+    {id:'p_planet', file:'models/planetary_cybergear/PlanetGear.stl',      thick:11.78, color:0xb8c0cc, orbit:CYBER_ORBIT, count:6},
+    {id:'p_sun',    file:'models/planetary_cybergear/SunGear.stl',         thick:11.78, color:0xffd479},
+    {id:'p_carrier',file:'models/planetary_cybergear/CareerReception.stl', thick:4,     color:0x9aa4b2},
+    {id:'p_output', file:'models/planetary_cybergear/OutputShaft.stl',     thick:11,    color:0xc8cfd9},
+    {id:'p_input',  file:'models/planetary_cybergear/InputShaft.stl',      thick:9,     color:0x8a94a4},
+    {id:'p_front',  file:'models/planetary_cybergear/Front.stl',           thick:9.44,  color:0x9aa4b2}
   ];
-  buildTdFromDefs(defs,done);
+  var items=[];
+  var pending=parts.length;
+  parts.forEach(function(p){
+    var g=new THREE.Group();
+    var partName=(TD_INFO[p.id]&&TD_INFO[p.id].n)?TD_INFO[p.id].n:p.id;
+    var label=createPartLabel(partName,new THREE.Vector3(0,0,0));
+    if(label){label.position.set(18,0,0);label.userData.tdLabelFor=p.id;g.add(label);}
+    items.push({obj:g,thick:p.thick,id:p.id});
+    /* 异步加载真实 STL；失败则不替换（场景仍可用） */
+    (function(pid,pobj){
+      tdLoadScaled(pobj.file,CYBER_SCALE,function(msh){
+        if(msh){
+          msh.userData.tdId=pid;
+          if(pobj.orbit&&pobj.count){
+            /* 行星轮：6 个绕 Y 轴均布，公转半径 CYBER_ORBIT */
+            var grp=new THREE.Group();
+            for(var i=0;i<pobj.count;i++){
+              var a=i*Math.PI*2/pobj.count;
+              var cl=msh.clone();
+              cl.position.set(Math.cos(a)*pobj.orbit*CYBER_SCALE,0,Math.sin(a)*pobj.orbit*CYBER_SCALE);
+              grp.add(cl);
+            }
+            g.add(grp);
+          }else{
+            g.add(msh);
+          }
+        }
+        if(--pending===0)finish();
+      },pobj.color);
+    })(p.id,p);
+  });
+  function finish(){
+    /* 沿 Y 轴按真实厚度堆叠（装配态不重叠），间隙 CYBER_GAP */
+    var gap=CYBER_GAP*CYBER_SCALE;
+    var total=0;items.forEach(function(it){total+=it.thick;});
+    total+=gap*(items.length-1);
+    var y=total/2;
+    items.forEach(function(it){
+      y-=it.thick/2;
+      it.obj.position.set(0,y,0);
+      y-=it.thick/2+gap;
+    });
+    /* 爆炸方向：三维螺旋式展开，避免零件重叠遮挡 */
+    var mid=(items.length-1)/2;
+    items.forEach(function(it,i){
+      var dirY=(i<=mid)?1:-1;
+      var spread=12+Math.abs(i-mid)*8;
+      var angle=i*Math.PI*0.55;
+      var dir=new THREE.Vector3(Math.sin(angle)*spread*0.3,dirY*spread*0.7,Math.cos(angle)*spread*0.3).normalize();
+      addTdPart(it.obj,it.id,dir,spread);
+    });
+    done();
+  }
 }
 
-/* 场景4：摆线 RV 减速器（摆线盘/输入齿轮为真实开源 STL，针齿圈/偏心轴/输出法兰参数化） */
+/* 场景4：摆线 RV 减速器（10 个零件全部为 howtomechatronics 开源 SolidWorks 真实 STL）
+   同轴装配：摆线盘/滚柱衬套环/基座外壳同心嵌套，偏心轴/输入轴/电机座沿轴堆叠，保持真实比例。 */
 function buildTdCycloidal(done){
-  var defs=[
-    {id:'c_pinion',h:5,mk:fbCyl(4,5,0xffd479),stl:'models/cycloidal/SpurGearSmall.STL',stlSize:18},
-    {id:'c_ecc',   h:6,mk:mkEccentric},
-    {id:'c_disk',  h:6,mk:fbCyl(12,4),stl:'models/cycloidal/CycloidalDisk.STL',stlSize:28},
-    {id:'c_pins',  h:6,mk:mkPinRing},
-    {id:'c_ring',  h:8,mk:fbRing(14,3),stl:'models/cycloidal/SpurGearLarge.STL',stlSize:30},
-    {id:'c_flange',h:4,mk:mkOutFlange}
+  var parts=[
+    {id:'c_output', file:'models/cycloidal_htm/OutputShaft.STL',       axis:'y', yBase:-22, yExp:-40, color:0xc8cfd9},
+    {id:'c_base',   file:'models/cycloidal_htm/BaseHousing.STL',       axis:'z', yBase:-8,  yExp:-26, color:0x9aa4b2},
+    {id:'c_disk',   file:'models/cycloidal_htm/CycloidalDisk.STL',     axis:'z', yBase:-3,  yExp:-8,  color:0xffd479},
+    {id:'c_rollers',file:'models/cycloidal_htm/RollerBushingRing.STL', axis:'y', yBase:2,   yExp:-2,  color:0x8a94a4},
+    {id:'c_lid',    file:'models/cycloidal_htm/HousingLid.STL',        axis:'y', yBase:14,  yExp:16,  color:0x9aa4b2},
+    {id:'c_ecc',    file:'models/cycloidal_htm/EccentricShaft.STL',    axis:'y', yBase:22,  yExp:28,  color:0xb8c0cc},
+    {id:'c_input',  file:'models/cycloidal_htm/InputShaft.STL',        axis:'y', yBase:32,  yExp:40,  color:0x8a94a4},
+    {id:'c_ring2',  file:'models/cycloidal_htm/DistanceRing2.STL',     axis:'y', yBase:40,  yExp:50,  color:0xc8cfd9},
+    {id:'c_ring3',  file:'models/cycloidal_htm/DistanceRing3.STL',     axis:'y', yBase:44,  yExp:58,  color:0xc8cfd9},
+    {id:'c_motor',  file:'models/cycloidal_htm/MotorMount.STL',        axis:'y', yBase:56,  yExp:72,  color:0x9aa4b2}
   ];
-  buildTdFromDefs(defs,done);
+  buildTdCoaxial(parts,done);
 }
 
 /* 拆解场景归一化：整体缩放到合适大小并居中到相机焦点 (0,-15,0) */
