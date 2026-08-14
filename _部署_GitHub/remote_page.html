@@ -1405,42 +1405,7 @@ function assembleUrdf(parsed,geos){
   return robotRoot;
 }
 
-/* 限并发 + 重试 + 失败容忍的STL加载器：个别文件加载失败时跳过该零件，不中断整体加载 */
-/* 【可调参数】单个STL失败重试次数、并发加载数、重试间隔 */
-var STL_MAX_RETRY=3;      /* 单个STL加载失败的最大重试次数 */
-var STL_CONCURRENCY=4;    /* 同时加载的STL数量：过高易被CDN/服务器限流，过低加载变慢 */
-var STL_RETRY_DELAY=600;  /* 重试间隔基准值(ms)，逐次递增，减少瞬时网络抖动的影响 */
-function loadSTLsTolerant(dir,names,loader){
-  var success=[],idx=0;
-  /* 加载单个STL：失败时按剩余次数重试，重试耗尽则容忍跳过（返回null，不中断整体） */
-  function loadOne(n,retryLeft){
-    return new Promise(function(res,rej){
-      loader.load(dir+'/'+n,function(g){res({n:n,g:g});},undefined,function(e){rej(e);});
-    }).catch(function(e){
-      if(retryLeft>0){
-        return new Promise(function(r){setTimeout(r,STL_RETRY_DELAY*(STL_MAX_RETRY-retryLeft+1));})
-          .then(function(){return loadOne(n,retryLeft-1);});
-      }
-      console.warn('[Robot3D] 单个STL加载失败，已跳过该零件:',n,e);
-      return null; /* 容忍失败：返回null，不中断其他零件的加载 */
-    });
-  }
-  /* 工作线程：从共享队列逐个取文件名加载，实现限并发 */
-  function worker(){
-    return new Promise(function(resolve){
-      (function step(){
-        if(idx>=names.length){resolve();return;}
-        var n=names[idx++];
-        loadOne(n,STL_MAX_RETRY).then(function(res){if(res)success.push(res);step();});
-      })();
-    });
-  }
-  var workers=[];
-  for(var i=0;i<STL_CONCURRENCY&&i<names.length;i++)workers.push(worker());
-  return Promise.all(workers).then(function(){return success;});
-}
-
-/* 异步加载官方 URDF+STL：成功替换回退模型；加载失败则保留回退模型并给出提示 */
+/* 异步加载官方 URDF+STL：成功替换回退模型；任一环节失败则保留回退模型并给出提示 */
 function loadUrdfRobot(m){
   /* file:// 协议下浏览器CORS策略阻止加载本地STL/URDF文件，直接使用内置高保真模型 */
   if(window.__IS_FILE_PROTO__){
@@ -1473,14 +1438,17 @@ function loadUrdfRobot(m){
       var names=Object.keys(need);
       if(!names.length||!STLLoader)throw new Error('无STL网格或加载器未就绪');
       var loader=new STLLoader();
-      /* 限并发 + 重试 + 失败容忍加载（修复：任一STL失败不再整体回退，缺个别零件仍显示官方模型） */
-      return loadSTLsTolerant(cfg.dir, names, loader);
+      /* 并行加载全部 STL；任一失败即整体回退（保证模型完整性，不出现缺件机器人） */
+      return Promise.all(names.map(function(n){
+        return new Promise(function(res,rej){
+          loader.load(cfg.dir+'/'+n,function(g){res({n:n,g:g});},undefined,function(e){rej(e);});
+        });
+      }));
     })
     .then(function(list){
       if(token!==urdfToken||currentModel!==m)return;  /* 已切换机型：丢弃过期结果 */
       var geos={};
       list.forEach(function(it){geos[it.n]=it.g;});
-      var missing=names.length-Object.keys(geos).length;
       /* 清空回退模型，换上真实模型 */
       while(body3d.children.length)body3d.remove(body3d.children[0]);
       partGroups={};
@@ -1507,16 +1475,15 @@ function loadUrdfRobot(m){
       }
       /* 自动调整相机以适配整个机器人模型 */
       fitCameraToObject(body3d);
-      showLdtip('官方模型加载完成'+(missing>0?('，'+missing+'个零件加载失败已跳过'):''));
-      setTimeout(hideLdtip,1800);
+      showLdtip('官方模型加载完成');
+      setTimeout(hideLdtip,1500);
       if(window.RobotApp)highlight(window.RobotApp.getCur());
     })
     .catch(function(e){
       if(token!==urdfToken)return;
       console.warn('[Robot3D] 官方模型加载失败，使用内置高保真模型:',e);
-      var msg=(e&&e.message)?e.message:String(e);
-      showLdtip('官方模型加载失败，已用内置模型 ('+msg+')');
-      setTimeout(hideLdtip,4000);
+      showLdtip('使用内置高保真模型');
+      setTimeout(hideLdtip,2000);
       setTimeout(function(){fitCameraToObject(body3d);},100);
     });
 }

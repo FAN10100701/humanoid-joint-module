@@ -51,6 +51,14 @@ body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
 }
 .hbtn:hover{color:var(--text);border-color:var(--border2);background:var(--bg4);}
 
+/* file:// 协议提示横幅 */
+.proto-banner{
+  background:linear-gradient(90deg,rgba(210,153,34,.16),rgba(210,153,34,.06));
+  border-bottom:1px solid rgba(210,153,34,.35);
+  color:var(--muted);font-size:12px;padding:7px 16px;text-align:center;flex-shrink:0;
+}
+.proto-banner b{color:var(--orange);}
+
 /* ===== 主体布局 ===== */
 .app{display:flex;flex:1;overflow:hidden;}
 
@@ -138,6 +146,16 @@ body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 
+/* 页面加载失败提示（替代黑屏） */
+.load-error{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:40px;text-align:center;background:var(--bg);
+}
+.load-error .le-icon{font-size:44px;}
+.load-error .le-title{font-size:18px;font-weight:800;color:var(--text);}
+.load-error .le-msg{font-size:13px;color:var(--muted);max-width:460px;line-height:1.7;}
+.load-error .le-btn{padding:8px 18px;font-size:13px;}
+
 /* ===== 底部状态栏 ===== */
 .footer{
   height:28px;background:var(--bg2);border-top:1px solid var(--border);
@@ -176,6 +194,10 @@ body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
     <button class="hbtn" id="btnOpenNew" title="在新窗口打开">↗️ 新窗口</button>
   </div>
 </div>
+<!-- file:// 协议提示横幅（双击打开时显示，建议使用本地服务器获得官方3D模型） -->
+<div class="proto-banner" id="protoBanner" style="display:none;">
+  <span>💡 当前为「直接双击打开」模式：3D解剖页将使用内置简化模型。要加载<b>官方宇树3D模型</b>，请双击运行 <b>_本地工具/启动教学页面.bat</b> 启动本地服务器。</span>
+</div>
 
 <div class="app">
   <nav class="sidebar" id="sidebar">
@@ -183,9 +205,9 @@ body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
     <div class="sidebar-footer">
       <div class="sys-info">
         <b>💡 使用说明</b><br>
-        双击本文件即可直接打开，无需启动服务器。<br>
-        3D模型需要联网加载Three.js（CDN）。<br>
-        所有页面均可离线使用（除3D页面首次加载外）。
+        双击本文件可直接打开（简化3D模型）。<br>
+        要加载<b>官方宇树3D模型</b>，请双击<br>
+        <b>_本地工具/启动教学页面.bat</b> 启动服务器。
       </div>
     </div>
   </nav>
@@ -203,6 +225,13 @@ body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
     </div>
     <div class="loading" id="loading"><div class="spinner"></div><span>加载中...</span></div>
     <iframe id="mainFrame" style="display:none;"></iframe>
+    <div class="load-error" id="loadError" style="display:none;">
+      <div class="le-icon">⚠️</div>
+      <div class="le-title">页面加载失败</div>
+      <div class="le-msg" id="leMsg">当前页面无法在嵌入窗口中显示（可能是浏览器安全限制，常见于直接双击打开时）。</div>
+      <button class="hbtn le-btn" id="leOpen">↗️ 在新窗口打开</button>
+      <button class="hbtn le-btn" id="leRetry">🔄 重试</button>
+    </div>
   </main>
 </div>
 
@@ -211,9 +240,9 @@ body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
   <div class="sep"></div>
   <div class="item">📦 包含 <b>10</b> 个教学模块</div>
   <div class="footer-right">
-    <div class="item">✅ 支持双击直接打开（无需服务器）</div>
+    <div class="item">✅ 双击可直接打开（简化3D模型）</div>
     <div class="sep"></div>
-    <div class="item">🔄 换电脑拷贝整个文件夹即可运行</div>
+    <div class="item">🚀 官方3D模型请用「启动教学页面.bat」</div>
   </div>
 </div>
 
@@ -246,6 +275,10 @@ var sidebar=document.getElementById('sidebar');
 var mainFrame=document.getElementById('mainFrame');
 var welcome=document.getElementById('welcome');
 var loading=document.getElementById('loading');
+var loadError=document.getElementById('loadError');
+var leMsg=document.getElementById('leMsg');
+var leOpen=document.getElementById('leOpen');
+var leRetry=document.getElementById('leRetry');
 var curPage=document.getElementById('curPage');
 var statusText=document.getElementById('statusText');
 var currentPageId=null;
@@ -305,9 +338,10 @@ function navigateTo(id){
     el.classList.toggle('on',el.dataset.id===id);
   });
 
-  /* 显示加载态 */
+  /* 显示加载态，隐藏错误提示 */
   welcome.classList.add('hidden');
   loading.classList.add('show');
+  loadError.style.display='none';
   mainFrame.style.display='none';
   curPage.textContent=page.name;
   statusText.textContent='加载中...';
@@ -315,22 +349,43 @@ function navigateTo(id){
   /* 加载iframe */
   mainFrame.src=page.path;
   mainFrame.onload=function(){
-    loading.classList.remove('show');
-    mainFrame.style.display='block';
-    statusText.textContent='就绪';
+    /* 加载完成后校验 iframe 内是否真的有内容（防止 file:// 下被浏览器拦截导致黑屏） */
+    var blank=false;
+    try{
+      var doc=mainFrame.contentDocument||mainFrame.contentWindow.document;
+      if(!doc||!doc.body||doc.body.children.length===0)blank=true;
+    }catch(e){blank=true;}  /* 跨域/被拦截时无法访问，视为加载失败 */
+    if(blank){
+      showLoadError(page);
+    }else{
+      loading.classList.remove('show');
+      mainFrame.style.display='block';
+      statusText.textContent='就绪';
+    }
   };
   mainFrame.onerror=function(){
-    loading.classList.remove('show');
-    statusText.textContent='加载失败';
+    showLoadError(page);
   };
 
-  /* 超时处理（3秒后强制显示，避免loading一直转） */
+  /* 超时处理（5秒后仍未加载完成，强制显示并给出提示） */
   setTimeout(function(){
     if(loading.classList.contains('show')){
       loading.classList.remove('show');
       mainFrame.style.display='block';
+      statusText.textContent='就绪';
     }
   },5000);
+}
+
+/* 显示页面加载失败提示（替代黑屏），并提供"新窗口打开/重试"按钮 */
+function showLoadError(page){
+  loading.classList.remove('show');
+  mainFrame.style.display='none';
+  loadError.style.display='flex';
+  statusText.textContent='加载失败';
+  leMsg.textContent='「'+page.name+'」无法在嵌入窗口中显示。这通常是浏览器安全限制（直接双击打开时常见），请点击下方按钮在新窗口打开，或使用「启动教学页面.bat」启动本地服务器后访问。';
+  leOpen.onclick=function(){window.open(page.path,'_blank');};
+  leRetry.onclick=function(){navigateTo(currentPageId);};
 }
 
 /* 返回首页 */
@@ -381,6 +436,8 @@ renderNav();
 /* 自动检测file://协议并提示 */
 if(location.protocol==='file:'){
   console.log('[教学系统] 运行在file://协议下，双击直接打开模式');
+  var pb=document.getElementById('protoBanner');
+  if(pb)pb.style.display='block';
 }
 </script>
 </body>

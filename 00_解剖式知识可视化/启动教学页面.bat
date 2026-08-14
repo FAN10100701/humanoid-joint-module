@@ -2,8 +2,8 @@
 rem ============================================================
 rem Humanoid Robot 3D Anatomy Page - One Click Launcher
 rem Double click this file: start local http server and open
-rem the 3D anatomy page (real Unitree H1/G1 models + explode
-rem disassembly) in your default browser automatically.
+rem the 3D anatomy page (real Unitree H1/G1 models) in your
+rem default browser automatically.
 rem NOTE: the html MUST be served over http. Local URDF/STL
 rem models and the local Three.js engine cannot be loaded
 rem under file:// protocol (double-clicking the html fails).
@@ -12,5 +12,5 @@ rem           不要直接双击 html 文件，否则 3D 引擎无法加载。
 rem ============================================================
 chcp 65001 >nul
 title Humanoid Robot 3D Anatomy - Local Server
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\00_解剖式知识可视化\server.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0server.ps1"
 pause
