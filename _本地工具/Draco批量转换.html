@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  Draco 批量转换页面（本地一次性工具，配合 Draco转换服务器.ps1 使用）
+  流程：页面加载 → 初始化 Draco 编码器(wasm) → 从服务器取 STL 清单 →
+        逐个下载/解析/编码成 .drc → POST 回服务器写盘 → 汇总报告
+  页面打开后全自动执行，无需点击；失败文件自动跳过并记录。
+============================================================ -->
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>STL → Draco 批量转换工具</title>
+<!-- Draco 编码器 JS 胶水（定义全局 DracoEncoderModule，wasm 同目录自动定位） -->
+<script src="/draco/draco_encoder_gltf_nodejs.js"></script>
+<style>
+  body{font-family:"Microsoft YaHei",sans-serif;background:#111;color:#eee;max-width:900px;margin:24px auto;padding:0 12px}
+  h3{color:#4fc3f7}
+  #bar{height:22px;background:#333;border-radius:4px;overflow:hidden;margin:8px 0}
+  #barIn{height:100%;width:0;background:#4fc3f7;transition:width .2s}
+  #log{background:#000;color:#9e9;padding:10px;height:420px;overflow-y:auto;font:12px/1.5 Consolas,monospace;border-radius:4px;white-space:pre-wrap}
+  .ok{color:#7fff9e}.bad{color:#ff7f7f}.dim{color:#888}
+</style>
+</head>
+<body>
+<h3>STL → Draco(.drc) 批量转换</h3>
+<div>进度：<span id="pct">0%</span>　完成 <span id="cnt">0</span> 个，失败 <span id="fail">0</span> 个</div>
+<div id="bar"><div id="barIn"></div></div>
+<div id="log"></div>
+
+<script>
+/* ====================【可调参数】==================== */
+var POS_BITS = 12;  /* 【可调】顶点坐标量化位数(8~14)：越大精度越高、体积越大。12位≈0.25mm级精度，视觉无损 */
+var NORM_BITS = 10; /* 【可调】法线量化位数(8~12)：10位足够平面着色使用 */
+var ENC_SPEED = 5;  /* 【可调】编码速度档(0最慢压缩最好~10最快压缩最差)：5为均衡档 */
+
+/* ==================== 日志与进度 ==================== */
+var doneCnt=0, failCnt=0, totalCnt=0;
+function log(s,cls){                 /* 追加一行日志（可带颜色类名） */
+  var d=document.createElement('div');
+  if(cls)d.className=cls;
+  d.textContent=s;
+  document.getElementById('log').appendChild(d);
+  document.getElementById('log').scrollTop=1e9;
+}
+function step(ok){                   /* 每完成/失败一个文件刷新进度条 */
+  doneCnt++; if(!ok)failCnt++;
+  document.getElementById('cnt').textContent=doneCnt;
+  document.getElementById('fail').textContent=failCnt;
+  var pct=totalCnt?Math.round(doneCnt/totalCnt*100):0;
+  document.getElementById('pct').textContent=pct+'%';
+  document.getElementById('barIn').style.width=pct+'%';
+}
+
+/* ==================== 初始化 Draco 编码器 ====================
+   DracoEncoderModule 为 emscripten 模块工厂：传入 locateFile 告诉它 wasm 在哪，
+   返回 thenable 对象，就绪后 resolve 出真正的 module */
+function initEncoder(){
+  return new Promise(function(res,rej){
+    try{
+      var m=DracoEncoderModule({
+        locateFile:function(){return '/draco/draco_encoder.wasm';},  /* wasm 由本地服务器提供 */
+        onRuntimeInitialized:function(){res(m);}
+      });
+      if(m&&m.then)m.then(function(mm){res(mm);},rej);  /* 兼容 thenable 形式 */
+    }catch(e){rej(e);}
+  });
+}
+
+/* ==================== 解析二进制 STL ====================
+   结构：80字节头 + uint32 三角形数 + 每三角形50字节(法线12B + 3顶点36B + 属性2B)
+   返回 {n:三角形数, pos:Float32Array(n*9), nor:Float32Array(n*9)}
+   法线全零时按顶点叉积自动重算（与前端 ensureNormals 同思路，保证 .drc 法线有效） */
+function parseSTL(buf){
+  if(buf.byteLength<84)throw new Error('文件过小非STL');
+  var dv=new DataView(buf), n=dv.getUint32(80,true);
+  if(84+n*50!==buf.byteLength)throw new Error('非标准二进制STL(长度不符)');
+  var pos=new Float32Array(n*9), nor=new Float32Array(n*9), hasNor=false, t,c,o,vo,i;
+  for(t=0;t<n;t++){
+    o=84+t*50;
+    var nx=dv.getFloat32(o,true),ny=dv.getFloat32(o+4,true),nz=dv.getFloat32(o+8,true);
+    if(nx!==0||ny!==0||nz!==0)hasNor=true;
+    for(c=0;c<3;c++){
+      i=(t*3+c)*3;
+      vo=o+12+c*12;
+      pos[i]=dv.getFloat32(vo,true); pos[i+1]=dv.getFloat32(vo+4,true); pos[i+2]=dv.getFloat32(vo+8,true);
+      nor[i]=nx; nor[i+1]=ny; nor[i+2]=nz;      /* STL 为平面着色：三角形3顶点共享同一个面法线 */
+    }
+  }
+  if(!hasNor){                                   /* 法线全零：叉积重算每个面的法线 */
+    for(t=0;t<n;t++){
+      i=t*9;
+      var ax=pos[i],ay=pos[i+1],az=pos[i+2],
+          bx=pos[i+3],by=pos[i+4],bz=pos[i+5],
+          cx=pos[i+6],cy=pos[i+7],cz=pos[i+8],
+          e1x=bx-ax,e1y=by-ay,e1z=bz-az,
+          e2x=cx-ax,e2y=cy-ay,e2z=cz-az,
+          fx=e1y*e2z-e1z*e2y, fy=e1z*e2x-e1x*e2z, fz=e1x*e2y-e1y*e2x,
+          len=Math.sqrt(fx*fx+fy*fy+fz*fz);
+      if(len>1e-12){fx/=len;fy/=len;fz/=len;}
+      for(c=0;c<3;c++){nor[i+c*3]=fx;nor[i+c*3+1]=fy;nor[i+c*3+2]=fz;}
+    }
+  }
+  return {n:n,pos:pos,nor:nor};
+}
+
+/* ==================== 编码为 .drc ====================
+   先用 EdgeBreaker(压缩率最高)；失败(非流形网格常见)自动改用 Sequential 重试 */
+function encodeDrc(mod,tri){
+  var numPoints=tri.n*3;
+  var idx=new Uint32Array(numPoints),i;
+  for(i=0;i<numPoints;i++)idx[i]=i;             /* STL 无共享顶点：索引就是 0,1,2,... 顺序排列 */
+  var encoder=new mod.Encoder();
+  var builder=new mod.MeshBuilder();
+  var mesh=new mod.Mesh();
+  builder.AddFacesToMesh(mesh,tri.n,idx);                        /* 三角形索引 */
+  builder.AddFloatAttributeToMesh(mesh,mod.POSITION,numPoints,3,tri.pos);  /* 顶点坐标 */
+  builder.AddFloatAttributeToMesh(mesh,mod.NORMAL,numPoints,3,tri.nor);   /* 顶点法线 */
+  encoder.SetSpeedOptions(ENC_SPEED,ENC_SPEED);                  /* 编码速度档 */
+  encoder.SetAttributeQuantization(mod.POSITION,POS_BITS);       /* 坐标量化位数 */
+  encoder.SetAttributeQuantization(mod.NORMAL,NORM_BITS);        /* 法线量化位数 */
+  encoder.SetEncodingMethod(mod.MESH_EDGEBREAKER_ENCODING);      /* 首选：边缘断裂编码(压缩率高) */
+  var out=new mod.DracoInt8Array();
+  var len=encoder.EncodeMeshToDracoBuffer(mesh,out);
+  if(len<=0){                                    /* 非流形网格导致失败：改顺序编码重试 */
+    mod.destroy(out);
+    out=new mod.DracoInt8Array();
+    encoder.SetEncodingMethod(mod.MESH_SEQUENTIAL_ENCODING);
+    len=encoder.EncodeMeshToDracoBuffer(mesh,out);
+  }
+  var bytes=null;
+  if(len>0){                                     /* 编码成功：从 wasm 堆里拷出字节 */
+    bytes=new Uint8Array(len);
+    for(i=0;i<len;i++)bytes[i]=out.GetValue(i);
+  }
+  mod.destroy(mesh); mod.destroy(out); mod.destroy(encoder); mod.destroy(builder);  /* 释放 wasm 侧对象，防内存泄漏 */
+  return bytes;
+}
+
+/* ==================== 主流程（全自动） ==================== */
+(async function(){
+  try{
+    log('正在初始化 Draco 编码器(wasm)...');
+    var mod=await initEncoder();
+    log('编码器就绪。正在获取 STL 清单...','ok');
+    var list=await (await fetch('/list')).json();
+    if(!list.length){log('models 目录下没有找到 STL 文件！','bad');return;}
+    totalCnt=list.length;
+    log('共 '+totalCnt+' 个 STL，参数：坐标'+POS_BITS+'位 法线'+NORM_BITS+'位 速度'+ENC_SPEED,'dim');
+
+    var sumSTL=0,sumDRC=0,sumGZ=0,fails=[];
+    for(var k=0;k<list.length;k++){
+      var it=list[k];
+      var okFlag=false;   /* 本文件是否成功写盘（显式标志，避免变量残留误判） */
+      try{
+        var buf=await (await fetch('/models/'+it.p)).arrayBuffer();   /* 下载原始 STL */
+        var tri=parseSTL(buf);                                        /* 解析出顶点+法线 */
+        var drc=encodeDrc(mod,tri);                                   /* 编码为 .drc 字节 */
+        if(!drc)throw new Error('两种编码方式均失败');
+        /* 写回服务器：xxx.STL → xxx.drc */
+        var r=await fetch('/save?path='+encodeURIComponent(it.p),{method:'POST',body:drc});
+        if(!r.ok)throw new Error('写盘失败 HTTP'+r.status);
+        okFlag=true;
+        sumSTL+=it.stl; sumDRC+=drc.length; sumGZ+=it.gz||0;
+        log('['+(k+1)+'/'+totalCnt+'] '+it.p+'  STL '+(it.stl/1024).toFixed(0)+'KB → DRC '+(drc.length/1024).toFixed(1)+'KB','ok');
+      }catch(e){
+        fails.push(it.p);
+        log('['+(k+1)+'/'+totalCnt+'] '+it.p+'  失败：'+e.message,'bad');
+      }
+      step(okFlag);   /* 按成功标志刷新进度与失败计数 */
+    }
+
+    /* ==================== 汇总报告 ==================== */
+    var line1='全部完成！成功 '+(totalCnt-fails.length)+' / '+totalCnt+'，失败 '+fails.length+' 个'+(fails.length?('：'+fails.join('、')):'');
+    var line2='原始STL总量 '+(sumSTL/1048576).toFixed(1)+'MB → DRC总量 '+(sumDRC/1048576).toFixed(1)+'MB';
+    var line3=(sumGZ>0)?('对比现行 .gz 传输量 '+(sumGZ/1048576).toFixed(1)+'MB → 省 '+Math.round((1-sumDRC/sumGZ)*100)+'%'):'';
+    log('──── 汇总 ────','dim');
+    log(line1, fails.length?'bad':'ok');
+    log(line2,'ok');
+    if(line3)log(line3,'ok');
+    /* 通知服务器：打印汇总并自动退出 */
+    await fetch('/finish',{method:'POST',body:line1+' | '+line2+(line3?(' | '+line3):'')});
+  }catch(e){
+    log('致命错误：'+e.message,'bad');
+  }
+})();
+</script>
+</body>
+</html>

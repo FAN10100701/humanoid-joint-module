@@ -1202,7 +1202,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 }());
 </script>
 <script type="module">
-let THREE, OrbitControls, STLLoader=null;
+let THREE, OrbitControls, STLLoader=null, DRACOLoader=null, _dracoLoader=null;
 let renderer, scene, camera, controls, body3d;
 let raf=null, built=false, active=false;
 /* partGroups: 部件键 -> 网格数组（真实 URDF 模型与回退模型统一用此结构） */
@@ -1352,11 +1352,12 @@ curEnv=restoreEnvPreset();           /* 启动时恢复上次选择的环境预�
 
 function loadDeps(cb){
   if(THREE){cb(true);return;}
-  /* 依次加载 three 核心 → 轨道控制器 → STL 加载器（加载官方 URDF 网格用）→ 环境贴图生成器（修复金属材质发黑） */
+  /* 依次加载 three 核心 → 轨道控制器 → STL 加载器（加载官方 URDF 网格用）→ 环境贴图生成器（修复金属材质发黑）→ Draco 加载器（优先加载 .drc 超压缩模型） */
   import('three').then(function(M){THREE=M;return import('three/addons/controls/OrbitControls.js');})
     .then(function(O){OrbitControls=O.OrbitControls;return import('three/addons/loaders/STLLoader.js');})
     .then(function(S){STLLoader=S.STLLoader;return import('three/addons/environments/RoomEnvironment.js');})
-    .then(function(R){RoomEnv=R.RoomEnvironment;cb(true);})
+    .then(function(R){RoomEnv=R.RoomEnvironment;return import('three/addons/loaders/DRACOLoader.js');})
+    .then(function(D){DRACOLoader=D.DRACOLoader;cb(true);})
     .catch(function(e){console.warn('[Robot3D] 引擎加载失败:',e);cb(false);});
 }
 /* ==================== 高保真PBR材质系统（航空级铝合金质感） ==================== */
@@ -1973,25 +1974,57 @@ function assembleUrdf(parsed,geos){
 }
 
 /* ===== 压缩 STL 智能加载（网络提速核心） =====
-   服务器上每个 STL 都配有同名 .gz 压缩版（整个模型库 77MB 压到 28MB，传输量省 63%）。
-   优先 fetch .gz + 浏览器内置 DecompressionStream 流式解压（Chrome80+/Edge80+/Safari16.4+），
-   浏览器不支持或 .gz 请求失败时自动回退原始未压缩 STL（兜底，页面永远可用）。
+   三级优先级自动降级，任何一级失败不影响页面可用：
+   1) .drc  —— Draco 压缩（全库 21.8MB(.gz) 再压到 4.6MB，传输量最省，首选）
+   2) .gz   —— gzip 压缩 + 浏览器内置 DecompressionStream 流式解压（Chrome80+/Edge80+/Safari16.4+）
+   3) .STL  —— 原始未压缩（最终兜底，老浏览器/文件缺失时页面仍可用）
    返回 Promise<BufferGeometry>，失败时 reject 由调用方处理。 */
-var GZ_STL_ENABLE=true;    /* 【可调】压缩加载总开关：false 时全部走原始 STL（排查问题时用） */
-var _stlParseLoader=null;  /* 共享的 STLLoader 实例（只用其 parse 方法解析解压后的字节） */
+var DRC_STL_ENABLE=true;  /* 【可调】Draco(.drc) 优先加载总开关：false 时跳过 .drc 直接走 .gz/.stl（排查问题时用） */
+var GZ_STL_ENABLE=true;   /* 【可调】gzip 压缩加载总开关：false 时跳过 .gz 直接走原始 STL（排查问题时用） */
+var _stlParseLoader=null; /* 共享的 STLLoader 实例（只用其 parse 方法解析解压后的字节） */
 function stlGeoSmart(url){
+  /* 第一优先级：.drc（Draco 加载器已就绪且开关打开才尝试；失败自动降级 .gz） */
+  if(DRC_STL_ENABLE&&DRACOLoader&&window.fetch)return stlGeoDrc(url).catch(function(){return stlGeoGz(url);});
+  return stlGeoGz(url);                              /* 未就绪/关闭开关：直接走 .gz 逻辑 */
+}
+/* Draco .drc 加载：xxx.STL → 同名 xxx.drc；解码器 wasm(lib/draco/)只加载一次全程复用 */
+function stlGeoDrc(url){
+  if(!_dracoLoader){
+    _dracoLoader=new DRACOLoader();
+    _dracoLoader.setDecoderPath('lib/draco/');       /* 解码器文件随项目部署，离线可用且 PWA 可缓存 */
+  }
+  return fetch(url.replace(/\.STL$/i,'.drc')).then(function(r){
+    if(!r.ok)throw new Error('drc '+r.status);       /* .drc 不存在(404)等：转入回退 */
+    return r.arrayBuffer();
+  }).then(function(buf){
+    /* decodeDracoFile 返回 Promise，回调里过一遍法线保底（与 STL 路径同一套防线） */
+    return _dracoLoader.decodeDracoFile(buf,function(g){return ensureNormals(g);});
+  });
+}
+/* .gz 加载：优先 fetch .gz + 浏览器内置 DecompressionStream 流式解压，失败回退原始 STL */
+function stlGeoGz(url){
   /* 浏览器不支持 fetch/DecompressionStream：直接走原始 STL 的 XHR 加载 */
   if(!GZ_STL_ENABLE||!window.fetch||!window.DecompressionStream)return stlGeoFallback(url);
   return fetch(url+'.gz').then(function(r){
-    if(!r.ok)throw new Error('gz '+r.status);   /* .gz 不存在(404)等：转入回退 */
+    if(!r.ok)throw new Error('gz '+r.status);        /* .gz 不存在(404)等：转入回退 */
     /* 流式解压：用 Response 包住解压流再取 ArrayBuffer，避免整个压缩块重复占内存 */
     return new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
   }).then(function(buf){
     if(!_stlParseLoader)_stlParseLoader=new STLLoader();
     return ensureNormals(_stlParseLoader.parse(buf));  /* 解压出的 STL 字节 → 几何体（并保证法线有效） */
   }).catch(function(){
-    return stlGeoFallback(url);                 /* 任何环节失败：回退原始未压缩 STL */
+    return stlGeoFallback(url);                      /* 任何环节失败：回退原始未压缩 STL */
   });
+}
+/* 模型预取辅助（供减速器/机型预载复用）：按与正式加载 stlGeoSmart 完全相同的
+   优先级顺序 .drc → .gz → 原始STL 把文件拉进浏览器 HTTP 缓存，保证预取命中 */
+function prefetchModel(u){
+  return fetch(u.replace(/\.STL$/i,'.drc'))
+    .catch(function(){throw 0;})                     /* 网络层失败也统一抛出，进入下一级 */
+    .then(function(r){if(r.ok)return r;throw 0;})    /* .drc 不存在：降级 .gz */
+    .catch(function(){return fetch(u+'.gz');})
+    .then(function(r){if(r.ok)return r;throw 0;})    /* .gz 不存在：降级原始 STL */
+    .catch(function(){return fetch(u);});
 }
 /* 回退路径：直接加载原始未压缩 STL（STLLoader 内部走 XHR，老浏览器兼容） */
 function stlGeoFallback(url){
@@ -2333,8 +2366,8 @@ function preloadReducers(delay){
       if(i>=REDUCER_STL.length)return;
       var u=REDUCER_STL[i++];
       /* 预取到 HTTP 缓存(不解析、不占显存)，真正进入拆解场景时命中缓存秒开。
-         优先预取 .gz 压缩版（正式加载 stlGeoSmart 也优先 .gz），无压缩版再预取原始版 */
-      fetch(u+'.gz').then(function(r){if(r.ok)return r;return fetch(u);},function(){return fetch(u);}).then(next,next);
+         优先级与正式加载 stlGeoSmart 一致：.drc → .gz → 原始STL（见 prefetchModel） */
+      prefetchModel(u).then(next,next);
     }
     next();
   },delay||3000);
@@ -2373,8 +2406,7 @@ function preloadRobots(delay){
         (function next(){                 /* 逐个串行预取：不与任何前台下载抢并发 */
           if(i>=list.length)return nextRobot(ki+1);
           var u=cfg.dir+'/'+list[i++];
-          /* 优先预取 .gz 压缩版（正式加载 stlGeoSmart 也优先 .gz），无压缩版再预取原始版 */
-          fetch(u+'.gz').then(function(r){if(r.ok)return r;return fetch(u);},function(){return fetch(u);}).then(next,next);   /* 预取到 HTTP 缓存即可，失败忽略继续 */
+          prefetchModel(u).then(next,next);   /* 优先级同正式加载(.drc→.gz→原始)，预取到 HTTP 缓存即可，失败忽略继续 */
         })();
       }).catch(function(){nextRobot(ki+1);});
     })(0);

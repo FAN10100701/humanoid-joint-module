@@ -2,12 +2,12 @@
    PWA Service Worker —— 离线缓存与二次访问加速
    策略：
    1) 核心资源（本页 HTML）install 时预缓存
-   2) 模型 .gz / STL / JS 库等静态资源：访问时缓存（cache-first），
+   2) 模型 .drc(Draco) / .gz / STL / JS 库等静态资源：访问时缓存（cache-first），
       二次访问零网络下载，完全离线可浏览
    3) HTML 导航请求：network-first（保证教学内容更新及时），断网回退缓存
    4) 改 SW_VERSION 版本号即可整体刷新全部缓存
    ============================================================ */
-var SW_VERSION='robot-3d-v1';            /* 【可调】缓存版本号：改动后旧缓存自动清除 */
+var SW_VERSION='robot-3d-v2';            /* 【可调】缓存版本号：改动后旧缓存自动清除（v2：新增 .drc Draco 模型） */
 var CORE_CACHE=SW_VERSION+'-core';       /* 核心资源缓存名（install 预缓存） */
 var RUNTIME_CACHE=SW_VERSION+'-runtime'; /* 运行时缓存名（模型等按需缓存） */
 
@@ -57,7 +57,7 @@ self.addEventListener('fetch',function(e){
     );
     return;
   }
-  /* 静态资源（.gz 模型 / .STL / .js 库 / 图片）：cache-first —— 命中即回，零网络 */
+  /* 静态资源（.drc 模型 / .gz 模型 / .STL / .js 库 / 图片）：cache-first —— 命中即回，零网络 */
   e.respondWith(
     caches.match(req).then(function(hit){
       if(hit)return hit;                    /* 二次访问：直接走本地缓存 */
