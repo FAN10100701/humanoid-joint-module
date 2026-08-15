@@ -79,3 +79,28 @@ body{padding-top:62px!important}
   .nav-inner{height:52px;gap:8px}
   .nav-search span.txt{display:none}
 }
+
+/* ---- 浅色外壳(苹果透亮玻璃) ---- */
+.nav-theme{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;color:#9ecbff}
+body[data-theme="light"] .nav-theme{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
+body[data-theme="light"] .topnav{background:rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-bottom:1px solid rgba(60,80,120,.12)}
+body[data-theme="light"] .nav-brand{color:#111827!important}
+body[data-theme="light"] .nav-links a{color:#475569!important}
+body[data-theme="light"] .nav-links a:hover{color:#111827!important;background:rgba(37,99,235,.08)}
+body[data-theme="light"] .nav-search{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.28);color:#2563eb}
+body[data-theme="light"] .nav-done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#15803d}
+body[data-theme="light"] .breadcrumb{color:#94a3b8}
+body[data-theme="light"] .breadcrumb a{color:#64748b}
+body[data-theme="light"] .prevnext .pn-item{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+body[data-theme="light"] .prevnext .pn-item b{color:#2563eb}
+body[data-theme="light"] .prevnext .pn-item span{color:#94a3b8}
+body[data-theme="light"] .site-footer{color:#94a3b8;border-top-color:rgba(60,80,120,.12)}
+body[data-theme="light"] .search-box{background:rgba(255,255,255,.9);border-color:rgba(37,99,235,.3)}
+body[data-theme="light"] .search-input{color:#0f172a}
+body[data-theme="light"] .search-head{color:#64748b}
+body[data-theme="light"] .search-hit:hover{background:rgba(37,99,235,.08)}
+body[data-theme="light"] .hit-t{color:#0f172a}
+body[data-theme="light"] .hit-meta{color:#94a3b8}
+body[data-theme="light"] .quiz{background:rgba(255,255,255,.62)}
+body[data-theme="light"] .quiz-q{color:#0f172a}
+body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#334155}

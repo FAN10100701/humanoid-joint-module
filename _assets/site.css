@@ -234,3 +234,99 @@ details.faq .faq-a{padding:2px 18px 16px;font-size:14px;color:#9aa4b2;line-heigh
   .container{padding:14px 14px 30px}
   h2{font-size:18px}
 }
+
+/* ============================================================
+   浅色 · 苹果透亮玻璃风格(body[data-theme="light"])
+   ============================================================ */
+.nav-theme{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;color:#9ecbff}
+body[data-theme="light"] .nav-theme{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
+
+body[data-theme="light"]{
+  background:
+    radial-gradient(1200px 600px at 8% -10%, rgba(56,132,255,.14), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgba(147,197,253,.18), transparent 55%),
+    radial-gradient(900px 600px at 50% 110%, rgba(209,224,244,.5), transparent 60%),
+    linear-gradient(160deg,#f7f9fc 0%,#eef2f8 45%,#e9edf5 100%);
+  color:#1a2332;
+}
+body[data-theme="light"] .topnav{background:rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-bottom:1px solid rgba(60,80,120,.12);box-shadow:0 2px 24px rgba(40,70,130,.06)}
+body[data-theme="light"] .nav-brand{color:#111827}
+body[data-theme="light"] .nav-links a{color:#475569}
+body[data-theme="light"] .nav-links a:hover{color:#111827;background:rgba(37,99,235,.08)}
+body[data-theme="light"] .nav-search{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.28);color:#2563eb}
+body[data-theme="light"] .nav-done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#15803d}
+body[data-theme="light"] .breadcrumb{color:#94a3b8}
+body[data-theme="light"] .breadcrumb a{color:#64748b}
+body[data-theme="light"] .breadcrumb a:hover{color:#2563eb}
+
+body[data-theme="light"] .page-head h1{color:#0f172a}
+body[data-theme="light"] .page-head .sub{color:#5a6a85}
+body[data-theme="light"] .page-head .tag{color:#2563eb;background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25)}
+body[data-theme="light"] h2{color:#0f172a;border-bottom-color:rgba(60,80,120,.14)}
+body[data-theme="light"] h3{color:#2563eb}
+body[data-theme="light"] h4{color:#334155}
+body[data-theme="light"] p,body[data-theme="light"] li{color:#3a4759}
+body[data-theme="light"] strong{color:#0f172a}
+
+body[data-theme="light"] .card,body[data-theme="light"] .lab,body[data-theme="light"] .progress-panel,
+body[data-theme="light"] .term-card,body[data-theme="light"] .quiz,body[data-theme="light"] details.faq,
+body[data-theme="light"] .rm-step,body[data-theme="light"] .step-item{
+  background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09);border-radius:16px;
+}
+body[data-theme="light"] .card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+body[data-theme="light"] .card .t{color:#0f172a}
+body[data-theme="light"] .card .d{color:#5a6a85}
+body[data-theme="light"] .card.featured{background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(255,255,255,.7));border-color:rgba(37,99,235,.28)}
+body[data-theme="light"] .step-item{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(147,197,253,.16));border-color:rgba(37,99,235,.22);color:#1e3a8a}
+body[data-theme="light"] .step-item b{color:#0f172a}
+body[data-theme="light"] .rm-step h4{color:#0f172a}
+body[data-theme="light"] .rm-step p{color:#5a6a85}
+
+body[data-theme="light"] .box-tip{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.3);color:#3a4759}
+body[data-theme="light"] .box-warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);color:#7c5a12}
+body[data-theme="light"] .box-danger{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.35);color:#9f3b3b}
+body[data-theme="light"] .box-ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35);color:#146c3c}
+body[data-theme="light"] .key-point{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(255,255,255,.6));border-left-color:#2563eb;color:#334155}
+body[data-theme="light"] .key-point b{color:#2563eb}
+body[data-theme="light"] .key-point .kp-title{color:#0f172a}
+
+body[data-theme="light"] table{background:rgba(255,255,255,.55);box-shadow:0 6px 24px rgba(50,80,140,.07)}
+body[data-theme="light"] th{background:rgba(37,99,235,.12);color:#0f172a}
+body[data-theme="light"] td{color:#3a4759;border-top-color:rgba(60,80,120,.1)}
+body[data-theme="light"] tr:hover td{background:rgba(37,99,235,.05)}
+body[data-theme="light"] pre{background:#f4f7fc;border-color:rgba(60,80,120,.14);color:#1e293b}
+body[data-theme="light"] :not(pre)>code{background:rgba(37,99,235,.1);color:#1d4ed8}
+body[data-theme="light"] pre code{color:#1e3a8a}
+
+body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#334155}
+body[data-theme="light"] .quiz-options button:hover{border-color:#2563eb;color:#0f172a}
+body[data-theme="light"] .quiz-q{color:#0f172a}
+body[data-theme="light"] .quiz-explain{background:rgba(37,99,235,.07);border-left-color:#2563eb;color:#4b5c74}
+body[data-theme="light"] details.faq summary{color:#1a2332}
+body[data-theme="light"] details.faq .faq-a{color:#4b5c74}
+body[data-theme="light"] .prevnext .pn-item{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+body[data-theme="light"] .prevnext .pn-item b{color:#2563eb}
+body[data-theme="light"] .prevnext .pn-item span{color:#94a3b8}
+body[data-theme="light"] .site-footer{color:#94a3b8;border-top-color:rgba(60,80,120,.12)}
+body[data-theme="light"] .site-footer a{color:#2563eb}
+
+body[data-theme="light"] .search-box{background:rgba(255,255,255,.9);border-color:rgba(37,99,235,.3)}
+body[data-theme="light"] .search-input{color:#0f172a}
+body[data-theme="light"] .search-head{color:#64748b}
+body[data-theme="light"] .search-hit:hover{background:rgba(37,99,235,.08)}
+body[data-theme="light"] .hit-t{color:#0f172a}
+body[data-theme="light"] .hit-meta{color:#94a3b8}
+
+body[data-theme="light"] .hero h1{color:#0f172a}
+body[data-theme="light"] .hero .sub{color:#5a6a85}
+body[data-theme="light"] .stat .v{color:#2563eb}
+body[data-theme="light"] .stat .k{color:#94a3b8}
+body[data-theme="light"] .hero-search input{background:rgba(255,255,255,.8);border-color:rgba(37,99,235,.3);color:#0f172a}
+body[data-theme="light"] .gloss-search input{background:rgba(255,255,255,.8);border-color:rgba(37,99,235,.3);color:#0f172a}
+body[data-theme="light"] .gloss-cats button{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.16);color:#64748b}
+body[data-theme="light"] .gloss-cats button.on{background:rgba(37,99,235,.15);border-color:#2563eb;color:#1d4ed8}
+body[data-theme="light"] .term-name{color:#0f172a}
+body[data-theme="light"] .term-desc{color:#5a6a85}
+body[data-theme="light"] .sec-title{color:#334155}
+body[data-theme="light"] .sec-title .en{color:#94a3b8}

@@ -51,6 +51,7 @@
       <a href="#sec7">前沿知识</a>
       <a href="#sec8">学习工具</a>
     </div>
+    <button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>
     <button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>
   </div>
 </nav>
@@ -384,45 +385,49 @@
     </div>
   </div>
 
-  <!-- ================= 最新更新 ================= -->
-  <div class="sec">
-    <div class="sec-title"><span class="num">★</span>最新更新 <span class="en">UPDATES</span><span class="bar"></span></div>
-    <div style="background:rgba(22,27,34,.6);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 20px">
-      <div class="upd-item"><span class="upd-date">本期新增</span><a href="06_软件与算法/01_软件学习路线图.html">软件与算法板块(5 页)</a><span class="badge-new">NEW</span><span style="color:#6b7280">软件全栈路线、固件、ROS2、仿真 RL、VLA</span></div>
-      <div class="upd-item"><span class="upd-date">本期新增</span><a href="07_前沿知识库/01_全球人形机器人机型全景.html">前沿知识库(3 页)</a><span class="badge-new">NEW</span><span style="color:#6b7280">全球机型全景、前沿技术专题、论文/数据集/开源社区</span></div>
-      <div class="upd-item"><span class="upd-date">本期新增</span><a href="08_学习工具/04_代码实验室.html">代码实验室</a><span class="badge-new">NEW</span><span style="color:#6b7280">浏览器内 PID 整定 / FOC 矢量 / 倒立摆三实验,零安装</span></div>
-      <div class="upd-item"><span class="upd-date">本期新增</span><a href="08_学习工具/01_术语词典.html">学习工具(4 页)</a><span class="badge-new">NEW</span><span style="color:#6b7280">术语词典、FAQ、自测题库、代码实验室</span></div>
-      <div class="upd-item"><span class="upd-date">本期新增</span><span style="color:#9aa4b2">全站导航 + 搜索 + 学习进度打卡(Ctrl+K 搜索)</span></div>
-      <div class="upd-item"><span class="upd-date">上期</span><a href="00_3D解剖/人形机器人解剖式知识可视化.html">3D 解剖系统升级</a><span style="color:#6b7280">智元 X1 接入、机身配色系统、力控仿真、顺序拆解动画</span></div>
-      <div class="upd-item"><span class="upd-date">上期</span><a href="03_项目实操/10_Hdrive新版方案_交叉认证与芯片选型报告.html">Hdrive 新版方案交叉认证报告</a></div>
-    </div>
-  </div>
-
   <!-- ================= 学习进度 ================= -->
   <div class="sec" id="progress-sec">
     <div class="sec-title"><span class="num">✓</span>我的学习进度 <span class="en">PROGRESS · 在各页面点右上角"✓ 完成"打卡</span><span class="bar"></span></div>
     <div class="progress-panel" id="progressPanel">
       <div id="progressRows">加载中…</div>
-      <div class="box box-tip" style="margin:14px 0 0"><b>💡 说明:</b>新页面(第 6/7/8 部分)已支持打卡统计;存量页面(第 0-5 部分)将陆续接入。进度保存在本地浏览器,不会上传。</div>
+      <div style="margin:14px 0 0;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="lab-btns" style="margin:0" onclick="Site.exportProgress()">⬇️ 导出进度</button>
+        <button class="lab-btns" style="margin:0" onclick="Site.importProgress()">⬆️ 导入进度</button>
+      </div>
+      <div class="box box-tip" style="margin:14px 0 0"><b>💡 关于进度与登录:</b>进度保存在<b>当前浏览器本地</b>(不上传、无账号)。换设备/换手机时,先在本机"⬇️ 导出进度"得到 JSON 文件,再在新设备"⬆️ 导入进度"即可延续。<b>真正的多设备云端同步需要登录系统与服务器</b>(静态托管无后端),如需要我可以在后续版本接入免费云同步(需你提供一个账号)。</div>
     </div>
   </div>
 
   <!-- ================= 版本与更新历史 ================= -->
   <div class="sec" id="version">
-    <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 每次更新都在这里登记</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.4.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-15 · 目录整理 + 品牌统一 + 版本体系</span></div>
-      <div style="font-size:12.5px;color:#6b7280;margin:8px 0 14px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.4.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-15</span></div>
+      <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
+
+      <details class="faq" open>
+        <summary>V1.4.0 · 2026-08-15 · 目录整理 + 品牌统一 + 版本体系</summary>
+        <div class="faq-a">九大板块统一命名(00_3D解剖 ~ 08_学习工具);power-analysis 并入 03_项目实操;清理残留目录;新增 README 与 CHANGELOG;站点品牌统一为"人形机器人学习站";修复启动脚本;新增本区块(按版本折叠)。</div>
+      </details>
       <details class="faq">
-        <summary>📜 展开查看版本历史</summary>
-        <div class="faq-a">
-          <b>V1.4.0 · 2026-08-15</b> 目录整理(统一 00-08 命名,power-analysis 并入 03);品牌统一为"人形机器人学习站";新增版本体系与本区块;修复启动脚本;全站链接/语法自检全绿。<br>
-          <b>V1.3.0 · 2026-08-15</b> 学习站大升级:新增 06 软件与算法 / 07 前沿知识库 / 08 学习工具(含代码实验室)共 12 页;全站导航、Ctrl+K 搜索、自测打卡;门户首页重写;16 个存量页接入导航。<br>
-          <b>V1.2.1 · 2026-08-14</b> 3D 解剖升级:5 套机身配色(修发黑根因)、智元 X1 接入、力控仿真、顺序拆解动画、无3D标注修复。<br>
-          <b>V1.2.0 · 2026-08-14</b> 手机端白屏修复:启动遮罩、老内核/看门狗/WebGL 提示;165 个 STL 转 DRACO(-79%)、CDN 改 npmmirror。<br>
-          <b>V1.1.0 · 2026-08-14</b> 十项需求开发:侧边栏拖宽、手机抽屉、拟人步态、H1/G1 同屏对比、力控仿真等。<br>
-          <b>V1.0.0 · 2026-08-13</b> 初始版本:理论 / 硬件 / 实操 / 进阶四部分 + 3D 解剖系统。
-        </div>
+        <summary>V1.3.0 · 2026-08-15 · 学习站大升级</summary>
+        <div class="faq-a">新增 06 软件与算法(5 页:路线图/固件/ROS2/仿真RL/感知VLA)、07 前沿知识库(3 页:机型全景/技术专题/论文数据集)、08 学习工具(4 页:术语词典/FAQ/自测题库/代码实验室);全站导航、Ctrl+K 搜索、自测判分、进度打卡;门户首页重写(学习路径);16 个存量页接入统一导航。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.2.1 · 2026-08-14 · 3D 解剖升级</summary>
+        <div class="faq-a">5 套机身配色系统(修整机发黑根因);智元灵犀 X1 接入(52 官方 STL);力控仿真(阻抗 vs 位置控制);顺序拆解动画;导航"无3D"标注修复;行星减速器原理动画。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.2.0 · 2026-08-14 · 手机端白屏修复与提速</summary>
+        <div class="faq-a">3D 启动遮罩(纯 CSS 即时可见);老内核(importmap)检测提示;网络慢看门狗;WebGL 失败兜底;165 个 STL 转 DRACO 压缩(传输体积 -79%);CDN 回退改 npmmirror 阿里镜像。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.1.0 · 2026-08-14 · 十项需求开发</summary>
+        <div class="faq-a">3D 主页面大版本:侧边栏拖宽、手机抽屉式拆解、拟人步态动画、H1/G1 同屏对比(真实身高等比)、PowerFlow 关节拆解、力控仿真。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.0.0 · 2026-08-13 · 初始版本</summary>
+        <div class="faq-a">理论入门 / 硬件基础 / 项目实操 / 升级进阶 四部分 + 3D 解剖系统(减速器剖面、FOC 三环动画、驱动电路图解)。</div>
       </details>
     </div>
   </div>

@@ -26,6 +26,26 @@
 
   function page(){ return window.PAGE || {}; }
 
+  /* ---------- 主题(亮/暗风格切换) ---------- */
+  var THEME_KEY = "site-theme";
+  function applyTheme(){
+    var t = "dark";
+    try{ t = localStorage.getItem(THEME_KEY) || "dark"; }catch(e){}
+    document.body.setAttribute("data-theme", t);
+    var btns = document.querySelectorAll(".nav-theme");
+    for(var i = 0; i < btns.length; i++){
+      btns[i].textContent = (t === "light") ? "🌙" : "☀️";
+      btns[i].setAttribute("title", (t === "light") ? "切到深色风格" : "切到浅色风格(苹果透亮)");
+    }
+  }
+  S.toggleTheme = function(){
+    var cur = document.body.getAttribute("data-theme") === "light";
+    var next = cur ? "dark" : "light";
+    document.body.setAttribute("data-theme", next);
+    try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+    applyTheme();
+  };
+
   /* ---------- 学习进度 ---------- */
   function getProgress(){
     try{ return JSON.parse(localStorage.getItem(STORE) || "{}"); }catch(e){ return {}; }
@@ -42,6 +62,36 @@
     var btn = document.querySelector(".nav-done");
     if(btn) btn.classList.toggle("on", !!p[id]);
     S.refreshHomeProgress && S.refreshHomeProgress();
+  };
+  /* 进度导出(下载 JSON,可换设备后导入) */
+  S.exportProgress = function(){
+    var p = getProgress();
+    var blob = new Blob([JSON.stringify(p, null, 2)], { type:"application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "人形机器人学习进度-" + new Date().toISOString().slice(0,10) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  /* 进度导入(合并进当前进度) */
+  S.importProgress = function(){
+    var input = document.createElement("input");
+    input.type = "file"; input.accept = ".json,application/json";
+    input.onchange = function(){
+      var f = input.files[0]; if(!f) return;
+      var r = new FileReader();
+      r.onload = function(){
+        try{
+          var data = JSON.parse(r.result);
+          var p = getProgress(), n = 0;
+          for(var k in data){ if(data[k] && !p[k]){ p[k] = data[k]; n++; } }
+          saveProgress(p);
+          if(window.renderProgress) window.renderProgress();
+          alert("已导入 " + n + " 条进度记录");
+        }catch(e){ alert("导入失败:文件格式不正确,请选择导出的 .json 文件"); }
+      };
+      r.readAsText(f);
+    };
+    input.click();
   };
   S.getSectionProgress = function(prefix){
     /* prefix 形如 "06" 或 "07-0"; 返回 {done,total} */
@@ -65,6 +115,7 @@
       html += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
     });
     html += '</div>'
+      + '<button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>'
       + '<button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>'
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       + '</div>';
@@ -230,8 +281,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ injectChrome(); S.initQuiz(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); S.initQuiz(); });
   }else{
-    injectChrome(); S.initQuiz();
+    applyTheme(); injectChrome(); S.initQuiz();
   }
 })();
