@@ -32,6 +32,7 @@ window.SITE_SEARCH_INDEX = [
 
   /* ---- 4 · 进阶 ---- */
   { t:"通信与控制算法升级路线", u:"04_升级进阶/09_通信与控制算法升级路线.html", s:"升级进阶", d:"CAN/EtherCAT 通信与 ADRC/MPC/RL 控制算法进阶路线", k:"CAN EtherCAT 通信 ADRC MPC RL 强化学习 升级路线 进阶" },
+  { t:"全身控制与步态规划 · WBC / MPC", u:"04_升级进阶/02_全身控制与步态规划_WBC与MPC.html", s:"升级进阶", d:"步态规划(ZMP/捕获点)、全身控制 WBC、模型预测控制 MPC、RL 步态对比与开源项目", k:"全身控制 WBC 步态规划 MPC 模型预测 ZMP 零力矩点 捕获点 逆动力学 QP 单刚体 SRBM 步态 行走 平衡 tosr_ts Drake crocoddyl ocs2" },
 
   /* ---- 5 · HdriveV2 ---- */
   { t:"HdriveV2 · 设计规范与决策(交叉认证报告)", u:"05_HdriveV2工程/00_设计规范与决策/Hdrive新版方案_交叉认证与芯片选型报告.html", s:"HdriveV2 工程", d:"HdriveV2 交叉认证:芯片选型、方案对比、Bug 核实(工程目录入口)", k:"HdriveV2 交叉认证 芯片选型 设计规范 决策" },
@@ -45,11 +46,13 @@ window.SITE_SEARCH_INDEX = [
   { t:"感知与具身智能 · VLA 与世界模型", u:"06_软件与算法/05_感知与具身智能_VLA与世界模型.html", s:"软件与算法", d:"感知栈、VLA 模型(RT-2/OpenVLA/π0/Helix)、世界模型、灵巧手与遥操作", k:"感知 具身智能 VLA 视觉语言动作 RT-2 OpenVLA pi0 Helix 世界模型 灵巧手 遥操作 SLAM 触觉" },
   { t:"视觉 SLAM 与状态估计", u:"06_软件与算法/06_视觉SLAM与状态估计.html", s:"软件与算法", d:"同时定位与建图:前端里程计、图优化、回环检测、ORB-SLAM3/VINS/LIO-SAM、高斯泼溅", k:"SLAM 定位 建图 里程计 图优化 回环 ORB-SLAM3 VINS LIO-SAM 高斯泼溅 3DGS 位姿 SE3 状态估计" },
   { t:"sim2real 部署步骤拆解", u:"06_软件与算法/07_sim2real部署步骤拆解.html", s:"软件与算法", d:"仿真到真机十步流程:建模、参数辨识、域随机化、延迟/噪声注入、策略导出、真机部署、数据闭环", k:"sim2real 仿真到真机 域随机化 延迟注入 策略导出 ONNX 部署 数据闭环 gap" },
+  { t:"VLA 与世界模型详解", u:"06_软件与算法/08_视觉语言动作模型VLA与世界模型详解.html", s:"软件与算法", d:"RT-1/RT-2/OpenVLA/π0/Helix/GR00T 逐个详解、世界模型(Genie/Cosmos)、数据训练、评测与局限", k:"VLA 世界模型 视觉语言动作 RT-1 RT-2 OpenVLA pi0 Helix GR00T GO-1 Genie Cosmos 世界模型 具身智能 大模型" },
 
   /* ---- 7 · 前沿知识库(新) ---- */
   { t:"全球人形机器人机型全景", u:"07_前沿知识库/01_全球人形机器人机型全景.html", s:"前沿知识库", d:"Optimus、Figure、宇树 H1/G1、智元、Atlas、小米、傅利叶等 10+ 机型参数对比与趋势", k:"人形机器人 机型 特斯拉 Optimus Figure 宇树 H1 G1 智元 远征 灵犀 波士顿动力 Atlas 小米 CyberOne 傅利叶 星动纪元 众擎 参数对比 行业趋势" },
   { t:"前沿技术专题库", u:"07_前沿知识库/02_前沿技术专题库.html", s:"前沿知识库", d:"一体化关节、灵巧手、触觉与六维力、全身控制、VLA、世界模型、能源热管理七大专题", k:"前沿 专题 一体化关节 准直驱 行星滚柱丝杠 灵巧手 触觉 六维力 电子皮肤 MPC WBC 全身控制 VLA 世界模型 热管理 电池" },
   { t:"论文 · 数据集 · 开源社区", u:"07_前沿知识库/03_论文_数据集_开源社区.html", s:"前沿知识库", d:"入门论文清单(带导读)、AMASS/HumanML3D 数据集、开源项目、竞赛与社区", k:"论文 arxiv 数据集 AMASS HumanML3D DexGraspNet Open X-Embodiment 开源 ODrive SimpleFOC MotorOS Mini Cheetah UnitreeSDK 竞赛 RoboCup 社区" },
+  { t:"灵巧手专题", u:"07_前沿知识库/04_灵巧手专题.html", s:"前沿知识库", d:"自由度与欠驱动、腱驱动/直驱、触觉传感、特斯拉手/宇树 Dex3-1/Shadow Hand、遥操作与灵巧操作", k:"灵巧手 欠驱动 腱驱动 直驱 触觉 电子皮肤 特斯拉手 宇树 Dex3-1 Shadow Hand 遥操作 抓取 灵巧操作 DexGraspNet" },
 
   /* ---- 8 · 学习工具(新) ---- */
   { t:"术语词典", u:"08_学习工具/01_术语词典.html", s:"学习工具", d:"100+ 核心术语:机械/电机/驱动/控制/通信/软件/AI,实时搜索分类", k:"术语 词典 词汇 谐波 背隙 编码器 FOC SVPWM CAN EtherCAT ROS2 术语表" },
