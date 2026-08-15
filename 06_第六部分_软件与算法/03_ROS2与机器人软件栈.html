@@ -1,8 +1,5 @@
 <!DOCTYPE html>
-<!-- ============================================================
-  人形机器人学习站 · 06 软件与算法 / 03 ROS2 与机器人软件栈
-  结构遵循 _assets/页面模板.html,样式遵循 _assets/site.css
-============================================================ -->
+<!-- 人形机器人学习站 · 06 软件与算法 / 03 ROS2 与机器人软件栈(遵循 _assets/页面模板.html 与 site.css) -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -44,7 +41,7 @@
   <!-- ================= 页面头部 ================= -->
   <div class="page-head">
     <h1>🤖 ROS2 与机器人软件栈</h1>
-    <div class="sub">从零理解机器人"操作系统"级的中间件:ROS2 是什么、六大核心概念怎么用、colcon 如何构建、URDF/RViz2/TF 如何描述与查看机器人、MoveIt2 能做什么,以及宇树等真实人形机器人的软件栈长什么样。适合已掌握单片机/嵌入式基础、想进入"整机软件"层的读者。</div>
+    <div class="sub">从零理解机器人"操作系统"级的中间件:ROS2 是什么、六大核心概念、colcon 构建、URDF/RViz2/TF 可视化、MoveIt2 运动规划,以及宇树等真实人形机器人的软件栈。适合已掌握单片机/嵌入式基础、想进入"整机软件"层的读者。</div>
     <div class="tags">
       <span class="tag">ROS2</span>
       <span class="tag">中间件</span>
@@ -111,7 +108,7 @@
 
   <!-- ================= 2. 六大核心概念 ================= -->
   <h2><span class="h2-num">2</span> 六大核心概念:节点 / 话题 / 服务 / 动作 / 参数 / 命名空间</h2>
-  <p>这六个概念是 ROS2 的"语法"。学完后你会发现:人形机器人的状态估计、运动规划、关节控制,全部是它们的组合。</p>
+  <p>这六个概念是 ROS2 的"语法":人形机器人的状态估计、运动规划、关节控制,都是它们的组合。</p>
 
   <h3>2.1 节点(Node):一切功能的载体</h3>
   <p>节点是 ROS2 图(Graph)中的基本计算单元:一个进程可含多个节点,各负责一项职责(如"状态估计节点"、"左腿控制节点")。节点之间不直接调用函数,而是通过话题/服务/动作通信,因此<strong>节点可被独立启动、停止、替换</strong>。</p>
@@ -127,7 +124,7 @@ def main(args=None):
     rclpy.shutdown()</code></pre>
 
   <h3>2.2 话题(Topic):发布/订阅,异步、一对多</h3>
-  <p>话题是最常用的通信方式:发布者广播,订阅者按需接收。<strong>发布者不知道谁在听,订阅者不知道谁在发</strong>——这是解耦的核心。<code>/joint_states</code>(关节角)、<code>/odom</code>、<code>/scan</code> 都是典型话题。下面是一对完整可运行的示例:</p>
+  <p>话题是最常用的通信方式:发布者广播,订阅者按需接收。<strong>发布者不知道谁在听,订阅者不知道谁在发</strong>——这是解耦的核心。<code>/joint_states</code>(关节角)、<code>/odom</code>、<code>/scan</code> 都是典型话题。下面是一对可运行示例:</p>
   <pre><code># talker.py —— 发布者:每 1 秒向 /chatter 发一条字符串
 import rclpy
 from rclpy.node import Node
@@ -203,17 +200,16 @@ class MoveServer(Node):
 
     def execute(self, goal_handle):
         goal_handle.publish_feedback(MoveToPose.Feedback(progress=0.3))  # 推送进度
-        # …… 长时间执行(如路径跟随)……
         if goal_handle.is_cancel_requested:                              # 支持取消
             goal_handle.canceled()
             return MoveToPose.Result(success=False)
+        # …… 长任务执行 ……
         goal_handle.succeed()
         return MoveToPose.Result(success=True)</code></pre>
-  <p>命令行:<code>ros2 action send_goal /move_to_pose my_msgs/action/MoveToPose "{x: 1.0, y: 0.0}" --feedback</code>。</p>
+  <p>命令行:<code>ros2 action send_goal /move_to_pose my_msgs/action/MoveToPose "{x: 1.0, y: 0.0}" --feedback</code></p>
 
   <h3>2.5 参数(Parameter):运行时可调的键值配置</h3>
-  <p>参数让节点行为<strong>不重新编译、不重启</strong>就能调整,例如把"最大关节速度"做成参数,方便标定调参。</p>
-  <pre><code># 节点内声明与读取参数
+  <p>参数让节点行为<strong>不重新编译、不重启</strong>就能调整,例如把"最大关节速度"做成参数,方便标定调参。</p>  <pre><code># 节点内声明与读取参数
 self.declare_parameter("max_speed", 1.5)                 # 默认 1.5
 speed = self.get_parameter("max_speed").value
 # 命令行: ros2 param get /talker max_speed
@@ -316,12 +312,10 @@ def generate_launch_description():
       <tr><td><code>ros2 topic echo &lt;topic&gt;</code></td><td>实时打印话题消息(调试神器)</td></tr>
       <tr><td><code>ros2 topic info &lt;topic&gt; -v</code></td><td>话题详情:发布者、订阅者、QoS</td></tr>
       <tr><td><code>ros2 topic hz &lt;topic&gt;</code></td><td>统计发布频率,检查节点是否卡死</td></tr>
-      <tr><td><code>ros2 topic pub &lt;topic&gt; &lt;type&gt; "{data: 'hi'}" --once</code></td><td>手动发布一条消息(测试订阅者)</td></tr>
       <tr><td><code>ros2 service list</code> / <code>ros2 service type</code></td><td>列出服务 / 查询服务类型</td></tr>
       <tr><td><code>ros2 service call &lt;srv&gt; &lt;type&gt; "{...}"</code></td><td>直接调用一个服务</td></tr>
       <tr><td><code>ros2 action list -t</code> / <code>ros2 action send_goal ... --feedback</code></td><td>列出动作 / 发送动作目标并打印反馈</td></tr>
       <tr><td><code>ros2 param list / get / set / dump</code></td><td>参数查看、读取、修改、导出</td></tr>
-      <tr><td><code>ros2 pkg list</code> / <code>ros2 pkg executables &lt;pkg&gt;</code></td><td>列出已装包 / 某包的可执行文件</td></tr>
       <tr><td><code>ros2 run &lt;pkg&gt; &lt;executable&gt;</code></td><td>运行包里的节点</td></tr>
       <tr><td><code>ros2 launch &lt;pkg&gt; &lt;file&gt;</code></td><td>按 launch 文件启动多节点系统</td></tr>
       <tr><td><code>ros2 doctor</code></td><td>系统自检:发现网络、配置、环境问题</td></tr>
@@ -348,7 +342,7 @@ def generate_launch_description():
   &lt;axis xyz="1 0 0"/&gt;                     &lt;!-- 旋转轴 --&gt;
   &lt;limit lower="-1.57" upper="1.57" effort="300" velocity="8"/&gt;
 &lt;/joint&gt;</code></pre>
-  <p>关节类型:<code>revolute</code>(有限角度,如髋/膝/踝)、<code>continuous</code>(无限旋转,如轮子)、<code>prismatic</code>(平移)、<code>fixed</code>(固定)、<code>floating</code>(6 自由度浮动,常模拟人形"基座-世界"关系)。</p>
+  <p>关节类型:<code>revolute</code>(有限角度,如髋/膝/踝)、<code>continuous</code>(无限旋转)、<code>prismatic</code>(平移)、<code>fixed</code>(固定)、<code>floating</code>(6 自由度浮动,常模拟"基座-世界"关系)。</p>
 
   <h3>4.2 xacro:给 URDF 加"宏与变量"</h3>
   <p>手写 URDF 时左右腿几乎一样,复制粘贴又长又难维护。<strong>xacro</strong> 提供宏、属性、数学表达式与文件包含,是人形 URDF 的标配写法:</p>
@@ -372,10 +366,10 @@ def generate_launch_description():
   <pre><code>ros2 run xacro xacro robot.xacro &gt; robot.urdf   # 展开成标准 URDF</code></pre>
 
   <h3>4.3 本站 00 部分的机器人模型资源</h3>
-  <p>本站 00 部分提供了 H1/G1/X1 的解剖视图与 3D 模型素材,学习"把真实关节布局映射成 URDF 的 link/joint 树"时非常有用:</p>
+  <p>本站 00 部分提供了 H1/G1/X1 的解剖视图与 3D 模型素材,学习"把真实关节布局映射成 URDF"时非常有用:</p>
   <div class="grid">
-    <a class="card" href="../00_解剖式知识可视化/人形机器人解剖式知识可视化.html"><span class="go">进入 →</span><div class="ic">🦿</div><div class="t">人形机器人解剖式知识可视化</div><div class="d">整机结构与关节爆炸视图,理解真实关节(髋/膝/踝)如何对应 URDF 的 joint</div></a>
-    <a class="card" href="../00_解剖式知识可视化/减速器精细模型下载整合教程.html"><span class="go">进入 →</span><div class="ic">⚙️</div><div class="t">减速器精细模型下载整合教程</div><div class="d">获取关节减速器 3D 素材,配合 URDF 的 link 几何与惯量设置</div></a>
+    <a class="card" href="../00_解剖式知识可视化/人形机器人解剖式知识可视化.html"><span class="go">进入 →</span><div class="ic">🦿</div><div class="t">人形机器人解剖式知识可视化</div><div class="d">整机结构与关节爆炸视图,理解真实关节如何对应 URDF 的 joint</div></a>
+    <a class="card" href="../00_解剖式知识可视化/减速器精细模型下载整合教程.html"><span class="go">进入 →</span><div class="ic">⚙️</div><div class="t">减速器精细模型下载整合教程</div><div class="d">获取关节减速器 3D 素材,配合 URDF 的 link 几何设置</div></a>
   </div>
 
   <h3>4.4 用 RViz2 查看机器人模型</h3>
@@ -385,21 +379,21 @@ ros2 run robot_state_publisher robot_state_publisher \
       --ros-args -p robot_description:="$(cat robot.urdf)"
 ros2 run joint_state_publisher_gui joint_state_publisher_gui
 rviz2</code></pre>
-  <p>RViz2 关键设置:<strong>Fixed Frame</strong> 设为 <code>pelvis</code>/<code>base_link</code>(否则报"frame 不在 TF 树中");<strong>Add → RobotModel</strong> 显示模型,再 Add → <strong>TF</strong> 显示坐标系;拖动关节滑块即可观察腿部运动。</p>
+  <p>RViz2 关键设置:<strong>Fixed Frame</strong> 设为 <code>pelvis</code>/<code>base_link</code>(否则报"frame 不在 TF 树中");<strong>Add → RobotModel</strong> 显示模型,再 Add → <strong>TF</strong> 显示坐标系;拖动关节滑块观察腿部运动。</p>
 
   <h3>4.5 TF 坐标变换:全机器人共用的"坐标系语言"</h3>
   <p>TF(Transform)管理所有坐标系间的相对位姿,构成一棵 <strong>TF 树</strong>:map → odom → base_link → 各关节坐标系 → 传感器坐标系。为什么需要它?<strong>每个数据都诞生在某个坐标系里</strong>(点云在雷达系、图像在相机系、关节角在关节系),要融合数据就必须能随时做坐标变换。常用命令:</p>
   <pre><code># 发布固定不变的静态变换(如 map → odom 初始关系)
 ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom
 ros2 run tf2_tools view_frames            # 可视化 TF 树(frames.pdf)
-ros2 run tf2_ros tf2_echo base_link l_ankle   # 检查两坐标系间变换</code></pre>
+ros2 run tf2_ros tf2_echo base_link l_ankle   # 检查坐标系间变换</code></pre>
   <div class="box box-warn">
-    <b>⚠️ 排错铁律:</b>RViz2 里"模型乱飞 / 没有 TF"九成是 TF 树断链(某 joint 没发)、Fixed Frame 设错、或 <code>robot_state_publisher</code> 没读到 URDF。先 <code>view_frames</code> 看树,再查 <code>ros2 topic hz /tf</code> 的频率。
+    <b>⚠️ 排错铁律:</b>RViz2 里"模型乱飞 / 没有 TF"九成是 TF 树断链、Fixed Frame 设错、或 <code>robot_state_publisher</code> 没读到 URDF。先 <code>view_frames</code> 看树,再查 <code>ros2 topic hz /tf</code>。
   </div>
 
   <!-- ================= 5. 仿真接口 ================= -->
   <h2><span class="h2-num">5</span> 仿真接口:与 Gazebo / Isaac Sim 桥接</h2>
-  <p>真机调试代价高、风险大,几乎必须先在仿真跑通。ROS2 的价值之一就是"同一套代码,换一个仿真后端":机器人侧代码不变,只换与硬件之间的"桥"。</p>
+  <p>真机调试代价高、风险大,几乎必须先仿真。ROS2 的价值之一就是"同一套代码,换一个仿真后端":机器人侧代码不变,只换与硬件之间的"桥"。</p>
   <ul>
     <li><strong>Gazebo(Gazebo Classic 与新版 gz-sim)</strong>:经典开源物理仿真。<code>gazebo_ros_pkgs</code> 提供 <code>gazebo_ros</code>(导入模型、spawn)与 <code>gazebo_ros2_control</code>(把仿真关节暴露成 <code>ros2_control</code> 接口,与真机控制代码一致);新版用 <code>ros_gz</code> 桥接。流程:写 URDF/xacro → 加仿真插件 → <code>ros2 launch</code> → 用话题驱动。</li>
     <li><strong>Isaac Sim / Isaac Lab(NVIDIA)</strong>:高保真渲染 + PhysX,GPU 并行,<strong>强化学习训人形</strong>的主流平台。<code>isaacsim-ros2-bridges</code> 把图像/深度/里程计/TF 发布成 ROS2 话题,并订阅关节指令,实现"仿真 ⇄ ROS2 同栈",适合先训策略再 sim2real。</li>
@@ -415,7 +409,7 @@ ros2 run tf2_ros tf2_echo base_link l_ankle   # 检查两坐标系间变换</cod
     </table>
   </div>
   <div class="box box-tip">
-    <b>💡 桥接的本质:</b>无论哪个仿真器,都是把"仿真中的关节状态/传感器数据"翻译成 ROS2 话题(如 <code>/joint_states</code>、<code>/odom</code>、<code>/scan</code>),同时把 ROS2 上的指令(如 <code>/cmd_vel</code>、关节力矩)翻译回仿真器。学会了这层抽象,真机与仿真切换只是换一个"驱动"。
+    <b>💡 桥接的本质:</b>无论哪个仿真器,都是把"仿真中的关节状态/传感器数据"翻译成 ROS2 话题(如 <code>/joint_states</code>、<code>/odom</code>),同时把 ROS2 上的指令(如 <code>/cmd_vel</code>)翻译回仿真器。学会这层抽象,真机与仿真切换只是换一个"驱动"。
   </div>
 
   <!-- ================= 6. 运动规划 ================= -->
@@ -424,11 +418,10 @@ ros2 run tf2_ros tf2_echo base_link l_ankle   # 检查两坐标系间变换</cod
   <h3>6.1 MoveIt2 是什么</h3>
   <p>MoveIt2 是 ROS2 生态最主流的<strong>运动规划框架</strong>(官方站点 moveit.ai),把"机械臂如何从 A 姿态走到 B 姿态"工具化。核心组件:</p>
   <ul>
-    <li><strong>move_group 节点</strong>:规划系统的总调度,对外提供服务/动作接口;</li>
+    <li><strong>move_group 节点</strong>:规划系统总调度,对外提供服务/动作接口;</li>
     <li><strong>规划场景(PlanningScene)</strong>:维护机器人模型、关节状态、障碍物;</li>
-    <li><strong>规划器插件(OMPL)</strong>:RRT、RRTConnect、BKPIECE 等采样规划算法;</li>
-    <li><strong>碰撞检测(FCL)</strong>:规划中实时检查是否撞到障碍或自碰撞;</li>
-    <li><strong>运动学</strong>:KDL/IKFast 等正逆解实现,支持笛卡尔空间规划。</li>
+    <li><strong>规划器插件(OMPL)</strong>:RRT、RRTConnect、BKPIECE 等采样算法;</li>
+    <li><strong>碰撞检测(FCL)</strong> 与 <strong>运动学(KDL/IKFast)</strong>:实时避障与正逆解。</li>
   </ul>
   <p>典型 Python 用法(<code>moveit_commander</code>;新项目也可用官方 <code>moveit_py</code>):</p>
   <pre><code>import moveit_commander
@@ -459,7 +452,7 @@ arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
   <div class="table-wrap">
     <table>
       <tr><th>方案</th><th>定位</th><th>说明</th></tr>
-      <tr><td>MoveIt2(局部使用)</td><td>上肢/手臂规划</td><td>若腰部以上是机械臂式结构,可单独规划手臂;躯干平衡由别的模块负责</td></tr>
+      <tr><td>MoveIt2(局部使用)</td><td>上肢/手臂规划</td><td>腰部以上若是机械臂式结构可单独规划手臂</td></tr>
       <tr><td>轨迹平滑(tosr_ts 等)</td><td>轨迹后处理</td><td>社区常用 tosr_ts 等把步态/足端轨迹平滑成时间最优、加速度受限的轨迹,供执行层跟踪</td></tr>
       <tr><td>自研 WBC(全身控制)</td><td>实时控制层</td><td>Whole-Body Control:把平衡/姿态/任务优先级建模成 QP,毫秒级求解关节力矩,人形标配</td></tr>
       <tr><td>MPC(模型预测控制)</td><td>动态规划</td><td>基于简化动力学模型在线滚动优化,厂商常用于步态与平衡</td></tr>
@@ -474,21 +467,20 @@ arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
   <h2><span class="h2-num">7</span> 人形机器人软件栈案例:宇树与开源参考</h2>
 
   <h3>7.1 宇树机器人的 ROS2 支持情况(已核实)</h3>
-  <p>宇树(Unitree)官方维护了两个开源仓库,是学习"真实人形机器人如何接 ROS2"的一手资料:</p>
-  <ul>
-    <li><strong><a href="https://github.com/unitreerobotics/unitree_ros2" target="_blank" rel="noopener">unitreerobotics/unitree_ros2</a></strong>:ROS2 官方包,支持 Go2/B2/H1/G1 等机型,含 <code>unitree_api</code>(DDS 通信接口)、<code>unitree_go</code>/<code>unitree_hg</code>(消息定义)、<code>unitree_ros2_real</code>(真机桥)与 <code>unitree_ros2_sim</code>(Gazebo 仿真桥),并附可直接 <code>colcon build</code> 的工作空间;</li>
+  <p>宇树(Unitree)官方维护了两个开源仓库,是学习"真实人形机器人如何接 ROS2"的一手资料:</p>  <ul>
+    <li><strong><a href="https://github.com/unitreerobotics/unitree_ros2" target="_blank" rel="noopener">unitreerobotics/unitree_ros2</a></strong>:ROS2 官方包,支持 Go2/B2/H1/G1,含 <code>unitree_api</code>(DDS 通信接口)、<code>unitree_go</code>/<code>unitree_hg</code>(消息定义)、<code>unitree_ros2_real</code>(真机桥)与 <code>unitree_ros2_sim</code>(Gazebo 仿真桥),并附可直接 <code>colcon build</code> 的工作空间;</li>
     <li><strong><a href="https://github.com/unitreerobotics/unitree_ros" target="_blank" rel="noopener">unitreerobotics/unitree_ros</a></strong>:ROS1 时代仓库(unitree_legged_msgs 等),可对照阅读迁移差异。</li>
   </ul>
   <p>通信原理:宇树机器人本体通过 <strong>DDS</strong>(而非 CAN/串口)与上位机交换数据,ROS2 侧把"状态量→DDS 主题"包装成标准消息(关节状态、IMU、触地信息)并接收高层指令。拿到真机后 <code>ros2 topic list</code> 就能看到一整套状态话题——ROS2 扮演"整机软件总线"。</p>
 
   <h3>7.2 一套典型的人形机器人软件架构</h3>
-  <p>把上面的概念串起来,一台真实人形机器人的软件栈大致分层如下(各层之间全部通过 ROS2 话题/服务/动作通信):<b>感知层</b>(相机/LiDAR/IMU/编码器)→ <b>状态估计层</b>(ESKF/因子图融合,发布 <code>/odom</code> 与 TF)→ <b>决策规划层</b>(步态/WBC/MPC/RL,输出关节目标)→ <b>关节控制层</b>(三环、阻抗、<code>ros2_control</code>)→ <b>执行层</b>(CAN/以太网/串口到关节模组,参见本站 Hdrive)。</p>
+  <p>把上面的概念串起来,一台真实人形机器人的软件栈大致分层如下(各层之间全部通过 ROS2 通信):<b>感知层</b>(相机/LiDAR/IMU/编码器)→ <b>状态估计层</b>(ESKF/因子图融合,发布 <code>/odom</code> 与 TF)→ <b>决策规划层</b>(步态/WBC/MPC/RL,输出关节目标)→ <b>关节控制层</b>(三环、阻抗、<code>ros2_control</code>)→ <b>执行层</b>(CAN/以太网到关节模组,参见本站 Hdrive)。</p>
   <ul>
     <li><strong>感知层</strong>:原始数据几乎全走话题(高频可丢帧,用 sensor data QoS);</li>
     <li><strong>状态估计层</strong>:多源融合成"我在哪、姿态如何",输出 TF 根节点附近的变换;</li>
     <li><strong>决策规划层</strong>:整机"大脑",人形场景由 <strong>WBC/MPC</strong> 或 <strong>RL 策略</strong>实现(而非 MoveIt2);</li>
     <li><strong>关节控制层</strong>:用 <code>ros2_control</code> 抽象"控制器↔硬件",同一套代码无缝跑仿真与真机;</li>
-    <li><strong>执行层</strong>:对接本站前几部分的关节模组(CAN/串口、FOC 固件),是软硬件边界。</li>
+    <li><strong>执行层</strong>:对接本站前几部分的关节模组(CAN/FOC 固件),是软硬件边界。</li>
   </ul>
 
   <h3>7.3 值得阅读的开源参考项目</h3>
@@ -505,10 +497,10 @@ arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
     <b>⚠️ 坑 1:版本不匹配(最高频):</b>发行版 ↔ Ubuntu ↔ 包版本必须对齐:Humble 只支持 22.04,Jazzy 只支持 24.04;装包用 <code>apt</code> 官方源(<code>ros-humble-xxx</code>),勿混用不同发行版包。
   </div>
   <div class="box box-warn">
-    <b>⚠️ 坑 2:DDS 实现不一致导致"互相看不见":</b>ROS2 默认 Fast DDS,宇树 SDK 等常要求 Cyclone DDS。两端 <code>RMW_IMPLEMENTATION</code> 不一致且跨机时可能互相发现不了——两端统一(<code>export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp</code>),复杂网络再用 <code>CYCLONEDDS_URI</code>/<code>FASTRTPS_DEFAULT_PROFILES_FILE</code> 指定网卡与多播。
+    <b>⚠️ 坑 2:DDS 实现不一致导致"互相看不见":</b>ROS2 默认 Fast DDS,宇树 SDK 等常要求 Cyclone DDS。两端 <code>RMW_IMPLEMENTATION</code> 不一致且跨机时可能互相发现不了——两端统一(<code>export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp</code>),复杂网络再用 <code>CYCLONEDDS_URI</code> 指定网卡与多播。
   </div>
   <div class="box box-warn">
-    <b>⚠️ 坑 3:环境变量与网络:</b>所有节点须同 <code>ROS_DOMAIN_ID</code>(多机器人务必分开);本机调试可 <code>export ROS_LOCALHOST_ONLY=1</code>。跨机要求同一网段、放行多播 UDP,用 <code>ping</code> + <code>ros2 doctor</code> 逐层排查;节点"消失"也可能是 daemon 缓存,<code>ros2 daemon stop</code> 重试。
+    <b>⚠️ 坑 3:环境变量与网络:</b>所有节点须同 <code>ROS_DOMAIN_ID</code>(多机器人务必分开);本机调试可 <code>export ROS_LOCALHOST_ONLY=1</code>。跨机要求同一网段、放行多播 UDP,用 <code>ping</code> + <code>ros2 doctor</code> 排查;节点"消失"也可能是 daemon 缓存,<code>ros2 daemon stop</code> 重试。
   </div>
   <div class="box box-warn">
     <b>⚠️ 坑 4:与嵌入式侧通信(CAN → ROS2 桥):</b>关节模组(如本站 Hdrive)走 CAN/串口,需一个桥:现成方案 <code>socketcan_bridge</code>(CAN 帧 → <code>can_msgs/Frame</code>)、<code>canopen_402</code>(CiA402 伺服),或自研"读帧 → 解析协议 → 发布 <code>JointState</code>"。<b>桥进程要稳定、周期要准</b>(丢帧直接表现为关节抖动),高频反馈建议独立进程 + 高优先级线程。
@@ -517,13 +509,13 @@ arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
     <b>⚠️ 坑 5:QoS 不匹配与时间同步:</b>传感器用 <code>best_effort</code> + 深队列,控制指令用 <code>reliable</code>;两端不兼容会<strong>静默断连</strong>(无报错只是没数据),用 <code>ros2 topic info -v</code> 核对。仿真要 <code>use_sim_time:=true</code> 并读 <code>/clock</code>。
   </div>
   <div class="box box-tip">
-    <b>💡 学习建议顺序:</b>① 先 CLI 后代码(<code>ros2 topic echo</code> 玩熟);② 先单机后多机;③ 先仿真后真机(整套栈先在 Gazebo/Isaac 跑通);④ 每加一层先确认"上层输出话题有数据";⑤ 灵异问题先 <code>ros2 doctor</code> / <code>view_frames</code> / <code>ros2 topic hz</code>。
+    <b>💡 学习建议顺序:</b>① 先 CLI 后代码;② 先单机后多机;③ 先仿真后真机(整套栈先在 Gazebo/Isaac 跑通);④ 每加一层先确认"上层输出话题有数据";⑤ 灵异问题先 <code>ros2 doctor</code> / <code>view_frames</code> / <code>ros2 topic hz</code>。
   </div>
 
   <!-- ================= 9. 小结与思考 ================= -->
   <h2><span class="h2-num">9</span> 小结与思考题</h2>
   <div class="box box-tip">
-    <b>📌 本节小结:</b>ROS2 是分布式机器人软件的"操作系统级中间件":DDS 去中心化取代 roscore,引入 QoS 与生命周期管理;六大概念覆盖几乎所有通信需求;colcon + package.xml + launch 构成标准工程范式;URDF/xacro 描述结构、TF 描述坐标系、RViz2 可视化;MoveIt2 擅长固定基座机械臂,人形机器人还需要 WBC/MPC/RL 全身控制;宇树 unitree_ros2 展示了真实人形机器人如何以 ROS2 为总线组织整机软件。
+    <b>📌 本节小结:</b>ROS2 是分布式机器人软件的"操作系统级中间件":DDS 去中心化取代 roscore,引入 QoS 与生命周期;六大概念覆盖几乎所有通信需求;colcon + package.xml + launch 是标准工程范式;URDF/xacro 描述结构、TF 描述坐标系、RViz2 可视化;MoveIt2 擅长固定基座机械臂,人形机器人还需要 WBC/MPC/RL 全身控制;宇树 unitree_ros2 展示了真实人形机器人如何以 ROS2 为总线组织整机软件。
   </div>
   <div class="box box-warn">
     <b>🤔 思考题:</b>
@@ -545,7 +537,7 @@ arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
       <button data-v="D">D. ROS2 通过 QoS 策略权衡实时性与可靠性</button>
     </div>
     <div class="quiz-feedback"></div>
-    <div class="quiz-explain">💡 解析:ROS2 恰恰为了支持多机分布式而设计,DDS 天然支持跨设备发现与通信;节点可分布在任意多台机器上,这是人形"多算力单元"场景的前提。</div>
+    <div class="quiz-explain">💡 解析:ROS2 恰恰为了支持多机分布式而设计,DDS 天然支持跨设备发现与通信;节点可分布在任意多台机器上。</div>
   </div>
 
   <div class="quiz">
@@ -595,7 +587,7 @@ arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
     <li><a href="https://github.com/unitreerobotics/unitree_ros2" target="_blank" rel="noopener">unitreerobotics/unitree_ros2(宇树官方 ROS2 仓库)</a> 与 <a href="https://github.com/unitreerobotics/unitree_ros" target="_blank" rel="noopener">unitree_ros(ROS1 仓库)</a>:核实宇树 ROS2 支持情况</li>
     <li><a href="https://gazebosim.org/" target="_blank" rel="noopener">Gazebo 官网</a> 与 <a href="https://docs.omniverse.nvidia.com/isaacsim/latest/installation/install_ros.html" target="_blank" rel="noopener">Isaac Sim ROS2 桥接安装文档</a>:仿真桥接</li>
     <li><a href="https://github.com/NVlabs/GR00T-WholeBodyControl" target="_blank" rel="noopener">NVlabs/GR00T-WholeBodyControl</a>:人形全身控制开源参考</li>
-    <li>本站 <a href="../00_解剖式知识可视化/人形机器人解剖式知识可视化.html">00 部分 · 人形机器人解剖式知识可视化</a> 与 <a href="../04_第四部分_升级进阶/09_通信与控制算法升级路线.html">04 部分 · 通信与控制算法升级路线</a>:机器人结构与单关节通信背景</li>
+    <li>本站 <a href="../00_解剖式知识可视化/人形机器人解剖式知识可视化.html">00 部分 · 人形机器人解剖式知识可视化</a> 与 <a href="../04_第四部分_升级进阶/09_通信与控制算法升级路线.html">04 部分 · 通信与控制算法升级路线</a>:结构与单关节通信背景</li>
   </ul>
 
 </div><!-- /container -->

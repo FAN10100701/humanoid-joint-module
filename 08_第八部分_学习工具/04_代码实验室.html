@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 代码实验室(浏览器运行)</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 实验室专属样式(前缀 lab-) */
+  .lab{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:20px 22px;margin:20px 0}
+  .lab canvas{display:block;max-width:100%;height:auto;background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-radius:10px;margin:12px 0}
+  .lab-controls{display:flex;flex-wrap:wrap;gap:14px 22px;margin:12px 0;padding:14px 16px;background:rgba(13,17,23,.6);border-radius:10px;border:1px solid rgba(255,255,255,.07)}
+  .lab-controls label{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#9aa4b2;white-space:nowrap}
+  .lab-controls input[type=range]{width:130px;accent-color:#3b82f6}
+  .lab-controls .val{display:inline-block;min-width:44px;color:#9ecbff;font-weight:700;font-family:Consolas,monospace;font-size:12.5px}
+  .lab-btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .lab-btns button{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.4);color:#9ecbff;font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit}
+  .lab-btns button:hover{background:rgba(59,130,246,.3);color:#fff}
+  .lab-metrics{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:12.5px;color:#8b949e;margin:8px 0}
+  .lab-metrics b{color:#fbbf24;font-family:Consolas,monospace;font-size:13px}
+  .lab-row{display:flex;flex-wrap:wrap;gap:16px}
+  .lab-row .lab-canvas-wrap{flex:1;min-width:320px}
+  .lab-note{font-size:13px;color:#aab8c8;line-height:1.9;margin-top:8px}
+  .lab-note b{color:#9ecbff}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-04",
+    root: "..",
+    breadcrumb: [
+      { t: "学习工具", u: "../index.html#sec8" },
+      { t: "代码实验室" }
+    ],
+    prev: { t: "自测题库", u: "03_自测题库.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧪 代码实验室</h1>
+    <div class="sub">不用安装任何软件 —— 在浏览器里直接调 PID、看 FOC 矢量、玩倒立摆<br>拖动滑块、点击按钮,现象立刻可见</div>
+    <div class="tags">
+      <span class="tag">PID 整定</span>
+      <span class="tag">FOC 矢量</span>
+      <span class="tag">倒立摆</span>
+      <span class="tag">零安装</span>
+      <span class="tag">纯本地运行</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 亲手调出一组"快速且无超调"的 PID 参数,理解 Kp/Ki/Kd 各自的作用<br>
+    2. 看懂 FOC 里"三相电流合成旋转矢量 → dq 分解 → id=0"的几何含义<br>
+    3. 理解倒立摆为什么必须"先立住再走",以及微分项提供的阻尼作用<br>
+    4. 把实验现象与本站 <a href="../01_第一部分_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">01-02 原理动画</a>、<a href="../06_第六部分_软件与算法/02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">06-02 固件与电机控制</a> 联系起来<br>
+    <b>建议用时:</b>30-60 分钟(每个实验 10-20 分钟)
+  </div>
+
+  <div class="box box-tip"><b>💡 使用说明:</b>三个实验全部在浏览器本地实时计算(JavaScript 物理仿真),<b>不联网、不上传、零安装</b>。滑块即调即生效;点"重置"回到初始状态。每个实验下方都有"现象解释"与"思考题",先玩、再想、最后对照解释。</div>
+
+  <!-- ============================================================
+       实验一 · PID 位置控制整定模拟器
+       ============================================================ -->
+  <div class="lab">
+    <h2 style="margin-top:0"><span class="h2-num">1</span> 实验一 · PID 位置控制整定模拟器</h2>
+    <p>模拟一个带阻尼的关节(转动惯量 J=0.5 kg·m²,阻尼 b=0.3 N·m·s/rad),用 PID 把它转到目标角度。这是人形机器人<b>关节位置环</b>的最小模型 —— 你在 06-02 里写的 SimpleFOC 位置环,内核就是它。</p>
+
+    <canvas id="pidCanvas" width="760" height="300"></canvas>
+
+    <div class="lab-controls">
+      <label>目标角 θ<sub>ref</sub> <input type="range" id="pidRef" min="0.5" max="3" step="0.1" value="1.5"><span class="val" id="pidRefV">1.5</span></label>
+      <label>Kp <input type="range" id="pidKp" min="0" max="200" step="1" value="60"><span class="val" id="pidKpV">60</span></label>
+      <label>Ki <input type="range" id="pidKi" min="0" max="50" step="1" value="0"><span class="val" id="pidKiV">0</span></label>
+      <label>Kd <input type="range" id="pidKd" min="0" max="40" step="0.5" value="8"><span class="val" id="pidKdV">8</span></label>
+    </div>
+    <div class="lab-btns">
+      <button onclick="lab1.reset('step')">🔄 阶跃重置</button>
+      <button onclick="lab1.reset('square')">〰️ 方波跟踪</button>
+      <button onclick="lab1.disturb()">💥 力矩扰动</button>
+      <button onclick="lab1.preset('under')">预设:欠阻尼(振荡)</button>
+      <button onclick="lab1.preset('crit')">预设:临界阻尼(推荐)</button>
+      <button onclick="lab1.preset('over')">预设:过阻尼(慢)</button>
+    </div>
+    <div class="lab-metrics">
+      超调量 <b id="pidOS">0%</b> | 调节时间(±2%) <b id="pidST">—</b> | 当前误差 <b id="pidErr">0.00</b> | 控制器输出 <b id="pidTau">0.0</b> N·m
+    </div>
+
+    <div class="lab-note">
+      <b>现象解释:</b>
+      · <b>Kp</b> 决定"回正力度"—— 太小到位慢、稳态有残差(重力/摩擦场景);太大开始振荡。<br>
+      · <b>Kd</b> 决定"刹车力度"(对速度的阻尼)—— 抑制超调与振荡;过大则响应迟钝甚至抖动。<br>
+      · <b>Ki</b> 消除稳态误差 —— 本模型无重力,纯 P 已无静差,可把 Ki 设为 0 对比;真实关节有摩擦和重力,才需要 Ki。<br>
+      · 先调 Kp 到"刚好开始振荡",再加大 Kd 压住振荡 —— 这是工程上最常用的整定顺序。点"力矩扰动"观察恢复能力:好的参数能快速回稳。
+    </div>
+    <div class="box box-warn" style="margin-top:12px"><b>🤔 思考题:</b>为什么本模型里 Ki 不起作用?如果把"目标角"换成"目标速度"(速度环),P 项应该怎么改?</div>
+  </div>
+
+  <!-- ============================================================
+       实验二 · FOC 电流矢量可视化
+       ============================================================ -->
+  <div class="lab">
+    <h2 style="margin-top:0"><span class="h2-num">2</span> 实验二 · FOC 电流矢量可视化</h2>
+    <p>拖动<b>电角度 θ<sub>e</sub></b> 与 <b>q 轴电流 i<sub>q</sub></b>,观察三相电流如何合成一个<b>旋转矢量</b>,以及 dq 坐标系如何把它"变静止"。这就是 FOC(磁场定向控制)的几何本质 —— 配合 <a href="../01_第一部分_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">01-02 原理动画</a> 观看。</p>
+
+    <div class="lab-row">
+      <div class="lab-canvas-wrap">
+        <canvas id="focCanvas" width="420" height="340"></canvas>
+      </div>
+      <div class="lab-canvas-wrap">
+        <canvas id="focWave" width="420" height="170"></canvas>
+        <canvas id="focDq" width="420" height="160"></canvas>
+      </div>
+    </div>
+
+    <div class="lab-controls">
+      <label>电角度 θ<sub>e</sub> <input type="range" id="focTheta" min="0" max="360" step="1" value="0"><span class="val" id="focThetaV">0°</span></label>
+      <label>q 轴电流 i<sub>q</sub> <input type="range" id="focIq" min="-10" max="10" step="0.5" value="6"><span class="val" id="focIqV">6.0 A</span></label>
+      <label><input type="checkbox" id="focAuto" style="width:auto"> 自动旋转 θ<sub>e</sub></label>
+    </div>
+    <div class="lab-metrics">
+      i<sub>d</sub> = <b id="focIdV">0.00</b> A(恒为 0,id=0 控制) | i<sub>q</sub> = <b id="focIqR">6.0</b> A | 矢量幅值 <b id="focMag">6.0</b> A | 矢量相位 <b id="focPhi">90°</b> | 三相电流 <b id="focIabc">ia=0.0 / ib=-5.2 / ic=5.2</b> A
+    </div>
+
+    <div class="lab-note">
+      <b>现象解释:</b>
+      · 左上图:αβ 静止坐标系中,三相电流 i<sub>a</sub>/i<sub>b</sub>/i<sub>c</sub> 合成一个幅值 = 1.5·|i<sub>s</sub>| 的旋转矢量(按 2/3 变换约定,这里直接用幅值 1·|i<sub>s</sub>| 示意)。<b>θ<sub>e</sub> 转一圈,矢量转一圈</b> —— 这就是三相正弦电流产生旋转磁场的来源。<br>
+      · 右上图:三个相电流的波形,任意时刻三者之和为 0(星形接法无中线)。<br>
+      · 下图:dq 坐标系<b>跟着转子磁极一起转</b>,于是旋转矢量在 dq 里"看起来静止"了:分解成 d 轴(励磁)与 q 轴(转矩)两个直流分量 —— 这就是 Park 变换的意义:把交流控制变成直流控制,两个 PI 就能搞定。<br>
+      · <b>id=0 控制</b>:让电流矢量始终垂直于转子磁极(d 轴),此时<b>全部电流都用来产生转矩</b>,单位电流转矩最大 —— 表贴式永磁电机(FOC 关节电机)最常用。
+    </div>
+    <div class="box box-warn" style="margin-top:12px"><b>🤔 思考题:</b>如果 id≠0,电流矢量会发生什么变化?对转矩和发热分别有什么影响?为什么 SVPWM 要输出的是"电压"而不是"电流"?</div>
+  </div>
+
+  <!-- ============================================================
+       实验三 · 倒立摆平衡控制
+       ============================================================ -->
+  <div class="lab">
+    <h2 style="margin-top:0"><span class="h2-num">3</span> 实验三 · 倒立摆平衡控制</h2>
+    <p>小车 + 摆杆,<b>摆杆朝上</b> —— 这是"站立平衡"的经典抽象:人形机器人站立、单腿支撑,本质上都是在控制一个"不稳定倒立系统"。默认模式用<b>角度 PD</b> 让摆杆保持竖直(内环);勾选"启用位置控制"体验<b>串级控制</b> —— 位置环把误差转成角度参考,再交给平衡环执行(外环)。</p>
+
+    <canvas id="cartCanvas" width="760" height="260"></canvas>
+
+    <div class="lab-controls">
+      <label>角度 Kp <input type="range" id="cpKp" min="0" max="150" step="1" value="40"><span class="val" id="cpKpV">40</span></label>
+      <label>角度 Kd <input type="range" id="cpKd" min="0" max="30" step="0.5" value="6"><span class="val" id="cpKdV">6.0</span></label>
+      <label><input type="checkbox" id="cpAdv" style="width:auto"> 启用位置控制(高级)</label>
+      <label>目标位置 <input type="range" id="cpXref" min="-1.5" max="1.5" step="0.1" value="0" disabled><span class="val" id="cpXrefV">0.0</span></label>
+    </div>
+    <div class="lab-btns">
+      <button onclick="lab3.reset()">🔄 重置</button>
+      <button onclick="lab3.disturb()">💥 推它一把</button>
+      <button onclick="lab3.preset('good')">预设:能立住</button>
+      <button onclick="lab3.preset('bad')">预设:立不住</button>
+    </div>
+    <div class="lab-metrics">
+      摆角 <b id="cpTheta">0.0°</b> | 小车位置 <b id="cpX">0.00 m</b> | 推力 <b id="cpF">0.0</b> N | 状态 <b id="cpState" style="color:#f87171">未平衡</b>
+    </div>
+
+    <div class="lab-note">
+      <b>现象解释:</b>
+      · 默认的<b>纯平衡模式</b>只有角度 PD:Kp 把摆杆拉回竖直,Kd 提供阻尼防止来回晃。调参口诀:先加 Kp 到"刚好开始晃",再加 Kd 压住晃动。<b>能立住后</b>点"推它一把",好的参数应在 1-2 秒内回稳(摆角不超过约 15°)。<br>
+      · 小车带滚动摩擦,平衡后它会自己慢慢停下 —— 真机上"站住不动"同样靠关节内部的阻尼与摩擦力矩。<br>
+      · <b>高级 · 位置控制</b>:位置误差先换算成"期望倾斜角"(限幅 ±0.3 rad 且斜率受限),再交给角度环。你会看到小车移向目标位置,但会伴随<b>缓慢晃动</b> —— 这是"位置环与平衡环耦合"的必然结果:想往右走,必须先向右倾;倾斜又产生加速度,位置环再回来纠偏。内环(角度)带宽必须远高于外环(位置),否则会越晃越大直至摔倒。<br>
+      · 真实的人形机器人平衡远比这复杂:脚踝/髋/膝关节协同、ZMP 约束、模型预测控制(MPC)与强化学习步态(参见 <a href="../04_第四部分_升级进阶/09_通信与控制算法升级路线.html">04-01 升级路线</a>、<a href="../06_第六部分_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html">06-04 仿真与 RL</a>),但"先稳住内环、再调外环"的思路完全一致。
+    </div>
+    <div class="box box-warn" style="margin-top:12px"><b>🤔 思考题:</b>为什么角度环必须"快"、位置环必须"慢"?如果把两个环的带宽反过来会怎样?这和你调三环(电流→速度→位置)的顺序有什么关系?</div>
+  </div>
+
+  <!-- ================= 自测 ================= -->
+  <h2><span class="h2-num">4</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 实验中把 Kd 从 0 逐渐增大,最直接的效果是什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 稳态误差变小</button>
+      <button data-v="B">B. 超调减小、振荡被抑制</button>
+      <button data-v="C">C. 响应速度无限加快</button>
+      <button data-v="D">D. 控制器输出饱和</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 Kd 对速度(误差变化率)起阻尼作用,直接抑制超调与振荡;消除稳态误差靠 Ki 或前馈。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. FOC 中"id=0 控制"的物理含义是什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 三相电流都为零</button>
+      <button data-v="B">B. 电机不再产生磁场</button>
+      <button data-v="C">C. 电流矢量始终垂直于转子磁极,全部电流用于产生转矩</button>
+      <button data-v="D">D. 只控制 d 轴电流</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 id=0 让定子电流矢量与转子磁极(d 轴)垂直,即全部落在 q 轴(转矩轴)上,单位电流转矩最大,是表贴式永磁电机的常用策略。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 倒立摆实验里,为什么角度环的增益必须明显大于位置环?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 稳定(不倒)是前提,内环必须快于外环</button>
+      <button data-v="B">B. 位置环不重要,可以删掉</button>
+      <button data-v="C">C. 角度环越慢越稳定</button>
+      <button data-v="D">D. 两个环互不影响,任意调</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 级联控制铁律:内环(角度)带宽必须远高于外环(位置),否则外环一动就把内环"带倒"。这与三环控制(电流→速度→位置)由内到外带宽递减是同一个道理。</div>
+  </div>
+
+  <!-- ================= 小结 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>三个实验演示了机器人控制的三个层次:①PID 位置环 —— 关节运动的最小闭环;②FOC 矢量控制 —— 电流环的几何本质(三相合成旋转矢量、dq 分解、id=0);③倒立摆 —— 平衡与级联控制思想(内环快、外环慢)。这些在真机上的实现路径分别是 SimpleFOC/ODrive(06-02)、FOC 固件(06-02)与 MPC/WBC/RL(04-01、06-04)。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 综合思考题:</b>
+    1. 把实验一的 Kd 换成"纯 P + 前馈"能不能达到同样效果?前馈需要知道什么模型信息?<br>
+    2. 如果给实验一的关节加上 2 N·m 的恒定重力负载,哪种参数组合能让稳态误差归零?<br>
+    3. 实验三的角度环用"摆角速度"做微分项,如果编码器噪声很大,Kd 大会有什么副作用?怎么缓解?
+  </div>
+
+  <!-- ================= 参考来源 ================= -->
+  <h2><span class="h2-num">5</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://en.wikipedia.org/wiki/Inverted_pendulum" target="_blank" rel="noopener">Wikipedia: Inverted pendulum(倒立摆动力学模型)</a></li>
+    <li><a href="https://docs.simplefoc.com/" target="_blank" rel="noopener">SimpleFOC 文档(FOC 电流环 / 位置环实现)</a></li>
+    <li><a href="https://en.wikipedia.org/wiki/PID_controller" target="_blank" rel="noopener">Wikipedia: PID controller(PID 整定方法)</a></li>
+    <li><a href="../01_第一部分_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">本站 01-02 · FOC / 三环 / 减速器原理动画</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<script>
+/* ============================================================
+   代码实验室 · 三个浏览器内物理实验(ES5 保守语法)
+   实验一:PID 位置控制(一阶惯性+阻尼)
+   实验二:FOC 电流矢量可视化
+   实验三:倒立摆(cart-pole)平衡控制
+   ============================================================ */
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+  function fmt(v, n){ n = n === undefined ? 2 : n; return v.toFixed(n); }
+
+  /* ================= 实验一:PID 位置控制 ================= */
+  var lab1 = window.lab1 = (function(){
+    var J = 0.5, b = 0.3, TAU_MAX = 10, DT = 0.001, SUB = 8;
+    var canvas = $("pidCanvas"), ctx = canvas.getContext("2d");
+    var mode = "step", t = 0, th = 0, w = 0, integ = 0, tau = 0;
+    var hist = [];                 // {t, th, ref}
+    var maxOvershoot = 0, settleT = -1, settleHold = 0;
+    var startRef = 1.5;
+
+    function refAt(tm){
+      if(mode === "square"){ return (Math.floor(tm / 5) % 2 === 0) ? startRef : -startRef * 0.6; }
+      return startRef;
+    }
+    function reset(m){
+      mode = m || "step";
+      t = 0; th = 0; w = 0; integ = 0; tau = 0;
+      hist = []; maxOvershoot = 0; settleT = -1; settleHold = 0;
+      startRef = parseFloat($("pidRef").value) || 1.5;
+      $("pidRefV").textContent = fmt(startRef, 1);
+    }
+    function step(){
+      var Kp = parseFloat($("pidKp").value), Ki = parseFloat($("pidKi").value), Kd = parseFloat($("pidKd").value);
+      for(var i = 0; i < SUB; i++){
+        var ref = refAt(t);
+        var e = ref - th;
+        var out = Kp * e + Ki * integ - Kd * w;
+        out = Math.max(-TAU_MAX, Math.min(TAU_MAX, out));
+        /* 抗积分饱和:输出饱和且误差同向时停止积分 */
+        if(Math.abs(out) < TAU_MAX || out * e < 0){ integ += e * DT; }
+        tau = out;
+        w += (tau - b * w) / J * DT;
+        th += w * DT;
+        t += DT;
+        hist.push({ t: t, th: th, ref: ref });
+        /* 超调与调节时间统计(仅阶跃模式) */
+        if(mode === "step"){
+          var overshootVal = th - ref;
+          if(overshootVal > maxOvershoot) maxOvershoot = overshootVal;
+          if(Math.abs(th - ref) < 0.02 * Math.abs(startRef)){
+            settleHold += DT;
+            if(settleHold > 1 && settleT < 0) settleT = t;
+          }else{ settleHold = 0; }
+        }
+      }
+      if(hist.length > 20000) hist.splice(0, hist.length - 20000);
+    }
+    function draw(){
+      var W = canvas.width, H = canvas.height;
+      var padL = 44, padR = 14, padT = 14, padB = 26;
+      var plotW = W - padL - padR, plotH = H - padT - padB;
+      var tWin = 20;               /* 显示最近 20 秒 */
+      var tEnd = Math.max(t, 0.1), tStart = tEnd - tWin;
+      var yMax = 1.25 * (Math.abs(startRef) + 0.3);
+      ctx.clearRect(0, 0, W, H);
+      /* 网格 */
+      ctx.strokeStyle = "rgba(255,255,255,.07)"; ctx.lineWidth = 1;
+      ctx.font = "10px Consolas,monospace"; ctx.fillStyle = "#6b7280";
+      for(var gx = 0; gx <= 4; gx++){
+        var px = padL + plotW * gx / 4;
+        ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
+      }
+      for(var gy = 0; gy <= 4; gy++){
+        var py = padT + plotH * gy / 4;
+        ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(padL + plotW, py); ctx.stroke();
+        ctx.fillText(fmt(yMax * (1 - gy / 4), 1), 6, py + 3);
+      }
+      function X(tm){ return padL + (tm - tStart) / tWin * plotW; }
+      function Y(v){ return padT + plotH * (1 - (v + yMax) / (2 * yMax)); }
+      /* 参考曲线 */
+      ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 2;
+      ctx.beginPath();
+      for(var i = 0; i < hist.length; i++){
+        var h = hist[i];
+        if(h.t < tStart) continue;
+        var x = X(h.t), y = Y(h.ref);
+        if(i === 0 || h.t < tStart + 0.01) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      /* 响应曲线 */
+      ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 2;
+      ctx.beginPath();
+      var started = false;
+      for(var j = 0; j < hist.length; j++){
+        var hh = hist[j];
+        if(hh.t < tStart) continue;
+        var xx = X(hh.t), yy = Y(hh.th);
+        if(!started){ ctx.moveTo(xx, yy); started = true; } else { ctx.lineTo(xx, yy); }
+      }
+      ctx.stroke();
+      /* 当前点 */
+      var cur = hist.length ? hist[hist.length - 1] : null;
+      if(cur){
+        ctx.fillStyle = "#22c55e";
+        ctx.beginPath(); ctx.arc(X(cur.t), Y(cur.th), 4, 0, 6.283); ctx.fill();
+      }
+      ctx.fillStyle = "#8b949e";
+      ctx.fillText("θ(rad)", W - 60, padT + 10);
+      ctx.fillText("最近 " + tWin + "s", padL, H - 8);
+      /* 指标 */
+      var osPct = 0;
+      if(mode === "step" && maxOvershoot > 0.01){ osPct = maxOvershoot / Math.abs(startRef) * 100; }
+      $("pidOS").textContent = fmt(osPct, 1) + "%";
+      $("pidST").textContent = settleT > 0 ? fmt(settleT, 1) + "s" : "—";
+      $("pidErr").textContent = fmt(Math.abs((cur ? cur.ref : startRef) - th), 3);
+      $("pidTau").textContent = fmt(tau, 1);
+    }
+    function disturb(){ w += 3.0; }   /* 速度冲击模拟力矩扰动 */
+    function preset(kind){
+      if(kind === "under"){ $("pidKp").value = 60; $("pidKi").value = 0; $("pidKd").value = 1.5; }
+      else if(kind === "crit"){ $("pidKp").value = 60; $("pidKi").value = 0; $("pidKd").value = 11; }
+      else { $("pidKp").value = 60; $("pidKi").value = 0; $("pidKd").value = 30; }
+      $("pidKpV").textContent = $("pidKp").value;
+      $("pidKiV").textContent = $("pidKi").value;
+      $("pidKdV").textContent = $("pidKd").value;
+      reset("step");
+    }
+    var els = ["pidKp", "pidKi", "pidKd"];
+    for(var i = 0; i < els.length; i++){
+      (function(id){
+        $(id).oninput = function(){ $(id + "V").textContent = $(id).value; };
+      })(els[i]);
+    }
+    return { reset: reset, step: step, draw: draw, disturb: disturb, preset: preset };
+  })();
+
+  /* ================= 实验二:FOC 矢量可视化 ================= */
+  var lab2 = (function(){
+    var cMain = $("focCanvas"), mctx = cMain.getContext("2d");
+    var cWave = $("focWave"), wctx = cWave.getContext("2d");
+    var cDq = $("focDq"), dctx = cDq.getContext("2d");
+    var thE = 0, iq = 6, auto = false;
+
+    function updateReadouts(thetaRad, iqVal){
+      var I = iqVal;
+      var phi = thetaRad + Math.PI / 2;
+      var ia = I * Math.cos(phi), ib = I * Math.cos(phi - 2.0944), ic = I * Math.cos(phi + 2.0944);
+      $("focIdV").textContent = fmt(0, 2);
+      $("focIqR").textContent = fmt(iqVal, 1);
+      $("focMag").textContent = fmt(Math.abs(I), 1);
+      $("focPhi").textContent = Math.round(phi * 180 / Math.PI) % 360 + "°";
+      $("focIabc").textContent = "ia=" + fmt(ia, 1) + " / ib=" + fmt(ib, 1) + " / ic=" + fmt(ic, 1);
+      return { phi: phi, ia: ia, ib: ib, ic: ic };
+    }
+    function drawMain(thetaRad, r){
+      var W = cMain.width, H = cMain.height;
+      var cx = W / 2, cy = H / 2, R = 120;
+      mctx.clearRect(0, 0, W, H);
+      /* 三相轴 */
+      var phis = [0, 2.0944, -2.0944];
+      var names = ["a", "b", "c"];
+      for(var i = 0; i < 3; i++){
+        mctx.strokeStyle = "rgba(255,255,255,.25)"; mctx.lineWidth = 2;
+        mctx.beginPath(); mctx.moveTo(cx, cy);
+        mctx.lineTo(cx + R * Math.cos(phis[i]), cy - R * Math.sin(phis[i])); mctx.stroke();
+        mctx.fillStyle = "#9aa4b2";
+        mctx.fillText(names[i], cx + (R + 14) * Math.cos(phis[i]) - 4, cy - (R + 14) * Math.sin(phis[i]) + 4);
+      }
+      /* αβ 轴 */
+      mctx.strokeStyle = "rgba(148,163,184,.5)"; mctx.lineWidth = 1;
+      mctx.beginPath(); mctx.moveTo(cx - R - 20, cy); mctx.lineTo(cx + R + 20, cy); mctx.stroke();
+      mctx.beginPath(); mctx.moveTo(cx, cy - R - 20); mctx.lineTo(cx, cy + R + 20); mctx.stroke();
+      mctx.fillStyle = "#8b949e"; mctx.font = "11px Consolas,monospace";
+      mctx.fillText("α", cx + R + 12, cy + 4); mctx.fillText("β", cx + 6, cy - R - 8);
+      /* dq 旋转坐标系 */
+      mctx.strokeStyle = "rgba(139,92,246,.8)"; mctx.lineWidth = 2; mctx.setLineDash([5, 4]);
+      mctx.beginPath(); mctx.moveTo(cx, cy);
+      mctx.lineTo(cx + R * Math.cos(thetaRad), cy - R * Math.sin(thetaRad)); mctx.stroke();
+      mctx.setLineDash([]);
+      mctx.fillStyle = "#a78bfa";
+      mctx.fillText("d(磁极)", cx + (R + 16) * Math.cos(thetaRad) - 16, cy - (R + 16) * Math.sin(thetaRad) + 4);
+      mctx.strokeStyle = "rgba(34,197,94,.7)"; mctx.lineWidth = 2; mctx.setLineDash([5, 4]);
+      mctx.beginPath(); mctx.moveTo(cx, cy);
+      mctx.lineTo(cx + R * Math.cos(thetaRad + Math.PI / 2), cy - R * Math.sin(thetaRad + Math.PI / 2)); mctx.stroke();
+      mctx.setLineDash([]);
+      mctx.fillStyle = "#4ade80";
+      mctx.fillText("q(转矩)", cx + (R + 16) * Math.cos(thetaRad + Math.PI / 2) - 16, cy - (R + 16) * Math.sin(thetaRad + Math.PI / 2) + 4);
+      /* 电流矢量 */
+      var mag = Math.min(Math.abs(r.iqVal) / 10, 1);
+      var len = 40 + 100 * mag;
+      mctx.strokeStyle = "#f59e0b"; mctx.lineWidth = 3.5;
+      mctx.beginPath(); mctx.moveTo(cx, cy);
+      mctx.lineTo(cx + len * Math.cos(r.phi), cy - len * Math.sin(r.phi)); mctx.stroke();
+      /* 箭头 */
+      var ax = cx + len * Math.cos(r.phi), ay = cy - len * Math.sin(r.phi);
+      var ang = r.phi;
+      mctx.fillStyle = "#f59e0b";
+      mctx.beginPath();
+      mctx.moveTo(ax, ay);
+      mctx.lineTo(ax - 12 * Math.cos(ang - 0.4), ay + 12 * Math.sin(ang - 0.4));
+      mctx.lineTo(ax - 12 * Math.cos(ang + 0.4), ay + 12 * Math.sin(ang + 0.4));
+      mctx.closePath(); mctx.fill();
+      mctx.fillStyle = "#fbbf24";
+      mctx.fillText("i_s", ax + 10 * Math.cos(ang), ay - 10 * Math.sin(ang) - 4);
+      mctx.fillStyle = "#6b7280"; mctx.font = "10px 'Microsoft YaHei',sans-serif";
+      mctx.fillText("θe=" + Math.round(thetaRad * 180 / Math.PI) + "°", 10, 18);
+    }
+    function drawWave(thetaRad, r){
+      var W = cWave.width, H = cWave.height;
+      var padL = 30, padB = 20, padT = 10;
+      var pw = W - padL - 10, ph = H - padT - padB;
+      var mid = padT + ph / 2;
+      wctx.clearRect(0, 0, W, H);
+      wctx.strokeStyle = "rgba(255,255,255,.08)"; wctx.lineWidth = 1;
+      wctx.beginPath(); wctx.moveTo(padL, mid); wctx.lineTo(padL + pw, mid); wctx.stroke();
+      wctx.fillStyle = "#6b7280"; wctx.font = "10px 'Microsoft YaHei',sans-serif";
+      wctx.fillText("三相电流 ia/ib/ic(A)", padL, 10);
+      var amp = 8;
+      var cols = ["#3b82f6", "#22c55e", "#ef4444"];
+      var vals = [r.ia, r.ib, r.ic];
+      for(var k = 0; k < 3; k++){
+        wctx.strokeStyle = cols[k]; wctx.lineWidth = 1.6;
+        wctx.beginPath();
+        for(var px = 0; px <= pw; px += 3){
+          var deg = (px / pw) * 2 * Math.PI;
+          /* 三相电流互差 120°,幅值取当前实测值 */
+          var v = Math.abs(vals[k]) * Math.cos(deg - k * 2.0944);
+          var yy = mid - (v / amp) * (ph / 2);
+          if(px === 0) wctx.moveTo(padL + px, yy); else wctx.lineTo(padL + px, yy);
+        }
+        wctx.stroke();
+      }
+      /* 当前 θe 标记 */
+      var markX = padL + ((thetaRad % (2 * Math.PI)) / (2 * Math.PI)) * pw;
+      wctx.strokeStyle = "#f59e0b"; wctx.lineWidth = 2;
+      wctx.beginPath(); wctx.moveTo(markX, padT); wctx.lineTo(markX, padT + ph); wctx.stroke();
+      wctx.fillStyle = "#fbbf24";
+      wctx.fillText("θe", markX + 4, padT + 10);
+      /* 三相信号标签 */
+      for(var s = 0; s < 3; s++){
+        wctx.fillStyle = cols[s];
+        wctx.fillText(namesShort(s), padL + 8 + s * 46, H - 5);
+      }
+      function namesShort(i){ return ["ia", "ib", "ic"][i]; }
+    }
+    function drawDq(thetaRad, r){
+      var W = cDq.width, H = cDq.height;
+      var padL = 30, padB = 20, padT = 14;
+      var pw = W - padL - 10, ph = H - padT - padB;
+      var mid = padT + ph / 2;
+      dctx.clearRect(0, 0, W, H);
+      dctx.strokeStyle = "rgba(255,255,255,.08)"; dctx.lineWidth = 1;
+      dctx.beginPath(); dctx.moveTo(padL, mid); dctx.lineTo(padL + pw, mid); dctx.stroke();
+      dctx.fillStyle = "#6b7280"; dctx.font = "10px 'Microsoft YaHei',sans-serif";
+      dctx.fillText("dq 坐标系中看到的电流(直流!)", padL, 12);
+      /* id=0 */
+      dctx.strokeStyle = "#a78bfa"; dctx.lineWidth = 1.6;
+      dctx.beginPath(); dctx.moveTo(padL, mid); dctx.lineTo(padL + pw, mid); dctx.stroke();
+      dctx.fillStyle = "#a78bfa";
+      dctx.fillText("id = 0(励磁轴)", padL + pw - 110, mid - 6);
+      /* iq 恒定(不随 θe 变) */
+      var qy = mid - Math.min(Math.abs(r.iqVal) / 10, 1) * (ph / 2 - 10);
+      dctx.strokeStyle = "#4ade80"; dctx.lineWidth = 2.4;
+      dctx.beginPath(); dctx.moveTo(padL, qy); dctx.lineTo(padL + pw, qy); dctx.stroke();
+      dctx.fillStyle = "#4ade80";
+      dctx.fillText("iq = " + fmt(r.iqVal, 1) + " A(转矩轴,恒定)", padL + 8, qy - 6);
+      dctx.fillStyle = "#6b7280";
+      dctx.fillText("这就是 Park 变换的意义:旋转的交流 → 静止的直流", padL + 8, H - 5);
+    }
+    function step(){
+      var thetaDeg = parseFloat($("focTheta").value);
+      if(auto){
+        thetaDeg = (thetaDeg + 1.2) % 360;
+        $("focTheta").value = thetaDeg;
+        $("focThetaV").textContent = Math.round(thetaDeg) + "°";
+      }
+      thE = thetaDeg * Math.PI / 180;
+      iq = parseFloat($("focIq").value);
+      var r = updateReadouts(thE, iq);
+      drawMain(thE, r);
+      drawWave(thE, r);
+      drawDq(thE, r);
+    }
+    $("focTheta").oninput = function(){ $("focThetaV").textContent = Math.round(this.value) + "°"; };
+    $("focIq").oninput = function(){ $("focIqV").textContent = fmt(parseFloat(this.value), 1) + " A"; };
+    $("focAuto").onchange = function(){ auto = this.checked; };
+    return { step: step };
+  })();
+
+  /* ================= 实验三:倒立摆(cart-pole) ================= */
+  var lab3 = window.lab3 = (function(){
+    var M = 1.0, m = 0.1, L = 0.5, G = 9.81, FMAX = 20, DT = 0.0005, SUB = 6;
+    var canvas = $("cartCanvas"), ctx = canvas.getContext("2d");
+    var x = 0, th = 0.05, dx = 0, dth = 0, t = 0, F = 0, thRef = 0;
+    var balancedHold = 0;
+
+    function reset(){
+      x = 0; th = 0.05; dx = 0; dth = 0; t = 0; F = 0; thRef = 0; balancedHold = 0;
+    }
+    function step(){
+      var Kp = parseFloat($("cpKp").value), Kd = parseFloat($("cpKd").value);
+      var adv = $("cpAdv").checked;
+      var xref = parseFloat($("cpXref").value);
+      for(var i = 0; i < SUB; i++){
+        var Fcmd;
+        if(adv){
+          /* 高级:位置环 -> 角度参考(带速率限制),角度环执行。
+             注意:位置环带宽必须远低于平衡环,否则两者互相打架(会出现缓慢晃动) */
+          var target = Math.max(-0.3, Math.min(0.3, 0.2 * (xref - x) - 1.5 * dx));
+          var diff = target - thRef;
+          var maxStep = 0.3 * DT;
+          thRef += Math.max(-maxStep, Math.min(maxStep, diff));
+          Fcmd = Kp * (th - thRef) + Kd * dth;
+        }else{
+          /* 默认:纯平衡(角度 PD) */
+          thRef = 0;
+          Fcmd = Kp * th + Kd * dth;
+        }
+        F = Math.max(-FMAX, Math.min(FMAX, Fcmd));
+        /* cart-pole 非线性动力学(θ 自竖直向上起算,含小车滚动摩擦 b=1) */
+        var cosT = Math.cos(th), sinT = Math.sin(th);
+        var denom = L * (4 / 3 - m * cosT * cosT / (M + m));
+        var d2th = (G * sinT + cosT * (-F - m * L * dth * dth * sinT) / (M + m)) / denom;
+        var d2x = (F - 1 * dx + m * L * (dth * dth * sinT - d2th * cosT)) / (M + m);
+        dth += d2th * DT; dth = Math.max(-20, Math.min(20, dth));
+        th += dth * DT;
+        /* 摆杆倒下后限制角度范围,避免数值爆炸 */
+        if(Math.abs(th) > 1.9){ th = th > 0 ? 1.9 : -1.9; dth = 0; }
+        dx += d2x * DT;
+        x += dx * DT;
+        t += DT;
+      }
+      if(Math.abs(th) < 0.08 && Math.abs(dth) < 0.5){ balancedHold += DT * SUB; } else { balancedHold = 0; }
+    }
+    function draw(){
+      var W = canvas.width, H = canvas.height;
+      var groundY = H - 40;
+      var scale = 90;   /* px per meter */
+      var cx0 = W / 2;
+      ctx.clearRect(0, 0, W, H);
+      /* 地面 */
+      ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+      /* 目标位置标记 */
+      var xref = parseFloat($("cpXref").value);
+      var tx = cx0 + xref * scale;
+      ctx.strokeStyle = "rgba(245,158,11,.6)"; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(tx, groundY); ctx.lineTo(tx, groundY - 34); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#f59e0b"; ctx.font = "11px 'Microsoft YaHei',sans-serif";
+      ctx.fillText("目标", tx - 14, groundY - 38);
+      /* 小车 */
+      var px = cx0 + x * scale;
+      var cw = 54, chh = 18;
+      ctx.fillStyle = "#1e40af";
+      ctx.fillRect(px - cw / 2, groundY - chh, cw, chh);
+      ctx.fillStyle = "#60a5fa";
+      ctx.fillRect(px - cw / 2 + 4, groundY - chh + 4, cw - 8, chh - 8);
+      /* 轮子 */
+      ctx.fillStyle = "#cbd5e1";
+      ctx.beginPath(); ctx.arc(px - cw / 2 + 8, groundY - 3, 5, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(px + cw / 2 - 8, groundY - 3, 5, 0, 6.283); ctx.fill();
+      /* 摆杆 */
+      var plen = L * scale * 2.6;
+      var ang = th - Math.PI / 2;
+      var ex = px + plen * Math.cos(ang), ey = groundY - chh + plen * Math.sin(ang);
+      ctx.strokeStyle = th > 0 ? "#ef4444" : "#22c55e"; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(px, groundY - chh); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.fillStyle = "#fbbf24";
+      ctx.beginPath(); ctx.arc(ex, ey, 7, 0, 6.283); ctx.fill();
+      /* 推力箭头 */
+      if(Math.abs(F) > 0.5){
+        ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 3;
+        var fl = Math.min(Math.abs(F) / FMAX, 1) * 60 * (F > 0 ? 1 : -1);
+        ctx.beginPath(); ctx.moveTo(px, groundY + 12); ctx.lineTo(px + fl, groundY + 12); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(px + fl + (F > 0 ? 10 : -10), groundY + 12);
+        ctx.lineTo(px + fl, groundY + 7); ctx.lineTo(px + fl, groundY + 17);
+        ctx.closePath(); ctx.fillStyle = "#3b82f6"; ctx.fill();
+      }
+      /* 读数 */
+      $("cpTheta").textContent = fmt(th * 180 / Math.PI, 1) + "°";
+      $("cpX").textContent = fmt(x, 2) + " m";
+      $("cpF").textContent = fmt(F, 1);
+      var st = $("cpState");
+      if(Math.abs(th) < 0.08 && balancedHold > 1.5){
+        st.textContent = "✅ 已平衡"; st.style.color = "#86efac";
+      }else if(Math.abs(th) < 0.5){
+        st.textContent = "⏳ 平衡中…"; st.style.color = "#fbbf24";
+      }else{
+        st.textContent = "❌ 未平衡"; st.style.color = "#f87171";
+      }
+      ctx.fillStyle = "#6b7280"; ctx.font = "10px 'Microsoft YaHei',sans-serif";
+      ctx.fillText("t=" + fmt(t, 1) + "s | 摆杆竖直 = 平衡", 10, 16);
+    }
+    function disturb(){ dth += 2.2; }
+    function preset(kind){
+      if(kind === "good"){ $("cpKp").value = 40; $("cpKd").value = 6; }
+      else { $("cpKp").value = 8; $("cpKd").value = 1; }
+      $("cpKpV").textContent = $("cpKp").value;
+      $("cpKdV").textContent = $("cpKd").value;
+      reset();
+    }
+    var els = ["cpKp", "cpKd", "cpXref"];
+    for(var i = 0; i < els.length; i++){
+      (function(id){
+        $(id).oninput = function(){ $(id + "V").textContent = $(id).value; };
+      })(els[i]);
+    }
+    $("cpAdv").onchange = function(){
+      var adv = this.checked;
+      $("cpXref").disabled = !adv;
+      $("cpXrefV").textContent = $("cpXref").value;
+    };
+    return { reset: reset, step: step, draw: draw, disturb: disturb, preset: preset };
+  })();
+
+  /* ================= 主循环 ================= */
+  function loop(){
+    lab1.step(); lab1.draw();
+    lab2.step();
+    lab3.step(); lab3.draw();
+    requestAnimationFrame(loop);
+  }
+  lab1.reset("step");
+  lab3.reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>
