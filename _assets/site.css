@@ -330,3 +330,34 @@ body[data-theme="light"] .term-name{color:#0f172a}
 body[data-theme="light"] .term-desc{color:#5a6a85}
 body[data-theme="light"] .sec-title{color:#334155}
 body[data-theme="light"] .sec-title .en{color:#94a3b8}
+
+/* ============================================================
+   文档式目录侧边栏(DeepSeek 官方文档风)
+   ============================================================ */
+.toc-sidebar{position:fixed;left:16px;top:76px;width:224px;max-height:calc(100vh - 96px);overflow-y:auto;z-index:80;
+  background:rgba(17,22,30,.68);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:14px 12px;font-size:12.5px;scrollbar-width:thin}
+.toc-title{font-weight:800;color:#fff;margin:0 0 8px 4px;font-size:13px}
+.toc-sidebar ul{list-style:none;padding:0;margin:0}
+.toc-sidebar li{margin:2px 0}
+.toc-sidebar a{display:block;color:#9aa4b2;padding:6px 10px;border-radius:8px;text-decoration:none;line-height:1.5;border-left:2px solid transparent;transition:.15s}
+.toc-sidebar a:hover{color:#fff;background:rgba(59,130,246,.15);border-left-color:#3b82f6;text-decoration:none}
+.toc-sidebar a.active{color:#9ecbff;background:rgba(59,130,246,.14);border-left-color:#3b82f6}
+.toc-toggle{display:none;position:fixed;right:14px;bottom:20px;z-index:85;width:46px;height:46px;border-radius:50%;
+  background:rgba(37,99,235,.9);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 8px 24px rgba(37,99,235,.4)}
+/* 有目录时,内容右移,呈"侧边栏 + 正文"文档布局 */
+body.has-toc .container{max-width:960px;margin-left:256px;margin-right:auto}
+body.has-toc .prevnext{max-width:960px;margin-left:256px;margin-right:auto}
+body.has-toc .breadcrumb{max-width:960px;margin-left:256px}
+body[data-theme="light"] .toc-sidebar{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.1)}
+body[data-theme="light"] .toc-title{color:#0f172a}
+body[data-theme="light"] .toc-sidebar a{color:#5a6a85}
+body[data-theme="light"] .toc-sidebar a:hover{color:#0f172a;background:rgba(37,99,235,.08);border-left-color:#2563eb}
+body[data-theme="light"] .toc-sidebar a.active{color:#2563eb;background:rgba(37,99,235,.12);border-left-color:#2563eb}
+
+@media (max-width:1180px){
+  .toc-sidebar{transform:translateX(-120%);transition:transform .25s}
+  .toc-sidebar.open{transform:translateX(0);box-shadow:0 24px 70px rgba(0,0,0,.4)}
+  .toc-toggle{display:block}
+  body.has-toc .container,body.has-toc .prevnext,body.has-toc .breadcrumb{margin-left:auto}
+}

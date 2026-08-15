@@ -7,6 +7,7 @@
   <url><loc>https://cyco.top/01_理论入门/01_整体知识框架_思维导图.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/03_驱动电路模块认知_交互式图解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/01_理论入门/04_机械原理基础_连杆齿轮传动.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/04_硬件设计通用要点_避坑指南.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/05_参考资料汇总_视频_开源项目.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/06_硬件原理图与PCB学习页_X1与Hdrive.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
@@ -23,6 +24,8 @@
   <url><loc>https://cyco.top/06_软件与算法/03_ROS2与机器人软件栈.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/05_感知与具身智能_VLA与世界模型.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/06_视觉SLAM与状态估计.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/07_sim2real部署步骤拆解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/07_前沿知识库/01_全球人形机器人机型全景.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/07_前沿知识库/02_前沿技术专题库.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/07_前沿知识库/03_论文_数据集_开源社区.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>

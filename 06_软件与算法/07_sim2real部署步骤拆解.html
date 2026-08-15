@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · sim2real 部署步骤拆解</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(前缀 my-) */
+  .my-step{display:flex;gap:14px;margin:16px 0}
+  .my-step-num{flex-shrink:0;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px}
+  .my-step-body{flex:1;background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:14px 18px}
+  .my-step-body .st{font-weight:800;color:#fff;font-size:15px;margin-bottom:6px}
+  .my-step-body .row{font-size:13.5px;color:#9aa4b2;line-height:1.8}
+  .my-step-body .row b{color:#9ecbff}
+  body[data-theme="light"] .my-step-body{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+  body[data-theme="light"] .my-step-body .st{color:#0f172a}
+  body[data-theme="light"] .my-step-body .row{color:#4b5c74}
+  body[data-theme="light"] .my-step-body .row b{color:#2563eb}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-07",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec6" },
+      { t: "sim2real 部署步骤拆解" }
+    ],
+    prev: { t: "视觉 SLAM 与状态估计", u: "06_视觉SLAM与状态估计.html" },
+    next: { t: "全球人形机器人机型全景", u: "../07_前沿知识库/01_全球人形机器人机型全景.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🔄 sim2real 部署步骤拆解</h1>
+    <div class="sub">从"仿真里会走"到"真机上能走" —— 十步完整流程,每步给出目标、做法、坑点与验收标准</div>
+    <div class="tags">
+      <span class="tag">域随机化</span>
+      <span class="tag">策略导出</span>
+      <span class="tag">真机部署</span>
+      <span class="tag">数据闭环</span>
+      <span class="tag">十步流程</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说清"仿真策略直接上真机为什么会失败"(sim2real gap 的 5 个来源)<br>
+    2. 能按十步流程把训练好的策略部署到真机,并说出每步的验收标准<br>
+    3. 理解域随机化、延迟注入、策略导出(ONNX/C++)、数据闭环各自的作用<br>
+    4. 与 <a href="04_仿真与强化学习_MuJoCo_Isaac.html">06-04 仿真与 RL</a> 配合:那页讲"怎么训",本页讲"怎么上真机"<br>
+    <b>建议用时:</b>约 30 分钟
+  </div>
+
+  <h2><span class="h2-num">1</span> 什么是 sim2real gap?</h2>
+  <p>在仿真里训练出一个"满分策略",直接拷到真机往往<b>立刻摔倒或根本站不起来</b>。原因是仿真和真机之间存在系统性差异,这些差异被统称为 <b>sim2real gap</b>。gap 越大,策略迁移越容易失败;而 sim2real 的全部工作,就是<b>把 gap 缩小到策略能容忍的范围</b>。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>差异来源</th><th>仿真里常被简化成</th><th>真机上的真实情况</th></tr>
+    <tr><td>物理精度</td><td>理想刚体、库伦摩擦常数、零背隙</td><td>柔性、变摩擦、减速器背隙、接触非线性</td></tr>
+    <tr><td>电机/执行器</td><td>理想力矩源、无延迟</td><td>力矩带宽有限、响应延迟、饱和、发热降额</td></tr>
+    <tr><td>通信/控制延迟</td><td>同步无延迟</td><td>控制周期 1-5ms、通信抖动、量化</td></tr>
+    <tr><td>传感器噪声</td><td>真值直接给</td><td>编码器/IMU 噪声、漂移、遮挡</td></tr>
+    <tr><td>算力</td><td>桌面 GPU 无限制</td><td>机载算力受限,策略推理要实时(常见 50Hz)</td></tr>
+  </table></div>
+
+  <div class="box box-tip"><b>💡 一句话原则:</b>策略能容忍的"随机性"越大,迁移成功率越高。所以 sim2real 的核心手段不是"把仿真做得多逼真",而是<b>"把策略练得多鲁棒"</b>(域随机化),再配合真机侧的工程化对齐(延迟、频率、保护)。</div>
+
+  <h2><span class="h2-num">2</span> 十步部署流程</h2>
+  <p>以下十步按顺序执行;每一步都有"验收标准",达标再进下一步。可对照 <a href="04_仿真与强化学习_MuJoCo_Isaac.html">06-04</a> 的训练流水线一起看。</p>
+
+  <div class="my-step"><div class="my-step-num">1</div><div class="my-step-body">
+    <div class="st">真机建模(URDF / MJCF)</div>
+    <div class="row"><b>目标:</b>在仿真里搭一个与真机结构一致的模型。<b>做法:</b>量测真实质量/惯量/连杆长度/关节限位,写进 URDF;不要用"默认参数"糊弄。<b>坑:</b>惯量张量(尤其转子和末端)误差大。<b>验收:</b>仿真里自由摆动/摔倒的姿态与真机肉眼一致。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">2</div><div class="my-step-body">
+    <div class="st">参数辨识(电机 / 摩擦 / 阻尼)</div>
+    <div class="row"><b>目标:</b>把电机 KV、相电阻、库伦+粘滞摩擦、减速器效率实测出来。<b>做法:</b>开环阶跃/斜坡实验 + 最小二乘拟合(或用 SimpleFOC/ODrive 的辨识例程)。<b>坑:</b>摩擦随温度/速度变化,取"工作区间"的均值。<b>验收:</b>同一指令下仿真与真机的电流/转速曲线趋势一致。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">3</div><div class="my-step-body">
+    <div class="st">域随机化(让策略"见过世面")</div>
+    <div class="row"><b>目标:</b>训练时随机扰动物理参数,让策略对参数变化不敏感。<b>做法:</b>每个 episode 随机采样质量(±10-20%)、摩擦、力矩缩放、地面摩擦/坡度、推搡力等。<b>坑:</b>范围太小=没效果,范围太大=学不会;先小后大逐步加。<b>验收:</b>策略在随机化后的环境里仍能稳定完成任务(成功率 ≥ 90%)。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">4</div><div class="my-step-body">
+    <div class="st">动作延迟注入</div>
+    <div class="row"><b>目标:</b>让策略适应真实控制延迟。<b>做法:</b>训练时把动作延迟 1-3 个控制周期(如 20-60ms)再作用到环境。<b>坑:</b>只延迟观测不延迟动作、或延迟随机化缺失,都会让策略上真机"手抖"。<b>验收:</b>策略在 40ms 延迟下不掉分(或掉分 &lt; 5%)。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">5</div><div class="my-step-body">
+    <div class="st">观测噪声注入</div>
+    <div class="row"><b>目标:</b>让策略适应传感器噪声。<b>做法:</b>给角度/角速度/线速度/IMU 加高斯噪声(幅值取真机实测的 1-1.5 倍)。<b>坑:</b>角度直接用"真值"会让策略依赖不存在的信号。<b>验收:</b>策略在噪声下仍稳定,且不发生高频抖动。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">6</div><div class="my-step-body">
+    <div class="st">奖励塑形与防 hack</div>
+    <div class="row"><b>目标:</b>设计让策略"真的会走"而非"钻空子"的奖励。<b>做法:</b>速度跟踪 + 能量惩罚 + 姿态惩罚 + 存活奖励的组合;加入"课程"(先站立→再行走)。<b>坑:</b>常见 hack:腿高频抽动、原地滑步、靠"摔倒前一刻"刷分。<b>验收:</b>回放 rollout 视频,确认动作自然、无异常抖动。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">7</div><div class="my-step-body">
+    <div class="st">PPO 训练(与 06-04 衔接)</div>
+    <div class="row"><b>目标:</b>训练出收敛策略。<b>做法:</b>Isaac Lab / legged-gym 跑 PPO;观察回报曲线与"提前终止"占比。<b>坑:</b>奖励曲线涨但实测表现差 → 奖励有问题。<b>验收:</b>训练收敛、rollout 成功率达标、策略确定性(无随机动作方差发散)。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">8</div><div class="my-step-body">
+    <div class="st">策略导出(ONNX / TorchScript → C++ / Rust)</div>
+    <div class="row"><b>目标:</b>把 PyTorch 策略转成真机能跑的推理。<b>做法:</b>导出 ONNX,用 onnxruntime(CPU/GPU)或转 C++ 在机载电脑推理;固定输入/输出张量形状。<b>坑:</b>忘记把"随机动作的均值"当最终输出(推理时不要采样);数值精度(float32→float16)可能抖动。<b>验收:</b>同一输入下,ONNX 输出与 PyTorch 输出误差 &lt; 1e-3。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">9</div><div class="my-step-body">
+    <div class="st">真机部署(接口 / 频率 / 保护)</div>
+    <div class="row"><b>目标:</b>策略推理 → 关节指令 的实时闭环。<b>做法:</b>上位机 50-100Hz 推理,输出目标关节角度/力矩 → 底层 FOC 环(见 06-02)执行;对齐频率、加死区、加力矩/速度限幅。<b>坑:</b>频率不齐(推理 50Hz vs 电机 10kHz)要经插值;缺限幅会烧电机/损坏关节。<b>验收:</b>上电后先用"悬吊/支撑"模式小力矩试运行,确认动作方向、限位、急停都正确。</div>
+  </div></div>
+
+  <div class="my-step"><div class="my-step-num">10</div><div class="my-step-body">
+    <div class="st">数据闭环(真机数据 → 修正 → 再训练)</div>
+    <div class="row"><b>目标:</b>用真机数据持续改进。<b>做法:</b>记录真机状态/动作/失败片段 → 回灌到仿真(做"重放"或修正参数)→ 针对性再训练。<b>坑:</b>只收集成功数据会掩盖失败模式,摔倒/异常数据更珍贵。<b>验收:</b>形成一个"仿真训练→真机试跑→数据回传→改进"的可重复闭环。</div>
+  </div></div>
+
+  <h2><span class="h2-num">3</span> 三个最关键的工程细节</h2>
+  <div class="box box-warn">
+    <b>① 控制频率对齐:</b>策略(如 50Hz)与电机控制环(如 10kHz)频率不同。策略输出的目标要经插值/平滑后再下发;否则真机会"一格一格"抖动。
+  </div>
+  <div class="box box-warn">
+    <b>② 力矩限制与急停:</b>真机第一原则是"不伤人、不摔坏"。务必加力矩上限、速度上限、倒地自动断电/抱闸,并设物理急停。
+  </div>
+  <div class="box box-warn">
+    <b>③ 先软后硬、先支撑后自由:</b>首次上真机一定在"悬吊支架"或"人工扶住"下小力矩试跑,确认无误再逐步放开 —— 这是无数人形/四足项目的标准安全流程。
+  </div>
+
+  <h2><span class="h2-num">4</span> 常见误区</h2>
+  <div class="box box-danger"><b>✗ "仿真跑分高 = 真机能跑":</b>仿真 100 分,真机可能 0 分 —— gap 没缩小前,分数没有迁移意义。</div>
+  <div class="box box-danger"><b>✗ "跳过域随机化":</b>不做域随机化的策略,几乎必然在真机上因一点点参数偏差而失败。</div>
+  <div class="box box-danger"><b>✗ "推理时还在采样动作":</b>训练时动作是"高斯采样",推理时必须取<b>均值</b>;继续采样 = 真机乱抖。</div>
+
+  <h2><span class="h2-num">5</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 训练策略时,让仿真器随机扰动质量/摩擦/地面参数,目的是什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 让仿真跑得更快</button>
+      <button data-v="B">B. 让策略对参数偏差更鲁棒,缩小 sim2real gap</button>
+      <button data-v="C">C. 提高渲染画质</button>
+      <button data-v="D">D. 减少训练步数</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 这就是"域随机化"的核心:让策略适应参数不确定性,从而在真机(参数未知/有偏差)上也能工作。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 策略从 PyTorch 部署到真机时,推理阶段应该输出什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 随机采样的动作</button>
+      <button data-v="B">B. 奖励值</button>
+      <button data-v="C">C. 动作分布的均值</button>
+      <button data-v="D">D. 训练时的梯度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 训练时动作来自"均值+噪声"的高斯分布;推理(部署)时必须取均值(确定性),否则真机动作会随机抖动。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 首次把策略上真机时,最安全的做法是什么?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 直接全速跑</button>
+      <button data-v="B">B. 只看仿真结果就行</button>
+      <button data-v="C">C. 关掉所有保护</button>
+      <button data-v="D">D. 悬吊/人工扶持下小力矩试跑,确认后再放开</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 安全第一:先软后硬、先支撑后自由,配合力矩/速度限幅与急停,是行业标准流程。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 下面哪项是"sim2real gap"的来源?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 电机响应延迟与力矩饱和</button>
+      <button data-v="B">B. 渲染帧率</button>
+      <button data-v="C">C. 代码注释数量</button>
+      <button data-v="D">D. 数据集的图片尺寸</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 电机不是理想力矩源,有延迟、带宽、饱和、发热降额 —— 这是仿真常忽略、真机必存在的 gap 来源之一。</div>
+  </div>
+
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>sim2real gap 来自物理、执行器、延迟、噪声、算力五处差异;十步流程(建模→辨识→域随机化→延迟注入→噪声注入→奖励塑形→训练→导出→部署→数据闭环)把 gap 逐步缩小;三个工程铁律是"频率对齐、限幅急停、先支撑后自由"。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果你的策略在仿真里能走、上真机却"高频抖腿",最可能漏了哪一步?<br>
+    2. 域随机化范围设得太大或太小,分别会发生什么?<br>
+    3. 真机上只有 50Hz 的推理能力,你会怎么设计观测/动作与控制频率?
+  </div>
+
+  <h2><span class="h2-num">6</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://arxiv.org/abs/2202.10268" target="_blank" rel="noopener">Learning to Walk in Minutes Using Massively Parallel Deep Reinforcement Learning(legged locomotion / PPO 训练范式)</a></li>
+    <li><a href="https://github.com/leggedrobotics/legged_gym" target="_blank" rel="noopener">legged_gym(ETH Zürich,经典四足/人形 RL 训练库)</a></li>
+    <li><a href="https://github.com/unitreerobotics/unitree_rl_gym" target="_blank" rel="noopener">unitree_rl_gym(宇树,真机部署常用参考)</a></li>
+    <li><a href="https://isaac-sim.github.io/IsaacLab/" target="_blank" rel="noopener">Isaac Lab 文档(RL 训练 + 域随机化接口)</a></li>
+    <li><a href="../06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html">本站 06-04 · 仿真与强化学习(训练侧)</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

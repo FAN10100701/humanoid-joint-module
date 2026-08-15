@@ -22,12 +22,12 @@
   /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
   window.SITE_SECTIONS = [
     { key:"00", name:"3D 解剖可视化", ids:["00-02","00-03"] },
-    { key:"01", name:"理论入门", ids:["01-01","01-02","01-03"] },
+    { key:"01", name:"理论入门", ids:["01-01","01-02","01-03","01-04"] },
     { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03"] },
     { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05"] },
     { key:"04", name:"升级进阶", ids:["04-01"] },
     { key:"05", name:"HdriveV2 工程", ids:["05-01","05-02"] },
-    { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05"] },
+    { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07"] },
     { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03"] },
     { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04"] }
   ];
@@ -183,6 +183,13 @@
         <div class="t">驱动电路模块认知 · 交互式图解</div>
         <div class="d">逐模块认识关节驱动板:电源、栅驱、采样、通信等电路结构交互图解。</div>
       </a>
+      <a class="card" href="01_理论入门/04_机械原理基础_连杆齿轮传动.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">⚙️</div>
+        <div class="t">机械原理基础 · 连杆 / 齿轮 / 传动</div>
+        <div class="d">机构自由度、连杆机构、齿轮减速比、谐波/行星/丝杠传动、材料轻量化与关节扭矩估算。</div>
+      </a>
     </div>
   </div>
 
@@ -319,6 +326,20 @@
         <div class="t">感知与具身智能 · VLA 与世界模型</div>
         <div class="d">感知栈、视觉-语言-动作模型(RT-2/OpenVLA/π0/Helix)、世界模型趋势、灵巧手与遥操作数据采集。</div>
       </a>
+      <a class="card" href="06_软件与算法/06_视觉SLAM与状态估计.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🗺️</div>
+        <div class="t">视觉 SLAM 与状态估计</div>
+        <div class="d">同时定位与建图原理:前端里程计、图优化、回环检测、ORB-SLAM3/VINS/LIO-SAM 与高斯泼溅前沿。</div>
+      </a>
+      <a class="card" href="06_软件与算法/07_sim2real部署步骤拆解.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🔄</div>
+        <div class="t">sim2real 部署步骤拆解</div>
+        <div class="d">从仿真到真机的十步流程:建模、域随机化、延迟注入、策略导出、真机部署与数据闭环。</div>
+      </a>
     </div>
   </div>
 
@@ -402,10 +423,18 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.4.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-15</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.4.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-15</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.4.2 · 2026-08-15 · 文档式目录 + 三页新教学</summary>
+        <div class="faq-a">新增<b>文档式目录侧边栏</b>(DeepSeek 官方文档风,自动从页面标题生成,左侧固定+滚动高亮,手机端悬浮按钮);新增 3 页:视觉 SLAM 与状态估计(06-06)、sim2real 部署步骤拆解(06-07)、机械原理基础·连杆齿轮传动(01-04)。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.4.1 · 2026-08-15 · 美化与体验</summary>
+        <div class="faq-a">首页版本历史改为按版本折叠(去"本期/上期");新增<b>苹果透亮玻璃浅色风格</b>切换(全站导航按钮,记忆选择);学习进度<b>导出/导入 JSON</b>(跨设备);新增 sitemap.xml + robots.txt(利于搜索引擎收录)。</div>
+      </details>
+      <details class="faq">
         <summary>V1.4.0 · 2026-08-15 · 目录整理 + 品牌统一 + 版本体系</summary>
         <div class="faq-a">九大板块统一命名(00_3D解剖 ~ 08_学习工具);power-analysis 并入 03_项目实操;清理残留目录;新增 README 与 CHANGELOG;站点品牌统一为"人形机器人学习站";修复启动脚本;新增本区块(按版本折叠)。</div>
       </details>
@@ -433,7 +462,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.4.0(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.4.2(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

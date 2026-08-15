@@ -102,6 +102,54 @@
     return { done:done, total:total };
   };
 
+  /* ---------- 文档式目录侧边栏(DeepSeek 官方文档风) ---------- */
+  function buildToc(){
+    var P = page();
+    if(!P.pageId) return;
+    /* 仅对使用 site.css 的新页面生效(旧页面布局各异,不注入) */
+    if(!document.querySelector('link[href*="site.css"]')) return;
+    var hs = document.querySelectorAll('.container h2');
+    if(hs.length < 2) return;
+    var items = [];
+    for(var i = 0; i < hs.length; i++){
+      var h = hs[i];
+      if(!h.id){ h.id = 'sec-' + (i + 1); }
+      var t = h.textContent.replace(/^\d+\s*/, '').trim();
+      items.push({ id: h.id, t: t });
+    }
+    var aside = document.createElement('aside');
+    aside.className = 'toc-sidebar';
+    aside.id = 'tocSidebar';
+    var html = '<div class="toc-title">📑 本页目录</div><ul>';
+    items.forEach(function(it){
+      html += '<li><a href="#' + it.id + '" data-toc="' + it.id + '">' + it.t + '</a></li>';
+    });
+    html += '</ul>';
+    aside.innerHTML = html;
+    document.body.appendChild(aside);
+    document.body.classList.add('has-toc');
+    var btn = document.createElement('button');
+    btn.className = 'toc-toggle';
+    btn.textContent = '📑';
+    btn.title = '目录';
+    btn.onclick = function(){ aside.classList.toggle('open'); };
+    document.body.appendChild(btn);
+    /* 滚动高亮当前章节 */
+    var links = aside.querySelectorAll('a');
+    var secs = [];
+    items.forEach(function(it){ secs.push(document.getElementById(it.id)); });
+    window.addEventListener('scroll', function(){
+      var y = window.scrollY + 120, cur = null;
+      for(var j = 0; j < secs.length; j++){
+        if(secs[j] && secs[j].offsetTop <= y){ cur = secs[j].id; }
+      }
+      for(var k = 0; k < links.length; k++){
+        if(links[k].getAttribute('data-toc') === cur){ links[k].classList.add('active'); }
+        else { links[k].classList.remove('active'); }
+      }
+    });
+  }
+
   /* ---------- 顶部导航 + 面包屑 + 上一篇/下一篇 + 页脚 ---------- */
   function injectChrome(){
     var P = page();
@@ -146,7 +194,7 @@
 
     var ft = document.createElement("footer");
     ft.className = "site-footer";
-    ft.innerHTML = "人形机器人学习站 · V1.4.0(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · "
+    ft.innerHTML = "人形机器人学习站 · V1.4.2(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · "
       + '<a href="' + root + '/index.html">返回首页</a> · 按 Ctrl+K 全站搜索 · '
       + '<a href="' + root + '/index.html#version">版本历史</a>';
     document.body.appendChild(ft);
@@ -281,8 +329,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); S.initQuiz(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); S.initQuiz(); });
   }else{
-    applyTheme(); injectChrome(); S.initQuiz();
+    applyTheme(); injectChrome(); buildToc(); S.initQuiz();
   }
 })();

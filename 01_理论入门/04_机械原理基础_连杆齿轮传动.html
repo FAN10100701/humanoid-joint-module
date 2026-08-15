@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 机械原理基础:连杆与齿轮传动</title>
+<!-- 共享样式:二级目录页面用 ../_assets/site.css -->
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(命名加 my- 前缀,避免与全局冲突) */
+  .my-calc{background:rgba(22,27,34,.8);border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:16px 18px;margin:14px 0}
+  .my-calc-t{font-weight:700;color:#fff;font-size:14.5px;margin-bottom:10px}
+  .my-calc-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px}
+  .my-calc-row label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9aa4b2;min-width:120px}
+  .my-calc-row input{background:rgba(13,17,23,.9);border:1px solid rgba(255,255,255,.14);color:#e6edf3;font-size:14px;padding:7px 10px;border-radius:8px;width:110px;font-family:Consolas,monospace;outline:none}
+  .my-calc-row input:focus{border-color:#3b82f6}
+  .my-calc-row button{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;border-radius:8px;cursor:pointer;font-family:inherit}
+  .my-calc-row button:hover{filter:brightness(1.15)}
+  .my-calc-out{margin-top:8px;font-size:13px;color:#c9d1d9;line-height:1.9}
+  .my-calc-line{padding:4px 0;border-top:1px dashed rgba(255,255,255,.08)}
+  .my-calc-line:first-child{border-top:none}
+  .my-calc-line b{color:#9ecbff;font-family:Consolas,monospace}
+  .my-ascii{font-size:12.5px;line-height:1.55}
+  body[data-theme="light"] .my-calc{background:rgba(255,255,255,.6);border-color:rgba(37,99,235,.28)}
+  body[data-theme="light"] .my-calc-t{color:#0f172a}
+  body[data-theme="light"] .my-calc-row label{color:#5a6a85}
+  body[data-theme="light"] .my-calc-row input{background:#fff;border-color:rgba(60,80,120,.2);color:#1a2332}
+  body[data-theme="light"] .my-calc-out{color:#3a4759}
+  body[data-theme="light"] .my-calc-line b{color:#1d4ed8}
+</style>
+<script>
+  /* 页面配置:导航/面包屑/前后翻页/打卡 全部由 site.js 读取 */
+  window.PAGE = {
+    pageId: "01-04",
+    root: "..",
+    breadcrumb: [ { t: "理论入门", u: "../index.html#sec1" }, { t: "机械原理基础" } ],
+    prev: { t: "驱动电路模块认知", u: "03_驱动电路模块认知_交互式图解.html" },
+    next: { t: "硬件设计避坑指南", u: "../02_硬件基础/04_硬件设计通用要点_避坑指南.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>⚙️ 机械原理基础:连杆与齿轮传动</h1>
+    <div class="sub">从零开始理解人形机器人的"骨骼与肌肉":自由度怎么算、齿轮怎么减速、关节怎么选材料、扭矩怎么估——读完你能看懂任何一台关节模组的结构说明书</div>
+    <div class="tags">
+      <span class="tag">机械原理</span>
+      <span class="tag">自由度</span>
+      <span class="tag">齿轮传动</span>
+      <span class="tag">减速器</span>
+      <span class="tag">轻量化</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出人形机器人机械系统的四层结构(骨架/关节/执行器/壳体),并说出各层职责<br>
+    2. 会用格鲁布勒公式 F = 3(n-1) - 2j - h 计算平面机构自由度,能算四连杆算例<br>
+    3. 能说出齿轮传动比 i = Z₂/Z₁ 的含义,并解释"扭矩×转速=功率"为什么是减速器的核心<br>
+    4. 能区分谐波/行星/摆线 RV 三类减速器与行星滚柱丝杠/同步带/滚珠丝杠的适用场景<br>
+    5. 能按"扭矩 ≈ 负载 × 力臂"估算一个关节需要多大扭矩,并区分持续扭矩与峰值扭矩<br>
+    <b>建议用时:</b>约 40 分钟(含自测)
+  </div>
+
+  <!-- ================= 1. 机械系统总览 ================= -->
+  <h2><span class="h2-num">1</span> 人形机器人机械系统总览</h2>
+  <p>把一台人形机器人想象成一个人:骨架是它的"骨头",关节是"韧带与铰链",执行器(电机+减速器)是"肌肉",壳体是"皮肤与盔甲"。这四个层次从内到外、从动力到支撑,共同完成"站稳、抬臂、抓物、走路"这些动作。</p>
+
+  <h3>四层结构图</h3>
+  <pre class="my-ascii"><code>┌───────────────────────────────────────────────────────────┐
+│  ④ 壳体与外壳层(防护/散热/走线)                              │
+│     铝合金壳体 · 碳纤维外壳 · 密封圈 · 散热筋 · 中空走线       │
+├───────────────────────────────────────────────────────────┤
+│  ③ 执行器层(动力输出)                                        │
+│     电机 → 减速器 → 输出轴承 → 关节输出法兰                    │
+│     (FOC 驱动器藏在壳体里,编码器反馈角度)                     │
+├───────────────────────────────────────────────────────────┤
+│  ② 关节与传动层(运动学)                                      │
+│     关节轴线 · 连杆 · 轴承(交叉滚子) · 密封 · 限位            │
+├───────────────────────────────────────────────────────────┤
+│  ① 骨架与连杆层(承载)                                        │
+│     骨盆 · 大腿骨 · 小腿骨 · 手臂骨 · 脊柱 · 脚踝              │
+└───────────────────────────────────────────────────────────┘
+        动力方向:①电机出扭矩 → ②减速器放大 → ③轴承支撑
+        载荷方向:地面反力 → 骨架 → 关节 → 执行器 → 壳体</code></pre>
+
+  <div class="table-wrap"><table>
+    <tr><th>层次</th><th>核心部件</th><th>职责</th><th>典型材料</th></tr>
+    <tr><td>① 骨架/连杆</td><td>大腿骨、小腿骨、上臂、前臂、骨盆</td><td>承受载荷、确定各关节相对位置</td><td>铝合金、钛合金、碳纤维</td></tr>
+    <tr><td>② 关节</td><td>轴承、密封、限位、关节杯</td><td>提供旋转/直线运动副,传递力与力矩</td><td>交叉滚子轴承、POM 衬套</td></tr>
+    <tr><td>③ 执行器</td><td>电机、减速器、编码器、驱动器</td><td>把电能变成扭矩与转速(动力源)</td><td>铜绕组、硅钢、永磁体、钢齿轮</td></tr>
+    <tr><td>④ 壳体</td><td>外壳、散热筋、线束通道</td><td>防护(IP 等级)、散热、收纳线缆</td><td>铝合金 6061、工程塑料</td></tr>
+  </table></div>
+
+  <div class="box box-tip"><b>💡 记忆锚点:</b>人形机器人的核心矛盾是"<strong>小体积装大扭矩、轻重量扛高载荷</strong>"。后面 3、4、5 节讲的齿轮传动、关键传动件、材料轻量化,全部围绕这个矛盾展开。</div>
+
+  <!-- ================= 2. 机构学基础 ================= -->
+  <h2><span class="h2-num">2</span> 机构学基础:自由度、运动副与连杆机构</h2>
+
+  <h3>2.1 什么是自由度</h3>
+  <p><strong>自由度(DOF, Degree of Freedom)</strong>指一个机构中"能独立变化的运动参数"的个数。在平面里,一个自由构件有 3 个自由度(沿 X、沿 Y 移动 + 绕 Z 转动);在空间里是 6 个(3 平动 + 3 转动)。把构件用运动副连接起来后,自由度会被"约束"掉一部分。</p>
+  <p>对人形机器人来说,自由度是"它能做出多少种独立动作"的直接度量:一个 6 自由度的机械臂末端可以到达空间任意位置和姿态;人的上肢粗略简化也有 7 个自由度(肩 3 + 肘 1 + 腕 3)。</p>
+
+  <h3>2.2 格鲁布勒公式与四连杆算例</h3>
+  <p>计算平面机构自由度的标准公式(<strong>格鲁布勒/库茨巴赫公式</strong>):</p>
+  <pre><code>F = 3(n - 1) - 2j - h
+
+  n = 构件总数(含机架/地面)
+  j = 低副数(转动副、移动副,每个限制 2 个自由度)
+  h = 高副数(齿轮副、凸轮副等,每个限制 1 个自由度)</code></pre>
+  <p><strong>算例:平面四连杆机构</strong>(曲柄摇杆机构)。它有 4 个构件:机架、曲柄、连杆、摇杆;4 个转动副;没有高副。</p>
+  <pre><code>F = 3×(4-1) - 2×4 - 0 = 9 - 8 = 1
+
+结论:四连杆机构只有 1 个自由度——
+      你只需驱动曲柄一个输入,摇杆的运动就完全确定了。</code></pre>
+  <p>再验证一个:两连杆机械臂(机架 + 大臂 + 小臂,2 个转动副):F = 3×(3-1) - 2×2 = 6 - 4 = 2,即"肩 + 肘"两个电机分别驱动,自由度=电机数=2,机构不欠约束也不冗余。</p>
+
+  <h3>2.3 常见运动副</h3>
+  <div class="table-wrap"><table>
+    <tr><th>运动副</th><th>英文</th><th>自由度</th><th>在机器人中的例子</th></tr>
+    <tr><td>转动副 R</td><td>Revolute</td><td>1(旋转)</td><td>膝关节、肘关节、肩关节的单轴旋转</td></tr>
+    <tr><td>移动副 P</td><td>Prismatic</td><td>1(直线)</td><td>丝杠螺母、导轨滑块、直线执行器</td></tr>
+    <tr><td>球副 S</td><td>Spherical</td><td>3(三轴旋转)</td><td>球窝关节模型、肩/髋的多轴简化</td></tr>
+    <tr><td>螺旋副 H</td><td>Screw</td><td>1(旋转与移动耦合)</td><td>滚珠丝杠、行星滚柱丝杠</td></tr>
+    <tr><td>圆柱副 C</td><td>Cylindrical</td><td>2(旋转+轴向移动)</td><td>活塞式伸缩机构(较少见)</td></tr>
+  </table></div>
+
+  <h3>2.4 连杆机构:四连杆膝关节与平行四边形肩关节</h3>
+  <p>连杆机构是用运动副连接起来的"杆件组合",它能把一种运动转成另一种:把旋转变成摆动、把摆动变成近似直线、或者让某个构件保持特定姿态。人形机器人里最常用的两个例子:</p>
+  <ul>
+    <li><strong>四连杆膝关节:</strong>人类膝关节并非简单铰链,而是"滚动+滑动"的复合运动。很多四足/人形机器人的膝部采用四连杆机构,好处是:① 传动角更优,腿部摆动时扭矩曲线更平缓;② 能机械限位,防止膝关节过伸(向后反折)损伤;③ 落地时缓冲更自然。它的自由度仍为 1,由髋/膝电机驱动曲柄输入即可。</li>
+    <li><strong>平行四边形肩关节(或机械臂连杆):</strong>平行四边形机构的特点是对边始终平行,所以末端构件"姿态保持不变"——无论机架怎么转,末端始终朝向同一个方向。很多机器人肩部或腰部用平行四边形机构,让"手腕/头部"始终水平,省掉一个姿态电机,还提高了刚度。</li>
+  </ul>
+  <div class="box box-warn"><b>⚠️ 重要结论:</b>自由度公式算出的 F 若小于 0,说明机构<strong>过约束</strong>(杆件打架,装不上或卡死);若大于电机数,说明有<strong>欠驱动</strong>构件(会飘)。设计时尽量让"自由度 = 电机数",机器人关节模组几乎都是这样做的。</div>
+
+  <!-- ================= 3. 齿轮与传动 ================= -->
+  <h2><span class="h2-num">3</span> 齿轮与传动:减速比、功率守恒与多级减速</h2>
+
+  <h3>3.1 传动比 i = Z₂ / Z₁</h3>
+  <p>一对啮合的齿轮,大齿轮齿数 Z₂、小齿轮齿数 Z₁,则<strong>传动比</strong>(减速比):</p>
+  <pre><code>i = Z₂ / Z₁
+
+输入(小齿轮):转速 n₁,扭矩 T₁
+输出(大齿轮):转速 n₂ = n₁ / i,扭矩 T₂ = i × T₁(理想无损耗)</code></pre>
+  <p>含义:齿数比 3:1 的齿轮副,把转速降到 1/3,同时把扭矩放大 3 倍。<strong>减速比越大,输出越"慢而有力"</strong>——这正是关节需要的:电机天生"快而无力",关节需要"慢而有力"。</p>
+
+  <h3>3.2 扭矩 × 转速 = 功率守恒</h3>
+  <p>忽略摩擦损耗时,输入功率 = 输出功率:</p>
+  <pre><code>P = T × ω          (ω 为角速度,单位 rad/s)
+P(W) ≈ T(N·m) × n(rpm) / 9.55
+
+电机端:0.1 N·m × 3000 rpm → P ≈ 31.4 W
+减速后:5 N·m × 60 rpm   → P ≈ 31.4 W   ← 功率不变,扭矩/转速互换</code></pre>
+  <p>这条守恒律是理解一切减速器的钥匙:<strong>减速器不产生能量,它只是把"高速小扭矩"换成"低速大扭矩"</strong>。实际有摩擦和柔轮变形损耗,机械效率 η 通常 60%~95%,输出功率 = 输入功率 × η。</p>
+
+  <h3>3.3 多级减速:传动比相乘</h3>
+  <p>单对齿轮减速比一般 1~10(再大就太大、效率低)。要得到 50:1、100:1,就用<strong>多级串联</strong>,总减速比 = 各级乘积:</p>
+  <pre><code>行星一级 1:5 × 行星二级 1:5 × 谐波 1:2(等效) → i = 50
+
+算例:电机 3000 rpm,两级减速 1:10 与 1:5
+  i 总 = 10 × 5 = 50
+  输出转速 = 3000 / 50 = 60 rpm
+  输出扭矩(理想)= 电机扭矩 × 50</code></pre>
+  <p>谐波减速器单级就能做到 30:1 ~ 160:1,所以它是"单级大减速比"的代表;行星减速器单级 3~10,常两三级串起来用;RV 则是"行星 + 摆线"两级复合。第 4 节详细对比。</p>
+
+  <div class="box box-tip"><b>💡 经验值:</b>人形机器人常见关节参数(供估算参考)——手指/手腕:输出 0.5~5 N·m,减速比 30~100;肩/肘/髋:输出 10~60 N·m,减速比 50~160;膝/踝(重载):输出 50~200 N·m,常用 RV 或大谐波。电机端转速普遍 2000~6000 rpm。</div>
+
+  <!-- ================= 4. 关键传动件原理 ================= -->
+  <h2><span class="h2-num">4</span> 关键传动件原理:减速器、丝杠、同步带与轴承</h2>
+
+  <h3>4.1 三类减速器对比</h3>
+  <div class="table-wrap"><table>
+    <tr><th>类型</th><th>核心结构</th><th>单级减速比</th><th>背隙</th><th>刚度/承载</th><th>典型用途</th></tr>
+    <tr><td>谐波减速器</td><td>波发生器 + 柔轮 + 刚轮</td><td>30~160</td><td>近乎为零</td><td>刚度中等、承载中等</td><td>肩/肘/腕等中小扭矩关节(人形机器人主力)</td></tr>
+    <tr><td>行星减速器</td><td>太阳轮 + 行星轮 + 内齿圈 + 行星架</td><td>3~10(可多级)</td><td>有(可低背隙)</td><td>刚度高、抗冲击好</td><td>低成本关节、需要效率高/耐冲击的场合</td></tr>
+    <tr><td>摆线 RV 减速器</td><td>行星齿轮 + 摆线针轮两级</td><td>30~200</td><td>小</td><td>刚度极高、承载极大</td><td>髋/膝/腰等重载关节、工业机器人底座</td></tr>
+  </table></div>
+  <ul>
+    <li><strong>谐波减速器:</strong>电机带动<strong>波发生器</strong>(凸轮+柔性轴承)旋转,迫使<strong>柔轮</strong>(薄壁弹性杯)产生椭圆变形,与<strong>刚轮</strong>(刚性内齿圈)逐齿啮合,每转一圈只错动 2 个齿,从而实现超大减速比。双波谐波 i = 柔轮齿数/2(如柔轮 100 齿 → i=50)。<strong>优点:</strong>单级大减速比、背隙近零、体积小重量轻;<strong>缺点:</strong>刚度有限、柔轮有疲劳寿命限制、不宜长时间承受冲击过载。</li>
+    <li><strong>行星减速器:</strong>太阳轮输入,固定内齿圈,行星架输出,减速比 i = 1 + 内齿圈齿数/太阳轮齿数。多个行星轮同时啮合分摊载荷,效率高(90%+)、结构紧凑、抗冲击好,但单级减速比小,常多级串联。</li>
+    <li><strong>摆线 RV 减速器:</strong>第一级行星减速 + 第二级摆线针轮,两级复合后既有大减速比又有极高刚性和承载能力,是重载关节的"大力士",缺点是体积重量偏大、成本高。</li>
+  </ul>
+  <p>想看清三个家伙的"内脏"长什么样、齿轮怎么咬合,强烈建议去看本页第 7 节链接的 3D 剖面图解页(也可直接点这里:<a href="../00_3D解剖/减速器剖面图详解.html" target="_blank">三种减速器 · 剖面结构与原理图解 →</a>)。</p>
+
+  <h3>4.2 直线传动:行星滚柱丝杠、滚珠丝杠与同步带</h3>
+  <p>人形机器人不只有旋转关节,还有"推拉"式直线运动(比如驱动前臂/手指开合、腿部某些机构的伸缩):</p>
+  <ul>
+    <li><strong>行星滚柱丝杠(Planetary Roller Screw):</strong>丝杠周围行星布置多个带螺纹滚柱,与螺母啮合,把旋转变成直线。接触点极多 → 承载大、刚度高、寿命长,体积却比同承载的滚珠丝杠更小。近年人形机器人(如特斯拉 Optimus 等)的前臂/手指直线执行器大量采用它。</li>
+    <li><strong>滚珠丝杠(Ball Screw):</strong>滚珠在丝杠与螺母的滚道间滚动,摩擦小、效率高(90%+)、定位精度高,是工业直线传动"万金油";缺点是有轴向间隙(可预紧消除),抗冲击不如滚柱丝杠。</li>
+    <li><strong>同步带(齿形带):</strong>靠齿啮合传递动力,不打滑、传动比准确、噪声小,还能<strong>远距离传动</strong>——把电机"藏"在肩膀,用同步带把动力送到肘/腕,远端关节就轻了。缺点是带子有弹性、刚度低于齿轮直连,适合轻载或需要减重的场合。</li>
+  </ul>
+
+  <h3>4.3 轴承:关节的"韧带"</h3>
+  <div class="table-wrap"><table>
+    <tr><th>轴承类型</th><th>承载特点</th><th>在关节中的角色</th></tr>
+    <tr><td>深沟球轴承</td><td>以径向载荷为主,兼少量轴向</td><td>电机轴、丝杠支撑、通用转动部位(便宜耐用)</td></tr>
+    <tr><td>交叉滚子轴承</td><td>同时承受径向+轴向+倾覆力矩</td><td>关节<strong>输出端主轴承</strong>(输出法兰与壳体之间)——一个轴承顶三个方向,刚度高、体积小</td></tr>
+    <tr><td>推力轴承</td><td>纯轴向载荷</td><td>丝杠轴向支撑、承受轴向顶推力的部位</td></tr>
+  </table></div>
+  <p>关节输出端受力最复杂(要扛径向剪切、轴向拉扯,还要扛"想把它掰弯"的倾覆力矩),所以几乎所有关节模组都在输出端用<strong>交叉滚子轴承</strong>,这也是你在解剖图上最容易认出的标志性零件。</p>
+
+  <!-- ================= 5. 材料与轻量化 ================= -->
+  <h2><span class="h2-num">5</span> 材料与轻量化:为什么关节要"减重"</h2>
+
+  <h3>5.1 比强度:材料性能的"性价比"指标</h3>
+  <p><strong>比强度 = 抗拉强度 ÷ 密度</strong>,表示"每公斤能扛多少力"。轻量化设计不看绝对强度,看比强度——同样强度下越轻越好,同样重量下越强越好。</p>
+  <div class="table-wrap"><table>
+    <tr><th>材料</th><th>密度 g/cm³</th><th>抗拉强度 MPa</th><th>比强度(约)</th><th>特点与用途</th></tr>
+    <tr><td>铝合金 6061-T6</td><td>2.70</td><td>≈310</td><td>中等</td><td>易加工、可阳极氧化、便宜——<strong>关节壳体/骨架首选</strong></td></tr>
+    <tr><td>铝合金 7075-T6</td><td>2.80</td><td>≈570</td><td>较高</td><td>强度近钢、比强度高,用于受大力结构件(大腿骨)</td></tr>
+    <tr><td>钛合金 Ti-6Al-4V</td><td>4.43</td><td>≈950</td><td>高</td><td>比强度高、耐蚀耐温,但贵且难加工,用于关键受力件/紧固件</td></tr>
+    <tr><td>碳纤维 CFRP</td><td>≈1.6</td><td>2000~3500(沿纤维)</td><td>极高</td><td>比强度之王,用于连杆/外壳;但各向异性、怕局部挤压、贵</td></tr>
+    <tr><td>尼龙 PA</td><td>1.14</td><td>≈80</td><td>—</td><td>韧性好、耐磨、可 3D 打印,用于外壳/齿轮/关节杯</td></tr>
+    <tr><td>聚甲醛 POM</td><td>1.41</td><td>≈70</td><td>—</td><td>自润滑、尺寸稳定、耐磨,用于齿轮/轴套/衬套</td></tr>
+  </table></div>
+  <p>实际设计口诀:<strong>壳体用 6061(好加工)、受力骨架用 7075/钛合金、能减重的连杆用碳纤维、非承载摩擦件用 POM/PA</strong>。</p>
+
+  <h3>5.2 为什么关节必须"斤斤计较"</h3>
+  <ul>
+    <li><strong>摆动惯量直接决定能耗:</strong>走路时腿要反复加速/减速,能耗 ∝ 转动惯量。腿越"头重脚轻"越费电——把质量往髋部集中(电池、驱动器放躯干)是步行机器人省电的第一原则。</li>
+    <li><strong>负载链逐级放大:</strong>腕部减 100 g,肩部、躯干、髋部、腿部都能跟着减重,工程经验是"远端每减 1 g,近端可连锁减 3~5 g"。所以减重要优先减最远端。</li>
+    <li><strong>电机/减速器规格连锁缩小:</strong>扭矩需求下降 → 电机、减速器、驱动器、电池、散热全部可以缩小 → 成本与重量同时下降,形成良性循环。</li>
+    <li><strong>动态性能更好:</strong>惯量小 → 关节带宽高、响应快、加减速冲击小,力控和抗扰都更容易做。</li>
+    <li><strong>更安全:</strong>碰撞动能 E = ½mv²,质量小一半,撞到人时的伤害也小一半。</li>
+  </ul>
+
+  <!-- ================= 6. 力与运动估算 ================= -->
+  <h2><span class="h2-num">6</span> 力与运动估算:关节扭矩、功率与持续/峰值</h2>
+
+  <h3>6.1 扭矩 ≈ 负载 × 力臂</h3>
+  <p>估算一个关节需要多大扭矩,第一步永远是静力学:让关节"托住"重物所需的最小扭矩,等于重力 × 到关节轴线的垂直距离:</p>
+  <pre><code>τ ≈ m × g × L
+  m = 负载质量(kg)    g = 9.81 m/s²    L = 质心到关节轴线的力臂(m)</code></pre>
+
+  <h3>6.2 算例一:抬腿</h3>
+  <p>单腿(大腿+小腿+脚)总质量约 3.5 kg,质心距髋关节约 0.25 m:</p>
+  <pre><code>静力矩   τ静 = 3.5 × 9.81 × 0.25 ≈ 8.6 N·m   ← 托住腿不落下的最小扭矩
+动态裕量   摆动加速、姿态变化约需 2 倍 → 峰值 ≈ 17 N·m
+工程取值   髋关节峰值扭矩 ≥ 20 N·m,持续扭矩 ≥ 10 N·m</code></pre>
+
+  <h3>6.3 算例二:抓物</h3>
+  <p>机械臂前伸 0.6 m 抓 2 kg 物体,手臂自重 4 kg、质心距肩 0.3 m:</p>
+  <pre><code>物体   τ物 = 2 × 9.81 × 0.6 ≈ 11.8 N·m
+自重   τ臂 = 4 × 9.81 × 0.3 ≈ 11.8 N·m
+合计   τ总 ≈ 23.5 N·m
+设计   ×1.5 安全系数 → 肩关节峰值 ≥ 35 N·m,持续 ≥ 25 N·m</code></pre>
+  <div class="box box-warn"><b>⚠️ 别忘了力臂会变:</b>手臂伸直(力臂最长)时扭矩最大,屈肘(力臂缩短)时变小。估算要按"最不利姿态 + 最大负载"取峰值,再乘 1.3~2 的安全系数。</div>
+
+  <h3>6.4 电机功率与"持续 vs 峰值"</h3>
+  <pre><code>关节机械功率  P = τ × ω
+例:35 N·m @ 2 rad/s(≈19 rpm)→ P ≈ 70 W
+电机端(减速比 50、效率 0.7):n电机 = 2×50 = 100 rad/s ≈ 955 rpm
+  T电机 = 35 / (50 × 0.7) ≈ 1 N·m</code></pre>
+  <p><strong>持续扭矩(Continuous)</strong>受绕组温升限制,电机可以长时间稳定输出的扭矩——选型、定减速比、配散热都看它。<strong>峰值扭矩(Peak)</strong>受磁饱和与驱动器电流限制,只能短时输出(几秒内),通常为持续的 2~4 倍。设计原则:<strong>用持续扭矩覆盖日常工况,用峰值扭矩应对瞬间冲击;绝不能用"峰值够用"来选电机</strong>——那会过温烧机。</p>
+
+  <h3>6.5 动手算一算(交互估算器)</h3>
+  <div class="my-calc">
+    <div class="my-calc-t">🧮 关节扭矩估算器(静力矩 → 设计扭矩 → 电机端)</div>
+    <div class="my-calc-row">
+      <label>负载质量 m(kg)<input id="tc-m" type="number" value="3.5" step="0.1" min="0"></label>
+      <label>力臂 L(m)<input id="tc-l" type="number" value="0.25" step="0.01" min="0"></label>
+      <label>动态/安全系数<input id="tc-k" type="number" value="2" step="0.1" min="1"></label>
+      <label>减速比 i<input id="tc-i" type="number" value="50" step="1" min="1"></label>
+      <label>关节角速度 ω(rad/s)<input id="tc-w" type="number" value="2" step="0.1" min="0"></label>
+      <button onclick="torqueCalc()">计算</button>
+    </div>
+    <div id="tc-out" class="my-calc-out"></div>
+  </div>
+  <div class="my-calc">
+    <div class="my-calc-t">🧮 自由度小算盘(平面机构 F = 3(n-1) - 2j - h)</div>
+    <div class="my-calc-row">
+      <label>构件数 n(含机架)<input id="dof-n" type="number" value="4" step="1" min="1"></label>
+      <label>低副数 j<input id="dof-j" type="number" value="4" step="1" min="0"></label>
+      <label>高副数 h<input id="dof-h" type="number" value="0" step="1" min="0"></label>
+      <button onclick="dofCalc()">计算 F</button>
+    </div>
+    <div id="dof-out" class="my-calc-out"></div>
+  </div>
+
+  <!-- ================= 7. 与 3D 解剖页对照学习 ================= -->
+  <h2><span class="h2-num">7</span> 与 3D 解剖页对照学习</h2>
+  <p>本页讲的是"原理",而解剖页讲的是"实物长什么样"。建议这样对照学:先在本页看懂"谐波减速器由波发生器/柔轮/刚轮组成",再打开解剖页,在剖面图上把三个零件一一找出来;先算明白"交叉滚子轴承扛倾覆力矩",再在解剖图上确认它装在输出法兰的位置。</p>
+  <div class="grid">
+    <a class="card" href="../00_3D解剖/减速器剖面图详解.html" target="_blank"><span class="go">进入 →</span><div class="ic">🔩</div><div class="t">三种减速器 · 剖面结构与原理图解</div><div class="d">谐波 / 行星 / 摆线 RV 的剖面解剖:看三大件怎么咬合、减速比怎么产生、背隙为什么近乎为零。</div></a>
+    <a class="card" href="../00_3D解剖/人形机器人解剖式知识可视化.html" target="_blank"><span class="go">进入 →</span><div class="ic">🦴</div><div class="t">人形机器人解剖式知识可视化</div><div class="d">点击部件看真实结构:关节模组里电机、减速器、交叉滚子轴承、编码器、抱闸如何同轴层层嵌套。</div></a>
+  </div>
+  <div class="box box-tip"><b>📌 对照清单:</b>在解剖图上依次找出——① 谐波减速器的柔轮(薄壁杯状件);② 交叉滚子轴承(输出端的大轴承);③ 电机定子/转子(绕线/磁钢);④ 输出端编码器磁环;⑤ 抱闸(若有)。全部找到,机械原理基础就过关了。</div>
+
+  <!-- ================= 8. 常见误区 ================= -->
+  <h2><span class="h2-num">8</span> 常见误区</h2>
+  <div class="box box-warn">
+    <b>⚠️ 这些坑,新手几乎都会踩:</b>
+    1. <strong>"减速比越大越好"</strong>——大减速比确实扭矩大,但输出转速变慢、背隙/刚度/效率变差、柔轮疲劳加快。正确做法:按"所需峰值扭矩 + 所需输出转速"反推减速比,够用就好。<br>
+    2. <strong>忽略背隙(回程间隙)</strong>——背隙会让关节"反向时先空转一小段",直接影响位置精度和力控手感。谐波近零背隙、行星/齿轮箱有背隙,买减速器必须看"背隙角"参数。<br>
+    3. <strong>只算静力矩,不算动态和力臂变化</strong>——机器人动起来扭矩会到静态的 2~4 倍,力臂最长时最危险,必须按最不利工况估算。<br>
+    4. <strong>用峰值扭矩选电机</strong>——持续扭矩才是"长期能扛"的,峰值只是瞬间。按持续选型、留 1.5~2 倍余量。<br>
+    5. <strong>忽略效率损耗</strong>——减速器效率 60%~95%,多级串联后损耗相乘(0.9×0.9×0.8≈0.65),电机端要除以总效率才是真实需求。<br>
+    6. <strong>轻量化只减壳体不减少臂/连杆</strong>——远端质量对功耗和负载链的放大效应远超壳体,减重优先级:远端连杆 &gt; 关节壳体 &gt; 近端结构。
+  </div>
+
+  <!-- ================= 9. 本节自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 一个平面四连杆机构(含机架共 4 个构件,4 个转动副,无高副),它的自由度 F 是多少?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. F = 0(机构被锁死)</button>
+      <button data-v="B">B. F = 1(只需 1 个输入,运动完全确定)</button>
+      <button data-v="C">C. F = 2(需要 2 个输入)</button>
+      <button data-v="D">D. F = 3</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:代入格鲁布勒公式 F = 3(n-1) - 2j - h = 3×(4-1) - 2×4 - 0 = 9 - 8 = 1。四连杆机构有且仅有 1 个自由度,驱动曲柄一个输入,摇杆运动就完全确定了——这也是膝关节四连杆机构"单电机驱动"的理论依据。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 电机转速 3000 rpm,经一对齿轮传动:小齿轮 Z₁ = 20 齿,大齿轮 Z₂ = 80 齿。该级传动比 i 和输出转速各是多少?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. i = 4,输出 750 rpm,扭矩放大 4 倍</button>
+      <button data-v="B">B. i = 0.25,输出 12000 rpm,扭矩缩小 4 倍</button>
+      <button data-v="C">C. i = 4,输出 12000 rpm,扭矩缩小 4 倍</button>
+      <button data-v="D">D. i = 0.25,输出 750 rpm,扭矩放大 4 倍</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:i = Z₂/Z₁ = 80/20 = 4。减速比大于 1 表示"降速增扭":输出转速 n₂ = n₁/i = 3000/4 = 750 rpm,扭矩按理想无损耗放大 i = 4 倍。功率守恒 P = T·ω,转速降 4 倍、扭矩就升 4 倍。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 关节输出端要同时承受径向力、轴向力和倾覆力矩,且空间紧凑,优先选用哪种轴承作为输出主轴承?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 深沟球轴承(径向为主)</button>
+      <button data-v="B">B. 推力轴承(纯轴向)</button>
+      <button data-v="C">C. 交叉滚子轴承(三个方向都能扛)</button>
+      <button data-v="D">D. 自润滑塑料轴套</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:交叉滚子轴承的滚子交叉排列,同时承受径向+轴向+倾覆力矩,一个轴承顶三个方向,刚度高、轴向尺寸小,是关节输出法兰与壳体之间的标配主轴承。深沟球扛不了大倾覆力矩,推力轴承只扛轴向,塑料轴套承载和精度都有限。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 机械臂前伸 0.5 m 抓取 2 kg 物体(忽略手臂自重,g 取 10 m/s²),肩关节至少要提供多大的静力矩才能托住?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 2 N·m</button>
+      <button data-v="B">B. 5 N·m</button>
+      <button data-v="C">C. 10 N·m</button>
+      <button data-v="D">D. 20 N·m</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:τ = m × g × L = 2 × 10 × 0.5 = 10 N·m。这只是"托住"的最小静力矩;实际还要加上手臂自重、动态加速和安全系数(通常 ×1.5~2),峰值需求会明显大于 10 N·m。</div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>人形机器人机械系统分骨架/关节/执行器/壳体四层,核心矛盾是"小体积大扭矩、轻重量高载荷"。机构学上用格鲁布勒公式 F = 3(n-1) - 2j - h 判断自由度,四连杆膝关节、平行四边形肩关节都是单自由度连杆机构的典型应用。减速器本质是"用转速换扭矩",传动比 i = Z₂/Z₁、多级相乘、功率守恒 P = T·ω 三条规律贯穿始终;谐波/行星/RV 三类减速器各司其职,交叉滚子轴承是关节输出的标配。选材看比强度,减重优先减远端。估算关节先算静力矩 τ ≈ m·g·L,再按最不利工况乘安全系数,选电机永远看持续扭矩、用峰值兜底。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果把膝关节四连杆机构换成普通铰链,自由度公式结果一样,为什么很多机器人还是要用四连杆?想想"扭矩曲线"和"限位"这两个角度。<br>
+    2. 同一台机器人,为什么髋关节用 RV 而手腕用谐波?从扭矩、减速比、刚度和成本四个维度各说一条理由。<br>
+    3. 一根 1 kg 的小腿连杆,从铝合金换成碳纤维,重量可能降到 0.6 kg——请估算这对"膝关节扭矩需求"和"整机电池续航"分别会带来多大的连锁影响。
+  </div>
+
+  <!-- ================= 参考来源 ================= -->
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://book.qq.com/book-read/29976649/13" target="_blank" rel="noopener">机械设计手册(第六版)·单行本·机构·结构设计</a>——自由度公式、运动副与连杆机构的标准定义来源</li>
+    <li><a href="https://baike.baidu.com/item/%E5%B9%B3%E9%9D%A2%E6%9C%BA%E6%9E%84%E7%9A%84%E8%87%AA%E7%94%B1%E5%BA%A6" target="_blank" rel="noopener">平面机构的自由度(百度百科)</a>——格鲁布勒公式与算例核对参考</li>
+    <li><a href="https://www.harmonicdrive.net.cn/Home/Harmonic" target="_blank" rel="noopener">Harmonic Drive 中国官网 · 了解 HarmonicDrive</a>——谐波减速器原理与产品参数</li>
+    <li><a href="https://cn.honpine.com/news/Harmonic-Drive-Reducers-News/Harmonic-Drive-Gearbox-%E2%80%93-Complete-Introduction-and-Analysis.html" target="_blank" rel="noopener">谐波减速器完整介绍与分析(鸿品)</a>——谐波减速器优缺点、背隙与选型参考</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- ================= 页面 JS(单一 ES5 块) ================= -->
+<script>
+/* ============================================================
+   本页交互:关节扭矩估算器 + 平面机构自由度小算盘
+   使用 ES5 语法,不依赖任何外部库
+   ============================================================ */
+
+/* ---------- 关节扭矩估算器 ---------- */
+function torqueCalc(){
+  var m = parseFloat(document.getElementById("tc-m").value) || 0;
+  var L = parseFloat(document.getElementById("tc-l").value) || 0;
+  var k = parseFloat(document.getElementById("tc-k").value) || 1;
+  var i = parseFloat(document.getElementById("tc-i").value) || 1;
+  var w = parseFloat(document.getElementById("tc-w").value) || 0;
+  var g = 9.81;
+
+  var tStatic = m * g * L;          /* 静力矩:托住负载的最小扭矩 */
+  var tDesign = tStatic * k;        /* 设计峰值:叠加动态与安全系数 */
+  var eff = 0.7;                    /* 减速器+传动总效率估算 */
+  var tMotor = i > 1 ? tDesign / (i * eff) : tDesign / eff; /* 电机端需求 */
+  var power = tDesign * w;          /* 关节机械功率 P = T × ω */
+
+  var html = "";
+  html += '<div class="my-calc-line">静力矩 τ = m·g·L = ' + m.toFixed(1) + '×9.81×' + L.toFixed(2)
+        + ' ≈ <b>' + tStatic.toFixed(1) + ' N·m</b></div>';
+  html += '<div class="my-calc-line">设计峰值扭矩(×' + k.toFixed(1) + ' 安全系数)≈ <b>'
+        + tDesign.toFixed(1) + ' N·m</b></div>';
+  html += '<div class="my-calc-line">建议:持续扭矩 ≥ ' + tStatic.toFixed(1)
+        + ' N·m,峰值扭矩 ≥ ' + tDesign.toFixed(1) + ' N·m</div>';
+  if(i > 1){
+    html += '<div class="my-calc-line">减速比 ' + i.toFixed(0) + '(效率 0.7):电机端需求 ≈ <b>'
+          + tMotor.toFixed(2) + ' N·m</b></div>';
+  }
+  if(w > 0){
+    html += '<div class="my-calc-line">关节机械功率 P = τ·ω = ' + tDesign.toFixed(1) + '×' + w.toFixed(1)
+          + ' ≈ <b>' + power.toFixed(1) + ' W</b></div>';
+  }
+  document.getElementById("tc-out").innerHTML = html;
+}
+
+/* ---------- 平面机构自由度小算盘 ---------- */
+function dofCalc(){
+  var n = parseInt(document.getElementById("dof-n").value, 10) || 0;
+  var j = parseInt(document.getElementById("dof-j").value, 10) || 0;
+  var h = parseInt(document.getElementById("dof-h").value, 10) || 0;
+  var F = 3 * (n - 1) - 2 * j - h;
+
+  var html = '<div class="my-calc-line">F = 3×(' + n + '-1) - 2×' + j + ' - ' + h + ' = '
+           + (3 * (n - 1)) + ' - ' + (2 * j) + ' - ' + h + ' = <b>' + F + '</b></div>';
+  if(F < 0){
+    html += '<div class="my-calc-line">F &lt; 0:机构<strong>过约束</strong>,杆件互相打架,装不上或卡死。</div>';
+  }else if(F === 0){
+    html += '<div class="my-calc-line">F = 0:机构是<strong>静定桁架</strong>,各构件相对位置固定,不能动。</div>';
+  }else if(F === 1){
+    html += '<div class="my-calc-line">F = 1:只需 1 个输入驱动,机构运动完全确定(如四连杆膝关节)。</div>';
+  }else{
+    html += '<div class="my-calc-line">F = ' + F + ':有 ' + F
+          + ' 个自由度,需要 ' + F + ' 个独立驱动,否则出现欠驱动构件。</div>';
+  }
+  document.getElementById("dof-out").innerHTML = html;
+}
+
+/* 首次打开页面时,给两个算盘各算一次,展示示例结果 */
+torqueCalc();
+dofCalc();
+</script>
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>
