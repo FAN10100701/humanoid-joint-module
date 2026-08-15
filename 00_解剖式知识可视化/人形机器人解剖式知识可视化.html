@@ -309,8 +309,11 @@ body[data-theme="dark"] .bb-perf{color:var(--muted)}
 /* 本地优先/CDN回退逻辑：通过sessionStorage标记避免无限循环 */
 (function(){
   var USE_CDN = sessionStorage.getItem('__three_cdn__')==='1';
+  /* 【大陆可达性修复】CDN回退地址由 unpkg.com 改为 npmmirror 阿里镜像：
+     unpkg 在大陆无VPN时常超时，一旦触发回退会导致 3D 引擎永久加载失败（白屏）；
+     npmmirror 大陆直连可达（已验证 200），回退链真正可用 */
   var imports = USE_CDN
-    ? {"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}
+    ? {"three":"https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js","three/addons/":"https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/"}
     : {"three":"./lib/three.module.js","three/addons/":"./lib/addons/"};
   document.write('<script type="importmap">'+JSON.stringify({imports:imports})+'<\/script>');
   if(!USE_CDN){
@@ -1244,10 +1247,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 }());
 </script>
 <script type="module">
-/* 【手机白屏修复】模块已启动：①通知启动自检看门狗（不再触发超时提示）
-   ②隐藏启动遮罩，此后加载进度由模块内中央加载框 showLoading 接管显示 */
+/* 【手机白屏修复】模块已启动：通知启动自检看门狗不再触发超时提示。
+   注意：启动遮罩不在此时撤下——改为首次 showLoading/hideLoading 时撤下，
+   以覆盖 three.module.js（约1.2MB）下载期间的无反馈窗口 */
 window.__3D_BOOT_OK__=true;
-(function(){var o=document.getElementById('bootOv');if(o)o.style.display='none';})();
 let THREE, OrbitControls, STLLoader=null, DRACOLoader=null, _dracoLoader=null;
 let renderer, scene, camera, controls, body3d;
 let raf=null, built=false, active=false;
@@ -1455,12 +1458,20 @@ function hideLdtip(){var el=document.getElementById('ldtip');if(el)el.classList.
 /* 舞台中央加载指示（加载官方模型时显示，避免中间空屏）
    showLoading(text, prog)：prog 为 0~1 的进度（可省略，只更新文字）
    hideLoading()：隐藏中央加载指示 */
+var _bootOvHidden=false;  /* 启动遮罩是否已撤下（首次出现真实进度/完成时撤下，覆盖引擎下载期无反馈缺口） */
+function hideBootOvOnce(){
+  if(_bootOvHidden)return;
+  _bootOvHidden=true;
+  var o=document.getElementById('bootOv');
+  if(o)o.style.display='none';   /* 撤下启动遮罩（此后的反馈由中央进度条/3D画面接管） */
+}
 function showLoading(text,prog){
+  hideBootOvOnce();              /* 真实进度出现：撤下启动遮罩 */
   var box=document.getElementById('loadBox');if(box)box.classList.add('show');
   var t=document.getElementById('loadText');if(t&&text!=null)t.textContent=text;
   var bar=document.getElementById('loadBarFill');if(bar&&prog!=null)bar.style.width=Math.round(prog*100)+'%';
 }
-function hideLoading(){var box=document.getElementById('loadBox');if(box)box.classList.remove('show');}
+function hideLoading(){hideBootOvOnce();var box=document.getElementById('loadBox');if(box)box.classList.remove('show');}
 
 /* 统计对象树中的Mesh数量（用于性能面板显示） */
 function countMeshes(root){
@@ -2043,6 +2054,7 @@ function stlGeoSmart(url){
   return stlGeoGz(url);                              /* 未就绪/关闭开关：直接走 .gz 逻辑 */
 }
 /* Draco .drc 加载：xxx.STL → 同名 xxx.drc；解码器 wasm(lib/draco/)只加载一次全程复用 */
+var DRC_DECODE_TIMEOUT_MS=15000;  /* 【可调】Draco解码超时(ms)：解码卡死(wasm/worker异常)时放弃并转入.gz回退，防进度条永久停滞 */
 function stlGeoDrc(url){
   if(!_dracoLoader){
     _dracoLoader=new DRACOLoader();
@@ -2052,8 +2064,23 @@ function stlGeoDrc(url){
     if(!r.ok)throw new Error('drc '+r.status);       /* .drc 不存在(404)等：转入回退 */
     return r.arrayBuffer();
   }).then(function(buf){
-    /* decodeDracoFile 返回 Promise，回调里过一遍法线保底（与 STL 路径同一套防线） */
-    return _dracoLoader.decodeDracoFile(buf,function(g){return ensureNormals(g);});
+    /* decodeDracoFile 返回 Promise，回调里过一遍法线保底（与 STL 路径同一套防线）。
+       外包一层超时保险：解码器卡死（wasm加载失败/worker无响应）时 reject 转入 .gz 回退，
+       避免单个零件永久挂起拖死整体进度（兼容回调式与Promise式两种 three 版本） */
+    return new Promise(function(resolve,reject){
+      var settled=false;
+      var timer=setTimeout(function(){
+        if(settled)return;
+        settled=true;
+        reject(new Error('drc decode timeout'));     /* 超时：放弃解码，走回退链 */
+      },DRC_DECODE_TIMEOUT_MS);
+      function ok(g){if(settled)return;settled=true;clearTimeout(timer);resolve(ensureNormals(g));}
+      function bad(e){if(settled)return;settled=true;clearTimeout(timer);reject(e);}
+      try{
+        var p=_dracoLoader.decodeDracoFile(buf,ok);  /* 回调式成功 */
+        if(p&&p.then)p.then(function(g){ok(g);}).catch(bad);  /* Promise式成功/失败 */
+      }catch(e){bad(e);}
+    });
   });
 }
 /* .gz 加载：优先 fetch .gz + 浏览器内置 DecompressionStream 流式解压，失败回退原始 STL */
