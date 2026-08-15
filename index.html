@@ -3,119 +3,199 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人形机器人关节模组 · 学习系统主页</title>
+<title>人形机器人学习站 · 从关节模组到具身智能</title>
+<meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具,软件+硬件全覆盖。">
+<link rel="stylesheet" href="_assets/site.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{min-height:100%}
-body{
-  background:radial-gradient(ellipse at 50% 0%,#16233c 0%,#0d1117 55%,#080b10 100%);
-  color:#e6edf3;
-  font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif;
-  line-height:1.6;
-  -webkit-font-smoothing:antialiased;
-  padding:40px 20px 60px;
-}
-.wrap{max-width:1080px;margin:0 auto}
-header{text-align:center;margin-bottom:34px}
-.logo-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#3b82f6;box-shadow:0 0 14px rgba(59,130,246,.8);margin-right:10px;vertical-align:middle}
-h1{font-size:26px;font-weight:800;letter-spacing:.5px;display:inline-block;vertical-align:middle}
-.sub{color:#8b949e;font-size:14px;margin-top:8px}
-.tag-row{margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.tag{font-size:12px;color:#9ecbff;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);padding:4px 12px;border-radius:999px}
-
-.hint{max-width:760px;margin:0 auto 34px;padding:12px 16px;border-radius:10px;font-size:13px;color:#c9d1d9;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);text-align:center}
-.hint b{color:#fff}
-
-.sec{margin-bottom:30px}
-.sec-title{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:#c9d1d9;margin-bottom:14px}
-.sec-title .num{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
-.sec-title .en{font-size:11px;color:#6b7280;font-weight:500;letter-spacing:.5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.card{display:block;text-decoration:none;color:inherit;background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 18px 16px;transition:.18s;position:relative;overflow:hidden}
-.card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.card .ic{font-size:22px;margin-bottom:10px}
-.card .t{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px}
-.card .d{font-size:12.5px;color:#9aa4b2;line-height:1.65}
-.card .go{position:absolute;right:14px;top:16px;color:#3b82f6;font-size:12px;font-weight:600;opacity:0;transition:.18s}
-.card:hover .go{opacity:1}
-.card.featured{grid-column:1/-1;background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(13,17,23,.7));border-color:rgba(59,130,246,.45)}
-.card.featured .t{font-size:18px}
-.card.featured .d{font-size:13.5px;color:#b6c2d1}
-.card.featured .go{opacity:1}
-
-footer{text-align:center;color:#6b7280;font-size:12px;margin-top:40px}
-footer a{color:#3b82f6;text-decoration:none}
+  .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(13,17,23,.6));border:1px solid rgba(59,130,246,.35);border-radius:16px;padding:22px;margin:26px 0}
+  .upd-item{display:flex;gap:12px;align-items:baseline;padding:9px 4px;border-bottom:1px dashed rgba(255,255,255,.07);font-size:13.5px}
+  .upd-item:last-child{border-bottom:none}
+  .upd-date{color:#6b7280;font-size:12px;flex-shrink:0;width:86px}
+  .upd-item a{color:#9ecbff}
+  .upd-item .badge-new{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px}
 </style>
+<script>
+  /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
+  window.SITE_SECTIONS = [
+    { key:"00", name:"3D 解剖可视化", ids:["00-02","00-03"] },
+    { key:"01", name:"理论入门", ids:["01-01","01-02","01-03"] },
+    { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03"] },
+    { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05"] },
+    { key:"04", name:"升级进阶", ids:["04-01"] },
+    { key:"05", name:"HdriveV2 工程", ids:["05-01","05-02"] },
+    { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05"] },
+    { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03"] },
+    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03"] }
+  ];
+</script>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1><span class="logo-dot"></span>人形机器人关节模组 · 学习系统</h1>
-    <div class="sub">从解剖认知到理论入门、硬件基础、项目实操、升级进阶的完整学习路线</div>
-    <div class="tag-row">
-      <span class="tag">宇树 H1 / G1 官方模型</span>
+
+<!-- ================= 顶部导航 ================= -->
+<nav class="topnav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html"><span class="brand-dot"></span>人形机器人学习站</a>
+    <div class="nav-links">
+      <a href="#learn-path">学习路径</a>
+      <a href="#sec0">3D解剖</a>
+      <a href="#sec1">理论入门</a>
+      <a href="#sec2">硬件基础</a>
+      <a href="#sec3">项目实操</a>
+      <a href="#sec4">升级进阶</a>
+      <a href="#sec5">HdriveV2</a>
+      <a href="#sec6">软件算法</a>
+      <a href="#sec7">前沿知识</a>
+      <a href="#sec8">学习工具</a>
+    </div>
+    <button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>
+  </div>
+</nav>
+
+<div class="container wide">
+
+  <!-- ================= Hero ================= -->
+  <div class="hero">
+    <h1>🤖 人形机器人学习站</h1>
+    <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
+    零基础可学 · 100% 免费 · 支持离线浏览 · 持续更新</div>
+    <div class="stats">
+      <div class="stat"><div class="v">29</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v">9</div><div class="k">大学习板块</div></div>
+      <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
+      <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
+    </div>
+    <div class="hero-search">
+      <input id="hpSearchInput" placeholder="搜索:FOC、谐波减速器、ROS2、Isaac、VLA、灵巧手…" onkeydown="if(event.key==='Enter')hpSearch()">
+      <button onclick="hpSearch()">全站搜索</button>
+    </div>
+    <div class="tags">
+      <span class="tag">宇树 H1 / G1 / 智元 X1 官方模型</span>
       <span class="tag">FOC 三环控制</span>
       <span class="tag">谐波 / 行星 / 摆线减速器</span>
-      <span class="tag">驱控一体关节</span>
+      <span class="tag">SimpleFOC / ODrive / MotorOS</span>
+      <span class="tag">ROS2 / MuJoCo / Isaac Lab</span>
+      <span class="tag">VLA 与具身智能</span>
     </div>
-  </header>
+  </div>
 
-  <div class="sec">
-    <div class="sec-title"><span class="num">0</span>解剖式知识可视化 <span class="en">3D ANATOMY</span></div>
+  <!-- ================= 学习路径 ================= -->
+  <div class="learn-path" id="learn-path">
+    <div class="sec-title" style="margin-top:0"><span class="num">▶</span>新手学习路径 <span class="en">LEARNING PATH · 按顺序学,3 个月入门</span><span class="bar"></span></div>
+    <div class="roadmap">
+      <div class="rm-step">
+        <span class="rm-arrow">→</span>
+        <span class="rm-num">1</span>
+        <h4>📖 理论入门</h4>
+        <p>先建立整体框架:知识思维导图 → FOC/三环原理动画 → 驱动电路模块认知</p>
+        <p style="color:#6b7280">建议 1~2 周 · 无需硬件</p>
+        <div class="rm-links">
+          <a href="01_第一部分_理论入门/01_整体知识框架_思维导图.html">思维导图</a>
+          <a href="01_第一部分_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">原理动画</a>
+        </div>
+      </div>
+      <div class="rm-step">
+        <span class="rm-arrow">→</span>
+        <span class="rm-num">2</span>
+        <h4>🔧 硬件基础</h4>
+        <p>看懂关节驱动板:避坑指南 → 参考资源 → 智元 X1 / Hdrive 原理图与 PCB</p>
+        <p style="color:#6b7280">建议 1~2 周 · 结合 3D 解剖</p>
+        <div class="rm-links">
+          <a href="02_第二部分_硬件基础/04_硬件设计通用要点_避坑指南.html">避坑指南</a>
+          <a href="02_第二部分_硬件基础/06_硬件原理图与PCB学习页_X1与Hdrive.html">原理图/PCB</a>
+          <a href="00_解剖式知识可视化/人形机器人解剖式知识可视化.html">3D 解剖</a>
+        </div>
+      </div>
+      <div class="rm-step">
+        <span class="rm-arrow">→</span>
+        <span class="rm-num">3</span>
+        <h4>🛠️ 项目实操</h4>
+        <p>动手做:Hdrive 融合方案 → 立创 EDA 逐模块绘制 → 电源链路分析 → 完整学习手册</p>
+        <p style="color:#6b7280">建议 2~4 周 · 产出第一块板</p>
+        <div class="rm-links">
+          <a href="03_第三部分_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html">Hdrive 指南</a>
+          <a href="03_第三部分_项目实操/07_立创EDA逐模块绘制步骤.html">EDA 绘制</a>
+          <a href="power-analysis/">电源分析</a>
+        </div>
+      </div>
+      <div class="rm-step">
+        <span class="rm-num">4</span>
+        <h4>💻 软件算法 → 🚀 前沿</h4>
+        <p>软件学习路线图 → 固件/ROS2/仿真强化学习 → VLA 具身智能;再看全球机型与前沿专题</p>
+        <p style="color:#6b7280">持续学习 · 软硬结合</p>
+        <div class="rm-links">
+          <a href="06_第六部分_软件与算法/01_软件学习路线图.html">软件路线图</a>
+          <a href="07_第七部分_前沿知识库/01_全球人形机器人机型全景.html">机型全景</a>
+          <a href="08_第八部分_学习工具/01_术语词典.html">术语词典</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 0 · 3D 解剖 ================= -->
+  <div class="sec" id="sec0">
+    <div class="sec-title"><span class="num">0</span>3D 解剖式知识可视化 <span class="en">ANATOMY</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card featured" href="00_解剖式知识可视化/人形机器人解剖式知识可视化.html">
         <span class="go">进入 →</span>
         <div class="ic">🤖</div>
-        <div class="t">3D 解剖知识系统（宇树机器人）</div>
-        <div class="d">宇树 H1 / G1 官方模型 3D 交互拆解：点击部件查看详解、关节动画、三种减速器爆炸拆解、FOC/三环/ADRC 核心知识可视化。</div>
+        <div class="t">3D 解剖知识系统(宇树 H1/G1 · 智元 X1)</div>
+        <div class="d">官方模型 3D 交互拆解:点击部件查看详解、关节动画、三种减速器爆炸拆解、FOC/三环/ADRC 可视化、力控仿真、同屏对比。</div>
       </a>
       <a class="card" href="00_解剖式知识可视化/减速器剖面图详解.html">
         <span class="go">进入 →</span>
         <div class="ic">📐</div>
         <div class="t">三种减速器 · 剖面结构与原理图解</div>
-        <div class="d">谐波 / 行星 / 摆线RV 的剖面示意图：核心零件、传动关系与减速比公式一图看懂。</div>
+        <div class="d">谐波 / 行星 / 摆线RV 剖面示意图:核心零件、传动关系与减速比公式一图看懂。</div>
+      </a>
+      <a class="card" href="00_解剖式知识可视化/减速器精细模型下载整合教程.html">
+        <span class="go">进入 →</span>
+        <div class="ic">📦</div>
+        <div class="t">减速器精细模型 · 下载整合教程</div>
+        <div class="d">谐波/行星/摆线精细 3D 模型下载与整合到 3D 系统的完整步骤。</div>
       </a>
     </div>
   </div>
 
-  <div class="sec">
-    <div class="sec-title"><span class="num">1</span>第一部分 · 理论入门 <span class="en">THEORY</span></div>
+  <!-- ================= 1 · 理论 ================= -->
+  <div class="sec" id="sec1">
+    <div class="sec-title"><span class="num">1</span>第一部分 · 理论入门 <span class="en">THEORY</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card" href="01_第一部分_理论入门/01_整体知识框架_思维导图.html">
         <span class="go">进入 →</span>
         <div class="ic">🗺️</div>
         <div class="t">整体知识框架 · 思维导图</div>
-        <div class="d">一图看懂人形机器人关节模组的完整知识体系与学习路径。</div>
+        <div class="d">一图看懂人形机器人关节模组的完整知识体系与学习路径(机械/电机/驱动/传感/控制/通信/集成/应用)。</div>
       </a>
       <a class="card" href="01_第一部分_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">
         <span class="go">进入 →</span>
         <div class="ic">⚙️</div>
         <div class="t">核心原理动画演示 · FOC / 三环 / 减速器</div>
-        <div class="d">FOC 磁场定向、三环级联控制、谐波/行星/摆线减速器原理动画。</div>
+        <div class="d">FOC 磁场定向、三环级联控制、谐波/行星/摆线减速器原理动画,含行星减速器传动比推导。</div>
       </a>
       <a class="card" href="01_第一部分_理论入门/03_驱动电路模块认知_交互式图解.html">
         <span class="go">进入 →</span>
         <div class="ic">🔌</div>
         <div class="t">驱动电路模块认知 · 交互式图解</div>
-        <div class="d">逐模块认识关节驱动板：电源、栅驱、采样、通信等电路结构。</div>
+        <div class="d">逐模块认识关节驱动板:电源、栅驱、采样、通信等电路结构交互图解。</div>
       </a>
     </div>
   </div>
 
-  <div class="sec">
-    <div class="sec-title"><span class="num">2</span>第二部分 · 硬件基础 <span class="en">HARDWARE</span></div>
+  <!-- ================= 2 · 硬件 ================= -->
+  <div class="sec" id="sec2">
+    <div class="sec-title"><span class="num">2</span>第二部分 · 硬件基础 <span class="en">HARDWARE</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card" href="02_第二部分_硬件基础/04_硬件设计通用要点_避坑指南.html">
         <span class="go">进入 →</span>
         <div class="ic">🛡️</div>
         <div class="t">硬件设计通用要点 · 避坑指南</div>
-        <div class="d">FOC 关节驱动板硬件设计实战要点与常见坑点。</div>
+        <div class="d">FOC 关节驱动板硬件设计实战要点与常见坑点:架构、模块、Layout、踩坑经验。</div>
       </a>
       <a class="card" href="02_第二部分_硬件基础/05_参考资料汇总_视频_开源项目.html">
         <span class="go">进入 →</span>
         <div class="ic">📚</div>
         <div class="t">参考资料汇总 · 视频 / 开源项目</div>
-        <div class="d">视频教程、开源项目、芯片手册等资料索引。</div>
+        <div class="d">视频教程、开源项目、芯片手册等资料索引,含 H1/G1/X1 按部位分类。</div>
       </a>
       <a class="card" href="02_第二部分_硬件基础/06_硬件原理图与PCB学习页_X1与Hdrive.html">
         <span class="go">进入 →</span>
@@ -126,14 +206,21 @@ footer a{color:#3b82f6;text-decoration:none}
     </div>
   </div>
 
-  <div class="sec">
-    <div class="sec-title"><span class="num">3</span>第三部分 · 项目实操 <span class="en">PRACTICE</span></div>
+  <!-- ================= 3 · 实操 ================= -->
+  <div class="sec" id="sec3">
+    <div class="sec-title"><span class="num">3</span>第三部分 · 项目实操 <span class="en">PRACTICE</span><span class="bar"></span></div>
     <div class="grid">
+      <a class="card featured" href="power-analysis/">
+        <span class="go">进入 →</span>
+        <div class="ic">⚡</div>
+        <div class="t">电源管理功率链路分析 · 第一页原理图</div>
+        <div class="d">HdriveV2 重绘版第一页设计指南:原方案 3 个电源 Bug 深度分析、DRV8323R / FD6288 双方案对比、输入保护 / Buck / LDO / 采样完整链路详解。</div>
+      </a>
       <a class="card" href="03_第三部分_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html">
         <span class="go">进入 →</span>
         <div class="ic">🧩</div>
         <div class="t">Hdrive 融合方案 · 完整指南</div>
-        <div class="d">本次项目核心：Hdrive 关节驱动板融合方案完整设计指南。</div>
+        <div class="d">本次项目核心:Hdrive 关节驱动板融合方案完整设计指南。</div>
       </a>
       <a class="card" href="03_第三部分_项目实操/07_立创EDA逐模块绘制步骤.html">
         <span class="go">进入 →</span>
@@ -145,25 +232,20 @@ footer a{color:#3b82f6;text-decoration:none}
         <span class="go">进入 →</span>
         <div class="ic">📖</div>
         <div class="t">完整学习手册 · 备查用</div>
-        <div class="d">汇总版学习手册，随时备查。</div>
+        <div class="d">汇总版学习手册,随时备查。</div>
       </a>
       <a class="card" href="03_第三部分_项目实操/10_Hdrive新版方案_交叉认证与芯片选型报告.html">
         <span class="go">进入 →</span>
         <div class="ic">🔍</div>
         <div class="t">Hdrive 新版方案 · 交叉认证报告</div>
-        <div class="d">多信息源交叉认证：芯片选型、方案对比、已知 Bug 逐条核实。</div>
-      </a>
-      <a class="card featured" href="power-analysis/">
-        <span class="go">进入 →</span>
-        <div class="ic">⚡</div>
-        <div class="t">电源管理功率链路分析 · 第一页原理图</div>
-        <div class="d">HdriveV2 重绘版第一页设计指南：原方案 3 个电源 Bug 深度分析、DRV8323R / FD6288 双方案对比、输入保护 / Buck / LDO / 采样完整链路详解。</div>
+        <div class="d">多信息源交叉认证:芯片选型、方案对比、已知 Bug 逐条核实。</div>
       </a>
     </div>
   </div>
 
-  <div class="sec">
-    <div class="sec-title"><span class="num">4</span>第四部分 · 升级进阶 <span class="en">ADVANCED</span></div>
+  <!-- ================= 4 · 进阶 ================= -->
+  <div class="sec" id="sec4">
+    <div class="sec-title"><span class="num">4</span>第四部分 · 升级进阶 <span class="en">ADVANCED</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card" href="04_第四部分_升级进阶/09_通信与控制算法升级路线.html">
         <span class="go">进入 →</span>
@@ -174,9 +256,182 @@ footer a{color:#3b82f6;text-decoration:none}
     </div>
   </div>
 
-  <footer>
-    人形机器人关节模组 · 教学系统
+  <!-- ================= 5 · HdriveV2 ================= -->
+  <div class="sec" id="sec5">
+    <div class="sec-title"><span class="num">5</span>第五部分 · HdriveV2 新版工程 <span class="en">ENGINEERING</span><span class="bar"></span></div>
+    <div class="grid">
+      <a class="card" href="05_第五部分_HdriveV2新版工程/00_设计规范与决策/Hdrive新版方案_交叉认证与芯片选型报告.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🧠</div>
+        <div class="t">Hdrive 新版方案 · 设计规范与决策</div>
+        <div class="d">交叉认证报告:芯片选型、方案对比、已知 Bug 逐条核实(原理图/PCB/BOM/固件/测试记录工程目录)。</div>
+      </a>
+      <a class="card" href="05_第五部分_HdriveV2新版工程/00_设计规范与决策/电源管理功率链路分析/电源管理功率链路分析.html">
+        <span class="go">进入 →</span>
+        <div class="ic">⚡</div>
+        <div class="t">HdriveV2 · 电源管理功率链路分析</div>
+        <div class="d">HdriveV2 工程内嵌版电源链路分析:输入保护、Buck、LDO、采样完整链路与 Bug 复盘。</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ================= 6 · 软件与算法(新) ================= -->
+  <div class="sec" id="sec6">
+    <div class="sec-title"><span class="num">6</span>第六部分 · 软件与算法 <span class="en">SOFTWARE & ALGORITHM · 全新</span><span class="bar"></span></div>
+    <div class="grid">
+      <a class="card" href="06_第六部分_软件与算法/01_软件学习路线图.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🧭</div>
+        <div class="t">软件学习路线图</div>
+        <div class="d">人形机器人软件全栈分层总览、纯软件/软硬结合两条路线、5 阶段学习计划与工具链清单。</div>
+      </a>
+      <a class="card" href="06_第六部分_软件与算法/02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">⚡</div>
+        <div class="t">固件与电机控制 · SimpleFOC / ODrive / MotorOS</div>
+        <div class="d">FOC 固件实现原理(Clark/Park/SVPWM 代码级)、SimpleFOC 最小可运行代码、ODrive 配置、小米 MotorOS 上手。</div>
+      </a>
+      <a class="card" href="06_第六部分_软件与算法/03_ROS2与机器人软件栈.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🟩</div>
+        <div class="t">ROS2 与机器人软件栈</div>
+        <div class="d">节点/话题/服务/动作/参数六大概念、colcon 工作空间、URDF+RViz2、MoveIt2 与运动规划、宇树 ROS2 案例。</div>
+      </a>
+      <a class="card" href="06_第六部分_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🎮</div>
+        <div class="t">仿真与强化学习 · MuJoCo / Isaac Lab</div>
+        <div class="d">仿真器对比、MuJoCo 入门、RL 训练流水线(观察/动作/奖励/PPO)、sim-to-real 域随机化技巧。</div>
+      </a>
+      <a class="card" href="06_第六部分_软件与算法/05_感知与具身智能_VLA与世界模型.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🧠</div>
+        <div class="t">感知与具身智能 · VLA 与世界模型</div>
+        <div class="d">感知栈、视觉-语言-动作模型(RT-2/OpenVLA/π0/Helix)、世界模型趋势、灵巧手与遥操作数据采集。</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ================= 7 · 前沿(新) ================= -->
+  <div class="sec" id="sec7">
+    <div class="sec-title"><span class="num">7</span>第七部分 · 前沿知识库 <span class="en">FRONTIER · 全新</span><span class="bar"></span></div>
+    <div class="grid">
+      <a class="card featured" href="07_第七部分_前沿知识库/01_全球人形机器人机型全景.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🌍</div>
+        <div class="t">全球人形机器人机型全景</div>
+        <div class="d">特斯拉 Optimus、Figure、宇树 H1/G1、智元、波士顿动力 Atlas、小米、傅利叶、星动纪元等 10+ 机型参数对比与行业趋势。</div>
+      </a>
+      <a class="card" href="07_第七部分_前沿知识库/02_前沿技术专题库.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🔬</div>
+        <div class="t">前沿技术专题库</div>
+        <div class="d">一体化关节、灵巧手、触觉与六维力、全身控制(MPC/WBC/RL)、VLA 大模型、世界模型、能源与热管理七大专题。</div>
+      </a>
+      <a class="card" href="07_第七部分_前沿知识库/03_论文_数据集_开源社区.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">📑</div>
+        <div class="t">论文 · 数据集 · 开源社区</div>
+        <div class="d">入门论文清单(带导读)、AMASS/HumanML3D 等数据集、ODrive/SimpleFOC/MotorOS/宇树/智元等开源项目、竞赛与社区。</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ================= 8 · 学习工具(新) ================= -->
+  <div class="sec" id="sec8">
+    <div class="sec-title"><span class="num">8</span>第八部分 · 学习工具 <span class="en">TOOLS · 全新</span><span class="bar"></span></div>
+    <div class="grid">
+      <a class="card" href="08_第八部分_学习工具/01_术语词典.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">📖</div>
+        <div class="t">术语词典</div>
+        <div class="d">100+ 人形机器人核心术语:机械/电机/驱动/控制/通信/软件/AI,支持实时搜索与分类筛选。</div>
+      </a>
+      <a class="card" href="08_第八部分_学习工具/02_常见问答FAQ.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">❓</div>
+        <div class="t">常见问答 FAQ</div>
+        <div class="d">新手高频问题:零基础怎么入门、先学软件还是硬件、需要花多少钱、多久能做出关节模组。</div>
+      </a>
+      <a class="card" href="08_第八部分_学习工具/03_自测题库.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">✅</div>
+        <div class="t">自测题库</div>
+        <div class="d">理论/硬件/软件/前沿四组综合测验,浏览器即时判分,检验学习成果。</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ================= 最新更新 ================= -->
+  <div class="sec">
+    <div class="sec-title"><span class="num">★</span>最新更新 <span class="en">UPDATES</span><span class="bar"></span></div>
+    <div style="background:rgba(22,27,34,.6);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 20px">
+      <div class="upd-item"><span class="upd-date">本期新增</span><a href="06_第六部分_软件与算法/01_软件学习路线图.html">软件与算法板块(5 页)</a><span class="badge-new">NEW</span><span style="color:#6b7280">软件全栈路线、固件、ROS2、仿真 RL、VLA</span></div>
+      <div class="upd-item"><span class="upd-date">本期新增</span><a href="07_第七部分_前沿知识库/01_全球人形机器人机型全景.html">前沿知识库(3 页)</a><span class="badge-new">NEW</span><span style="color:#6b7280">全球机型全景、前沿技术专题、论文/数据集/开源社区</span></div>
+      <div class="upd-item"><span class="upd-date">本期新增</span><a href="08_第八部分_学习工具/01_术语词典.html">学习工具(3 页)</a><span class="badge-new">NEW</span><span style="color:#6b7280">术语词典、FAQ、自测题库</span></div>
+      <div class="upd-item"><span class="upd-date">本期新增</span><span style="color:#9aa4b2">全站导航 + 搜索 + 学习进度打卡(Ctrl+K 搜索)</span></div>
+      <div class="upd-item"><span class="upd-date">上期</span><a href="00_解剖式知识可视化/人形机器人解剖式知识可视化.html">3D 解剖系统升级</a><span style="color:#6b7280">智元 X1 接入、机身配色系统、力控仿真、顺序拆解动画</span></div>
+      <div class="upd-item"><span class="upd-date">上期</span><a href="03_第三部分_项目实操/10_Hdrive新版方案_交叉认证与芯片选型报告.html">Hdrive 新版方案交叉认证报告</a></div>
+    </div>
+  </div>
+
+  <!-- ================= 学习进度 ================= -->
+  <div class="sec" id="progress-sec">
+    <div class="sec-title"><span class="num">✓</span>我的学习进度 <span class="en">PROGRESS · 在各页面点右上角"✓ 完成"打卡</span><span class="bar"></span></div>
+    <div class="progress-panel" id="progressPanel">
+      <div id="progressRows">加载中…</div>
+      <div class="box box-tip" style="margin:14px 0 0"><b>💡 说明:</b>新页面(第 6/7/8 部分)已支持打卡统计;存量页面(第 0-5 部分)将陆续接入。进度保存在本地浏览器,不会上传。</div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    人形机器人学习站 · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索
   </footer>
 </div>
+
+<script src="_assets/site.js"></script>
+<script>
+  /* 首页搜索框 → 打开搜索浮层并填入关键词 */
+  function hpSearch(){
+    var v = document.getElementById("hpSearchInput").value;
+    Site.openSearch(v);
+  }
+
+  /* 学习进度统计 */
+  function renderProgress(){
+    var rows = document.getElementById("progressRows");
+    var p = {};
+    try{ p = JSON.parse(localStorage.getItem("humanoid-site-progress-v1") || "{}"); }catch(e){}
+    var html = "";
+    var totalDone = 0, totalAll = 0;
+    (window.SITE_SECTIONS || []).forEach(function(sec){
+      var done = 0;
+      sec.ids.forEach(function(id){ if(p[id]) done++; });
+      totalDone += done; totalAll += sec.ids.length;
+      var pct = Math.round(done / sec.ids.length * 100);
+      html += '<div class="pbar-row"><span class="pl">' + sec.name + '</span>'
+        + '<div class="pbar"><i style="width:' + pct + '%"></i></div>'
+        + '<span class="pv">' + done + '/' + sec.ids.length + '</span></div>';
+    });
+    var totalPct = totalAll ? Math.round(totalDone / totalAll * 100) : 0;
+    html = '<div class="pbar-row" style="font-weight:700"><span class="pl">总进度</span>'
+      + '<div class="pbar"><i style="width:' + totalPct + '%"></i></div>'
+      + '<span class="pv">' + totalDone + '/' + totalAll + '</span></div>' + html;
+    rows.innerHTML = html;
+  }
+  Site.refreshHomeProgress = renderProgress;
+  document.addEventListener("DOMContentLoaded", renderProgress);
+</script>
 </body>
 </html>

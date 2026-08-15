@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 软件学习路线图</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(前缀 my- 避免与全局冲突) */
+  .my-stack{background:rgba(13,17,23,.7);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:18px 20px;margin:16px 0;font-family:Consolas,"Courier New",monospace;font-size:12.5px;line-height:1.9;color:#9ecbff;overflow-x:auto;white-space:pre}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-01",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec6" },
+      { t: "软件学习路线图" }
+    ],
+    prev: { t: "电源管理功率链路分析", u: "../05_第五部分_HdriveV2新版工程/00_设计规范与决策/电源管理功率链路分析/电源管理功率链路分析.html" },
+    next: { t: "固件与电机控制 · SimpleFOC / ODrive", u: "02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧭 人形机器人软件学习路线图</h1>
+    <div class="sub">从零基础到具身智能 —— 软件全栈分层 · 两条学习路线 · 5 阶段计划 · 必备工具链</div>
+    <div class="tags">
+      <span class="tag">全栈分层</span>
+      <span class="tag">两条路线</span>
+      <span class="tag">5 阶段计划</span>
+      <span class="tag">零基础可学</span>
+      <span class="tag">软硬结合</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出人形机器人软件全栈的分层结构,并说清每一层"解决什么问题"<br>
+    2. 能根据自己的基础,选择"纯软件路线"或"软硬结合路线"<br>
+    3. 能为自己制定一份 6 个月的阶段学习计划(含每个阶段的产出物)<br>
+    4. 能说出 5 个以上必备工具及其用途<br>
+    <b>建议用时:</b>约 20 分钟
+  </div>
+
+  <!-- ================= 1. 软件全栈总览 ================= -->
+  <h2><span class="h2-num">1</span> 软件全栈总览:人形机器人里跑着什么软件?</h2>
+  <p>一台人形机器人从头到脚,软件可以分为 7 层。理解这个分层,是制定学习路线的前提 —— 你不需要同时学所有层,但必须知道每层在哪、解决什么、由谁负责。</p>
+
+  <div class="my-stack">┌────────────────────────────────────────────────────────────┐
+│ 7 应用层     工业任务 / 家庭服务 / 交互 / 数据采集平台          │
+├────────────────────────────────────────────────────────────┤
+│ 6 AI 层      强化学习策略 / VLA 大模型 / 世界模型 / 感知理解    │
+├────────────────────────────────────────────────────────────┤
+│ 5 运动控制层 步态生成 / MPC·WBC 全身控制 / 防跌倒 / 规划       │
+├────────────────────────────────────────────────────────────┤
+│ 4 中间件层   ROS2(节点/话题/服务) / DDS / TF 坐标 / 日志       │
+├────────────────────────────────────────────────────────────┤
+│ 3 系统层     Linux(实时补丁) / RTOS / 设备驱动 / 启动管理      │
+├────────────────────────────────────────────────────────────┤
+│ 2 板级软件   固件 Bootloader / CAN 协议 / 参数配置 / 状态机    │
+├────────────────────────────────────────────────────────────┤
+│ 1 电机控制层 FOC 电流环 / 速度环 / 位置环 / 编码器处理 / 保护   │
+└────────────────────────────────────────────────────────────┘
+             ↑ 越往下越接近硬件,越往上越接近"智能"</div>
+
+  <div class="table-wrap"><table>
+    <tr><th>层</th><th>解决什么问题</th><th>代表技术 / 项目</th><th>对应本站内容</th></tr>
+    <tr><td>1 电机控制层</td><td>让每个关节电机精准出力、平滑转动</td><td>FOC、SimpleFOC、ODrive、小米 CyberGear</td><td><a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">06-02 固件与电机控制</a>、<a href="../01_第一部分_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">01-02 原理动画</a></td></tr>
+    <tr><td>2 板级软件</td><td>让驱动板"活"起来:初始化、通信、保护</td><td>STM32 固件、CAN/CANFD 协议、Bootloader</td><td><a href="../01_第一部分_理论入门/03_驱动电路模块认知_交互式图解.html">01-03 驱动电路</a></td></tr>
+    <tr><td>3 系统层</td><td>管理整机资源:算力分配、实时性、驱动</td><td>Ubuntu + PREEMPT_RT、FreeRTOS、NVIDIA Jetson</td><td>—</td></tr>
+    <tr><td>4 中间件层</td><td>让所有模块"说同一种语言",解耦开发</td><td>ROS2、DDS、TF2、ros2_control</td><td><a href="03_ROS2与机器人软件栈.html">06-03 ROS2 软件栈</a></td></tr>
+    <tr><td>5 运动控制层</td><td>决定"下一步怎么走":站立、行走、抓取</td><td>步态规划、ZMP、MPC、WBC、强化学习步态</td><td><a href="../04_第四部分_升级进阶/09_通信与控制算法升级路线.html">04-01 升级路线</a>、<a href="04_仿真与强化学习_MuJoCo_Isaac.html">06-04 仿真与 RL</a></td></tr>
+    <tr><td>6 AI 层</td><td>理解世界、听懂指令、自主决策</td><td>RL 策略、VLA、世界模型、视觉感知</td><td><a href="05_感知与具身智能_VLA与世界模型.html">06-05 感知与具身智能</a></td></tr>
+    <tr><td>7 应用层</td><td>完成具体任务:搬运、巡检、陪伴</td><td>任务编排、数据平台、人机交互</td><td>—</td></tr>
+  </table></div>
+
+  <div class="box box-tip"><b>💡 认知锚点:</b>一台真机的软件栈是"1-2 层(关节固件)+ 3-7 层(整机大脑)"的组合。绝大多数入门者从 <b>第 1 层(FOC 固件)</b> 或 <b>第 4 层(ROS2)</b> 切入 —— 前者偏嵌入式,后者偏系统与算法,两条路最终在"仿真 + 真机部署"汇合。</div>
+
+  <!-- ================= 2. 两条学习路线 ================= -->
+  <h2><span class="h2-num">2</span> 两条学习路线:先软还是先硬?</h2>
+
+  <div class="step-flow">
+    <div class="step-item"><span class="n">A</span><b>路线 A · 纯软件路线</b><br>编程基础 → ROS2 → 仿真 → RL/AI<br>适合:程序员 / 算法爱好者,目标是做"大脑"</div>
+    <div class="step-item"><span class="n">B</span><b>路线 B · 软硬结合路线</b><br>嵌入式 → 电机控制固件 → 整机联调 → 算法<br>适合:电子/机械背景,目标是做"关节与整机"</div>
+    <div class="step-item"><span class="n">★</span><b>共同终点</b><br>仿真中训练/验证 → 部署真机 → 数据闭环<br>两条路都需要:Python + Linux + Git</div>
+  </div>
+
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>路线 A · 纯软件</th><th>路线 B · 软硬结合</th></tr>
+    <tr><td>起点要求</td><td>会一门编程语言(Python 即可)</td><td>会看原理图、懂基本电路更好</td></tr>
+    <tr><td>最快见效路径</td><td>MuJoCo 里让 H1 模型走起来(1-2 周)</td><td>SimpleFOC 让电机转起来(1-2 周)</td></tr>
+    <tr><td>核心产出物</td><td>仿真策略、ROS2 包、数据脚本</td><td>能转的关节、CAN 通信、整机调通</td></tr>
+    <tr><td>典型岗位方向</td><td>运动规划、强化学习、感知算法</td><td>嵌入式固件、电机驱动、硬件联调</td></tr>
+    <tr><td>最大风险</td><td>只跑仿真,不懂真机约束</td><td>陷在硬件里,不懂上层算法</td></tr>
+    <tr><td>本站配套</td><td>06-03 / 06-04 / 06-05</td><td>01 / 02 / 03 部分 + 06-02</td></tr>
+  </table></div>
+
+  <div class="box box-warn"><b>⚠️ 实话实说:</b>人形机器人是典型的"软硬不分家"领域 —— 关节力矩不够、算法再好也走不稳;算法粗糙、硬件再好也跑不出效果。建议以一条路线为主,但至少把另一条路线的 <b>入门章节</b> 读完(本站 01-05 部分就是为路线 B 的硬件侧准备的,06 部分为路线 A 的软件侧准备)。</div>
+
+  <!-- ================= 3. 5 阶段学习计划 ================= -->
+  <h2><span class="h2-num">3</span> 5 阶段学习计划:6 个月从零到入门</h2>
+  <p>以下计划按"每周 8-12 小时"估算,每个阶段都有<b>可检验的产出物</b> —— 产出物完成 = 阶段通关,再进入下一阶段。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>阶段</th><th>周期</th><th>目标</th><th>必学内容</th><th>产出物(通关标准)</th></tr>
+    <tr><td>① 编程与环境</td><td>第 1-2 周</td><td>建立编程与工具基础</td><td>Python 基础、Git、Linux 常用命令、VSCode</td><td>在 GitHub 建仓库并提交 3 次代码</td></tr>
+    <tr><td>② 电机控制固件</td><td>第 3-6 周</td><td>理解并跑通"关节的软件"</td><td>STM32/ESP32 外设、FOC 原理、SimpleFOC 或 ODrive</td><td><b>让电机闭环转起来</b>并能调速调力矩</td></tr>
+    <tr><td>③ ROS2 与仿真</td><td>第 7-12 周</td><td>进入"整机软件世界"</td><td>ROS2 六大概念、URDF、RViz2、MuJoCo/Isaac Lab</td><td>在仿真里加载人形机器人模型并让其站立/行走</td></tr>
+    <tr><td>④ 运动控制与强化学习</td><td>第 13-18 周</td><td>掌握"怎么走"的核心算法</td><td>三环/PD/前馈、MPC/WBC 概念、RL 训练流水线(PPO)</td><td>训练一个策略,使仿真人形机器人在扰动下站稳</td></tr>
+    <tr><td>⑤ 感知与具身智能</td><td>第 19-24 周</td><td>了解"大脑"与前沿</td><td>感知栈、VLA 原理、数据采集、世界模型趋势</td><td>完成一篇前沿技术调研笔记(可发到本站 07 部分风格)</td></tr>
+  </table></div>
+
+  <div class="box box-ok"><b>✅ 通关建议:</b>每个阶段的产出物<b>一定要真的做出来</b>。只读不做的学习,三个月后基本归零;亲手跑通一个闭环,胜过看十遍教程。产出物可以小,但不能没有。</div>
+
+  <!-- ================= 4. 必备工具链 ================= -->
+  <h2><span class="h2-num">4</span> 必备工具链清单</h2>
+  <div class="table-wrap"><table>
+    <tr><th>用途</th><th>工具(全部免费/开源)</th><th>备注</th></tr>
+    <tr><td>代码编辑</td><td>VSCode + Python / C/C++ 插件</td><td>远程开发插件连 Linux 服务器很实用</td></tr>
+    <tr><td>嵌入式开发</td><td>STM32CubeIDE / PlatformIO</td><td>SimpleFOC 官方推荐 PlatformIO</td></tr>
+    <tr><td>版本管理</td><td>Git + GitHub</td><td>先学 add/commit/push 三个命令就够</td></tr>
+    <tr><td>仿真</td><td>MuJoCo(mjpython)/ Isaac Lab</td><td>入门用 MuJoCo,研究 RL 用 Isaac Lab</td></tr>
+    <tr><td>机器人中间件</td><td>ROS2(Humble 或 Jazzy LTS)</td><td>Linux 上体验最佳</td></tr>
+    <tr><td>Python 环境</td><td>Miniconda + pip</td><td>RL 训练建议单独建环境,避免依赖冲突</td></tr>
+    <tr><td>调试硬件</td><td>逻辑分析仪、示波器(可选)、串口工具</td><td>调 CAN/串口必备逻辑分析仪(几十元)</td></tr>
+    <tr><td>AI 编程助手</td><td>AI 对话/代码助手</td><td>读代码、改 bug、写脚本效率翻倍</td></tr>
+  </table></div>
+
+  <!-- ================= 5. 与本站其他部分衔接 ================= -->
+  <h2><span class="h2-num">5</span> 与本站其他部分的衔接</h2>
+  <p>这个学习站不是孤立的 —— 第 0-5 部分(硬件侧)与第 6 部分(软件侧)互为上下游,建议按下面的映射对照学习:</p>
+  <div class="table-wrap"><table>
+    <tr><th>软件学习内容</th><th>配套硬件章节</th><th>为什么配套</th></tr>
+    <tr><td>FOC 固件(06-02)</td><td><a href="../01_第一部分_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">01-02 原理动画</a> / <a href="../02_第二部分_硬件基础/04_硬件设计通用要点_避坑指南.html">02-01 避坑指南</a></td><td>先懂三相逆变与采样电路,再看代码才有画面感</td></tr>
+    <tr><td>电机与减速器选型</td><td><a href="../00_解剖式知识可视化/减速器剖面图详解.html">00-02 减速器剖面</a> / <a href="../02_第二部分_硬件基础/06_硬件原理图与PCB学习页_X1与Hdrive.html">02-03 原理图/PCB</a></td><td>软件里的"关节限位/力矩上限"来自硬件参数</td></tr>
+    <tr><td>整机联调(CAN + ROS2)</td><td><a href="../03_第三部分_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html">03-01 Hdrive 指南</a> / <a href="../04_第四部分_升级进阶/09_通信与控制算法升级路线.html">04-01 升级路线</a></td><td>通信协议两端都要懂:固件发什么,上位机收什么</td></tr>
+    <tr><td>仿真与 RL(06-04)</td><td><a href="../00_解剖式知识可视化/人形机器人解剖式知识可视化.html">00-01 3D 解剖</a>(H1/G1/X1 模型)</td><td>仿真的 URDF 就来自真实机型结构</td></tr>
+    <tr><td>前沿与行业(07 部分)</td><td>整站</td><td>知道行业往哪走,才知道该学什么</td></tr>
+  </table></div>
+
+  <!-- ================= 6. 常见误区 ================= -->
+  <h2><span class="h2-num">6</span> 常见误区与建议</h2>
+  <div class="box box-warn">
+    <b>⚠️ 误区一:"学 ROS2 就是学人形机器人"</b><br>
+    ROS2 只是中间件(第 4 层)。关节怎么转(第 1 层)、怎么走(第 5 层)都不是 ROS2 解决的。先把分层图记牢,再决定主攻方向。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 误区二:"只跑仿真,不碰真机"</b><br>
+    仿真里随便调参,真机上 1ms 延迟、编码器噪声、力矩饱和都会教你做人。至少要有"一块驱动板 + 一个电机"的真机体验(参见 03 部分实操)。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 误区三:"跳过数学"</b><br>
+    线性代数(矩阵/旋转)是运动学的语言,微积分是控制的语言。不用学到数学系水平,但 <b>向量、矩阵、导数、积分</b> 这四个概念必须真正理解。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 误区四:"资料收藏 = 学会"</b><br>
+    收藏 100 个教程不如跑通 1 个最小示例。本站每个软件章节都给了"最小可运行"路径,照着跑,别只看。
+  </div>
+
+  <!-- ================= 7. 本节自测 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 以下哪个属于软件全栈中的"中间件层"?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. FOC 电流环</button>
+      <button data-v="B">B. CAN 协议栈</button>
+      <button data-v="C">C. ROS2 节点/话题</button>
+      <button data-v="D">D. 步态生成器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 ROS2 的节点/话题/服务属于中间件层(第 4 层);FOC 属于电机控制层,CAN 协议属于板级软件,步态生成属于运动控制层。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. "软硬结合路线"的第一个里程碑产出物是什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 训练出能行走的 RL 策略</button>
+      <button data-v="B">B. 用 SimpleFOC/ODrive 让电机闭环转起来</button>
+      <button data-v="C">C. 完成一个 ROS2 功能包</button>
+      <button data-v="D">D. 读完所有数据手册</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 软硬结合路线的通关标准是"电机闭环转起来"(阶段②的产出物);RL 策略是阶段④以后的事。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 两条学习路线(A 纯软件 / B 软硬结合)的共同必备基础是什么?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 会焊接电路板</button>
+      <button data-v="B">B. 精通 C++ 模板元编程</button>
+      <button data-v="C">C. 拥有真机</button>
+      <button data-v="D">D. Python + Git + Linux 基础</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 两条路线都需要 Python(算法/脚本)、Git(协作/版本)、Linux(开发环境),这是共同地基。</div>
+  </div>
+
+  <!-- ================= 8. 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>人形机器人软件分 7 层,从 FOC 固件到 AI 应用;有"纯软件"与"软硬结合"两条路线,终点都是"仿真训练 + 真机部署";按 5 阶段计划(编程环境 → 固件 → ROS2/仿真 → 运动控制/RL → 感知/AI)循序渐进,每阶段必须产出可检验的成果;Python、Git、Linux 是两条路线的共同地基。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果你的目标是"让机器人学会走路",应该优先学哪几层?为什么?<br>
+    2. 你更接近路线 A 还是路线 B?你的第一个"最小产出物"准备做什么?<br>
+    3. 仿真(06-04)与真机(03 部分)各自的优势和局限是什么?
+  </div>
+
+  <!-- ================= 9. 参考来源 ================= -->
+  <h2><span class="h2-num">9</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://docs.ros.org/en/rolling/Concepts.html" target="_blank" rel="noopener">ROS2 官方概念文档</a>(节点/话题/服务/动作/参数)</li>
+    <li><a href="https://mujoco.org/" target="_blank" rel="noopener">MuJoCo 官网</a>(Google DeepMind 开源物理仿真)</li>
+    <li><a href="https://isaac-sim.github.io/IsaacLab/" target="_blank" rel="noopener">Isaac Lab 官方文档</a>(RL 训练框架)</li>
+    <li><a href="https://docs.simplefoc.com/" target="_blank" rel="noopener">SimpleFOC 文档</a>(开源 FOC 库)</li>
+    <li><a href="https://docs.odriverobotics.com/" target="_blank" rel="noopener">ODrive 文档</a>(高功率 FOC 驱动板)</li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

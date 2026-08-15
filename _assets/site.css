@@ -1,0 +1,236 @@
+/* ============================================================
+   人形机器人学习站 · 全站共享主题样式
+   用法: 每个页面 <head> 引入 <link rel="stylesheet" href="../_assets/site.css">
+   (首页在根目录用 href="_assets/site.css")
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:radial-gradient(ellipse at 50% 0%,#16233c 0%,#0d1117 55%,#080b10 100%);
+  color:#e6edf3;
+  font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  padding-top:64px;
+}
+a{color:#58a6ff;text-decoration:none}
+a:hover{text-decoration:underline}
+img{max-width:100%}
+
+/* ---------- 顶部导航 ---------- */
+.topnav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07)}
+.nav-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:0 16px;height:56px}
+.nav-brand{display:flex;align-items:center;gap:8px;font-weight:800;color:#fff;font-size:15px;white-space:nowrap;text-decoration:none}
+.nav-brand:hover{text-decoration:none}
+.brand-dot{width:10px;height:10px;border-radius:50%;background:#3b82f6;box-shadow:0 0 12px rgba(59,130,246,.9)}
+.nav-links{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links a{color:#9aa4b2;font-size:13px;padding:6px 10px;border-radius:7px;white-space:nowrap;text-decoration:none}
+.nav-links a:hover{color:#fff;background:rgba(59,130,246,.15)}
+.nav-search,.nav-done{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:12.5px;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;font-family:inherit}
+.nav-search:hover{background:rgba(59,130,246,.28);color:#fff}
+.nav-search kbd{background:rgba(255,255,255,.12);border-radius:4px;padding:1px 5px;font-size:11px;margin-left:4px;color:#c9d1d9}
+.nav-done.on{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5);color:#86efac}
+
+/* ---------- 面包屑 ---------- */
+.breadcrumb{max-width:1180px;margin:0 auto;padding:16px 20px 0;font-size:12.5px;color:#6b7280}
+.breadcrumb a{color:#8b949e}
+.breadcrumb a:hover{color:#58a6ff}
+.breadcrumb .sep{margin:0 7px;color:#3d4450}
+
+/* ---------- 布局容器 ---------- */
+.container{max-width:1080px;margin:0 auto;padding:20px 20px 40px}
+.container.wide{max-width:1180px}
+
+/* ---------- 页面头部 ---------- */
+.page-head{text-align:center;padding:26px 0 8px}
+.page-head h1{font-size:30px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1.35}
+.page-head .sub{color:#8b949e;font-size:14.5px;margin-top:10px;line-height:1.8}
+.page-head .tags{margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.page-head .tag{font-size:12px;color:#9ecbff;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);padding:4px 12px;border-radius:999px}
+
+/* ---------- 信息框 ---------- */
+.box{border-radius:12px;padding:16px 20px;margin:18px 0;font-size:14px;line-height:1.8;border:1px solid}
+.box b{font-weight:700}
+.box-tip{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.35);color:#c9d1d9}
+.box-tip b{color:#9ecbff}
+.box-warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.4);color:#fde68a}
+.box-warn b{color:#fbbf24}
+.box-danger{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.4);color:#fecaca}
+.box-danger b{color:#f87171}
+.box-ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.4);color:#bbf7d0}
+.box-ok b{color:#86efac}
+.key-point{background:linear-gradient(135deg,rgba(37,99,235,.22),rgba(13,17,23,.5));border-left:4px solid #3b82f6;padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0;font-size:14px;line-height:1.8;color:#dbe6f5}
+.key-point b{color:#93c5fd}
+.key-point .kp-title{color:#fff;font-weight:700;margin-bottom:4px}
+
+/* ---------- 标题与正文 ---------- */
+h2{font-size:21px;font-weight:800;color:#fff;margin:34px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+h2 .h2-num{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#3b82f6);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+h3{font-size:17px;font-weight:700;color:#9ecbff;margin:24px 0 10px}
+h4{font-size:15px;font-weight:700;color:#c9d1d9;margin:18px 0 8px}
+p{font-size:14.5px;color:#c9d1d9;margin:10px 0}
+ul,ol{padding-left:26px;margin:10px 0}
+li{font-size:14.5px;color:#c9d1d9;margin:6px 0;line-height:1.8}
+li::marker{color:#3b82f6}
+strong{color:#fff}
+
+/* ---------- 表格 ---------- */
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:rgba(22,27,34,.6);border-radius:10px;overflow:hidden}
+th{background:rgba(37,99,235,.22);color:#fff;padding:10px 12px;text-align:left;font-weight:700;white-space:nowrap}
+td{padding:10px 12px;border-top:1px solid rgba(255,255,255,.07);color:#c9d1d9;vertical-align:top}
+tr:hover td{background:rgba(59,130,246,.06)}
+.table-wrap{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;overflow-x:auto;margin:14px 0;font-size:13px;line-height:1.7}
+code{font-family:Consolas,"Courier New",monospace;font-size:13px}
+:not(pre)>code{background:rgba(59,130,246,.14);color:#9ecbff;padding:1px 6px;border-radius:5px;font-size:12.5px}
+pre code{color:#a8c7e8;background:none;padding:0}
+
+/* ---------- 卡片 ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:14px 0}
+.card{display:block;text-decoration:none;color:inherit;background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 18px 16px;transition:.18s;position:relative;overflow:hidden}
+.card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.35);text-decoration:none}
+.card .ic{font-size:22px;margin-bottom:10px}
+.card .t{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px}
+.card .d{font-size:12.5px;color:#9aa4b2;line-height:1.65}
+.card .go{position:absolute;right:14px;top:16px;color:#3b82f6;font-size:12px;font-weight:600;opacity:0;transition:.18s}
+.card:hover .go{opacity:1}
+.card .new-badge{position:absolute;right:12px;top:12px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px}
+.card.featured{grid-column:1/-1;background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(13,17,23,.7));border-color:rgba(59,130,246,.45)}
+.card.featured .t{font-size:18px}
+.card.featured .d{font-size:13.5px;color:#b6c2d1}
+.card.featured .go{opacity:1}
+
+/* ---------- 自测题 ---------- */
+.quiz{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:16px 18px;margin:14px 0}
+.quiz-q{font-size:14.5px;color:#fff;font-weight:600;margin-bottom:12px}
+.quiz-options{display:flex;flex-direction:column;gap:8px}
+.quiz-options button{text-align:left;background:rgba(13,17,23,.8);border:1px solid rgba(255,255,255,.12);color:#c9d1d9;font-size:13.5px;padding:9px 14px;border-radius:9px;cursor:pointer;font-family:inherit;transition:.15s}
+.quiz-options button:hover{border-color:#3b82f6;color:#fff}
+.quiz-options button.correct{border-color:#22c55e;background:rgba(34,197,94,.15);color:#86efac;font-weight:700}
+.quiz-options button.wrong{border-color:#ef4444;background:rgba(239,68,68,.15);color:#fca5a5}
+.quiz-feedback{display:none;margin-top:10px;font-size:13px;font-weight:600}
+.quiz-feedback.ok{display:block;color:#86efac}
+.quiz-feedback.no{display:block;color:#fca5a5}
+.quiz-explain{display:none;margin-top:10px;padding:10px 14px;background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;font-size:13px;color:#aab8c8;line-height:1.8}
+.quiz-explain.show{display:block}
+
+/* ---------- 折叠 FAQ / 章节 ---------- */
+details.faq{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;margin:10px 0;overflow:hidden}
+details.faq summary{cursor:pointer;padding:14px 18px;font-size:14.5px;font-weight:600;color:#e6edf3;list-style:none;position:relative;padding-right:40px}
+details.faq summary::-webkit-details-marker{display:none}
+details.faq summary::after{content:"＋";position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#3b82f6;font-size:16px;font-weight:800}
+details.faq[open] summary::after{content:"－"}
+details.faq summary:hover{background:rgba(59,130,246,.08)}
+details.faq .faq-a{padding:2px 18px 16px;font-size:14px;color:#9aa4b2;line-height:1.9;border-top:1px dashed rgba(255,255,255,.08)}
+
+/* ---------- 步骤流 ---------- */
+.step-flow{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;align-items:stretch}
+.step-item{flex:1;min-width:170px;background:linear-gradient(135deg,rgba(30,58,138,.5),rgba(55,48,163,.5));border:1px solid rgba(59,130,246,.35);padding:14px 16px;border-radius:12px;font-size:13px;color:#bfdbfe;line-height:1.7}
+.step-item .n{display:inline-block;width:22px;height:22px;background:#3b82f6;color:#fff;border-radius:6px;text-align:center;line-height:22px;font-weight:800;font-size:12px;margin-right:8px}
+.step-item b{color:#fff;font-size:14px}
+
+/* ---------- 学习路径(首页) ---------- */
+.roadmap{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:16px 0}
+.rm-step{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px;position:relative;transition:.2s}
+.rm-step:hover{border-color:rgba(59,130,246,.55);transform:translateY(-2px)}
+.rm-step .rm-arrow{position:absolute;right:-11px;top:50%;transform:translateY(-50%);color:#3b82f6;font-size:18px;z-index:2}
+.rm-step .rm-num{display:inline-flex;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;align-items:center;justify-content:center;font-weight:800;font-size:14px;margin-bottom:10px}
+.rm-step h4{color:#fff;font-size:15.5px;margin-bottom:6px}
+.rm-step p{font-size:12.5px;color:#9aa4b2;margin:4px 0}
+.rm-step .rm-links{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.rm-step .rm-links a{font-size:12px;color:#9ecbff;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);padding:3px 10px;border-radius:999px;text-decoration:none}
+.rm-step .rm-links a:hover{background:rgba(59,130,246,.3);color:#fff}
+
+/* ---------- 首页 Hero / 统计 ---------- */
+.hero{text-align:center;padding:34px 10px 10px}
+.hero h1{font-size:34px;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1.35}
+.hero .sub{color:#8b949e;font-size:15px;margin-top:12px;line-height:1.9}
+.stats{display:flex;justify-content:center;gap:26px;margin:22px 0 8px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat .v{font-size:26px;font-weight:900;color:#3b82f6}
+.stat .k{font-size:12px;color:#6b7280;margin-top:2px}
+.hero-search{max-width:560px;margin:20px auto 0;display:flex;gap:8px}
+.hero-search input{flex:1;background:rgba(13,17,23,.85);border:1px solid rgba(59,130,246,.4);color:#e6edf3;font-size:14px;padding:12px 16px;border-radius:10px;outline:none;font-family:inherit}
+.hero-search input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+.hero-search button{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:14px;font-weight:700;padding:0 22px;border-radius:10px;cursor:pointer;font-family:inherit}
+.hero-search button:hover{filter:brightness(1.15)}
+
+/* ---------- 首页板块 ---------- */
+.sec{margin:26px 0}
+.sec-title{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:#c9d1d9;margin-bottom:14px}
+.sec-title .num{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.sec-title .en{font-size:11px;color:#6b7280;font-weight:500;letter-spacing:.5px}
+.sec-title .bar{flex:1;height:1px;background:linear-gradient(90deg,rgba(59,130,246,.4),transparent)}
+
+/* ---------- 学习进度(首页) ---------- */
+.progress-panel{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px;margin:18px 0}
+.progress-panel h3{color:#fff;font-size:16px;margin-bottom:14px}
+.pbar-row{display:flex;align-items:center;gap:12px;margin:10px 0;font-size:13px}
+.pbar-row .pl{width:110px;color:#9aa4b2;flex-shrink:0}
+.pbar{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#22c55e);border-radius:99px;transition:width .4s}
+.pbar-row .pv{width:44px;text-align:right;color:#6b7280;font-size:12px;flex-shrink:0}
+
+/* ---------- 上一篇/下一篇 ---------- */
+.prevnext{max-width:1080px;margin:34px auto 0;padding:0 20px;display:flex;gap:12px}
+.pn-item{flex:1;background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:14px 18px;color:inherit;text-decoration:none;transition:.18s}
+.pn-item:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);text-decoration:none}
+.pn-item span{font-size:11.5px;color:#6b7280;display:block;margin-bottom:4px}
+.pn-item b{font-size:14px;color:#9ecbff}
+.pn-item.next{text-align:right}
+
+/* ---------- 页脚 ---------- */
+.site-footer{text-align:center;color:#6b7280;font-size:12px;padding:26px 20px 40px;border-top:1px solid rgba(255,255,255,.06);margin-top:30px}
+.site-footer a{color:#3b82f6}
+
+/* ---------- 搜索浮层 ---------- */
+.search-overlay{display:none;position:fixed;inset:0;background:rgba(4,8,14,.82);backdrop-filter:blur(6px);z-index:200;align-items:flex-start;justify-content:center;padding:10vh 16px 16px}
+.search-overlay.show{display:flex}
+.search-box{width:100%;max-width:640px;background:#161b22;border:1px solid rgba(59,130,246,.4);border-radius:16px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+.search-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;font-size:13px;color:#8b949e;border-bottom:1px solid rgba(255,255,255,.07);font-weight:700}
+.search-close{cursor:pointer;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:rgba(255,255,255,.07);color:#c9d1d9;font-size:13px}
+.search-close:hover{background:rgba(239,68,68,.3);color:#fff}
+.search-input{width:100%;background:transparent;border:none;outline:none;color:#fff;font-size:16px;padding:16px 18px;font-family:inherit;border-bottom:1px solid rgba(255,255,255,.07)}
+.search-results{max-height:52vh;overflow-y:auto;padding:8px}
+.search-count{font-size:12px;color:#6b7280;padding:8px 10px 4px}
+.search-hit{display:block;padding:11px 14px;border-radius:10px;color:inherit;text-decoration:none}
+.search-hit:hover{background:rgba(59,130,246,.12);text-decoration:none}
+.hit-t{font-size:14.5px;font-weight:700;color:#fff}
+.hit-meta{font-size:12px;color:#6b7280;margin-top:3px}
+.search-empty{text-align:center;color:#6b7280;font-size:13.5px;padding:34px 10px}
+
+/* ---------- 术语词典 ---------- */
+.gloss-search{margin:16px 0;display:flex;gap:8px}
+.gloss-search input{flex:1;background:rgba(13,17,23,.85);border:1px solid rgba(59,130,246,.4);color:#e6edf3;font-size:14px;padding:11px 16px;border-radius:10px;outline:none;font-family:inherit}
+.gloss-search input:focus{border-color:#3b82f6}
+.gloss-cats{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.gloss-cats button{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:12.5px;padding:6px 14px;border-radius:999px;cursor:pointer;font-family:inherit}
+.gloss-cats button:hover{border-color:#3b82f6;color:#fff}
+.gloss-cats button.on{background:rgba(59,130,246,.25);border-color:#3b82f6;color:#fff}
+.term-card{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;margin:8px 0}
+.term-card .term-name{font-size:14.5px;font-weight:700;color:#fff}
+.term-card .term-en{font-size:12px;color:#6b7280;margin-left:8px}
+.term-card .term-desc{font-size:13px;color:#9aa4b2;margin-top:4px;line-height:1.7}
+.term-card .term-link{font-size:12px;color:#58a6ff;margin-left:6px}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .nav-links{display:none}
+  .hero h1{font-size:26px}
+  .page-head h1{font-size:24px}
+  .prevnext{flex-direction:column}
+  .pn-item.next{text-align:left}
+}
+@media (max-width:600px){
+  body{padding-top:56px}
+  .nav-inner{height:52px;gap:8px}
+  .nav-search span.txt{display:none}
+  .stats{gap:16px}
+  .stat .v{font-size:20px}
+  .container{padding:14px 14px 30px}
+  h2{font-size:18px}
+}

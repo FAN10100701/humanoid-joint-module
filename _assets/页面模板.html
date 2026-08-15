@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 新页面标准模板
+  ★ 所有新页面必须严格按本模板的结构与注释编写 ★
+  请复制本文件到目标位置,然后:
+  1. 修改 <title> 与 window.PAGE 配置(见下方说明)
+  2. 用你的页面大纲替换 <body> 中的占位内容
+  3. 绝对不要修改 ../_assets/site.css 与 ../_assets/site.js
+  4. 保持深色主题风格;如确需额外样式,可在本页 <style> 内补充,
+     但必须以 -- 前缀命名类(如 .my-xxx),避免与全局冲突
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 页面标题(请替换)</title>
+<!-- 共享样式:二级目录页面用 ../_assets/site.css;根目录页面用 _assets/site.css -->
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(可选),命名加前缀避免冲突 */
+</style>
+<script>
+  /* ============================================================
+     window.PAGE 配置说明(★ 每页必填 ★)
+     pageId    : 唯一 ID,用于"标记完成"打卡。格式: 章节-序号
+                 (06-01 / 07-02 / 08-03 ...)
+     root      : 相对站点根的路径前缀。二级目录页面为 ".." ,
+                 根目录页面为 ""。导航/搜索链接会自动拼接。
+     breadcrumb: 面包屑数组,最后一项不带 u(当前页)
+     prev/next : 上一篇/下一篇 {t:标题, u:相对本页的路径}。
+                 同一章节内按编号顺序互链;章节第一页的 prev 指向
+                 上一章节最后一页或首页;最后一页的 next 指向
+                 下一章节第一页或 null(不写)。
+     ============================================================ */
+  window.PAGE = {
+    pageId: "06-01",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec6" },
+      { t: "当前页标题(请替换)" }
+    ],
+    prev: { t: "返回首页", u: "../index.html" },
+    next: { t: "下一篇标题", u: "02_xxx.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🤖 页面大标题(请替换)</h1>
+    <div class="sub">一句话副标题:本页学什么、适合谁、读完能获得什么</div>
+    <div class="tags">
+      <span class="tag">标签1</span>
+      <span class="tag">标签2</span>
+      <span class="tag">标签3</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 目标一(可检验,如"能说出……的三大组成")<br>
+    2. 目标二<br>
+    3. 目标三<br>
+    <b>建议用时:</b>约 XX 分钟
+  </div>
+
+  <!-- ================= 正文分节 =================
+       每个大节用 <h2>,小节用 <h3>。
+       常用组件速查(类名必须与 site.css 一致):
+       - 信息框: <div class="box box-tip|box-warn|box-danger|box-ok"><b>标题:</b>内容</div>
+       - 表格:   <div class="table-wrap"><table><tr><th>..</th></tr><tr><td>..</td></tr></table></div>
+       - 代码:   <pre><code>...</code></pre>
+       - 卡片:   <div class="grid"><a class="card" href=".."><span class="go">进入 →</span><div class="ic">📚</div><div class="t">标题</div><div class="d">描述</div></a></div>
+       - 步骤流: <div class="step-flow"><div class="step-item"><span class="n">1</span><b>步骤名</b><br>说明</div>...</div>
+       - 折叠:   <details class="faq"><summary>问题</summary><div class="faq-a">答案</div></details>
+  ================= -->
+
+  <h2><span class="h2-num">1</span> 第一节标题</h2>
+  <p>正文内容……(每个大节建议 300 字以上,信息密度要高)</p>
+
+  <h3>小节标题</h3>
+  <ul>
+    <li>要点一</li>
+    <li>要点二</li>
+  </ul>
+
+  <!-- ================= 自测题(每页 3~5 题) =================
+       data-answer 写正确选项字母(A/B/C/D)
+       quiz-explain 写解析,答后自动显示 -->
+  <h2><span class="h2-num">N</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 问题题干?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 错误选项</button>
+      <button data-v="B">B. 正确选项</button>
+      <button data-v="C">C. 错误选项</button>
+      <button data-v="D">D. 错误选项</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:为什么选 B。</div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>用 3~5 句话总结本页核心知识点,帮助读者回顾。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 开放性问题一<br>
+    2. 开放性问题二
+  </div>
+
+  <!-- ================= 参考来源(前沿事实页面必填) ================= -->
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://..." target="_blank" rel="noopener">来源标题 1</a>(用 web_search 核实后填写)</li>
+    <li><a href="https://..." target="_blank" rel="noopener">来源标题 2</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效
+     全站搜索索引(_assets/search-index.js)由 site.js 自动加载,无需手动引入 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>
