@@ -1,18 +1,11 @@
 @echo off
 rem ============================================================
-rem Humanoid Robot 3D Anatomy - One Click Launcher
-rem Double click this file: start local http server and open
-rem the 3D anatomy page in your default browser automatically.
-rem NOTE: the html MUST be served over http. Local URDF/STL
-rem models and the local Three.js engine cannot be loaded
-rem under file:// protocol (double-clicking the html fails).
+rem 人形机器人学习站 - One Click Launcher
+rem 双击本文件:启动本地 http 服务器并自动打开浏览器。
+rem 说明: 3D 解剖页必须通过 http 访问(URDF/STL/Three.js
+rem 在 file:// 协议下无法加载,双击 html 会白屏)。
 rem ============================================================
-title Humanoid Robot 3D Anatomy - Local Server
-for /d %%D in ("%~dp0..\00_*") do set "SRV=%%D\server.ps1"
-if not exist "%SRV%" (
-    echo [ERROR] server.ps1 not found. Please check the "00_..." folder exists.
-    pause
-    exit /b 1
-)
-powershell -NoProfile -ExecutionPolicy Bypass -File "%SRV%"
-pause
+title 人形机器人学习站 - Local Server
+start "学习站本地服务器" powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0启动服务器.ps1"
+timeout /t 2 /nobreak >nul
+start "" http://127.0.0.1:8123/
