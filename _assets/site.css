@@ -361,3 +361,18 @@ body[data-theme="light"] .toc-sidebar a.active{color:#2563eb;background:rgba(37,
   .toc-toggle{display:block}
   body.has-toc .container,body.has-toc .prevnext,body.has-toc .breadcrumb{margin-left:auto}
 }
+
+/* ============================================================
+   回到顶部按钮 + 入场动画
+   ============================================================ */
+.backtop{position:fixed;right:18px;bottom:22px;z-index:95;width:44px;height:44px;border-radius:50%;
+  background:rgba(37,99,235,.9);color:#fff;border:none;font-size:20px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(37,99,235,.4);transition:.2s}
+.backtop:hover{transform:translateY(-3px);background:#2563eb}
+body[data-theme="light"] .backtop{background:rgba(37,99,235,.88)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.card,.sec-title,.page-head,.lab,.progress-panel{animation:fadeUp .5s ease both}
+.card:nth-child(2){animation-delay:.05s}.card:nth-child(3){animation-delay:.1s}
+.card:nth-child(4){animation-delay:.15s}.card:nth-child(5){animation-delay:.2s}
+.card:nth-child(6){animation-delay:.25s}.card:nth-child(7){animation-delay:.3s}
+@media (prefers-reduced-motion:reduce){.card,.sec-title,.page-head,.lab,.progress-panel{animation:none}}

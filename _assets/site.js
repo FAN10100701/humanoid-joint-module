@@ -150,6 +150,20 @@
     });
   }
 
+  /* ---------- 回到顶部按钮 ---------- */
+  function initBackTop(){
+    var btn = document.createElement('button');
+    btn.className = 'backtop';
+    btn.innerHTML = '↑';
+    btn.title = '回到顶部';
+    btn.style.display = 'none';
+    btn.onclick = function(){ window.scrollTo({ top:0, behavior:'smooth' }); };
+    document.body.appendChild(btn);
+    window.addEventListener('scroll', function(){
+      btn.style.display = window.scrollY > 600 ? 'flex' : 'none';
+    });
+  }
+
   /* ---------- 顶部导航 + 面包屑 + 上一篇/下一篇 + 页脚 ---------- */
   function injectChrome(){
     var P = page();
@@ -329,8 +343,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); S.initQuiz(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); S.initQuiz();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz();
   }
 })();

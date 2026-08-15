@@ -104,3 +104,10 @@ body[data-theme="light"] .hit-meta{color:#94a3b8}
 body[data-theme="light"] .quiz{background:rgba(255,255,255,.62)}
 body[data-theme="light"] .quiz-q{color:#0f172a}
 body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#334155}
+
+/* ---- 回到顶部按钮(存量页外壳) ---- */
+.backtop{position:fixed;right:18px;bottom:22px;z-index:95;width:44px;height:44px;border-radius:50%;
+  background:rgba(37,99,235,.9);color:#fff;border:none;font-size:20px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(37,99,235,.4);transition:.2s}
+.backtop:hover{transform:translateY(-3px);background:#2563eb}
+body[data-theme="light"] .backtop{background:rgba(37,99,235,.88)}
