@@ -222,8 +222,7 @@ body[data-theme="dark"] .bb-expand{background:rgba(20,28,42,.9);border-color:var
   .app{grid-template-columns:1fr;height:calc(100vh - 54px - 56px)}
   .app>.stg{grid-column:1;grid-row:1}  /* 【iOS空白修复】移动端单列布局，舞台必须回到第 1 列，否则被放进隐式列宽度塌缩为 0 */
   .stg{height:100%}
-  #diagFab{bottom:66px}        /* 诊断浮标上移，避开底部标签栏(btab 高56px) */
-  #diagPanel{bottom:112px}
+  #diagPanel{bottom:120px}   /* 诊断面板上移，避开底部标签栏(btab 高56px) */
   .nav{position:fixed;left:0;top:54px;bottom:56px;width:80%;max-width:320px;z-index:95;background:var(--bg3);border-right:1px solid var(--rule);transform:translateX(-106%);transition:transform .28s cubic-bezier(.2,.8,.3,1);box-shadow:var(--sh2);padding-top:8px}
   body.drawer-nav .nav{transform:none}
   .det{position:fixed;right:0;top:54px;bottom:56px;width:88%;max-width:380px;z-index:95;background:var(--bg3);border-left:1px solid var(--rule);transform:translateX(106%);transition:transform .28s cubic-bezier(.2,.8,.3,1);box-shadow:var(--sh2)}
@@ -334,17 +333,13 @@ body[data-theme="dark"] .bb-perf{color:var(--muted)}
   .bottom-bar{display:none}
   .app{grid-template-columns:1fr;height:calc(100vh - 54px - 56px)!important}
 }
-/* ===== 移动端常驻诊断浮标(排查"3D 不显示"的反馈工具,仅触屏设备显示) ===== */
-#diagFab{position:fixed;left:10px;bottom:10px;z-index:999;display:none;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid var(--rule);background:rgba(255,255,255,.92);color:var(--muted);font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:var(--sh2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-family:inherit}
-body[data-theme="dark"] #diagFab{background:rgba(20,28,42,.92);border-color:var(--rule2)}
-#diagPanel{position:fixed;left:10px;bottom:52px;z-index:999;display:none;width:min(330px,calc(100vw - 20px));padding:12px 14px;border-radius:12px;border:1px solid var(--rule);background:rgba(255,255,255,.97);color:var(--ink);font-size:12px;line-height:2;box-shadow:var(--sh3);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-family:var(--mono)}
+/* ===== 诊断面板（入口：桌面底部栏「🔧 诊断」/ 移动端底部标签栏「🔧 诊断」，引擎失败时自动弹出） ===== */
+#diagPanel{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);z-index:999;display:none;width:min(380px,calc(100vw - 24px));padding:12px 14px;border-radius:12px;border:1px solid var(--rule);background:rgba(255,255,255,.97);color:var(--ink);font-size:12px;line-height:2;box-shadow:var(--sh3);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-family:var(--mono)}
 body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:var(--rule2)}
 #diagPanel .dp-copy{float:right;border:1px solid var(--rule);background:transparent;color:var(--accent);font-size:11px;padding:2px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
 #diagPanel .dp-close{position:absolute;right:4px;top:2px;border:none;background:transparent;color:var(--faint);font-size:13px;cursor:pointer;font-family:inherit;padding:2px 6px}
 #diagPanel .dp-close:hover{color:var(--bad)}
-#diagFab.mini{opacity:.35;padding:4px 8px;font-size:10.5px;border-style:dashed}
 #diagPanel .dp-ok{color:var(--ok)}#diagPanel .dp-bad{color:var(--bad)}#diagPanel .dp-wait{color:var(--warn)}
-@media(min-width:861px){#diagFab,#diagPanel{display:none!important}}
 </style></head><body>
 <!-- 【模块加载策略】
      本地模式(默认):零依赖——本地库已改写为相对导入(three.module.js 与 addons 全部相对路径)，
@@ -526,6 +521,7 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   <button class="bb-btn td-only" id="bbLabels" title="显示 / 隐藏零件名称标签">🏷️ 零件标签</button>
   <div class="bb-sep"></div>
   <div class="bb-perf" id="bbPerf" title="实时帧率与零件数量">📊 -- FPS · -- 件</div>
+  <button class="bb-btn" id="bbDiag" title="设备诊断（引擎状态/加载日志/浏览器信息）">🔧 诊断</button>
   <button class="bb-fold" id="bbFold" title="收起底部栏（展开请点右下角 ⚙️）">▾ 收起</button>
 </div>
 <button class="bb-expand" id="bbExpand" title="展开底部栏">⚙️</button>
@@ -589,6 +585,7 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   <button data-act="model"><span class="ic">🤖</span>机型</button>
   <button data-act="view"><span class="ic">🎛</span>视图</button>
   <button data-act="det"><span class="ic">ℹ</span>详情</button>
+  <button data-act="diag"><span class="ic">🔧</span>诊断</button>
   <button data-act="theme"><span class="ic">🌗</span>主题</button>
 </nav>
 
@@ -1360,6 +1357,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       else if(a==='det'){body.classList.contains('drawer-det')?closeDrawers():openDrawer('det');}
       else if(a==='model'){openDrawer('model');}
       else if(a==='view'){openDrawer('view');}
+      else if(a==='diag'){closeDrawers();if(window.__TOGGLE_DIAG__)window.__TOGGLE_DIAG__();}
     });
   });
   document.querySelectorAll('#drwModel .vb').forEach(function(b){
@@ -1438,27 +1436,15 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
   });
 }
 </script>
-<!-- 移动端常驻诊断浮标:启动遮罩消失后仍可查看/复制设备与引擎状态,便于反馈排障 -->
-<div id="diagFab" title="设备诊断">📱 诊断</div>
-<div id="diagPanel"><button class="dp-close" id="diagClose" type="button" title="收起诊断(缩小为圆点)">✕</button><button class="dp-copy" id="diagCopy" type="button">复制</button><div id="diagBody"></div></div>
+<!-- 诊断面板（入口：桌面底部栏「🔧 诊断」/ 移动端底部标签栏「🔧 诊断」；引擎失败时自动弹出） -->
+<div id="diagPanel"><button class="dp-close" id="diagClose" type="button" title="关闭诊断">✕</button><button class="dp-copy" id="diagCopy" type="button">复制</button><div id="diagBody"></div></div>
 <script>
-/* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
+/* 诊断面板:入口=桌面底部栏「🔧 诊断」/ 移动端底部标签栏「🔧 诊断」;引擎失败时自动弹出;✕ 关闭 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v7.1';  /* 2026-08-17 · 诊断浮标可收起(✕缩小为圆点)+显示浏览器/系统(不限iOS) */
+var DIAG_VER='v7.2';  /* 2026-08-17 · 诊断嵌入底部工具栏(桌面🔧按钮/移动端btab),移除悬浮浮标不再遮挡 */
 (function(){
-  var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
-  if(!fab||!panel||!bodyEl)return;
-  /* 显示策略：触屏设备常驻；桌面端仅在 3D 引擎启动失败时自动出现(便于反馈排障,成功不打扰) */
-  var isCoarse=!1;
-  try{ isCoarse=!!(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches); }catch(e){}
-  if(!isCoarse){
-    setTimeout(function(){
-      var ok=!!window.__3D_BOOT_OK__&&!!(window.__DIAG__&&window.__DIAG__.three==='ok');
-      if(!ok)fab.style.display='flex';
-    },9000);
-  }else{
-    fab.style.display='flex';
-  }
+  var panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
+  if(!panel||!bodyEl)return;
   var errs=[];
   window.addEventListener('error',function(e){
     /* 区分脚本错误与资源加载错误(资源错误 message 常为空,iOS 尤其如此) */
@@ -1511,17 +1497,16 @@ var DIAG_VER='v7.1';  /* 2026-08-17 · 诊断浮标可收起(✕缩小为圆点)
     if(errs.length){ h+='<span class="dp-bad">运行期错误 ×'+errs.length+'</span><br>'+errs.slice(-3).join('<br>')+'<br>'; }
     bodyEl.innerHTML=h;
   }
-  fab.addEventListener('click',function(){
-    var on=panel.style.display!=='block';
-    fab.classList.remove('mini');       /* 点开时恢复完整样式 */
-    panel.style.display=on?'block':'none';
-    if(on)refresh();
-  });
+  function openDiag(){panel.style.display='block';refresh();}
+  function closeDiag(){panel.style.display='none';}
+  function toggleDiag(){var on=panel.style.display!=='block';if(on)openDiag();else closeDiag();}
   var closeBtn=document.getElementById('diagClose');
-  if(closeBtn)closeBtn.addEventListener('click',function(){
-    panel.style.display='none';
-    fab.classList.add('mini');          /* 缩小为半透明小圆点,不再遮挡 */
-  });
+  if(closeBtn)closeBtn.addEventListener('click',closeDiag);
+  var bbDiag=document.getElementById('bbDiag');
+  if(bbDiag)bbDiag.addEventListener('click',toggleDiag);
+  /* 暴露给移动端 btab 与失败自动弹出使用 */
+  window.__TOGGLE_DIAG__=toggleDiag;
+  window.__OPEN_DIAG__=openDiag;
   copyBtn.addEventListener('click',function(){
     var d=window.__DIAG__||{};
     var txt='诊断代码 '+DIAG_VER+' | 浏览器='+_ua.b+' | 系统='+_ua.os+' | iOS='+(d.ios||'—')+' | importmap='+(d.imp?'原生':'补丁')+' | WebGL='+(d.gl?'可用':'不可用')+' | WASM='+(d.wasm?'可用':'不可用')+' | three='+(d.three||'?')+' | 引擎='+(d.mod||'?')+' | 渲染='+(window.__RENDERED__?'是':'否')+' | Three来源='+(sessionStorage.getItem('__three_cdn__')==='1'?'CDN':'本地')+(errs.length?(' | 错误:'+errs.join(' ;; ')):'');
@@ -1531,10 +1516,9 @@ var DIAG_VER='v7.1';  /* 2026-08-17 · 诊断浮标可收起(✕缩小为圆点)
   });
   setInterval(function(){
     refresh();
-    /* 桌面端:引擎失败后 2 秒内自动显示诊断浮标(不再等 9 秒) */
-    if(!isCoarse&&window.__3D_FAILED__)fab.style.display='flex';
-  },2000);
-  if(isCoarse)fab.style.display='flex';   /* 触屏常驻；桌面端由失败检测控制显示 */
+    /* 引擎失败:自动弹出诊断面板(桌面/移动端一致,便于反馈排障) */
+    if(window.__3D_FAILED__&&panel.style.display!=='block')openDiag();
+  },3000);
 })();
 </script>
 </body></html>
