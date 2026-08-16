@@ -63,6 +63,7 @@ window.SITE_SEARCH_INDEX = [
   { t:"机器人感知专题 · 相机 / 激光雷达 / 点云", u:"06_软件与算法/12_机器人感知专题_相机激光雷达点云.html", s:"软件与算法", d:"相机模型与标定、激光雷达原理、点云处理(PCL/Open3D)、多传感器融合与人形感知方案", k:"感知 相机 标定 内参 畸变 深度相机 激光雷达 点云 PCL Open3D 滤波 分割 RANSAC 聚类 ICP 多传感器融合" },
   { t:"MoveIt2 进阶 · 运动规划与抓取管线", u:"06_软件与算法/13_MoveIt2进阶_运动规划与抓取管线.html", s:"软件与算法", d:"OMPL 规划器详解、约束/笛卡尔路径、Octomap 避障、MoveIt Task Constructor 抓取管线、ros2_control 真机部署", k:"MoveIt2 运动规划 OMPL RRT BiTRRT 约束规划 笛卡尔路径 避障 Octomap 抓取 MoveIt Task Constructor ros2_control 真机" },
   { t:"ros2_control 实战深挖", u:"06_软件与算法/14_ros2_control实战深挖.html", s:"软件与算法", d:"controller_manager、硬件接口、常用关节控制器配置、自定义 HardwareInterface、MoveIt 串联与真机部署", k:"ros2_control 控制器 controller_manager 硬件接口 HardwareInterface joint_trajectory_controller 真机 部署 MoveIt 关节模式 CAN" },
+  { t:"浏览器内强化学习实验室", u:"06_软件与算法/15_浏览器内强化学习实验室.html", s:"软件与算法", d:"浏览器内运行的强化学习交互实验室:网格世界/倒立摆等 RL 训练可视化,零安装", k:"强化学习 RL 实验室 浏览器 交互 训练 PPO 网格世界 倒立摆 可视化" },
 
   /* ---- 7 · 前沿知识库(新) ---- */
   { t:"全球人形机器人机型全景", u:"07_前沿知识库/01_全球人形机器人机型全景.html", s:"前沿知识库", d:"Optimus、Figure、宇树 H1/G1、智元、Atlas、小米、傅利叶等 10+ 机型参数对比与趋势", k:"人形机器人 机型 特斯拉 Optimus Figure 宇树 H1 G1 智元 远征 灵犀 波士顿动力 Atlas 小米 CyberOne 傅利叶 星动纪元 众擎 参数对比 行业趋势" },

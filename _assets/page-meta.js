@@ -49,6 +49,7 @@ window.SITE_PAGE_META = {
   "06-12": { time:"40 分钟", prereq:"无", updated:"2026-08-16", verified:"已联网核实", goals:["理解相机标定与深度相机原理","掌握点云滤波/分割/聚类基本流程","能说清多传感器融合思路"] },
   "06-13": { time:"60 分钟", prereq:"06-10", updated:"2026-08-16", verified:"已联网核实", goals:["对比常用 OMPL 规划器并会配置","用 Task Constructor 搭抓取管线","知道 MoveIt 真机部署流程"] },
   "06-14": { time:"60 分钟", prereq:"06-13", updated:"2026-08-16", verified:"命令已联网核实", goals:["理解 ros2_control 架构与 controller_manager","能配置常用控制器并写硬件接口","打通 MoveIt2 → 真机关节执行链"] },
+  "06-15": { time:"30 分钟", prereq:"06-04", updated:"2026-08-17", verified:"交互实验室", goals:["在浏览器里跑通 RL 训练循环","观察奖励/策略演化规律"] },
   "07-01": { time:"20 分钟", prereq:"无", updated:"2026-08-15", verified:"已联网核实(17 次检索)", goals:["记住主流机型的关键参数","能横向对比不同技术路线与趋势"] },
   "07-02": { time:"25 分钟", prereq:"无", updated:"2026-08-15", verified:"已联网核实(12 次检索)", goals:["了解七大前沿技术专题的现状与方向"] },
   "07-03": { time:"30 分钟", prereq:"无", updated:"2026-08-15", verified:"链接已核实", goals:["挑 3 篇论文精读并记录笔记","知道去哪里找数据集与开源项目"] },

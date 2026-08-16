@@ -167,7 +167,9 @@ function rlStep(st, F){   /* 与校验代码实验室.js 同源的 cart-pole 动
   st.dx += d2x*DT; st.x += st.dx*DT;
 }
 function rlRunEpisode(train){
-  var st = { th: 0.05, dth: 0, x: 0, dx: 0 };
+  /* 训练时随机初始偏角方向,保证左右两侧状态被对称探索(最小的"域随机化") */
+  var th0 = train ? (Math.random()<0.5?-0.05:0.05) : 0.05;
+  var st = { th: th0, dth: 0, x: 0, dx: 0 };
   var total = 0, steps = Math.round(RL.T_EP / RL.DT);
   for(var k=0; k<steps; k++){
     var ij = rlSIdx(st.th, st.dth);
