@@ -52,6 +52,13 @@
     { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07","07-08"] },
     { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07"] }
   ];
+  /* 学习页面/可打卡页面统计：由 SITE_SECTIONS 自动计算（新增页面只需更新上面的 ids，无需手改数字） */
+  (function(){
+    var tracked=0;
+    window.SITE_SECTIONS.forEach(function(sec){tracked+=sec.ids.length;});
+    var el1=document.getElementById("statPages");if(el1)el1.textContent=tracked+1;  /* +1 = 3D 解剖主页面(无 pageId) */
+    var el2=document.getElementById("statTracked");if(el2)el2.textContent=tracked;
+  })();
 </script>
 </head>
 <body>

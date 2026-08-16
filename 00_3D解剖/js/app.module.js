@@ -10,7 +10,7 @@ window.__3D_BOOT_OK__=true;
 /* E4 二次拆分：机型配置/参数数据独立成 js/config.js（导出名与原内联名一致，引用零改动） */
 import { PROP, LABEL_FONT_SIZE, LABEL_PADDING, LABEL_BG_COLOR, LABEL_TEXT_COLOR, AUTO_ROTATE_SPEED,
   GAIT_PERIOD, GAIT_SMOOTH, GAIT_LEG_AMP, GAIT_KNEE_BASE, GAIT_KNEE_AMP, GAIT_ANKLE_AMP,
-  GAIT_ARM_AMP, GAIT_ELBOW_BASE, GAIT_ELBOW_AMP, GAIT_WAIST_AMP, CAMERA_DEFAULT_DIST,
+  GAIT_ARM_AMP, GAIT_ELBOW_BASE, GAIT_ELBOW_AMP, GAIT_WAIST_AMP, GAIT_BOB_AMP, CAMERA_DEFAULT_DIST,
   COLOR_SCHEMES, ENV_PRESETS, URDF_CFG, PART_COLORS,
   DRC_STL_ENABLE, GZ_STL_ENABLE, DRC_DECODE_TIMEOUT_MS, STL_MAX_RETRY, STL_CONCURRENCY,
   STL_RETRY_DELAY, PLACEHOLDER_SIZE, ROBOT_TARGET_H, FLOOR_Y, REDUCER_STL,
@@ -1813,8 +1813,11 @@ function loop(){
   if(!tdActive&&animDemo&&urdfRoot){
     animTime+=0.016;
     /* 拟人步态：左右腿相位差π，手臂与同侧腿反相摆动，膝/踝随动补偿；
+       躯干上下起伏(质心 bob)与重心侧移增强真实行走感；
        所有目标角经 setJointAngle 二次夹紧在关节限位内，平滑系数保证无跳变 */
     var gaitPhase=animTime*2*Math.PI/GAIT_PERIOD; /* 左腿相位基准 */
+    /* 躯干起伏：双支撑相最低、单支撑相最高（每半步一个波峰，幅度 GAIT_BOB_AMP 场景单位≈4cm） */
+    body3d.position.y=GAIT_BOB_AMP*0.5*(1-Math.cos(2*gaitPhase));
     Object.keys(urdfJoints).forEach(function(jn){
       var j=urdfJoints[jn];
       if(!j||!j.group)return;
@@ -1826,21 +1829,21 @@ function loop(){
       switch(nf.type){
         /* 下肢：摆腿-屈膝-蹬地踝补偿，构成行走主循环 */
         case 'hip_pitch':   tgt=Math.sin(ph)*GAIT_LEG_AMP; break;                      /* 髋前后摆腿 */
-        case 'knee':        tgt=GAIT_KNEE_BASE+GAIT_KNEE_AMP*0.5*(1+Math.sin(ph+1.5)); break; /* 摆动相屈膝 */
-        case 'ankle_pitch': tgt=-Math.sin(ph+2.1)*GAIT_ANKLE_AMP; break;              /* 踝俯仰补偿 */
-        case 'ankle_roll':  tgt=0.05*Math.sin(ph); break;                              /* 踝微侧摆 */
-        case 'hip_roll':    tgt=0.05*Math.sin(ph); break;                              /* 髋微侧摆(重心转移) */
-        case 'hip_yaw':     tgt=0.04*Math.sin(ph); break;                              /* 髋微内旋 */
+        case 'knee':        tgt=GAIT_KNEE_BASE+GAIT_KNEE_AMP*0.5*(1+Math.sin(ph-0.6)); break; /* 摆动相屈膝(滞后摆腿) */
+        case 'ankle_pitch': tgt=-Math.sin(ph+1.9)*GAIT_ANKLE_AMP; break;              /* 踝俯仰补偿：摆动相背伸+落地缓冲 */
+        case 'ankle_roll':  tgt=0.06*Math.sin(ph); break;                              /* 踝微侧摆 */
+        case 'hip_roll':    tgt=0.09*Math.sin(ph); break;                              /* 髋微侧摆(重心转移更明显) */
+        case 'hip_yaw':     tgt=0.05*Math.sin(ph); break;                              /* 髋微内旋 */
         /* 上肢：手臂与同侧腿反相摆动（自然行走姿态），肘部微屈随动 */
         case 'shoulder_pitch': tgt=Math.sin(ph+Math.PI)*GAIT_ARM_AMP; break;           /* 摆臂 */
-        case 'shoulder_roll':  tgt=(nf.side==='l'?1:-1)*0.06; break;                   /* 自然小外张 */
-        case 'shoulder_yaw':   tgt=0.03*Math.sin(ph+Math.PI); break;                   /* 肩微内旋 */
+        case 'shoulder_roll':  tgt=(nf.side==='l'?1:-1)*0.09; break;                   /* 自然小外张 */
+        case 'shoulder_yaw':   tgt=0.04*Math.sin(ph+Math.PI); break;                   /* 肩微内旋 */
         case 'elbow':       tgt=GAIT_ELBOW_BASE+GAIT_ELBOW_AMP*0.5*(1+Math.sin(ph+Math.PI)); break; /* 屈肘随动 */
         case 'elbow_yaw':   tgt=0.05*Math.sin(ph); break;                              /* 前臂微旋 */
         /* 躯干：腰部随步态轻微扭转/起伏，增强拟人感 */
         case 'waist_yaw':   tgt=Math.sin(gaitPhase)*GAIT_WAIST_AMP; break;             /* 腰随摆臂反扭 */
-        case 'waist_pitch': tgt=0.04*Math.sin(2*gaitPhase); break;                     /* 步频两倍轻微起伏 */
-        case 'waist_roll':  tgt=0.03*Math.sin(gaitPhase); break;                       /* 腰微侧倾 */
+        case 'waist_pitch': tgt=0.06*Math.sin(2*gaitPhase)+0.03; break;                /* 步频两倍起伏+轻微前倾 */
+        case 'waist_roll':  tgt=0.05*Math.sin(gaitPhase); break;                       /* 腰微侧倾 */
         /* wrist / hand 不参与步态，保持零位 */
       }
       if(tgt===null)return;
@@ -1952,6 +1955,8 @@ function resetJointMap(map){
       if(j.group&&j.zero)j.group.quaternion.copy(j.zero);
     }
   });
+  /* 步态躯干起伏复位：动画关闭/姿态切换时机器人回到地面高度 */
+  if(body3d)body3d.position.y=0;
 }
 /* 切换动画演示开关 */
 function toggleAnimDemo(){

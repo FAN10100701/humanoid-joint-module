@@ -18,16 +18,17 @@ export const LABEL_BG_COLOR='rgba(20,28,42,0.85)'; /* 标签背景色 */
 export const LABEL_TEXT_COLOR='#ffffff';   /* 标签文字颜色 */
 export const AUTO_ROTATE_SPEED=0.008;      /* 自动旋转速度 */
 /* ===== 拟人步态可调参数（关节动画：原地行走演示，全部单位弧度） ===== */
-export const GAIT_PERIOD=2.6;      /* 步态周期(秒)：越大走得越慢 */
-export const GAIT_SMOOTH=0.08;     /* 关节角向目标平滑系数(0~1)：越小动作越柔 */
-export const GAIT_LEG_AMP=0.30;    /* 髋关节前后摆腿幅度 */
-export const GAIT_KNEE_BASE=0.22;  /* 膝关节基础微屈角：行走中膝盖不锁死 */
-export const GAIT_KNEE_AMP=0.30;   /* 膝关节摆动相附加屈膝幅度 */
-export const GAIT_ANKLE_AMP=0.16;  /* 踝关节俯仰补偿幅度 */
-export const GAIT_ARM_AMP=0.28;    /* 肩关节前后摆臂幅度 */
-export const GAIT_ELBOW_BASE=0.22; /* 肘关节基础微屈角：摆臂自然屈肘 */
-export const GAIT_ELBOW_AMP=0.10;  /* 肘关节随摆臂屈伸幅度 */
-export const GAIT_WAIST_AMP=0.07;  /* 腰部偏航随动幅度 */
+export const GAIT_PERIOD=2.2;      /* 步态周期(秒)：越大走得越慢（2.2≈每步1.1秒，接近自然步频） */
+export const GAIT_SMOOTH=0.16;     /* 关节角向目标平滑系数(0~1)：越大动作越利落（0.16 消除发飘感） */
+export const GAIT_LEG_AMP=0.42;    /* 髋关节前后摆腿幅度（明显迈步感） */
+export const GAIT_KNEE_BASE=0.16;  /* 膝关节基础微屈角：支撑相接近伸直 */
+export const GAIT_KNEE_AMP=0.42;   /* 膝关节摆动相附加屈膝幅度（抬脚更清晰） */
+export const GAIT_ANKLE_AMP=0.22;  /* 踝关节俯仰补偿幅度（落地缓冲+蹬地） */
+export const GAIT_ARM_AMP=0.40;    /* 肩关节前后摆臂幅度（摆臂更有力） */
+export const GAIT_ELBOW_BASE=0.25; /* 肘关节基础微屈角：摆臂自然屈肘 */
+export const GAIT_ELBOW_AMP=0.18;  /* 肘关节随摆臂屈伸幅度 */
+export const GAIT_WAIST_AMP=0.10;  /* 腰部偏航随动幅度（反扭更明显） */
+export const GAIT_BOB_AMP=1.8;     /* 躯干上下起伏幅度(场景单位≈4cm)：质心随步态升降，增强真实感 */
 export const CAMERA_DEFAULT_DIST=105;      /* 默认相机距离 */
 
 /* ==================== 机身配色方案系统（可切换：原配色/银白/纯白/金属/半透明） ====================
