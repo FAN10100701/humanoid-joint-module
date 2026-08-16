@@ -576,10 +576,14 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.5.5</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · 代码实验室热修复</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.5.6</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · 3D 模块二次拆分</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.5.6 · 2026-08-16 · 3D 模块二次拆分</summary>
+        <div class="faq-a"><b>E4 3D 模块二次拆分</b>:机型配置/参数数据(URDF 资源配置、机型比例、配色/环境预设、压缩加载开关、预加载清单、拆解词典 50 词条、步态/动画/对比布局等全部可调参数)从 `app.module.js` 独立成纯数据文件 `00_3D解剖/js/config.js`,主逻辑仅保留算法与交互 —— 以后调参数、加机型只改一个文件;导出名与原内联名一致,引用零改动,已通过语法与引用一致性校验。<b>缓存升级</b>:3D 页 sw v3→v4、全站缓存名升 hrl-site-v1.5.6,老缓存用户自动刷新到新代码。决策记录:保留全部原始 STL(离线兜底 + 未来"精细度切换"按需使用,当前 .drc→.gz 三级压缩加载已兼具速度与精度)。</div>
+      </details>
+      <details class="faq">
         <summary>V1.5.5 · 2026-08-16 · 代码实验室热修复</summary>
         <div class="faq-a">修复 <b>代码实验室整页冻结</b>的根因:FOC 实验(实验二)的 `updateReadouts` 返回值缺失 `iqVal` 字段,导致 `drawDq` 首帧抛 TypeError、整个动画循环中断 —— 表现为"三个实验调参数都没反应"。已补上字段并回归验证 11/11 通过;<b>交互升级</b>:实验一拖动任何参数自动<b>重放</b>响应曲线(含目标角滑块即时生效),实验三摆杆倒下时调参自动<b>重置</b>重新起摆 —— 调参效果立即可见。</div>
       </details>
@@ -627,7 +631,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.5.5(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.5.6(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
