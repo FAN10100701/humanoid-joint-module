@@ -376,12 +376,51 @@
     ft.className = "site-footer";
     ft.innerHTML = "人形机器人学习站 · " + S.VERSION + " · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · "
       + '<a href="' + root + '/index.html">返回首页</a> · 按 Ctrl+K 全站搜索 · '
-      + '<a href="' + root + '/index.html#version">版本历史</a>';
+      + '<a href="' + root + '/index.html#version">版本历史</a>'
+      + ' · 👀 <span id="busuanzi_value_site_pv">--</span> 次访问';
     document.body.appendChild(ft);
+    /* 不蒜子访问统计：零后端、懒加载；脚本不可达时仅显示 "--"，不影响页面 */
+    try{
+      var bs = document.createElement("script");
+      bs.async = true;
+      bs.src = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+      document.body.appendChild(bs);
+    }catch(e){}
 
     if(P.pageId){
       var btn = document.querySelector(".nav-done");
       if(btn) btn.classList.toggle("on", !!getProgress()[P.pageId]);
+    }
+  }
+
+  /* ---------- 结构化数据 JSON-LD(SEO):BreadcrumbList + FAQPage 富摘要 ---------- */
+  function injectJsonLd(){
+    var P = page();
+    var arr = [];
+    if(P.breadcrumb && P.breadcrumb.length){
+      var base = location.origin + location.pathname.replace(/[^/]*$/, "") + "index.html";
+      var items = [{ "@type":"ListItem", "position":1, "name":"首页", "item":base }];
+      P.breadcrumb.forEach(function(b, i){
+        items.push({ "@type":"ListItem", "position":i+2, "name":b.t, "item": b.u ? new URL(b.u, location.href).href : location.href });
+      });
+      arr.push({ "@context":"https://schema.org", "@type":"BreadcrumbList", "itemListElement":items });
+    }
+    /* FAQPage：扫描页面内 details.faq 折叠问答块(面试专题/FAQ/版本历史等页面自动生效) */
+    var faqs = document.querySelectorAll("details.faq");
+    if(faqs.length){
+      var main = [];
+      for(var i=0;i<faqs.length;i++){
+        var s = faqs[i].querySelector("summary");
+        var a = faqs[i].querySelector(".faq-a");
+        if(s && a) main.push({ "@type":"Question", "name":s.textContent.trim().slice(0,300), "acceptedAnswer":{ "@type":"Answer", "text":a.textContent.trim().slice(0,3000) } });
+      }
+      if(main.length) arr.push({ "@context":"https://schema.org", "@type":"FAQPage", "mainEntity":main });
+    }
+    for(var j=0;j<arr.length;j++){
+      var sc = document.createElement("script");
+      sc.type = "application/ld+json";
+      sc.textContent = JSON.stringify(arr[j]);
+      document.head.appendChild(sc);
     }
   }
 
@@ -547,7 +586,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V1.6.0(2026-08-16)";
+  S.VERSION = "V1.6.1(2026-08-16)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -663,8 +702,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initGiscus(); initKaTeX(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initGiscus(); initKaTeX(); injectJsonLd(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initGiscus(); initKaTeX();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initGiscus(); initKaTeX(); injectJsonLd();
   }
 })();

@@ -124,7 +124,17 @@ function loadDeps(cb){
     .then(function(S){STLLoader=S.STLLoader;return import('three/addons/environments/RoomEnvironment.js');})
     .then(function(R){RoomEnv=R.RoomEnvironment;return import('three/addons/loaders/DRACOLoader.js');})
     .then(function(D){DRACOLoader=D.DRACOLoader;cb(true);})
-    .catch(function(e){console.warn('[Robot3D] 引擎加载失败:',e);cb(false);});
+    .catch(function(e){
+      console.warn('[Robot3D] 引擎加载失败:',e);
+      /* 【iOS 修复】动态 import 失败时主动切换到 CDN 并刷新——不依赖 window error 的
+         message 文本匹配(iOS 上模块加载错误 message 常为空,旧回退逻辑会失效) */
+      if(!sessionStorage.getItem('__three_cdn__')){
+        try{sessionStorage.setItem('__three_cdn__','1');}catch(err){}
+        try{location.reload();}catch(err){}
+        return;
+      }
+      cb(false);
+    });
 }
 /* ==================== 高保真PBR材质系统（航空级铝合金质感） ==================== */
 /* 金属主体材质：高强度7075铝合金，磨砂阳极氧化质感 */
@@ -735,6 +745,9 @@ function assembleUrdf(parsed,geos){
 /* DRC/GZ 压缩加载开关已移至 js/config.js（E4 拆分） */
 var _stlParseLoader=null; /* 共享的 STLLoader 实例（只用其 parse 方法解析解压后的字节） */
 function stlGeoSmart(url){
+  /* 【精细模式】用户选择"精细模型"时跳过 .drc/.gz 压缩,直接加载原始 STL(全精度,数据量大) */
+  var FINE=!1;try{FINE=localStorage.getItem('robot-fine-mode')==='1';}catch(e){}
+  if(FINE)return stlGeoFallback(url);
   /* 第一优先级：.drc（Draco 加载器已就绪且开关打开才尝试；失败自动降级 .gz） */
   if(DRC_STL_ENABLE&&DRACOLoader&&window.fetch)return stlGeoDrc(url).catch(function(){return stlGeoGz(url);});
   return stlGeoGz(url);                              /* 未就绪/关闭开关：直接走 .gz 逻辑 */
@@ -2921,6 +2934,11 @@ window.Robot3D={
   toggleCompare:toggleCompare,   /* H1/G1 同屏对比开关（供底部栏按钮调用） */
   setColorScheme:applyColorScheme, /* 机身配色方案切换（供底部栏/移动端抽屉下拉调用） */
   setEnvPreset:applyEnvPreset,     /* 环境背景预设切换（供底部栏/移动端抽屉下拉调用） */
+  setFineMode:function(on){        /* 模型精细度切换：流畅(压缩) ↔ 精细(原始STL)，切换后重载 */
+    try{localStorage.setItem('robot-fine-mode', on?'1':'0');}catch(e){}
+    showLdtip(on?'正在加载原始精细模型(数据量大,请稍候)…':'正在切换流畅模式(压缩模型)…');
+    setTimeout(function(){try{location.reload();}catch(e){}},300);
+  },
   /* 零件数量统计（供底部栏性能显示使用） */
   get meshCount(){return body3d?countMeshes(body3d):0;},
   /* 拆解场景零件数量（供底部栏性能显示使用） */

@@ -47,8 +47,8 @@
     { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03","02-04","02-05","02-06","02-07"] },
     { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05"] },
     { key:"04", name:"升级进阶", ids:["04-01","04-02"] },
-    { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08","06-09","06-10","06-11","06-12","06-13"] },
-    { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07"] },
+    { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08","06-09","06-10","06-11","06-12","06-13","06-14"] },
+    { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07","07-08"] },
     { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07"] }
   ];
 </script>
@@ -576,10 +576,14 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.6.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · 内容大扩充:6 新页 + 面试专题 + 题库 40 + 术语 100</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.6.1</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · iOS 3D 白屏修复 + 收录升级 + 面试 v2</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.6.1 · 2026-08-16 · iOS 3D 白屏修复 + 收录升级 + 面试 v2</summary>
+        <div class="faq-a">🔧 <b>iOS 3D 白屏修复</b>(经手机实测诊断定位):three.js 动态 import 在 iOS 失败且错误信息为空,导致原 CDN 回退机制失效;现改为<b>静态 importmap + error/unhandledrejection 双通道回退 + 加载器主动回退</b>,诊断浮标升级为区分脚本/资源错误;🆕 <b>3D 精细度切换</b>(底部栏「流畅/精细」,默认三级压缩,可切原始 STL);🔍 <b>收录升级</b>:全站自动注入 JSON-LD(面包屑 + FAQ 富摘要)、页脚访问统计、3D 页 meta 补齐、附《搜索引擎收录指南》;🆕 <b>新增 2 页</b>:具身智能数据集与评测专题、ros2_control 实战深挖;<b>面试专题 v2</b>:610→1137 行,新增 HR 面 10 题 / 英文面试 15 题 / 手撕手推 10 题 / 公司专项 8 家;全站 <b>52 个可索引页面</b>。</div>
+      </details>
+      <details class="faq">
         <summary>V1.6.0 · 2026-08-16 · 内容大扩充:6 新页 + 面试专题 + 题库 40 + 术语 100</summary>
         <div class="faq-a">🆕 <b>新增 6 页</b>(全部联网核实):ROS2 导航 Navigation2 实战、机器人感知专题(相机/激光雷达/点云)、MoveIt2 进阶(运动规划与抓取管线)、FOC 驱动器硬件深挖、传感器专题(IMU/力矩/触觉)、<b>大厂面试专题</b>(问答题/流程题/场景题+答题方法论);<b>题库 24→40 题</b>、<b>术语表 72→100 词</b>(自测题库/术语词典页同步);<b>学习地图补全</b> 36→51 节点;前沿主题(VLA/Sim2Real/世界模型/灵巧手/步态)已有专页,不重复建;<b>Giscus 评论区启用</b>(repoId/categoryId 经 GitHub API 获取,类别 Ideas,安装 giscus App 后生效);<b>3D 页</b>:移动端常驻「📱 诊断」浮标 + modulepreload 首屏提速。</div>
       </details>
@@ -635,7 +639,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.6.0(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.6.1(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

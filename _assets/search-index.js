@@ -55,6 +55,7 @@ window.SITE_SEARCH_INDEX = [
   { t:"ROS2 导航 Navigation2 实战", u:"06_软件与算法/11_ROS2导航_Navigation2实战.html", s:"软件与算法", d:"Nav2 导航栈:行为树/规划器/控制器/代价地图/AMCL 定位、建图、导航参数与实战步骤", k:"ROS2 Nav2 Navigation2 导航 行为树 规划器 控制器 代价地图 costmap AMCL 定位 建图 SLAM Toolbox Cartographer DWB TEB 避障" },
   { t:"机器人感知专题 · 相机 / 激光雷达 / 点云", u:"06_软件与算法/12_机器人感知专题_相机激光雷达点云.html", s:"软件与算法", d:"相机模型与标定、激光雷达原理、点云处理(PCL/Open3D)、多传感器融合与人形感知方案", k:"感知 相机 标定 内参 畸变 深度相机 激光雷达 点云 PCL Open3D 滤波 分割 RANSAC 聚类 ICP 多传感器融合" },
   { t:"MoveIt2 进阶 · 运动规划与抓取管线", u:"06_软件与算法/13_MoveIt2进阶_运动规划与抓取管线.html", s:"软件与算法", d:"OMPL 规划器详解、约束/笛卡尔路径、Octomap 避障、MoveIt Task Constructor 抓取管线、ros2_control 真机部署", k:"MoveIt2 运动规划 OMPL RRT BiTRRT 约束规划 笛卡尔路径 避障 Octomap 抓取 MoveIt Task Constructor ros2_control 真机" },
+  { t:"ros2_control 实战深挖", u:"06_软件与算法/14_ros2_control实战深挖.html", s:"软件与算法", d:"controller_manager、硬件接口、常用关节控制器配置、自定义 HardwareInterface、MoveIt 串联与真机部署", k:"ros2_control 控制器 controller_manager 硬件接口 HardwareInterface joint_trajectory_controller 真机 部署 MoveIt 关节模式 CAN" },
 
   /* ---- 7 · 前沿知识库(新) ---- */
   { t:"全球人形机器人机型全景", u:"07_前沿知识库/01_全球人形机器人机型全景.html", s:"前沿知识库", d:"Optimus、Figure、宇树 H1/G1、智元、Atlas、小米、傅利叶等 10+ 机型参数对比与趋势", k:"人形机器人 机型 特斯拉 Optimus Figure 宇树 H1 G1 智元 远征 灵犀 波士顿动力 Atlas 小米 CyberOne 傅利叶 星动纪元 众擎 参数对比 行业趋势" },
@@ -64,6 +65,7 @@ window.SITE_SEARCH_INDEX = [
   { t:"电池与能源系统专题", u:"07_前沿知识库/05_电池与能源系统专题.html", s:"前沿知识库", d:"功耗来源、锂电基础、续航估算、高压平台、BMS 与热失控安全、主流机型电池方案", k:"电池 能源 续航 能量密度 C率 高压平台 48V BMS 热失控 快充 换电 锂电 Optimus 宇树 功耗" },
   { t:"灵巧操作与抓取规划", u:"07_前沿知识库/06_灵巧操作与抓取规划.html", s:"前沿知识库", d:"抓取问题表述、力/形封闭、6D 抓取规划、力控抓取、操作任务、数据集与基准、与 VLA 结合", k:"抓取 灵巧操作 力封闭 形封闭 6D抓取 力控 阻抗控制 GraspNet DexGraspNet 插线 开门 数据基准" },
   { t:"开源整机与仓库深度解析", u:"07_前沿知识库/07_开源整机与仓库深度解析.html", s:"前沿知识库", d:"宇树开源生态、智元开源、OpenLoong 开源整机逐仓库拆解、其他开源项目与许可证合规", k:"开源整机 宇树 unitree_sdk2 unitree_ros2 unitree_rl_gym 智元 AgiBot World 灵犀X1 OpenLoong 青龙 开源仓库 许可证 MIT Apache GPL" },
+  { t:"具身智能数据集与评测专题", u:"07_前沿知识库/08_具身智能数据集与评测专题.html", s:"前沿知识库", d:"OXE/DROID/AgiBot World/G1-Dex1 数据集逐个拆解、SIMPLER 评测基准、采集方式对比、数据合规与学习路线", k:"数据集 具身智能 OXE Open X-Embodiment DROID AgiBot World G1-Dex1 评测 SIMPLER 遥操作 数据采集 版权 行为克隆 潜动作" },
 
   /* ---- 8 · 学习工具(新) ---- */
   { t:"术语词典", u:"08_学习工具/01_术语词典.html", s:"学习工具", d:"100+ 核心术语:机械/电机/驱动/控制/通信/软件/AI,实时搜索分类", k:"术语 词典 词汇 谐波 背隙 编码器 FOC SVPWM CAN EtherCAT ROS2 术语表" },

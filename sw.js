@@ -4,9 +4,9 @@
    - 静态资源(_assets): 缓存优先
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
-   - 版本: V1.6.0 · 2026-08-16(升级站点时改 CACHE 名以强制更新)
+   - 版本: V1.6.1 · 2026-08-16(升级站点时改 CACHE 名以强制更新)
    ============================================================ */
-var CACHE = "hrl-site-v1.6.0";
+var CACHE = "hrl-site-v1.6.1";
 var PRECACHE = [
   "./index.html",
   "./404.html",

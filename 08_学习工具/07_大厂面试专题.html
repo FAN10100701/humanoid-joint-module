@@ -11,6 +11,7 @@
   .my-fw b{color:#86efac}
   .my-sub{font-size:13.5px;color:#9aa4b2;margin:6px 0 10px}
   .my-check li{margin:5px 0}
+  .my-en{color:#93c5fd;font-size:13.5px;line-height:1.9;margin:6px 0 4px}
 </style>
 <script>
   window.PAGE = {
@@ -44,7 +45,7 @@
     1. 能画出机器人 / 具身智能五类岗位地图,说出各自的技能树与典型面试轮次<br>
     2. 能对六大专题(电机驱动 / 机械传动 / 控制 / ROS2 / 感知规划 / 具身智能)的 20+ 高频问答题给出「框架化参考回答要点」<br>
     3. 掌握流程题、项目深挖题、场景开放题的回答套路(拆解 → 决策点 → 验证),并会用 STAR 法则讲项目<br>
-    <b>建议用时:</b>约 50~60 分钟(含 8 道自测)
+    <b>建议用时:</b>约 50~60 分钟(含 12 道自测)
   </div>
 
   <!-- ================= 1. 岗位地图 ================= -->
@@ -477,8 +478,474 @@
     <li>✅ 手撕:LeetCode 高频题刷过一轮 + 会手写 Clark/Park 与 PID 离散化。</li>
   </ul>
 
-  <!-- ================= 7. 本节自测 ================= -->
-  <h2><span class="h2-num">7</span> 本节自测</h2>
+  <!-- ================= 7. HR 面与综合面常见题 ================= -->
+  <h2><span class="h2-num">7</span> HR 面与综合面常见题(10 题 · 参考回答要点)</h2>
+  <p class="my-sub">HR 面与综合面(总监面 / 交叉面)考的是「动机、稳定性、情商、性价比」,技术题往往只占一部分。原则:<b>真实 + 结构化 + 与岗位强关联</b>,不要背稿。下面每题给「回答要点 + 参考话术骨架」,展开后用你自己的话重说一遍。</p>
+
+  <details class="faq">
+    <summary>Q1 请做自我介绍(1 分钟 / 3 分钟怎么讲)</summary>
+    <div class="faq-a">
+      <b>1 分钟版(三段式):</b>① 我是谁(学校 / 方向 / 工龄一句话);② 我做过什么(挑 1~2 个最相关亮点,带量化,如「我把电流环带宽调到 X Hz、策略真机成功率 Y%」);③ 我为什么适合这个岗位(把简历关键词往 JD 上贴)。<br><br>
+      <b>3 分钟版:</b>把第②段展开成一个完整 STAR(情境→任务→行动→结果),其余两段不变。<br><br>
+      <b>参考骨架:</b>「我是 XX,方向是机器人控制。硕士期间我独立完成了一个 FOC 关节控制器,把电流环带宽做到 XX,并在真机上验证了力控;后来做了一个 sim2real 步态项目,成功率从 X% 提到 Y%。我看到贵司在做 XX,和我的积累高度匹配,所以来应聘这个岗位。」<br><br>
+      <b>注意:</b>① 别复述简历全文,讲「简历之外、面试官想听的重点」;② 结尾留一个「钩子」,引导面试官追问你最拿手的项目。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q2 为什么选择我们公司 / 这个岗位?</summary>
+    <div class="faq-a">
+      <b>三点结构:</b>① 技术方向匹配(公司做的东西 = 你的积累,点名具体产品 / 技术,如「你们的 H1 步态 RL」「灵犀开源平台」);② 业务阶段吸引你(量产攻坚 / 前沿探索 / 开源社区);③ 你能贡献什么(反向给价值)。<br><br>
+      <b>参考骨架:</b>「我长期在做电机驱动与运动控制,贵司在步态强化学习和关节模组上的技术路线正好是我深耕的方向;同时产品正处在从 Demo 到量产的关键阶段,我的工程落地经验能帮上忙。」<br><br>
+      <b>避坑:</b>只说「平台大 / 薪资高 / 离家近」会显得动机很弱,一定要落到「技术 + 业务」上。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q3 为什么从 A 方向转到 B 方向(转岗 / 转行)?</summary>
+    <div class="faq-a">
+      <b>框架:</b>① 承认并肯定过去(别贬低原方向,「汽车底盘控制让我打下了扎实的控制功底」);② 讲清转换的<b>内在逻辑</b>(能力可迁移:「都是从『建模→控制→真机』这套方法」);③ 展示你已做的准备(自学课程 / 做过的小项目 / 复现的 demo);④ 落到长期匹配。<br><br>
+      <b>参考骨架:</b>「我在汽车行业做了三年底盘电机控制,核心是 FOC 与闭环调参,这套能力在机器人关节上完全通用。过去一年我业余复现了谐波关节的力控和一套 sim2real 抓取 demo,确认自己更想做人形机器人。」<br><br>
+      <b>避坑:</b>忌说「原行业没前途」「想换风口」——要讲「能力延续 + 主动选择」。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q4 期望薪资怎么谈?</summary>
+    <div class="faq-a">
+      <b>要点:</b>① 先做功课:了解目标公司该岗位的市场区间(招聘平台 / 学长 / 社区);② 被问时<b>给区间而非单点</b>,且下限是你能接受的底线;③ 反问清<b>薪酬结构</b>(月 base / 年终几个月 / 股票期权 / 补贴 / 加班费),再算总包;④ 表达态度:「薪资合理即可,我更看重岗位与成长」。<br><br>
+      <b>参考骨架:</b>「我了解这个岗位的市场区间大概在 XX~XX,我希望在这个范围内。具体数字可以根据贵司的薪酬结构(年终、股票)综合来看,我更看重的是岗位匹配和长期发展。」<br><br>
+      <b>避坑:</b>别一上来报死数,也别甩一句「你们看着给」——既显得没准备,也容易被压价。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q5 说说你的缺点?</summary>
+    <div class="faq-a">
+      <b>公式:</b>真实但非致命的缺点 + 已采取的改进措施 + 量化效果。<br><br>
+      <b>参考骨架:</b>「我过去写代码喜欢一次写完再测,导致联调阶段返工多。后来我强制自己用『先写测试用例、小步提交、真机增量验证』的方式,现在项目联调周期明显缩短了。」<br><br>
+      <b>避坑:</b>① 别说「我太追求完美 / 太努力」这类变相自夸的空话;② 也别踩岗位红线(嵌入式岗说「我粗心、不喜抠细节」是自杀);③ 说 1 个即可,别连说 3 个暴露过多。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q6 为什么从上家公司离职?</summary>
+    <div class="faq-a">
+      <b>原则:</b>客观、不贬低前司、往前看。安全且真实的理由:① 发展方向与个人规划不匹配;② 想接触具身智能 / 机器人前沿;③ 组织或业务调整(如实)。<br><br>
+      <b>参考骨架:</b>「上一家公司在传统工业控制,我很感谢那几年的积累;但我想把积累用在前景更大的机器人方向,这和我的长期规划一致,所以主动选择离开。」<br><br>
+      <b>避坑:</b>绝不说「和领导 / 同事不和」「钱少事多加班狠」——哪怕是真的,面试官也只会担心你「不好相处 / 抗压差 / 再来一次还会走」。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q7 你的职业规划是什么?</summary>
+    <div class="faq-a">
+      <b>三段式(对齐岗位 JD):</b>① 短期 1~2 年:扎根岗位,把某块技术做到精通(如「把关节控制与整机联调吃透」);② 中期 3~5 年:成为该方向的骨干 / 能独立带一个技术模块(如「独立负责某类关节或某个控制子系统」);③ 长期:结合公司业务一起成长(如「往整机运动控制 / 具身智能架构方向深耕」)。<br><br>
+      <b>避坑:</b>别给「三年当主管、五年创业」这类脱离岗位的规划,面试官要的是「你会不会踏实留下来做技术」。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q8 项目里和同事发生冲突,你怎么处理?</summary>
+    <div class="faq-a">
+      <b>框架(对事不对人):</b>① 先各自说清分歧点,把「立场之争」变成「问题之争」;② 用<b>数据 / 实验</b>说话(「我们各做一个最小验证,看结果」);③ 找折中方案或请负责人拍板;④ 事后复盘协作机制。<br><br>
+      <b>参考骨架(套一个例子):</b>「一次我和硬件同学就电流采样方案有分歧,我没有争论谁对,而是各做一版小样测噪声和温漂,用实测数据选了更稳的方案,并把选择标准沉淀下来。」<br><br>
+      <b>考点:</b>面试官在测你的<b>沟通方式与情绪管理</b>,重点展示「如何把冲突导向结果」,而不是「谁赢」。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q9 你对 996 / 加班怎么看?</summary>
+    <div class="faq-a">
+      <b>立场:</b>接受关键节点的必要加班,但更强调效率与结果导向;不硬扛、也不当面抗拒。<br><br>
+      <b>参考骨架:</b>「项目冲刺、上线、真机演示这些关键节点,需要时我全力以赴;平时我更倾向于把时间花在提升效率上,避免无效加班。我理解这个行业偶尔要抢进度,只要目标明确、付出有回报,我没有问题。」<br><br>
+      <b>避坑:</b>① 别说「我坚决不加班」(显得难管理);② 也别拍胸脯「加班完全无所谓」(显得假、也可能被当软柿子)。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q10 反问环节该问什么(怎么问显得专业)?</summary>
+    <div class="faq-a">
+      <b>核心:问「业务本质」而非「待遇细节」。</b>推荐问:① 团队目前在攻的<b>最难技术问题</b>是什么?② 这个岗位<b>前 6 个月</b>最看重的产出 / 成功标准?③ 产品到了什么阶段(<b>Demo / 小批量 / 量产</b>)?④ 某条技术路线怎么选(如「步态是走 RL 还是 MPC/WBC?为什么」)?<br><br>
+      <b>避坑:</b>第一轮别一上来问加班和薪资(薪资可在谈 offer 时集中谈);也别问官网上已写得明明白白的问题,显得没做功课。
+    </div>
+  </details>
+
+  <!-- ================= 8. 英文面试速查 ================= -->
+  <h2><span class="h2-num">8</span> 英文面试速查(15 个高频问题 · 中英对照)</h2>
+  <p class="my-sub">外企、海外面试、或外籍面试官环节常会英文问答。每题给「中文理解(先懂要答什么)+ 英文回答模板(可背可改)」。套用模板时把方括号里的占位换成你自己的项目与数字。</p>
+
+  <details class="faq">
+    <summary>Q1 Tell me about yourself(请介绍一下自己)</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>背景(学历 / 方向)→ 1~2 个相关亮点(带量化)→ 为什么适合该岗位。<br>
+      <p class="my-en">I'm a master's student in control engineering. I built a FOC joint controller, where I tuned the current loop to a [XX Hz] bandwidth, and I trained a locomotion policy that reached [XX%] success on the real robot. My background in motor control and motion planning matches this role well.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q2 Why robotics / why do you want to work in robotics?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>为什么选机器人方向 / 这份工作,讲兴趣 + 能力 + 价值。<br>
+      <p class="my-en">Robotics sits at the intersection of perception, control, and hardware. I enjoy turning algorithms into physical motion, and humanoid robots push both control and embodied AI to the limit — that is exactly where I want to grow.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q3 What is FOC (field-oriented control)?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>先讲 Clark/Park 把三相交流转到 dq 变成直流,再讲 d/q 分别控励磁与转矩,最后 SVPWM 输出。<br>
+      <p class="my-en">FOC transforms the three-phase currents into a rotating d-q frame using the Clarke and Park transforms, so the AC currents become DC values. A PI controller then regulates the torque (q-axis) and the flux (d-axis) independently, and the result is converted back through the inverse transforms and SVPWM.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q4 What is the difference between PID and MPC?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>PID 无模型、只反馈、简单;MPC 有模型、有限时域在线优化、可显式处理约束。<br>
+      <p class="my-en">PID is a feedback-only controller with no explicit model — simple and fast. MPC solves a finite-horizon optimal control problem at every step using a model, so it can preview future references and explicitly handle constraints, at a much higher computational cost.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q5 Explain SLAM.</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>同时定位与建图;前端建约束、后端全局优化 + 回环消除漂移。<br>
+      <p class="my-en">SLAM estimates the robot's pose and builds a map at the same time. The front end extracts and matches features to get relative poses between frames, and the back end performs global optimization — for example pose-graph or factor-graph optimization — plus loop closure to reduce accumulated drift.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q6 What is a Kalman filter?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>递推状态估计,预测 + 更新两步,卡尔曼增益按噪声权衡。<br>
+      <p class="my-en">It is a recursive state estimator. First it predicts the state and covariance using the motion model, then it updates them with the measurement, weighted by the Kalman gain, which balances the trust between the model and the sensor noise.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q7 What is impedance control?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>把机器人末端调节成「弹簧-阻尼-质量」,控制力与运动的关系,用于柔顺接触。<br>
+      <p class="my-en">Impedance control makes the robot behave like a spring-mass-damper system. It regulates the relationship between force and motion — roughly F = M·x'' + B·x' + K·x — which is essential for safe contact and manipulation.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q8 What is the difference between forward and inverse kinematics?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>正解由关节角算末端位姿;逆解由期望位姿反求关节角(解析或雅可比数值)。<br>
+      <p class="my-en">Forward kinematics computes the end-effector pose from the joint angles. Inverse kinematics computes the joint angles that achieve a desired pose, usually solved numerically with the Jacobian or analytically for simple arms.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q9 What is sim2real?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>仿真训练、真机部署;gap 来自物理 / 视觉 / 延迟;手段是域随机化、辨识、真机微调。<br>
+      <p class="my-en">Policies are trained in simulation for cheap and scalable data, then deployed on the real robot. The gap comes from physics, vision, and latency mismatch. Domain randomization, system identification, and fine-tuning with real data are the common ways to close it.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q10 What is a VLA (vision-language-action) model?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>视觉 + 语言指令端到端直接输出动作,区别于传统分层控制。<br>
+      <p class="my-en">A VLA model maps vision and language instructions directly to robot actions, end to end, instead of the classic sense-plan-act pipeline. It generalizes better but needs large amounts of data and is less interpretable.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q11 What is a harmonic drive (gearbox)?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>谐波减速器:波发生器使柔轮变形、与刚轮啮合,大减速比、近零背隙。<br>
+      <p class="my-en">A harmonic drive uses a wave generator to deform a flexspline against a rigid circular spline, achieving a high reduction ratio — roughly 30 to 160 — with near-zero backlash. It is widely used in humanoid robot joints.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q12 What are CAN and EtherCAT?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>CAN 稳健低成本的实时总线;EtherCAT 基于以太网、低延迟 + 时钟同步,适合多轴。<br>
+      <p class="my-en">CAN is a robust, low-cost fieldbus for real-time control. EtherCAT is an Ethernet-based protocol with very low latency and synchronized distributed clocks, which is better for many-axis motion control.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q13 Describe a challenging project (your biggest challenge).</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>用 STAR 讲一个真踩过的坑:现象→定位→行动→量化结果。<br>
+      <p class="my-en">In my FOC project the motor screamed at high speed. I scoped the phase-current waveform, found sampling noise near the PWM switching edge, moved the ADC sampling point and added filtering, and the oscillation disappeared. That taught me to always check the signal chain before tuning gains.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q14 What are your strengths and weaknesses?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>优点贴合岗位;缺点真实但非致命 + 改进措施。<br>
+      <p class="my-en">My strength is bridging theory and practice — I can derive a controller and also tune it on hardware. My weakness is that I sometimes over-optimize small details; I now set time-boxes and priorities to stay focused on the goal.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q15 Do you have any questions for us?</summary>
+    <div class="faq-a">
+      <b>中文理解:</b>问业务本质,别问待遇细节。<br>
+      <p class="my-en">Yes — what is the hardest technical problem the team is solving right now? What would success look like in the first six months? And how far along is the product toward mass production?</p>
+    </div>
+  </details>
+
+  <!-- ================= 9. 手撕代码与手推题 ================= -->
+  <h2><span class="h2-num">9</span> 手撕代码与手推题(10 题 · 题目 + 思路 + 关键代码)</h2>
+  <p class="my-sub">这是第 5 章「手撕题提示」的详细展开:每题先讲「推导 / 思路」,再给「伪代码 / 关键代码」。面试时<b>边写边讲为什么</b>,写不出完整代码就给伪代码 + 说清边界条件。</p>
+
+  <details class="faq">
+    <summary>Q1 一维卡尔曼滤波:推导并写出预测 / 更新两步</summary>
+    <div class="faq-a">
+      <b>推导:</b>系统 x_k = A·x_{k-1} + w、观测 z_k = H·x_k + v(w~N(0,Q)、v~N(0,R))。<b>预测:</b>x̂_k⁻ = A·x̂_{k-1},P_k⁻ = A·P_{k-1}·Aᵀ + Q。<b>更新:</b>K = P_k⁻·Hᵀ·(H·P_k⁻·Hᵀ + R)⁻¹,x̂_k = x̂_k⁻ + K·(z_k − H·x̂_k⁻),P_k = (I − K·H)·P_k⁻。一维时 A=H=1,退化为两式。<br>
+      <pre><code>// 一维卡尔曼(状态 x、方差 P、过程噪声 Q、观测噪声 R)
+float kalman1d(float x, float P, float Q, float R, float z) {
+    // 预测(一维 A=1,无控制输入)
+    float x_pred = x;
+    float P_pred = P + Q;
+    // 更新(一维 H=1)
+    float K = P_pred / (P_pred + R);
+    x = x_pred + K * (z - x_pred);
+    P = (1.0f - K) * P_pred;
+    return x;   // 返回滤波后的状态
+}</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q2 PID 离散化:位置式与增量式各写一遍</summary>
+    <div class="faq-a">
+      <b>推导:</b>位置式 u(k) = Kp·e(k) + Ki·Σe(i) + Kd·(e(k)−e(k−1));增量式 Δu(k) = Kp·(e(k)−e(k−1)) + Ki·e(k) + Kd·(e(k)−2e(k−1)+e(k−2)),u(k)=u(k−1)+Δu(k)。增量式天然无积分累加、便于限幅与手自动切换。<br>
+      <pre><code>// 位置式(注意积分抗饱和 + 限幅)
+u  = Kp*e + Ki*integral + Kd*(e - prev_e);
+integral += e;  prev_e = e;   // 之后对 u 与 integral 做 anti-windup 限幅
+
+// 增量式(输出 = 上次输出 + 增量)
+du = Kp*(e - e1) + Ki*e + Kd*(e - 2*e1 + e2);
+e2 = e1; e1 = e;               // 滑动保存历史误差
+u  = u_prev + du;  u_prev = u;</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q3 Clark / Park 变换手写(幅值不变约定)</summary>
+    <div class="faq-a">
+      <b>推导:</b>Clark 把三相 abc 投到两相正交 αβ(幅值不变);Park 把 αβ 随转子旋到 dq,使交流量变直流量。逆变换用于把 dq 电压送回三相。<br>
+      <pre><code>// Clark(幅值不变):abc -> alpha/beta
+I_alpha = I_a;
+I_beta  = (I_a + 2.0f*I_b) / sqrtf(3.0f);   // 或 (I_b - I_c)/sqrt(3)
+
+// Park:alpha/beta -> d/q
+I_d =  I_alpha*cosf(th) + I_beta*sinf(th);
+I_q = -I_alpha*sinf(th) + I_beta*cosf(th);
+
+// 逆 Park:d/q -> alpha/beta
+V_alpha = V_d*cosf(th) - V_q*sinf(th);
+V_beta  = V_d*sinf(th) + V_q*cosf(th);</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q4 SVPWM 扇区判断(给定 Vα、Vβ 求扇区号)</summary>
+    <div class="faq-a">
+      <b>推导:</b>用三个投影 Vref1=Vβ、Vref2=√3/2·Vα−1/2·Vβ、Vref3=−√3/2·Vα−1/2·Vβ 的正负组合 N 判扇区,N 与扇区的映射为 {3→1,1→2,5→3,4→4,6→5,2→6}。<br>
+      <pre><code>int svpwm_sector(float Va, float Vb) {
+    float V1 = Vb;
+    float V2 =  0.866f*Va - 0.5f*Vb;   // sqrt(3)/2 * Va - 1/2 * Vb
+    float V3 = -0.866f*Va - 0.5f*Vb;   // -sqrt(3)/2 * Va - 1/2 * Vb
+    int N = (V1 &gt; 0) + ((V2 &gt; 0) &lt;&lt; 1) + ((V3 &gt; 0) &lt;&lt; 2);
+    switch (N) {
+        case 3: return 1; case 1: return 2; case 5: return 3;
+        case 4: return 4; case 6: return 5; case 2: return 6;
+    }
+    return 0;
+}</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q5 四元数转欧拉角(roll / pitch / yaw)</summary>
+    <div class="faq-a">
+      <b>推导:</b>四元数 q=(w,x,y,z) 对应的旋转矩阵元素可反解出欧拉角;注意 pitch 需 clamp 到 [−1,1] 再 asin,避免数值越界。不同旋转顺序(ZYX / XYZ)公式不同,本处为 ZYX。<br>
+      <pre><code>roll  = atan2f(2*(w*x + y*z), 1 - 2*(x*x + y*y));
+pitch = asinf(clampf(2*(w*y - z*x), -1.0f, 1.0f));
+yaw   = atan2f(2*(w*z + x*y), 1 - 2*(y*y + z*z));</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q6 栅格地图上两点间的 A* 寻路</summary>
+    <div class="faq-a">
+      <b>思路:</b>open 表按 f = g + h 取最小(g 已付代价、h 启发式,曼哈顿 / 欧氏),每次弹出 f 最小点扩展,记录父节点回溯路径;h 可采纳则保证最优。<br>
+      <pre><code>def astar(grid, start, goal):
+    open_h = [(h(start, goal), 0, start)]   # (f, g, 节点) 最小堆
+    g = {start: 0}; parent = {}
+    while open_h:
+        f, cost, cur = heappop(open_h)
+        if cur == goal: break
+        for nxt in neighbors(cur):
+            if grid[nxt] == 障碍: continue
+            ng = cost + 1                    # 四邻接代价为 1
+            if ng &lt; g.get(nxt, inf):
+                g[nxt] = ng; parent[nxt] = cur
+                heappush(open_h, (ng + h(nxt, goal), ng, nxt))
+    return reconstruct(parent, goal)         # 沿 parent 回溯路径</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q7 点云质心与 PCA 主轴方向</summary>
+    <div class="faq-a">
+      <b>思路:</b>质心 c = mean(p_i);协方差 C = Σ(p_i−c)(p_i−c)ᵀ/n;最大特征值对应特征向量即点云主轴(主方向),常用于位姿估计 / 抓取朝向。可用幂迭代或直接特征分解(Eigen/Jacobi)。<br>
+      <pre><code>c = points.mean(axis=0)              # (3,)
+C = (points - c).T @ (points - c) / len(points)   # 3x3 协方差
+w, v = np.linalg.eig(C)              # 特征分解
+axis = v[:, argmax(w)]               # 最大特征值 -> 主轴方向</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q8 欧拉积分 vs 四阶龙格-库塔(RK4)</summary>
+    <div class="faq-a">
+      <b>思路:</b>欧拉是单步一阶近似,简单但误差大、需小步长;RK4 在区间内取 4 个斜率加权,四阶精度,步长可更大。面试点:精度阶数、步长与稳定性。<br>
+      <pre><code>// 欧拉(一阶)
+y += h * f(t, y); t += h;
+
+// RK4(四阶)
+k1 = f(t,        y);
+k2 = f(t + h/2,  y + h/2 * k1);
+k3 = f(t + h/2,  y + h/2 * k2);
+k4 = f(t + h,    y + h   * k3);
+y += (h / 6.0) * (k1 + 2*k2 + 2*k3 + k4);  t += h;</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q9 二阶低通滤波器离散化(双线性变换)</summary>
+    <div class="faq-a">
+      <b>思路:</b>连续二阶低通 H(s)=ωn²/(s²+2ζωn·s+ωn²),令 s = 2fs·(z−1)/(z+1) 代入,展开成 biquad 形式,得到差分方程 y[n] = b0·x[n]+b1·x[n−1]+b2·x[n−2] − a1·y[n−1] − a2·y[n−2]。<br>
+      <pre><code>k  = 2.0f * fs;
+A  = k*k + 2.0f*zeta*wn*k + wn*wn;
+b0 = wn*wn / A;
+b1 = 2.0f*wn*wn / A;
+b2 = wn*wn / A;
+a1 = 2.0f*(wn*wn - k*k) / A;
+a2 = (k*k - 2.0f*zeta*wn*k + wn*wn) / A;
+// y[n] = b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2]</code></pre>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q10 二叉树层序遍历(通用编程题)</summary>
+    <div class="faq-a">
+      <b>思路:</b>BFS 用队列,按层循环 len(q) 次把当前层节点全部出队,同时把下一层子节点入队,得到「一层一个列表」。时间 O(n)、空间 O(n)。<br>
+      <pre><code>from collections import deque
+def levelOrder(root):
+    if not root: return []
+    res, q = [], deque([root])
+    while q:
+        level = []
+        for _ in range(len(q)):       # 每次恰好处理一层
+            node = q.popleft()
+            level.append(node.val)
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+        res.append(level)
+    return res</code></pre>
+    </div>
+  </details>
+
+  <!-- ================= 10. 公司专项速览 ================= -->
+  <h2><span class="h2-num">10</span> 公司专项速览(8 家 · 一段简介 + 高频考点)</h2>
+  <p class="my-sub">下面为具身智能 / 机器人方向常见目标公司。考点经 web_search 核实(2025~2026 面经 / 招聘 JD),涉及型号与组织以官方为准,<b>标「约」表示需以公司最新动态为准</b>。</p>
+
+  <h3>10.1 宇树科技(Unitree)</h3>
+  <p>以四足(Go2 / B2)与人形(H1 / G1 / H2)闻名,自研关节电机与灵巧手(如 Dex 系列),步态走强化学习(RL)sim2real 路线,底层电机驱动与运动控制是「硬主线」,面试官更想听你怎么把代码跑到真机上。</p>
+  <ul>
+    <li>FOC / 无刷电机驱动与三环调参</li>
+    <li>运动控制:MPC(约 30~50Hz)与虚拟模型控制 VMC(可 500Hz+)对比</li>
+    <li>RL 步态 / sim2real 与域随机化</li>
+    <li>灵巧手力控与触觉</li>
+    <li>嵌入式 C / CAN / 编码器</li>
+  </ul>
+
+  <h3>10.2 智元机器人(Agibot)</h3>
+  <p>具身智能路线,远征系列人形 + 开源人形平台「灵犀」X1 / X2,主推通用操作基座 / VLA 大模型(如 GO-1 / 启元大模型,约),强调数据采集与真机训练闭环。</p>
+  <ul>
+    <li>VLA / 通用操作模型原理(端到端 vs 分层)</li>
+    <li>RL 与模仿学习、sim2real</li>
+    <li>遥操作数据采集与数据闭环</li>
+    <li>灵犀开源平台 / ROS2 工程</li>
+    <li>世界模型(World Model)</li>
+  </ul>
+
+  <h3>10.3 大疆(DJI)</h3>
+  <p>嵌入式与控制是看家本领(无人机 / 云台 / 机器人),电机控制算法岗笔试以「偏难、覆盖广」著称,常考 PWM、MTPA、FOC、弱磁与姿态解算。</p>
+  <ul>
+    <li>C / C++ 与指针、RTOS、内存</li>
+    <li>FOC / MTPA / 弱磁 / SVPWM</li>
+    <li>PID / 卡尔曼滤波 / 姿态解算(四元数、互补滤波、EKF)</li>
+    <li>IMU / 传感器标定与融合</li>
+    <li>嵌入式系统设计(中断 / 采样时序)</li>
+  </ul>
+
+  <h3>10.4 华为车 BU / 机器人</h3>
+  <p>嵌入式(中高级)与通信是重点,机器人 / 具身智能是新兴方向。通信侧常考 CAN / CAN-FD、车载以太网、时间同步与网络协议栈。</p>
+  <ul>
+    <li>嵌入式基础:内存、多线程、中断、并发</li>
+    <li>Linux / 操作系统原理</li>
+    <li>CAN / CAN-FD / 车载以太网等通信协议</li>
+    <li>网络协议与时间同步(约)</li>
+    <li>手撕数据结构 / 算法</li>
+  </ul>
+
+  <h3>10.5 特斯拉 Optimus(Tesla)</h3>
+  <p>Optimus 以一体化执行器著称,结构 / 执行器 / 热管理是硬件面试重点:旋转关节用谐波减速器,直线关节用行星滚柱丝杠(约),灵巧手与传感器集成度高,量产工艺是持续热点。</p>
+  <ul>
+    <li>行星滚柱丝杠原理与选型</li>
+    <li>谐波减速器与关节结构</li>
+    <li>关节结构设计与热管理</li>
+    <li>电机选型与电磁设计</li>
+    <li>量产工艺 / 轻量化(约)</li>
+  </ul>
+
+  <h3>10.6 波士顿动力(Boston Dynamics)</h3>
+  <p>Atlas 从液压转向电动(约),控制与动力学是其灵魂:模型预测控制 + 全身控制(WBC)+ 状态估计是高频考点,重推导与落地。</p>
+  <ul>
+    <li>模型预测控制(MPC)与凸优化</li>
+    <li>全身控制 WBC / 二次规划(接触约束)</li>
+    <li>动力学建模与接触 / 摩擦</li>
+    <li>状态估计(IMU / 接触判断)</li>
+    <li>ZMP / 倒立摆 / 步态规划</li>
+  </ul>
+
+  <h3>10.7 小米机器人</h3>
+  <p>CyberOne(铁大)、CyberDog(铁蛋)系列,电机(自研关节电机)与机械(谐波减速器 / 结构 / 轻量化)是重点,有变刚度柔顺关节相关专利(约)。</p>
+  <ul>
+    <li>关节电机选型与电磁设计</li>
+    <li>谐波减速器 / 传动与背隙</li>
+    <li>结构设计与轻量化</li>
+    <li>FOC 驱动与力控</li>
+    <li>传感器(IMU / 力 / 视觉)</li>
+  </ul>
+
+  <h3>10.8 速腾聚创(RoboSense)/ 禾赛(Hesai)</h3>
+  <p>激光雷达 + 感知算法为主线,考点集中在雷达原理、点云处理、3D 检测与多传感器融合,对 C++ 与数据结构要求高。</p>
+  <ul>
+    <li>激光雷达测距原理(ToF / FMCW,约)</li>
+    <li>点云滤波 / 配准(ICP / NDT)</li>
+    <li>3D 目标检测与跟踪</li>
+    <li>多传感器融合与标定</li>
+    <li>C++ 与数据结构 / 算法</li>
+  </ul>
+
+  <!-- ================= 11. 本节自测 ================= -->
+  <h2><span class="h2-num">11</span> 本节自测</h2>
 
   <div class="quiz">
     <div class="quiz-q">1. FOC 三环从内到外的正确顺序是?</div>
@@ -576,6 +1043,54 @@
     <div class="quiz-explain">💡 解析:VLA 把视觉感知 + 自然语言指令端到端映射为动作(代表 RT-2 / OpenVLA / π0 / Helix),区别于传统分层控制;短板是数据需求大、可解释差、高频精细控制不足。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">9. HR 面被问「说说你的缺点」时,最合适的做法是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 说一个致命缺点,显得诚实</button>
+      <button data-v="B">B. 说「我最大的缺点是太追求完美」这类套话</button>
+      <button data-v="C">C. 说一个真实但非核心的缺点,并给出已采取的改进措施与效果</button>
+      <button data-v="D">D. 拒绝回答,认为这题不合理</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:缺点题要「真实但非致命 + 改进措施 + 量化效果」;「太追求完美」是变相自夸,说致命缺点或拒答都会扣分,且不要踩岗位红线(如嵌入式岗说「我粗心」)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 英文面试被问 Tell me about yourself 时,最稳妥的结构是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只报姓名与年龄</button>
+      <button data-v="B">B. 背景(学历/方向)→ 1~2 个相关亮点(带量化)→ 为什么适合该岗位</button>
+      <button data-v="C">C. 把简历从头到尾完整念一遍</button>
+      <button data-v="D">D. 直接反问面试官想听什么</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:自我介绍用三段式「我是谁 → 我做过什么(带量化)→ 我为什么适合」,别复述简历全文,结尾留「钩子」引导面试官追问你最拿手的项目。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 关于 PID 的离散化,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 位置式 PID 每次输出的是控制量的增量</button>
+      <button data-v="B">B. 增量式 PID 输出控制量增量 Δu,便于限幅与手自动无扰切换</button>
+      <button data-v="C">C. 位置式与增量式在数学上完全无关</button>
+      <button data-v="D">D. 增量式 PID 不含积分作用</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:增量式 Δu(k)=Kp(e(k)−e(k−1))+Ki·e(k)+Kd(e(k)−2e(k−1)+e(k−2)),输出是「上次 + 增量」,天然避免积分累加,便于限幅与手自动无扰切换;它仍含积分作用,与位置式等价。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. 关于波士顿动力 Atlas 的核心控制,最贴近其技术路线的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 仅用单环 PID,不做任何优化</button>
+      <button data-v="B">B. 模型预测控制(MPC)+ 全身控制(WBC)+ 状态估计</button>
+      <button data-v="C">C. 只用 ZMP 判据,完全不建模</button>
+      <button data-v="D">D. 完全依赖端到端 VLA,不做传统控制</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:波士顿动力以控制 / 动力学见长,Atlas 采用模型预测控制 + 全身控制(WBC,处理接触约束的二次规划)+ 状态估计这条传统控制路线,ZMP / 倒立摆只是其中一环。</div>
+  </div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>机器人 / 具身智能面试的本质是「用结构化框架展示你对系统从底层(FOC、减速器)到上层(VLA、规划)的通透理解」。把岗位地图看清楚,六大专题高频题各准备一句「结论 + 机制 + 落点」,流程题与场景题统一用「拆解 → 决策点 → 验证」框架,项目用 STAR 讲清「我做了什么 + 量化结果」,手撕会推核心公式——这套组合比临时背题稳得多。
@@ -588,7 +1103,7 @@
   </div>
 
   <!-- ================= 参考来源 ================= -->
-  <h2><span class="h2-num">8</span> 参考资料</h2>
+  <h2><span class="h2-num">12</span> 参考资料</h2>
   <p class="my-sub">本页高频题与趋势经 web_search 核实(2025~2026 常见面经 / 题库 / 招聘 JD);涉及型号参数以官网为准。资料整理更新至 2026-08。</p>
   <ul>
     <li><a href="https://github.com/WinstonJQ/embodied-interview-qa" target="_blank" rel="noopener">具身智能高频面试题库(embodied-interview-qa,GitHub)</a>——VLA / 世界模型 / 工程落地 / 开放题高频题来源</li>
@@ -601,6 +1116,18 @@
     <li><a href="https://zhuanlan.zhihu.com/p/544043873" target="_blank" rel="noopener">SLAM 面试题汇总(知乎)</a>——前端 / 后端 / 图优化 / 滤波</li>
     <li><a href="https://www.zondrive.com/newsinfo/11231589.html" target="_blank" rel="noopener">背隙 0 弧分减速机实测(中大创远)</a>——背隙 / 回差检测与精度概念</li>
     <li><a href="https://www.liepin.com/job/1979304995.shtml" target="_blank" rel="noopener">强化学习运动控制工程师招聘 JD(猎聘)</a>——岗位技能要求与轮次参考</li>
+    <li><a href="https://blog.csdn.net/ZHHHHH15/article/details/161041844" target="_blank" rel="noopener">宇树科技四足机器人算法工程师面试题精选(CSDN)</a>——MPC / VMC 频率、Q 与 R 调参等</li>
+    <li><a href="https://www.cnblogs.com/autodriver/p/20055961" target="_blank" rel="noopener">宇树科技校招怎么准备:真机运动控制与软硬结合(博客园)</a></li>
+    <li><a href="https://www.nowcoder.com/discuss/800422955732754432" target="_blank" rel="noopener">智元机器人·灵犀 嵌入式开发面经(牛客)</a></li>
+    <li><a href="https://ac.nowcoder.com/discuss/1649144" target="_blank" rel="noopener">大疆嵌入式面经(牛客)</a>——C / 操作系统 / 驱动</li>
+    <li><a href="https://wenku.csdn.net/column/9990ifnl4g4" target="_blank" rel="noopener">大疆电机控制算法笔试解析(CSDN)</a>——PWM / MTPA / FOC 高频考点</li>
+    <li><a href="https://www.nowcoder.com/feed/main/detail/f1cdcdbffc8f4b2f92fc67023bd10f5b" target="_blank" rel="noopener">华为车 BU 嵌入式面经(牛客)</a></li>
+    <li><a href="https://www.donews.com/article/detail/6885/98319.html" target="_blank" rel="noopener">特斯拉 Optimus 关节执行器 / 供应链解析(DoNews)</a></li>
+    <li><a href="https://hub.baai.ac.cn/view/23493" target="_blank" rel="noopener">模型预测控制与波士顿动力 Atlas(BAAI 智源)</a></li>
+    <li><a href="https://blog.csdn.net/weixin_29094539/article/details/158875243" target="_blank" rel="noopener">Atlas 动态平衡与全身控制核心算法(CSDN)</a></li>
+    <li><a href="https://xiaomi.jobs.f.mioffice.cn/referral/campus/position/7670102799699822867/detail" target="_blank" rel="noopener">小米机器人工程师(上肢)招聘 JD(小米官方)</a></li>
+    <li><a href="https://www.nowcoder.com/discuss/353158533745156096" target="_blank" rel="noopener">速腾聚创激光感知面经(牛客)</a></li>
+    <li><a href="https://www.nowcoder.com/discuss/521395035791810560" target="_blank" rel="noopener">禾赛科技二面面经(牛客)</a></li>
   </ul>
 
 </div><!-- /container -->

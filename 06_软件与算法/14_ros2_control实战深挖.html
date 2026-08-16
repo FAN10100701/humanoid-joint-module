@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · ros2_control 实战深挖:控制器与硬件接口</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(可选),命名加前缀避免冲突 */
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-14",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec6" },
+      { t: "ros2_control 实战深挖" }
+    ],
+    prev: { t: "MoveIt2 进阶 · 运动规划与抓取管线", u: "13_MoveIt2进阶_运动规划与抓取管线.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>⚙️ ros2_control 实战深挖:控制器与硬件接口</h1>
+    <div class="sub">上一页 MoveIt2 负责「算出轨迹」,本页回答「轨迹到底怎么驱动电机」—— 深入 ros2_control 的 controller_manager / hardware_interface / controller 三层架构,逐个吃透常用控制器配置,手写一个自定义硬件接口插件,并把 Unitree、CyberGear、自研 Hdrive 等真实关节模组接入,最后打通 MoveIt2 → FollowJointTrajectory → 轨迹控制器的完整执行链路。</div>
+    <div class="tags">
+      <span class="tag">ros2_control</span>
+      <span class="tag">controller_manager</span>
+      <span class="tag">hardware_interface</span>
+      <span class="tag">轨迹控制器</span>
+      <span class="tag">关节模组</span>
+      <span class="tag">实时控制</span>
+      <span class="tag">力控阻抗</span>
+      <span class="tag">CAN/EtherCAT</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出 ros2_control 的<b>三层架构图</b>(controller_manager / controller / hardware_interface),说清各自职责与数据流向,并读懂 URDF 里的 <code>ros2_control</code> 描述块<br>
+    2. 能用 <code>ros2 control</code> 命令行完成控制器的<b>加载 / 配置 / 激活 / 切换 / 卸载</b>,理解生命周期(lifecycle)节点与 <code>switch_controller</code> 的切换时序<br>
+    3. 能独立写出 <b>joint_state_broadcaster / joint_trajectory_controller / joint_group_effort_controller / forward_command_controller</b> 的完整 yaml 配置,并用 <code>list_controllers</code> 验证状态<br>
+    4. 能说明 <code>SystemInterface</code> 与 <code>ActuatorInterface</code> 的区别,并手写一个「读编码器、写 PWM/力矩」的硬件接口插件,掌握 pluginlib 注册与 CMakeLists/package.xml 要点<br>
+    5. 能讲清真实关节模组(CAN/EtherCAT → 硬件接口)的适配思路,并会写<b>模拟硬件(test 模式)</b>用于离线联调<br>
+    6. 能说清 MoveIt2 → FollowJointTrajectory action → 轨迹控制器的全链路,以及位置/速度/力矩模式切换与阻抗/力控的 ros2_control 实现思路<br>
+    <b>建议用时:</b>90-120 分钟(含动手)。<b>前置:</b>建议先读本站 <a href="10_ROS2实战进阶_URDF与MoveIt2.html">06-10 URDF 与 MoveIt2</a>(已讲 ros2_control 骨架与 joint_state_broadcaster)与 <a href="13_MoveIt2进阶_运动规划与抓取管线.html">06-13 MoveIt2 进阶</a>(已讲规划与真机集成概览),本页是<b>执行层</b>的深入,默认你已会启动 controller_manager、会用 colcon 编译一个包。
+  </div>
+
+  <h2><span class="h2-num">1</span> ros2_control 架构全景</h2>
+  <p>上一页我们反复提到「轨迹交给 ros2_control 执行」,这一页就把这件事彻底讲透。ros2_control 是 ROS2 官方维护的<b>机器人控制框架</b>,它的核心使命只有一句:<b>把「控制逻辑」与「硬件驱动」彻底解耦</b>。控制算法(轨迹插值、PID、状态广播)不需要知道底下是伺服电机、是 EtherCAT 从站、还是 Gazebo 仿真关节;硬件驱动也不需要知道上层跑的是轨迹控制器还是力控。</p>
+
+  <h3>1.1 三层架构与数据流向</h3>
+  <div class="table-wrap"><table>
+    <tr><th>层次</th><th>是什么</th><th>职责</th><th>典型实例</th></tr>
+    <tr><td><b>controller_manager</b></td><td>控制框架的「管家」,一个生命周期节点</td><td>加载/配置/激活/切换/卸载控制器,以固定周期调度所有激活的控制器,并管理硬件资源</td><td><code>controller_manager</code> 节点</td></tr>
+    <tr><td><b>controller(控制器)</b></td><td>计算控制律的插件,也是生命周期节点</td><td>读状态接口、算控制律、写命令接口;或广播状态</td><td>joint_trajectory_controller、joint_state_broadcaster</td></tr>
+    <tr><td><b>hardware_interface(硬件接口)</b></td><td>真实硬件/仿真的抽象插件</td><td>把命令接口翻译成电机指令(写总线),把编码器/电流读数上报成状态接口(读总线)</td><td>继承 <code>SystemInterface</code> 的自定义插件、<code>gazebo_ros2_control</code></td></tr>
+  </table></div>
+  <p>数据流是一个<b>闭环</b>:每个控制周期(update_rate,如 1000 Hz)内,controller_manager 先调硬件接口的 <code>read()</code> 把状态刷进来 → 再逐个调用激活控制器的 <code>update()</code>,让它们读状态、写命令 → 最后调硬件接口的 <code>write()</code> 把命令刷到电机。</p>
+  <pre><code>          ┌────────────── controller_manager (RT 线程, update_rate Hz) ──────────────┐
+          │   ① read(): 硬件 → 状态接口         ② update(): 控制器读状态/写命令      │
+          │   ③ write(): 命令接口 → 硬件                                               │
+          └───────────────┬───────────────────────────────────────┬────────────────────┘
+              state 接口 ▲│(位置/速度/力矩)        command 接口 ▼│(位置/速度/力矩/effort)
+          ┌───────────────┴───────────────────────────────────────┴────────────────────┐
+          │              hardware_interface (SystemInterface / ActuatorInterface)       │
+          │   CAN / EtherCAT / RS485 / 仿真插件(ign_ros2_control / gazebo_ros2_control) │
+          └─────────────────────────────────────────────────────────────────────────────┘
+                                    │ 写电机命令 / 读编码器反馈
+                          ┌─────────▼─────────┐
+                          │ 关节模组(伺服+减速器) │
+                          └───────────────────┘</code></pre>
+
+  <h3>1.2 关键抽象:state / command 接口</h3>
+  <p>控制器与硬件之间只通过两类<b>命名接口</b>交流,名字必须<b>逐字匹配</b>,这是全框架的「契约」:</p>
+  <div class="table-wrap"><table>
+    <tr><th>接口类别</th><th>方向</th><th>常见名称</th><th>含义</th></tr>
+    <tr><td><b>command interface</b>(命令接口)</td><td>控制器 → 硬件</td><td><code>position</code> / <code>velocity</code> / <code>effort</code></td><td>期望位置 / 期望速度 / 期望力矩(电流)</td></tr>
+    <tr><td><b>state interface</b>(状态接口)</td><td>硬件 → 控制器</td><td><code>position</code> / <code>velocity</code> / <code>effort</code></td><td>实测位置(编码器) / 实测速度 / 实测力矩</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 为什么叫「接口」而不是「变量」?</b>因为同一关节可以同时暴露多个接口:一个关节既声明 <code>position</code> 命令接口又声明 <code>effort</code> 命令接口,上层就能在「位置模式」与「力矩模式」之间切换(见第 7 节)。接口名是纯字符串,硬件插件导出什么、控制器申请什么,两边对不上就报「接口不存在」。
+  </div>
+
+  <h3>1.3 URDF 里的 ros2_control 描述块</h3>
+  <p>URDF 描述机器人的几何与运动学,而 ros2_control 需要的「用什么硬件插件、每个关节暴露哪些接口」写在 URDF 的 <code>&lt;ros2_control&gt;</code> 标签里(通常单独放一个 xacro 文件再 <code>&lt;xacro:include&gt;</code> 进来)。一个最小示例:</p>
+  <pre><code>&lt;!-- 文件:ros2_control.xacro,被主 URDF xacro include --&gt;
+&lt;ros2_control name="my_arm" type="system"&gt;
+  &lt;hardware&gt;
+    &lt;plugin&gt;hdrive_system/HDriveSystemHardware&lt;/plugin&gt;
+    &lt;param name="can_interface"&gt;can0&lt;/param&gt;
+    &lt;param name="motor_id"&gt;1&lt;/param&gt;
+    &lt;param name="reduction_ratio"&gt;9.0&lt;/param&gt;
+  &lt;/hardware&gt;
+  &lt;joint name="elbow_joint"&gt;
+    &lt;command_interface name="position"/&gt;
+    &lt;command_interface name="effort"/&gt;
+    &lt;state_interface name="position"/&gt;
+    &lt;state_interface name="velocity"/&gt;
+    &lt;state_interface name="effort"/&gt;
+  &lt;/joint&gt;
+&lt;/ros2_control&gt;</code></pre>
+  <ul>
+    <li><code>name</code> + <code>type</code>:类型有 <code>system</code>(整机一个硬件插件,负责多个关节)、<code>actuator</code>(每个执行器一个插件,见第 4 节)、<code>sensor</code>(纯传感器);</li>
+    <li><code>&lt;hardware&gt;&lt;plugin&gt;</code>:插件名 = pluginlib 里注册的类名;</li>
+    <li><code>&lt;joint&gt;</code> 下的接口名必须与硬件插件里 <code>export_xxx_interfaces()</code> 导出的名字一致;</li>
+    <li><code>&lt;param&gt;</code> 是传给硬件插件的初始化参数(总线名、电机 ID、减速比等),会出现在 <code>on_init()</code> 的 <code>hardware_info</code> 里。</li>
+  </ul>
+
+  <h3>1.4 实时性:为什么要 RT 线程</h3>
+  <p>控制回路对<b>周期确定性</b>有硬要求:如果本该 1 ms 执行一次的回路偶尔卡到 5 ms,关节就会一顿一顿,力矩控制甚至可能发散。因此 ros2_control 的 controller_manager 以<b>实时(RT)线程</b>跑控制循环,要求:</p>
+  <ul>
+    <li><b>固定的更新频率</b>:<code>update_rate</code> 参数决定控制器调度频率(如 1000 Hz);</li>
+    <li><b>实时调度优先级</b>:RT 线程需要 <code>SCHED_FIFO</code> 优先级,否则会被普通进程抢占导致抖动;</li>
+    <li><b>锁页内存</b>:<code>mlockall</code> 防止内存被换页到磁盘,避免缺页中断破坏实时性;</li>
+    <li><b>RT 循环内禁阻塞</b>:控制器 <code>update()</code> 与硬件 <code>read()/write()</code> 里<b>不能</b>打日志、申请内存、做网络 I/O(这些会引入非确定延迟)。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠️ 实时与 ROS2 默认 DDS 的边界:</b>ROS2 的话题通信默认<b>不是硬实时</b>的,实时性只体现在 controller_manager 的<b>控制循环内</b>(read → update → write)。所以「读编码器 + 写力矩」要放在硬件接口的 <code>read()/write()</code> 里同步完成,而不是绕道去订阅话题。实时权限配置(优先级 + 锁页)见第 8 节。
+  </div>
+
+  <h2><span class="h2-num">2</span> controller_manager 详解</h2>
+  <p>controller_manager 是所有控制器的生命周期管理器,它本身也是一个<b>生命周期节点</b>,配合命令行 <code>ros2 control</code> 完成「运行时动态增删控制器」而不重启整机——这是真机调试最重要的能力(改一个控制器不用重新拉起全部节点)。</p>
+
+  <h3>2.1 生命周期(lifecycle)状态机</h3>
+  <p>每个控制器都要走过一串状态:<b>unconfigured → inactive → active</b>,并可逆向 <b>deactivate</b>,最后 <b>finalize(清理)</b>。关键语义:</p>
+  <ul>
+    <li><code>unconfigured</code>:已加载但未配置,还没申请到命令接口资源;</li>
+    <li><code>inactive</code>:已配置、接口已「预占」,但<b>尚未运行</b>(update() 不被调用);</li>
+    <li><code>active</code>:正在被 controller_manager 每个周期调度,真正读写接口。</li>
+  </ul>
+  <p>「加载 ≠ 激活」是新手的头号坑:load 之后控制器停在 inactive,不 activate 就永远不干活。</p>
+
+  <h3>2.2 命令行:ros2 control</h3>
+  <p>官方命令行工具 <code>ros2 control</code> 提供完整的运行时管理(下方命令均已核实于官方 ros2controlcli 文档):</p>
+  <pre><code>ros2 control list_controllers            # 列出所有已加载控制器及其状态(active/inactive/unconfigured)
+ros2 control list_controller_types       # 列出本机可用的控制器插件类型
+ros2 control list_hardware_interfaces    # 列出硬件导出的全部 state/command 接口(诊断神器)
+
+ros2 control load_controller   joint_state_broadcaster        # 加载(进入 unconfigured)
+ros2 control configure_controller joint_state_broadcaster     # 配置(进入 inactive)
+ros2 control set_controller_state joint_state_broadcaster active   # 激活
+ros2 control set_controller_state joint_state_broadcaster inactive # 停用
+ros2 control unload_controller joint_state_broadcaster        # 卸载</code></pre>
+  <div class="box box-tip">
+    <b>💡 一步到位的 spawner:</b>手敲 4 条命令太啰嗦,官方提供 <code>spawner</code> 工具,一次完成「加载 + 配置 + 激活」:<code>ros2 run controller_manager spawner joint_state_broadcaster</code>。若控制器已存在,spawner 会报「已加载」并退出(可用 <code>--inactive</code> 只加载不激活、<code>--activate-as-group</code> 等参数控制行为)。
+  </div>
+
+  <h3>2.3 controller_manager 的 yaml 配置</h3>
+  <p>controller_manager 本身的参数(更新频率、是否用仿真时间)与各控制器的参数写在同一份 yaml 里,一起传给节点:</p>
+  <pre><code>controller_manager:
+  ros__parameters:
+    update_rate: 1000          # 控制循环 Hz(务必与硬件能力匹配)
+    use_sim_time: false
+
+# 下面每个顶级 key 是一个「待 spawner 启动的控制器」名
+joint_state_broadcaster:
+  ros__parameters:
+    type: joint_state_broadcaster/JointStateBroadcaster
+    publish_rate: 100
+
+arm_controller:
+  ros__parameters:
+    type: joint_trajectory_controller/JointTrajectoryController
+    # ... 具体参数见第 3 节</code></pre>
+  <p>注意 <code>update_rate</code> 是整机的控制频率,所有 active 控制器共享同一节奏;每个控制器内部再靠各自参数(如 <code>publish_rate</code>、<code>state_publish_rate</code>)做降频。</p>
+
+  <h3>2.4 控制器切换:switch_controller</h3>
+  <p>真机上经常要在「力控」与「位置轨迹」之间来回切(抓取时用力控柔顺,搬运时用轨迹)。切换不是「停了 A 再起 B」那么随意,因为两个控制器可能<b>争抢同一个关节的命令接口</b>——同一时刻一个关节的 position 命令接口只能被<b>一个</b> active 控制器占用。切换靠:</p>
+  <pre><code># 同时停用 joint_group_effort_controller、激活 arm_controller
+ros2 control switch_controllers \
+  --deactivate joint_group_effort_controller \
+  --activate arm_controller
+
+# 带严格度与时间窗(不同版本参数名略有差异,以 distro 文档为准)
+ros2 control switch_controllers \
+  --activate arm_controller \
+  --deactivate joint_group_effort_controller \
+  --strictness STRICT \
+  --activate-asap --deactivate-asap</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ 切换时序要点:</b><code>switch_controller</code> 会先让「要停用」的控制器安全停住(把当前命令写回硬件,避免跳变),再激活「要启用」的控制器。<code>activate_asap</code>/<code>deactivate_asap</code> 控制「是否等前一组完全就绪再切」。两个控制器若都申请同一关节的同一命令接口,必须<b>先停一个再起另一个</b>,直接双开会因接口冲突而拒绝激活。
+  </div>
+
+  <h2><span class="h2-num">3</span> 常用控制器逐个配置</h2>
+  <p>官方 <code>ros2_controllers</code> 仓库提供了一整套「开箱即用」的控制器,人形机器人关节模组最常用的四类如下(类型名均来自官方 controllers_index):</p>
+  <div class="table-wrap"><table>
+    <tr><th>控制器</th><th>插件类型</th><th>作用</th><th>申请的命令接口</th><th>典型用途</th></tr>
+    <tr><td><b>joint_state_broadcaster</b></td><td><code>joint_state_broadcaster/JointStateBroadcaster</code></td><td>把硬件状态广播到 <code>/joint_states</code></td><td>无(只读状态)</td><td>给 TF、RViz、MoveIt2 供「当前关节角」</td></tr>
+    <tr><td><b>joint_trajectory_controller</b></td><td><code>joint_trajectory_controller/JointTrajectoryController</code></td><td>接收整条轨迹,插值后逐周期下发</td><td>position(或 velocity/effort)</td><td>执行 MoveIt2 规划出的轨迹</td></tr>
+    <tr><td><b>joint_group_effort_controller</b></td><td><code>effort_controllers/JointGroupEffortController</code></td><td>直接下发一组关节的力矩/电流</td><td>effort</td><td>力控、重力补偿、拖动示教</td></tr>
+    <tr><td><b>forward_command_controller</b></td><td><code>forward_command_controller/ForwardCommandController</code></td><td>把话题上的命令「透传」到命令接口</td><td>由 <code>interface_name</code> 指定(1 个)</td><td>手动调试、单关节点动、速度/力矩开环</td></tr>
+  </table></div>
+
+  <h3>3.1 joint_state_broadcaster</h3>
+  <p>它是最基础的控制器,只「读」不「写」:把硬件上报的关节状态整理成 <code>sensor_msgs/msg/JointState</code> 发布到 <code>/joint_states</code>,供 <code>robot_state_publisher</code> 计算 TF、供 MoveIt2 获取当前状态。它<b>不申请任何命令接口</b>,所以可以和轨迹控制器同时 active、互不冲突。</p>
+  <pre><code>joint_state_broadcaster:
+  ros__parameters:
+    type: joint_state_broadcaster/JointStateBroadcaster
+    publish_rate: 100     # /joint_states 发布频率 Hz
+    extra_joints: []      # 额外并入的非受控关节名(可选)</code></pre>
+  <pre><code># 启动 + 验证
+ros2 run controller_manager spawner joint_state_broadcaster
+ros2 control list_controllers          # 应看到 joint_state_broadcaster : active
+ros2 topic echo /joint_states          # 应能看到 position/velocity 数组在跳动</code></pre>
+
+  <h3>3.2 joint_trajectory_controller(轨迹控制器,核心)</h3>
+  <p>它是 MoveIt2 真机执行的主力:通过 <b>FollowJointTrajectory action</b> 接收一条带时间戳的轨迹,在控制周期内做<b>样条插值</b>,把每个采样点的期望位置/速度下发到命令接口。参数(已核实官方 userdoc):</p>
+  <pre><code>arm_controller:
+  ros__parameters:
+    type: joint_trajectory_controller/JointTrajectoryController
+    joints:                       # 受控关节列表,顺序即命令数组顺序
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+    command_interfaces:           # 申请的命令接口(位置模式)
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 50.0      # 控制器状态回传频率
+    action_monitor_rate: 20.0     # action 目标监控频率
+    allow_partial_joints_goal: false   # 是否允许只给部分关节下目标
+    constraints:
+      stopped_velocity_tolerance: 0.01  # 判定「已停止」的速度容差
+      goal_time: 0.0                    # 目标允许的到达时间余量</code></pre>
+  <pre><code>ros2 run controller_manager spawner arm_controller
+ros2 control list_controllers        # arm_controller : active
+# 发一条「各关节回到 0」的轨迹(action 方式,3 秒走完)
+ros2 action send_goal /arm_controller/follow_joint_trajectory \
+  control_msgs/action/FollowJointTrajectory \
+  "{trajectory: {joint_names: [shoulder_pan_joint, shoulder_lift_joint, elbow_joint, wrist_1_joint],
+     points: [{positions: [0.0, 0.0, 0.0, 0.0], time_from_start: {sec: 3, nanosec: 0}}]}}"</code></pre>
+  <div class="box box-tip">
+    <b>💡 position / velocity / effort 三种模式怎么选?</b>取决于电机底层的「内环」:伺服电机内部自带位置环时,ros2_control 只下发 <code>position</code> 即可;若要自己闭环速度就下发 <code>velocity</code>;直接给电流/力矩环则下发 <code>effort</code>(适合做力控/阻抗)。同一条轨迹,下发接口越「底层」,上层越需要把插值、闭环做扎实。
+  </div>
+
+  <h3>3.3 joint_group_effort_controller(力矩组控制器)</h3>
+  <p>它把 <code>std_msgs/msg/Float64MultiArray</code> 话题上的一组力矩值,直接映射到一组关节的 <code>effort</code> 命令接口。常用于重力补偿、拖动示教、以及纯力矩的力控实验。注意它<b>不做闭环</b>,只是开环「你给多少我就下发多少」。</p>
+  <pre><code>effort_controller:
+  ros__parameters:
+    type: effort_controllers/JointGroupEffortController
+    joints:
+      - elbow_joint
+      - wrist_1_joint
+    command_interfaces:
+      - effort
+    state_interfaces:
+      - position
+      - velocity</code></pre>
+  <pre><code>ros2 run controller_manager spawner effort_controller
+# 给两个关节各下发 0.5 / -0.3 的力矩(单位通常为 N·m)
+ros2 topic pub /effort_controller/commands std_msgs/msg/Float64MultiArray \
+  "{data: [0.5, -0.3]}"</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ 版本提示:</b><code>effort_controllers/JointGroupEffortController</code> 在新版本 ros2_controllers 中被标记为<b>将被弃用</b>(官方建议逐步迁移到 forward_command_controller 等替代方案,约)。学习与旧项目兼容用它没问题,新项目建议先查当前 distro 的控制器索引确认替代品。
+  </div>
+
+  <h3>3.4 forward_command_controller(前馈/透传控制器)</h3>
+  <p>它把 <code>std_msgs/msg/Float64MultiArray</code> 话题值<b>原样写进指定的一种命令接口</b>。比 joint_group_effort_controller 更通用:<code>interface_name</code> 参数决定透传的是 position、velocity 还是 effort。适合手动点动、单关节测试、或把自定义高层控制器的输出直接送入底层。</p>
+  <pre><code>forward_position_controller:
+  ros__parameters:
+    type: forward_command_controller/ForwardCommandController
+    joints:
+      - elbow_joint
+    interface_name: position     # 透传到 position 命令接口
+    # interface_name: velocity / effort   # 也可透传速度或力矩</code></pre>
+  <pre><code>ros2 run controller_manager spawner forward_position_controller
+ros2 topic pub /forward_position_controller/commands std_msgs/msg/Float64MultiArray \
+  "{data: [0.78]}"   # 让 elbow_joint 走到约 0.78 rad</code></pre>
+
+  <h2><span class="h2-num">4</span> 自定义硬件接口实战</h2>
+  <p>官方控制器覆盖了「控制律」,但「硬件」千差万别:你的关节模组可能是 CAN 总线的宇树电机、是 EtherCAT 伺服、也可能只是一块开发板发 PWM。这部分必须自己写 <b>hardware_interface 插件</b>。核心是继承 <code>hardware_interface::SystemInterface</code>(整机)或 <code>ActuatorInterface</code>(单个执行器),实现一组标准虚函数。</p>
+
+  <h3>4.1 SystemInterface vs ActuatorInterface</h3>
+  <div class="table-wrap"><table>
+    <tr><th>基类</th><th>适用场景</th><th>生命周期归属</th></tr>
+    <tr><td><code>SystemInterface</code></td><td>一个插件管<b>多个关节</b>(整条手臂/整机),共享一条总线</td><td>对应 URDF 里 <code>type="system"</code></td></tr>
+    <tr><td><code>ActuatorInterface</code></td><td>一个插件管<b>一个执行器</b>,可独立开关(如每个模组自带 MCU)</td><td>对应 URDF 里 <code>type="actuator"</code></td></tr>
+    <tr><td><code>SensorInterface</code></td><td>只读传感器(IMU、力传感器)</td><td>对应 <code>type="sensor"</code></td></tr>
+  </table></div>
+  <p>人形机器人「每个关节模组一个独立电机」的形态,既可以用一个大 SystemInterface 统一收发,也可以用多个 ActuatorInterface 每个模组一个插件(更模块化,便于单个模组热插拔)。下面以 SystemInterface 为例,ActuatorInterface 只是把「多个关节」换成「单个关节」、虚函数签名略有差异。</p>
+
+  <h3>4.2 必须实现的虚函数</h3>
+  <ul>
+    <li><code>on_init(hardware_info)</code>:从 URDF 的 <code>ros2_control</code> 块读关节名、接口名、param,初始化数据结构;</li>
+    <li><code>export_state_interfaces()</code> / <code>export_command_interfaces()</code>:把「我提供哪些状态/命令接口」<b>上报</b>给框架,名字与 URDF 必须一致;</li>
+    <li><code>on_configure()</code> / <code>on_activate()</code>:打开总线、使能电机(activate 后电机才能上力矩);</li>
+    <li><code>read()</code>:从硬件读编码器/电流,写进 state 变量;</li>
+    <li><code>write()</code>:把 command 变量(控制器刚写的期望值)发给电机;</li>
+    <li><code>on_deactivate()</code> / <code>on_shutdown()</code>:停机、关闭总线。</li>
+  </ul>
+
+  <h3>4.3 C++ 骨架:读编码器、写力矩</h3>
+  <pre><code>#include &lt;hardware_interface/system_interface.hpp&gt;
+#include &lt;hardware_interface/types/hardware_interface_return_values.hpp&gt;
+#include &lt;hardware_interface/types/hardware_interface_type_values.hpp&gt;
+#include &lt;pluginlib/class_list_macros.hpp&gt;
+#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;vector&gt;
+#include &lt;string&gt;
+
+namespace hdrive_system
+{
+class HDriveSystemHardware : public hardware_interface::SystemInterface
+{
+public:
+  hardware_interface::CallbackReturn on_init(
+      const hardware_interface::HardwareInfo &amp; info) override
+  {
+    if (hardware_interface::SystemInterface::on_init(info) !=
+        hardware_interface::CallbackReturn::SUCCESS)
+      return hardware_interface::CallbackReturn::ERROR;
+    // 读 URDF 里的参数(总线名、电机 ID、减速比等)
+    can_interface_ = info_.hardware_parameters.at("can_interface");
+    motor_id_ = std::stoi(info_.hardware_parameters.at("motor_id"));
+    joint_name_ = info_.joints[0].name;
+    // 为每个状态/命令接口分配存储
+    position_state_ = 0.0;
+    velocity_state_ = 0.0;
+    effort_state_ = 0.0;
+    effort_command_ = 0.0;
+    return hardware_interface::CallbackReturn::SUCCESS;
+  }
+
+  std::vector&lt;hardware_interface::StateInterface&gt;
+  export_state_interfaces() override
+  {
+    std::vector&lt;hardware_interface::StateInterface&gt; state;
+    // 接口名必须与 URDF &lt;state_interface&gt; 一致
+    state.emplace_back(joint_name_, "position", &amp;position_state_);
+    state.emplace_back(joint_name_, "velocity", &amp;velocity_state_);
+    state.emplace_back(joint_name_, "effort", &amp;effort_state_);
+    return state;
+  }
+
+  std::vector&lt;hardware_interface::CommandInterface&gt;
+  export_command_interfaces() override
+  {
+    std::vector&lt;hardware_interface::CommandInterface&gt; cmd;
+    // 只导出 effort 命令接口(力矩模式);要位置模式就加 "position"
+    cmd.emplace_back(joint_name_, "effort", &amp;effort_command_);
+    return cmd;
+  }
+
+  hardware_interface::CallbackReturn on_activate(
+      const rclcpp_lifecycle::State &amp;) override
+  {
+    // 打开 CAN、使能电机(上电使能)
+    open_can(can_interface_);
+    enable_motor(motor_id_);
+    return hardware_interface::CallbackReturn::SUCCESS;
+  }
+
+  hardware_interface::return_type read(
+      const rclcpp::Time &amp;, const rclcpp::Duration &amp;) override
+  {
+    // 从总线读编码器(角位移)→ 换算关节角(除以减速比)→ 写状态
+    double raw = read_encoder(motor_id_);
+    position_state_ = raw / reduction_ratio_;
+    // 速度、力矩可在此处一并估算/读取
+    return hardware_interface::return_type::OK;
+  }
+
+  hardware_interface::return_type write(
+      const rclcpp::Time &amp;, const rclcpp::Duration &amp;) override
+  {
+    // 把期望力矩换算成电机电流/占空比后写入总线
+    double current = effort_command_ * torque_to_current_;  // N·m → A
+    write_current(motor_id_, current);
+    return hardware_interface::return_type::OK;
+  }
+
+private:
+  std::string joint_name_, can_interface_;
+  int motor_id_ = 0;
+  double reduction_ratio_ = 1.0, torque_to_current_ = 1.0;
+  double position_state_ = 0.0, velocity_state_ = 0.0, effort_state_ = 0.0;
+  double effort_command_ = 0.0;
+};
+
+}  // namespace hdrive_system
+
+// pluginlib 注册:类名、命名空间类、基类
+PLUGINLIB_EXPORT_CLASS(hdrive_system::HDriveSystemHardware,
+                       hardware_interface::SystemInterface)</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ read/write 的实时约束:</b>这两个函数跑在 RT 线程里,<b>禁止</b> <code>RCLCPP_INFO</code>、<code>std::cout</code>、动态内存分配、sleep 等阻塞/非确定操作。总线读写要选<b>非阻塞、带超时</b>的 API,否则一次 CAN 超时就会拖垮整个控制周期。
+  </div>
+
+  <h3>4.4 插件注册与构建(pluginlib / CMakeLists / package.xml)</h3>
+  <p>硬件插件靠 <b>pluginlib</b> 机制被发现:编译产物是一个共享库,配一个 XML 清单声明「库里有哪个类、继承哪个基类」。三件套:</p>
+  <pre><code>&lt;!-- 文件:config/hdrive_system_plugin.xml --&gt;
+&lt;library path="hdrive_system_hardware"&gt;
+  &lt;class name="hdrive_system/HDriveSystemHardware"
+         type="hdrive_system::HDriveSystemHardware"
+         base_class_type="hardware_interface::SystemInterface"&gt;
+    &lt;description&gt;HDrive 关节模组硬件接口(CAN 收发)&lt;/description&gt;
+  &lt;/class&gt;
+&lt;/library&gt;</code></pre>
+  <pre><code># CMakeLists.txt 关键片段
+find_package(ament_cmake REQUIRED)
+find_package(hardware_interface REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+
+add_library(hdrive_system_hardware src/hdrive_system_hardware.cpp)
+target_include_directories(hdrive_system_hardware PRIVATE include)
+ament_target_dependencies(hdrive_system_hardware
+  hardware_interface pluginlib rclcpp rclcpp_lifecycle)
+
+# 安装插件库与插件清单
+pluginlib_export_plugin_description_file(hardware_interface config/hdrive_system_plugin.xml)
+install(TARGETS hdrive_system_hardware
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+ament_export_dependencies(hardware_interface pluginlib rclcpp rclcpp_lifecycle)
+ament_package()</code></pre>
+  <pre><code>&lt;!-- package.xml 关键片段 --&gt;
+&lt;depend&gt;hardware_interface&lt;/depend&gt;
+&lt;depend&gt;pluginlib&lt;/depend&gt;
+&lt;depend&gt;rclcpp&lt;/depend&gt;
+&lt;depend&gt;rclcpp_lifecycle&lt;/depend&gt;
+&lt;export&gt;
+  &lt;build_type&gt;ament_cmake&lt;/build_type&gt;
+&lt;/export&gt;</code></pre>
+  <p>编译后验证插件是否被找到:<code>ros2 control list_hardware_components</code> 里应能看到 <code>hdrive_system/HDriveSystemHardware</code>。</p>
+
+  <h2><span class="h2-num">5</span> 与真实关节模组对接</h2>
+  <p>关节模组的「硬件接口」本质就是<b>一条通信总线的收发封装</b>:CAN、EtherCAT、RS485、甚至 USB 串口。适配思路万变不离其宗——把「总线协议读写」隔离在 <code>read()/write()</code> 里,让上层控制器只看到标准的 position/velocity/effort 接口。</p>
+
+  <h3>5.1 三类主流模组的适配思路</h3>
+  <div class="table-wrap"><table>
+    <tr><th>模组</th><th>通信</th><th>典型控制模式</th><th>ros2_control 适配要点</th></tr>
+    <tr><td><b>宇树 Unitree 电机</b>(A1/Go2/H1 系列关节)</td><td>CAN(UART 亦可)</td><td>位置 / 速度 / 力矩(PD 前馈)</td><td>官方 <code>unitree_ros</code> 提供底层 SDK;在 <code>read()/write()</code> 里封装 CAN 帧收发,把 motor data 映射到关节接口</td></tr>
+    <tr><td><b>小米 CyberGear</b></td><td>CAN(2.0)</td><td>MIT 模式(位置/速度/力矩 + 增益)、位置/速度/电流模式</td><td>社区已有 <code>cybergear_ros2</code> 等包;MIT 模式的 <code>kp/kd</code> 增益对应「阻抗/PD」参数,可映射到 effort/position 接口</td></tr>
+    <tr><td><b>自研 Hdrive</b>(示例)</td><td>CAN / EtherCAT</td><td>位置 / 速度 / 电流(力矩)</td><td>自己定义 CAN 报文(编码器回读 + 电流指令),封装成第 4 节的 SystemInterface</td></tr>
+  </table></div>
+  <p>通用适配三步:<b>① 写通信驱动</b>(CAN 初始化、报文编解码、超时处理)→ <b>② 封装硬件接口</b>(把「电机量」换算到「关节量」,乘/除减速比)→ <b>③ 在 URDF ros2_control 块声明接口与参数</b>(总线名、电机 ID、减速比、力矩-电流系数)。</p>
+  <div class="box box-tip">
+    <b>💡 减速比与量纲换算:</b>电机侧是「电机轴角度/速度/力矩」,关节侧是「关节角度/速度/力矩」,中间隔着一个<b>减速器</b>。经验公式(忽略摩擦与效率):关节角 = 电机角 / 减速比;关节力矩 = 电机力矩 × 减速比。编码器回读与电流指令都别算错方向,否则一上电就会「反转 + 飞车」。
+  </div>
+
+  <h3>5.2 写 test 模式(模拟硬件)</h3>
+  <p>真机到手前,先用<b>模拟硬件</b>把整套 ros2_control + MoveIt2 跑通,能提前暴露 90% 的配置错误。两种做法:</p>
+  <ul>
+    <li><b>官方 mock_components</b>:<code>ros2_control</code> 自带 <code>mock_components/GenericSystem</code>,不接任何真实硬件,<code>read()</code> 直接把「上次写入的命令」当状态回读(即假设电机瞬时到位)。适合测控制器与 MoveIt2 的配置正确性。</li>
+    <li><b>仿真插件</b>:<code>gazebo_ros2_control</code> / <code>ign_ros2_control</code> 把 ros2_control 的接口接到仿真器的物理关节,能验证动力学与闭环,代价是要配 URDF 的仿真插件。</li>
+  </ul>
+  <pre><code>&lt;!-- URDF 用 mock 组件做 test 模式(GenericSystem,type 为 system) --&gt;
+&lt;ros2_control name="my_arm" type="system"&gt;
+  &lt;hardware&gt;
+    &lt;plugin&gt;mock_components/GenericSystem&lt;/plugin&gt;
+  &lt;/hardware&gt;
+  &lt;joint name="elbow_joint"&gt;
+    &lt;command_interface name="position"/&gt;
+    &lt;state_interface name="position"/&gt;
+    &lt;state_interface name="velocity"/&gt;
+  &lt;/joint&gt;
+&lt;/ros2_control&gt;</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ 从 mock 切到真机的改动点:</b>只换 URDF 里 <code>&lt;plugin&gt;</code> 的类名与参数即可,控制器配置、MoveIt2 配置、上层代码<b>一行不用改</b>——这正是「控制与硬件解耦」的红利。但 mock 假设「命令即状态」,不会暴露<b>实时性、总线丢包、限位、摩擦</b>等真机才有的问题,别把 mock 通过当成真机能跑。
+  </div>
+
+  <h2><span class="h2-num">6</span> 与 MoveIt2 串联:从规划到执行</h2>
+  <p>MoveIt2 只做「规划」,<b>不直接发电机指令</b>。全链路:<b>MoveIt2 规划 → 发布 <code>control_msgs/action/FollowJointTrajectory</code> 目标 → joint_trajectory_controller 逐周期插值写 position/velocity → hardware_interface 写电机/读编码器 → 关节模组</b>,编码器反馈再沿 state 接口回到控制器形成闭环。</p>
+
+  <h3>6.1 move_group 侧的 ros2_control 配置</h3>
+  <p>MoveIt2 需要知道「规划组 arm 该把轨迹发给哪个 action、用哪个控制器」。在 <code>moveit_config</code> 包里配 <code>ros2_controllers.yaml</code>(控制器名、类型、关节、action 命名空间),并让 <code>moveit_controller_manager</code> 加载它:</p>
+  <pre><code># moveit_config/config/ros2_controllers.yaml
+controller_manager:
+  ros__parameters:
+    update_rate: 1000
+
+arm_controller:
+  ros__parameters:
+    type: joint_trajectory_controller/JointTrajectoryController
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+
+# MoveIt 侧:moveit_controller_manager 的控制器声明
+moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
+moveit_simple_controller_manager:
+  controller_names:
+    - arm_controller
+  arm_controller:
+    action_ns: follow_joint_trajectory   # action 命名空间
+    type: FollowJointTrajectory
+    default: true
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ 两处关节名要「三对齐」:</b>URDF 的关节、<code>ros2_controllers.yaml</code> 里 <code>joints</code>、<code>moveit_simple_controller_manager</code> 里的 <code>joints</code> 必须<b>逐字一致</b>(含大小写、下划线)。任何一处不一致,要么 controller_manager 报「无此关节」,要么 MoveIt2 下发后 action 被拒绝。
+  </div>
+
+  <h3>6.2 真机调试流程(减速起步)</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>起硬件 + 起控制器</b><br>先启动硬件接口(使能电机),再 spawner joint_state_broadcaster + arm_controller 并确认 active</div>
+    <div class="step-item"><span class="n">2</span><b>验证状态流</b><br>ros2 topic echo /joint_states 看编码器值是否随手动转动而变化</div>
+    <div class="step-item"><span class="n">3</span><b>低速点动</b><br>先用 forward_command_controller 小步点动单关节,确认方向/量纲正确</div>
+    <div class="step-item"><span class="n">4</span><b>起 MoveIt</b><br>demo.launch.py 连上真机控制器,确认 FollowJointTrajectory action 可达</div>
+    <div class="step-item"><span class="n">5</span><b>空载试跑</b><br>setMaxVelocityScalingFactor(0.1~0.2) 空载走一条 home 轨迹,手按急停</div>
+  </div>
+  <div class="box box-danger">
+    <b>🔴 真机铁律:</b>首次执行务必<b>速度缩放 + 空载 + 手按急停</b>;先验证「编码器方向与命令方向一致」,否则第一发轨迹就可能反向冲限位。力矩模式更是要把力矩上限压到最低再放开。
+  </div>
+
+  <h2><span class="h2-num">7</span> 关节模式切换与力控/阻抗</h2>
+  <p>人形机器人关节模组很少「一种模式跑到底」:定位用位置模式,柔顺拖动用速度/力矩模式,接触作业要力控/阻抗控制。ros2_control 支持<b>同一关节暴露多个命令接口</b>,由「当前激活哪个控制器」决定走哪条命令通道。</p>
+
+  <h3>7.1 位置/速度/力矩模式如何切换</h3>
+  <p>在 URDF 里给关节同时声明三种命令接口,然后配三个控制器各占一种:</p>
+  <pre><code>&lt;joint name="elbow_joint"&gt;
+  &lt;command_interface name="position"/&gt;
+  &lt;command_interface name="velocity"/&gt;
+  &lt;command_interface name="effort"/&gt;
+  &lt;state_interface name="position"/&gt;
+  &lt;state_interface name="velocity"/&gt;
+  &lt;state_interface name="effort"/&gt;
+&lt;/joint&gt;</code></pre>
+  <p>切换就是「换一个 active 控制器」:<code>ros2 control switch_controllers --deactivate arm_position_controller --activate arm_effort_controller</code>。因为三个控制器各申请<b>不同</b>的命令接口(position / velocity / effort),理论上可同时 active;但同一类接口(如两个都申请 position)则互斥,必须切。</p>
+
+  <h3>7.2 笛卡尔力控与阻抗控制的实现思路</h3>
+  <ul>
+    <li><b>关节力矩控制(基础)</b>:用 <code>effort_controllers/JointGroupEffortController</code> 直接下发关节力矩,配合重力/摩擦补偿,是最底层的力控单元;</li>
+    <li><b>阻抗/导纳控制(关节空间)</b>:经典阻抗律 <b>τ = K(q_d − q) + D(q̇_d − q̇) + 重力补偿</b>,可自己写一个 controller 插件,在 <code>update()</code> 里读位置/速度状态、按阻抗律算出 effort 写回;或把 <b>K/D 增益</b>下沉到电机 MIT 模式(CyberGear/宇树电机都支持)由底层执行;</li>
+    <li><b>笛卡尔力控</b>:需要在末端加<b>六维力/力矩传感器(F/T sensor)</b>,经 <code>force_torque_sensor_broadcaster</code> 广播到话题,上层再算「末端力 → 关节力矩」的雅可比转置映射,交给 effort 接口。MoveIt 侧的 <code>moveit_servo</code> 亦可配合做实时伺服。</li>
+  </ul>
+  <div class="box box-tip">
+    <b>💡 阻抗参数放哪里?</b>「上层算力矩」(自己写 controller)灵活、可加完整动力学前馈,但受控制周期与通信延迟限制;「下沉到电机 MIT 模式」实时性最好、响应最快,但 K/D 只能在线调、模型简单。工程上常是<b>混合</b>:电机做内环高带宽力矩环,ros2_control 做外环位置/阻抗环。
+  </div>
+
+  <h2><span class="h2-num">8</span> 常见坑与调试</h2>
+  <div class="box box-warn">
+    <b>⚠️ 高频坑汇总:</b><br>
+    1. <b>控制器未激活</b>:加载后停在 inactive,不 <code>activate</code> 就没有任何输出 → 先 <code>ros2 control list_controllers</code> 看状态列;<br>
+    2. <b>接口名称不匹配</b>:URDF 的 <code>&lt;state_interface name="position"/&gt;</code> 与硬件插件 <code>export_state_interfaces()</code> 里 <code>"position"</code> 字符串不一致 → 用 <code>ros2 control list_hardware_interfaces</code> 逐一比对;<br>
+    3. <b>控制周期不匹配</b>:<code>update_rate</code> 设 1000 Hz 但总线/硬件只支持 200 Hz,导致 read/write 超时、周期抖动 → 把 update_rate 降到硬件能力以内;<br>
+    4. <b>关节名三处不一致</b>:URDF / 控制器 yaml / MoveIt 配置的关节名必须逐字一致;<br>
+    5. <b>实时权限不足</b>:RT 线程拿不到 <code>SCHED_FIFO</code> 优先级或锁页内存,表现为周期抖动、偶发卡顿 → 配 <code>rtprio</code> 与 <code>memlock</code>(见下);<br>
+    6. <b>read/write 里打日志</b>:RT 线程内 <code>RCLCPP_INFO</code>/<code>std::cout</code> 拖垮实时性,甚至偶发「丢周期」。
+  </div>
+
+  <h3>8.1 实时权限配置(优先级 + 锁页内存)</h3>
+  <pre><code># ① 给实时用户组配置 rtprio 与 memlock(/etc/security/limits.d/ros2_rt.conf)
+@realtime  -  rtprio  98
+@realtime  -  memlock unlimited
+
+# ② 把运行用户加入 realtime 组,重新登录生效
+sudo usermod -a -G realtime $USER
+
+# ③(可选)给 controller_manager 可执行文件授予调度能力,免 root
+sudo setcap cap_sys_nice+ep /opt/ros/humble/lib/controller_manager/controller_manager
+
+# ④ 验证:应分别显示 98 与 unlimited
+ulimit -r; ulimit -l</code></pre>
+  <div class="box box-tip">
+    <b>💡 判断「是否真实时」:</b>看 controller_manager 启动日志里的周期诊断信息(新版本提供执行时间与周期性的 diagnostics),或对比 <code>update_rate</code> 设定值与实际执行间隔的抖动。抖动大、偶发超时,优先查权限与 read/write 里的阻塞调用。
+  </div>
+
+  <h3>8.2 诊断命令速查</h3>
+  <pre><code>ros2 control list_controllers          # 谁 active / 谁 inactive / 谁配置失败
+ros2 control list_hardware_interfaces  # 硬件到底导出了哪些 state/command 接口
+ros2 control list_controller_types     # 有哪些控制器插件可加载
+ros2 topic echo /joint_states          # 状态流是否在动</code></pre>
+
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 关于 ros2_control 的三层架构职责,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. controller 负责硬件驱动,hardware_interface 负责运动规划</button>
+      <button data-v="B">B. controller_manager 直接给电机下发 PWM</button>
+      <button data-v="C">C. controller_manager 管理控制器生命周期并调度;controller 算控制律;hardware_interface 把命令/状态翻译成总线读写</button>
+      <button data-v="D">D. 三者可以任意互换职责,没有固定分工</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 核心是「控制逻辑与硬件驱动解耦」:controller 计算控制律,hardware_interface 收发总线,controller_manager 以固定周期调度两者(读→算→写)。运动规划是 MoveIt2 的事。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 控制器是生命周期节点,load_controller 之后它的状态是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. active,立即开始控制</button>
+      <button data-v="B">B. unconfigured(或经 configure 后 inactive),必须显式 activate 才会运行</button>
+      <button data-v="C">C. finalized,已经不可用</button>
+      <button data-v="D">D. 自动回到 unconfigured 并等待下一次加载</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 加载≠激活:load 进入 unconfigured,configure 进入 inactive,只有 activate 后 update() 才会被调度。spawner 工具帮你一次完成加载+配置+激活。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. joint_state_broadcaster 与 joint_trajectory_controller 能同时 active 而不冲突,根本原因是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 前者只读状态、不申请命令接口;后者申请命令接口,两者不争抢同一资源</button>
+      <button data-v="B">B. 它们运行在不同进程里</button>
+      <button data-v="C">C. controller_manager 会自动让它们轮流运行</button>
+      <button data-v="D">D. 其实会冲突,必须先停一个</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 joint_state_broadcaster 只订阅状态并广播 /joint_states,不占用任何 command 接口;而「同一关节同一命令接口只能被一个 active 控制器占用」的互斥只发生在命令接口上。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 forward_command_controller 与 joint_group_effort_controller,正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 两者完全相同,可以无条件互换</button>
+      <button data-v="B">B. forward_command_controller 只能透传 effort</button>
+      <button data-v="C">C. joint_group_effort_controller 能自己闭环位置</button>
+      <button data-v="D">D. forward_command_controller 靠 interface_name 参数透传任意一种命令接口;joint_group_effort_controller 固定下发 effort 且不做闭环</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 forward_command_controller 是通用「透传」,interface_name 决定 position/velocity/effort;joint_group_effort_controller 只发 effort、开环,常用于力矩/拖动示教。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 在硬件接口插件里,把电机轴角度换算成关节角度的正确关系是(设减速比 R&gt;1)?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 关节角 = 电机角 × R</button>
+      <button data-v="B">B. 关节角 = 电机角 ÷ R;反向时关节力矩 = 电机力矩 × R</button>
+      <button data-v="C">C. 关节角 = 电机角,无需换算</button>
+      <button data-v="D">D. 关节角 = 电机角 + R</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 减速器让电机转 R 圈关节才转 1 圈:关节角=电机角/R,关节力矩=电机力矩×R(忽略效率)。方向与量纲算错会「反转/飞车」。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 关于硬件接口的 read() / write() 实时约束,错误的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 它们跑在 RT 线程里,应避免阻塞调用</button>
+      <button data-v="B">B. 里面打 RCLCPP_INFO 日志会破坏实时性</button>
+      <button data-v="C">C. 里面可以随意 sleep 或做网络请求,不影响实时性</button>
+      <button data-v="D">D. 总线读写应选非阻塞、带超时的 API</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 sleep、网络 I/O、动态内存、打日志都是 RT 循环里的「毒药」,会引入非确定延迟,拖垮控制周期,严重时导致关节抖动甚至发散。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">7. MoveIt2 规划成功后把轨迹交给真机的完整链路是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. MoveIt2 直接写电机寄存器</button>
+      <button data-v="B">B. MoveIt2 → 话题 /cmd_vel → 电机</button>
+      <button data-v="C">C. MoveIt2 → TF 广播 → 电机</button>
+      <button data-v="D">D. MoveIt2 → FollowJointTrajectory action → joint_trajectory_controller 插值 → hardware_interface → 电机</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 MoveIt2 只规划,不直接驱动硬件;它把轨迹作为 FollowJointTrajectory action 目标发给轨迹控制器,由控制器逐周期插值写命令接口,再经硬件接口下发到电机。</div>
+  </div>
+
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>ros2_control 用 <b>controller_manager(调度 + 生命周期)/ controller(控制律)/ hardware_interface(总线读写)</b> 三层把「控制」与「硬件」解耦,URDF 的 <code>ros2_control</code> 块声明插件与每个关节的 state/command 接口,实时性靠 RT 线程(固定 update_rate + 优先级 + 锁页)。<b>controller_manager</b> 用 <code>ros2 control</code> 完成加载/激活/切换(spawner 一键到位),<b>joint_trajectory_controller</b> 是 MoveIt2 执行主力,<b>joint_state_broadcaster / joint_group_effort_controller / forward_command_controller</b> 各司其职。自定义硬件只需继承 <code>SystemInterface</code> 实现 read/write 并用 pluginlib 注册;真实模组(Unitree/CyberGear/Hdrive)的适配就是把 CAN/EtherCAT 收发封装进 read/write,再用 mock 组件做离线 test 模式。全链路是 <b>MoveIt2 → FollowJointTrajectory → 轨迹控制器 → 硬件接口 → 电机</b>,模式切换靠「多命令接口 + 切换 active 控制器」,力控/阻抗则落到 effort 接口与电机 MIT 模式。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 若 <code>ros2 control list_controllers</code> 显示 arm_controller 是 active,但电机完全不动,你会按什么顺序排查(至少列出 4 步)?<br>
+    2. 同一关节同时声明 position 和 effort 两个命令接口,为什么「位置轨迹控制器」和「力矩组控制器」不能同时 active?写出你的切换命令。<br>
+    3. CyberGear 的 MIT 模式要求下发 kp/kd 增益,你会把它们映射到 ros2_control 的哪个层次?为什么?<br>
+    4. 自己动手:用官方 mock_components 起一个 2 关节臂,spawner joint_state_broadcaster + joint_trajectory_controller,发一条 FollowJointTrajectory 目标,观察 <code>list_hardware_interfaces</code> 与 <code>list_controllers</code> 的变化。
+  </div>
+
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://control.ros.org/" target="_blank" rel="noopener">ros2_control 官方文档(总入口)</a></li>
+    <li><a href="https://control.ros.org/master/doc/ros2_control/ros2controlcli/doc/userdoc.html" target="_blank" rel="noopener">ros2_control · Command Line Interface(ros2 control 命令行)</a></li>
+    <li><a href="https://docs.ros.org/en/humble/p/controller_manager/doc/userdoc.html" target="_blank" rel="noopener">controller_manager 官方用户文档</a></li>
+    <li><a href="https://control.ros.org/humble/doc/ros2_controllers/joint_trajectory_controller/doc/userdoc.html" target="_blank" rel="noopener">joint_trajectory_controller 官方用户文档</a></li>
+    <li><a href="https://control.ros.org/humble/doc/ros2_controllers/joint_state_broadcaster/doc/userdoc.html" target="_blank" rel="noopener">joint_state_broadcaster 官方用户文档</a></li>
+    <li><a href="https://github.com/ros-controls/ros2_controllers" target="_blank" rel="noopener">ros2_controllers GitHub 仓库(控制器索引 controllers_index)</a></li>
+    <li><a href="https://control.ros.org/master/doc/ros2_control/hardware_interface/doc/hardware_interface_types_userdoc.html" target="_blank" rel="noopener">ros2_control · Hardware Interface Types(SystemInterface / ActuatorInterface / SensorInterface)</a></li>
+    <li><a href="http://docs.ros.org/en/ros2_packages/kilted/api/hardware_interface/doc/writing_new_hardware_component.html" target="_blank" rel="noopener">ros2_control · Writing a Hardware Component(硬件组件开发指南)</a></li>
+    <li><a href="https://github.com/ros-controls/ros2_control_demos" target="_blank" rel="noopener">ros2_control_demos GitHub 仓库(官方示例 example_1~example_N)</a></li>
+    <li><a href="https://moveit.picknik.ai/main/doc/examples/controller_configuration/controller_configuration_tutorial.html" target="_blank" rel="noopener">MoveIt2 · Controller Configuration 教程(moveit 与 ros2_control 集成)</a></li>
+    <li><a href="https://github.com/unitreerobotics/unitree_ros" target="_blank" rel="noopener">宇树官方 unitree_ros 仓库(电机 SDK 与描述文件)</a></li>
+    <li><a href="https://github.com/NaokiTakahashi12/cybergear_ros2" target="_blank" rel="noopener">cybergear_ros2(小米 CyberGear 的 ROS2 适配,社区)</a></li>
+    <li><a href="https://github.com/belovictor/cybergear-docs" target="_blank" rel="noopener">CyberGear 指令手册整理(cybergear-docs,CAN/MIT 模式)</a></li>
+    <li><a href="13_MoveIt2进阶_运动规划与抓取管线.html">本站 06-13 · MoveIt2 进阶:运动规划与抓取管线(本页前置,讲规划层)</a></li>
+    <li><a href="10_ROS2实战进阶_URDF与MoveIt2.html">本站 06-10 · ROS2 实战进阶:URDF 与 MoveIt2(ros2_control 入门)</a></li>
+  </ul>
+  <p>资料整理更新至 2026-08;包名、命令与配置项已用 web_search 对照官方文档核实,不同 distro 的参数名与弃用状态可能略有差异,文中未能逐一核实之处均标注「约」,请以当前版本官方文档为准。</p>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

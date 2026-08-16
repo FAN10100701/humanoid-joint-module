@@ -36,6 +36,7 @@
   <url><loc>https://cyco.top/06_软件与算法/11_ROS2导航_Navigation2实战.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/12_机器人感知专题_相机激光雷达点云.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/13_MoveIt2进阶_运动规划与抓取管线.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/14_ros2_control实战深挖.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/07_前沿知识库/01_全球人形机器人机型全景.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/07_前沿知识库/02_前沿技术专题库.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/07_前沿知识库/03_论文_数据集_开源社区.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
@@ -43,6 +44,7 @@
   <url><loc>https://cyco.top/07_前沿知识库/05_电池与能源系统专题.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/07_前沿知识库/06_灵巧操作与抓取规划.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/07_前沿知识库/07_开源整机与仓库深度解析.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/07_前沿知识库/08_具身智能数据集与评测专题.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/01_术语词典.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/02_常见问答FAQ.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/03_自测题库.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
