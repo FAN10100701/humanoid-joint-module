@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 浏览器内强化学习实验室(Q-Learning倒立摆)</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-rl{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px;margin:16px 0;background:rgba(15,23,42,.45)}
+  body[data-theme="light"] .my-rl{background:rgba(255,255,255,.65)}
+  .my-rl canvas{max-width:100%;height:auto;background:#0b1626;border-radius:10px}
+  .my-rl .my-bar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .my-rl .my-bar button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;font-family:inherit}
+  .my-rl .my-bar button:hover{border-color:#2563eb}
+  .my-rl .my-bar button:disabled{opacity:.45;cursor:not-allowed}
+  .my-stat{font-size:13.5px;line-height:2}
+  .my-stat b{font-family:Consolas,monospace;color:#34d399}
+  body[data-theme="light"] .my-stat b{color:#047857}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-15",
+    root: "..",
+    breadcrumb: [ { t: "软件与算法", u: "../index.html#sec6" }, { t: "浏览器内强化学习实验室" } ],
+    prev: { t: "ros2_control 实战深挖", u: "14_ros2_control实战深挖.html" },
+    next: { t: "全球人形机器人机型全景", u: "../07_前沿知识库/01_全球人形机器人机型全景.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🧠 浏览器内强化学习实验室:Q-Learning 倒立摆</h1>
+    <div class="sub">不用装任何环境——点"训练",看 Q 表从随机乱推到学会平衡倒立摆:奖励曲线爬升、策略热图成形,再与 PD 控制器同台对比。</div>
+    <div class="tags"><span class="tag">强化学习</span><span class="tag">Q-Learning</span><span class="tag">倒立摆</span><span class="tag">奖励设计</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 亲手跑通一次表格型 Q-Learning:状态离散化 → ε-greedy 探索 → TD 更新<br>
+    2. 观察奖励曲线与策略热图的演化,理解"奖励塑形"为什么决定成败<br>
+    3. 能说出 RL 与经典控制(PD)各自的长处与 sim2real 的坑<br>
+    <b>建议用时:</b>约 35 分钟(含训练等待)
+  </div>
+
+  <h2><span class="h2-num">1</span> 问题设定:平衡一根倒立摆</h2>
+  <p>小车倒立摆是"机器人保持平衡"的最小模型(单腿/双足的爷爷辈)。控制目标:<strong>只允许水平推车(F ∈ {−10, 0, +10} N 三档动作),让摆杆保持竖直</strong>。这是 06-04 页讲的 MuJoCo/Isaac 任务的微缩版——状态连续、动力学非线性、没有现成模型。</p>
+  <div class="formula">Q(s,a) \leftarrow Q(s,a) + \alpha\Big[\, r + \gamma \max_{a'} Q(s',a') - Q(s,a) \Big]</div>
+  <ul>
+    <li><strong>状态离散化:</strong>(θ, ω) 各 12 档 → 144 个格子;θ∈[−0.3, 0.3] rad,ω∈[−3, 3] rad/s。连续世界→查表世界的桥梁。</li>
+    <li><strong>奖励塑形:</strong>每步 r = 1 − 3|θ| − 0.15|ω|(越直越高分);倒下(|θ|&gt;0.6 rad)额外 −10 并结束回合。"给什么奖励,学到什么行为"。</li>
+    <li><strong>ε-greedy 探索:</strong>以概率 ε 随机乱试(找新招),否则选 Q 最大的动作(用老招);ε 从 1.0 随回合衰减到 0.05。</li>
+    <li><strong>超参数:</strong>α=0.15(学习率),γ=0.995(折扣,越接近 1 越"远视")。</li>
+  </ul>
+
+  <div class="my-rl">
+    <div class="my-bar">
+      <button onclick="rlTrain(100)">📚 训练 100 回合</button>
+      <button onclick="rlTrain(1000)">🚀 训练 1000 回合</button>
+      <button onclick="rlDemo('rl')">🎬 用学到的策略演示</button>
+      <button onclick="rlDemo('pd')">⚖️ PD 控制对比演示</button>
+      <button onclick="rlReset()">🗑️ 重置 Q 表</button>
+    </div>
+    <canvas id="rlPole" width="920" height="250"></canvas>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">
+      <canvas id="rlCurve" width="450" height="190" style="flex:1 1 320px"></canvas>
+      <canvas id="rlHeat" width="450" height="190" style="flex:1 1 320px"></canvas>
+    </div>
+    <div class="my-stat" id="rlStat"></div>
+  </div>
+
+  <div class="box box-tip"><b>💡 怎么玩:</b>①先点"训练 1000 回合"(几秒完成,看奖励曲线从 −300 左右爬到 1000+,回合上限约 1200=每步满分×1200 步);②看右图热图——左半蓝(向左推)、右半红(向右推)、中间一条竖直"保持不推"的窄带,这就是学出来的策略结构;③点"演示"对比 RL 与 PD:PD 立刻就稳(模型已知时经典控制仍是王者),RL 的价值在于<b>不需要模型、能学奖励定义的任意目标</b>。</div>
+
+  <h2><span class="h2-num">2</span> 奖励设计:RL 的"编程语言"</h2>
+  <p>同一个摆,换奖励就换行为:r=+1(存活)→ 学会"苟住不动";r=1−3|θ| → 贴近竖直;r 加上 −0.01|F| → 学会省力;若奖励写成"角度绝对值越大越好",它学会主动摔倒。工程实践的三条铁律:<strong>①奖励要可微地引导目标(阶梯式奖励=迷宫);②别给"作弊捷径"(reward hacking,机器人会把传感器挡住如果那能得高分);③生存奖励+失败大罚是最常用的骨架</strong>。人形机器人整机 RL 的奖励函数通常有 20~50 项(速度跟踪/能耗/碰撞/姿态…),调奖励占项目时间的一半。</p>
+
+  <h2><span class="h2-num">3</span> 与经典控制、深度RL的关系</h2>
+  <div class="table-wrap"><table>
+    <tr><th></th><th>PD/经典控制</th><th>表格 Q-Learning(本页)</th><th>深度 RL(PPO/SAC)</th></tr>
+    <tr><td>需要模型吗</td><td>需要(J、Kt…)</td><td>不需要</td><td>不需要</td></tr>
+    <tr><td>状态维度</td><td>任意</td><td>≤3~4 维(否则表爆炸)</td><td>几十~上千维(用神经网络)</td></tr>
+    <tr><td>可解释性</td><td>高(带宽/极点)</td><td>中(能看热图)</td><td>低(黑盒)</td></tr>
+    <tr><td>人形上的用法</td><td>底层三环/平衡反射</td><td>教学原型</td><td>步态/全身控制(06-04 的 Isaac RL)</td></tr>
+  </table></div>
+  <div class="box box-warn"><b>⚠️ sim2real 的坑(本页沙盒里看不见的):</b>仿真里的策略拿到真机常崩——执行器延迟/摩擦死区没建模、传感器噪声不同、摔倒的代价不可逆。标准对策:域随机化(训练时随机化质量/摩擦/延迟)、系统辨识、真机微调。详见<a href="07_sim2real部署步骤拆解.html">sim2real 部署拆解</a>。</div>
+
+  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. ε-greedy 中 ε 从 1.0 衰减到 0.05 的意义是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 加快仿真速度</button>
+      <button data-v="B">B. 前期多探索找好策略,后期多利用已学策略并收敛</button>
+      <button data-v="C">C. 防止内存溢出</button>
+      <button data-v="D">D. 让奖励更平滑</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:ε 是"探索 vs 利用"的旋钮。一直大 → 永远乱试学不精;一开始就小 → 陷入最初的坏策略出不来。衰减式调度兼顾两者,是 RL 最通用的工程技巧。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 表格 Q-Learning 难以直接用于人形机器人全身控制的主要原因是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 计算量太大,浏览器跑不动</button>
+      <button data-v="B">B. 奖励无法定义</button>
+      <button data-v="C">C. 状态维度几十上百维,表格离散化后状态数指数爆炸(维度灾难),必须用神经网络逼近 Q</button>
+      <button data-v="D">D. Q-Learning 只能处理离散动作</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:本页 144 个格子够用;人形整机状态(30+ 关节角×速度+IMU+足底力)离散化后格子数是天文数字——DQN/PPO 用神经网络代替表格泛化到未见状态。(D 也是真限制之一,但可用 actor-critic 解决,主因是 C。)</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 训练出的策略热图"中间窄带不推、两侧对推"说明?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 策略学会了分区结构:误差小就保持,倒向哪边就往哪边追——与 PD 反馈律结构一致</button>
+      <button data-v="B">B. 热图渲染有 bug</button>
+      <button data-v="C">C. Q 表还没收敛,需要继续训练</button>
+      <button data-v="D">D. 说明奖励设计错了</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:RL 在简单任务上"重新发现"了经典控制律的结构(比例式分区)——这是本页最值得回味的现象:好的策略不问出身。而 PD 只用 3 行代码就达到同样效果,再次说明"模型已知用控制,模型未知/目标复杂用 RL"。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①表格 Q-Learning 五要素:离散状态、动作集、奖励、ε-greedy、TD 更新;②奖励塑形决定学到什么——生存奖励+失败大罚+连续引导项是标准骨架;③热图会自发收敛出与 PD 同构的分区策略;④状态维度爆炸时升级为深度 RL(PPO/SAC),真机部署前必须处理 sim2real(域随机化/辨识)。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 把失败罚金从 −10 改成 −1,训练结果会怎么变?动手改代码试试(本页脚本开源在源码里)。<br>2. 为什么本页动力学故意保留了摩擦和推力上限?去掉它们后学到的策略在真机上会怎样?</div>
+
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://www.gwern.net/docs/rl/sutton/barto/2017-sutton-rlintro.pdf" target="_blank" rel="noopener">Sutton &amp; Barto · Reinforcement Learning: An Introduction(第 6 章 Q-Learning)</a></li>
+    <li><a href="https://gymnasium.farama.org/environments/classic_control/cart_pole/" target="_blank" rel="noopener">Gymnasium · CartPole(经典 RL 环境,本页为其倒立摆变体)</a></li>
+    <li><a href="04_仿真与强化学习_MuJoCo_Isaac.html" target="_blank">本站 · 仿真与强化学习 MuJoCo/Isaac(整机级 RL)</a></li>
+  </ul>
+
+</div><!-- /container -->
+<script>
+/* ============ Q-Learning 倒立摆(动力学与 代码实验室 cart-pole 同源) ============ */
+var RL = {
+  NTH: 12, NOM: 12, NA: 3,
+  TH_MAX: 0.3, OM_MAX: 3.0, ACTIONS: [-10, 0, 10],
+  ALPHA: 0.15, GAMMA: 0.995, EPS0: 1.0, EPS_MIN: 0.05, EPS_DECAY: 0.995,
+  DT: 0.005, T_EP: 6.0, TH_FAIL: 0.6,
+  M: 1.0, m: 0.1, L: 0.5, G: 9.81,
+  q: null, visits: null, eps: 1.0, episodes: 0, rewards: [], best: -1e9,
+  demo: null, demoTimer: 0, training: false
+};
+RL.q = new Float64Array(RL.NTH * RL.NOM * RL.NA);
+RL.visits = new Uint32Array(RL.NTH * RL.NOM);
+
+function rlSIdx(th, om){
+  var i = Math.floor((th + RL.TH_MAX) / (2*RL.TH_MAX) * RL.NTH);
+  var j = Math.floor((om + RL.OM_MAX) / (2*RL.OM_MAX) * RL.NOM);
+  i = Math.max(0, Math.min(RL.NTH-1, i));
+  j = Math.max(0, Math.min(RL.NOM-1, j));
+  return [i, j];
+}
+function rlQ(i,j,a){ return RL.q[(i*RL.NOM + j)*RL.NA + a]; }
+function rlBestA(i,j){
+  var b=0; for(var a=1;a<RL.NA;a++) if(rlQ(i,j,a) > rlQ(i,j,b)) b=a;
+  return b;
+}
+function rlStep(st, F){   /* 与校验代码实验室.js 同源的 cart-pole 动力学 */
+  var M=RL.M, m=RL.m, L=RL.L, DT=RL.DT;
+  var cosT=Math.cos(st.th), sinT=Math.sin(st.th);
+  var denom = L*(4/3 - m*cosT*cosT/(M+m));
+  var d2th = (RL.G*sinT + cosT*(-F - m*L*st.dth*st.dth*sinT)/(M+m)) / denom;
+  var d2x = (F - 1*st.dx + m*L*(st.dth*st.dth*sinT - d2th*cosT)) / (M+m);
+  st.dth += d2th*DT; st.th += st.dth*DT;
+  st.dx += d2x*DT; st.x += st.dx*DT;
+}
+function rlRunEpisode(train){
+  var st = { th: 0.05, dth: 0, x: 0, dx: 0 };
+  var total = 0, steps = Math.round(RL.T_EP / RL.DT);
+  for(var k=0; k<steps; k++){
+    var ij = rlSIdx(st.th, st.dth);
+    var a;
+    if(train && Math.random() < RL.eps){ a = Math.floor(Math.random()*RL.NA); }
+    else { a = rlBestA(ij[0], ij[1]); }
+    var F = RL.ACTIONS[a];
+    rlStep(st, F);
+    var r = 1 - 3*Math.abs(st.th) - 0.15*Math.abs(st.dth);
+    var done = Math.abs(st.th) > RL.TH_FAIL;
+    if(done) r -= 10;
+    total += r;
+    if(train){
+      var ij2 = rlSIdx(st.th, st.dth);
+      var maxNext = rlQ(ij2[0], ij2[1], rlBestA(ij2[0], ij2[1]));
+      var idx = (ij[0]*RL.NOM + ij[1])*RL.NA + a;
+      RL.q[idx] += RL.ALPHA * (r + (done?0:RL.GAMMA*maxNext) - RL.q[idx]);
+      RL.visits[ij[0]*RL.NOM + ij[1]]++;
+    }
+    if(done) break;
+  }
+  return { total: total, survive: !done };
+}
+function rlTrain(n){
+  if(RL.training) return;
+  RL.training = true;
+  var done = 0;
+  (function chunk(){
+    for(var k=0; k<4 && done<n; k++, done++){
+      var res = rlRunEpisode(true);
+      RL.episodes++;
+      RL.rewards.push(res.total);
+      if(res.total > RL.best) RL.best = res.total;
+      RL.eps = Math.max(RL.EPS_MIN, RL.eps * RL.EPS_DECAY);
+    }
+    rlRenderCharts(); rlStat();
+    if(done < n){ setTimeout(chunk, 0); }
+    else { RL.training = false; rlStat(); }
+  })();
+}
+function rlReset(){
+  if(RL.training) return;
+  RL.q.fill(0); RL.visits.fill(0);
+  RL.eps = RL.EPS0; RL.episodes = 0; RL.rewards = []; RL.best = -1e9;
+  rlRenderCharts(); rlStat(); rlDrawPole({th:0.05,dth:0,x:0,dx:0}, '已重置', 0);
+}
+function rlDemo(mode){
+  if(RL.training) return;
+  var st = { th: 0.05, dth: 0, x: 0, dx: 0 };
+  var t0 = performance.now(), acc = 0, lastT = t0, label = mode==='rl' ? 'Q-Learning 策略' : 'PD 控制 (Kp=40, Kd=6)';
+  if(RL.demo) cancelAnimationFrame(RL.demo);
+  (function loop(now){
+    var dt = Math.min((now-lastT)/1000, 0.05); lastT = now; acc += dt;
+    while(acc >= RL.DT){
+      var F;
+      if(mode === 'rl'){
+        var ij = rlSIdx(st.th, st.dth);
+        F = RL.ACTIONS[rlBestA(ij[0], ij[1])];
+      } else {
+        F = Math.max(-10, Math.min(10, 40*st.th + 6*st.dth));
+      }
+      rlStep(st, F);
+      acc -= RL.DT;
+    }
+    rlDrawPole(st, label, (now-t0)/1000);
+    if(Math.abs(st.th) < 1.2 && (now-t0) < 20000){
+      RL.demo = requestAnimationFrame(loop);
+    } else { RL.demo = 0; }
+  })(t0);
+}
+
+/* ============ 渲染 ============ */
+function rlDrawPole(st, label, tSec){
+  var cv = document.getElementById('rlPole'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#0b1626'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#1e3a5f';
+  for(var g=0; g<W; g+=30){ ctx.beginPath(); ctx.moveTo(g,0); ctx.lineTo(g,H); ctx.stroke(); }
+  var floorY = H-40;
+  ctx.strokeStyle='#475569'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(20,floorY); ctx.lineTo(W-20,floorY); ctx.stroke();
+  var scale = 160;                      /* px per meter */
+  var cx = W/2 + Math.max(-W/2+80, Math.min(W/2-80, st.x*scale*1.6));
+  /* 小车 */
+  ctx.fillStyle='#3b82f6';
+  ctx.fillRect(cx-34, floorY-26, 68, 26);
+  ctx.strokeStyle='#93c5fd'; ctx.strokeRect(cx-34, floorY-26, 68, 26);
+  ctx.fillStyle='#94a3b8';
+  ctx.beginPath(); ctx.arc(cx-20, floorY, 7, 0, Math.PI*2); ctx.arc(cx+20, floorY, 7, 0, Math.PI*2); ctx.fill();
+  /* 摆杆 */
+  var px2 = cx + Math.sin(st.th)*RL.L*2*scale;
+  var py2 = floorY-26 - Math.cos(st.th)*RL.L*2*scale;
+  ctx.strokeStyle='#f97316'; ctx.lineWidth=6; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(cx, floorY-26); ctx.lineTo(px2, py2); ctx.stroke();
+  ctx.fillStyle='#fdba74';
+  ctx.beginPath(); ctx.arc(px2, py2, 9, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#e2e8f0'; ctx.font='bold 14px sans-serif'; ctx.textAlign='left';
+  ctx.fillText(label + '   θ=' + (st.th*180/Math.PI).toFixed(1) + '°   t=' + tSec.toFixed(1) + 's', 16, 24);
+  ctx.fillStyle = Math.abs(st.th) < 0.3 ? '#34d399' : '#f87171';
+  ctx.beginPath(); ctx.arc(W-30, 20, 6, 0, Math.PI*2); ctx.fill();
+  ctx.textAlign='start';
+}
+function rlRenderCharts(){
+  var cv = document.getElementById('rlCurve'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0b1626'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#94a3b8'; ctx.font='11px sans-serif';
+  ctx.fillText('回合总奖励(平滑后)', 8, 14);
+  if(RL.rewards.length > 1){
+    var rs = RL.rewards, N = rs.length, win = Math.max(10, Math.floor(N/60));
+    var sm = [];
+    for(var i=0;i<N;i++){
+      var s=0,c=0;
+      for(var k=Math.max(0,i-win); k<=Math.min(N-1,i+win); k++){ s+=rs[k]; c++; }
+      sm.push(s/c);
+    }
+    var lo = Math.min.apply(null, sm), hi = Math.max.apply(null, sm);
+    if(hi-lo < 1){ hi = lo+1; }
+    ctx.strokeStyle='#22c55e'; ctx.lineWidth=2;
+    ctx.beginPath();
+    for(i=0;i<N;i++){
+      var x = 8 + i/(N-1)*(W-16), y = H-14 - (sm[i]-lo)/(hi-lo)*(H-40);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.stroke();
+    ctx.fillStyle='#64748b';
+    ctx.fillText('最高 '+Math.round(hi), W-90, 14);
+    ctx.fillText('最低 '+Math.round(lo), W-90, H-8);
+  }
+  /* 策略热图 */
+  var hv = document.getElementById('rlHeat'), hctx = hv.getContext('2d');
+  var HW = hv.width, HH = hv.height;
+  hctx.clearRect(0,0,HW,HH);
+  hctx.fillStyle='#0b1626'; hctx.fillRect(0,0,HW,HH);
+  hctx.fillStyle='#94a3b8'; hctx.font='11px sans-serif';
+  hctx.fillText('策略热图:←推 | 保持 | 推→ (横=θ,纵=ω)', 8, 14);
+  var gx0=8, gy0=22, gw=HW-16, gh=HH-42;
+  var cw = gw/RL.NTH, ch = gh/RL.NOM;
+  for(i=0;i<RL.NTH;i++){
+    for(var j=0;j<RL.NOM;j++){
+      var vis = RL.visits[i*RL.NOM+j] > 0;
+      var a = rlBestA(i,j);
+      var col = vis ? (a===0 ? '#ef4444' : a===2 ? '#3b82f6' : '#64748b') : '#1e293b';
+      hctx.fillStyle = col;
+      hctx.globalAlpha = vis ? 0.85 : 0.6;
+      hctx.fillRect(gx0+i*cw, gy0+gh-(j+1)*ch, cw-1, ch-1);
+    }
+  }
+  hctx.globalAlpha = 1;
+  hctx.fillStyle='#64748b';
+  hctx.fillText('θ→', gx0+gw-20, gy0+gh+14);
+  hctx.save(); hctx.translate(gx0-2, gy0+16); hctx.rotate(-Math.PI/2); hctx.fillText('ω→', -40, 0); hctx.restore();
+}
+function rlStat(){
+  var last20 = RL.rewards.slice(-20);
+  var avg = last20.length ? last20.reduce(function(a,b){return a+b;},0)/last20.length : 0;
+  document.getElementById('rlStat').innerHTML =
+    '回合数 <b>' + RL.episodes + '</b> · ε=<b>' + RL.eps.toFixed(2) + '</b>' +
+    ' · 最近20回合平均奖励 <b>' + (avg?avg.toFixed(0):'—') + '</b>' +
+    ' · 历史最佳 <b>' + (RL.best>-1e8?RL.best.toFixed(0):'—') + '</b>' +
+    ' · 状态覆盖 <b>' + (Array.from(RL.visits).filter(function(v){return v>0;}).length) + '/' + RL.NTH*RL.NOM + '</b> 格' +
+    (RL.training ? ' <span style="color:#fbbf24">⏳ 训练中…</span>' : RL.episodes>=800 && avg>1000 ? ' <span style="color:#34d399">✔ 已学会平衡(平均奖励&gt;1000),点"演示"看效果</span>' : '');
+}
+rlDrawPole({th:0.05,dth:0,x:0,dx:0}, '待训练/待演示', 0);
+rlRenderCharts();
+rlStat();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>

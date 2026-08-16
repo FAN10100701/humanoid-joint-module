@@ -9,6 +9,7 @@
   <url><loc>https://cyco.top/01_理论入门/03_驱动电路模块认知_交互式图解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/04_机械原理基础_连杆齿轮传动.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/05_运动学基础_正逆运动学与DH参数.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/01_理论入门/06_控制数学工具箱.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/04_硬件设计通用要点_避坑指南.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/05_参考资料汇总_视频_开源项目.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/06_硬件原理图与PCB学习页_X1与Hdrive.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
@@ -16,6 +17,11 @@
   <url><loc>https://cyco.top/02_硬件基础/08_热管理与散热设计专题.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/09_FOC驱动器硬件深挖.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/10_传感器专题_IMU力矩与触觉.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/02_硬件基础/11_FOC调参整定实战手册.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/02_硬件基础/12_故障诊断决策树.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/02_硬件基础/14_硬件公式计算器矩阵.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/02_硬件基础/15_传感器与关节标定专题.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/03_项目实操/07_立创EDA逐模块绘制步骤.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/03_项目实操/08_完整学习手册_备查用.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>

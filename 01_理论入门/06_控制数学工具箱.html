@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 控制数学工具箱:拉普拉斯、传递函数与Bode图</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-lab{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px;margin:16px 0;background:rgba(15,23,42,.45)}
+  body[data-theme="light"] .my-lab{background:rgba(255,255,255,.65)}
+  .my-lab canvas{max-width:100%;height:auto;background:#0b1626;border-radius:10px}
+  .my-lab label{font-size:13px;margin-right:16px}
+  .my-lab input[type=range]{vertical-align:middle;accent-color:#2563eb;width:180px}
+  .my-read{font-size:13.5px;line-height:2;margin-top:8px}
+  .my-read b{font-family:Consolas,monospace;color:#34d399}
+  body[data-theme="light"] .my-read b{color:#047857}
+  .my-zone{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .my-zone button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px}
+  .my-zone button.on{background:#2563eb;color:#fff;border-color:#2563eb}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "01-06",
+    root: "..",
+    breadcrumb: [ { t: "理论入门", u: "../index.html#sec1" }, { t: "控制数学工具箱" } ],
+    prev: { t: "运动学基础", u: "05_运动学基础_正逆运动学与DH参数.html" },
+    next: { t: "硬件设计避坑指南", u: "../02_硬件基础/04_硬件设计通用要点_避坑指南.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>📐 控制数学工具箱:拉普拉斯、传递函数与 Bode 图</h1>
+    <div class="sub">把"微分方程"翻译成"代数运算"的三件套——拖动 ζ 与 ωn,实时看阶跃响应与 Bode 图如何联动,读懂带宽/超调/谐振峰。</div>
+    <div class="tags"><span class="tag">拉普拉斯变换</span><span class="tag">传递函数</span><span class="tag">二阶系统</span><span class="tag">Bode图</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 说清拉普拉斯变换解决了什么问题(微分→代数、时域→s 域)<br>
+    2. 掌握二阶系统标准式,理解 ζ(阻尼)与 ωn(自然频率)如何同时决定超调与速度<br>
+    3. 会读 Bode 图:−3dB 带宽、谐振峰值 Mr、相位滞后,并能联系到三环整定的带宽法<br>
+    <b>建议用时:</b>约 30 分钟
+  </div>
+
+  <h2><span class="h2-num">1</span> 拉普拉斯变换:控制工程师的"翻译器"</h2>
+  <p>线性微分方程直接求解要背齐次解+特解,叠加初始条件,繁琐易错。拉普拉斯变换 <div class="formula">F(s) = \mathcal{L}[f(t)] = \int_0^\infty f(t)\,e^{-st}\,dt</div> 把<strong>微分变成乘 s、积分变成除 s、卷积变成乘法</strong>,整个微分方程变成关于 s 的一元代数方程:解出 F(s),再查表反变换回时域。三个最常用的对:</p>
+  <div class="table-wrap"><table>
+    <tr><th>时域 f(t)</th><th>s 域 F(s)</th><th>控制系统里是谁</th></tr>
+    <tr><td>单位阶跃 1(t)</td><td>1/s</td><td>阶跃指令/突加负载</td></tr>
+    <tr><td>e<sup>−at</sup></td><td>1/(s+a)</td><td>一阶衰减(极点在 −a)</td></tr>
+    <tr><td>sin ωt</td><td>ω/(s²+ω²)</td><td>振荡/正弦激励</td></tr>
+    <tr><td>f′(t)</td><td>sF(s) − f(0)</td><td>微分(初值为 0 时就是 ×s)</td></tr>
+    <tr><td>∫f dt</td><td>F(s)/s</td><td>积分(速度→位置)</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💡 一句话本质:</b>s 平面上的<strong>极点位置 = 系统的"性格"</strong>——负实轴上的极点=衰减,离虚轴越远衰减越快;带虚部分量=振荡;虚轴上=等幅振荡(临界不稳);右半平面=发散。整定 PID 本质上就是在<strong>搬极点的位置</strong>。</div>
+
+  <h2><span class="h2-num">2</span> 一阶环节:时间常数 τ 的直觉</h2>
+  <p>惯性环节 G(s)=1/(τs+1):阶跃响应以指数爬升,<strong>每过一个 τ 走完剩余距离的 63.2%</strong>,3τ 到 95%,5τ 到 99%。RL 电路(τ=L/R)、电机机械加速(τ=J/b)、温度对象都是一阶。FOC 电流环带宽法整定(Kp=ωcL, Ki=ωcR)做完极点对消后,闭环就化成这个形状——"带宽 1/(2π) Hz"和"时间常数"说的同一件事。</p>
+
+  <h2><span class="h2-num">3</span> 二阶环节交互实验(拖滑杆看全部)</h2>
+  <p>标准二阶系统是三环里"速度环+位置环"级联后的典型形状:</p>
+  <div class="formula">G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}, \qquad M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \times 100\% \;(\zeta<1)</div>
+  <div class="my-lab">
+    <label>阻尼比 ζ: <input type="range" id="cgZ" min="0.05" max="2.5" step="0.01" value="0.35" oninput="cgDraw()"> <b id="cgZv">0.35</b></label>
+    <label>自然频率 ωn (rad/s): <input type="range" id="cgW" min="1" max="20" step="0.1" value="6" oninput="cgDraw()"> <b id="cgWv">6.0</b></label>
+    <div class="my-zone" id="cgPresets">
+      <button onclick="cgSet(0.05,6)">欠阻尼振荡 ζ=0.05</button>
+      <button onclick="cgSet(0.35,6)">工程折中 ζ=0.35</button>
+      <button onclick="cgSet(0.707,6)">最佳平坦 ζ=0.707</button>
+      <button onclick="cgSet(1,6)">临界阻尼 ζ=1</button>
+      <button onclick="cgSet(2.2,6)">过阻尼 ζ=2.2</button>
+    </div>
+    <canvas id="cgCanvas" width="920" height="400"></canvas>
+    <div class="my-read" id="cgRead"></div>
+  </div>
+  <div class="box box-tip"><b>💡 怎么读上图:</b>左图阶跃响应(绿线)——ζ↓超调↑振荡↑,ωn↓整体变慢;虚线包络 e<sup>−ζωn t</sup> 是"它最多能荡到哪"。右图 Bode 幅频(对数横轴)——低频 0dB,过了 ωn 以 −40dB/十倍频 下坠;ζ 小时 ωn 附近鼓起的"谐振峰"就是机械系统共振的数学影子。</div>
+
+  <h2><span class="h2-num">4</span> Bode 图:频域体检报告</h2>
+  <p>给系统灌不同频率的正弦,稳态输出的<strong>幅值比</strong>与<strong>相位差</strong>随频率的曲线就是 Bode 图。三个必读指标:</p>
+  <ul>
+    <li><strong>−3dB 带宽 ωb:</strong>幅值跌到 0.707 的频率——"跟得动"的指令频率上限,高于它的指令被低通掉(这正是三环"内环带宽 ≥ 5~10 倍外环"的物理含义)。</li>
+    <li><strong>谐振峰值 M<sub>r</sub> = 1/(2ζ√(1−ζ²)):</strong>ζ&lt;0.707 时出现;Mr&gt;2(ζ&lt;0.26)意味着阶跃超调&gt;40%,工程上先把 ζ 提上去再谈带宽。</li>
+    <li><strong>相位滞后:</strong>每个极点贡献最多 −90°;级联三个环节累计 −270°,若在增益>1 的频率上相位到 −180°,闭环自激振荡(奈奎斯特判据的直观版)。</li>
+  </ul>
+  <div class="box box-warn"><b>⚠️ 与整定的连接:</b>调参手册的带宽法就是在放置闭环极点:电流环极点对消后是一阶(τ=1/ωc);速度/位置环整定后的闭环近似二阶——你现在拖动的 ζ 和 ωn,就是整定时"超调 5% 对应 ζ≈0.7、响应快慢对应 ωn"的那两个旋钮。数学与工程在此合流。</div>
+
+  <h2><span class="h2-num">5</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 拉普拉斯变换给控制系统带来的核心便利是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 把非线性系统变成线性系统</button>
+      <button data-v="B">B. 把微分/积分运算变成乘/除 s 的代数运算,微分方程变代数方程</button>
+      <button data-v="C">C. 消除系统噪声</button>
+      <button data-v="D">D. 保证闭环一定稳定</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:拉氏变换是"线性"工具(叠加原理成立),它不改变系统性质、不除噪、更不保证稳定——它只是把时域微积分翻译成 s 域代数,让求解与频域分析(Bode/根轨迹)成为可能。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 二阶系统 ζ=0.2,保持 ωn 不变把 ζ 提到 0.7,阶跃响应会?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 超调显著减小,首次到达稳态附近略变慢</button>
+      <button data-v="B">B. 超调不变,但整体加速</button>
+      <button data-v="C">C. 稳态误差消失</button>
+      <button data-v="D">D. 系统发散</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Mp=e^{−πζ/√(1−ζ²)}:ζ=0.2 超调约 52%,ζ=0.7 约 4.6%。阻尼增加以轻微牺牲上升速度为代价(阻尼比 0.707 是"最快无超调"的工程甜点);稳态误差由系统型别与积分器决定,与 ζ 无关。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. "内环带宽必须 ≥ 外环 5~10 倍"的频域解释是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 为了省电</button>
+      <button data-v="B">B. 为了降低开关频率</button>
+      <button data-v="C">C. 外环指令频率在外环带宽内,而内环在其带宽内必须"近似直通"(幅值≈1、相位滞后小),否则等效延迟侵蚀外环相位裕度</button>
+      <button data-v="D">D. 纯经验约定,没有理论依据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:外环发出的指令频率 ≤ 外环带宽;若内环带宽不足,在这个频段内内环幅值衰减+相位滞后,级联后回路额外损失相位裕度 → 振荡。5~10 倍保证内环在外环工作频段的相位滞后 &lt;~10°,这是级联控制的频域设计准则。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①拉氏变换把微积分翻译成 s 域代数,极点位置决定系统性格;②一阶看时间常数 τ(63.2%/3τ/5τ),二阶由 ζ 与 ωn 二维定性格:ζ 管超调、ωn 管快慢;③Bode 三指标:−3dB 带宽(跟得动)、谐振峰(共振风险)、相位滞后(稳定性);④整定=搬极点,带宽法公式背后就是这里的数学。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 把 ζ 固定 0.707,ωn 从 6 拖到 20:超调变化吗?上升时间呢?这解释了"带宽与阻尼可以独立整定"吗?<br>2. 为什么机械谐振(柔性关节)会在 Bode 图上表现为高频谐振峰?此时提高速度环增益可能发生什么?</div>
+
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://ctms.engin.umich.edu/CTMS/index.php?example=Introduction&section=SystemAnalysis" target="_blank" rel="noopener">UMich CTMS · System Analysis(传递函数与 Bode)</a></li>
+    <li><a href="https://en.wikipedia.org/wiki/Second-order_system" target="_blank" rel="noopener">Wikipedia · Second-order system(标准式与 Mp/Mr 公式)</a></li>
+  </ul>
+
+</div><!-- /container -->
+<script>
+/* ============ 二阶系统交互:阶跃响应 + Bode 幅频 ============ */
+function cgStep(z, wn, t){
+  if(z < 1){
+    var wd = wn*Math.sqrt(1-z*z);
+    return 1 - Math.exp(-z*wn*t)*(Math.cos(wd*t) + z/Math.sqrt(1-z*z)*Math.sin(wd*t));
+  }
+  if(Math.abs(z-1) < 1e-9){
+    return 1 - (1+wn*t)*Math.exp(-wn*t);
+  }
+  var r = Math.sqrt(z*z-1);
+  var s1 = -wn*(z-r), s2 = -wn*(z+r);   /* s1 慢极点, s2 快极点(均为负) */
+  return 1 - (s2*Math.exp(s1*t) - s1*Math.exp(s2*t))/(s2-s1);
+}
+function cgMagDB(z, wn, w){
+  var re = wn*wn - w*w, im = 2*z*wn*w;
+  return 20*Math.log10(wn*wn/Math.sqrt(re*re+im*im));
+}
+function cgSet(z, w){
+  document.getElementById('cgZ').value = z;
+  document.getElementById('cgW').value = w;
+  cgDraw();
+}
+function cgDraw(){
+  var z = parseFloat(document.getElementById('cgZ').value);
+  var wn = parseFloat(document.getElementById('cgW').value);
+  document.getElementById('cgZv').textContent = z.toFixed(2);
+  document.getElementById('cgWv').textContent = wn.toFixed(1);
+  var cv = document.getElementById('cgCanvas'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#0b1626'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 1;
+  for(var g=0; g<W; g+=30){ ctx.beginPath(); ctx.moveTo(g,0); ctx.lineTo(g,H); ctx.stroke(); }
+  for(g=0; g<H; g+=30){ ctx.beginPath(); ctx.moveTo(0,g); ctx.lineTo(W,g); ctx.stroke(); }
+
+  /* 左:阶跃响应 */
+  var px0=14, pw=430, py0=30, ph=H-70, tEnd = 8/wn*3+1;
+  var yOf = function(v){ return py0+ph - v*ph/1.6; };  /* 顶部留 0.6 余量给超调 */
+  ctx.strokeStyle='#334155'; ctx.strokeRect(px0,py0,pw,ph);
+  ctx.strokeStyle='#475569';
+  ctx.beginPath(); ctx.moveTo(px0, yOf(1)); ctx.lineTo(px0+pw, yOf(1)); ctx.stroke();
+  ctx.fillStyle='#64748b'; ctx.font='11px sans-serif';
+  ctx.fillText('1.0', px0-2, yOf(1)-4);
+  ctx.fillText('阶跃响应 c(t)   横轴 0~'+tEnd.toFixed(1)+'s', px0+6, py0+14);
+  /* 包络 1±e^{-ζωn t} */
+  ctx.strokeStyle='rgba(148,163,184,.5)'; ctx.setLineDash([4,4]);
+  [1,-1].forEach(function(sign){
+    ctx.beginPath();
+    for(var i=0;i<=pw;i+=3){
+      var t = i/pw*tEnd, v = 1 + sign*Math.exp(-z*wn*t);
+      var y = py0+ph - v*ph/1.6;
+      i?ctx.lineTo(px0+i,y):ctx.moveTo(px0+i,y);
+    }
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  /* 响应曲线 */
+  ctx.strokeStyle='#22c55e'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  var peak = 0, tPeak = 0;
+  for(var i2=0;i2<=pw;i2+=2){
+    var t2 = i2/pw*tEnd, v2 = cgStep(z,wn,t2);
+    if(v2>peak){ peak=v2; tPeak=t2; }
+    var y2 = py0+ph - v2*ph/1.6;
+    i2?ctx.lineTo(px0+i2,y2):ctx.moveTo(px0+i2,y2);
+  }
+  ctx.stroke();
+  /* 超调点标注 */
+  if(peak>1.005){
+    ctx.fillStyle='#fbbf24';
+    var peakX = px0 + tPeak/tEnd*pw;
+    ctx.beginPath(); ctx.arc(peakX, yOf(peak), 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillText('峰值 '+peak.toFixed(2), Math.min(peakX+8, px0+pw-70), yOf(peak)-6);
+  }
+
+  /* 右:Bode 幅频 */
+  var bx0=px0+pw+30, bw=W-bx0-14;
+  ctx.strokeStyle='#334155'; ctx.strokeRect(bx0,py0,bw,ph);
+  var dBTop = 12, dBBot = -60;
+  var yDb = function(db){ return py0 + (dBTop-db)/(dBTop-dBBot)*ph; };
+  /* 0dB 与 -3dB 线 */
+  [[0,'#475569','0 dB'],[-3,'#f59e0b','-3 dB']].forEach(function(m){
+    ctx.strokeStyle=m[1]; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(bx0,yDb(m[0])); ctx.lineTo(bx0+bw,yDb(m[0])); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=m[1]; ctx.fillText(m[2], bx0+4, yDb(m[0])-3);
+  });
+  ctx.fillStyle='#64748b';
+  ctx.fillText('Bode 幅频 |G(jω)| dB   横轴 log ω (0.1~100 rad/s)', bx0+6, py0+14);
+  var w0=0.1, w1=100, lgl0=Math.log10(w0), lgl1=Math.log10(w1);
+  var xOf = function(w){ return bx0 + (Math.log10(w)-lgl0)/(lgl1-lgl0)*bw; };
+  /* 频率刻度 */
+  [0.1,1,10,100].forEach(function(w){
+    ctx.fillStyle='#64748b';
+    ctx.fillText(w>=1?String(w):'0.1', xOf(w)-6, py0+ph+14);
+  });
+  ctx.strokeStyle='#60a5fa'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  var wb = 0;
+  for(var i3=0;i3<=bw;i3+=2){
+    var w = Math.pow(10, lgl0 + i3/bw*(lgl1-lgl0));
+    var db = cgMagDB(z,wn,w);
+    if(db < dBBot) db = dBBot;
+    if(db > dBTop) db = dBTop;
+    i3?ctx.lineTo(bx0+i3,yDb(db)):ctx.moveTo(bx0+i3,yDb(db));
+  }
+  ctx.stroke();
+  /* 数值指标 */
+  var Mp = z<1 ? Math.exp(-Math.PI*z/Math.sqrt(1-z*z))*100 : 0;
+  var Mr = z<0.7071 ? 1/(2*z*Math.sqrt(1-z*z)) : 1;
+  var wScan = 0.1, wbFound = 0;
+  for(wScan=0.1; wScan<200; wScan*=1.02){
+    if(cgMagDB(z,wn,wScan) <= -3.0007){ wbFound = wScan; break; }
+  }
+  document.getElementById('cgRead').innerHTML =
+    'ζ=<b>' + z.toFixed(2) + '</b> ωn=<b>' + wn.toFixed(1) + ' rad/s</b>' +
+    (z<1 ? ' · 超调 M<sub>p</sub>=<b>' + Mp.toFixed(1) + '%</b>' : ' · 无超调(ζ≥1)') +
+    ' · 衰减率 ζωn=<b>' + (z*wn).toFixed(2) + ' 1/s</b>' +
+    (z<0.71 ? ' · 谐振峰 M<sub>r</sub>=<b>' + Mr.toFixed(2) + '</b>' : ' · 无谐振峰(ζ≥0.707)') +
+    (wbFound ? ' · −3dB 带宽 ωb≈<b>' + wbFound.toFixed(1) + ' rad/s</b>(' + (wbFound/6.283).toFixed(1) + ' Hz)' : '') +
+    (z<0.3 ? '<br><span style="color:#f87171">⚠ 谐振峰过高:工程上先把 ζ 提到 0.4~0.8 再谈带宽</span>' : '');
+}
+cgDraw();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>
