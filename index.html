@@ -44,11 +44,11 @@
   window.SITE_SECTIONS = [
     { key:"00", name:"3D 解剖可视化", ids:["00-02","00-03"] },
     { key:"01", name:"理论入门", ids:["01-01","01-02","01-03","01-04","01-05"] },
-    { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03","02-04"] },
+    { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03","02-04","02-05"] },
     { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05"] },
     { key:"04", name:"升级进阶", ids:["04-01","04-02"] },
     { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08","06-09","06-10"] },
-    { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06"] },
+    { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07"] },
     { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06"] }
   ];
 </script>
@@ -272,6 +272,13 @@
         <div class="t">电机选型计算专题</div>
         <div class="d">五类电机对比、选型五步法(扭矩/转速/惯量匹配/热校验)、髋关节完整算例与扭矩计算器。</div>
       </a>
+      <a class="card" href="02_硬件基础/08_热管理与散热设计专题.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🌡️</div>
+        <div class="t">热管理与散热设计专题</div>
+        <div class="d">热阻/损耗基础、关节热路径、电机与驱动板散热、整机热管理、热设计五步法与结温计算器。</div>
+      </a>
     </div>
   </div>
 
@@ -474,6 +481,13 @@
         <div class="t">灵巧操作与抓取规划</div>
         <div class="d">力/形封闭、6D 抓取规划、力控抓取、开门插线等操作任务、数据集基准与 VLA 结合。</div>
       </a>
+      <a class="card" href="07_前沿知识库/07_开源整机与仓库深度解析.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🌍</div>
+        <div class="t">开源整机与仓库深度解析</div>
+        <div class="d">宇树/智元/OpenLoong 开源生态逐仓库拆解、许可证合规边界与开源整机学习路线。</div>
+      </a>
     </div>
   </div>
 
@@ -562,11 +576,11 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.5.4</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · 代码实验室热修复</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.5.5</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · 代码实验室热修复</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V1.5.4 · 2026-08-16 · 代码实验室热修复</summary>
+        <summary>V1.5.5 · 2026-08-16 · 代码实验室热修复</summary>
         <div class="faq-a">修复 <b>代码实验室整页冻结</b>的根因:FOC 实验(实验二)的 `updateReadouts` 返回值缺失 `iqVal` 字段,导致 `drawDq` 首帧抛 TypeError、整个动画循环中断 —— 表现为"三个实验调参数都没反应"。已补上字段并回归验证 11/11 通过;<b>交互升级</b>:实验一拖动任何参数自动<b>重放</b>响应曲线(含目标角滑块即时生效),实验三摆杆倒下时调参自动<b>重置</b>重新起摆 —— 调参效果立即可见。</div>
       </details>
       <details class="faq">
@@ -613,7 +627,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.5.4(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.5.5(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
