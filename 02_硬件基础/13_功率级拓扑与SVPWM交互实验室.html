@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 功率级拓扑与SVPWM交互实验室</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-lab{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px;margin:16px 0;background:rgba(15,23,42,.45)}
+  body[data-theme="light"] .my-lab{background:rgba(255,255,255,.65)}
+  .my-vbtns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .my-vbtns button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:6px 13px;cursor:pointer;font-size:13px;font-family:Consolas,monospace}
+  .my-vbtns button.on{background:#16a34a;color:#fff;border-color:#16a34a}
+  body[data-theme="light"] .my-vbtns button{background:#fff;color:#334155}
+  .my-vbtns button:hover{border-color:#2563eb}
+  .my-read{font-size:13.5px;line-height:2;margin-top:8px}
+  .my-read b{font-family:Consolas,monospace;color:#34d399}
+  body[data-theme="light"] .my-read b{color:#047857}
+  .my-lab canvas{max-width:100%;height:auto;background:#0b1626;border-radius:10px;touch-action:none}
+  .my-lab label{font-size:13px;margin-right:14px}
+  .my-lab input[type=range]{vertical-align:middle;accent-color:#2563eb}
+  .sw-on{fill:#16a34a !important;stroke:#4ade80 !important}
+  .sw-off{fill:#1e293b;stroke:#475569}
+  .wp{stroke:#64748b;stroke-width:2.5;fill:none}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "02-10",
+    root: "..",
+    breadcrumb: [ { t: "硬件基础", u: "../index.html#sec2" }, { t: "功率级拓扑与SVPWM交互实验室" } ],
+    prev: { t: "故障诊断决策树", u: "12_故障诊断决策树.html" },
+    next: { t: "硬件公式计算器矩阵", u: "14_硬件公式计算器矩阵.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>⚡ 功率级拓扑与 SVPWM 交互实验室</h1>
+    <div class="sub">点击 8 个电压矢量看三相逆变桥的开关状态与电流路径;拖动调制比与转速,看 SVPWM 扇区切换与马鞍波的来历。</div>
+    <div class="tags"><span class="tag">三相逆变桥</span><span class="tag">SVPWM</span><span class="tag">电压矢量</span><span class="tag">死区</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 看懂三相全桥拓扑:6 个开关管 → 8 个开关状态 → 6 个有效电压矢量 + 2 个零矢量<br>
+    2. 理解 SVPWM:参考矢量由相邻两个基本矢量+零矢量按时分配合成,扇区与 T1/T2/T0 实时可算<br>
+    3. 能解释马鞍波(共模注入)的来历以及死区时间存在的必要性<br>
+    <b>建议用时:</b>约 35 分钟
+  </div>
+
+  <h2><span class="h2-num">1</span> 实验一:三相逆变桥开关状态(点击矢量)</h2>
+  <p>下图为三相全桥:直流母线(DC+ / DC−)接三个半桥,中点 U/V/W 接电机三相绕组(星接)。每个半桥"上管通=1,下管通=0"。三个开关位组合出 8 种状态:<b>V1(100)~V6(110) 是有效矢量,V0(000)/V7(111) 是零矢量</b>(电机端口等电位,不产生有效转矩方向)。点击按钮:绿色=导通开关管,橙色=电流路径。</p>
+
+  <div class="my-lab">
+    <div class="my-vbtns" id="vecBtns"></div>
+    <svg id="bridgeSvg" viewBox="0 0 640 400" style="max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <line x1="40" y1="46" x2="520" y2="46" stroke="#ef4444" stroke-width="5"/>
+      <line x1="40" y1="330" x2="520" y2="330" stroke="#60a5fa" stroke-width="5"/>
+      <text x="46" y="36" fill="#f87171" font-size="13" font-weight="bold">DC+ (母线正)</text>
+      <text x="46" y="352" fill="#60a5fa" font-size="13" font-weight="bold">DC− (母线负)</text>
+      <g id="legs"></g>
+      <!-- 三相绕组(星接),右侧集中绘制 -->
+      <path id="wU" class="wp" d="M140 190 L180 190 L180 160 L440 160"/>
+      <path id="wV" class="wp" d="M260 190 L440 190"/>
+      <path id="wW" class="wp" d="M380 190 L410 190 L410 220 L440 220"/>
+      <g stroke="#94a3b8" stroke-width="2.5" fill="none">
+        <path id="cU" d="M440 160 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0"/>
+        <path id="cV" d="M440 190 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0"/>
+        <path id="cW" d="M440 220 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0"/>
+      </g>
+      <path id="wStar" class="wp" d="M536 160 L560 160 L560 190 L536 190 M536 220 L560 220 L560 190"/>
+      <circle cx="560" cy="190" r="5" fill="#f59e0b"/>
+      <text x="572" y="194" fill="#94a3b8" font-size="12">中性点</text>
+      <text x="446" y="148" fill="#64748b" font-size="12">U</text>
+      <text x="446" y="182" fill="#64748b" font-size="12">V</text>
+      <text x="446" y="244" fill="#64748b" font-size="12">W</text>
+      <g id="curArrows" opacity="0">
+        <text id="arrU" x="300" y="152" fill="#f97316" font-size="16" font-weight="bold">▶</text>
+        <text id="arrV" x="330" y="182" fill="#f97316" font-size="16" font-weight="bold">▶</text>
+        <text id="arrW" x="416" y="212" fill="#f97316" font-size="16" font-weight="bold">▶</text>
+      </g>
+      <text x="430" y="270" fill="#64748b" font-size="12">电机三相绕组(星接)</text>
+    </svg>
+    <div class="my-read" id="vecRead"></div>
+    <div style="margin-top:6px">
+      <button style="border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:6px 14px;cursor:pointer" onclick="vecAuto()">&#9654; 自动旋转六拍(矢量依次切换)</button>
+    </div>
+  </div>
+
+  <div class="box box-warn"><b>⚠️ 死区时间(Dead Time):</b>同一半桥的上下管<b>绝不允许同时导通</b>——否则母线直通短路,毫秒级炸管。切换时必须先关断一个、留出 0.5~3 μs 的"双关断"间隙再开另一个,间隙内靠续流二极管维持电流。代价是输出电压出现死区畸变(换向异响、低速力矩波动),需要死区补偿。上图切换是理想化的瞬时动作,真实硬件中间隔着死区。</div>
+
+  <h2><span class="h2-num">2</span> 实验二:SVPWM 扇区与马鞍波</h2>
+  <p>SVPWM(空间矢量 PWM)把旋转的参考电压矢量 <b>V<sub>ref</sub></b> 分解到所在扇区,由相邻基本矢量 V<sub>k</sub>、V<sub>k+1</sub> 加零矢量按时隙合成:</p>
+  <div class="formula">T_1 = m\,T_s\sin(k\cdot60^\circ - \theta), \quad T_2 = m\,T_s\sin(\theta - (k{-}1)\cdot60^\circ), \quad T_0 = T_s - T_1 - T_2</div>
+  <p>其中 m 为调制比,θ 为矢量角,k 为扇区号。等效三相调制波经<strong>共模注入 u<sub>cm</sub> = −(max+min)/2</strong> 后就是<b>马鞍波</b>——比正弦 PWM 的直流母线利用率高约 <b>15%</b>(线性区 m 上限 0.907 而非 0.785),这正是关节驱动器偏爱 SVPWM 的原因。</p>
+
+  <div class="my-lab">
+    <label>调制比 m: <input type="range" id="svM" min="0.1" max="1" step="0.01" value="0.85" oninput="svpwmPaint()"> <b id="svMv">0.85</b></label>
+    <label>转速(电角速度 rad/s): <input type="range" id="svW" min="0.5" max="6" step="0.1" value="2" oninput="svpwmPaint()"> <b id="svWv">2.0</b></label>
+    <label><input type="checkbox" id="svPlay" checked onchange="svpwmPaint()"> 动画</label>
+    <canvas id="svCanvas" width="920" height="380"></canvas>
+    <div class="my-read" id="svRead"></div>
+  </div>
+
+  <div class="box box-tip"><b>💡 怎么读上图:</b>左图 αβ 平面,六边形顶点是 6 个基本矢量,绿色箭头是 V<sub>ref</sub>,橙色虚线圆是线性区边界;m&gt;0.907 进入过调制(削顶,电流环失控风险)。右图三条曲线是 U/V/W 相含共模注入后的马鞍调制波,白虚线是当前 θ 相位。m 越接近 0.907,马鞍顶部越平坦——零矢量时间被压到 0。</div>
+
+  <h2><span class="h2-num">3</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 三相逆变桥共有多少个开关状态?其中有效电压矢量和零矢量各多少?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 6 个状态,全部有效</button>
+      <button data-v="B">B. 8 个状态,7 有效 1 零</button>
+      <button data-v="C">C. 8 个状态,6 有效 + 2 零矢量</button>
+      <button data-v="D">D. 27 个状态,任选组合</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:3 个半桥各 2 种状态 → 2³=8。V1(100)~V6(110) 产生六个方向的电压矢量;000 与 111 时三相接到同一母线,端口电压为零,称零矢量,用于插入"不发力"的时间片。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. SVPWM 相比正弦 SPWM 的核心优势是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 开关损耗减半</button>
+      <button data-v="B">B. 相同母线电压下可输出约 15% 更高的基波电压(直流利用率高)</button>
+      <button data-v="C">C. 不需要死区时间</button>
+      <button data-v="D">D. 谐波完全为零</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:共模注入把线性调制区从 m=0.785 提到 0.907,同电压下力矩/转速上限更高——对电池供电的人形机器人是白捡的收益。开关损耗取决于 PWM 频率,两种调制相同;死区两者都要;谐波只是分布更优而非为零。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 设置死区时间的根本原因是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 防止同一半桥上下管直通短路(功率管关断有微秒级延迟)</button>
+      <button data-v="B">B. 提高调制精度</button>
+      <button data-v="C">C. 降低电磁干扰</button>
+      <button data-v="D">D. 给 MCU 留计算时间</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:功率管开通快、关断慢,无死区时切换瞬间上下管同时导通 → 母线直通炸管。死区是安全代价,其电压畸变再由死区补偿抵消。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①三相全桥 8 状态 = 6 有效矢量 + 2 零矢量;②SVPWM 用相邻矢量按时隙合成参考矢量,T1/T2/T0 与扇区实时对应;③马鞍波来自共模注入 −(max+min)/2,直流利用率 +15%;④死区防直通是功率级安全底线,其畸变需补偿。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 设为 V0(000) 时电机绕组还有电流吗?电流经什么器件续流?<br>2. m 拖到 1.0,马鞍波哪里先"削顶"?过调制对电流环意味着什么?</div>
+
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://www.ti.com/lit/pdf/slua618" target="_blank" rel="noopener">TI · InstaSPIN and SVPWM</a>(扇区合成与死区设计)</li>
+    <li><a href="https://docs.simplefoc.com/svpwm" target="_blank" rel="noopener">SimpleFOC · Space Vector PWM</a>(实现细节)</li>
+  </ul>
+
+</div><!-- /container -->
+<script>
+/* ============ 实验一:三相逆变桥 ============ */
+var VEC = [
+  { id:"V0", s:[0,0,0], name:"V0(000) 零矢量", note:"三台下管全通:U/V/W 短接到 DC−,电机端口电压为 0,绕组电流经下管续流衰减——用于嵌入'不发力'时间片。" },
+  { id:"V1", s:[1,0,0], name:"V1(100)", note:"U 上管 + V/W 下管导通。电流:DC+ → T1 → U 绕组 → 中性点 → V、W 绕组(并联分流)→ T4/T6 → DC−。Vref 方向 0°(α 轴)。" },
+  { id:"V2", s:[1,1,0], name:"V2(110)", note:"U/V 上管 + W 下管。Vref 方向 60°。与 V1 只差 V 相:切换时 V 半桥必须经过死区。" },
+  { id:"V3", s:[0,1,0], name:"V3(010)", note:"V 上管 + U/W 下管。Vref 方向 120°。" },
+  { id:"V4", s:[0,1,1], name:"V4(011)", note:"V/W 上管 + U 下管。Vref 方向 180°。" },
+  { id:"V5", s:[0,0,1], name:"V5(001)", note:"W 上管 + U/V 下管。Vref 方向 240°。" },
+  { id:"V6", s:[1,0,1], name:"V6(101)", note:"U/W 上管 + V 下管。Vref 方向 300°。" },
+  { id:"V7", s:[1,1,1], name:"V7(111) 零矢量", note:"三台上管全通:三相短接到 DC+,同样是零电压矢量。SVPWM 用 V0/V7 把零矢量时间对称分到周期首尾,优化谐波。" }
+];
+var LEGX = [140, 260, 380], LEGN = ["U", "V", "W"];
+
+(function buildBridge(){
+  var g = document.getElementById('legs');
+  var html = '';
+  for(var li=0; li<3; li++){
+    var x = LEGX[li];
+    html += '<line class="legw base" data-leg="'+li+'" x1="'+x+'" y1="46" x2="'+x+'" y2="86" stroke="#475569" stroke-width="3"/>';
+    html += '<rect id="sw'+li+'u" x="'+(x-26)+'" y="86" width="52" height="34" rx="6" class="sw-off" stroke-width="2"/>';
+    html += '<text x="'+x+'" y="108" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="bold">T'+(li*2+1)+'</text>';
+    html += '<line class="legw base" data-leg="'+li+'" x1="'+x+'" y1="120" x2="'+x+'" y2="190" stroke="#475569" stroke-width="3"/>';
+    html += '<circle cx="'+x+'" cy="190" r="5" fill="#f59e0b"/>';
+    html += '<text x="'+(x+10)+'" y="176" fill="#f59e0b" font-size="13" font-weight="bold">'+LEGN[li]+'</text>';
+    html += '<line class="legw base" data-leg="'+li+'" x1="'+x+'" y1="190" x2="'+x+'" y2="260" stroke="#475569" stroke-width="3"/>';
+    html += '<rect id="sw'+li+'d" x="'+(x-26)+'" y="260" width="52" height="34" rx="6" class="sw-off" stroke-width="2"/>';
+    html += '<text x="'+x+'" y="282" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="bold">T'+(li*2+2)+'</text>';
+    html += '<line class="legw base" data-leg="'+li+'" x1="'+x+'" y1="294" x2="'+x+'" y2="330" stroke="#475569" stroke-width="3"/>';
+  }
+  g.innerHTML = html;
+})();
+
+function setVec(i, btn){
+  var v = VEC[i];
+  document.querySelectorAll('#vecBtns button').forEach(function(b){ b.classList.remove('on'); });
+  if(btn) btn.classList.add('on');
+  /* 全量复位导线与绕组,再按状态着色(避免残留) */
+  document.querySelectorAll('.legw').forEach(function(w){
+    w.setAttribute('stroke', '#475569'); w.setAttribute('stroke-width', '3');
+  });
+  ['wU','wV','wW','wStar','cU','cV','cW'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.setAttribute('stroke', '#94a3b8');
+  });
+  for(var li=0; li<3; li++){
+    var up = document.getElementById('sw'+li+'u'), dn = document.getElementById('sw'+li+'d');
+    if(v.s[li]){ up.setAttribute('class','sw-on'); dn.setAttribute('class','sw-off'); }
+    else { dn.setAttribute('class','sw-on'); up.setAttribute('class','sw-off'); }
+  }
+  var arrows = document.getElementById('curArrows');
+  if(v.id==='V0' || v.id==='V7'){
+    arrows.setAttribute('opacity','0');
+  } else {
+    arrows.setAttribute('opacity','1');
+    for(var j=0;j<3;j++){
+      var one = v.s[j];
+      var t = document.getElementById('arr'+'UVW'[j]);
+      t.textContent = one ? '▶' : '◀';
+      document.getElementById('w'+'UVW'[j]).setAttribute('stroke', '#f97316');
+      document.getElementById('c'+'UVW'[j]).setAttribute('stroke', '#f97316');
+    }
+    document.getElementById('wStar').setAttribute('stroke', '#f97316');
+    /* 桥臂导线:上管通 → 上段橙色;下管通 → 下段橙色(用 stroke 区分,不能靠 class) */
+    document.querySelectorAll('.legw[data-leg]').forEach(function(w){
+      var leg = +w.getAttribute('data-leg');
+      var y1 = +w.getAttribute('y1'), y2 = +w.getAttribute('y2');
+      var isUpperSeg = y2 <= 190;   /* 中点以上的线段 */
+      if(v.s[leg] === (isUpperSeg ? 1 : 0)) { w.setAttribute('stroke', '#f97316'); w.setAttribute('stroke-width','4'); }
+    });
+  }
+  document.getElementById('vecRead').innerHTML = '<b>' + v.name + '</b> — ' + v.note;
+}
+(function initBtns(){
+  var bar = document.getElementById('vecBtns');
+  VEC.forEach(function(v, i){
+    var b = document.createElement('button');
+    b.textContent = v.id + '(' + v.s.join('') + ')';
+    b.onclick = function(){ setVec(i, b); };
+    bar.appendChild(b);
+  });
+  setVec(1, bar.children[1]);
+})();
+var vecTimer = null;
+function vecAuto(){
+  if(vecTimer){ clearInterval(vecTimer); vecTimer = null; return; }
+  var i = 1;
+  vecTimer = setInterval(function(){ i = i % 6 + 1; setVec(i, document.getElementById('vecBtns').children[i]); }, 1200);
+}
+
+/* ============ 实验二:SVPWM 扇区与马鞍波 ============ */
+var svTheta = 0, svLast = null, svRaf = 0;
+function svSector(th){ return Math.floor((((th % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI)) / (Math.PI/3)) + 1; }
+function svpwmPaint(){
+  var m = parseFloat(document.getElementById('svM').value);
+  var w = parseFloat(document.getElementById('svW').value);
+  document.getElementById('svMv').textContent = m.toFixed(2);
+  document.getElementById('svWv').textContent = w.toFixed(1);
+  var cv = document.getElementById('svCanvas'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var th = svTheta;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 1;
+  for(var gx=0; gx<W; gx+=30){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
+  for(var gy=0; gy<H; gy+=30){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+
+  /* 左图:αβ 六边形 */
+  var cx = 170, cy = H/2, R = 130, k;
+  ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for(k=0;k<=6;k++){ var a = k*Math.PI/3; var px = cx + R*Math.cos(a), py = cy - R*Math.sin(a); k?ctx.lineTo(px,py):ctx.moveTo(px,py); }
+  ctx.stroke();
+  ctx.setLineDash([5,5]); ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, R*0.907, 0, Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#fbbf24'; ctx.font='11px sans-serif'; ctx.fillText('线性区边界 0.907', cx - 34, cy - R*0.95 - 4);
+  ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2;
+  ctx.fillStyle = '#93c5fd'; ctx.font='12px sans-serif';
+  for(k=0;k<6;k++){
+    var a = k*Math.PI/3;
+    var x2 = cx + R*Math.cos(a), y2 = cy - R*Math.sin(a);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x2,y2); ctx.stroke();
+    ctx.fillText('V' + (k+1), x2 + 10*Math.cos(a) - 8, y2 - 10*Math.sin(a) + 4);
+  }
+  var vr = R * m;
+  var vx = cx + vr*Math.cos(th), vy = cy - vr*Math.sin(th);
+  ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3.5;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(vx,vy); ctx.stroke();
+  ctx.fillStyle = '#22c55e';
+  ctx.beginPath(); ctx.arc(vx,vy,5,0,Math.PI*2); ctx.fill();
+  var sec = svSector(th);
+  ctx.font='bold 14px sans-serif'; ctx.fillStyle = '#e2e8f0';
+  ctx.fillText('扇区 ' + sec, cx - 26, cy + R + 28);
+  ctx.fillText('Vref (m=' + m.toFixed(2) + ')', cx - 40, 18);
+  ctx.fillStyle='#64748b'; ctx.font='11px sans-serif';
+  ctx.fillText('α', cx + R + 12, cy + 4); ctx.fillText('β', cx - 4, cy - R - 6);
+
+  /* 右图:三相马鞍调制波 */
+  var px0 = 360, pw = W - px0 - 20, ph = H - 90, py0 = 45;
+  ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+  ctx.strokeRect(px0, py0, pw, ph);
+  var midY = py0 + ph/2;
+  ctx.strokeStyle = '#475569';
+  ctx.beginPath(); ctx.moveTo(px0, midY); ctx.lineTo(px0+pw, midY); ctx.stroke();
+  var cols = ['#ef4444','#10b981','#3b82f6'], names = ['U 相','V 相','W 相'];
+  var series = [[],[],[]];
+  for(var i2=0;i2<=pw;i2+=2){
+    var t = i2/pw * 2*Math.PI;
+    var uu = m*Math.sin(t), vv = m*Math.sin(t-2*Math.PI/3), ww = m*Math.sin(t+2*Math.PI/3);
+    var cmv = -(Math.max(uu,vv,ww)+Math.min(uu,vv,ww))/2;
+    series[0].push(uu+cmv); series[1].push(vv+cmv); series[2].push(ww+cmv);
+  }
+  series.forEach(function(sr, si){
+    ctx.strokeStyle = cols[si]; ctx.lineWidth = 2;
+    ctx.beginPath();
+    sr.forEach(function(val, i3){
+      var x = px0 + i3*2, y = midY - val * (ph/2) / 1.05;
+      i3 ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+    });
+    ctx.stroke();
+  });
+  ctx.font='12px sans-serif';
+  for(k=0;k<3;k++){ ctx.fillStyle = cols[k]; ctx.fillText(names[k], px0+8+k*44, py0+16); }
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('调制波(共模注入 −(max+min)/2 → 马鞍形)', px0+150, py0+16);
+  var thN = (((th % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI)) / (2*Math.PI);
+  var cxr = px0 + thN*pw;
+  ctx.strokeStyle = '#e2e8f0'; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(cxr, py0); ctx.lineTo(cxr, py0+ph); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#e2e8f0'; ctx.font='12px sans-serif';
+  ctx.fillText('θ=' + (thN*360).toFixed(0) + '°', Math.min(cxr+4, px0+pw-54), py0+ph+16);
+
+  var a1 = sec*Math.PI/3 - th, a2 = th - (sec-1)*Math.PI/3;
+  var T1 = m*Math.sin(a1), T2 = m*Math.sin(a2), T0 = 1 - T1 - T2;
+  var overload = (T1+T2 > 1.0001) || m > 0.907;
+  document.getElementById('svRead').innerHTML =
+    '扇区 <b>' + sec + '</b> · T1 = m·sin(' + (sec*60) + '°−θ) = <b>' + (T1*100).toFixed(1) + '%</b>' +
+    ' · T2 = m·sin(θ−' + ((sec-1)*60) + '°) = <b>' + (T2*100).toFixed(1) + '%</b>' +
+    ' · T0(零矢量) = <b>' + (Math.max(0,T0)*100).toFixed(1) + '%</b>' +
+    (overload ? ' <span style="color:#f87171">⚠ 超出线性区(m>0.907 或 T1+T2>100%),进入过调制,波形削顶</span>' : '');
+}
+(function svLoop(now){
+  if(svLast !== null){
+    var dt = Math.min((now - svLast)/1000, 0.05);
+    if(document.getElementById('svPlay').checked){
+      svTheta += parseFloat(document.getElementById('svW').value) * dt;
+      svpwmPaint();
+    }
+  }
+  svLast = now;
+  requestAnimationFrame(svLoop);
+})(performance.now());
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>

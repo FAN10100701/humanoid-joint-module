@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 硬件公式计算器矩阵</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-calc{border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:14px 18px;margin:18px 0;background:rgba(15,23,42,.4)}
+  body[data-theme="light"] .my-calc{background:rgba(255,255,255,.6)}
+  .my-calc h3{margin-top:0}
+  .my-calc .my-f{font-family:Consolas,monospace;font-size:13px;color:#9ecbff;margin:6px 0 10px}
+  body[data-theme="light"] .my-calc .my-f{color:#1d4ed8}
+  .my-calc label{display:inline-block;margin:5px 12px 5px 0;font-size:13px}
+  .my-calc input{width:86px;background:rgba(2,6,23,.6);border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:4px 8px;font-family:Consolas,monospace}
+  body[data-theme="light"] .my-calc input{background:#fff;border-color:#cbd5e1;color:#0f172a}
+  .my-calc .my-res{margin-top:8px;font-size:14px;line-height:2}
+  .my-calc .my-res b{font-family:Consolas,monospace;color:#34d399}
+  body[data-theme="light"] .my-calc .my-res b{color:#047857}
+  .my-calc .my-note{font-size:12.5px;color:#94a3b8;margin-top:6px;line-height:1.8}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "02-11",
+    root: "..",
+    breadcrumb: [ { t: "硬件基础", u: "../index.html#sec2" }, { t: "硬件公式计算器矩阵" } ],
+    prev: { t: "功率级拓扑与SVPWM交互实验室", u: "13_功率级拓扑与SVPWM交互实验室.html" },
+    next: { t: "传感器与关节标定专题", u: "15_传感器与关节标定专题.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🧮 硬件公式计算器矩阵</h1>
+    <div class="sub">功率级损耗、母线电容、电流采样、BUCK 电感、电机常数、惯量匹配——关节驱动板设计中最常用的六个计算器,公式与单位全部明示。</div>
+    <div class="tags"><span class="tag">MOSFET损耗</span><span class="tag">母线电容</span><span class="tag">采样电阻</span><span class="tag">BUCK电感</span><span class="tag">Kt/Ke</span><span class="tag">惯量匹配</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 会算 MOSFET 导通+开关损耗,知道 PWM 频率对损耗的线性影响<br>
+    2. 会按纹波要求算 BUCK 电感与母线电容,会匹配电流采样电阻与运放增益<br>
+    3. 掌握 Kt/Ke 的三种单位换算与"惯量比&le;5~10"的选型准则<br>
+    <b>建议用时:</b>约 30 分钟(配合手算练习)
+  </div>
+
+  <h2><span class="h2-num">1</span> MOSFET 功率损耗(单管,半桥之一)</h2>
+  <div class="my-calc">
+    <div class="my-f">P = I_rms² · R<sub>ds(on)</sub> · D &nbsp;+&nbsp; 0.5 · V<sub>ds</sub> · I<sub>pk</sub> · (t<sub>r</sub>+t<sub>f</sub>) · f<sub>sw</sub> &nbsp;&nbsp;(导通损耗 + 开关损耗)</div>
+    <label>电流有效值 I_rms (A) <input id="mI" value="10" oninput="calM()"></label>
+    <label>Rds(on) (mΩ) <input id="mR" value="8" oninput="calM()"></label>
+    <label>占空比 D (0~1) <input id="mD" value="0.5" oninput="calM()"></label><br>
+    <label>母线电压 Vds (V) <input id="mV" value="48" oninput="calM()"></label>
+    <label>峰值电流 I_pk (A) <input id="mP" value="14" oninput="calM()"></label>
+    <label>开关时间 tr+tf (ns) <input id="mT" value="40" oninput="calM()"></label>
+    <label>PWM 频率 fsw (kHz) <input id="mF" value="20" oninput="calM()"></label>
+    <div class="my-res" id="mOut"></div>
+    <div class="my-note">结果为单个 MOSFET 损耗;三相全桥 6 管近似 ×6(占空比分布不同,工程估算够用)。再用热管理专题的结温计算器核对温升。开关损耗与 fsw 严格线性——这是高频化(低啸叫)与效率的取舍点。</div>
+  </div>
+
+  <h2><span class="h2-num">2</span> 母线电容(BUCK 输入/逆变直流链)</h2>
+  <div class="my-calc">
+    <div class="my-f">C ≥ I<sub>out</sub> · D·(1−D) / ( f<sub>sw</sub> · ΔV<sub>pp</sub> ) &nbsp;&nbsp;(最坏占空比 D=0.5 时 C ≥ I/(4·f·ΔV))</div>
+    <label>输出/负载电流 I_out (A) <input id="cI" value="12" oninput="calC()"></label>
+    <label>开关频率 fsw (kHz) <input id="cF" value="20" oninput="calC()"></label>
+    <label>允许纹波 ΔVpp (mV) <input id="cV" value="200" oninput="calC()"></label>
+    <div class="my-res" id="cOut"></div>
+    <div class="my-note">经验再加 2~3 倍余量(电容 ESR、温漂、老化)。逆变直流链还要叠加三相脉动与制动回灌,详见《FOC驱动器硬件深挖》。低 ESR 组合:大容量电解(µF 级)+ 并联 MLCC(百 nF~µF 级,滤高频)。</div>
+  </div>
+
+  <h2><span class="h2-num">3</span> 电流采样电阻与运放增益</h2>
+  <div class="my-calc">
+    <div class="my-f">V<sub>adc</sub> = I<sub>pk</sub> · R<sub>s</sub> · G ≤ V<sub>ref</sub> &nbsp;&nbsp;(峰值不顶满量程) &nbsp;;&nbsp; P<sub>R</sub> = I<sub>rms</sub>² · R<sub>s</sub></div>
+    <label>峰值电流 I_pk (A) <input id="sI" value="20" oninput="calS()"></label>
+    <label>采样电阻 R_s (mΩ) <input id="sR" value="5" oninput="calS()"></label>
+    <label>运放增益 G <input id="sG" value="10" oninput="calS()"></label>
+    <label>ADC 基准 V_ref (V) <input id="sV" value="3.3" oninput="calS()"></label>
+    <label>电流有效值 I_rms (A) <input id="sQ" value="14" oninput="calS()"></label>
+    <div class="my-res" id="sOut"></div>
+    <div class="my-note">电阻取小(1~10 mΩ)以降低发热,用运放把信号放大到 ADC 满量程的 80% 左右;太接近满量程会削顶失真(电流环振荡的常见根因之一)。</div>
+  </div>
+
+  <h2><span class="h2-num">4</span> BUCK 电感设计</h2>
+  <div class="my-calc">
+    <div class="my-f">L = V<sub>out</sub>(1 − V<sub>out</sub>/V<sub>in</sub>) / ( f<sub>sw</sub> · ΔI<sub>L</sub> ) ,&nbsp; ΔI<sub>L</sub> = r · I<sub>out</sub> (r 取 0.2~0.4)</div>
+    <label>输入电压 Vin (V) <input id="lI" value="48" oninput="calL()"></label>
+    <label>输出电压 Vout (V) <input id="lO" value="12" oninput="calL()"></label>
+    <label>负载电流 I_out (A) <input id="lA" value="2" oninput="calL()"></label>
+    <label>开关频率 fsw (kHz) <input id="lF" value="500" oninput="calL()"></label>
+    <label>纹波系数 r (0.2~0.4) <input id="lR" value="0.3" oninput="calL()"></label>
+    <div class="my-res" id="lOut"></div>
+    <div class="my-note">算出 L 后还要校核:①饱和电流 > I_pk = I_out + ΔI<sub>L</sub>/2;②直流电阻铜损;③磁芯损耗随频率上升。12V/5V 逻辑电源常用集成 BUCK(如 TPS54xxx),此计算器用于评估 datasheet 外的定制工况。</div>
+  </div>
+
+  <h2><span class="h2-num">5</span> 电机常数 Kt ↔ Ke 换算</h2>
+  <div class="my-calc">
+    <div class="my-f">K<sub>t</sub>(N·m/A) = K<sub>e</sub>(V·s/rad) = K<sub>e</sub>(V/KRPM) / 104.7 &nbsp;;&nbsp; P = τ·ω = K<sub>t</sub>·I · ω</div>
+    <label>已知 Kt (N·m/A) <input id="kT" value="0.095" oninput="calK()"></label>
+    <div class="my-res" id="kOut"></div>
+    <div class="my-note">换算链:1 KRPM = 1000/60 r/s = 104.72 rad/s。SI 制下 Kt 与 Ke 数值相等(能量守恒),厂家常给 V/KRPM(无刷电机)或 N·m/A(力矩电机),本站电机选型专题的算例即用此换算。</div>
+  </div>
+
+  <h2><span class="h2-num">6</span> 负载折算惯量与惯量比</h2>
+  <div class="my-calc">
+    <div class="my-f">J<sub>ref</sub> = J<sub>load</sub> / i² &nbsp;;&nbsp; 惯量比 = J<sub>ref</sub> / J<sub>rotor</sub> ≤ 5~10(伺服推荐)</div>
+    <label>负载惯量 J_load (kg·cm²) <input id="jL" value="50" oninput="calJ()"></label>
+    <label>转子惯量 J_rotor (kg·cm²) <input id="jR" value="8" oninput="calJ()"></label>
+    <label>减速比 i <input id="jI" value="10" oninput="calJ()"></label>
+    <div class="my-res" id="jOut"></div>
+    <div class="my-note">惯量比过大 → 动态"头重脚轻",带宽上不去、易振荡。对策:加大减速比(J 按平方缩小)或选大一号电机。准直驱(QDD)方案故意用小 i 换反驱透明度,此时靠高分辨率编码器+高电流环带宽补偿——设计权衡见电机选型专题。</div>
+  </div>
+
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 其他条件不变,PWM 频率从 20 kHz 提高到 40 kHz,单个 MOSFET 的开关损耗?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 不变</button>
+      <button data-v="B">B. 加倍(开关损耗与 fsw 成正比)</button>
+      <button data-v="C">C. 减半</button>
+      <button data-v="D">D. 平方倍增长</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:P_sw = 0.5·V·I·(tr+tf)·fsw,与 fsw 严格线性。频率翻倍损耗翻倍——"用高频消啸叫"要拿效率埋单,这是功率级设计的经典取舍。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 峰值电流 20 A、R_s=5 mΩ、增益 10、ADC 基准 3.3 V,该采样链会发生什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 输出 3.3 V,正好满量程</button>
+      <button data-v="B">B. 输出 2.0 V,余量合适</button>
+      <button data-v="C">C. 输出 1.0 V,仅约 30% 量程,偏保守浪费分辨率</button>
+      <button data-v="D">D. 输出 10 V,严重削顶</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:V = 20 A × 0.005 Ω × 10 = 1.0 V,是满量程的 30%——安全但浪费了分辨率,可把增益提到 ~26 让峰值落在 80% 左右。真正危险的是反向情况:堵转大电流时削顶,电流环随之振荡。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 负载惯量 100 kg·cm²、转子 10 kg·cm²,减速比 3:1 时惯量比是多少?如何降到 5 以内?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 约 1.11(100/9/10),已经达标</button>
+      <button data-v="B">B. 10,需要把减速比加大到 5 以上</button>
+      <button data-v="C">C. 30,必须换更大电机</button>
+      <button data-v="D">D. 0.3,惯量比过小反而不好</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:J_ref = 100/3² = 11.1 kg·cm²,惯量比 = 11.1/10 ≈ 1.11,远小于 5,达标。核心是"折算按减速比平方缩小"——这一步算错(忘了平方)就会得出 B 的错误结论。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①MOSFET 损耗=导通(I²R·D)+开关(∝fsw),配结温计算器闭环;②电容按 ΔQ/ΔV 纹波法+2~3 倍余量;③采样电阻取小、增益凑满量程 80%;④BUCK 电感由纹波系数反推;⑤Kt=Ke(SI),V/KRPM÷104.7 换算;⑥惯量按 i² 折算,惯量比≤5~10。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么 MOSFET 的 Rds(on) 标称值要按"工作结温下的值"(通常约为室温的 1.6~1.8 倍)代入损耗公式?<br>2. 电机 datasheet 只给 Ke=8.5 V/KRPM,如何最快得到 Kt?这套换算在选电池电压时还告诉你什么?(提示:反电动势预算)</div>
+
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://www.infineon.com/dgdl/Infineon-MOSFET+power+losses+-AN.pdf" target="_blank" rel="noopener">Infineon · MOSFET Power Losses Application Note</a>(导通/开关损耗模型)</li>
+    <li><a href="https://www.ti.com/lit/an/slva057/slva057.pdf" target="_blank" rel="noopener">TI · Input/Output Capacitor Selection in Buck Converters</a>(纹波法电容计算)</li>
+    <li><a href="https://www.ti.com/lit/an/slva477b/slva477b.pdf" target="_blank" rel="noopener">TI · Basic Calculation of a Buck Converter's Power Stage</a>(电感设计)</li>
+  </ul>
+
+</div><!-- /container -->
+<script>
+function fv(id){ var v = parseFloat(document.getElementById(id).value); return isFinite(v) ? v : NaN; }
+function calM(){
+  var I=fv('mI'), R=fv('mR')/1000, D=fv('mD'), V=fv('mV'), P=fv('mP'), T=fv('mT')*1e-9, F=fv('mF')*1000;
+  if([I,R,D,V,P,T,F].some(isNaN)){ document.getElementById('mOut').textContent='请输入有效数字'; return; }
+  var pc = I*I*R*D, ps = 0.5*V*P*T*F, tot = pc+ps;
+  document.getElementById('mOut').innerHTML =
+    '导通损耗 = ' + I + '² × ' + (R*1000).toFixed(1) + 'mΩ × ' + D + ' = <b>' + pc.toFixed(2) + ' W</b><br>' +
+    '开关损耗 = 0.5 × ' + V + ' × ' + P + ' × ' + (T*1e9).toFixed(0) + 'ns × ' + (F/1000).toFixed(0) + 'kHz = <b>' + ps.toFixed(2) + ' W</b><br>' +
+    '单管合计 <b>' + tot.toFixed(2) + ' W</b> · 三相全桥估算 <b>' + (tot*6).toFixed(1) + ' W</b>' +
+    (ps > pc ? '<br><span style="color:#fbbf24">⚠ 开关损耗占主导:考虑降 fsw 或选更快器件</span>' : '');
+}
+function calC(){
+  var I=fv('cI'), F=fv('cF')*1000, V=fv('cV')/1000;
+  if([I,F,V].some(isNaN)){ document.getElementById('cOut').textContent='请输入有效数字'; return; }
+  var c = I/(4*F*V);
+  document.getElementById('cOut').innerHTML =
+    '最坏工况(D=0.5):C ≥ I/(4·f·ΔV) = <b>' + (c*1e6).toFixed(0) + ' µF</b><br>' +
+    '加 2~3 倍余量 → 工程取 <b>' + (c*1e6*2.5).toFixed(0) + ' µF</b>(低 ESR,并 MLCC)';
+}
+function calS(){
+  var I=fv('sI'), R=fv('sR')/1000, G=fv('sG'), V=fv('sV'), Q=fv('sQ');
+  if([I,R,G,V,Q].some(isNaN)){ document.getElementById('sOut').textContent='请输入有效数字'; return; }
+  var vo = I*R*G, pr = Q*Q*R, pct = vo/V*100;
+  document.getElementById('sOut').innerHTML =
+    '峰值输出电压 = ' + I + ' × ' + (R*1000).toFixed(1) + 'mΩ × ' + G + ' = <b>' + vo.toFixed(3) + ' V</b>(量程 ' + pct.toFixed(0) + '%)' +
+    (pct > 95 ? '<br><span style="color:#f87171">⚠ 接近/超过满量程,会削顶 → 降 R_s 或降增益</span>' : pct < 40 ? '<br><span style="color:#fbbf24">⚠ 余量过大浪费分辨率,可提高增益</span>' : '<br><span style="color:#34d399">✔ 余量合理</span>') + '<br>' +
+    '采样电阻功耗 = ' + Q + '² × ' + (R*1000).toFixed(1) + 'mΩ = <b>' + pr.toFixed(2) + ' W</b>(选 ≥2 倍功率的合金电阻)';
+}
+function calL(){
+  var vi=fv('lI'), vo=fv('lO'), io=fv('lA'), f=fv('lF')*1000, r=fv('lR');
+  if([vi,vo,io,f,r].some(isNaN)){ document.getElementById('lOut').textContent='请输入有效数字'; return; }
+  var di = r*io, L = vo*(1-vo/vi)/(f*di);
+  document.getElementById('lOut').innerHTML =
+    'ΔI_L = r·I_out = <b>' + di.toFixed(2) + ' A</b> · 电感 L = <b>' + (L*1e6).toFixed(1) + ' µH</b><br>' +
+    '电感饱和电流需 > I_pk = ' + (io+di/2).toFixed(2) + ' A';
+}
+function calK(){
+  var kt=fv('kT');
+  if(isNaN(kt)){ document.getElementById('kOut').textContent='请输入有效数字'; return; }
+  document.getElementById('kOut').innerHTML =
+    'Ke(SI) = <b>' + kt.toFixed(4) + ' V·s/rad</b> · Ke(常用单位) = <b>' + (kt*104.72).toFixed(2) + ' V/KRPM</b><br>' +
+    '自检:1000 rpm(104.72 rad/s)时反电动势 ≈ ' + (kt*104.72).toFixed(2) + ' V/相——评估最高转速下的母线电压预算时直接用得上。';
+}
+function calJ(){
+  var jl=fv('jL'), jr=fv('jR'), i=fv('jI');
+  if([jl,jr,i].some(isNaN) || i===0){ document.getElementById('jOut').textContent='请输入有效数字'; return; }
+  var ref = jl/(i*i), ratio = ref/jr;
+  document.getElementById('jOut').innerHTML =
+    '折算到电机轴:J_ref = ' + jl + '/' + i + '² = <b>' + ref.toFixed(2) + ' kg·cm²</b><br>' +
+    '惯量比 = ' + ref.toFixed(2) + '/' + jr + ' = <b>' + ratio.toFixed(2) + '</b> ' +
+    (ratio <= 5 ? '<span style="color:#34d399">✔ 达标(≤5)</span>' : ratio <= 10 ? '<span style="color:#fbbf24">⚠ 边缘(5~10),动态要求高时改善</span>' : '<span style="color:#f87171">✘ 超标:加大减速比或换大电机</span>') +
+    '<br>若要惯量比 ≤5:i ≥ ' + Math.sqrt(jl/(5*jr)).toFixed(1);
+}
+calM(); calC(); calS(); calL(); calK(); calJ();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>

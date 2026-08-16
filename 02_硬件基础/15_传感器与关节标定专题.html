@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 传感器与关节标定专题</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-clamp{border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:14px 18px;margin:16px 0;background:rgba(34,197,94,.05)}
+  .my-clamp b.t{color:#34d399}
+  .my-dos{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0}
+  .my-dos div{flex:1 1 300px;border-radius:10px;padding:12px 14px;line-height:1.9;font-size:13.5px}
+  .my-dos .ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35)}
+  .my-dos .no{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.35)}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "02-12",
+    root: "..",
+    breadcrumb: [ { t: "硬件基础", u: "../index.html#sec2" }, { t: "传感器与关节标定专题" } ],
+    prev: { t: "硬件公式计算器矩阵", u: "14_硬件公式计算器矩阵.html" },
+    next: { t: "Hdrive 融合方案完整指南", u: "../03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🎯 传感器与关节标定专题</h1>
+    <div class="sub">编码器零位/方向校准、IMU 六面标定、力矩标定、关节零位与限位——控制精度的天花板由标定决定,而不是由 PID 决定。</div>
+    <div class="tags"><span class="tag">编码器标定</span><span class="tag">电角度零位</span><span class="tag">IMU标定</span><span class="tag">力矩标定</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 会做无感/有感 FOC 的电角度零位标定(对齐 U 相与 d 轴),并理解标错的症状<br>
+    2. 理解 IMU 六面标定(零偏/刻度/非正交)与关节零位/限位标定流程<br>
+    3. 会用力臂砝码法标定关节力矩,掌握标定数据的管理与复标时机<br>
+    <b>建议用时:</b>约 30 分钟
+  </div>
+
+  <h2><span class="h2-num">1</span> 为什么标定是精度的天花板</h2>
+  <p>控制器眼里只有数字:角度 3.7 rad、电流 4.2 A、力矩 12 N·m。<strong>如果数字本身是错的(零位偏了 5°、刻度偏了 8%),再好的控制算法也在精确地放大错误</strong>。工程事故的常见链条:零位错 → Iq 没对准 q 轴 → 有效力矩变小且发热变大 → 工程师以为是 PID 不好 → 越调越糟。所以排查规律是:<b>先标定,后参数</b>。</p>
+  <div class="box box-tip"><b>📏 全站约定:</b>凡出现"电机出力不足但电流正常""闭环疯转""换向咔哒"三类症状,第一步永远是复查零位与方向(见<a href="12_故障诊断决策树.html">故障诊断决策树</a>),而不是动 PID。</div>
+
+  <h2><span class="h2-num">2</span> 电角度零位标定(FOC 的地基)</h2>
+  <p>FOC 需要知道转子 d 轴相对 U 相绕组轴线的角度 θ<sub>e0</sub>。标定思路:<strong>给 U 相注入定向电流把转子"拉"到 U 轴对齐位置(此时编码器读数就是零偏)</strong>:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>安全准备</b><br>卸负载或固定关节;限流 30%;确认可自由微动的行程余量。</div>
+    <div class="step-item"><span class="n">2</span><b>通电对齐</b><br>电压/电流模式输出 U 轴定向矢量(如 V<sub>U</sub> 为正,V<sub>V</sub>=V<sub>W</sub>=−V<sub>U</sub>/2),转子自动转到 d 轴对齐 U 相。</div>
+    <div class="step-item"><span class="n">3</span><b>读零偏</b><br>等待 1~2 s 稳定,读编码器机械角 θ<sub>m</sub>,记 θ<sub>e0</sub> = θ<sub>m</sub>·极对数(或多圈绝对角)。</div>
+    <div class="step-item"><span class="n">4</span><b>方向校验</b><br>开环小电压正转:编码器角必须同向单调增;反向则改方向标志,再回第 2 步。</div>
+    <div class="step-item"><span class="n">5</span><b>写参数复验</b><br>保存零偏;闭环速度正反转各一圈,无疯转、无异响、力矩对称即为合格。</div>
+  </div>
+  <div class="my-dos">
+    <div class="ok"><b class="t">✔ 要做</b><br>· 重复标定 3 次取平均(重复性 &lt;0.5° 电角度)<br>· 装减速器前后各标一次(装配应力会改变零位)<br>· 温度剧变后复标(磁编码器温漂)<br>· 记录标定日期与工装版本</div>
+    <div class="no"><b style="color:#f87171">✘ 别做</b><br>· 带负载标定(转子被卡住,对的是负载不是 U 轴)<br>· 用手转电机"目测"零位<br>· 同时改方向标志和零位(一次只改一个)<br>· 标定后不复验闭环就上负载</div>
+  </div>
+  <div class="my-clamp"><b class="t">🧰 SimpleFOC 一句话标定:</b><code>motor.initFOC()</code> 内部就是这套流程(电压对齐 + 方向检测),但它对"负载卡死/弱磁吸力"没有防护,批量产线建议改用受限电流的定制对齐程序。</div>
+
+  <h2><span class="h2-num">3</span> IMU 六面标定</h2>
+  <p>IMU(姿态/加速度计)误差 = <b>零偏 bias + 刻度 scale + 轴间非正交 misalignment</b>。六面法:把 IMU 的 6 个面分别朝上静止采样(各 30~60 s),得到 6 组重力读数,解出 12 参数(3 轴零偏+3 轴刻度,非正交项可并入刻度矩阵):</p>
+  <div class="formula">b_i = (a_{i,up} + a_{i,down})/2, \qquad s_i = (a_{i,up} - a_{i,down})/2g</div>
+  <p>陀螺仪零偏:静止采集 1~5 min 取均值(上电温漂段跳过前 30 s)。标定后静止姿态漂移应明显收敛。要点:①六面工装的平面度比 IMU 本身精度更重要;②标定后参数写入非易失存储,与安装位置绑定;③整机更换 IMU 或结构大修后必须复标。</p>
+
+  <h2><span class="h2-num">4</span> 关节零位、限位与方向</h2>
+  <p>电角度零位解决"电机层",关节零位解决"机构层":关节零位 = 机器人站立姿态(或 URDF zero pose)对应的编码器读数。流程:①关节置于机械零位工装(定位销/靠块);②记录减速器输出端编码器读数(注意:输出端绝对值编码器与电机端编码器不同源);③定义正方向(与 URDF/仿真一致!);④写入软限位(机械限位内缩 2~5°)+ 限位减速策略(接近限位自动降速)。方向与仿真不一致,是 sim2real 首日事故的高频原因。</p>
+
+  <h2><span class="h2-num">5</span> 力矩标定(砝码力臂法)</h2>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>装力臂</b><br>输出轴装水平刚性力臂(长 L,精度 ±0.5 mm),末端挂钩。</div>
+    <div class="step-item"><span class="n">2</span><b>多点加载</b><br>0~额定×1.2 之间取 5~7 个砝码点,每点稳定 2 s 采样均值(应变式)或锁电流读力矩(电流反推式)。</div>
+    <div class="step-item"><span class="n">3</span><b>线性拟合</b><br>最小二乘拟合 τ<sub>real</sub> = k·τ<sub>read</sub> + b,残差 &lt;1% F.S. 合格;明显的迟滞(加载/卸载不重合)说明减速器摩擦/背隙超差。</div>
+    <div class="step-item"><span class="n">4</span><b>复标时机</b><br>更换减速器/重装结构后;温度跨 20℃;摔机/堵转事故后立即复标。</div>
+  </div>
+  <div class="box box-warn"><b>⚠️ 电流反推力矩的坑:</b>τ = K<sub>t</sub>·I<sub>q</sub>·i 只在"摩擦可忽略"时成立。谐波/蜗轮等大摩擦传动的关节,空载电流可达额定的 10~20%,必须外加摩擦补偿(查表或 LuGre 模型),否则零附近力矩误差可达 30%+。这也是 QDD 准直驱方案"力控好"的本质:减速比小 → 摩擦折算小 → 电流即力矩。</div>
+
+  <h2><span class="h2-num">6</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 电角度零位标定时,给 U 相注入定向电流的目的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 测试电流环带宽</button>
+      <button data-v="B">B. 把转子磁极(d 轴)拉到与 U 相绕组轴线对齐,此刻编码器读数即零偏</button>
+      <button data-v="C">C. 给编码器供电</button>
+      <button data-v="D">D. 消除齿槽转矩</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:定子 U 轴通电产生的磁场会把转子 d 轴吸到对齐位置——这是"用物理对齐代替数学搜索"的巧妙做法。对齐瞬间的机械角与电角度的差就是零位偏置。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 关节力矩标定后,零附近力矩误差仍高达 30%,最可能的原因是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 砝码不够重</button>
+      <button data-v="B">B. ADC 位数不足</button>
+      <button data-v="C">C. 传动摩擦未补偿(空载电流占比大),τ=Kt·I 在大摩擦传动中失效</button>
+      <button data-v="D">D. 力臂太短</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:大减速比传动的摩擦折算到电机轴后,空载电流可达 10~20% 额定,零附近"电流里全是摩擦,不是负载"。对策:摩擦补偿模型,或改用输出端力矩传感器/小减速比方案。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 关于标定数据的维护,下列做法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 标定参数写死在代码里,和固件一起版本管理</button>
+      <button data-v="B">B. 每次上电自动重新标定一次</button>
+      <button data-v="C">C. 标定一次终身有效</button>
+      <button data-v="D">D. 存非易失存储并记录日期/工装/温度,换硬件或事故后复标</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:标定参数属于"硬件个体",应绑定序列号存非易失区(或产线数据库),而非写进固件——换一台电机参数就不同。自动上电标定会打断正常使用且带载时不可靠;温漂/老化/事故都需要按触发条件复标。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①标定决定精度天花板,排查永远"先标定后参数";②电角度零位=U 轴通电对齐法,三步:对齐→读零偏→验方向;③IMU 六面法解零偏/刻度,关节零位绑定 URDF 正方向;④力矩标定用砝码力臂+线性拟合,大摩擦传动必须摩擦补偿;⑤标定数据按"硬件个体"管理,设定复标触发条件。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 极对数填错(实际 21 对填成 14)时,零位标定看起来"成功",为什么闭环一定会失败?<br>2. 设计一个批量产线的标定工装:如何在一分钟内完成 6 个关节模组的零位+方向标定?(提示:多轴同时对齐电流)</div>
+
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://docs.simplefoc.com/calibration" target="_blank" rel="noopener">SimpleFOC · Sensor &amp; Zero Alignment Calibration</a>(电压对齐与方向检测实现)</li>
+    <li><a href="https://github.com/ethz-asl/ethzasl_msf/wiki/Calibration-of-IMU" target="_blank" rel="noopener">ETHZurich · IMU Calibration(六面法)</a></li>
+    <li><a href="https://docs.odriverobotics.com/encoders.html" target="_blank" rel="noopener">ODrive · Encoder Calibration</a>(编码器偏置与 CPR 校准)</li>
+  </ul>
+
+</div><!-- /container -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · FOC调参整定实战手册</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-calc{border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:14px 16px;margin:16px 0;background:rgba(15,23,42,.4)}
+  body[data-theme="light"] .my-calc{background:rgba(255,255,255,.6)}
+  .my-calc label{display:inline-block;margin:6px 14px 6px 0;font-size:13px}
+  .my-calc input{width:90px;background:rgba(2,6,23,.6);border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:4px 8px;font-family:Consolas,monospace}
+  body[data-theme="light"] .my-calc input{background:#fff;border-color:#cbd5e1;color:#0f172a}
+  .my-calc .my-res{margin-top:10px;font-size:14px;line-height:2}
+  .my-calc .my-res b{font-family:Consolas,monospace;color:#34d399}
+  body[data-theme="light"] .my-calc .my-res b{color:#047857}
+  .my-step{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .my-step button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px}
+  body[data-theme="light"] .my-step button{background:#fff;color:#334155}
+  .my-step button.on{background:#2563eb;color:#fff;border-color:#2563eb}
+  .my-stage{border-left:3px solid #2563eb;padding:10px 14px;margin:12px 0;background:rgba(37,99,235,.06);border-radius:0 8px 8px 0;line-height:1.9}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "02-08",
+    root: "..",
+    breadcrumb: [ { t: "硬件基础", u: "../index.html#sec2" }, { t: "FOC调参整定实战手册" } ],
+    prev: { t: "传感器专题", u: "10_传感器专题_IMU力矩与触觉.html" },
+    next: { t: "故障诊断决策树", u: "12_故障诊断决策树.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🎛️ FOC 调参整定实战手册</h1>
+    <div class="sub">从电流环到位置环的工程整定顺序、参数公式与症状对症表——把"会跑 FOC"变成"调得动 FOC"。</div>
+    <div class="tags"><span class="tag">FOC</span><span class="tag">PID整定</span><span class="tag">电流环</span><span class="tag">带宽法</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说出三环整定的正确顺序以及"内环带宽 ≥ 外环 5~10 倍"的原因<br>
+    2. 会用带宽法公式算出电流环 PI 初值(Kp = ωc·L,Ki = ωc·R)<br>
+    3. 能根据阶跃响应症状(超调/振荡/慢)判断该动哪个参数、往哪边动<br>
+    <b>建议用时:</b>约 30 分钟
+  </div>
+
+  <h2><span class="h2-num">1</span> 整定总纲:为什么必须"由内向外"</h2>
+  <p>FOC 三环是<strong>级联结构</strong>:位置环的输出是速度环的参考,速度环的输出是电流环的参考。内环对外环而言必须"足够快"——否则外环发出的指令,内环还没执行完,外环又发了新的,等效于给系统叠加了延迟,直接表现就是<strong>振荡或莫名发热</strong>。工程约定:</p>
+  <div class="box box-tip"><b>📏 带宽分离原则:</b>f<sub>电流环</sub> ≥ (5~10)·f<sub>速度环</sub> ≥ (25~100)·f<sub>位置环</sub>。典型数值:电流环 500~2000 Hz,速度环 50~200 Hz,位置环 5~50 Hz。先整定最内环并<b>验证合格</b>,再逐级向外;顺序错了,外环参数怎么调都是错的。</div>
+
+  <h3>1.1 交互式整定流程单(点击阶段查看要点)</h3>
+  <div class="my-step">
+    <button class="on" onclick="myStage(0,this)">① 准备检查</button>
+    <button onclick="myStage(1,this)">② 电流环</button>
+    <button onclick="myStage(2,this)">③ 速度环</button>
+    <button onclick="myStage(3,this)">④ 位置环</button>
+    <button onclick="myStage(4,this)">⑤ 带负载复验</button>
+  </div>
+  <div class="my-stage" id="myStageBox"></div>
+
+  <h2><span class="h2-num">2</span> 电流环:带宽法一步到位</h2>
+  <p>电流环对象近似为<strong>一阶 RL 电路</strong>(电压→电流),用 PI 控制器做极点对消:把 PI 零点放在电机转折频率 R/L 上,闭环带宽就等于积分系数与电感的乘积。得到一组工程上广泛使用的初值公式:</p>
+  <div class="formula">K_p = \omega_c \cdot L, \qquad K_i = \omega_c \cdot R, \qquad \omega_c = 2\pi f_{bw}</div>
+  <p>其中 f<sub>bw</sub> 为目标闭环带宽(Hz),L 为相电感(H),R 为相电阻(Ω)。Kp 单位 V/A,Ki 单位 V/(A·s)。注意 SimpleFOC 的 LPF 与 ODrive 的 anticogging/rampe 各有差异,先关掉再整定。</p>
+
+  <div class="my-calc">
+    <b>🔌 电流环 PI 初值计算器(带宽法)</b><br>
+    <label>相电阻 R (Ω) <input id="ccR" type="number" step="0.01" value="1.2" oninput="ccCalc()"></label>
+    <label>相电感 L (mH) <input id="ccL" type="number" step="0.01" value="0.35" oninput="ccCalc()"></label>
+    <label>目标带宽 f<sub>bw</sub> (Hz) <input id="ccF" type="number" step="10" value="800" oninput="ccCalc()"></label>
+    <div class="my-res" id="ccOut"></div>
+  </div>
+
+  <div class="box box-warn"><b>⚠️ 带宽上限:</b>f<sub>bw</sub> 不能超过 PWM 频率的 1/10~1/20(20 kHz PWM → 电流环 ≤ 1~2 kHz),也受电流采样噪声与执行延时限制。给 U/V/W 三相扰动阶跃,标准是:<strong>无静差、无振荡、上升时间 ≈ 0.35/f<sub>bw</sub></strong>。上电后电机应有"定住"的刚度且安静;嗡嗡声大说明带宽过高或噪声大。</div>
+
+  <h2><span class="h2-num">3</span> 速度环:从 J 出发,看曲线调参</h2>
+  <p>速度环对象是<strong>积分环节(电流→加速度)+ 机械惯性 J</strong>,常用 PI 或 PD。初值同样可用带宽法:K<sub>p,v</sub> = J·ω<sub>v</sub>/K<sub>t</sub>(把转矩常数折算进去),K<sub>i,v</sub> 取 K<sub>p,v</sub> 的 1/5~1/10 积分时间。之后靠<strong>速度阶跃曲线</strong>微调:</p>
+  <div class="table-wrap"><table>
+    <tr><th>症状</th><th>该动的参数</th><th>方向与理由</th></tr>
+    <tr><td>阶跃超调 &gt; 20%,来回振</td><td>Kp / Kd(阻尼)</td><td>降 Kp 或加 Kd——增益过大激发机械谐振</td></tr>
+    <tr><td>爬到目标很慢,软绵绵</td><td>Kp</td><td>升 Kp,直到轻微超调再回退 20~30%</td></tr>
+    <tr><td>稳态有差(带载下垂)</td><td>Ki</td><td>加 Ki 消差;过大则低速来回" hunting"</td></tr>
+    <tr><td>空载正常,带载啸叫</td><td>速度 LPF / Kp</td><td>滤波太重→延迟振荡;减轻滤波并降 Kp</td></tr>
+    <tr><td>停止时低频晃动</td><td>Ki / 死区补偿</td><td>积分饱和或齿槽转矩未补偿</td></tr>
+  </table></div>
+
+  <h2><span class="h2-num">4</span> 位置环:Kp 就是带宽,Kd 管阻尼</h2>
+  <p>位置环对象含一个积分(速度→位置),纯 P 就能稳,特征非常直观:<strong>位置环 Kp(1/s, rad/s 量纲)≈ 期望位置带宽 ω<sub>p</sub></strong>,响应时间约 3/ω<sub>p</sub>。需要更硬的跟踪或抑制超调时加 Kd(对速度环参考做阻尼)。经验流程:Kp 从小往大加,直到负载阶跃下位置误差满意且无振荡;超调则加 Kd。对人形关节,位置环带宽 5~30 Hz 已足够,剩下的刚性靠力控环(阻抗)实现。</p>
+
+  <h2><span class="h2-num">5</span> 症状 → 参数速查表(贴在工位版)</h2>
+  <div class="table-wrap"><table>
+    <tr><th>症状</th><th>首选排查参数</th><th>其次排查</th></tr>
+    <tr><td>电机高频嗡叫、电流波形毛刺大</td><td>电流环 Kp/Ki 过高、LPF 过重</td><td>PWM 死区、采样噪声、接地</td></tr>
+    <tr><td>一给速度就过流跳保护</td><td>电流环未整定就开速度环</td><td>编码器方向接反、零位错</td></tr>
+    <tr><td>速度稳但电机发烫</td><td>速度环 hunting、Ki 过大</td><td>齿槽转矩、死区、机械卡滞</td></tr>
+    <tr><td>位置慢漂</td><td>位置环 Ki(或速度环积分)</td><td>编码器多圈计数、重力前馈缺失</td></tr>
+    <tr><td>换向瞬间抖一下</td><td>死区补偿量</td><td>电流采样偏置校零</td></tr>
+    <tr><td>带载后整体变"软"</td><td>电流限幅值、母线电压</td><td>速度环 Kp(按负载 J 重算)</td></tr>
+  </table></div>
+
+  <h2><span class="h2-num">6</span> 框架参数名对照(SimpleFOC / ODrive)</h2>
+  <div class="table-wrap"><table>
+    <tr><th>含义</th><th>SimpleFOC</th><th>ODrive</th></tr>
+    <tr><td>电流环 Kp / Ki</td><td>motor.PID_current_q.Kp / .Ki(同 d 轴)</td><td>axis.controller.config.<code>current_ctrl_bandwidth</code>(直接给带宽,自动算 PI)</td></tr>
+    <tr><td>速度环 Kp / Ki</td><td>motor.PID_velocity.Kp / .Ki + .output_ramp</td><td>config.<code>vel_gain</code> / <code>vel_integrator_gain</code></td></tr>
+    <tr><td>位置环 Kp</td><td>motor.P_angle.Kp + .P_angle.velocity_limit</td><td>config.<code>pos_gain</code></td></tr>
+    <tr><td>电流滤波</td><td>motor.LPF_current.Tf</td><td>config.<code>current_filter_bandwidth</code></td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💡 动手建议:</b>整定现象都可以先在 <a href="../08_学习工具/04_代码实验室.html">代码实验室</a> 里预演——PID 实验的"阶跃/方波/扰动"三种激励与本节的判读方法一一对应,练出"看曲线说参数"的手感再到真机上手。</div>
+
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 三环整定的正确顺序与原因是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 从位置环开始,因为它是最终目标</button>
+      <button data-v="B">B. 从电流环开始逐级向外,内环必须远快于外环,否则等效延迟导致振荡</button>
+      <button data-v="C">C. 三个环同时整定,互相收敛</button>
+      <button data-v="D">D. 先整定速度环,它是机械与电气的接口</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:级联控制要求内环带宽 ≥ 外环 5~10 倍。先内后外,每级验证合格再进下一级;顺序颠倒时外环会把内环的滞后当成被控对象特性,参数永远调不稳。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 相电阻 0.8 Ω、相电感 0.2 mH、目标电流环带宽 1000 Hz,带宽法 PI 初值约为?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. Kp=0.8,Ki=1.26</button>
+      <button data-v="B">B. Kp=200,Ki=800</button>
+      <button data-v="C">C. Kp≈1.26,Ki≈5027</button>
+      <button data-v="D">D. Kp=1257,Ki=5027</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:ωc=2π×1000≈6283 rad/s;Kp=ωc·L=6283×0.0002≈1.26 V/A;Ki=ωc·R=6283×0.8≈5027 V/(A·s)。注意 L 要用 H(0.2 mH=0.0002 H),这是最常见的单位坑。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 速度阶跃响应超调 30% 且持续振荡,首先应该?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 降低速度环 Kp(或增加阻尼项),再验证</button>
+      <button data-v="B">B. 增大 Ki 消除振荡</button>
+      <button data-v="C">C. 提高电流环带宽掩盖振荡</button>
+      <button data-v="D">D. 增大速度滤波时间常数让曲线变平滑</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:超调+振荡是典型增益过高;降 Kp 或加阻尼。加大 Ki 会加剧振荡;加重滤波只掩盖症状还增加相位滞后;电流环与本症状无关(它是内环,已验收合格)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①级联三环必须由内向外整定,带宽分离 5~10 倍;②电流环用带宽法一步算出初值(Kp=ωcL,Ki=ωcR),上限受 PWM 频率约束;③速度环按"症状-参数表"看曲线微调,位置环 Kp≈带宽、Kd 管阻尼;④嗡叫/过流/发烫/漂移各有首选排查参数,配合故障诊断树页使用。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 若电机参数(相电感)手册值偏小 30%,算出的电流环会发生什么现象?如何在示波器上发现?<br>2. 为什么速度环整定合格后,带上传动比 100:1 的减速器,外环参数通常要重新整定?(提示:折算惯量与反向驱动性)</div>
+
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://docs.simplefoc.com/pi_velocity" target="_blank" rel="noopener">SimpleFOC 官方文档 · Velocity PID &amp; Tuning</a>(参数含义与整定章节)</li>
+    <li><a href="https://docs.odriverobotics.com/tuning.html" target="_blank" rel="noopener">ODrive 官方文档 · Tuning Guide</a>(增益换算与整定流程)</li>
+    <li><a href="https://e2e.ti.com/group/motor-drive-professionals/m/forumpins/696306" target="_blank" rel="noopener">TI InstaSPIN Current Loop Bandwidth Selection</a>(带宽法与 PWM 频率约束)</li>
+  </ul>
+
+</div><!-- /container -->
+<script>
+/* ============ 交互:整定流程单 ============ */
+var myStages = [
+  "<b>① 准备检查(整定前必做)</b><br>· 确认编码器方向与零位正确(见 标定专题):方向反了闭环必炸<br>· 电流采样偏置已校零、母线电压稳定、限流保护值先设小(如 30%)<br>· 手转电机顺畅,机械无卡滞;参数(PWM 频率、极对数、死区)已填对",
+  "<b>② 电流环(核心,先在电流模式下)</b><br>· 用计算器算出 Kp/Ki 初值 → 给 q 轴电流阶跃(如 0.5 A)<br>· 合格标准:响应快、无振荡无静差,电机安静有刚度<br>· 不合格:超调→同比例降 Kp/Ki;慢→同比例升,直到 PWM 频率 1/10 上限",
+  "<b>③ 速度环(电流环验收后)</b><br>· 初值 Kp,v = J·ωv/Kt(J 含负载折算),Ki 取其 1/5~1/10<br>· 给速度阶跃,按第 3 节症状表微调;低速爬行/停止晃动注意死区与积分",
+  "<b>④ 位置环(速度环验收后)</b><br>· Kp 从小到大加到负载阶跃误差满意且无振荡;超调加 Kd<br>· 人形关节 5~30 Hz 足够;刚性需求交给上层力控,不要硬堆位置增益",
+  "<b>⑤ 带负载复验(最容易漏的一步)</b><br>· 装上真实负载/减速器后重复 ③④:折算惯量变了,速度环增益需按新 J 重算<br>· 跑发热测试(额定力矩 10 min)与堵转保护测试,记录参数备份"
+];
+function myStage(i, btn){
+  document.querySelectorAll('.my-step button').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  document.getElementById('myStageBox').innerHTML = myStages[i];
+}
+myStage(0, document.querySelector('.my-step button'));
+
+/* ============ 电流环 PI 计算器(带宽法) ============ */
+function ccCalc(){
+  var R = parseFloat(document.getElementById('ccR').value);
+  var LmH = parseFloat(document.getElementById('ccL').value);
+  var f = parseFloat(document.getElementById('ccF').value);
+  var out = document.getElementById('ccOut');
+  if(!(R>0) || !(LmH>0) || !(f>0)){ out.innerHTML = '请输入有效正数'; return; }
+  var L = LmH/1000, wc = 2*Math.PI*f;
+  var kp = wc*L, ki = wc*R;
+  var warn = f > 2000 ? '<span style="color:#f87171">⚠ 带宽偏高:确认 ≤ PWM 频率的 1/10~1/20</span><br>' : '';
+  out.innerHTML = warn +
+    'K<sub>p</sub> = ω<sub>c</sub>·L = ' + (2*Math.PI*f).toFixed(0) + ' × ' + L.toExponential(3) + ' = <b>' + kp.toFixed(3) + ' V/A</b><br>' +
+    'K<sub>i</sub> = ω<sub>c</sub>·R = ' + (2*Math.PI*f).toFixed(0) + ' × ' + R + ' = <b>' + ki.toFixed(0) + ' V/(A·s)</b><br>' +
+    '预期电流阶跃上升时间 ≈ 0.35/f ≈ <b>' + (0.35/f*1000).toFixed(2) + ' ms</b>(极点对消后闭环为一阶)';
+}
+ccCalc();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>

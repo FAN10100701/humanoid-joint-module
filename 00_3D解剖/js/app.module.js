@@ -126,10 +126,16 @@ function loadDeps(cb){
     .then(function(D){DRACOLoader=D.DRACOLoader;cb(true);})
     .catch(function(e){
       console.warn('[Robot3D] 引擎加载失败:',e);
-      /* 【iOS 修复】动态 import 失败时主动切换到 CDN 并刷新——不依赖 window error 的
-         message 文本匹配(iOS 上模块加载错误 message 常为空,旧回退逻辑会失效) */
-      if(!sessionStorage.getItem('__three_cdn__')){
+      /* 【防误触发+防死循环】状态机：无标记→切CDN；CDN失败→回本地并标记(2)；本地再失败→报错提示不再循环 */
+      var cdn=null;try{cdn=sessionStorage.getItem('__three_cdn__');}catch(err){}
+      if(!cdn){
         try{sessionStorage.setItem('__three_cdn__','1');}catch(err){}
+        try{location.reload();}catch(err){}
+        return;
+      }
+      if(cdn==='1'){
+        /* CDN 也失败：恢复本地并标记，避免永久卡在 CDN 上 */
+        try{sessionStorage.setItem('__three_cdn__','2');}catch(err){}
         try{location.reload();}catch(err){}
         return;
       }

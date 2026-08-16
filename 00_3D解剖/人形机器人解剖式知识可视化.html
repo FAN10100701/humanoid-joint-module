@@ -212,6 +212,8 @@ body[data-theme="dark"] .status{background:rgba(13,18,30,.8);border-color:var(--
   .app{grid-template-columns:1fr;height:calc(100vh - 54px - 56px)}
   .app>.stg{grid-column:1;grid-row:1}  /* 【iOS空白修复】移动端单列布局，舞台必须回到第 1 列，否则被放进隐式列宽度塌缩为 0 */
   .stg{height:100%}
+  #diagFab{bottom:66px}        /* 诊断浮标上移，避开底部标签栏(btab 高56px) */
+  #diagPanel{bottom:112px}
   .nav{position:fixed;left:0;top:54px;bottom:56px;width:80%;max-width:320px;z-index:95;background:var(--bg3);border-right:1px solid var(--rule);transform:translateX(-106%);transition:transform .28s cubic-bezier(.2,.8,.3,1);box-shadow:var(--sh2);padding-top:8px}
   body.drawer-nav .nav{transform:none}
   .det{position:fixed;right:0;top:54px;bottom:56px;width:88%;max-width:380px;z-index:95;background:var(--bg3);border-left:1px solid var(--rule);transform:translateX(106%);transition:transform .28s cubic-bezier(.2,.8,.3,1);box-shadow:var(--sh2)}
@@ -349,9 +351,10 @@ body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:va
     document.write('<script type="importmap">'+JSON.stringify({imports:imports})+'<\/script>');
     console.log('[3D] 使用CDN模式加载Three.js');
   }
-  /* 模块加载失败自动切换CDN并刷新（仅一次）：
-     【iOS 修复】同时监听 error 与 unhandledrejection——iOS 上报的模块错误 message 常为空，
-     文本匹配会失效，此处双通道兜底；app.module.js 的 loadDeps 失败分支也会主动触发本逻辑 */
+  /* 模块加载失败自动切换CDN并刷新：
+     【iOS 修复】同时监听 error 与 unhandledrejection——iOS 上报的模块错误 message 常为空。
+     【防误触发】只匹配明确的模块加载错误(收窄条件,避免无关报错含 three/module 字样就切 CDN);
+     【防死循环】状态机:无标记→切CDN(1);CDN也失败→回本地(2);本地再失败→不再循环,由 loadDeps 报错提示 */
   if(!USE_CDN){
     var tryCdn=function(reason){
       if(sessionStorage.getItem('__three_cdn__'))return;
@@ -359,17 +362,16 @@ body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:va
       console.warn('[3D] 本地Three.js加载失败，自动切换到CDN:',reason||'');
       location.reload();
     };
+    var isModuleErr=function(msg){
+      return msg.indexOf('Failed to resolve module')>=0 || msg.indexOf('Importing a module script failed')>=0 || /three\.module\.js/.test(msg) || /three\/addons/.test(msg);
+    };
     window.addEventListener('error',function(e){
       var msg=(e&&e.message)?String(e.message):'';
-      if(msg.indexOf('three')>=0 || msg.indexOf('Failed to resolve module')>=0 || msg.indexOf('Importing a module')>=0){
-        tryCdn(e&&e.message);
-      }
+      if(isModuleErr(msg))tryCdn(e&&e.message);
     },true);
     window.addEventListener('unhandledrejection',function(e){
       var r=(e&&e.reason)||{}, msg=String((r&&r.message)||r||'');
-      if(msg.indexOf('three')>=0 || msg.indexOf('module')>=0 || msg.indexOf('Failed to resolve')>=0 || msg.indexOf('Importing')>=0){
-        tryCdn(e&&e.reason);
-      }
+      if(isModuleErr(msg))tryCdn(e&&e.reason);
     },true);
   }
 })();
@@ -1429,11 +1431,21 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v6.3';  /* 2026-08-16 · 修复移动端舞台隐式grid列宽度塌缩(模型已渲染但看不见) */
+var DIAG_VER='v6.4';  /* 2026-08-17 · CDN回退防误触发+状态机(CDN失败自动回本地)+桌面端失败自动显示诊断+浮标避开底部栏 */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;
-  try{ if(!window.matchMedia||!window.matchMedia('(pointer:coarse)').matches) return; }catch(e){ return; }
+  /* 显示策略：触屏设备常驻；桌面端仅在 3D 引擎启动失败时自动出现(便于反馈排障,成功不打扰) */
+  var isCoarse=!1;
+  try{ isCoarse=!!(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches); }catch(e){}
+  if(!isCoarse){
+    setTimeout(function(){
+      var ok=!!window.__3D_BOOT_OK__&&!!(window.__DIAG__&&window.__DIAG__.three==='ok');
+      if(!ok)fab.style.display='flex';
+    },9000);
+  }else{
+    fab.style.display='flex';
+  }
   var errs=[];
   window.addEventListener('error',function(e){
     /* 区分脚本错误与资源加载错误(资源错误 message 常为空,iOS 尤其如此) */
@@ -1468,7 +1480,7 @@ var DIAG_VER='v6.3';  /* 2026-08-16 · 修复移动端舞台隐式grid列宽度�
     else prompt('请手动复制以下诊断信息:',txt);
   });
   setInterval(refresh,2000);
-  fab.style.display='flex';
+  if(isCoarse)fab.style.display='flex';   /* 触屏常驻；桌面端由上方 9 秒失败检测控制显示 */
 })();
 </script>
 </body></html>

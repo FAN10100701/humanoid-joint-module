@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 关节驱动故障诊断决策树</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-tree{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:18px;margin:16px 0;background:rgba(15,23,42,.45)}
+  body[data-theme="light"] .my-tree{background:rgba(255,255,255,.65)}
+  .my-path{font-size:12.5px;color:#94a3b8;margin-bottom:12px;line-height:2}
+  .my-path .my-p{display:inline-block;background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.4);color:#9ecbff;border-radius:6px;padding:2px 10px;margin:2px 4px 2px 0;cursor:pointer}
+  body[data-theme="light"] .my-path .my-p{color:#1d4ed8}
+  .my-q{font-size:15.5px;font-weight:700;margin:6px 0 12px}
+  .my-opts{display:flex;flex-direction:column;gap:8px}
+  .my-opts button{text-align:left;background:rgba(30,41,59,.7);border:1px solid #334155;color:#e2e8f0;font-size:14px;padding:10px 14px;border-radius:9px;cursor:pointer;font-family:inherit;transition:.15s}
+  .my-opts button:hover{border-color:#2563eb;background:rgba(37,99,235,.12)}
+  body[data-theme="light"] .my-opts button{background:#fff;color:#1e293b}
+  .my-leaf{border-left:3px solid #22c55e;padding:12px 16px;background:rgba(34,197,94,.07);border-radius:0 10px 10px 0;line-height:1.9}
+  .my-leaf b{color:#34d399}
+  .my-leaf a{color:#60a5fa}
+  .my-leaf .my-rank{display:inline-block;font-size:12px;border-radius:6px;padding:1px 8px;margin-right:6px;background:rgba(37,99,235,.2);color:#9ecbff}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "02-09",
+    root: "..",
+    breadcrumb: [ { t: "硬件基础", u: "../index.html#sec2" }, { t: "故障诊断决策树" } ],
+    prev: { t: "FOC调参整定实战手册", u: "11_FOC调参整定实战手册.html" },
+    next: { t: "功率级拓扑与SVPWM交互实验室", u: "13_功率级拓扑与SVPWM交互实验室.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🩺 关节驱动故障诊断决策树</h1>
+    <div class="sub">像医生问诊一样排查:选症状 → 跟着分支走 → 定位根因与处置。覆盖上电、运行、发热、报警四大类常见故障。</div>
+    <div class="tags"><span class="tag">故障排查</span><span class="tag">决策树</span><span class="tag">工程实战</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 掌握"先安全、后分层(电源→通信→传感→驱动→控制)"的排查思路<br>
+    2. 会用决策树把模糊症状收敛到具体根因(接线/参数/硬件/软件)<br>
+    3. 记住高危症状(冒烟/电池鼓包/堵转过流)的第一处置动作<br>
+    <b>建议用时:</b>约 25 分钟
+  </div>
+
+  <h2><span class="h2-num">1</span> 交互式问诊(从症状出发)</h2>
+  <p>点击最接近你现场情况的选项;顶部灰色路径可以点击回退任意一步。叶子节点给出<b>根因 → 处置 → 延伸阅读</b>。</p>
+
+  <div class="my-tree">
+    <div class="my-path" id="diagPath"></div>
+    <div id="diagBody"></div>
+  </div>
+
+  <div class="box box-danger"><b>🚨 安全铁律:</b>出现<strong>冒烟、焦味、电池鼓包/发烫、母线电压异常升高、电机剧烈异响</strong>时,先断电再诊断!带故障运行几分钟足以烧毁功率管或电芯。排查电源类问题必须用电流受限的 bench 电源(CC 模式限 100~300 mA)。</div>
+
+  <h2><span class="h2-num">2</span> 分层排查总原则</h2>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>电源层</b><br>各级电压是否正常:电池→母线→12V/5V/3.3V→栅驱自举。万用表静态测,别急着插主控。</div>
+    <div class="step-item"><span class="n">2</span><b>通信层</b><br>CAN/USB/编码器 SPI 能否读到合理数据?一帧都收不到先查线序与终端电阻,不查协议。</div>
+    <div class="step-item"><span class="n">3</span><b>传感层</b><br>编码器角度连续?手转 360° 单调递增?IMU 静止读数稳定?传感器错,控制器必错。</div>
+    <div class="step-item"><span class="n">4</span><b>驱动层</b><br>开环(电压模式)小电压转起来吗?三相 PWM 波形对吗?功率级问题在这一层暴露。</div>
+    <div class="step-item"><span class="n">5</span><b>控制层</b><br>最后才动 PID/观测器。参数问题的前提是下面四层全部健康。</div>
+  </div>
+
+  <h2><span class="h2-num">3</span> 高频故障速查表</h2>
+  <div class="table-wrap"><table>
+    <tr><th>现象</th><th>最常见根因(按概率排序)</th><th>一句话处置</th></tr>
+    <tr><td>上电即过流/炸管</td><td>自举电容失效 · 死区没设 · 相线短路 · 上下管直通</td><td>断电查死区与自举,限流电源再上电</td></tr>
+    <tr><td>开环转、闭环就疯转</td><td>编码器方向接反 · 电角度零位错 · 极对数错</td><td>按标定专题重做零位与方向校验</td></tr>
+    <tr><td>电机嗡嗡叫但不出力</td><td>电流环增益过高振荡 · 编码器噪声 · 缺相</td><td>降电流环带宽,看三相电流是否平衡</td></tr>
+    <tr><td>堵转瞬间掉电重启</td><td>母线电压跌落(dv/dt) · 电源线太细 · 电容太小</td><td>加大母线电容、加压降保护阈值</td></tr>
+    <tr><td>零速有位置但"呼呼"发热</td><td>速度环 hunting · 齿槽转矩未补偿</td><td>降 Ki/加死区补偿,测空载电流</td></tr>
+    <tr><td>CAN 偶发丢帧</td><td>终端电阻 120Ω×2 · 波特率误差 · 共模干扰</td><td>双端终端电阻,查位时序采样点</td></tr>
+  </table></div>
+
+  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 电机开环(电压模式)能正常转动,一切到闭环就高速疯转,最可能的原因是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 电流环带宽太低</button>
+      <button data-v="B">B. 编码器方向接反或电角度零位错误(正反馈)</button>
+      <button data-v="C">C. 母线电压不足</button>
+      <button data-v="D">D. PWM 频率太高</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:开环只输出旋转磁场不依赖反馈;闭环依赖编码器,方向反了或零位错 → 控制器"纠偏"方向与误差同向,形成正反馈疯转。这是闭环调试第一杀手,务必先做零位/方向标定。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 按分层排查原则,上电无任何反应时应最先检查?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 电源层:各级电压(电池→母线→12V/5V/3.3V)</button>
+      <button data-v="B">B. 控制层:PID 参数是否为 0</button>
+      <button data-v="C">C. 通信层:CAN 波特率</button>
+      <button data-v="D">D. 机械层:转子是否卡死</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:分层原则从电源层开始逐层向上——没有电,上层一切诊断都无意义;且电源问题要用限流电源排查最安全。控制层放在最后。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 出现冒烟/焦味的正确第一动作是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 立即读故障码定位根因</button>
+      <button data-v="B">B. 降低速度环 Kp 观察是否恢复</button>
+      <button data-v="C">C. 拔掉编码器线再上电</button>
+      <button data-v="D">D. 立即断电,冷却后再用限流电源排查</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:安全铁律——高危症状先断电。带故障运行会扩大损坏(功率管炸裂可能连坐母线与电芯)。诊断一律用限流电源(CC 100~300 mA)重新上电。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①排查永远分层:电源→通信→传感→驱动→控制,先安全后诊断;②"开环正常闭环疯转"= 反馈方向/零位问题;"嗡叫不出力"= 电流环振荡或缺相;③决策树的价值在于把"感觉不对"翻译成可执行的检查序列,配合调参手册与标定专题形成完整闭环。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么"偶发"故障(几天一次的过流)比"必现"故障更难排查?你会设计什么复现手段(振动台/温箱/长时间日志)?<br>2. 若三相电流波形一相幅值明显偏小,你的排查树分支会怎么画?</div>
+
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://docs.simplefoc.com/troubleshooting" target="_blank" rel="noopener">SimpleFOC · Troubleshooting</a>(开环/闭环、嗡叫、发烫类症状官方排查清单)</li>
+    <li><a href="https://docs.odriverobotics.com/troubleshooting.html" target="_blank" rel="noopener">ODrive · Troubleshooting</a>(ENC_ERROR/CURRENT_LIMIT 等错误码对照)</li>
+  </ul>
+
+</div><!-- /container -->
+<script>
+/* ============ 决策树数据与引擎 ============ */
+var DIAG = {
+  start: { q:"选择最接近的症状 👇", opts:[
+    ["上电后没有任何反应", "pwr"],
+    ["电机不转或疯转", "mtr"],
+    ["电机抖动/嗡叫/异响", "vib"],
+    ["异常发热", "hot"],
+    ["报过流/过压/编码器错误", "err"],
+    ["力矩异常/发软", "tq"]
+  ]},
+  pwr: { q:"电源输入端电压正常吗?(电池/适配器输出)", opts:[
+    ["输入电压正常", "pwr2"],
+    ["输入电压为 0 或过低", {leaf:"检查电池电压与保险丝/防反接 MOS。电池无输出:过放保护板锁定,充电激活或换电芯;有输出但板上无电:保险丝熔断或防反接管坏——先查为什么烧(下游短路)再更换。", rank:"电源层"}],
+    ["不确定/没测", {leaf:"先拿万用表测:电池端电压 → 电源线插头端电压 → 板子输入焊盘电压。三处应当一致(线损 &lt;0.2V)。任何一档掉电就是线索。限流电源(CC 200mA)上电看电流:静态应 &lt;50mA,若直接顶到限流值说明有短路。", rank:"电源层"}]
+  ]},
+  pwr2: { q:"板上 DCDC 输出(12V/5V/3.3V)正常吗?", opts:[
+    ["都正常", {leaf:"电源层 OK → 转通信层:USB/CAN 能否连接?指示灯状态?固件是否在跑(看门狗复位循环会导致'看起来没反应')。用示波器/逻辑分析仪看复位脚电平是否在周期性翻转。", rank:"电源→通信层"}],
+    ["某一路无输出", {leaf:"该路 DCDC 芯片或其后级短路。断电测该路对地阻抗:偏低(&lt;100Ω)则逐个断开后级负载定位;阻抗正常则换 DCDC 芯片/检查使能脚与电感。", rank:"电源层"}],
+    ["输出跳变不稳", {leaf:"典型是后级间歇性短路或 DCDC 补偿不良:先查 MCU/驱动芯片是否发热,再查使能时序(上电浪涌把 DCDO 拉垮)。加大软启动电容或分路供电验证。", rank:"电源层"}]
+  ]},
+  mtr: { q:"不转还是疯转?", opts:[
+    ["完全不转,也没有保持力矩", "mtr1"],
+    ["开环能转,闭环就疯转/飞车", {leaf:"九成是反馈极性问题:编码器方向接反、电角度零位错、或极对数填错。处置:①手转电机一圈确认角度单调且方向一致;②按《传感器与关节标定专题》重做零位标定;③核对极对数(数磁钢/2)。切勿带负载重试!", rank:"控制层·反馈"}],
+    ["转但方向反了", {leaf:"软件改方向标志(电机方向或编码器方向二选一,别同时改两处);改完重做零位标定。", rank:"控制层"}]
+  ]},
+  mtr1: { q:"给开环小电压(如 2V,电压模式)电机有反应吗?", opts:[
+    ["没反应,电流也几乎为 0", {leaf:"功率级未工作:查 PWM 输出(栅驱输入脚有波形吗?自举电容充电了吗?)→ 三相输出对地电压是否跟随。栅驱无输入查 MCU 引脚配置;栅驱有输入无输出查自举二极管/电容与 12V 供电。", rank:"驱动层"}],
+    ["没反应,但电流很大", {leaf:"有短路或堵转:立即断电。查相线是否短路/接错(星角)、电机自身线圈电阻(三相应对称,差异&gt;10%线圈损坏)、机械卡死(手转)。", rank:"驱动/机械层"}],
+    ["能转起来", {leaf:"功率级健康 → 问题在传感/控制层:闭环不转多半是编码器读数异常(断线/SPI 错误)或电流环未整定导致保护。先读编码器原始值确认连续,再走电流环整定流程。", rank:"传感/控制层"}]
+  ]},
+  vib: { q:"声音的"节奏"更像哪种?", opts:[
+    ["高频连续嗡叫(kHz 级)", {leaf:"电流环增益过高或电流采样噪声大:降电流环带宽(×0.5 试),查采样线是否差分/远离功率线,检查死区设置。嗡叫时用示波器看相电流是否叠加振荡包络。", rank:"控制层·电流环"}],
+    ["低频抖动/咯咯声", {leaf:"速度环 hunting 或齿槽转矩:降速度环 Ki、加死区补偿;若是位置模式,查位置 Kp 是否过高激发机械谐振(减速器背隙+高增益=典型咯咯声)。", rank:"控制层·速度环"}],
+    ["换向瞬间"咔"一下", {leaf:"死区补偿不当或电流采样偏置未校零:调死区补偿量;上电做 ADC 偏置校零(静置采数百次取均值)。", rank:"控制/采样层"}]
+  ]},
+  hot: { q:"发热部位?", opts:[
+    ["电机发烫", "hot1"],
+    ["驱动板功率管发烫", "hot2"],
+    ["电机+驱动板都烫", {leaf:"整体过载:检查力矩需求是否超出连续额定(结温计算器算一下),减速比是否太小、速度环 hunting 空耗。长时间 &gt;80℃ 会退磁,先降载。", rank:"系统级"}]
+  ]},
+  hot1: { q:"电机空载(卸掉负载)还烫吗?", opts:[
+    ["空载就烫", {leaf:"①零速保持电流是否异常大(正常 &lt;10% 额定)——大则电流环/零位问题;②齿槽与死区补偿不足导致持续微振;③绕组局部短路(三相电阻不对称)。", rank:"控制/电机层"}],
+    ["空载正常,带载才烫", {leaf:"正常的热设计边界问题:用热管理专题的结温计算器校核;若堵转工况频繁,考虑更大减速比或更高 Kt 电机,而不是硬扛。", rank:"系统级·热"}]
+  ]},
+  hot2: { q:"功率管温度随转速/负载变化明显吗?", opts:[
+    ["一上电就烫(不转也烫)", {leaf:"静态直通前兆:死区时间不足或栅驱下拉能力弱,查自举电容是否失电导致上下管同时导通;静态应几乎不发热,发热立即断电!用限流电源验证。", rank:"驱动层·危险"}],
+    ["随负载线性变烫", {leaf:"导通+开关损耗正常线性,若超预期:用硬件计算器矩阵算损耗,核对 Rds(on) 与开关频率——PWM 频率每翻倍开关损耗翻倍,20kHz 以上确认必要性;散热铺铜/导热垫是否到位。", rank:"系统级·热"}]
+  ]},
+  err: { q:"报的是什么错?", opts:[
+    ["过流 CURRENT_LIMIT/过流保护", {leaf:"①先确认真过载还是误报:电流采样增益/偏置错误会误报;②加速过程过流→加电流斜率限制;③堵转过流→检查机械与限幅;④一使能就过流→查功率级与采样电路。", rank:"保护/采样层"}],
+    ["过压 OVERVOLTAGE", {leaf:"母线电压超限:减速/制动时能量回灌(无刹车电阻的板子最常见)。加大母线电容、加制动电阻、或软件限制减速度。电池满电时下坡/减速最易触发。", rank:"电源层"}],
+    ["编码器 ENC_ERROR", {leaf:"①读原始角度:是否跳变/卡死/漂移;②查线(屏蔽、长度、磁环距离);③多圈计数溢出;④磁场干扰(功率线贴近磁编码器)。传感器不修复,控制层免谈。", rank:"传感层"}]
+  ]},
+  tq: { q:"力矩问题是", opts:[
+    ["出力比预期小很多", "tq1"],
+    ["零速"站不住",位置慢慢下垂", {leaf:"①位置环 Ki(或速度环积分)未启用/过小;②电流限幅值设太小;③重力矩前馈缺失(垂直关节必加 m·g·l 前馈);④减速器打滑/损坏(谐波柔轮疲劳)。", rank:"控制/机械层"}]
+  ]},
+  tq1: { q:"测过实际相电流幅值吗?", opts:[
+    ["相电流达不到命令值", {leaf:"母线电压不够(高速时反电动势+IR 压降吃掉余量)或电流限幅/斜率限制卡住。查 SVPWM 调制比是否已 &gt;0.95;必要时升压或减小最高转速需求。", rank:"系统级"}],
+    ["相电流正常但仍没力", {leaf:"①Kt 参数错(力矩=Kt·Iq,核对手册/台架砝码标定);②电角度不准导致 Iq 没对准 q 轴(零位漂移,重标定);③减速器内部损坏空转。", rank:"参数/机械层"}]
+  ]}
+};
+
+(function(){
+  var hist = [];
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function render(nodeKey){
+    var node = DIAG[nodeKey];
+    var body = document.getElementById('diagBody');
+    var path = document.getElementById('diagPath');
+    path.innerHTML = hist.length ? '' : '';
+    hist.forEach(function(h, i){
+      var sp = document.createElement('span');
+      sp.className = 'my-p';
+      sp.textContent = '↩ ' + h.label;
+      sp.onclick = function(){ hist = hist.slice(0, i); render(h.key); };
+      path.appendChild(sp);
+    });
+    if(node.q){
+      var q = document.createElement('div'); q.className='my-q'; q.textContent = node.q;
+      body.innerHTML = ''; body.appendChild(q);
+      var box = document.createElement('div'); box.className='my-opts';
+      node.opts.forEach(function(o){
+        var b = document.createElement('button');
+        b.innerHTML = '▸ ' + o[0];
+        b.onclick = function(){
+          var next = o[1];
+          if(typeof next === 'string'){
+            hist.push({ key: nodeKey, label: o[0].slice(0,14) });
+            render(next);
+          } else {
+            body.innerHTML = '<div class="my-leaf"><span class="my-rank">' + next.rank + '</span>' +
+              '<b>诊断与处置:</b><br>' + next.leaf + '<br><br>📚 延伸:' +
+              '<a href="11_FOC调参整定实战手册.html">调参手册</a> · ' +
+              '<a href="15_传感器与关节标定专题.html">标定专题</a> · ' +
+              '<a href="14_硬件公式计算器矩阵.html">硬件计算器</a> · ' +
+              '<a href="08_热管理与散热设计专题.html">热管理</a> · ' +
+              '<a href="../08_学习工具/08_仿真中心.html">仿真中心</a></div>' +
+              '<div style="margin-top:10px"><button class="my-p" style="cursor:pointer" onclick="diagRestart()">🔄 重新问诊</button></div>';
+          }
+        };
+        box.appendChild(b);
+      });
+      body.appendChild(box);
+    }
+  }
+  window.diagRestart = function(){ hist=[]; render('start'); };
+  render('start');
+})();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>
