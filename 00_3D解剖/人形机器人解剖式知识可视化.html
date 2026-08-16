@@ -194,6 +194,10 @@ body[data-theme="dark"] .status{background:rgba(13,18,30,.8);border-color:var(--
 /* ===== 移动端抽屉 + 底部 Tab ===== */
 /* 抽屉分组小标题 */
 .drw-h{width:100%;font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.5px;margin:8px 4px 0;text-transform:uppercase}
+/* 抽屉按钮上下文显隐：拆解专属(td-only)仅拆解场景显示；整机专属(whole-only)仅整机模式显示 */
+.drw .td-only{display:none!important}
+body.td-on .drw .td-only{display:inline-block!important}
+body.td-on .drw .whole-only{display:none!important}
 /* 底部栏分组标签(桌面) */
 .bb-grp{font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.6px;margin:0 2px}
 /* 底部栏收起/展开 */
@@ -546,22 +550,19 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   <button class="hb" id="zFit2">⤢</button>
   <button class="vb" id="btnAutoRot2">自动旋转</button>
   <div class="drw-h">教学演示</div>
-  <button class="vb" id="btnAnim2">关节演示</button>
-  <button class="vb" id="btnPoseReset">站立复位</button>
-  <button class="vb" id="btnPoseWave">举手礼</button>
-  <button class="vb" id="btnPoseT">大字站立</button>
-  <button class="vb" id="btnPoseSquat">半蹲姿态</button>
+  <button class="vb whole-only" id="btnAnim2">关节演示</button>
+  <button class="vb whole-only" id="btnPoseReset">站立复位</button>
   <div class="drw-h">显示</div>
   <button class="vb" id="btnWire2">线框模式</button>
-  <button class="vb" id="btnCompare2">三机同屏对比</button>
+  <button class="vb whole-only" id="btnCompare2">三机同屏对比</button>
   <button class="vb" id="btnFine2">流畅/精细模型</button>
   <!-- 移动端拆解场景控制（桌面端这些功能在底部栏，移动端底部栏被底部标签栏取代） -->
-  <div class="drw-h">拆解教学</div>
-  <button class="vb" id="btnBackWhole2">返回整机</button>
-  <button class="vb" id="btnExplode2">爆炸拆解</button>
-  <button class="vb" id="btnDemo2">自动演示</button>
-  <button class="vb" id="btnSeq2">顺序拆解</button>
-  <button class="vb" id="btnLabels2">零件标签</button>
+  <div class="drw-h td-only">拆解教学</div>
+  <button class="vb td-only" id="btnBackWhole2">返回整机</button>
+  <button class="vb td-only" id="btnExplode2">爆炸拆解</button>
+  <button class="vb td-only" id="btnDemo2">自动演示</button>
+  <button class="vb td-only" id="btnSeq2">顺序拆解</button>
+  <button class="vb td-only" id="btnLabels2">零件标签</button>
   <div class="drw-h">场景与外观</div>
   <select class="vb" id="sceneSel2">
     <option value="">场景：整机模型</option>
@@ -1383,9 +1384,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     else if(window.RobotApp){window.RobotApp.setAnim();}
   });
   bind('btnPoseReset',function(){if(window.Robot3D&&window.Robot3D.active){window.Robot3D.resetJoints();}});
-  bind('btnPoseWave',function(){if(window.Robot3D&&window.Robot3D.active){window.Robot3D.poseWaveHand();}});
-  bind('btnPoseT',function(){if(window.Robot3D&&window.Robot3D.active){window.Robot3D.poseTpose();}});
-  bind('btnPoseSquat',function(){if(window.Robot3D&&window.Robot3D.active){window.Robot3D.poseSquat();}});
   bind('zIn2',function(){if(window.RobotApp)window.RobotApp.zoomBy(1.2);});
   bind('zOut2',function(){if(window.RobotApp)window.RobotApp.zoomBy(1/1.2);});
   bind('zFit2',function(){
@@ -1449,7 +1447,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断面板:入口=桌面底部栏「🔧 诊断」/ 移动端底部标签栏「🔧 诊断」;引擎失败时自动弹出;✕ 关闭 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v7.3';  /* 2026-08-17 · import超时防挂起+CDN标记30分钟过期+诊断面板重置加载按钮(一键回本地) */
+var DIAG_VER='v7.4';  /* 2026-08-17 · 抽屉按钮上下文显隐(整机/拆解)+删除错乱姿态预设(举手礼/大字/半蹲) */
 (function(){
   var panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!panel||!bodyEl)return;

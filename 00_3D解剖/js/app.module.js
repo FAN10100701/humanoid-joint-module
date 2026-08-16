@@ -2620,6 +2620,7 @@ function buildTdScene(key,sceneName){
   scene.add(tdGroup);
   body3d.visible=false;                       /* 隐藏机器人，舞台让给拆解场景 */
   var bbTd=document.getElementById('bottomBar');if(bbTd)bbTd.classList.add('td-on');  /* 显示拆解专属按钮 */
+  document.body.classList.add('td-on');  /* 移动端抽屉联动:显示拆解专属按钮/隐藏整机专属 */
   var bar=document.getElementById('exbar');if(bar)bar.classList.add('show');
   var rg=document.getElementById('exrng');if(rg)rg.value=0;
   var ea=document.getElementById('exauto');if(ea)ea.classList.remove('on');
@@ -2651,6 +2652,7 @@ window.exitTdScene=function(){
   if(!tdActive&&!tdGroup)return;
   tdActive=false;tdKey='';
   var bbTdX=document.getElementById('bottomBar');if(bbTdX)bbTdX.classList.remove('td-on');  /* 收起拆解专属按钮 */
+  document.body.classList.remove('td-on');  /* 移动端抽屉联动:恢复整机按钮 */
   var bar=document.getElementById('exbar');if(bar)bar.classList.remove('show');
   cleanupTdGroup();
   hideLdtip();
