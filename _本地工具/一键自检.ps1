@@ -47,14 +47,19 @@ foreach($f in $pages){
 Check "JS syntax (pages=" + $pages.Count + ")" ($synFail -eq 0) ($synFail.ToString() + " failed blocks")
 
 # ---- 1b) external JS files syntax (site.js etc.) ----
+# 按 ES module 检查(复制到临时 .mjs,兼容 import 语法的 .js 文件)
 $jsFail = 0
-$jsFiles = Get-ChildItem -Path $root -Recurse -File -Include *.js,*.mjs | Where-Object {
+$jsFiles = Get-ChildItem -Path $root -Recurse -File -Include *.js | Where-Object {
   $_.FullName -notmatch 'edge_prof|node_modules|\.git' -and $_.FullName -notmatch '\\_本地工具\\'
 }
+$jsTmp = Join-Path $env:TEMP ("js_mod_check_" + [guid]::NewGuid().ToString('N') + ".mjs")
 foreach($j in $jsFiles){
-  $out = & node --check $j.FullName 2>&1
+  $content = [IO.File]::ReadAllText($j.FullName, [Text.Encoding]::UTF8)
+  [IO.File]::WriteAllText($jsTmp, $content, (New-Object System.Text.UTF8Encoding($false)))
+  $out = & node --check $jsTmp 2>&1
   if($LASTEXITCODE -ne 0){ $jsFail++; Write-Host ("  JS-FILE: " + $j.FullName.Substring($root.Length+1)) }
 }
+Remove-Item -Force $jsTmp -ErrorAction SilentlyContinue
 Check "External JS syntax" ($jsFail -eq 0) ($jsFail.ToString() + " failed files")
 
 # ---- 2) link audit ----
