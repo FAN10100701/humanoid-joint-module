@@ -30,9 +30,12 @@
   /* ---------- 主题(亮/暗风格切换) ---------- */
   var THEME_KEY = "site-theme";
   function applyTheme(){
-    var t = "dark";
-    try{ t = localStorage.getItem(THEME_KEY) || "dark"; }catch(e){}
+    var t = "light";   /* 默认日间(浅色)模式 */
+    try{ t = localStorage.getItem(THEME_KEY) || "light"; }catch(e){}
     document.body.setAttribute("data-theme", t);
+    /* 浏览器地址栏/状态栏颜色跟随主题 */
+    var mc = document.querySelector('meta[name="theme-color"]');
+    if(mc){ mc.setAttribute("content", t === "light" ? "#f6f8fb" : "#0d1117"); }
     var btns = document.querySelectorAll(".nav-theme");
     for(var i = 0; i < btns.length; i++){
       btns[i].textContent = (t === "light") ? "🌙" : "☀️";
