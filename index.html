@@ -73,6 +73,12 @@
       <input id="hpSearchInput" placeholder="搜索:FOC、谐波减速器、ROS2、Isaac、VLA、灵巧手…" onkeydown="if(event.key==='Enter')hpSearch()">
       <button onclick="hpSearch()">全站搜索</button>
     </div>
+    <div style="margin-top:18px;text-align:center">
+      <div class="theme-seg" role="group" aria-label="风格切换">
+        <button data-t="dark" onclick="Site.setTheme('dark')">🌙 深色风格</button>
+        <button data-t="light" onclick="Site.setTheme('light')">☀️ 极简浅色</button>
+      </div>
+    </div>
     <div class="tags">
       <span class="tag">宇树 H1 / G1 / 智元 X1 官方模型</span>
       <span class="tag">FOC 三环控制</span>
@@ -444,10 +450,14 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.4.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-15</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.4.3</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-15</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.4.3 · 2026-08-15 · 三页深度知识 + 极简切换升级</summary>
+        <div class="faq-a">新增 <b>VLA 与世界模型详解</b>(06-08:RT-1→π0→Helix/GR00T 逐个详解+世界模型)、<b>灵巧手专题</b>(07-04)、<b>全身控制与步态规划 WBC/MPC</b>(04-02);首页新增<b>深色/极简浅色分段开关</b>(更醒目),浅色风格更纯白。</div>
+      </details>
+      <details class="faq">
         <summary>V1.4.2 · 2026-08-15 · 文档式目录 + 三页新教学</summary>
         <div class="faq-a">新增<b>文档式目录侧边栏</b>(DeepSeek 官方文档风,自动从页面标题生成,左侧固定+滚动高亮,手机端悬浮按钮);新增 3 页:视觉 SLAM 与状态估计(06-06)、sim2real 部署步骤拆解(06-07)、机械原理基础·连杆齿轮传动(01-04)。</div>
       </details>
@@ -483,7 +493,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.4.2(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.4.3(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

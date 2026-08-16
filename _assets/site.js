@@ -37,14 +37,22 @@
       btns[i].textContent = (t === "light") ? "🌙" : "☀️";
       btns[i].setAttribute("title", (t === "light") ? "切到深色风格" : "切到浅色风格(苹果透亮)");
     }
+    var seg = document.querySelectorAll(".theme-seg button");
+    for(var j = 0; j < seg.length; j++){
+      seg[j].classList.toggle("on", seg[j].getAttribute("data-t") === t);
+    }
   }
-  S.toggleTheme = function(){
-    var cur = document.body.getAttribute("data-theme") === "light";
-    var next = cur ? "dark" : "light";
+  S.setTheme = function(name){
+    var next = (name === "light") ? "light" : "dark";
     document.body.setAttribute("data-theme", next);
     try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
     applyTheme();
   };
+  S.toggleTheme = function(){
+    var cur = document.body.getAttribute("data-theme") === "light";
+    S.setTheme(cur ? "dark" : "light");
+  };
+  window.toggleTheme = function(){ if(window.Site) Site.toggleTheme(); };
 
   /* ---------- 学习进度 ---------- */
   function getProgress(){
@@ -208,7 +216,7 @@
 
     var ft = document.createElement("footer");
     ft.className = "site-footer";
-    ft.innerHTML = "人形机器人学习站 · V1.4.2(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · "
+    ft.innerHTML = "人形机器人学习站 · V1.4.3(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · "
       + '<a href="' + root + '/index.html">返回首页</a> · 按 Ctrl+K 全站搜索 · '
       + '<a href="' + root + '/index.html#version">版本历史</a>';
     document.body.appendChild(ft);

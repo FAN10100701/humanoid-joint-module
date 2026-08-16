@@ -243,10 +243,9 @@ body[data-theme="light"] .nav-theme{background:rgba(37,99,235,.08);border-color:
 
 body[data-theme="light"]{
   background:
-    radial-gradient(1200px 600px at 8% -10%, rgba(56,132,255,.14), transparent 60%),
-    radial-gradient(1000px 500px at 100% 0%, rgba(147,197,253,.18), transparent 55%),
-    radial-gradient(900px 600px at 50% 110%, rgba(209,224,244,.5), transparent 60%),
-    linear-gradient(160deg,#f7f9fc 0%,#eef2f8 45%,#e9edf5 100%);
+    radial-gradient(1100px 520px at 12% -8%, rgba(220,232,248,.55), transparent 60%),
+    radial-gradient(900px 460px at 100% 0%, rgba(230,238,250,.6), transparent 55%),
+    linear-gradient(160deg,#fbfcfe 0%,#f3f6fb 50%,#ebeff7 100%);
   color:#1a2332;
 }
 body[data-theme="light"] .topnav{background:rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-bottom:1px solid rgba(60,80,120,.12);box-shadow:0 2px 24px rgba(40,70,130,.06)}
@@ -376,3 +375,15 @@ body[data-theme="light"] .backtop{background:rgba(37,99,235,.88)}
 .card:nth-child(4){animation-delay:.15s}.card:nth-child(5){animation-delay:.2s}
 .card:nth-child(6){animation-delay:.25s}.card:nth-child(7){animation-delay:.3s}
 @media (prefers-reduced-motion:reduce){.card,.sec-title,.page-head,.lab,.progress-panel{animation:none}}
+
+/* ============================================================
+   主题分段开关(首页 Hero 醒目切换)
+   ============================================================ */
+.theme-seg{display:inline-flex;gap:6px;padding:5px;background:rgba(22,27,34,.55);border:1px solid rgba(255,255,255,.12);border-radius:999px;backdrop-filter:blur(10px)}
+.theme-seg button{border:none;background:transparent;color:#9aa4b2;font-size:13px;padding:7px 18px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.2s}
+.theme-seg button:hover{color:#fff}
+.theme-seg button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-weight:700;box-shadow:0 4px 14px rgba(37,99,235,.4)}
+body[data-theme="light"] .theme-seg{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.14)}
+body[data-theme="light"] .theme-seg button{color:#64748b}
+body[data-theme="light"] .theme-seg button:hover{color:#0f172a}
+body[data-theme="light"] .theme-seg button.on{color:#fff}
