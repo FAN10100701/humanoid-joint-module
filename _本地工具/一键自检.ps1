@@ -28,7 +28,7 @@ $indexablePages = $pages | Where-Object {
 $synFail = 0
 foreach($f in $pages){
   $content = [IO.File]::ReadAllText($f.FullName, [Text.Encoding]::UTF8)
-  $pattern = '(?s)<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>'
+  $pattern = '(?s)<script(?![^>]*\bsrc=)(?![^>]*type\s*=\s*["'']application/(?:ld\+json|json)["''])[^>]*>(.*?)</script>'
   $blocks = [regex]::Matches($content, $pattern)
   $tmp = Join-Path $env:TEMP ("js_selfcheck_" + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $tmp | Out-Null

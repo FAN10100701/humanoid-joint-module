@@ -168,12 +168,8 @@ Ai =    [ sinθi    cosθi   0   ai·sinθi ]
 
   <h3>4.1 2 连杆臂正运动学推导</h3>
   <p>把 3.2 的两段变换连乘,A1 · A2 的旋转部分等于 <span class="my-mono">Rz(θ1+θ2)</span>(绕 z 轴的两次旋转直接相加),平移部分展开得到著名的结果:</p>
-  <pre><code>x = L1·cosθ1 + L2·cos(θ1+θ2)
-y = L1·sinθ1 + L2·sin(θ1+θ2)
-φ = θ1 + θ2            ← 末端朝向角(平面内)
-
-验证:θ1=0、θ2=0 时,臂完全伸直指向 +X,
-      x = L1 + L2,y = 0 ✓ 与直觉一致</code></pre>
+  <div class="formula">x = L_1\cos\theta_1 + L_2\cos(\theta_1+\theta_2), \quad y = L_1\sin\theta_1 + L_2\sin(\theta_1+\theta_2), \quad \varphi = \theta_1 + \theta_2</div>
+  <p style="font-size:13px;color:#8b949e">验证:θ1=0、θ2=0 时,臂完全伸直指向 +X, x = L1 + L2, y = 0 ✓ 与直觉一致</p>
 
   <h3>4.2 伪代码</h3>
   <pre><code>function FK(theta):
@@ -203,11 +199,9 @@ y = L1·sinθ1 + L2·sin(θ1+θ2)
 
   <h3>5.2 2 连杆臂解析解(重点算例)</h3>
   <p>给末端目标 (x, y),两根连杆长 L1、L2。由余弦定理先求第二个关节角:</p>
-  <pre><code>c2 = (x² + y² - L1² - L2²) / (2·L1·L2)
-θ2 = ±acos(c2)          ← 两个解:肘朝上 / 肘朝下
-
-再由几何关系求 θ1:
-θ1 = atan2(y, x) - atan2(L2·sinθ2, L1 + L2·cosθ2)</code></pre>
+  <div class="formula">c_2 = \frac{x^2 + y^2 - L_1^2 - L_2^2}{2 L_1 L_2}, \quad \theta_2 = \pm \arccos(c_2) \;\; \text{(肘朝上 / 肘朝下两解)}</div>
+  <p>再由几何关系求 θ1:</p>
+  <div class="formula">\theta_1 = \operatorname{atan2}(y, x) - \operatorname{atan2}(L_2 \sin\theta_2,\; L_1 + L_2 \cos\theta_2)</div>
   <pre class="my-ascii"><code>末端同一点 → 两种手臂姿态:
         θ2>0(肘在上)           θ2<0(肘在下)
          ▲  ▲                    ▲

@@ -269,6 +269,56 @@
     document.addEventListener("keydown", hide);
   }
 
+  /* ---------- Giscus 评论区(配置驱动,见 _assets/giscus-config.js) ---------- */
+  function initGiscus(){
+    if(!window.GISCUS_CONFIG || !GISCUS_CONFIG.repoId) return;   /* 未配置:不加载 */
+    var P = page();
+    if(!P.pageId) return;
+    var c = document.querySelector(".container");
+    if(!c) return;
+    var box = document.createElement("div");
+    box.className = "giscus-wrap";
+    box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="giscusEl"></div>';
+    c.appendChild(box);
+    var s = document.createElement("script");
+    s.src = "https://giscus.app/client.js";
+    s.setAttribute("data-repo", window.GISCUS_CONFIG.repo);
+    s.setAttribute("data-repo-id", window.GISCUS_CONFIG.repoId);
+    s.setAttribute("data-category", window.GISCUS_CONFIG.category);
+    s.setAttribute("data-category-id", window.GISCUS_CONFIG.categoryId);
+    s.setAttribute("data-mapping", "pathname");
+    s.setAttribute("data-strict", "0");
+    s.setAttribute("data-reactions-enabled", "1");
+    s.setAttribute("data-emit-metadata", "0");
+    s.setAttribute("data-input-position", "bottom");
+    s.setAttribute("data-theme", document.body.getAttribute("data-theme") === "light" ? "light" : "dark");
+    s.setAttribute("data-lang", "zh-CN");
+    s.crossOrigin = "anonymous";
+    s.async = true;
+    document.getElementById("giscusEl").appendChild(s);
+  }
+
+  /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ---------- */
+  function initKaTeX(){
+    var els = document.querySelectorAll(".formula");
+    if(!els.length) return;
+    var l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
+    document.head.appendChild(l);
+    var s = document.createElement("script");
+    s.src = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js";
+    s.onload = function(){
+      if(!window.katex) return;
+      for(var i = 0; i < els.length; i++){
+        var el = els[i];
+        try{ katex.render(el.textContent, el, { throwOnError:false, displayMode:true }); }
+        catch(e){ /* 保持原文 */ }
+      }
+    };
+    document.head.appendChild(s);
+  }
+
   /* ---------- 顶部导航 + 面包屑 + 上一篇/下一篇 + 页脚 ---------- */
   function injectChrome(){
     var P = page();
@@ -387,6 +437,26 @@
     var re = new RegExp("(" + terms.map(function(t){ return t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }).join("|") + ")", "gi");
     return html.replace(re, "<mark>$1</mark>");
   }
+  /* 拼音/别名扩展:输入 xiebo 也能搜到"谐波",输入 foc 直达 FOC */
+  var PINYIN = {
+    "xiebo":"谐波","xingxing":"行星","b aixian":"摆线","jiansuqi":"减速器","dianji":"电机","mada":"马达",
+    "qudong":"驱动","kongzhi":"控制","tongxin":"通信","ruanjian":"软件","yingjian":"硬件",
+    "lingqiaoshou":"灵巧手","lingqiao":"灵巧","chuanganqi":"传感器","dianchi":"电池","rengongzhineng":"人工智能",
+    "zhineng":"智能","shijie":"世界","moxing":"模型","bufa":"步态","pingheng":"平衡","daolibai":"倒立摆",
+    "guanjie":"关节","zhengji":"整机","xiaobo":"谐波","beixi":"背隙","dianliu":"电流","sudu":"速度",
+    "weizhi":"位置","youxi":"游戏","can":"CAN","foc":"FOC","pid":"PID","ros2":"ROS2","ros":"ROS2",
+    "slam":"SLAM","vla":"VLA","wbc":"全身控制","mpc":"模型预测控制","imu":"IMU","ik":"逆运动学","fk":"正运动学",
+    "urdf":"URDF","s2r":"sim2real","stl":"3D模型","dof":"自由度"
+  };
+  function expandQuery(q){
+    var parts = q.split(/\s+/), changed = false, out = [];
+    for(var i = 0; i < parts.length; i++){
+      var p = parts[i];
+      var map = PINYIN[p];
+      if(map){ out.push(map); changed = true; } else { out.push(p); }
+    }
+    return { q: out.join(" "), changed: changed };
+  }
   function renderSearch(overlay, q){
     var box = overlay.querySelector(".search-results");
     q = (q || "").trim().toLowerCase();
@@ -394,8 +464,9 @@
       box.innerHTML = '<div class="search-empty">输入关键词开始搜索 —— 支持 标题 / 板块 / 描述 / 术语,多个词用空格分隔<br>例如:FOC、谐波、ROS2、Isaac、VLA、灵巧手、编码器、CAN</div>';
       return;
     }
+    var ex = expandQuery(q);
     var idx = buildIndex();
-    var terms = q.split(/\s+/).filter(function(t){ return t; });
+    var terms = ex.q.split(/\s+/).filter(function(t){ return t; });
     var scored = [];
     for(var i = 0; i < idx.length; i++){
       var it = idx[i];
@@ -583,8 +654,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initGiscus(); initKaTeX(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initGiscus(); initKaTeX();
   }
 })();

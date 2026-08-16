@@ -407,6 +407,24 @@ body[data-theme="light"] .page-stamp{color:#94a3b8}
 .term-tip b{color:#9ecbff;margin-right:6px}
 body[data-theme="light"] .term-tip{background:rgba(255,255,255,.97);border-color:rgba(37,99,235,.35);color:#334155;box-shadow:0 14px 40px rgba(40,80,160,.2)}
 body[data-theme="light"] .term-tip b{color:#2563eb}
+/* KaTeX 公式块(LaTeX 渲染前显示为等宽原文) */
+.formula{display:block;text-align:center;margin:14px auto;padding:12px 14px;background:rgba(13,17,23,.6);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow-x:auto;font-size:16px;color:#e6edf3;font-family:KaTeX_Main,"Times New Roman",serif}
+body[data-theme="light"] .formula{background:#ffffff;border-color:rgba(60,80,120,.14);color:#0f172a}
+/* Giscus 评论区 */
+.giscus-wrap{margin:30px 0}
+.giscus-wrap h2{margin-bottom:14px}
+/* 移动端抽屉导航(首页) */
+.nav-ham{display:none;background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:15px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit}
+.nav-ham:hover{background:rgba(59,130,246,.28);color:#fff}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:260px;max-width:82vw;background:rgba(13,17,23,.98);border-left:1px solid rgba(255,255,255,.1);z-index:250;transform:translateX(100%);transition:transform .25s;padding:60px 20px 20px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+.drawer.open{transform:translateX(0)}
+.drawer a{color:#9aa4b2;font-size:14.5px;padding:11px 14px;border-radius:10px;text-decoration:none}
+.drawer a:hover{background:rgba(59,130,246,.15);color:#fff;text-decoration:none}
+.drawer-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.08);border:none;color:#c9d1d9;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:14px}
+body[data-theme="light"] .drawer{background:rgba(255,255,255,.98);border-left-color:rgba(60,80,120,.14)}
+body[data-theme="light"] .drawer a{color:#334155}
+body[data-theme="light"] .drawer a:hover{background:rgba(37,99,235,.1);color:#0f172a}
+@media (max-width:900px){ .nav-ham{display:block} }
 
 /* ---------- 新手引导 ---------- */
 .onboard-overlay{position:fixed;inset:0;z-index:300;background:rgba(4,8,14,.78);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}

@@ -16,7 +16,7 @@ if(-not $node){ Write-Error "node.exe not found"; exit 1 }
 Write-Output ("node: " + $node)
 
 $content = Get-Content -LiteralPath $HtmlFile -Raw -Encoding UTF8
-$pattern = '(?s)<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>'
+$pattern = '(?s)<script(?![^>]*\bsrc=)(?![^>]*type\s*=\s*["'']application/(?:ld\+json|json)["''])[^>]*>(.*?)</script>'
 $matches = [regex]::Matches($content, $pattern)
 Write-Output ("script blocks found: " + $matches.Count)
 
