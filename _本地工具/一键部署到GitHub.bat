@@ -25,7 +25,7 @@ echo [2/3] Creating commit...
 echo.
 
 echo [3/3] Pushing to GitHub...
-rem 检测本机代理(127.0.0.1:7897)是否开启,用于判断是否需要代理参数
+rem detect local proxy port 7897 (ASCII only, GBK-safe)
 powershell -NoProfile -Command "try{$c=New-Object Net.Sockets.TcpClient;$c.Connect('127.0.0.1',7897);$c.Close();exit 0}catch{exit 1}" >nul 2>&1
 if errorlevel 1 goto :noproxy
 echo   [OK] Local proxy 127.0.0.1:7897 is running (git global proxy will be used).
