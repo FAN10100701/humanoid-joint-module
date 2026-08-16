@@ -304,6 +304,9 @@ body[data-theme="dark"] .bb-perf{color:var(--muted)}
   .app{grid-template-columns:1fr;height:calc(100vh - 54px - 56px)!important}
 }
 </style></head><body>
+<!-- 【iOS 兼容修复】es-module-shims:为不支持 importmap 的旧内核(iOS Safari <16.4 等)提供 polyfill。
+     必须先于下方 importmap 与模块脚本加载(本地文件,离线可用) -->
+<script src="./lib/es-module-shims.js"></script>
 <!-- Three.js 本地优先加载：默认使用本地 lib/ 文件夹，完全离线可用；加载失败自动回退 CDN -->
 <script>
 /* 本地优先/CDN回退逻辑：通过sessionStorage标记避免无限循环 */

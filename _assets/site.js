@@ -176,20 +176,29 @@
     btn.title = '目录';
     btn.onclick = function(){ aside.classList.toggle('open'); };
     document.body.appendChild(btn);
-    /* 滚动高亮当前章节 */
+    /* 滚动高亮当前章节(用文档绝对位置,避免 offsetParent 偏移导致高亮错位) */
     var links = aside.querySelectorAll('a');
     var secs = [];
     items.forEach(function(it){ secs.push(document.getElementById(it.id)); });
-    window.addEventListener('scroll', function(){
-      var y = window.scrollY + 120, cur = null;
+    function highlightToc(){
+      var y = window.scrollY + 150, cur = null;
       for(var j = 0; j < secs.length; j++){
-        if(secs[j] && secs[j].offsetTop <= y){ cur = secs[j].id; }
+        if(secs[j]){
+          var top = secs[j].getBoundingClientRect().top + window.scrollY;
+          if(top <= y) cur = secs[j].id;
+        }
       }
+      /* 滚动到底部时,高亮最后一个章节 */
+      var docEnd = (document.documentElement.scrollHeight || document.body.scrollHeight) - window.innerHeight;
+      if(y >= docEnd && secs.length && secs[secs.length - 1]){ cur = secs[secs.length - 1].id; }
       for(var k = 0; k < links.length; k++){
         if(links[k].getAttribute('data-toc') === cur){ links[k].classList.add('active'); }
         else { links[k].classList.remove('active'); }
       }
-    });
+    }
+    window.addEventListener('scroll', highlightToc, { passive:true });
+    window.addEventListener('load', highlightToc);
+    setTimeout(highlightToc, 100);
   }
 
   /* ---------- 回到顶部按钮 ---------- */
