@@ -26,6 +26,7 @@ window.SITE_PAGE_META = {
   "03-03": { time:"40 分钟", prereq:"无", updated:"2026-08-15", verified:"备查手册", goals:["通读完整学习手册,建立全局观","把手册作为项目实操的备查工具"] },
   "03-04": { time:"20 分钟", prereq:"03-01", updated:"2026-08-15", verified:"交叉认证", goals:["掌握芯片选型的交叉认证方法","学会逐条核实方案声明与已知 Bug"] },
   "03-05": { time:"30 分钟", prereq:"03-01", updated:"2026-08-15", verified:"原理图分析", goals:["看懂 HdriveV2 第一页电源功率链路","能讲清原方案 3 个电源 Bug 的成因与对策"] },
+  "03-06": { time:"45 分钟", prereq:"03-01 / 04-02", updated:"2026-08-17", verified:"参数已联网核实", goals:["掌握整机调试的五阶段流程与验收标准","能按清单整定三环 PID 并抑制谐振","会用决策树排查电机/通信/热故障"] },
   "04-01": { time:"20 分钟", prereq:"03-03", updated:"2026-08-15", verified:"路线图", goals:["了解 CAN / EtherCAT 通信的升级路线","了解 ADRC / MPC / RL 算法各自的适用场景"] },
   "04-02": { time:"25 分钟", prereq:"04-01", updated:"2026-08-16", verified:"已联网核实", goals:["理解 ZMP / 捕获点 / WBC / MPC 概念","能对比 MPC 与 RL 步态方案的优劣"] },
   "06-01": { time:"15 分钟", prereq:"无", updated:"2026-08-15", verified:"路线图", goals:["选择适合自己的软件学习路线","制定一份 5 阶段学习计划"] },

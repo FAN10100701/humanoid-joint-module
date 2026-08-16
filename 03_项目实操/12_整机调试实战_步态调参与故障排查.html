@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 整机调试实战:步态调参与故障排查
+  结构严格遵循 _assets/页面模板.html
+  本页为「动手调试」实战向,与 04_升级进阶/02(WBC 与 MPC 理论页)互补
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 整机调试实战(步态调参与故障排查)</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式:公式块与参数标签,均以 my- 前缀命名,避免与全局冲突 */
+  .my-formula{background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-left:3px solid #3b82f6;border-radius:10px;padding:12px 16px;margin:12px 0;font-family:Consolas,"Courier New",monospace;font-size:13.5px;color:#a8c7e8;line-height:1.8;overflow-x:auto}
+  .my-kv{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .my-kv-p{background:rgba(59,130,246,.15);color:#9ecbff;border:1px solid rgba(59,130,246,.4)}
+  .my-kv-i{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.4)}
+  .my-kv-d{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.4)}
+  .my-step{display:inline-block;min-width:30px;text-align:center;padding:2px 8px;background:linear-gradient(135deg,#2563eb,#3b82f6);border-radius:7px;color:#fff;font-weight:800;font-size:12.5px;margin-right:6px}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "03-06",
+    root: "..",
+    breadcrumb: [
+      { t: "项目实操", u: "../index.html#sec3" },
+      { t: "整机调试实战 · 步态调参与故障排查" }
+    ],
+    prev: { t: "电源管理功率链路分析", u: "11_电源管理功率链路分析/index.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🤖 整机调试实战:步态调参与故障排查</h1>
+    <div class="sub">面向已经做好关节模组(如本项目 Hdrive)、想把它们组装成「会站、会走、摔不坏」整机的读者。本页把「上电安全 → 单关节 → 多关节 → 站立 → 平衡 → 行走」的整机调试路线拆成可执行的步骤,并给出关节整定、通信同步、步态调参、故障排查的实操方法与参数清单。</div>
+    <div class="tags">
+      <span class="tag">整机调试</span>
+      <span class="tag">步态调参</span>
+      <span class="tag">关节整定</span>
+      <span class="tag">FOC 三环</span>
+      <span class="tag">故障排查</span>
+      <span class="tag">验收测试</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能按「硬件上电安全 → 单关节运动 → 多关节协调 → 站立 → 平衡 → 行走」六阶段推进整机调试,并说出每一阶段的验收标准<br>
+    2. 能说出 FOC 电流环/速度环/位置环的整定顺序与参数判断(比例过大→抖动、积分→稳态误差/饱和),并掌握振荡的判定方法<br>
+    3. 能讲清机械谐振的测量方法与陷波滤波器的作用,以及库仑/粘滞摩擦的辨识与补偿方法<br>
+    4. 能解释 CAN/EtherCAT 总线的帧率、控制周期与抖动,并记住「先通信后使能」的上电时序<br>
+    5. 能列出「站立 → 行走」的调参清单(步幅、步频、抬脚高度、支撑期占比、躯干前倾角、重心高度),并用倒立摆/ZMP 直觉解释常见步态问题的成因<br>
+    6. 能按排查决策树定位电机不转、抖动啸叫、关节过热、位置漂移、通信中断、掉电坠落等故障<br>
+    <b>建议用时:</b>约 90~120 分钟(建议边看边对着你的 Hdrive 整机操作)
+  </div>
+
+  <!-- ================= 1 整机调试总流程 ================= -->
+  <h2><span class="h2-num">1</span> 整机调试总流程:六阶段路线图</h2>
+  <p>整机调试最大的坑是「一步到位」:刚把 12 个关节拧上腿就急着让它走路,结果一旦抖动、发热、摔倒,你分不清是哪个关节、哪一环的问题。正确做法是把调试<b>分层递进</b>,每一阶段只验证一件事,通过了再进入下一阶段。</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>硬件上电安全</b><br>限流上电、测电源、验 MOS 与采样,不接电机先跑「点灯+空 PWM」</div>
+    <div class="step-item"><span class="n">2</span><b>单关节运动</b><br>单个关节标定编码器、整定电流/速度/位置环,做到「指哪打哪」</div>
+    <div class="step-item"><span class="n">3</span><b>多关节协调</b><br>一条腿上的髋/膝/踝联合运动,验证总线同步、力矩限幅、抱闸时序</div>
+    <div class="step-item"><span class="n">4</span><b>站立</b><br>双腿锁髋锁膝站立,质心投影落在支撑多边形内,能抗轻微推搡</div>
+    <div class="step-item"><span class="n">5</span><b>平衡</b><br>原地重心前后/左右转移、单腿支撑,验证踝策略与迈步策略</div>
+    <div class="step-item"><span class="n">6</span><b>行走</b><br>小步慢走起步,逐步加步幅/步频,最终抗扰动行走与停止</div>
+  </div>
+  <p>每阶段的<b>验收标准</b>要「可测量、可复现」,不要用「感觉还行」这种主观判断。下表给出每个阶段常用的量化门槛:</p>
+  <div class="table-wrap"><table>
+    <tr><th>阶段</th><th>验收标准(量化)</th><th>常用工具</th><th>不通过时的典型原因</th></tr>
+    <tr>
+      <td><strong>1 上电安全</strong></td>
+      <td>空载电流 &lt; 阈值(约几十 mA 级)、3.3V/5V/母线电压正确、无元件发烫、nFAULT 为高</td>
+      <td>限流电源、万用表、示波器</td>
+      <td>短路/虚焊/去耦不足/驱动保护触发</td>
+    </tr>
+    <tr>
+      <td><strong>2 单关节</strong></td>
+      <td>位置阶跃无超调或超调 &lt; 约 10~20%,速度阶跃快速收敛,电流环无啸叫</td>
+      <td>串口绘图、编码器读数</td>
+      <td>增益过大/过小、谐振、编码器零位错误</td>
+    </tr>
+    <tr>
+      <td><strong>3 多关节</strong></td>
+      <td>多关节同步误差 &lt; 约 1~2 个控制周期,丢帧率接近 0,抱闸时序正确</td>
+      <td>总线分析仪、逻辑分析仪</td>
+      <td>终端电阻、ID 冲突、抖动过大</td>
+    </tr>
+    <tr>
+      <td><strong>4 站立</strong></td>
+      <td>静立 30s 不倒,质心投影稳定在支撑多边形内,轻微推搡(&lt; 约 5N)不倾倒</td>
+      <td>IMU、ZMP 在线估计</td>
+      <td>踝刚度不足、质心估计误差</td>
+    </tr>
+    <tr>
+      <td><strong>5 平衡</strong></td>
+      <td>原地重心转移幅度达标、单腿支撑约 2~3s 不倾倒</td>
+      <td>IMU、脚底力传感器</td>
+      <td>侧向刚度不足、捕获点(CP)越界未迈步</td>
+    </tr>
+    <tr>
+      <td><strong>6 行走</strong></td>
+      <td>连续步行约 10~20 步不摔、平均速度约 0.1~0.3m/s、落地冲击在限幅内</td>
+      <td>录像、里程计、加速度计</td>
+      <td>步态参数不当(见第 4 节)</td>
+    </tr>
+  </table></div>
+  <div class="box box-danger">
+    <b>⚠️ 安全铁律:</b>整机调试全程要有「急停」能力——物理急停开关、软件限幅(电流限幅、速度限幅、位置软限位)、抱闸自动刹车三层都要在<b>第一次带电机上电前</b>配好。人在旁边随时准备断电,机器人固定或悬吊,避免第一脚就撞墙/夹手。
+  </div>
+
+  <!-- ================= 2 关节级整定实战 ================= -->
+  <h2><span class="h2-num">2</span> 关节级整定实战:FOC 三环、谐振与摩擦</h2>
+  <p>整机走得好不好,先看每个关节「听不听话」。关节级整定的核心是<b>由内向外</b>:先把电流环(力矩环)调好,再包速度环,最后包位置环。内环是外环的「执行机构」,内环不稳,外环永远调不稳。</p>
+
+  <h3>2.1 FOC 电流环整定</h3>
+  <p><strong>电流环是力矩的直接来源</strong>,它决定了关节的「硬度」和响应速度。整定目标是:阶跃电流响应快、无振荡、跟踪误差小,即<b>带宽</b>和<b>相位裕度</b>达标。对关节模组,电流环带宽约 <b>300Hz~1kHz</b> 是常见目标,高性能场合可到约 2kHz 以上;相位裕度目标约 <b>45°~60°</b>,增益裕度约 <b>6~10dB</b>(小于此值易振荡)。</p>
+  <p>整定步骤(以本项目 SimpleFOC 生态为例):</p>
+  <ol>
+    <li><b>先标定采样零点:</b>电机不转时读三相电流,校掉 INA240 偏置(1.65V 参考偏置),否则低速时电流环会「乱抖」。</li>
+    <li><b>开环验证:</b>给一个低频小电压/小电流开环驱动,确认相电流正弦、电机平稳旋转、方向正确。</li>
+    <li><b>阶跃激励:</b>施加一个电流阶跃指令(如 0 → 1A,约为额定电流的 10%~20%),观察实测电流响应。</li>
+    <li><b>加比例 Kp:</b>从 0 逐步加大 Kp,直到阶跃响应「接近一条直角边」但不出现明显振荡;继续加若出现<b>等幅/发散振荡或可闻啸叫</b>,说明增益过高,回退到约 70%~80%。</li>
+    <li><b>加积分 Ki:</b>Ki 用来消除稳态电流误差,但过大导致超调与低频振荡。Ki 的合理量级约为「Kp ÷ 电机电气时间常数(约 L/R)」。</li>
+    <li><b>验证带宽:</b>用小幅正弦扫频(或阶跃上升时间)复核带宽与相位裕度,确认无振荡后再交给速度环。</li>
+  </ol>
+  <pre><code># SimpleFOC 电流环整定示意(伪代码,数值为示例)
+motor.voltage_power_supply = 24;      # 母线电压
+driver.voltage_limit = 12;            # 调试期先限幅,防止过冲
+motor.PID_current_q.P = 8.0;          # 电流环比例(示例,按电机电感调整)
+motor.PID_current_q.I = 400.0;        # 电流环积分(约 = P / (L/R))
+motor.PID_current_d.P = 8.0;          # d 轴同理
+motor.PID_current_d.I = 400.0;
+motor.current_limit = 25.0;           # 电流限幅(堵转保护)
+# 调试:从 P=0 起步,逐步加大;出现啸叫即回退</code></pre>
+  <div class="box box-tip">
+    <b>💡 振荡判定三招:</b>① 听——电流环增益过高常伴随高频「吱吱」啸叫;② 看——阶跃响应在稳态附近反复上下来回即为欠阻尼/振荡;③ 摸——电机轴出现不随指令的高频抖动。三者出现其一,先降 Kp 再谈带宽。
+  </div>
+
+  <h3>2.2 速度环 / 位置环 PID 整定步骤与参数判断</h3>
+  <p>速度环与位置环通常用<b>串级 PI/PID</b>,整定顺序仍是先内后外。工程上常用<b>齐格勒-尼科尔斯(Ziegler-Nichols)临界比例法</b>起步:先只加比例,逐步增大直到系统出现<b>持续等幅振荡</b>,记下此时的临界增益 Ku 与振荡周期 Tu,再按经验公式取整——PID 时约 Kp = 0.6Ku、Ti = 0.5Tu、Td = 0.125Tu,PI 时约 Kp = 0.45Ku、Ti = 0.83Tu。这个方法给出的是「能跑」的初值,之后还要微调。</p>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>作用</th><th>过大的症状</th><th>过小的症状</th></tr>
+    <tr>
+      <td><strong>速度环比例 Kp</strong></td>
+      <td>决定速度响应快慢与刚度</td>
+      <td>速度抖动、噪声放大、高频啸叫</td>
+      <td>响应慢、跟随滞后、发软</td>
+    </tr>
+    <tr>
+      <td><strong>速度环积分 Ki</strong></td>
+      <td>消除稳态速度误差、抵抗恒定负载</td>
+      <td>超调、低频振荡、积分饱和</td>
+      <td>存在稳态速度误差、抗负载差</td>
+    </tr>
+    <tr>
+      <td><strong>位置环比例 Kp</strong></td>
+      <td>决定位置刚度(弹簧感)</td>
+      <td>定位振荡、来回摆动、噪声抖动</td>
+      <td>定位软、有静差、受外力易偏</td>
+    </tr>
+    <tr>
+      <td><strong>位置环积分(若用)</strong></td>
+      <td>消除定位静差</td>
+      <td>超调、积分饱和、归零过冲</td>
+      <td>残余位置静差</td>
+    </tr>
+    <tr>
+      <td><strong>位置环微分 Kd(若用)</strong></td>
+      <td>增加阻尼、抑制超调</td>
+      <td>放大编码器噪声、抖动</td>
+      <td>超调大、收敛慢</td>
+    </tr>
+  </table></div>
+  <p>判断口诀:<b>「比例管快慢、积分管误差、微分管阻尼」</b>。位置环典型带宽约 <b>20~100Hz</b>,速度环约 <b>50~200Hz</b>(约为电流环的 1/10~1/5),带宽由内向外逐层递减——外环快不过内环,否则会「催着内环跑」导致振荡。整定完成标准:位置阶跃「快、稳、准」——上升时间尽量短、超调 &lt; 约 10~20%、无振荡、静差接近 0。</p>
+
+  <h3>2.3 机械谐振与陷波滤波器</h3>
+  <p>关节不是刚体:电机惯量通过减速器/谐波、联轴器连到负载,构成<b>双惯量系统</b>,传动链的柔顺性会在<b>几百 Hz~几 kHz</b> 处产生一个机械谐振峰。当速度环/位置环带宽接近这个频率时,系统会剧烈振动、啸叫甚至损坏减速器——这就是「增益一加就抖」的常见根源。</p>
+  <p><strong>如何测谐振频率:</strong>① <b>开环扫频</b>:不闭环,给电机施加幅值很小的正弦速度/电流激励,从低频扫到高频,记录速度幅值响应,找到幅值显著放大的峰值频率(反谐振点附近也一并记录);② <b>白噪声激励 + FFT</b>:注入宽带小信号,对速度/电流做 FFT 找谱峰;③ <b>自整定辨识</b>:很多伺服驱动器自带在线辨识(基于 FFT 的谐振特征辨识)。测得谐振频率 f_r 后,在速度环输出(或电流指令前)串入一个<b>陷波滤波器(notch filter)</b>:</p>
+  <div class="my-formula">陷波器(双二次型):中心频率 f0 = f_r,深度由参数 ξ1/ξ2(阻尼比)决定<br>本质:在 f_r 处制造一个「陷下去的坑」,衰减该频率的增益,让环路增益不越过 0dB 临界</div>
+  <p>工程要点:<b>陷波中心频率会随负载和姿态漂移</b>(负载越大、等效惯量越大,谐振频率越低),所以固定陷波只适合负载基本不变的关节;负载变化大时优先用<b>自适应陷波</b>(在线辨识 f_r 并实时跟踪)。陷波深度不是越深越好——太深会吃掉相位裕度,一般先「浅陷波 + 降增益」组合处理。</p>
+
+  <h3>2.4 前馈与摩擦补偿(库仑/粘滞摩擦辨识)</h3>
+  <p>关节运动时,摩擦会吃掉一部分力矩,表现为:低速时「顿挫」(爬行)、换向时位置「死区」、速度环跟随滞后。摩擦最常用的模型是<b>库仑 + 粘滞</b>:</p>
+  <div class="my-formula">τ_f(ω) = F_c · sign(ω) + B · ω　　(F_c 为库仑摩擦系数,B 为粘滞摩擦系数,ω 为角速度)</div>
+  <p><strong>辨识方法(恒速法):</strong>让关节以多个恒定速度 ω₁…ωₙ 正转和反转(电流环闭环、速度开环给恒定电压/电流),每点记录<b>平均力矩(电流 × 扭矩系数)</b>;以 ω 为横轴、平均 τ 为纵轴做线性拟合,<b>截距≈库仑摩擦 F_c,斜率≈粘滞摩擦 B</b>(正反转符号相反,取绝对值)。</p>
+  <pre><code># 摩擦辨识伪代码(恒速法)
+for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
+    for sign in [+1, -1]:            # 正反转各测一次
+        drive_openloop(w * sign)     # 开环给到该速度,等稳定
+        tau_avg = mean(iq) * Kt      # 平均力矩 = 平均电流 × 扭矩系数
+        record(w, sign, tau_avg)     # 记录 (速度, 方向, 平均力矩)
+# 拟合 tau_avg = Fc + B*|w| ,得到 Fc、B</code></pre>
+  <p>得到 F̂c、B̂ 后,把它们作为<b>前馈</b>加到速度环输出上:</p>
+  <div class="my-formula">τ_ff = F̂c · sign(ω_ref) + B̂ · ω_ref + Ĵ · α_ref + τ_gravity(θ)<br>其中 Ĵ·α_ref 为惯量前馈,τ_gravity(θ) 为重力前馈(随关节角变化)</div>
+  <p>有了前馈,反馈环只需「修小误差」,带宽要求下降、跟踪更跟手。注意两点:① <code>sign()</code> 在零速附近会来回跳变,工程上常用 <code>tanh()</code> 平滑或加死区;② 摩擦系数会随温度、润滑老化变化,定期重辨识。</p>
+
+  <!-- ================= 3 通信与同步调试 ================= -->
+  <h2><span class="h2-num">3</span> 通信与同步调试:帧率、抖动、丢帧与上电时序</h2>
+  <p>整机有十几个到几十个关节,「单关节调好」不等于「整机协调」——关节之间靠总线串起来,总线延迟与抖动会直接变成整机的不稳定。本节讲关节模组联网时最容易踩的坑。</p>
+
+  <h3>3.1 CAN / EtherCAT 总线帧率与控制周期</h3>
+  <div class="table-wrap"><table>
+    <tr><th>总线</th><th>速率</th><th>典型控制周期</th><th>适用关节数</th><th>备注</th></tr>
+    <tr>
+      <td><strong>CAN(CAN 2.0)</strong></td>
+      <td>最高约 1Mbps(标准帧每帧 8 字节数据)</td>
+      <td>约 1ms~10ms(多节点时受带宽限制)</td>
+      <td>少~中(10~20 关节)</td>
+      <td>需算带宽:30 关节 × 1kHz × 8 字节会超 1Mbps,要降频或分组</td>
+    </tr>
+    <tr>
+      <td><strong>CAN-FD</strong></td>
+      <td>数据段可到约 5~8Mbps</td>
+      <td>约 0.5ms~2ms</td>
+      <td>中</td>
+      <td>帧数据更长,缓解 CAN 2.0 带宽瓶颈</td>
+    </tr>
+    <tr>
+      <td><strong>EtherCAT</strong></td>
+      <td>100Mbps 全双工</td>
+      <td>约 125μs~1ms(常见)</td>
+      <td>多(几十~上百关节)</td>
+      <td>分布式时钟(DC)同步,抖动亚微秒级</td>
+    </tr>
+  </table></div>
+  <p><b>控制周期怎么选:</b>位置/速度指令下发周期要和内环匹配——位置环周期通常取约 1ms(EtherCAT 的 1kHz 或 CAN 的 1ms),电流环则永远在关节 MCU 内部以更高频(约 10~40kHz)独立跑。外层指令周期太长会「一顿一顿」,太短又浪费总线带宽。</p>
+
+  <h3>3.2 控制周期抖动与多关节同步</h3>
+  <p><strong>抖动(jitter)</strong>指控制周期实际执行时刻的波动。抖动大时,即使平均周期正确,位置环的「采样时刻忽快忽慢」也会带来抖动噪声甚至振荡。降低抖动的手段:① 用<b>硬件定时器</b>中断而不是软件 <code>delay()</code> 生成控制节拍;② 总线用<b>主站硬件时间戳/分布式时钟</b>(EtherCAT DC)对齐;③ 把通信接收放进中断/DMA,避免主循环耗时导致丢节拍。</p>
+  <p><strong>多关节同步</strong>的要求:所有关节在<b>同一个控制周期</b>里采样、执行,指令带时间戳,过期指令丢弃。EtherCAT 靠 DC 把各从站时钟对齐到亚微秒级;CAN 无硬件同步,多关节高频同步更难,通常靠「广播帧 + 各节点本地定时」近似同步。</p>
+
+  <h3>3.3 丢帧处理</h3>
+  <ul>
+    <li><b>检测:</b>给每帧加递增序号/心跳计数,从站检测到序号跳变即丢帧,统计丢帧率。</li>
+    <li><b>短期丢帧:</b>指令用「零阶保持」继续执行上一帧,或做一次线性外插,避免突然跳变。</li>
+    <li><b>连续丢帧/超时:</b>超过阈值(如连续几十毫秒无新指令)必须<b>降级保护</b>——先减速到零、再抱闸刹车,不能「定格在最后一帧大力矩」。</li>
+    <li><b>根因:</b>终端电阻缺失/重复、线缆过长、分支拓扑(非手拉手)、接地不良、ID 冲突、波特率不一致。</li>
+  </ul>
+
+  <h3>3.4 上电时序:先通信后使能</h3>
+  <p>整机上电顺序必须遵守「<b>先通信、后使能、再运动</b>」,断电反序:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>上电</b><br>主站和各关节 MCU 上电,跑自检(电压/温度/编码器)</div>
+    <div class="step-item"><span class="n">2</span><b>通信握手</b><br>主站枚举各关节,确认 ID、版本、状态字无故障</div>
+    <div class="step-item"><span class="n">3</span><b>建力矩→开抱闸</b><br>电机先建立保持力矩,再打开抱闸(顺序反了会坠落)</div>
+    <div class="step-item"><span class="n">4</span><b>使能+运动</b><br>关节使能后,再下发位置/力矩/步态指令</div>
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 断电时序(抱闸安全):</b>下电时<b>先关抱闸刹住、再断电机驱动</b>;上电时<b>先让电机建立力矩、再打开抱闸</b>。顺序一错,负载腿会自由落体。本项目 Hdrive 用 AO3400 + 抱闸线圈控制,软件上必须把这条时序写进状态机,并做上电默认「抱闸抱死」的失效安全设计。
+  </div>
+
+  <!-- ================= 4 步态调参实战 ================= -->
+  <h2><span class="h2-num">4</span> 步态调参实战:参数清单、顺序与倒立摆直觉</h2>
+  <p>关节都听话了,整机还不会走路——因为「走路」是<b>全身动力学</b>问题:迈步时质心会周期性跑出支撑多边形,机器人靠重力前倒,再用下一步的落点接住自己。步态调参就是调整一组高层参数,让这条「受控的不稳定」链条稳定运转。本节先给参数清单,再讲调参顺序,最后用倒立摆/ZMP 直觉解释「为什么调这个参数」。</p>
+
+  <h3>4.1 从站立到行走的参数清单</h3>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>含义</th><th>起步参考值(小机)</th><th>逐步调整方向</th></tr>
+    <tr>
+      <td><strong>步幅(步长)</strong></td>
+      <td>单步质心前进的水平距离</td>
+      <td>约 3~8cm(小步)</td>
+      <td>站稳后逐步加大,一次加约 1~2cm</td>
+    </tr>
+    <tr>
+      <td><strong>步频(步态频率)</strong></td>
+      <td>单位时间步数(或步态周期倒数)</td>
+      <td>约 0.4~0.8Hz(慢走)</td>
+      <td>走稳后逐步提高,同时注意落地冲击</td>
+    </tr>
+    <tr>
+      <td><strong>抬脚高度(足底离地净空)</strong></td>
+      <td>摆动腿脚尖离地最大高度</td>
+      <td>约 1~3cm</td>
+      <td>够用即可,过高反而冲击大、单支撑期变长</td>
+    </tr>
+    <tr>
+      <td><strong>支撑期占比(duty factor)</strong></td>
+      <td>单腿支撑时间占步态周期比例</td>
+      <td>约 0.6~0.7(偏静态)</td>
+      <td>走快时降到约 0.5 左右,跑动 &lt; 0.5</td>
+    </tr>
+    <tr>
+      <td><strong>躯干前倾角</strong></td>
+      <td>躯干相对竖直的前倾角度</td>
+      <td>约 1°~3°</td>
+      <td>加速/起步加大,减速/停止回正甚至后仰</td>
+    </tr>
+    <tr>
+      <td><strong>重心高度(CoM 高度)</strong></td>
+      <td>质心离地高度(由屈膝程度决定)</td>
+      <td>腿伸直略高、屈膝略低</td>
+      <td>降低更稳但屈膝力矩大、能耗高</td>
+    </tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 一句话原则:</b>起步永远是「<b>小步幅、低步频、高支撑占比、小前倾、略屈膝</b>」——先求稳,再求快。所有参数一次只调一个,记录每一步变化带来的现象,才能建立「参数 ↔ 现象」的对应关系。
+  </div>
+
+  <h3>4.2 调参顺序与判断标准</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>先站稳</b><br>双腿站立,质心投影落在双脚支撑多边形内,踝关节能跟踪小扰动</div>
+    <div class="step-item"><span class="n">2</span><b>原地重心转移</b><br>前后、左右缓慢转移重心,体会支撑多边形的边界</div>
+    <div class="step-item"><span class="n">3</span><b>单腿支撑</b><br>抬起一条腿维持约 2~3s,验证另一腿的踝/髋能独自支撑</div>
+    <div class="step-item"><span class="n">4</span><b>小步慢走</b><br>小步幅+低步频+高支撑占比起步,先走 2~3 步就停</div>
+    <div class="step-item"><span class="n">5</span><b>逐步加快</b><br>一次只加一个参数:先加步频、再加步幅、最后降支撑占比</div>
+  </div>
+  <p>每一步的判断标准:站稳 → 站立 30s 不抖;原地转移 → 质心轨迹平滑无突跳;单腿支撑 → 不倾倒、支撑踝无明显高频抖;小步慢走 → 连续 5 步不拖地不后仰;逐步加快 → 每一步都先「能走稳」再「走更快」,出现任何异常立即回退上一组参数。</p>
+
+  <h3>4.3 常见问题对应参数(排查表)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>现象</th><th>最可能相关的参数</th><th>调整方向</th><th>倒立摆/ZMP 直觉</th></tr>
+    <tr>
+      <td><strong>迈不开步(原地踏步/步幅极小)</strong></td>
+      <td>前倾角不足、步幅过小、踝力矩/地面摩擦不足</td>
+      <td>加大前倾角、加大步幅、提高踝增益或换地面</td>
+      <td>前倾让质心获得向前偏移,产生向前的重力分量「推」身体前倒;ZMP 前移到支撑区前缘,才有前进动力</td>
+    </tr>
+    <tr>
+      <td><strong>拖地(脚尖擦地)</strong></td>
+      <td>抬脚高度不足、摆动轨迹过低、重心未提前转移</td>
+      <td>加抬脚高度、抬高摆动轨迹、提前把重心移到支撑腿</td>
+      <td>摆动腿离地净空不够,脚还没摆到落点就蹭地,被摩擦力绊住</td>
+    </tr>
+    <tr>
+      <td><strong>身体后仰</strong></td>
+      <td>前倾不足/过早回正、步频过快、质心没跟上</td>
+      <td>维持前倾、降步频、让质心先于摆腿移动</td>
+      <td>后仰时质心投影落到支撑区后缘,前进分量消失,机器被自己「拉住」</td>
+    </tr>
+    <tr>
+      <td><strong>横向晃动(左右摆)</strong></td>
+      <td>侧向质心转移幅度过冲、髋内收外展刚度不足、步宽过窄</td>
+      <td>减小侧移过冲、加髋侧向增益、适当加步宽</td>
+      <td>单腿支撑期质心必须在支撑脚正上方附近;侧向转移过头,ZMP 越出脚掌内侧就侧倾</td>
+    </tr>
+    <tr>
+      <td><strong>落地冲击大(咚咚响)</strong></td>
+      <td>抬脚过高、落地速度大、踝/膝缺乏柔顺缓冲、支撑期切换太急</td>
+      <td>降抬脚高度、控制落地速度、加柔顺(阻抗/力矩环)、延长双支撑相</td>
+      <td>摆动腿落地动能瞬间转化为地面反力冲击;柔顺踝把冲击「泄」掉,而不是硬撞</td>
+    </tr>
+  </table></div>
+
+  <h3>4.4 倒立摆 / ZMP 直觉:参数为什么这样影响</h3>
+  <p>把机器人简化成<b>线性倒立摆(LIPM)</b>:一根等长腿顶着一个质点(质心),质心高度恒定为 h,绕支撑点摆动。它的水平动力学极简:</p>
+  <div class="my-formula">ẍ = (g / h) · x　　(x 为质心相对支撑点的水平偏移,g 为重力加速度)<br>p_ZMP = x − (h / g) · ẍ　　(ZMP = 质心投影 减去 惯性力修正)</div>
+  <p>从这两个式子能推出上面所有参数的作用:</p>
+  <ul>
+    <li><b>重心高度 h ↓</b> → ω = √(g/h) 变小 → 倒立摆「发散更慢」→ 更稳,但屈膝力矩和能耗上升。这就是「蹲低点更稳但更累」。</li>
+    <li><b>前倾角 ↑</b> → 质心投影 x 前移 → 由 LIPM 方程产生向前的 ẍ → 机器前进;前倾过大,质心跑出支撑区前沿又来不及迈步,就前扑。前倾角本质是「持续给一个向前加速度」。</li>
+    <li><b>步幅 ↑</b> → 落点前移 → 支撑点前移 → 质心相对新支撑点的偏移与 ZMP 摆动幅度都变大 → 需要更大的踝力矩和更稳的平衡;步幅超过质心能「追上的范围」就摔。</li>
+    <li><b>步频 ↑</b> → 每步留给「质心前倒被接住」的时间变短 → 对控制器和执行层延迟更敏感,步频过快会「来不及反应」。</li>
+    <li><b>支撑期占比 ↑</b> → 双腿同时着地的时间长 → 支撑多边形更大 → 更接近静态稳定;占比降到 0.5 以下就进入「跑」,双支撑相消失,几乎全靠动态平衡。</li>
+    <li><b>抬脚高度 ↑</b> → 摆动腿离地时间长 → 单支撑期拉长 → 平衡难度上升,且落地速度更大 → 冲击更大。所以「抬脚够用即可」。</li>
+  </ul>
+  <div class="box box-tip">
+    <b>💡 记法:</b>「前倾给动力、步幅定步长、步频定节奏、占比定稳度、抬脚定净空、重心定摆速」。调参时脑子里始终有一条 LIPM:质心是那个「想倒的摆」,落点是那个「接住它的支撑点」,ZMP 必须在支撑多边形内留裕度。
+  </div>
+
+  <!-- ================= 5 故障排查流程 ================= -->
+  <h2><span class="h2-num">5</span> 故障排查流程:六类故障决策树</h2>
+  <p>调试中出问题,最忌「东试一下西试一下」。正确做法是按<b>决策树</b>从「最常见、最易测」的原因开始逐层排查。下表把六类高频故障的排查顺序压缩成树:</p>
+  <div class="table-wrap"><table>
+    <tr><th>故障现象</th><th>排查第 1 步</th><th>排查第 2 步</th><th>排查第 3 步</th><th>常见根因</th></tr>
+    <tr>
+      <td><strong>电机不转</strong></td>
+      <td>测母线电压是否正常、有无欠压</td>
+      <td>查使能位/抱闸是否已打开、状态字是否故障</td>
+      <td>查通信指令是否到达、编码器是否有反馈</td>
+      <td>供电断、抱闸未开、使能未置、指令没发、编码器断线</td>
+    </tr>
+    <tr>
+      <td><strong>电机抖动/啸叫</strong></td>
+      <td>先降电流环 Kp 看是否消失</td>
+      <td>扫频找谐振峰,判断是否机械谐振</td>
+      <td>查编码器信号噪声/接地/屏蔽</td>
+      <td>增益过高、机械谐振、编码器噪声、采样偏置</td>
+    </tr>
+    <tr>
+      <td><strong>关节过热</strong></td>
+      <td>测持续电流是否长期接近/超过额定</td>
+      <td>查是否堵转、机械卡死、负载异常</td>
+      <td>查散热(风扇/导热/铜皮)是否到位</td>
+      <td>持续扭矩超限、堵转保护缺失、散热不足、环境温度高</td>
+    </tr>
+    <tr>
+      <td><strong>位置漂移</strong></td>
+      <td>查编码器磁环/连接是否松动</td>
+      <td>查传动是否打滑(联轴器/键槽)</td>
+      <td>查减速器背隙(回差)</td>
+      <td>编码器松动、打滑、背隙、零位漂移</td>
+    </tr>
+    <tr>
+      <td><strong>通信中断</strong></td>
+      <td>查两端 120Ω 终端电阻是否只加两端</td>
+      <td>查线缆/接插件接触、是否手拉手拓扑</td>
+      <td>查节点 ID 是否重复、波特率是否一致</td>
+      <td>终端电阻缺失/重复、线断、ID 冲突、波特率不匹配</td>
+    </tr>
+    <tr>
+      <td><strong>掉电坠落</strong></td>
+      <td>查抱闸时序(是否先断驱动后抱闸)</td>
+      <td>查掉电瞬间母线电压维持时间(电容)</td>
+      <td>查重力矩是否超过抱闸/保持力矩</td>
+      <td>抱闸时序错、电容保持不足、保持力矩不够</td>
+    </tr>
+  </table></div>
+
+  <h3>几个关键故障的深入排查</h3>
+  <div class="box box-warn">
+    <b>🔍 抖动/啸叫深挖:</b>先「降增益」区分是<b>控制失稳</b>(降增益就好)还是<b>机械谐振</b>(降增益仍抖,扫频有明确峰)。谐振要加陷波,控制失稳要降增益/加阻尼。两者混在一起时,先处理谐振再调增益,否则永远在「一加就抖、一降就软」之间打转。
+  </div>
+  <div class="box box-warn">
+    <b>🔍 通信中断深挖:</b>CAN 总线<b>只在物理两端各加一个 120Ω 终端电阻</b>,加多会拉低差分信号、加少会反射;分支线(星型)会破坏阻抗匹配,必须改手拉手。多个节点 ID 重复会导致总线错误帧暴涨、仲裁混乱。先「单节点通、再逐个加节点」是最快的定位法。
+  </div>
+  <div class="box box-warn">
+    <b>🔍 掉电坠落深挖:</b>抱闸是「断电抱死」型(断电才刹车),所以正常上电运行时要先「通电松开」;突然掉电时靠<b>母线电容保持</b>让 MCU 再跑几百毫秒,完成「先抱闸、再停驱动」。如果电容不够大或时序错,重力矩会让腿瞬间砸下。必要时加大母线电容或加独立超级电容给控制侧续命。
+  </div>
+
+  <!-- ================= 6 整机测试与验收 ================= -->
+  <h2><span class="h2-num">6</span> 整机测试与验收:标定、温升、耐久与稳定性</h2>
+  <p>调好之后还要「验收」,证明整机真的合格,而不是「今天碰巧能走」。下面给出四项最基础的验收测试。</p>
+  <div class="table-wrap"><table>
+    <tr><th>测试项</th><th>方法</th><th>合格判据(参考)</th></tr>
+    <tr>
+      <td><strong>扭矩标定</strong></td>
+      <td>测力臂 + 砝码/扭矩传感器,给多个电流值测输出扭矩,拟合电流→扭矩系数 Kt</td>
+      <td>Kt 线性度好、与标称值偏差 &lt; 约 ±10%;额定/峰值扭矩达标</td>
+    </tr>
+    <tr>
+      <td><strong>温升测试</strong></td>
+      <td>以额定扭矩/额定转速持续运行约 30~60min,测电机绕组与 MOS/驱动板温度</td>
+      <td>绕组与 MOS 温升在允许范围(参考值:MOS 表面 &lt; 约 80°C,具体看器件结温降额)</td>
+    </tr>
+    <tr>
+      <td><strong>耐久测试</strong></td>
+      <td>规定工况循环运行(如步态循环 8h 或 N 万步),统计故障与磨损</td>
+      <td>无功能性故障,紧固件不松、编码器不漂、温升稳定</td>
+    </tr>
+    <tr>
+      <td><strong>行走稳定性评估</strong></td>
+      <td>连续步行记录步数/时长、质心侧向摆幅、跌倒次数、落地冲击峰值加速度</td>
+      <td>连续步行约 10~20 步不摔、质心摆幅小、落地冲击在限幅内、能平稳启动和停止</td>
+    </tr>
+  </table></div>
+  <p><strong>行走稳定性的简单指标</strong>(没有专业动作捕捉时也能测):① <b>连续步数/时长</b>——能连续走多少步不倒;② <b>直线偏差</b>——走 1m 后横向偏移多少;③ <b>落地冲击</b>——用足底或躯干加速度计测落地瞬间峰值 g 值;④ <b>ZMP 裕度</b>——若有关节力矩与足底力,可实时算 ZMP 距支撑多边形边界的最近距离,裕度越大越稳。这些指标不需要昂贵设备,却能量化「走得好不好」。</p>
+
+  <!-- ================= 7 与 Hdrive 结合 ================= -->
+  <h2><span class="h2-num">7</span> 与 Hdrive 结合:调试记录模板与常见问题清单</h2>
+  <p>把上面的流程落到你的 Hdrive 关节模组上,关键是「<b>记录</b>」——参数一多,不记录就等于白调。下面给一个可直接复制的调试记录模板,以及结合本项目硬件的常见问题清单。</p>
+  <h3>7.1 关节调试记录模板</h3>
+  <pre><code>============================================================
+关节调试记录
+------------------------------------------------------------
+关节ID:__________    位置:髋/膝/踝(L/R)    固件版本:__________
+电机型号:__________  减速比:__________      编码器:__________
+日期:__________      调试人:__________
+------------------------------------------------------------
+[电流环]  Kp=____  Ki=____  带宽约____Hz  振荡判定:有/无
+[速度环]  Kp=____  Ki=____  上升时间____ms 超调____%
+[位置环]  Kp=____  Ki=____  Kd=____ 静差____ 振荡:有/无
+[谐振]    谐振频率 f_r=____Hz  陷波中心=____ 深度=____
+[摩擦]    Fc=____  B=____  辨识速度点:________
+[限幅]    电流限幅=____A  速度限幅=____  软限位=____
+[温升]    环境____°C  绕组____°C  MOS____°C  @额定运行____min
+[抱闸]    上电时序验证:通过/失败  掉电抱闸:通过/失败
+[备注]    ________________________________________________
+============================================================</code></pre>
+  <h3>7.2 Hdrive 常见问题清单</h3>
+  <div class="table-wrap"><table>
+    <tr><th>现象</th><th>结合本项目硬件的可能原因</th><th>处理建议</th></tr>
+    <tr>
+      <td>上电就报 nFAULT</td>
+      <td>DRV8323 过流/欠压/过温保护,或母线电容未紧贴、去耦不足</td>
+      <td>查母线电容位置、栅极电阻、限流上电,读 nFAULT 拉低原因</td>
+    </tr>
+    <tr>
+      <td>电流采样噪声大/乱抖</td>
+      <td>INA240 未做 Kelvin 连接、REF 1.65V 偏置不准、采样线没屏蔽</td>
+      <td>查 Kelvin 走线、校零点、加 RC 滤波、模拟区远离开关节点</td>
+    </tr>
+    <tr>
+      <td>低速顿挫/换向死区</td>
+      <td>摩擦补偿缺失、编码器零位不准、采样偏置</td>
+      <td>做摩擦辨识加前馈、重校编码器零位与采样零点</td>
+    </tr>
+    <tr>
+      <td>通信时通时断</td>
+      <td>TJA1042 终端电阻、CANH/CANL 接线、ID 冲突</td>
+      <td>两端各 120Ω、手拉手拓扑、逐个节点加、查 ID/波特率</td>
+    </tr>
+    <tr>
+      <td>掉电腿坠落</td>
+      <td>抱闸续流二极管方向、抱闸时序、母线电容保持不足</td>
+      <td>查 SS34 方向、校验上电/断电时序、加大母线电容</td>
+    </tr>
+    <tr>
+      <td>MOS 过热</td>
+      <td>2oz 铜厚/散热过孔不足、持续电流超限</td>
+      <td>补散热过孔阵列、加散热片、核对额定扭矩下的电流</td>
+    </tr>
+  </table></div>
+
+  <!-- ================= 8 小结与思考 ================= -->
+  <h2><span class="h2-num">8</span> 小结与思考</h2>
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>整机调试按「上电安全 → 单关节 → 多关节 → 站立 → 平衡 → 行走」六阶段逐层推进,每阶段用可量化标准验收;关节级整定由内向外——电流环先稳(目标带宽约 300Hz~1kHz、相位裕度约 45°~60°),再速度环、位置环(带宽逐层递减),比例管快慢、积分管误差、微分管阻尼;机械谐振用扫频测 f_r 后加陷波,摩擦用恒速法辨识库仑/粘滞系数做前馈;通信上 CAN/EtherCAT 各有其帧率与周期,抖动与丢帧要专门处理,上电必须「先通信后使能」;步态调参从「小步幅、低步频、高支撑占比、小前倾、略屈膝」起步,用 LIPM/ZMP 直觉理解每个参数的作用;故障排查按决策树从易到难,不盲试。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 你的整机走到第 4 阶段「站立」就频繁抖腿,但单关节测试时位置环很正常。可能的原因有哪些?你会按什么顺序排查?(提示:多关节耦合、总线抖动、地面反力、支撑相负载突变)<br>
+    2. 机器人「迈不开步」,你按第 4 节表把前倾角加到 8° 还是原地踏步,下一步该怀疑哪个环节?(提示:地面摩擦、踝力矩是否真的输出、前倾指令是否被姿态环吃掉)<br>
+    3. 摩擦补偿用 <code>sign(ω)</code> 在零速附近抖动,如何平滑?如果关节负载随姿态变化(重力项),摩擦前馈公式还要加什么?
+  </div>
+
+  <!-- ================= 9 本节自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 整机调试的正确推进顺序是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 直接装好全部关节就试走,靠反复摔练出来</button>
+      <button data-v="B">B. 上电安全 → 单关节 → 多关节协调 → 站立 → 平衡 → 行走</button>
+      <button data-v="C">C. 先调步态再调关节,因为走路才是最终目标</button>
+      <button data-v="D">D. 先行走 → 再平衡 → 再单关节,从结果倒推</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:整机调试必须分层递进,每一阶段只验证一件事,内层稳定再进外层。选 B。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. FOC 电流环整定时,出现持续等幅振荡或可闻啸叫,最直接的判断是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 积分过大,应该继续加大 Ki</button>
+      <button data-v="B">B. 编码器零位漂移,与增益无关</button>
+      <button data-v="C">C. 比例增益过高/相位裕度不足,应回退 Kp</button>
+      <button data-v="D">D. 电压太低,应提高母线电压</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电流环增益过高导致相位裕度不足,阶跃响应欠阻尼振荡,典型表现就是啸叫,应降低 Kp(回退到约 70%~80%)。选 C。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 关于机械谐振与陷波滤波器,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 谐振来自传动链柔顺形成的双惯量系统,在特定频率出现峰值,可用陷波器衰减</button>
+      <button data-v="B">B. 谐振频率与负载无关,一次标定永远不变</button>
+      <button data-v="C">C. 陷波越深越好,可以无限加大深度</button>
+      <button data-v="D">D. 加陷波可以替代降低增益,两者不能同时用</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:A 正确。谐振频率会随负载/姿态漂移,固定陷波只适合负载基本不变的情况;陷波太深会吃掉相位裕度,常与适度降增益配合。选 A。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 恒速法辨识摩擦时,以角速度 ω 为横轴、平均力矩 τ 为纵轴做线性拟合,得到的截距与斜率分别近似?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 截距=粘滞摩擦系数,斜率=库仑摩擦系数</button>
+      <button data-v="B">B. 截距=惯量,斜率=阻尼</button>
+      <button data-v="C">C. 截距=重力矩,斜率=粘滞摩擦</button>
+      <button data-v="D">D. 截距=库仑摩擦系数,斜率=粘滞摩擦系数</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:摩擦模型 τ_f = F_c·sign(ω) + B·ω,即 τ 与 ω 线性,截距对应库仑摩擦 F_c,斜率对应粘滞摩擦 B。选 D。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 关于上电时序,安全正确的顺序是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 先开抱闸 → 再建立力矩 → 再通信</button>
+      <button data-v="B">B. 先通信握手 → 电机建立保持力矩 → 再打开抱闸 → 再使能运动</button>
+      <button data-v="C">C. 先使能运动 → 再打开抱闸 → 再通信</button>
+      <button data-v="D">D. 通信、使能、抱闸三件事可以任意顺序</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:必须先通信、电机先建立保持力矩、再开抱闸,否则负载腿会自由落体。断电时反序:先抱闸、再断驱动。选 B。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 机器人「迈不开步、原地踏步」,用倒立摆/ZMP 直觉判断,最可能的原因是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 前倾角不足,质心投影未前移,缺少向前的重力分量驱动</button>
+      <button data-v="B">B. 抬脚高度太高</button>
+      <button data-v="C">C. 支撑期占比太低</button>
+      <button data-v="D">D. 重心高度太低</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:前进动力来自质心相对支撑点的前移(前倾)产生的重力分量;前倾不足时 ZMP 不前移,身体「不往前倒」,自然迈不开步。抬脚过高反而拖慢摆动、支撑占比低是走不稳而非迈不开。选 A。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">7. CAN 总线通信时通时断,下列排查顺序最合理的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 直接换 MCU 重刷固件</button>
+      <button data-v="B">B. 先加大波特率再观察</button>
+      <button data-v="C">C. 先单节点验证,再查两端 120Ω 终端电阻、拓扑、ID 冲突与波特率</button>
+      <button data-v="D">D. 给所有节点都加 120Ω 电阻增强信号</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:通信问题从「单节点通不通」开始,再查物理层(两端各 120Ω、手拉手拓扑)、协议层(ID 唯一、波特率一致)。选 C。</div>
+  </div>
+
+  <!-- ================= 10 参考来源 ================= -->
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <p style="font-size:12.5px;color:#6b7280;">资料整理更新至 2026-08。下列来源经 web_search 核实,参数建议值中带「约」的为工程经验范围,请在实机上验证。</p>
+  <ul>
+    <li><a href="https://en.wikipedia.org/wiki/Zero_moment_point" target="_blank" rel="noopener">Zero Moment Point(维基百科,Vukobratović 1968 概念出处)</a></li>
+    <li><a href="https://www.sciencedirect.com/science/article/pii/S2405844024132689" target="_blank" rel="noopener">Next generation legged robot locomotion: A review on control techniques(ScienceDirect,足式运动控制综述)</a></li>
+    <li><a href="https://docs.simplefoc.com/" target="_blank" rel="noopener">SimpleFOC 官方文档(本项目软件生态,含 PID 环、电流/速度/位置环配置)</a></li>
+    <li><a href="https://docs.odriverobotics.com/" target="_blank" rel="noopener">ODrive 官方文档(伺服整定、陷波、摩擦补偿等应用笔记)</a></li>
+    <li><a href="http://info.gongkong.com/Article/202606/1113.html" target="_blank" rel="noopener">伺服驱动系统调参实战:从 PID 参数整定到振动抑制的完整方法(工控网)</a></li>
+    <li><a href="http://info.gongkong.com/Article/202606/1015.html" target="_blank" rel="noopener">伺服驱动器调优实战:从参数整定到振动抑制的系统方法(工控网)</a></li>
+    <li><a href="https://www.motor-abc.cn/djykzyy/article/abstract/20191107" target="_blank" rel="noopener">基于自适应陷波滤波器的伺服系统谐振频率估计及抑制(电机与控制应用)</a></li>
+    <li><a href="https://d.wanfangdata.com.cn/periodical/gxjmgc201105022" target="_blank" rel="noopener">谐波减速器的非线性摩擦建模及补偿(光学精密工程,万方)</a></li>
+    <li><a href="https://patents.google.com/patent/CN116318508A/en" target="_blank" rel="noopener">EtherCAT 从站伺服同步专利(EtherCAT 周期 125μs/1ms 与同步说明)</a></li>
+    <li><a href="https://cloud.tencent.com/developer/article/2507547" target="_blank" rel="noopener">多设备 CAN 总线通信异常的故障排查(腾讯云开发者社区)</a></li>
+    <li>Kajita 等,Biped Walking Pattern Generation by Using Preview Control of Zero-Moment Point,ICRA 2003(预览控制原文);Pratt 等,Capture Point: A Step toward Humanoid Push Recovery,Humanoids 2006(捕获点原文)——可经 <a href="https://scholar.google.com/scholar?q=preview+control+of+zero-moment+point" target="_blank" rel="noopener">Google Scholar</a> 检索获取</li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>
