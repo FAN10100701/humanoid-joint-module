@@ -235,6 +235,9 @@ body[data-theme="dark"] .bb-expand{background:rgba(20,28,42,.9);border-color:var
   body.drawer-view .drw.view{transform:none}
   .btab{display:flex;position:fixed;left:0;right:0;bottom:0;height:56px;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--rule);align-items:stretch}
   .btab button{flex:1;border:none;background:transparent;color:var(--muted);font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;font-family:inherit;padding:0}
+  .btab a.bhome{flex:1;background:transparent;color:var(--muted);font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;font-family:inherit;padding:0;text-decoration:none;border-left:1px solid var(--rule)}
+  .btab a.bhome:active,.btab a.bhome:hover{color:var(--accent)}
+  .btab a.bhome .ic{font-size:18px;line-height:1}
   .btab button .ic{font-size:18px;line-height:1}
   .btab button.on,.btab button:active{color:var(--accent)}
   body[data-theme="dark"] .btab{background:rgba(13,18,30,.94)}
@@ -340,11 +343,32 @@ body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:va
 #diagPanel .dp-ok{color:var(--ok)}#diagPanel .dp-bad{color:var(--bad)}#diagPanel .dp-wait{color:var(--warn)}
 @media(min-width:861px){#diagFab,#diagPanel{display:none!important}}
 </style></head><body>
-<!-- 返回学习站首页悬浮按钮(独立页无全站导航,交接文档遗留项) -->
-<a href="../index.html" style="position:fixed;top:14px;right:14px;z-index:99;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:18px;background:rgba(13,18,30,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(120,140,180,.35);color:#cdd8ea;font:600 12px/1 'Segoe UI','Microsoft YaHei',sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.25)" onmouseover="this.style.borderColor='var(--accent,#2563eb)'" onmouseout="this.style.borderColor='rgba(120,140,180,.35)'">🏠 学习站首页</a>
-<!-- 【加载方式说明】three 依赖由 js/app.module.js 的 loadDeps 以"相对路径+CDN绝对URL"方式动态导入，
-     不依赖 importmap、不加载 es-module-shims——兼容任何支持 ES module 的浏览器(含无原生 importmap 的老内核)，
-     file:// 协议自动走 CDN。此处无需任何模块配置。 -->
+<!-- 【模块加载策略】
+     本地模式(默认):零依赖——本地库已改写为相对导入(three.module.js 与 addons 全部相对路径)，
+       任何支持 ES module 的浏览器(含无原生 importmap 的老内核)都能直接运行，无需 importmap/shims；
+     CDN 回退模式(file:// 或本地失败后):解析期注入 importmap 解析裸说明符(three/addons)，
+       老内核浏览器(无原生 importmap)自动加载 es-module-shims polyfill。 -->
+<script>
+(function(){
+  var mark=null;try{mark=sessionStorage.getItem('__three_cdn__');}catch(e){}
+  var isFile=location.protocol==='file:';
+  var IS_CDN=isFile||mark==='1'||mark==='3'||mark==='4';
+  window.__THREE_CDN_MODE__=IS_CDN;
+  if(IS_CDN){
+    /* CDN 模式需要 importmap：老内核无原生支持时加载 shims polyfill */
+    if(!window.HTMLScriptElement||!HTMLScriptElement.supports||!HTMLScriptElement.supports('importmap')){
+      document.write('<script src="./lib/es-module-shims.js"><\/script>');
+    }
+    var SRC={
+      '1':{three:'https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js',addons:'https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/'},
+      '3':{three:'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',addons:'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/'},
+      '4':{three:'https://unpkg.com/three@0.160.0/build/three.module.js',addons:'https://unpkg.com/three@0.160.0/examples/jsm/'}
+    };
+    var src=SRC[mark]||SRC['1'];
+    document.write('<script type="importmap">'+JSON.stringify({imports:{three:src.three,'three/addons/':src.addons}})+'<\/script>');
+  }
+})();
+</script>
 <script>
 /* 检测是否为 file:// 协议：file:// 下 STL/URDF 文件无法通过fetch加载，使用内置参数化模型 */
 window.__IS_FILE_PROTO__=location.protocol==='file:';
@@ -557,6 +581,7 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   </select>
 </div>
 <nav class="btab" id="btab">
+  <a class="bhome" href="../index.html" title="返回学习站首页"><span class="ic">🏠</span>首页</a>
   <button data-act="nav"><span class="ic">☰</span>导航</button>
   <button data-act="model"><span class="ic">🤖</span>机型</button>
   <button data-act="view"><span class="ic">🎛</span>视图</button>
@@ -1416,7 +1441,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v6.9';  /* 2026-08-17 · 多CDN冗余(npmmirror/jsdelivr/unpkg)逐级降级+失败清标记回本地自愈+详细错误探针 */
+var DIAG_VER='v7.0';  /* 2026-08-17 · 兼容性终极方案:本地库相对路径零依赖(全浏览器可用)+CDN模式importmap三源+失败自愈状态机 */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;

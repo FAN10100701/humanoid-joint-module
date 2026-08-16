@@ -122,53 +122,41 @@ function probe(msg){try{window.__3D_LOAD_LOG__.push(String(msg).slice(0,220));}c
 function errtxt(e){var m=(e&&e.message)?String(e.message):String(e);return m.slice(0,160);}
 function loadDeps(cb){
   if(THREE){cb(true);return;}
-  /* 【importmap 无关加载】相对路径+多 CDN 绝对 URL 动态导入,不依赖 importmap 与 es-module-shims。
-     顺序:本地 → npmmirror(gzip) → jsdelivr → unpkg;每级失败自动降级,全部失败则清标记下次回本地重试。 */
+  /* 状态机(见 HTML 顶部脚本的 importmap 注入):
+     无标记 → 本地模式(相对路径,零依赖,所有 ES module 浏览器可用)
+     标记 1/3/4 → CDN 模式(裸说明符,由注入的 importmap 解析,三源逐级切换)
+     标记 9 → 回本地重试(CDN 全失败后的自愈),本地再失败则报错停止 */
+  var mark=null;try{mark=sessionStorage.getItem('__three_cdn__');}catch(e){}
+  var isFile=location.protocol==='file:';
+  var cdnMode=isFile||mark==='1'||mark==='3'||mark==='4';
   var LOC='./lib/';
-  function C(base,sub){return base+sub;}
-  var A=[
-    ['three.module.js',
-      C('https://registry.npmmirror.com/three/0.160.0/files/build/','three.module.js'),
-      C('https://cdn.jsdelivr.net/npm/three@0.160.0/build/','three.module.js'),
-      C('https://unpkg.com/three@0.160.0/build/','three.module.js')],
-    ['addons/controls/OrbitControls.js',
-      C('https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/controls/','OrbitControls.js'),
-      C('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/','OrbitControls.js'),
-      C('https://unpkg.com/three@0.160.0/examples/jsm/controls/','OrbitControls.js')],
-    ['addons/loaders/STLLoader.js',
-      C('https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/loaders/','STLLoader.js'),
-      C('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/','STLLoader.js'),
-      C('https://unpkg.com/three@0.160.0/examples/jsm/loaders/','STLLoader.js')],
-    ['addons/environments/RoomEnvironment.js',
-      C('https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/environments/','RoomEnvironment.js'),
-      C('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/','RoomEnvironment.js'),
-      C('https://unpkg.com/three@0.160.0/examples/jsm/environments/','RoomEnvironment.js')],
-    ['addons/loaders/DRACOLoader.js',
-      C('https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/loaders/','DRACOLoader.js'),
-      C('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/','DRACOLoader.js'),
-      C('https://unpkg.com/three@0.160.0/examples/jsm/loaders/','DRACOLoader.js')]
-  ];
-  var file=location.protocol==='file:';
-  var mode=file||sessionStorage.getItem('__three_cdn__')==='1'?'CDN':'本地';
-  probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+mode);
-  function tryList(list,idx){
-    if(idx>=list.length){
-      probe('❌ 全部 CDN 源均失败');
-      return Promise.reject(new Error('all sources failed'));
+  var LOCS=['three.module.js','addons/controls/OrbitControls.js','addons/loaders/STLLoader.js','addons/environments/RoomEnvironment.js','addons/loaders/DRACOLoader.js'];
+  var BARE=['three','three/addons/controls/OrbitControls.js','three/addons/loaders/STLLoader.js','three/addons/environments/RoomEnvironment.js','three/addons/loaders/DRACOLoader.js'];
+  probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+(cdnMode?('CDN('+(mark||'file')+')'):'本地'));
+  /* 失败推进状态机:返回 true=已切换并 reload,false=停止报错 */
+  function advance(){
+    var m=null;try{m=sessionStorage.getItem('__three_cdn__');}catch(e){}
+    if(isFile){
+      if(!m||m==='9'){try{sessionStorage.setItem('__three_cdn__','1');}catch(e){}}
+      else if(m==='1'){try{sessionStorage.setItem('__three_cdn__','3');}catch(e){}}
+      else if(m==='3'){try{sessionStorage.setItem('__three_cdn__','4');}catch(e){}}
+      else return false;
+      try{location.reload();}catch(e){}
+      return true;
     }
-    return import(list[idx]).catch(function(e){
-      probe('CDN['+idx+'] '+list[idx].split('/').slice(-2, -1)[0]+'/'+list[idx].split('/').pop()+' 失败: '+errtxt(e));
-      return tryList(list,idx+1);
-    });
+    if(!m){try{sessionStorage.setItem('__three_cdn__','1');}catch(e){}}
+    else if(m==='1'){try{sessionStorage.setItem('__three_cdn__','3');}catch(e){}}
+    else if(m==='3'){try{sessionStorage.setItem('__three_cdn__','4');}catch(e){}}
+    else if(m==='4'){try{sessionStorage.setItem('__three_cdn__','9');}catch(e){}}
+    else return false;   /* '9':本地也失败,停止 */
+    try{location.reload();}catch(e){}
+    return true;
   }
   function imp(i){
-    if(file||sessionStorage.getItem('__three_cdn__')==='1'){
-      return tryList(A[i].slice(1),0);
-    }
-    return import(LOC+A[i][0]).catch(function(e){
-      probe('本地 '+A[i][0]+' 失败: '+errtxt(e)+' → 切 CDN');
-      try{sessionStorage.setItem('__three_cdn__','1');}catch(err){}
-      return tryList(A[i].slice(1),0);
+    if(cdnMode)return import(BARE[i]).catch(function(e){probe('CDN '+BARE[i]+' 失败: '+errtxt(e));throw e;});
+    return import(LOC+LOCS[i]).catch(function(e){
+      probe('本地 '+LOCS[i]+' 失败: '+errtxt(e));
+      throw e;
     });
   }
   imp(0).then(function(M){THREE=M;window.__THREE_LOADED__=true;probe('three 核心 OK');window.__SHOW_DIAG__&&window.__SHOW_DIAG__();return imp(1);})
@@ -180,8 +168,7 @@ function loadDeps(cb){
       console.warn('[Robot3D] 引擎加载失败:',e);
       probe('❌ 加载失败: '+errtxt(e));
       window.__3D_FAILED__=true;
-      /* 全部失败:清 CDN 标记,下次加载重新从本地开始(网络恢复后可自愈) */
-      try{sessionStorage.removeItem('__three_cdn__');}catch(err){}
+      if(advance())return;   /* 升级 CDN 源 / 回本地,重载后重试 */
       cb(false);
     });
 }
