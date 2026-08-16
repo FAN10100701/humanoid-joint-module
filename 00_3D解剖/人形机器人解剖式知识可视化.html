@@ -345,11 +345,37 @@ window.__IS_FILE_PROTO__=location.protocol==='file:';
    ② 网络过慢/中断 → 看门狗超时后提示 */
 var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本超时仍未启动则显示网络排查提示 */
 (function(){
+  /* 【手机诊断】把设备真实状态显示在启动遮罩上，便于定位"加载不出模型"的原因 */
+  function detectDiag(){
+    var ua=navigator.userAgent||'';
+    var iosM=ua.match(/OS (\d+)[_.](\d+)/), iosV='';
+    if(iosM)iosV=iosM[1]+'.'+iosM[2];
+    var glOk=false;
+    try{var c=document.createElement('canvas');glOk=!!(c.getContext('webgl2')||c.getContext('webgl'));}catch(e){}
+    var wasmOk=typeof WebAssembly!=='undefined'&&typeof WebAssembly.instantiate==='function';
+    var impOk=false;
+    try{impOk=!!(window.HTMLScriptElement&&HTMLScriptElement.supports&&HTMLScriptElement.supports('importmap'));}catch(e){}
+    window.__DIAG__={
+      ios:iosV, imp:impOk, gl:glOk, wasm:wasmOk,
+      three:window.__THREE_LOADED__?'ok':'loading', mod:window.__3D_BOOT_OK__?'ok':'waiting'
+    };
+    return window.__DIAG__;
+  }
+  function showDiag(){
+    var d=detectDiag();
+    var el=document.getElementById('bootDiag');
+    if(!el)return;
+    el.innerHTML='📱 设备诊断: iOS '+d.ios+' · importmap '+(d.imp?'✓':'✗(旧内核,已加载兼容补丁)')
+      +' · WebGL '+(d.gl?'✓':'✗')+' · WASM '+(d.wasm?'✓':'✗')
+      +' · three.js '+(d.three==='ok'?'✓':'…')+' · 模型引擎 '+(d.mod==='ok'?'✓':'…');
+  }
+  window.__SHOW_DIAG__=showDiag;
   function bootFail(html){   /* 启动遮罩升级为排查提示：停转圈 + 换文案 */
     var o=document.getElementById('bootOv');
     if(!o)return;
     var s=o.querySelector('.spin');if(s)s.style.display='none';
     var t=document.getElementById('bootTxt');if(t)t.innerHTML=html;
+    showDiag();
   }
   /* 同步特性检测：HTMLScriptElement.supports('importmap') 为官方标准检测方式 */
   var impOk=false;
@@ -357,8 +383,13 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   /* 本脚本位于 bootOv 元素之前：DOM 操作必须等解析完成（DOMContentLoaded）后再执行 */
   function runBootCheck(){
     if(!impOk){
-      bootFail('当前浏览器内核过旧，不支持 3D 所需的 ES 模块特性。<br>请改用 <b>系统浏览器</b> 或最新版 <b>Chrome / Safari / Edge</b> 打开本页<br><span class="sub">（微信/QQ 内置浏览器常见：可点右上角"…"选择"在浏览器打开"）</span>');
-      return;   /* 内核不支持：无需再等网络看门狗 */
+      /* 已内置 es-module-shims 兼容补丁：旧内核理论上可继续，但仍提示用户升级以获得最佳体验 */
+      bootFail('当前浏览器内核较旧（不支持原生 importmap），已自动加载兼容补丁。<br>若仍无法显示 3D，请升级 <b>iOS 到 16.4 以上</b> 或使用 <b>最新版 Chrome / Safari / Edge</b><br><span class="sub">（微信/QQ 内置浏览器常见：可点右上角"…"选择"在浏览器打开"）</span>');
+      setTimeout(function(){
+        if(window.__3D_BOOT_OK__)return;
+        bootFail('3D 引擎启动超时（网络较慢或中断）。<br>请检查网络后<b>刷新重试</b>，首次访问需下载约 1~5MB。<br><span class="sub">（若为本地双击打开的 file:// 页面，请改用 _本地工具 目录下的"启动教学页面.bat"）</span>');
+      },BOOT_WATCHDOG_MS);
+      return;
     }
     /* 内核支持但迟迟未启动：网络过慢/中断（或本地 file:// 双击打开） */
     setTimeout(function(){
@@ -366,7 +397,7 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
       bootFail('3D 引擎启动超时（网络较慢或中断）。<br>请检查网络后<b>刷新重试</b>，首次访问需下载约 1~5MB。<br><span class="sub">（若为本地双击打开的 file:// 页面，请改用 _本地工具 目录下的"启动教学页面.bat"）</span>');
     },BOOT_WATCHDOG_MS);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',runBootCheck);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){runBootCheck();showDiag();});
   else runBootCheck();
 })();
 </script>
@@ -390,7 +421,7 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
     <div class="sbd">机型：<b id="stageM">宇树 H1</b> · <span id="stageP">整机系统</span></div>
     <canvas id="webgl"></canvas>
     <!-- 3D 启动遮罩：进页面立即显示（纯CSS无JS依赖），模块脚本启动后自动隐藏；手机慢网/老内核不再白屏无提示 -->
-    <div id="bootOv"><div class="spin"></div><div id="bootTxt">正在加载 3D 引擎与模型…<br><span class="sub">首次访问需下载约 1~5MB，请稍候</span></div></div>
+    <div id="bootOv"><div class="spin"></div><div id="bootTxt">正在加载 3D 引擎与模型…<br><span class="sub">首次访问需下载约 1~5MB，请稍候</span></div><div id="bootDiag" style="font-size:11px;color:var(--faint);text-align:center;padding:0 30px;line-height:1.8"></div></div>
     <div class="view-label" id="webglLbl">拖拽旋转 · 滚轮缩放 · 点击部件查看详情</div>
     <div class="ldtip" id="ldtip">正在初始化 3D 引擎…</div>
     <div class="load-box show" id="loadBox">

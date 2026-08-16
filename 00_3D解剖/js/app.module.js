@@ -158,7 +158,7 @@ curEnv=restoreEnvPreset();           /* 启动时恢复上次选择的环境预�
 function loadDeps(cb){
   if(THREE){cb(true);return;}
   /* 依次加载 three 核心 → 轨道控制器 → STL 加载器（加载官方 URDF 网格用）→ 环境贴图生成器（修复金属材质发黑）→ Draco 加载器（优先加载 .drc 超压缩模型） */
-  import('three').then(function(M){THREE=M;return import('three/addons/controls/OrbitControls.js');})
+  import('three').then(function(M){THREE=M;window.__THREE_LOADED__=true;window.__SHOW_DIAG__&&window.__SHOW_DIAG__();return import('three/addons/controls/OrbitControls.js');})
     .then(function(O){OrbitControls=O.OrbitControls;return import('three/addons/loaders/STLLoader.js');})
     .then(function(S){STLLoader=S.STLLoader;return import('three/addons/environments/RoomEnvironment.js');})
     .then(function(R){RoomEnv=R.RoomEnvironment;return import('three/addons/loaders/DRACOLoader.js');})
