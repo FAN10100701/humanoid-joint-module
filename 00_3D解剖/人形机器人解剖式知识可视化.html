@@ -192,6 +192,14 @@ body[data-theme="dark"] .status{background:rgba(13,18,30,.8);border-color:var(--
 .ham:hover{color:var(--ink);background:#fff;box-shadow:var(--sh1)}
 
 /* ===== 移动端抽屉 + 底部 Tab ===== */
+/* 抽屉分组小标题 */
+.drw-h{width:100%;font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.5px;margin:8px 4px 0;text-transform:uppercase}
+/* 底部栏分组标签(桌面) */
+.bb-grp{font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.6px;margin:0 2px}
+/* 拆解模式下整机按钮置灰提示(不可点,避免"点了没反应") */
+.bottom-bar.td-on .bb-btn:not(.td-only),.bottom-bar.td-on .bb-switch:not(.td-only),.bottom-bar.td-on .bb-sel:not(.td-only):not(#bbSceneSel){opacity:.32;pointer-events:none}
+/* 桌面端 exbar 的"自动拆解/旋转"与底部栏重复,隐藏按钮只留滑杆(移动端保留) */
+@media(min-width:861px){.exbar .exbtn{display:none}}
 .navbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90;opacity:0;pointer-events:none;transition:opacity .25s}
 .drw{position:fixed;left:0;right:0;bottom:56px;z-index:96;background:var(--bg3);border-top:1px solid var(--rule);transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.8,.3,1);padding:14px;display:none;flex-wrap:wrap;gap:8px;box-shadow:var(--sh2)}
 .drw .vb,.drw .hb{font-size:13px;padding:10px 14px}
@@ -471,20 +479,40 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   <aside class="det" id="det"><div class="din" id="dIn"></div>  </aside>
 <div class="rz rz-det" id="rzDet" title="拖动调整详情栏宽度"></div>
 </div>
-<!-- ===== 底部功能栏（桌面端，玻璃拟态悬浮） ===== -->
+<!-- ===== 底部功能栏（桌面端，按教学任务分组：机型 → 视角 → 教学演示 → 显示 → 拆解教学） ===== -->
 <div class="bottom-bar" id="bottomBar">
-  <button class="bb-btn" id="bbReset" title="重置视角">🔄 重置视角</button>
-  <button class="bb-btn" id="bbWire" title="线框模式">🔲 线框</button>
-  <button class="bb-btn" id="bbAnim" title="关节动画">▶ 关节动画</button>
-  <button class="bb-btn" id="bbAutoRot" title="自动旋转">🔄 自动旋转</button>
+  <span class="bb-grp">机型</span>
+  <div class="bb-switch" id="bbModelSwitch">
+    <button class="bb-opt" data-m="x1">智元 X1</button>
+    <button class="bb-opt on" data-m="h1">宇树 H1</button>
+    <button class="bb-opt" data-m="g1">宇树 G1</button>
+  </div>
   <div class="bb-sep"></div>
-  <!-- 拆解 4 按钮(.td-only)：仅拆解场景显示（JS 切 bottomBar 的 td-on 类），整机模式自动收起防拥挤 -->
-  <button class="bb-btn td-only" id="bbExplode" title="爆炸拆解 / 恢复装配">💥 爆炸拆解</button>
-  <button class="bb-btn td-only" id="bbLabels" title="显示 / 隐藏零件名称标签">🏷️ 零件标签</button>
-  <button class="bb-btn td-only" id="bbDemo" title="自动循环播放拆解 / 装配动画">▶️ 自动演示</button>
-  <button class="bb-btn td-only" id="bbSeq" title="按真实维修顺序逐个零件依次拆出再依次装回（拆解顺序动画）">🎬 顺序拆解</button>
-  <div class="bb-sep td-only"></div>
-  <select class="bb-sel" id="bbSceneSel" title="切换演示场景（关节模组 / 三种减速器拆解）">
+  <span class="bb-grp">视角</span>
+  <button class="bb-btn" id="bbReset" title="重置视角（回到整机适配视角）">🎯 复位视角</button>
+  <button class="bb-btn" id="bbAutoRot" title="自动旋转（360° 观察整机）">🔄 自动旋转</button>
+  <div class="bb-sep"></div>
+  <span class="bb-grp">教学演示</span>
+  <button class="bb-btn" id="bbAnim" title="关节动画（拟人步态演示，展示各关节协同运动）">🚶 关节动画</button>
+  <button class="bb-btn" id="bbCompare" title="三机同屏对比（左 H1 / 中 G1 / 右 X1，按真实身高比例脚踩同一地面，关节动画与姿态同步）">🆚 三机对比</button>
+  <div class="bb-sep"></div>
+  <span class="bb-grp">显示</span>
+  <button class="bb-btn" id="bbWire" title="线框模式（观察内部结构轮廓）">🔲 线框</button>
+  <button class="bb-btn" id="bbFine" title="模型精细度：流畅(默认,压缩模型加载快) ↔ 精细(原始 STL 全精度,数据量大)">✨ 精细度</button>
+  <select class="bb-sel" id="bbColorSel" title="切换机身配色方案（原配色 / 银白 / 纯白 / 金属色 / 半透明）">
+    <option value="dark">🎨 原配色</option>
+    <option value="silver">🎨 银白</option>
+    <option value="white">🎨 纯白</option>
+    <option value="metal">🎨 金属色</option>
+    <option value="ghost">🎨 半透明</option>
+  </select>
+  <select class="bb-sel" id="bbEnvSel" title="切换环境背景（程序化生成，不增加加载时间）">
+    <option value="none">🖼 无环境</option>
+    <option value="sky">🖼 晴天自然光</option>
+    <option value="sunset">🖼 黄昏暖光</option>
+    <option value="studio">🖼 展厅</option>
+  </select>
+  <select class="bb-sel" id="bbSceneSel" title="切换演示场景（整机模型 / 关节模组 / 三种减速器拆解）">
     <option value="">整机模型</option>
     <option value="td_joint">关节模组拆解</option>
     <option value="td_powerflow">PowerFlow关节拆解(智元X1)</option>
@@ -492,26 +520,12 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
     <option value="td_planetary">行星减速器拆解</option>
     <option value="td_cycloidal">摆线RV减速器拆解</option>
   </select>
-  <div class="bb-switch" id="bbModelSwitch">
-    <button class="bb-opt" data-m="x1">智元 X1</button>
-  <button class="bb-opt on" data-m="h1">宇树 H1</button>
-    <button class="bb-opt" data-m="g1">宇树 G1</button>
-  </div>
-  <button class="bb-btn" id="bbCompare" title="三机同屏对比（左 H1 / 中 G1 / 右 X1，按真实身高比例脚踩同一地面，关节动画与姿态同步）">🆚 三机同屏</button>
-  <button class="bb-btn" id="bbFine" title="模型精细度：流畅(默认,压缩模型加载快) ↔ 精细(加载原始 STL 全精度,数据量大,首次较慢)">✨ 流畅/精细</button>
-  <select class="bb-sel" id="bbColorSel" title="切换机身配色方案（原配色 / 银白 / 纯白 / 金属色 / 半透明）">
-<option value="dark">🎨 机身配色：原配色</option>
-<option value="silver">🎨 机身配色：银白</option>
-<option value="white">🎨 机身配色：纯白</option>
-<option value="metal">🎨 机身配色：金属色</option>
-<option value="ghost">🎨 机身配色：半透明</option>
-  </select>
-  <select class="bb-sel" id="bbEnvSel" title="切换环境背景（默认无环境；晴天/黄昏/展厅均为程序化生成，不增加加载时间）">
-    <option value="none">🖼 环境：无(默认)</option>
-    <option value="sky">🖼 环境：晴天自然光</option>
-    <option value="sunset">🖼 环境：黄昏暖光</option>
-    <option value="studio">🖼 环境：展厅</option>
-  </select>
+  <div class="bb-sep td-only"></div>
+  <span class="bb-grp td-only">拆解教学</span>
+  <button class="bb-btn td-only" id="bbExplode" title="爆炸拆解 / 恢复装配">💥 爆炸拆解</button>
+  <button class="bb-btn td-only" id="bbDemo" title="自动循环播放拆解 / 装配动画">▶️ 自动演示</button>
+  <button class="bb-btn td-only" id="bbSeq" title="按真实维修顺序逐个零件依次拆出再依次装回">🎬 顺序拆解</button>
+  <button class="bb-btn td-only" id="bbLabels" title="显示 / 隐藏零件名称标签">🏷️ 零件标签</button>
   <div class="bb-sep"></div>
   <div class="bb-perf" id="bbPerf" title="实时帧率与零件数量">📊 -- FPS · -- 件</div>
 </div>
@@ -522,24 +536,29 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   <button class="vb" data-m="g1">宇树 G1</button>
 </div>
 <div class="drw view" id="drwView">
-  <button class="vb" id="btnWire2">线框模式</button>
-  <button class="vb" id="btnAnim2">关节演示</button>
+  <div class="drw-h">视角</div>
+  <button class="hb" id="zIn2">+</button>
+  <button class="hb" id="zOut2">−</button>
+  <button class="hb" id="zFit2">⤢</button>
   <button class="vb" id="btnAutoRot2">自动旋转</button>
+  <div class="drw-h">教学演示</div>
+  <button class="vb" id="btnAnim2">关节演示</button>
   <button class="vb" id="btnPoseReset">站立复位</button>
   <button class="vb" id="btnPoseWave">举手礼</button>
   <button class="vb" id="btnPoseT">大字站立</button>
   <button class="vb" id="btnPoseSquat">半蹲姿态</button>
-  <button class="hb" id="zIn2">+</button>
-  <button class="hb" id="zOut2">−</button>
-  <button class="hb" id="zFit2">⤢</button>
+  <div class="drw-h">显示</div>
+  <button class="vb" id="btnWire2">线框模式</button>
+  <button class="vb" id="btnCompare2">三机同屏对比</button>
+  <button class="vb" id="btnFine2">流畅/精细模型</button>
   <!-- 移动端拆解场景控制（桌面端这些功能在底部栏，移动端底部栏被底部标签栏取代） -->
+  <div class="drw-h">拆解教学</div>
   <button class="vb" id="btnBackWhole2">返回整机</button>
   <button class="vb" id="btnExplode2">爆炸拆解</button>
   <button class="vb" id="btnDemo2">自动演示</button>
   <button class="vb" id="btnSeq2">顺序拆解</button>
   <button class="vb" id="btnLabels2">零件标签</button>
-  <button class="vb" id="btnCompare2">三机同屏对比</button>
-  <button class="vb" id="btnFine2">流畅/精细模型</button>
+  <div class="drw-h">场景与外观</div>
   <select class="vb" id="sceneSel2">
     <option value="">场景：整机模型</option>
     <option value="td_joint">场景：关节模组拆解</option>
@@ -1223,16 +1242,7 @@ function init(){
   document.querySelectorAll('.bb-opt').forEach(function(b){
     b.addEventListener('click',function(){switchModel(b.dataset.m);});
   });
-  // 移动端抽屉按钮绑定
-  var bw2=document.getElementById('btnWire2');if(bw2)bw2.addEventListener('click',toggleWire);
-  var ba2=document.getElementById('btnAnim2');if(ba2)ba2.addEventListener('click',toggleJointAnim);
-  var bar2=document.getElementById('btnAutoRot2');if(bar2)bar2.addEventListener('click',toggleAutoRotate);
-  var bpr=document.getElementById('btnPoseReset');if(bpr)bpr.addEventListener('click',function(){if(window.Robot3D)window.Robot3D.resetJoints();});
-  var bpw=document.getElementById('btnPoseWave');if(bpw)bpw.addEventListener('click',function(){if(window.Robot3D)window.Robot3D.poseWaveHand();});
-  var bpt=document.getElementById('btnPoseT');if(bpt)bpt.addEventListener('click',function(){if(window.Robot3D)window.Robot3D.poseTpose();});
-  var bps=document.getElementById('btnPoseSquat');if(bps)bps.addEventListener('click',function(){if(window.Robot3D)window.Robot3D.poseSquat();});
-  var zi2=document.getElementById('zIn2');if(zi2)zi2.addEventListener('click',function(){zoomCamera(0.83);});
-  var zo2=document.getElementById('zOut2');if(zo2)zo2.addEventListener('click',function(){zoomCamera(1.2);});
+  // 移动端抽屉按钮绑定（姿态/缩放按钮与下方 bind() 统一绑定区重复，这里只保留 zFit2 唯一绑定）
   var zf2=document.getElementById('zFit2');if(zf2)zf2.addEventListener('click',resetView);
   // 移动端拆解场景控制（对应桌面端底部栏按钮）：返回整机/爆炸/自动演示/顺序拆解/标签/场景切换
   var bwh2=document.getElementById('btnBackWhole2');if(bwh2)bwh2.addEventListener('click',function(){selectPart('whole');});

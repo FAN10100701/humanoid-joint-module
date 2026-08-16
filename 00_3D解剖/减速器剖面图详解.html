@@ -16,8 +16,12 @@ a.back:hover{background:#2563eb;color:#fff}
 .card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.06);padding:26px;margin-bottom:24px}
 .card h2{font-size:19px;font-weight:800;margin-bottom:4px;color:#0f172a}
 .card .sub{font-size:12px;color:#8a94a4;margin-bottom:16px;letter-spacing:.5px}
-.svgbox{display:flex;justify-content:center;padding:6px 0 2px}
+.svgbox{display:flex;justify-content:center;padding:6px 0 2px;position:relative}
 .svgbox svg{max-width:100%;height:auto}
+.animbtn{position:absolute;top:6px;right:6px;border:1px solid #2563eb;background:#fff;color:#2563eb;font-size:12.5px;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(37,99,235,.15);transition:.15s;z-index:2}
+.animbtn:hover{background:#2563eb;color:#fff}
+.animbtn.on{background:#2563eb;color:#fff}
+.anim-tip{font-size:11.5px;color:#8a94a4;text-align:center;margin-top:6px}
 .legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
 .lg{font-size:12px;color:#475569;display:flex;align-items:center;gap:6px;background:#f1f5f9;border:1px solid #e2e8f0;padding:4px 10px;border-radius:8px}
 .lg i{width:12px;height:12px;border-radius:3px;display:inline-block}
@@ -282,5 +286,167 @@ window.PAGE = { pageId:"00-02", root:"..",
   next:{t:"减速器精细模型下载教程", u:"减速器精细模型下载整合教程.html"} };
 </script>
 <script src="../_assets/site.js"></script>
+<script>
+/* ============ 剖面图传动动画:不改 SVG 静态标记,仅运行时挂 transform + 叠加运动标记 ============
+   谐波:波发生器+柔轮变形椭圆随输入转,啮合点跟踪长轴两端,绿色刻度=柔轮输出(1/100 反向)
+   行星:太阳轮自转,行星轮绕中心公转+自转(世界系 -0.5ω),行星架 1/4 同向输出(i=4)
+   摆线:偏心轴公转+自转,摆线盘偏心"公摆"+反向慢自转(齿差1,i=15),绿销=输出法兰(仅匀速转) */
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  var CX = 210, CY = 150;
+  var svg = document.querySelectorAll(".svgbox svg");
+  if (svg.length < 3) return;
+
+  function mk(tag, attrs, parent) {
+    var el = document.createElementNS(NS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    parent.appendChild(el);
+    return el;
+  }
+  function save(el) { return { el: el, tf: el.getAttribute("transform") }; }
+  function restore(s) { if (s.tf === null) s.el.removeAttribute("transform"); else s.el.setAttribute("transform", s.tf); }
+
+  /* ---------- ① 谐波 ---------- */
+  var hSvg = svg[0];
+  var hC = hSvg.querySelectorAll("circle"), hE = hSvg.querySelectorAll("ellipse");
+  var hG = hSvg.querySelectorAll("g");
+  var hMeshLine = hG[2].querySelector("line");
+  var hSaved = [hE[0], hE[1], hE[2], hE[3], hC[2], hC[3], hC[4], hMeshLine].map(save);
+  var hDotOri = [{ cx: hC[3].getAttribute("cx"), cy: hC[3].getAttribute("cy") },
+                 { cx: hC[4].getAttribute("cx"), cy: hC[4].getAttribute("cy") }];
+  var hLineOri = { x1: hMeshLine.getAttribute("x1"), y1: hMeshLine.getAttribute("y1") };
+  var hSpoke = mk("line", { x1: CX, y1: CY, x2: 272, y2: CY, stroke: "#0f172a", "stroke-width": 3, "stroke-linecap": "round", display: "none" }, hSvg); /* 波发生器转幅 */
+  var hOut = mk("circle", { cx: 290, cy: CY, r: 5, fill: "#16a34a", display: "none" }, hSvg); /* 柔轮输出刻度(反向 1/100) */
+
+  function harmonic(th) {
+    var a = "rotate(" + th + " " + CX + " " + CY + ")";
+    hE[2].setAttribute("transform", a); hE[3].setAttribute("transform", a);   /* 波发生器(输入) */
+    hC[2].setAttribute("transform", a);
+    hE[0].setAttribute("transform", a); hE[1].setAttribute("transform", a);   /* 柔轮椭圆(变形随输入) */
+    var rad = th * Math.PI / 180;                                            /* 啮合点跟踪长轴两端 */
+    var r0 = 80, dx = Math.cos(rad) * r0, dy = Math.sin(rad) * r0;
+    hC[3].setAttribute("cx", CX + dx); hC[3].setAttribute("cy", CY + dy);
+    hC[4].setAttribute("cx", CX - dx); hC[4].setAttribute("cy", CY - dy);
+    hMeshLine.setAttribute("x1", CX + dx); hMeshLine.setAttribute("y1", CY + dy);
+    hSpoke.setAttribute("transform", a);
+    hOut.setAttribute("transform", "rotate(" + (-th / 100) + " " + CX + " " + CY + ")");
+  }
+
+  /* ---------- ② 行星 ---------- */
+  var pSvg = svg[1];
+  var pC = pSvg.querySelectorAll("circle");
+  var pG = pSvg.querySelectorAll("g");
+  var pCarrier = pG[2];
+  var pPos = [[210, 66], [150, 185], [270, 185]];
+  var pSaved = [pC[1], pC[2], pC[3], pC[4], pCarrier].map(save);
+  var pSpokes = [];
+  mk("line", { x1: CX, y1: CY, x2: CX, y2: CY - 30, stroke: "#0f172a", "stroke-width": 3, "stroke-linecap": "round", display: "none", "data-k": "sun" }, pSvg);
+  pSpokes.push(pSvg.querySelector('[data-k="sun"]'));
+  pPos.forEach(function (p) {
+    pSpokes.push(mk("line", { x1: p[0], y1: p[1], x2: p[0], y2: p[1] - 22, stroke: "#7c5a12", "stroke-width": 2.5, "stroke-linecap": "round", display: "none" }, pSvg));
+  });
+
+  function planetary(th) {
+    var sun = th, carrier = th / 4, spin = -th * 0.5;   /* i=4;行星轮世界系自转=-0.5ω */
+    pC[4].setAttribute("transform", "rotate(" + sun + " " + CX + " " + CY + ")");
+    pCarrier.setAttribute("transform", "rotate(" + carrier + " " + CX + " " + CY + ")");
+    pSpokes[0].setAttribute("transform", "rotate(" + sun + " " + CX + " " + CY + ")");
+    for (var i = 0; i < 3; i++) {
+      var t = "rotate(" + carrier + " " + CX + " " + CY + ") rotate(" + spin + " " + pPos[i][0] + " " + pPos[i][1] + ")";
+      pC[i + 1].setAttribute("transform", t);
+      pSpokes[i + 1].setAttribute("transform", t);
+    }
+  }
+
+  /* ---------- ③ 摆线 ---------- */
+  var cSvg = svg[2];
+  var cC = cSvg.querySelectorAll("circle");
+  var cDisc = cSvg.querySelector("path");
+  var cHolesG = cSvg.querySelectorAll("g")[1];
+  var cSaved = [cDisc, cC[17], cHolesG, cC[18], cC[19]].map(save);
+  var cSpin = mk("line", { x1: 196, y1: 142, x2: 196, y2: 136, stroke: "#0f172a", "stroke-width": 3, "stroke-linecap": "round", display: "none" }, cSvg); /* 偏心轴自转标记 */
+  var cPins = [[210, 98], [165, 195], [255, 195]].map(function (p) {
+    return mk("circle", { cx: p[0], cy: p[1], r: 3.5, fill: "#16a34a", display: "none" }, cSvg); /* 输出法兰销:不摆只匀速转 */
+  });
+
+  function cycloidal(th) {
+    var beta = -th / 15, e = 7;   /* 齿差1 → i=15(针16根),偏心距示意放大 */
+    var rad = th * Math.PI / 180;
+    var discTf = "translate(" + (Math.cos(rad) * e) + " " + (Math.sin(rad) * e) + ") rotate(" + beta + " " + CX + " " + CY + ")";
+    cDisc.setAttribute("transform", discTf);
+    cC[17].setAttribute("transform", discTf);
+    cHolesG.setAttribute("transform", discTf);
+    var orbit = "rotate(" + th + " " + CX + " " + CY + ")";
+    cC[18].setAttribute("transform", orbit); cC[19].setAttribute("transform", orbit);
+    cSpin.setAttribute("transform", orbit + " rotate(" + th + " 196 150)");
+    cPins.forEach(function (p) { p.setAttribute("transform", "rotate(" + beta + " " + CX + " " + CY + ")"); });
+  }
+
+  /* ---------- 播放控制(每图独立开关,暂停时还原静态标注) ---------- */
+  var stages = [
+    { svg: hSvg, t: 0, on: false, fn: harmonic, overlays: [hSpoke, hOut],
+      stop: function () {
+        hSaved.forEach(restore);
+        hC[3].setAttribute("cx", hDotOri[0].cx); hC[3].setAttribute("cy", hDotOri[0].cy);
+        hC[4].setAttribute("cx", hDotOri[1].cx); hC[4].setAttribute("cy", hDotOri[1].cy);
+        hMeshLine.setAttribute("x1", hLineOri.x1); hMeshLine.setAttribute("y1", hLineOri.y1);
+      } },
+    { svg: pSvg, t: 0, on: false, fn: planetary, overlays: pSpokes,
+      stop: function () { pSaved.forEach(restore); } },
+    { svg: cSvg, t: 0, on: false, fn: cycloidal, overlays: [cSpin].concat(cPins),
+      stop: function () { cSaved.forEach(restore); } }
+  ];
+  var tips = ["波发生器旋转 → 柔轮变形椭圆跟随,啮合点沿长轴两端公转;绿点=柔轮输出(反向 1/100)",
+              "太阳轮高速自转 → 行星轮一边自转一边公转,行星架以 1/4 转速同向输出(i=4)",
+              "偏心轴公转带动摆线盘'公摆'并反向慢转(齿差1);绿销=输出法兰,只做匀速转动"];
+  var W_IN = 40;              /* 输入角速度(°/s) */
+  var last = null, raf = 0;
+
+  function loop(now) {
+    var dt = last === null ? 0 : Math.min((now - last) / 1000, 0.05);
+    last = now;
+    var any = false;
+    stages.forEach(function (s) {
+      if (!s.on) return;
+      any = true;
+      s.t += dt * W_IN;
+      s.fn(s.t);
+    });
+    if (any) raf = requestAnimationFrame(loop);
+    else { raf = 0; last = null; }
+  }
+
+  stages.forEach(function (s, i) {
+    var box = s.svg.parentNode;
+    var btn = document.createElement("button");
+    btn.className = "animbtn";
+    btn.type = "button";
+    btn.textContent = "▶ 播放传动动画";
+    btn.addEventListener("click", function () {
+      s.on = !s.on;
+      btn.classList.toggle("on", s.on);
+      btn.textContent = s.on ? "⏸ 暂停(还原静态图)" : "▶ 播放传动动画";
+      var tip = box.parentNode.querySelector(".anim-tip[data-i='" + i + "']");
+      if (!tip) {
+        tip = document.createElement("div");
+        tip.className = "anim-tip";
+        tip.setAttribute("data-i", i);
+        box.parentNode.insertBefore(tip, box.nextSibling);
+      }
+      if (s.on) {
+        s.overlays.forEach(function (o) { o.removeAttribute("display"); });
+        tip.textContent = "🎬 " + tips[i];
+        if (!raf) { last = null; raf = requestAnimationFrame(loop); }
+      } else {
+        s.overlays.forEach(function (o) { o.setAttribute("display", "none"); });
+        s.stop();
+        tip.textContent = "";
+      }
+    });
+    box.appendChild(btn);
+  });
+})();
+</script>
 </body>
 </html>

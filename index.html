@@ -6,7 +6,7 @@
 <title>人形机器人学习站 · 从关节模组到具身智能</title>
 <meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具,软件+硬件全覆盖。">
 <meta property="og:title" content="人形机器人学习站 · 从关节模组到具身智能">
-<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,35 个学习页面,零基础可学。">
+<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,52 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <link rel="manifest" href="manifest.json">
@@ -100,8 +100,8 @@
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
     零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</div>
     <div class="stats">
-      <div class="stat"><div class="v" id="statPages">35</div><div class="k">学习页面</div></div>
-      <div class="stat"><div class="v" id="statTracked">32</div><div class="k">可打卡页面</div></div>
+      <div class="stat"><div class="v" id="statPages">51</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v" id="statTracked">50</div><div class="k">可打卡页面</div></div>
       <div class="stat"><div class="v">8</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
       <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
@@ -560,7 +560,7 @@
           <input type="checkbox" id="autoSaveBox" checked onchange="Site.setAutoSave(this.checked)" style="width:auto">退出页面时自动保存进度
         </label>
       </div>
-      <div class="box box-tip" style="margin:14px 0 0"><b>💡 关于进度与登录:</b>进度保存在<b>当前浏览器本地</b>(不上传、无账号)。换设备/换手机时:①在本机点"💾 保存进度到本地文件"(或开启自动保存,退出页面时自动下载 .json)→ ②在新设备点"📂 从本地文件导入进度"即可延续。<b>真正的多设备云端同步需要登录系统与服务器</b>(静态托管无后端);QQ/微信登录 + 云同步方案与费用见本站 CHANGELOG 与维护文档,需要时我可按你确认的方案接入。<br>注:3D 主页面与"05 HdriveV2 工程(规划中)"暂不参与打卡统计。</div>
+      <div class="box box-tip" style="margin:14px 0 0"><b>💡 关于进度与登录:</b>进度保存在<b>当前浏览器本地</b>(不上传、无账号)。换设备/换手机时:①在本机点"💾 保存进度到本地文件"(或开启自动保存,退出页面时自动下载 .json)→ ②在新设备点"📂 从本地文件导入进度"即可延续。<b>真正的多设备云端同步需要登录系统与服务器</b>(静态托管无后端,本站暂不提供;如有需要欢迎到项目仓库提 issue 讨论)。<br>注:3D 主页面与"05 HdriveV2 工程(规划中)"暂不参与打卡统计。</div>
     </div>
   </div>
 
@@ -576,10 +576,14 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.6.1</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · iOS 3D 白屏修复 + 收录升级 + 面试 v2</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.6.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 摆线动画场景 + 运动学交互实验 + 剖面图动画化</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.6.2 · 2026-08-17 · 摆线动画场景 + 运动学交互实验 + 剖面图动画化</summary>
+        <div class="faq-a">🌀 <b>动画页补齐摆线减速器场景</b>(第 6 个页签,对齐 3D 解剖页五场景体系:偏心套高速输入 → 摆线轮"公摆"+反向慢自转 → 销孔带动法兰同轴输出,i=齿数 20,附原理说明面板);🧭 <b>运动学页新增 5.4 交互实验</b>:2 连杆 FK/IK 演练场——IK 模式拖目标点实时解析反解、肘上/肘下双解同屏、可达域环形显示、目标超臂展演示"无解"、det(J) 实时显示与奇异位形警告;FK 模式拖关节滑杆看末端落点;连杆长度 L1/L2 可调(新增配套数值校验脚本,9 项断言全过);🎬 <b>减速器剖面图详解页动画化</b>:三张剖面图各配"播放传动动画"开关——谐波啮合点跟踪长轴两端、行星轮公转+自转+行星架 1/4 同向输出、摆线盘公摆+输出法兰匀速销,暂停自动还原静态标注图;🧹 <b>一致性修复</b>:og:description 35→52 页、首页统计兜底 51/50、README 数字同步(19 机型/134 术语/40 题/08 目录补全/05 目录如实标注规划中)、清理 models 空目录与孤儿 mermaid.min.js;根 sw 缓存升级 v1.6.2。</div>
+      </details>
+      <details class="faq">
         <summary>V1.6.1 · 2026-08-16 · iOS 3D 白屏修复 + 收录升级 + 面试 v2</summary>
         <div class="faq-a">🔧 <b>iOS 3D 白屏修复</b>(经手机实测诊断定位):three.js 动态 import 在 iOS 失败且错误信息为空,导致原 CDN 回退机制失效;现改为<b>静态 importmap + error/unhandledrejection 双通道回退 + 加载器主动回退</b>,诊断浮标升级为区分脚本/资源错误;🆕 <b>3D 精细度切换</b>(底部栏「流畅/精细」,默认三级压缩,可切原始 STL);🔍 <b>收录升级</b>:全站自动注入 JSON-LD(面包屑 + FAQ 富摘要)、页脚访问统计、3D 页 meta 补齐、附《搜索引擎收录指南》;🆕 <b>新增 2 页</b>:具身智能数据集与评测专题、ros2_control 实战深挖;<b>面试专题 v2</b>:610→1137 行,新增 HR 面 10 题 / 英文面试 15 题 / 手撕手推 10 题 / 公司专项 8 家;全站 <b>52 个可索引页面</b>。</div>
       </details>
@@ -639,7 +643,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.6.1(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.6.2(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
