@@ -26,6 +26,23 @@ a.back:hover{background:#2563eb;color:#fff}
 .foot{text-align:center;color:#8a94a4;font-size:12px;margin-top:8px}
 </style>
 <link rel="stylesheet" href="../_assets/chrome.css">
+<style>
+/* 本节自测:本页是浅色独立老页面,chrome.css 提供的是深色自测样式;
+   这里补一套与页面浅色风格一致的基础样式,类名与 site.js 判分(.correct/.wrong/.ok/.no/.show)保持一致 */
+.quiz{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;margin:14px 0}
+.quiz-q{font-size:14.5px;color:#0f172a;font-weight:600;margin-bottom:12px}
+.quiz-options{display:flex;flex-direction:column;gap:8px}
+.quiz-options button{text-align:left;background:#fff;border:1px solid #e2e8f0;color:#334155;font-size:13.5px;padding:9px 14px;border-radius:9px;cursor:pointer;font-family:inherit;transition:.15s}
+.quiz-options button:hover{border-color:#2563eb;color:#0f172a}
+.quiz-options button.correct{border-color:#22c55e;background:rgba(34,197,94,.12);color:#15803d;font-weight:700}
+.quiz-options button.wrong{border-color:#ef4444;background:rgba(239,68,68,.1);color:#b91c1c}
+.quiz-feedback{display:none;margin-top:10px;font-size:13px;font-weight:600}
+.quiz-feedback.ok{display:block;color:#15803d}
+.quiz-feedback.no{display:block;color:#b91c1c}
+.quiz-explain{display:none;margin-top:10px;padding:10px 14px;background:#fff;border-left:3px solid #2563eb;border-radius:0 8px 8px 0;font-size:13px;color:#475569;line-height:1.8}
+.quiz-explain.show{display:block}
+.quiz-explain a{color:#2563eb}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -200,6 +217,60 @@ a.back:hover{background:#2563eb;color:#fff}
       <span class="lg"><i style="background:#0f172a"></i>曲柄销（输出）</span>
     </div>
     <div class="desc">偏心轴每转一圈，<b>摆线盘</b>反向转过一个针齿角度（齿差 1 传动），减速比 = <b>针齿数</b>。摆线盘与针齿是<b>滚动接触</b>且约一半针齿同时承载，因此<b>抗冲击能力远超谐波</b>、寿命长，但体积重量更大、有偏心振动（需双盘对消）。工业机器人（KUKA/发那科）大关节多用 RV。</div>
+  </div>
+
+  <!-- 本节自测 -->
+  <div class="card">
+    <h2>四、本节自测</h2>
+    <div class="sub">SELF-CHECK · 共 4 题 · 答后显示解析</div>
+
+    <div class="quiz">
+      <div class="quiz-q">1. 谐波减速器由哪三大核心部件组成(对应"输入—变形—输出/固定"的角色)?</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 太阳轮、行星轮、内齿圈</button>
+        <button data-v="B">B. 波发生器、柔轮、刚轮</button>
+        <button data-v="C">C. 偏心轴、摆线盘、针齿圈</button>
+        <button data-v="D">D. 电机、编码器、输出法兰</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:谐波减速器的三大件是<b>波发生器</b>(椭圆凸轮+柔性轴承,输入端)、<b>柔轮</b>(薄壁弹性外齿,输出端)、<b>刚轮</b>(刚性内齿圈,固定端,齿数比柔轮多 2)。A 是行星减速器的三大件,C 是摆线 RV 的组成。<a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html">对照三类减速器 →</a></div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">2. 谐波减速器能实现"零背隙"(近乎无回程间隙),根本原因是什么?</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 靠高精度球轴承把齿侧间隙完全消除</button>
+        <button data-v="B">B. 柔轮被波发生器撑成椭圆,长轴两端与刚轮始终弹性啮合,且刚轮比柔轮多 2 齿</button>
+        <button data-v="C">C. 齿面硬碰硬锁死,不留任何间隙</button>
+        <button data-v="D">D. 靠外部抱闸把间隙压紧</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:波发生器把柔轮撑成椭圆,<b>长轴两端的柔轮齿与刚轮内齿始终处于弹性啮合状态</b>,没有传统齿轮那样的齿侧间隙,因此背隙近乎为零;同时刚轮比柔轮多 2 齿,波发生器每转一圈柔轮反向错动 2 齿——这正是本页"零背隙、扭矩密度极高"的由来。</div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">3. 行星减速器内齿圈固定时,减速比 i = 1 + Z环/Z阳。若太阳轮 20 齿、内齿圈 60 齿,减速比是多少?</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. i = 3:1</button>
+        <button data-v="B">B. i = 4:1</button>
+        <button data-v="C">C. i = 5:1</button>
+        <button data-v="D">D. i = 1:4</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:代入公式 i = 1 + Z环/Z阳 = 1 + 60/20 = 1 + 3 = <b>4:1</b>(本页行星小节原文算例)。行星减速器单级减速比小(3~10),要得到大减速比需多级串联,且多级串联会累积背隙。<a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html">齿轮传动比详解 →</a></div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">4. 关于摆线(RV)减速器与谐波/行星减速器的主要区别,下列哪项正确?</div>
+      <div class="quiz-options" data-answer="A">
+        <button data-v="A">A. RV 靠摆线盘与针齿滚动接触、约一半针齿同时承载,抗冲击与承载远超谐波,但体积重量更大</button>
+        <button data-v="B">B. RV 靠柔轮弹性变形传动,零背隙但怕冲击</button>
+        <button data-v="C">C. RV 单级减速比最小,只能做微型关节</button>
+        <button data-v="D">D. RV 与行星完全一样,只是多了一根偏心轴</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:RV(摆线针轮)由<b>偏心轴</b>驱动<b>摆线盘</b>与<b>针齿圈</b>滚动啮合(齿差 1 传动,减速比=针齿数),约一半针齿同时承载,所以抗冲击与承载能力远超谐波、寿命长;代价是体积重量更大、有偏心振动(需双盘对消)。柔轮弹性变形是谐波的特点(B 错),行星才是单级减速比小(C 错)。<a href="../08_学习工具/03_自测题库.html">去做更多自测题 →</a></div>
+    </div>
   </div>
 
   <div class="foot">注：本图为教学示意剖面，重点展示零件组成与传动关系，非等比例工程图。</div>

@@ -41,6 +41,13 @@
   <!-- ================= 得分栏 ================= -->
   <div class="qz-scorebar" id="scoreBar"><span class="qz-dot"></span>已答 0/24 · 答对 0</div>
 
+  <!-- ================= 今日复习(间隔重复 SRS) ================= -->
+  <div class="srs-wrap">
+    <h2><span class="h2-num">S</span> 今日复习 · 间隔重复 SRS</h2>
+    <p style="font-size:13px;color:#9aa4b2">基于本页 24 题题库,按"学-练-测-复习"闭环自动安排复习:答对间隔逐级拉长(30分钟→1天→2天→4天→8天→16天),答错 30 分钟后重试。进度保存在本地浏览器。</p>
+    <div id="srsPanel"></div>
+  </div>
+
   <!-- ================= 学习目标与使用说明 ================= -->
   <div class="key-point">
     <div class="kp-title">🎯 本页学习目标</div>
@@ -436,6 +443,10 @@
     updateScore();
   })();
 </script>
+
+<!-- 今日复习 SRS:题库数据 + 间隔重复引擎(必须先于 site.js 加载) -->
+<script src="../_assets/quiz-bank.js"></script>
+<script src="../_assets/srs.js"></script>
 
 <!-- 共享脚本:导航 / 面包屑 / 前后翻页 / 页脚 / 自测判分 / 搜索 / 打卡 全部自动生效 -->
 <script src="../_assets/site.js"></script>

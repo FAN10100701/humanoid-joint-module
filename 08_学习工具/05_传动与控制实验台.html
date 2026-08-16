@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 传动与控制实验台</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ============================================================
+     页面级补充样式:全部以 .lab- 前缀命名,避免与全局冲突
+     ============================================================ */
+  .lab-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0;overflow-x:auto;padding:2px;-webkit-overflow-scrolling:touch}
+  .lab-tab{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}
+  .lab-tab:hover{border-color:#3b82f6;color:#fff}
+  .lab-tab.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border-color:#3b82f6;font-weight:700;box-shadow:0 4px 14px rgba(37,99,235,.4)}
+  .lab-panel{background:rgba(22,27,34,.55);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px 20px;margin-top:14px}
+  .lab-h{font-size:17px;font-weight:800;color:#fff;margin:4px 0 8px}
+  .lab-intro{font-size:13.5px;color:#aab8c8;line-height:1.8;margin:6px 0 4px}
+  .lab-intro b{color:#9ecbff}
+  .lab-controls{display:flex;flex-wrap:wrap;gap:14px 22px;margin:14px 0;padding:14px 16px;background:rgba(13,17,23,.6);border-radius:10px;border:1px solid rgba(255,255,255,.07)}
+  .lab-controls label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:#9aa4b2;white-space:nowrap;max-width:100%}
+  .lab-controls input[type=range]{width:150px;max-width:60vw;accent-color:#3b82f6}
+  .lab-controls .lab-val{display:inline-block;min-width:62px;color:#9ecbff;font-weight:700;font-family:Consolas,monospace;font-size:12.5px}
+  .lab-btns{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  .lab-btns button{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.4);color:#9ecbff;font-size:12.5px;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:inherit}
+  .lab-btns button:hover{background:rgba(59,130,246,.3);color:#fff}
+  .lab-btns button.lab-run{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.4);color:#fbbf24}
+  .lab-btns button.lab-run:hover{background:rgba(245,158,11,.28);color:#fff}
+  .lab-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;margin:14px 0;align-items:start}
+  .lab-svg{width:100%;height:auto;display:block;background:rgba(10,15,22,.55);border:1px solid rgba(255,255,255,.08);border-radius:10px}
+  .lab-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:8px 0}
+  .lab-card{background:rgba(13,17,23,.6);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px}
+  .lab-card .lab-k{font-size:11.5px;color:#8b949e}
+  .lab-card .lab-v{font-size:17px;font-weight:800;color:#fff;font-family:Consolas,monospace;line-height:1.35}
+  .lab-bar-wrap{margin:10px 0}
+  .lab-bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}
+  .lab-bar-row .lab-bar-k{width:78px;color:#9aa4b2;flex-shrink:0}
+  .lab-bar{flex:1;height:14px;background:rgba(255,255,255,.07);border-radius:8px;overflow:hidden}
+  .lab-bar i{display:block;height:100%;width:0;border-radius:8px;transition:width .25s}
+  .lab-bar-row .lab-bar-val{width:104px;text-align:right;color:#c9d1d9;font-family:Consolas,monospace;font-size:12px;flex-shrink:0}
+  .lab-warn-text{font-size:13px;font-weight:700;margin-top:6px;line-height:1.7;min-height:1.7em}
+  .lab-canvas{width:100%;height:320px;display:block;background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-radius:10px;margin:12px 0}
+  .lab-legend{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0 4px;font-size:12.5px;color:#9aa4b2}
+  .lab-legend .lab-dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .lab-metrics{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:12.5px;color:#8b949e;margin:8px 0}
+  .lab-metrics b{color:#fbbf24;font-family:Consolas,monospace;font-size:13px}
+  .lab-note{font-size:13px;color:#aab8c8;line-height:1.9;margin-top:8px}
+  .lab-note b{color:#9ecbff}
+  @media (max-width:820px){.lab-grid{grid-template-columns:1fr}}
+
+  /* 浅色主题适配 */
+  body[data-theme="light"] .lab-tab{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.16);color:#64748b}
+  body[data-theme="light"] .lab-tab.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
+  body[data-theme="light"] .lab-panel{background:rgba(255,255,255,.6);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+  body[data-theme="light"] .lab-h{color:#0f172a}
+  body[data-theme="light"] .lab-intro{color:#4b5c74}
+  body[data-theme="light"] .lab-controls{background:rgba(255,255,255,.5);border-color:rgba(60,80,120,.12)}
+  body[data-theme="light"] .lab-controls label{color:#5a6a85}
+  body[data-theme="light"] .lab-controls .lab-val{color:#2563eb}
+  body[data-theme="light"] .lab-btns button{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
+  body[data-theme="light"] .lab-btns button.lab-run{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#b45309}
+  body[data-theme="light"] .lab-card{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.12)}
+  body[data-theme="light"] .lab-card .lab-k{color:#94a3b8}
+  body[data-theme="light"] .lab-card .lab-v{color:#0f172a}
+  body[data-theme="light"] .lab-bar{background:rgba(60,80,120,.14)}
+  body[data-theme="light"] .lab-bar-row .lab-k,body[data-theme="light"] .lab-bar-row .lab-bar-k{color:#5a6a85}
+  body[data-theme="light"] .lab-bar-row .lab-bar-val{color:#334155}
+  body[data-theme="light"] .lab-legend{color:#5a6a85}
+  body[data-theme="light"] .lab-metrics{color:#94a3b8}
+  body[data-theme="light"] .lab-note{color:#4b5c74}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-05",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "传动与控制实验台" } ],
+    prev: { t: "自测题库", u: "03_自测题库.html" },
+    next: { t: "学习地图", u: "06_学习地图.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>⚙️ 传动与控制实验台</h1>
+    <div class="sub">两个可交互实验台:拖动滑块算减速器传动参数,点阶跃看 FOC 三环示波器<br>零安装、纯本地运行,数字随参数即时刷新</div>
+    <div class="tags">
+      <span class="tag">减速器传动</span>
+      <span class="tag">功率与效率</span>
+      <span class="tag">FOC 三环</span>
+      <span class="tag">实时示波器</span>
+      <span class="tag">离线可用</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 掌握减速器传动参数关系:输出转速 = 电机转速 ÷ 减速比,输入扭矩 = 负载扭矩 ÷ (减速比 × 效率)<br>
+    2. 理解功率链条:输入功率 = 输出功率 ÷ 效率,损耗功率全部转化为发热<br>
+    3. 看清 FOC 三环「电流环(最内最快) → 速度环 → 位置环(最外最慢)」的级联响应过程<br>
+    4. 把谐波 / 行星 / RV 三类减速器的减速比区间与选型场景和参数对应起来<br>
+    <b>建议用时:</b>20~40 分钟
+  </div>
+
+  <div class="box box-tip"><b>💡 使用说明:</b>两个实验台全部在浏览器本地实时计算,<b>不联网、不上传、零安装</b>。标签页按钮与滑块在手机上可换行、可横向滚动,不会溢出。第一个实验台滑块「即拖即算」;第二个实验台点「阶跃」触发一次位置阶跃,点「运行 / 暂停」控制仿真推进,曲线按 10 秒时间窗逐帧滚动。</div>
+
+  <!-- ================= 标签页切换按钮 ================= -->
+  <div class="lab-tabs">
+    <button class="lab-tab on" id="tabBtn1" title="切换到减速器传动参数实验台">⚙️ 实验台一 · 减速器传动参数</button>
+    <button class="lab-tab" id="tabBtn2" title="切换到 FOC 三环控制示波器">📈 实验台二 · FOC 三环控制示波器</button>
+  </div>
+
+  <!-- ============================================================
+       实验台一 · 减速器传动参数实验台(默认显示)
+       ============================================================ -->
+  <div class="lab-panel" id="labPanel1">
+    <div class="lab-h">⚙️ 实验台一 · 减速器传动参数</div>
+    <p class="lab-intro">拖动四个滑块,右侧数值卡片与传动链示意图<b>即时联动</b>。减速器把「高速小扭矩」变成「低速大扭矩」,同时以效率 η 消耗一部分功率变成发热。</p>
+
+    <!-- 滑块 -->
+    <div class="lab-controls">
+      <label title="电机输入转速 0~6000 rpm">电机转速
+        <input type="range" id="gMotorSpeed" min="0" max="6000" step="50" value="3000" title="电机输入转速(0~6000 rpm)">
+        <span class="lab-val" id="gMotorSpeedV">3000 rpm</span></label>
+      <label title="减速比 1~160">减速比
+        <input type="range" id="gRatio" min="1" max="160" step="1" value="50" title="减速比(1~160)">
+        <span class="lab-val" id="gRatioV">50 : 1</span></label>
+      <label title="传动效率 50%~99%">传动效率
+        <input type="range" id="gEff" min="50" max="99" step="1" value="85" title="传动效率(50%~99%)">
+        <span class="lab-val" id="gEffV">85 %</span></label>
+      <label title="负载扭矩 0~200 N·m">负载扭矩
+        <input type="range" id="gLoad" min="0" max="200" step="1" value="50" title="负载扭矩(0~200 N·m)">
+        <span class="lab-val" id="gLoadV">50 N·m</span></label>
+    </div>
+
+    <!-- 预设按钮 -->
+    <div class="lab-btns">
+      <button id="presetHarmonic" title="谐波减速器典型参数:50:1、效率 90%">🔵 预设:谐波关节(50:1, 90%)</button>
+      <button id="presetPlanetary" title="行星准直驱典型参数:6:1、效率 96%">🟢 预设:行星准直驱(6:1, 96%)</button>
+      <button id="presetRv" title="RV 重载减速器典型参数:100:1、效率 88%">🟠 预设:RV 重载(100:1, 88%)</button>
+    </div>
+
+    <!-- 示意图 + 数值卡片 -->
+    <div class="lab-grid">
+      <div>
+        <svg class="lab-svg" viewBox="0 0 780 250" role="img" aria-label="电机-减速器-负载传动链示意">
+          <!-- 连接线 + 箭头 -->
+          <line x1="205" y1="115" x2="290" y2="115" stroke="#3b82f6" stroke-width="3"></line>
+          <polygon points="296,110 296,120 307,115" fill="#3b82f6"></polygon>
+          <line x1="460" y1="115" x2="548" y2="115" stroke="#3b82f6" stroke-width="3"></line>
+          <polygon points="554,110 554,120 565,115" fill="#3b82f6"></polygon>
+          <!-- 电机 -->
+          <rect x="35" y="70" width="170" height="92" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="2"></rect>
+          <text x="120" y="94" text-anchor="middle" fill="#fca5a5" font-size="14" font-weight="bold">⚙️ 电机(输入)</text>
+          <text id="svgMotorRpm" x="120" y="118" text-anchor="middle" fill="#e6edf3" font-size="12">转速 n₁ = 3000 rpm</text>
+          <text id="svgTorqueIn" x="120" y="138" text-anchor="middle" fill="#fbbf24" font-size="12">扭矩 τ₁ = 1.18 N·m</text>
+          <!-- 减速器 -->
+          <rect x="300" y="70" width="160" height="92" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="2"></rect>
+          <text x="380" y="94" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="bold">🪐 减速器</text>
+          <text id="svgRatio" x="380" y="118" text-anchor="middle" fill="#e6edf3" font-size="12">减速比 i = 50 : 1</text>
+          <text id="svgEff" x="380" y="138" text-anchor="middle" fill="#9ecbff" font-size="12">效率 η = 85 %</text>
+          <!-- 负载 -->
+          <rect x="560" y="70" width="185" height="92" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2"></rect>
+          <text x="652" y="94" text-anchor="middle" fill="#86efac" font-size="14" font-weight="bold">🏋️ 负载(输出)</text>
+          <text id="svgOutRpm" x="652" y="118" text-anchor="middle" fill="#e6edf3" font-size="12">转速 n₂ = 60 rpm</text>
+          <text id="svgTorqueLoad" x="652" y="138" text-anchor="middle" fill="#86efac" font-size="12">扭矩 τ₂ = 50 N·m</text>
+          <!-- 标注 -->
+          <text x="120" y="184" text-anchor="middle" fill="#6b7280" font-size="11">高速 · 低扭矩</text>
+          <text x="380" y="184" text-anchor="middle" fill="#6b7280" font-size="11">减速 i 倍 · 扭矩放大</text>
+          <text x="652" y="184" text-anchor="middle" fill="#6b7280" font-size="11">低速 · 高扭矩</text>
+          <text x="390" y="60" text-anchor="middle" fill="#8b949e" font-size="11">输出转速 n₂ = n₁ ÷ i</text>
+        </svg>
+      </div>
+      <div>
+        <div class="lab-cards">
+          <div class="lab-card"><div class="lab-k">输出转速 n₂</div><div class="lab-v" id="rOutSpeed">60.0 rpm</div></div>
+          <div class="lab-card"><div class="lab-k">输入轴扭矩 τ₁</div><div class="lab-v" id="rInTorque">1.18 N·m</div></div>
+          <div class="lab-card"><div class="lab-k">输入功率 P₁</div><div class="lab-v" id="rInPower">369.6 W</div></div>
+          <div class="lab-card"><div class="lab-k">输出功率 P₂</div><div class="lab-v" id="rOutPower">314.2 W</div></div>
+          <div class="lab-card"><div class="lab-k">损耗功率(发热)</div><div class="lab-v" id="rLossPower">55.4 W</div></div>
+        </div>
+        <div class="lab-bar-wrap">
+          <div class="lab-bar-row"><span class="lab-bar-k">输入功率</span><span class="lab-bar"><i id="barIn"></i></span><span class="lab-bar-val" id="barInVal">369.6 W</span></div>
+          <div class="lab-bar-row"><span class="lab-bar-k">输出功率</span><span class="lab-bar"><i id="barOut"></i></span><span class="lab-bar-val" id="barOutVal">314.2 W</span></div>
+          <div class="lab-bar-row"><span class="lab-bar-k">损耗(发热)</span><span class="lab-bar"><i id="barLoss"></i></span><span class="lab-bar-val" id="barLossVal">55.4 W</span></div>
+        </div>
+        <div class="lab-warn-text" id="gWarn"></div>
+      </div>
+    </div>
+
+    <div class="lab-note"><b>公式:</b>
+      输出转速 n₂ = n₁ ÷ i(单位 rpm);输出角速度 ω₂ = 2π·n₂ ÷ 60(rad/s);输出功率 P₂ = τ₂ × ω₂(W);
+      输入功率 P₁ = P₂ ÷ η(W);损耗功率 P<sub>损</sub> = P₁ − P₂(全部变成热);输入轴扭矩 τ₁ = τ₂ ÷ (i × η)(N·m)。
+      拖动「负载扭矩」到 200 N·m、减速比调到 1,即可看到输入扭矩报警。
+    </div>
+
+    <div class="box box-tip"><b>📘 教育提示 · 减速器选型(与滑块联动):</b>
+      谐波减速器单级减速比 <b>30~160</b>,靠柔轮弹性啮合做到<b>零背隙</b>,精度最高;行星减速器单级减速比 <b>3~10</b>,效率高、反驱透明,是<b>准直驱(QDD)</b>关节首选;RV 减速器(摆线针轮)刚性高、抗冲击,用于<b>重载</b>关节(≥150 N·m)。<br>
+      <span id="gTipLine" style="color:#9ecbff"></span>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       实验台二 · FOC 三环控制示波器
+       ============================================================ -->
+  <div class="lab-panel" id="labPanel2" style="display:none">
+    <div class="lab-h">📈 实验台二 · FOC 三环控制示波器</div>
+    <p class="lab-intro">三环从<b>内到外</b>依次是:<b>电流环(最内、最快) → 速度环 → 位置环(最外、最慢)</b>。位置环把误差变成速度指令,速度环再变成电流(力矩)指令,电流产生加速度驱动关节转动。下面用简单离散动力学「一阶惯性 + 阻尼」示意仿真,画出位置 / 速度 / 电流三条曲线。</p>
+
+    <div class="lab-controls">
+      <label title="目标位置 0~180°">目标位置
+        <input type="range" id="focTarget" min="0" max="180" step="1" value="90" title="目标位置(0~180°)">
+        <span class="lab-val" id="focTargetV">90°</span></label>
+      <label title="位置环比例增益 Kp 0.1~10">位置环 Kp
+        <input type="range" id="focPosKp" min="0.1" max="10" step="0.1" value="2" title="位置环比例增益 Kp(0.1~10)">
+        <span class="lab-val" id="focPosKpV">2.0</span></label>
+      <label title="速度环比例增益 Kp 0.1~5">速度环 Kp
+        <input type="range" id="focVelKp" min="0.1" max="5" step="0.1" value="1" title="速度环比例增益 Kp(0.1~5)">
+        <span class="lab-val" id="focVelKpV">1.0</span></label>
+    </div>
+
+    <div class="lab-btns">
+      <button id="focStepBtn" title="施加一次 0→目标位置 的阶跃并重新开始仿真">⚡ 阶跃</button>
+      <button id="focRunBtn" class="lab-run" title="运行或暂停仿真">⏸ 暂停</button>
+    </div>
+
+    <canvas class="lab-canvas" id="focCanvas" title="FOC 三环控制实时示波器:绿=位置,蓝=速度,橙=电流"></canvas>
+
+    <div class="lab-legend">
+      <span><span class="lab-dot" style="background:#22c55e"></span>位置(绿)</span>
+      <span><span class="lab-dot" style="background:#3b82f6"></span>速度(蓝)</span>
+      <span><span class="lab-dot" style="background:#f59e0b"></span>电流 / 力矩(橙)</span>
+    </div>
+
+    <div class="lab-metrics">
+      当前位置 <b id="focThV">0.0°</b> | 速度 <b id="focOmV">0°/s</b> | 电流 <b id="focIcV">0.0 A</b> | 时间 <b id="focTV">0.0 s</b>
+    </div>
+
+    <div class="lab-note"><b>怎么读:</b>阶跃后,绿线(位置)先快速上升再贴住目标虚线;蓝线(速度)先冲高再回落归零;橙线(电流)在最开始瞬间冲到限幅,代表电机全力加速,到位后电流降到只够抵消阻尼。把「位置环 Kp」调大,绿线冲得更快但可能超调;把「速度环 Kp」调大,蓝线更跟手但电流尖峰更高。</div>
+
+    <div class="box box-tip"><b>📘 教育提示 · 为什么电流环带宽最高、位置环最慢:</b>电流环要控制的对象是<b>电气回路</b>(电感时间常数毫秒级),能跑到 10~40kHz,所以带宽最高;位置环要等<b>机械系统</b>(转动惯量 + 减速器)响应,机械时间常数大,带宽只有约 1kHz——因此级联控制的铁律是「内环必须快于外环」,由内向外带宽递减,系统才稳定。</div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>①减速器把「高速小扭矩」变「低速大扭矩」:n₂=n₁÷i、τ₁=τ₂÷(i·η);功率链条 P₂=τ₂·ω₂、P₁=P₂÷η,差值就是发热损耗。②FOC 三环由内向外为电流环→速度环→位置环,带宽递减;电流环输出力矩、速度环输出电流指令、位置环输出速度指令,层层级联。③选型口诀:行星 3~10 准直驱、谐波 30~160 零背隙、RV 重载抗冲击。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 为什么减速比越大,电机侧需要的输入扭矩越小?代价是什么(结合输出转速与效率损耗说明)?<br>
+    2. 效率 η 从 99% 降到 50% 时,同样的负载下电机要多输出多少功率?这些功率去了哪里?<br>
+    3. 在示波器里把「位置环 Kp」调到 10、把「速度环 Kp」调到 0.1,观察位置曲线会怎样?为什么内环太慢会拖垮外环?
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ============================================================
+   传动与控制实验台 · 两个浏览器内实验(保守 ES5 语法)
+   实验台一:减速器传动参数即时计算 + SVG 传动链 + 条形对比
+   实验台二:FOC 三环级联控制示波器(离散动力学 + canvas)
+   ============================================================ */
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+  function fmt(v, d){ d = (d === undefined) ? 2 : d; return v.toFixed(d); }
+  function fmtPower(v){
+    if(Math.abs(v) >= 1000){ return (v / 1000).toFixed(2) + " kW"; }
+    return v.toFixed(0) + " W";
+  }
+
+  /* ---------- 标签页切换 ---------- */
+  function switchLab(n){
+    var b1 = $("tabBtn1"), b2 = $("tabBtn2");
+    var p1 = $("labPanel1"), p2 = $("labPanel2");
+    if(n === 1){
+      b1.className = "lab-tab on"; b2.className = "lab-tab";
+      p1.style.display = "block"; p2.style.display = "none";
+    }else{
+      b2.className = "lab-tab on"; b1.className = "lab-tab";
+      p1.style.display = "none"; p2.style.display = "block";
+    }
+  }
+
+  /* ================= 实验台一:减速器传动参数 ================= */
+  var PEAK_TORQUE = 5;   /* 电机峰值扭矩,单位 N·m */
+
+  function read1(){
+    var n   = parseFloat($("gMotorSpeed").value);   /* rpm */
+    var i   = parseFloat($("gRatio").value);        /* 减速比 */
+    var eff = parseFloat($("gEff").value) / 100;    /* 效率 */
+    var load = parseFloat($("gLoad").value);        /* N·m */
+    var nOut = n / i;                               /* rpm */
+    var wOut = 2 * Math.PI * nOut / 60;             /* rad/s */
+    var pOut = load * wOut;                         /* W */
+    var pIn = pOut / eff;                           /* W */
+    var pLoss = pIn - pOut;                         /* W */
+    var tIn = load / (i * eff);                     /* N·m */
+    return { n:n, i:i, eff:eff, load:load, nOut:nOut, pOut:pOut, pIn:pIn, pLoss:pLoss, tIn:tIn };
+  }
+
+  function setBar(id, ratio, color, txt){
+    var bar = $(id);
+    if(bar){
+      bar.style.width = Math.max(0, Math.min(100, ratio * 100)) + "%";
+      bar.style.background = color;
+    }
+    var val = $(id + "Val");
+    if(val){ val.textContent = txt; }
+  }
+
+  function updateTip(r){
+    var line = $("gTipLine");
+    var i = r.i, load = r.load, t;
+    if(load >= 150){
+      t = "当前负载扭矩 " + fmt(load, 0) + " N·m 属<b>重载</b>(≥150 N·m),建议选 <b>RV 减速器</b>(摆线针轮,抗冲击、刚性高、寿命长)。";
+    }else if(i >= 3 && i <= 10){
+      t = "当前减速比 " + fmt(i, 0) + " : 1 落在 <b>行星减速器</b>典型区间(3~10):准直驱(QDD)、反驱透明、效率高(&gt;95%)。";
+    }else if(i >= 30 && i <= 160){
+      t = "当前减速比 " + fmt(i, 0) + " : 1 落在 <b>谐波减速器</b>典型区间(30~160):零背隙、体积小、大减速比,精度最高。";
+    }else if(i > 10 && i < 30){
+      t = "当前减速比 " + fmt(i, 0) + " : 1 介于行星与谐波之间:轻载可两级行星,高精度选小谐波。";
+    }else if(i < 3){
+      t = "当前减速比 " + fmt(i, 0) + " : 1 接近直驱:电机几乎直接带负载,反驱最透明但需电机输出大扭矩。";
+    }else{
+      t = "当前减速比 " + fmt(i, 0) + " : 1 超出常见单级范围,重载场景通常选 RV 减速器。";
+    }
+    if(line){ line.innerHTML = "👉 " + t; }
+  }
+
+  function update1(){
+    var r = read1();
+    /* 滑块数值标签 */
+    $("gMotorSpeedV").textContent = fmt(r.n, 0) + " rpm";
+    $("gRatioV").textContent = fmt(r.i, 0) + " : 1";
+    $("gEffV").textContent = fmt(r.eff * 100, 0) + " %";
+    $("gLoadV").textContent = fmt(r.load, 0) + " N·m";
+    /* 数值卡片 */
+    $("rOutSpeed").textContent = fmt(r.nOut, 1) + " rpm";
+    $("rInTorque").textContent = fmt(r.tIn, 2) + " N·m";
+    $("rInPower").textContent = fmtPower(r.pIn);
+    $("rOutPower").textContent = fmtPower(r.pOut);
+    $("rLossPower").textContent = fmtPower(r.pLoss);
+    /* SVG 示意图 */
+    $("svgMotorRpm").textContent = "转速 n₁ = " + fmt(r.n, 0) + " rpm";
+    $("svgRatio").textContent = "减速比 i = " + fmt(r.i, 0) + " : 1";
+    $("svgEff").textContent = "效率 η = " + fmt(r.eff * 100, 0) + " %";
+    $("svgOutRpm").textContent = "转速 n₂ = " + fmt(r.nOut, 1) + " rpm";
+    $("svgTorqueIn").textContent = "扭矩 τ₁ = " + fmt(r.tIn, 2) + " N·m";
+    $("svgTorqueLoad").textContent = "扭矩 τ₂ = " + fmt(r.load, 0) + " N·m";
+    /* 条形对比(以输入功率为基准 100%) */
+    var max = Math.max(r.pIn, 0.001);
+    setBar("barIn", r.pIn / max, "#3b82f6", fmtPower(r.pIn));
+    setBar("barOut", r.pOut / max, "#22c55e", fmtPower(r.pOut));
+    setBar("barLoss", r.pLoss / max, "#f59e0b", fmtPower(r.pLoss));
+    /* 电机峰值扭矩提示 */
+    var warn = $("gWarn");
+    if(r.tIn > PEAK_TORQUE){
+      warn.innerHTML = "⚠️ 输入扭矩 " + fmt(r.tIn, 2) + " N·m 超过电机峰值扭矩 " + PEAK_TORQUE + " N·m,需更换更大电机,或提高减速比 / 效率。";
+      warn.style.color = "#ef4444";
+    }else{
+      warn.innerHTML = "✅ 输入扭矩 " + fmt(r.tIn, 2) + " N·m 在电机峰值扭矩 " + PEAK_TORQUE + " N·m 范围内,选型合理。";
+      warn.style.color = "#22c55e";
+    }
+    updateTip(r);
+  }
+
+  function preset1(kind){
+    if(kind === "planetary"){ $("gRatio").value = 6;   $("gEff").value = 96; }
+    else if(kind === "rv"){    $("gRatio").value = 100; $("gEff").value = 88; }
+    else{                      $("gRatio").value = 50;  $("gEff").value = 90; } /* harmonic */
+    update1();
+  }
+
+  /* ================= 实验台二:FOC 三环示波器 ================= */
+  var FOC_H = 320;             /* canvas CSS 高度 */
+  var focW = 0;                /* 当前 CSS 宽度(懒加载时填充) */
+  var focCtx = $("focCanvas").getContext("2d");
+  var DT = 0.001, SUB = 4;     /* 每帧 4ms 仿真(约 4 倍慢放) */
+  var KT = 60, DAMP = 2.5;     /* 力矩→角加速度增益、阻尼 */
+  var TAU_C = 0.004;           /* 电流环一阶惯性时间常数(快) */
+  var IMAX = 35, WMAX = 720;   /* 电流 / 速度限幅 */
+
+  var F = {
+    target: 90, theta: 0, omega: 0, icur: 0, t: 0,
+    running: true, hist: []
+  };
+
+  function focStepOnce(dt){
+    var posKp = parseFloat($("focPosKp").value);
+    var velKp = parseFloat($("focVelKp").value);
+    var eP = F.target - F.theta;                       /* 位置误差 */
+    var wRef = clamp(posKp * eP, -WMAX, WMAX);         /* 位置环 → 速度指令 */
+    var eV = wRef - F.omega;                           /* 速度误差 */
+    var iRef = clamp(velKp * eV, -IMAX, IMAX);         /* 速度环 → 电流指令 */
+    F.icur += (iRef - F.icur) * (dt / TAU_C);          /* 电流一阶惯性 */
+    var accel = KT * F.icur - DAMP * F.omega;          /* 电流 → 加速度(带阻尼) */
+    F.omega += accel * dt;
+    F.theta += F.omega * dt;
+    F.t += dt;
+  }
+
+  function focStep(){
+    F.target = parseFloat($("focTarget").value);
+    F.theta = 0; F.omega = 0; F.icur = 0; F.t = 0;
+    F.hist = [];
+    F.running = true;
+    $("focTargetV").textContent = fmt(F.target, 0) + "°";
+    updateRunBtn();
+  }
+
+  function focToggle(){
+    F.running = !F.running;
+    updateRunBtn();
+  }
+
+  function updateRunBtn(){
+    var b = $("focRunBtn");
+    b.textContent = F.running ? "⏸ 暂停" : "▶ 运行";
+  }
+
+  function drawFoc(){
+    var canvas = $("focCanvas");
+    var cw = canvas.clientWidth;
+    /* 懒加载 + 响应式:当宽度变化时按 devicePixelRatio 重建画布 */
+    if(cw > 0 && cw !== focW){
+      focW = cw;
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(focW * dpr);
+      canvas.height = Math.round(FOC_H * dpr);
+      focCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    if(focW < 10){ return; }
+
+    var W = focW, H = FOC_H;
+    var padL = 50, padR = 96, padT = 30, padB = 26;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var tEnd = F.t, tStart = tEnd - 10;
+    if(tStart < 0){ tStart = 0; tEnd = 10; }
+
+    function X(tm){ return padL + (tm - tStart) / 10 * plotW; }
+    function Yp(v){ return padT + plotH * (1 - v / 180); }           /* 位置 0~180 */
+    function Ys(v, range){ return padT + plotH * (1 - (v + range) / (2 * range)); } /* 对称量 */
+
+    focCtx.clearRect(0, 0, W, H);
+    focCtx.fillStyle = "#0a0f16";
+    focCtx.fillRect(0, 0, W, H);
+
+    /* 网格 */
+    focCtx.strokeStyle = "rgba(255,255,255,.06)";
+    focCtx.lineWidth = 1;
+    var gx, gy;
+    for(gx = 0; gx <= 10; gx++){
+      var px = padL + plotW * gx / 10;
+      focCtx.beginPath(); focCtx.moveTo(px, padT); focCtx.lineTo(px, padT + plotH); focCtx.stroke();
+    }
+    for(gy = 0; gy <= 4; gy++){
+      var py = padT + plotH * gy / 4;
+      focCtx.beginPath(); focCtx.moveTo(padL, py); focCtx.lineTo(padL + plotW, py); focCtx.stroke();
+    }
+    /* 速度 / 电流零线 */
+    focCtx.strokeStyle = "rgba(255,255,255,.12)";
+    focCtx.beginPath(); focCtx.moveTo(padL, padT + plotH / 2); focCtx.lineTo(padL + plotW, padT + plotH / 2); focCtx.stroke();
+
+    /* 左侧 Y 轴:位置刻度 */
+    focCtx.font = "10px Consolas, monospace";
+    focCtx.textAlign = "right";
+    focCtx.fillStyle = "#6b7280";
+    var posTicks = [180, 135, 90, 45, 0], pi;
+    for(pi = 0; pi < 5; pi++){
+      focCtx.fillText(posTicks[pi] + "°", padL - 6, Yp(posTicks[pi]) + 3);
+    }
+
+    /* X 轴:相对时间 0~10 s */
+    focCtx.textAlign = "center";
+    var xi;
+    for(xi = 0; xi <= 10; xi += 2){
+      var xx = padL + plotW * xi / 10;
+      focCtx.fillText(String(xi), xx, padT + plotH + 14);
+    }
+    focCtx.fillText("最近 10 秒 · 时间(s)", padL + plotW / 2, H - 6);
+
+    /* 右侧 Y 轴:三条曲线各自归一化标注 */
+    focCtx.textAlign = "left";
+    focCtx.font = "11px 'Microsoft YaHei', sans-serif";
+    focCtx.fillStyle = "#22c55e"; focCtx.fillText("位置 0~180°", padL + plotW + 8, padT + 14);
+    focCtx.fillStyle = "#3b82f6"; focCtx.fillText("速度 ±720°/s", padL + plotW + 8, padT + 30);
+    focCtx.fillStyle = "#f59e0b"; focCtx.fillText("电流 ±40 A", padL + plotW + 8, padT + 46);
+
+    /* 目标位置参考虚线 */
+    var ty = Yp(F.target);
+    focCtx.strokeStyle = "rgba(74,222,128,.55)";
+    focCtx.setLineDash([5, 4]);
+    focCtx.beginPath(); focCtx.moveTo(padL, ty); focCtx.lineTo(padL + plotW, ty); focCtx.stroke();
+    focCtx.setLineDash([]);
+
+    /* 三条曲线 */
+    function series(xf, yf, color, lw){
+      focCtx.strokeStyle = color;
+      focCtx.lineWidth = lw;
+      focCtx.beginPath();
+      var started = false, k;
+      for(k = 0; k < F.hist.length; k++){
+        var h = F.hist[k];
+        if(h.t < tStart){ continue; }
+        var x = xf(h), y = yf(h);
+        if(x < padL - 2 || x > padL + plotW + 2){ continue; }
+        if(!started){ focCtx.moveTo(x, y); started = true; }
+        else { focCtx.lineTo(x, y); }
+      }
+      focCtx.stroke();
+    }
+    series(function(h){ return X(h.t); }, function(h){ return Yp(h.th); }, "#22c55e", 2);
+    series(function(h){ return X(h.t); }, function(h){ return Ys(h.om, 720); }, "#3b82f6", 1.8);
+    series(function(h){ return X(h.t); }, function(h){ return Ys(h.ic, 40); }, "#f59e0b", 1.8);
+
+    /* 实时读数 */
+    $("focThV").textContent = fmt(F.theta, 1) + "°";
+    $("focOmV").textContent = fmt(F.omega, 0) + "°/s";
+    $("focIcV").textContent = fmt(F.icur, 1) + " A";
+    $("focTV").textContent = fmt(F.t, 1) + " s";
+  }
+
+  /* ================= 事件绑定与主循环 ================= */
+  function init(){
+    /* 标签页 */
+    $("tabBtn1").onclick = function(){ switchLab(1); };
+    $("tabBtn2").onclick = function(){ switchLab(2); };
+
+    /* 实验台一:预设 + 滑块 */
+    $("presetHarmonic").onclick = function(){ preset1("harmonic"); };
+    $("presetPlanetary").onclick = function(){ preset1("planetary"); };
+    $("presetRv").onclick = function(){ preset1("rv"); };
+    var ids1 = ["gMotorSpeed", "gRatio", "gEff", "gLoad"], i;
+    for(i = 0; i < ids1.length; i++){
+      (function(id){ $(id).oninput = function(){ update1(); }; })(ids1[i]);
+    }
+
+    /* 实验台二:阶跃 / 运行暂停 / 滑块 */
+    $("focStepBtn").onclick = function(){ focStep(); };
+    $("focRunBtn").onclick = function(){ focToggle(); };
+    $("focTarget").oninput = function(){
+      F.target = parseFloat($("focTarget").value);
+      $("focTargetV").textContent = fmt(F.target, 0) + "°";
+    };
+    $("focPosKp").oninput = function(){ $("focPosKpV").textContent = fmt(parseFloat($("focPosKp").value), 1); };
+    $("focVelKp").oninput = function(){ $("focVelKpV").textContent = fmt(parseFloat($("focVelKp").value), 1); };
+
+    /* 初始渲染 */
+    update1();
+    focStep();
+  }
+
+  function loop(){
+    if(F.running){
+      var s;
+      for(s = 0; s < SUB; s++){ focStepOnce(DT); }
+      F.hist.push({ t: F.t, th: F.theta, om: F.omega, ic: F.icur });
+      var cutoff = F.t - 10;
+      while(F.hist.length > 0 && F.hist[0].t < cutoff){ F.hist.shift(); }
+    }
+    drawFoc();
+    requestAnimationFrame(loop);
+  }
+
+  init();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

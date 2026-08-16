@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 学习地图</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<script>
+  window.PAGE = {
+    pageId: "08-06",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "学习地图" } ],
+    prev: { t: "传动与控制实验台", u: "05_传动与控制实验台.html" }
+  };
+</script>
+<style>
+  /* ================= 学习地图专属样式(.map- 前缀,不改 site.css) ================= */
+  .map-progress{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(13,17,23,.6));border:1px solid rgba(59,130,246,.35);border-radius:14px;padding:18px 20px;margin:22px 0}
+  .map-progress-head{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#e6edf3}
+  .map-progress-num{font-weight:800;color:#c9d1d9}
+  .map-progress-num b{font-size:22px;color:#9ecbff}
+  .map-progress-track{height:12px;background:rgba(255,255,255,.08);border-radius:999px;margin:14px 0 8px;overflow:hidden}
+  .map-progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#3b82f6);border-radius:999px;transition:width .4s ease}
+  .map-progress-note{font-size:12px;color:#8b949e}
+  .map-next{margin-top:12px;font-size:13.5px;color:#e6edf3;line-height:1.6}
+  .map-next b{color:#60a5fa}
+
+  .map-legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:22px 0;font-size:13px;color:#c9d1d9}
+  .map-legend-item{display:flex;align-items:center;gap:7px}
+  .map-swatch{width:16px;height:16px;border-radius:5px;flex-shrink:0;border:1px solid transparent}
+  .map-swatch.gray{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)}
+  .map-swatch.green{background:rgba(34,197,94,.28);border-color:#22c55e}
+  .map-swatch.blue{background:rgba(59,130,246,.16);border-color:#3b82f6}
+
+  .map-board{margin:20px 0}
+  .map-group{margin:0 0 2px}
+  .map-group-head{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+  .map-group-name{font-size:16px;font-weight:800;color:#fff}
+  .map-group-count{font-size:11px;color:#9ecbff;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);padding:2px 9px;border-radius:999px}
+  .map-nodes{display:flex;flex-wrap:wrap;gap:10px}
+  .map-node{position:relative;flex:1 1 220px;min-width:180px;display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:13px 14px 12px;text-decoration:none;color:#c9d1d9;transition:transform .15s ease,border-color .15s ease,background .15s ease}
+  .map-node:hover{transform:translateY(-2px);border-color:rgba(59,130,246,.55);background:rgba(59,130,246,.08)}
+  .map-node-title{display:block;font-size:13.5px;font-weight:600;color:#e6edf3;line-height:1.45}
+  .map-node-foot{display:flex;align-items:center;gap:6px;margin-top:2px}
+  .map-node-id{font-size:11px;color:#6b7280;font-family:Consolas,Monaco,monospace;letter-spacing:.3px}
+  .map-check{width:18px;height:18px;border-radius:50%;background:#22c55e;color:#06210f;font-size:12px;font-weight:800;line-height:18px;text-align:center;display:none;flex-shrink:0}
+  .map-node.done{background:rgba(34,197,94,.10);border-color:rgba(34,197,94,.55)}
+  .map-node.done .map-node-title{color:#bbf7d0}
+  .map-node.done .map-check{display:inline-block}
+  .map-node.next{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.28)}
+  .map-arrow{text-align:center;color:#3b82f6;font-size:20px;font-weight:800;margin:16px 0;opacity:.92}
+
+  .map-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+  .map-actions button{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#9ecbff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+  .map-actions button:hover{background:rgba(59,130,246,.28)}
+
+  /* 浅色主题适配 */
+  body[data-theme="light"] .map-progress{background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(255,255,255,.72));border-color:rgba(59,130,246,.3)}
+  body[data-theme="light"] .map-progress-head{color:#0f172a}
+  body[data-theme="light"] .map-progress-num b{color:#2563eb}
+  body[data-theme="light"] .map-progress-note{color:#94a3b8}
+  body[data-theme="light"] .map-next{color:#0f172a}
+  body[data-theme="light"] .map-next b{color:#2563eb}
+  body[data-theme="light"] .map-legend{color:#334155}
+  body[data-theme="light"] .map-group-name{color:#0f172a}
+  body[data-theme="light"] .map-node{background:rgba(255,255,255,.78);border-color:rgba(60,80,120,.18);color:#334155}
+  body[data-theme="light"] .map-node:hover{background:rgba(59,130,246,.1)}
+  body[data-theme="light"] .map-node-title{color:#0f172a}
+  body[data-theme="light"] .map-node.done{background:rgba(34,197,94,.12)}
+  body[data-theme="light"] .map-node.done .map-node-title{color:#15803d}
+  body[data-theme="light"] .map-node-id{color:#94a3b8}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🗺️ 学习地图</h1>
+    <div class="sub">一图看清全站 38 个页面与推荐学习顺序,学过的自动点亮</div>
+    <div class="tags">
+      <span class="tag">9 大板块</span>
+      <span class="tag">38 个页面</span>
+      <span class="tag">进度自动点亮</span>
+      <span class="tag">可点击跳转</span>
+    </div>
+  </div>
+
+  <!-- ================= 总进度条 ================= -->
+  <div class="map-progress">
+    <div class="map-progress-head">
+      <span>📊 全站学习进度</span>
+      <span class="map-progress-num">已完成 <b id="mapDone">0</b> / <b id="mapTotal">38</b></span>
+    </div>
+    <div class="map-progress-track"><div class="map-progress-fill" id="mapFill" style="width:0%"></div></div>
+    <div class="map-progress-note">地图收录 36 页 · 全站共 38 页(含首页与本页)</div>
+    <div class="map-next" id="mapNext"></div>
+  </div>
+
+  <!-- ================= 图例 ================= -->
+  <div class="map-legend">
+    <span style="font-weight:700;color:#8b949e">图例:</span>
+    <span class="map-legend-item"><span class="map-swatch gray"></span>未学习</span>
+    <span class="map-legend-item"><span class="map-swatch green"></span>已完成</span>
+    <span class="map-legend-item"><span class="map-swatch blue"></span>当前推荐下一站(第一个未完成)</span>
+  </div>
+
+  <!-- ================= 学习地图(JS 生成) ================= -->
+  <div class="map-board" id="mapBoard"></div>
+
+  <!-- ================= 说明 ================= -->
+  <div class="box box-tip">
+    <b>💡 进度说明:</b>进度数据保存在<b>本机浏览器(localStorage)</b>,与全站各页面右上角"✓ 完成"打卡数据<b>同源</b>(键 humanoid-site-progress-v1)。学过的页面会自动点亮为绿色并计入上方进度条;蓝框高亮的节点即"当前推荐下一站"。换设备/换浏览器时,可导出/导入进度延续记录。
+    <div class="map-actions">
+      <button onclick="Site.exportProgress()">⬇️ 导出进度</button>
+      <button onclick="Site.importProgress()">⬆️ 导入进度</button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ============================================================
+   学习地图:可点击节点 + 进度点亮 + 推荐下一站高亮(纯内联 ES5)
+   ============================================================ */
+(function () {
+  "use strict";
+
+  /* 页面清单(id / 标题 / 相对本文件的链接),共 36 页 */
+  var PAGES = [
+    { id: "00-02", t: "3D 解剖知识系统", u: "../00_3D解剖/人形机器人解剖式知识可视化.html" },
+    { id: "00-03", t: "三种减速器剖面图解", u: "../00_3D解剖/减速器剖面图详解.html" },
+    { id: "00-04", t: "减速器精细模型下载", u: "../00_3D解剖/减速器精细模型下载整合教程.html" },
+    { id: "01-01", t: "整体知识框架·思维导图", u: "../01_理论入门/01_整体知识框架_思维导图.html" },
+    { id: "01-02", t: "FOC/三环/减速器原理动画", u: "../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html" },
+    { id: "01-03", t: "驱动电路模块认知", u: "../01_理论入门/03_驱动电路模块认知_交互式图解.html" },
+    { id: "01-04", t: "机械原理基础·连杆齿轮", u: "../01_理论入门/04_机械原理基础_连杆齿轮传动.html" },
+    { id: "02-01", t: "硬件设计避坑指南", u: "../02_硬件基础/04_硬件设计通用要点_避坑指南.html" },
+    { id: "02-02", t: "参考资料汇总", u: "../02_硬件基础/05_参考资料汇总_视频_开源项目.html" },
+    { id: "02-03", t: "原理图/PCB学习页", u: "../02_硬件基础/06_硬件原理图与PCB学习页_X1与Hdrive.html" },
+    { id: "03-01", t: "Hdrive融合方案指南", u: "../03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html" },
+    { id: "03-02", t: "立创EDA绘制步骤", u: "../03_项目实操/07_立创EDA逐模块绘制步骤.html" },
+    { id: "03-03", t: "完整学习手册", u: "../03_项目实操/08_完整学习手册_备查用.html" },
+    { id: "03-04", t: "Hdrive交叉认证报告", u: "../03_项目实操/10_Hdrive新版方案_交叉认证与芯片选型报告.html" },
+    { id: "03-05", t: "电源管理功率链路分析", u: "../03_项目实操/11_电源管理功率链路分析/index.html" },
+    { id: "04-01", t: "通信与控制算法升级路线", u: "../04_升级进阶/09_通信与控制算法升级路线.html" },
+    { id: "04-02", t: "全身控制与步态规划WBC/MPC", u: "../04_升级进阶/02_全身控制与步态规划_WBC与MPC.html" },
+    { id: "05-01", t: "HdriveV2设计规范与决策", u: "../05_HdriveV2工程/00_设计规范与决策/Hdrive新版方案_交叉认证与芯片选型报告.html" },
+    { id: "05-02", t: "HdriveV2电源链路分析", u: "../05_HdriveV2工程/00_设计规范与决策/电源管理功率链路分析/电源管理功率链路分析.html" },
+    { id: "06-01", t: "软件学习路线图", u: "../06_软件与算法/01_软件学习路线图.html" },
+    { id: "06-02", t: "固件与电机控制", u: "../06_软件与算法/02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html" },
+    { id: "06-03", t: "ROS2与机器人软件栈", u: "../06_软件与算法/03_ROS2与机器人软件栈.html" },
+    { id: "06-04", t: "仿真与强化学习", u: "../06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html" },
+    { id: "06-05", t: "感知与具身智能VLA", u: "../06_软件与算法/05_感知与具身智能_VLA与世界模型.html" },
+    { id: "06-06", t: "视觉SLAM与状态估计", u: "../06_软件与算法/06_视觉SLAM与状态估计.html" },
+    { id: "06-07", t: "sim2real部署步骤", u: "../06_软件与算法/07_sim2real部署步骤拆解.html" },
+    { id: "06-08", t: "VLA与世界模型详解", u: "../06_软件与算法/08_视觉语言动作模型VLA与世界模型详解.html" },
+    { id: "07-01", t: "全球人形机器人机型全景", u: "../07_前沿知识库/01_全球人形机器人机型全景.html" },
+    { id: "07-02", t: "前沿技术专题库", u: "../07_前沿知识库/02_前沿技术专题库.html" },
+    { id: "07-03", t: "论文·数据集·开源社区", u: "../07_前沿知识库/03_论文_数据集_开源社区.html" },
+    { id: "07-04", t: "灵巧手专题", u: "../07_前沿知识库/04_灵巧手专题.html" },
+    { id: "08-01", t: "术语词典", u: "../08_学习工具/01_术语词典.html" },
+    { id: "08-02", t: "常见问答FAQ", u: "../08_学习工具/02_常见问答FAQ.html" },
+    { id: "08-03", t: "自测题库", u: "../08_学习工具/03_自测题库.html" },
+    { id: "08-04", t: "代码实验室", u: "../08_学习工具/04_代码实验室.html" },
+    { id: "08-05", t: "传动与控制实验台", u: "../08_学习工具/05_传动与控制实验台.html" }
+  ];
+
+  /* 板块分组(推荐学习顺序 00 → 01 → ... → 08) */
+  var GROUPS = [
+    { key: "00", name: "3D解剖" },
+    { key: "01", name: "理论入门" },
+    { key: "02", name: "硬件基础" },
+    { key: "03", name: "项目实操" },
+    { key: "04", name: "升级进阶" },
+    { key: "05", name: "HdriveV2工程" },
+    { key: "06", name: "软件与算法" },
+    { key: "07", name: "前沿知识库" },
+    { key: "08", name: "学习工具" }
+  ];
+
+  var STORE = "humanoid-site-progress-v1";
+  /* 全站总页数 = 地图节点 36 + 首页 + 本页(学习地图),如需与节点严格一致可改为 PAGES.length */
+  var TOTAL = 38;
+
+  function getProgress() {
+    try { return JSON.parse(localStorage.getItem(STORE) || "{}"); }
+    catch (e) { return {}; }
+  }
+
+  function renderMap() {
+    var p = getProgress();
+    var doneCount = 0;
+    var firstPending = null;
+    var firstPendingTitle = "";
+    var html = "";
+    var g, i, j, nodes, node, isDone, cls;
+
+    for (g = 0; g < GROUPS.length; g++) {
+      nodes = [];
+      for (i = 0; i < PAGES.length; i++) {
+        if (PAGES[i].id.indexOf(GROUPS[g].key) === 0) { nodes.push(PAGES[i]); }
+      }
+      html += '<div class="map-group">';
+      html += '<div class="map-group-head"><span class="map-group-name">' + GROUPS[g].key + ' · ' + GROUPS[g].name + '</span><span class="map-group-count">' + nodes.length + ' 页</span></div>';
+      html += '<div class="map-nodes">';
+      for (j = 0; j < nodes.length; j++) {
+        node = nodes[j];
+        isDone = !!p[node.id];
+        if (isDone) { doneCount++; }
+        cls = "map-node";
+        if (isDone) { cls += " done"; }
+        if (!firstPending && !isDone) {
+          firstPending = node.id;
+          firstPendingTitle = node.t;
+          cls += " next";
+        }
+        html += '<a class="' + cls + '" href="' + node.u + '">'
+          + '<span class="map-node-title">' + node.t + '</span>'
+          + '<span class="map-node-foot"><span class="map-check">✓</span><span class="map-node-id">' + node.id + '</span></span>'
+          + '</a>';
+      }
+      html += '</div></div>';
+      if (g < GROUPS.length - 1) { html += '<div class="map-arrow">→</div>'; }
+    }
+
+    document.getElementById("mapBoard").innerHTML = html;
+    document.getElementById("mapDone").textContent = String(doneCount);
+    document.getElementById("mapTotal").textContent = String(TOTAL);
+    document.getElementById("mapFill").style.width = Math.round(doneCount / TOTAL * 100) + "%";
+
+    var nextEl = document.getElementById("mapNext");
+    if (firstPending) {
+      nextEl.innerHTML = '👉 当前推荐下一站:<b>' + firstPendingTitle + '</b>(蓝框高亮处)';
+    } else {
+      nextEl.innerHTML = '🎉 恭喜!地图上的页面已全部完成';
+    }
+  }
+
+  /* 暴露给 site.js 的进度导入,导入后自动重绘 */
+  window.renderProgress = renderMap;
+
+  renderMap();
+
+  /* 其他标签页打卡后,自动刷新本页地图 */
+  window.addEventListener("storage", function (e) {
+    if (e.key === STORE) { renderMap(); }
+  });
+})();
+</script>
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

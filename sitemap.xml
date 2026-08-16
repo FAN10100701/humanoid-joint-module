@@ -18,8 +18,6 @@
   <url><loc>https://cyco.top/03_项目实操/11_电源管理功率链路分析/index.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/04_升级进阶/02_全身控制与步态规划_WBC与MPC.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/04_升级进阶/09_通信与控制算法升级路线.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://cyco.top/05_HdriveV2工程/00_设计规范与决策/Hdrive新版方案_交叉认证与芯片选型报告.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://cyco.top/05_HdriveV2工程/00_设计规范与决策/电源管理功率链路分析/电源管理功率链路分析.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/01_软件学习路线图.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/03_ROS2与机器人软件栈.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
@@ -36,4 +34,6 @@
   <url><loc>https://cyco.top/08_学习工具/02_常见问答FAQ.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/03_自测题库.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/04_代码实验室.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/08_学习工具/05_传动与控制实验台.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/08_学习工具/06_学习地图.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>

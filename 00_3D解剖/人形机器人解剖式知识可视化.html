@@ -1654,8 +1654,9 @@ function orbit3D(dx,dy){
 
 function initThree(){
   var canvas=document.getElementById('webgl');
+  var isMobile=window.innerWidth<768||('ontouchstart' in window);
   try{
-    renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+    renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!isMobile,alpha:true});
   }catch(e){
     /* 【手机白屏修复】WebGL 创建失败（部分手机/浏览器无硬件加速）：显式提示原因与解决办法，
        并重新显示启动遮罩承载提示文案，而非留一张空白画布 */
@@ -1664,8 +1665,9 @@ function initThree(){
     if(_t)_t.innerHTML='当前设备/浏览器不支持 WebGL，无法显示 3D 模型。<br>请尝试：<b>系统浏览器</b>、最新版 Chrome/Safari，或在电脑上打开。';
     throw e;   /* 继续上抛终止后续初始化，避免渲染器空引用连环报错 */
   }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isMobile?1.5:2));
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  if(isMobile)renderer.shadowMap.enabled=false;  /* 移动端关闭阴影渲染（桌面保持原样） */
   renderer.toneMapping=THREE.ACESFilmicToneMapping;  /* 电影级色调映射：真实金属反光 */
   renderer.toneMappingExposure=1.15;                 /* 曝光度：稍微提亮 */
   renderer.outputColorSpace=THREE.SRGBColorSpace;    /* sRGB色彩空间：颜色准确 */
@@ -1678,6 +1680,7 @@ function initThree(){
   controls.minDistance=45; controls.maxDistance=220;
   controls.target.set(0,-15,0);
   controls.enablePan=false;
+  if(isMobile)controls.zoomSpeed=1.2;  /* 移动端放大双指缩放速度（桌面保持默认 1.0） */
   /* 监听用户开始拖动：①标记已交互，避免加载完成后相机被强行复位；②取消进行中的聚焦动画，避免视角被拉回 */
   controls.addEventListener('start',function(){
     userInteracted=true;

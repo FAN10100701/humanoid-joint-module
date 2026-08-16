@@ -19,6 +19,7 @@
     { t:"硬件基础", u:"02_硬件基础/04_硬件设计通用要点_避坑指南.html" },
     { t:"项目实操", u:"03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html" },
     { t:"升级进阶", u:"04_升级进阶/09_通信与控制算法升级路线.html" },
+    { t:"HdriveV2", u:"03_项目实操/10_Hdrive新版方案_交叉认证与芯片选型报告.html" },
     { t:"软件算法", u:"06_软件与算法/01_软件学习路线图.html" },
     { t:"前沿知识", u:"07_前沿知识库/01_全球人形机器人机型全景.html" },
     { t:"学习工具", u:"08_学习工具/01_术语词典.html" }
@@ -62,11 +63,27 @@
     try{ localStorage.setItem(STORE, JSON.stringify(p)); }catch(e){}
   }
   S.isDone = function(id){ return !!getProgress()[id]; };
+  /* 学习活动记录(首页日历热力图数据源):每次新打卡记一次当日活动 */
+  var AKEY = "humanoid-site-activity-v1";
+  function logActivity(){
+    try{
+      var d = new Date();
+      var key = d.getFullYear() + "-" + (d.getMonth() + 1 < 10 ? "0" : "") + (d.getMonth() + 1) + "-" + (d.getDate() < 10 ? "0" : "") + d.getDate();
+      var a = JSON.parse(localStorage.getItem(AKEY) || "{}");
+      a[key] = (a[key] || 0) + 1;
+      localStorage.setItem(AKEY, JSON.stringify(a));
+    }catch(e){}
+  }
+  S.getActivity = function(){
+    try{ return JSON.parse(localStorage.getItem(AKEY) || "{}"); }catch(e){ return {}; }
+  };
   S.toggleDone = function(){
     var id = page().pageId; if(!id) return;
     var p = getProgress();
-    p[id] = p[id] ? 0 : Date.now();
+    var was = !!p[id];
+    p[id] = was ? 0 : Date.now();
     saveProgress(p);
+    if(!was) logActivity();
     var btn = document.querySelector(".nav-done");
     if(btn) btn.classList.toggle("on", !!p[id]);
     S.refreshHomeProgress && S.refreshHomeProgress();
@@ -176,6 +193,8 @@
   function injectChrome(){
     var P = page();
     var root = P.root || "";
+    /* 首页自带头部/页脚,不注入第二套导航与页脚(评审 #1/#2) */
+    if(!P.pageId) return;
     var nav = document.createElement("nav");
     nav.className = "topnav";
     var html = '<div class="nav-inner">'
@@ -216,7 +235,7 @@
 
     var ft = document.createElement("footer");
     ft.className = "site-footer";
-    ft.innerHTML = "人形机器人学习站 · V1.4.3(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · "
+    ft.innerHTML = "人形机器人学习站 · " + S.VERSION + " · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · "
       + '<a href="' + root + '/index.html">返回首页</a> · 按 Ctrl+K 全站搜索 · '
       + '<a href="' + root + '/index.html#version">版本历史</a>';
     document.body.appendChild(ft);
@@ -278,36 +297,60 @@
     var root = page().root || "";
     var s = document.createElement("script");
     s.src = (root ? root + "/" : "") + "_assets/search-index.js";
-    s.onload = function(){ cb(); };
+    s.onload = function(){ cb(); if(S.onSearchIndexReady) S.onSearchIndexReady(); };
     s.onerror = function(){ cb(); };
     document.head.appendChild(s);
+  }
+  function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function highlight(html, terms){
+    if(!terms || !terms.length) return html;
+    var re = new RegExp("(" + terms.map(function(t){ return t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }).join("|") + ")", "gi");
+    return html.replace(re, "<mark>$1</mark>");
   }
   function renderSearch(overlay, q){
     var box = overlay.querySelector(".search-results");
     q = (q || "").trim().toLowerCase();
     if(!q){
-      box.innerHTML = '<div class="search-empty">输入关键词开始搜索 —— 支持 标题 / 板块 / 描述 / 术语<br>例如:FOC、谐波、ROS2、Isaac、VLA、灵巧手、编码器、CAN</div>';
+      box.innerHTML = '<div class="search-empty">输入关键词开始搜索 —— 支持 标题 / 板块 / 描述 / 术语,多个词用空格分隔<br>例如:FOC、谐波、ROS2、Isaac、VLA、灵巧手、编码器、CAN</div>';
       return;
     }
     var idx = buildIndex();
-    var hits = idx.filter(function(it){
-      return it.t.toLowerCase().indexOf(q) >= 0
-        || it.s.toLowerCase().indexOf(q) >= 0
-        || it.d.toLowerCase().indexOf(q) >= 0
-        || it.k.indexOf(q) >= 0;
-    });
-    if(!hits.length){
-      box.innerHTML = '<div class="search-empty">没有找到与「' + q + '」相关的内容</div>';
+    var terms = q.split(/\s+/).filter(function(t){ return t; });
+    var scored = [];
+    for(var i = 0; i < idx.length; i++){
+      var it = idx[i];
+      var score = 0, ok = true;
+      for(var j = 0; j < terms.length; j++){
+        var t = terms[j];
+        var inTitle = it.t.toLowerCase().indexOf(t) >= 0;
+        var inSec   = it.s.toLowerCase().indexOf(t) >= 0;
+        var inDesc  = it.d.toLowerCase().indexOf(t) >= 0;
+        var inKw    = it.k.indexOf(t) >= 0;
+        if(!(inTitle || inSec || inDesc || inKw)){ ok = false; break; }
+        if(inTitle) score += 4;
+        if(inSec)   score += 2;
+        if(inDesc)  score += 1;
+        if(inKw)    score += 1;
+        if(inTitle && it.t.toLowerCase().indexOf(t) === 0) score += 1; /* 前缀命中加权 */
+      }
+      if(ok) scored.push({ s: score, h: it });
+    }
+    if(!scored.length){
+      box.innerHTML = '<div class="search-empty">没有找到与「' + esc(q) + '」相关的内容,换个词试试</div>';
       return;
     }
+    scored.sort(function(a, b){ return b.s - a.s; });
     var root = page().root || "";
     var base = root ? root + "/" : "";
-    var html = '<div class="search-count">共 ' + hits.length + " 条结果</div>";
-    hits.forEach(function(h){
+    var html = '<div class="search-count">共 ' + scored.length + " 条结果(按相关度排序)</div>";
+    for(var k = 0; k < scored.length; k++){
+      var h = scored[k].h;
+      var tt = highlight(esc(h.t), terms);
+      var meta = highlight(esc(h.s) + " · " + esc(h.d), terms);
       html += '<a class="search-hit" href="' + base + h.u + '">'
-        + '<div class="hit-t">' + h.t + "</div>"
-        + '<div class="hit-meta">' + h.s + " · " + h.d + "</div></a>";
-    });
+        + '<div class="hit-t">' + tt + "</div>"
+        + '<div class="hit-meta">' + meta + "</div></a>";
+    }
     box.innerHTML = html;
   }
   S.openSearch = function(initQuery){
@@ -343,6 +386,99 @@
     if(o) o.classList.remove("show");
   };
 
+  /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
+  S.VERSION = "V1.5.0(2026-08-16)";
+
+  /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
+  function ensurePageMeta(cb){
+    if(window.SITE_PAGE_META){ cb(); return; }
+    var root = page().root || "";
+    var s = document.createElement("script");
+    s.src = (root ? root + "/" : "") + "_assets/page-meta.js";
+    s.onload = function(){ cb(); };
+    s.onerror = function(){ cb(); };
+    document.head.appendChild(s);
+  }
+  function injectLearningGoals(){
+    var P = page();
+    if(!P.pageId) return;
+    /* 已自带"学习目标"块的页面(模板新页)不重复注入 */
+    var exists = document.querySelector(".key-point .kp-title");
+    if(exists && /学习目标/.test(exists.textContent || "")) return;
+    ensurePageMeta(function(){
+      var meta = (window.SITE_PAGE_META || {})[P.pageId];
+      if(!meta) return;
+      var head = document.querySelector(".page-head");
+      if(!head || !head.parentNode) return;
+      var div = document.createElement("div");
+      div.className = "key-point page-goals";
+      var html = '<div class="kp-title">🎯 本页学习目标</div>';
+      (meta.goals || []).forEach(function(g){ html += "1. " + g + "<br>"; });
+      if(meta.time)  html += "<b>建议用时:</b>" + meta.time + "　";
+      if(meta.prereq) html += "<b>前置知识:</b>" + meta.prereq;
+      div.innerHTML = html;
+      head.parentNode.insertBefore(div, head.nextSibling);
+    });
+  }
+
+  /* ---------- 新手引导(仅首页,首次访问 3 步) ---------- */
+  function initOnboarding(){
+    if(page().pageId) return;   /* 只在首页展示 */
+    var ON_KEY = "site-onboard-v1";
+    var seen = false;
+    try{ seen = localStorage.getItem(ON_KEY) === "1"; }catch(e){}
+    if(seen) return;
+    var nPages = (window.SITE_SEARCH_INDEX ? window.SITE_SEARCH_INDEX.length - 1 : 35);
+    var steps = [
+      { t:"👋 欢迎来到人形机器人学习站", d:"这里是从关节模组到具身智能的免费学习网站:3D 解剖、FOC 原理、硬件实战、软件算法、前沿知识,共 " + nPages + " 个页面。" },
+      { t:"🔍 用搜索快速定位", d:"按 Ctrl+K(手机点顶部「搜索」按钮)打开全站搜索,输入 FOC、谐波、ROS2、VLA 等关键词,直达对应页面。" },
+      { t:"✅ 学习打卡", d:"学完一页,点右上角「✓ 完成」按钮打卡;首页会统计你的学习进度,还可导出/导入,换设备不丢进度。" }
+    ];
+    var cur = 0;
+    var ov = document.createElement("div");
+    ov.className = "onboard-overlay";
+    ov.innerHTML = '<div class="onboard-card">'
+      + '<div class="onboard-body"></div>'
+      + '<div class="onboard-nav"><span class="onboard-dots"></span>'
+      + '<span class="onboard-btns"><button class="onboard-skip">跳过</button>'
+      + '<button class="onboard-next">下一步 →</button></span></div></div>';
+    document.body.appendChild(ov);
+    function render(){
+      var st = steps[cur];
+      ov.querySelector(".onboard-body").innerHTML = '<div class="onboard-title">' + st.t + "</div><div class=\"onboard-desc\">" + st.d + "</div>";
+      var dots = ov.querySelector(".onboard-dots");
+      var dh = "";
+      for(var i = 0; i < steps.length; i++){
+        dh += '<span class="onboard-dot' + (i === cur ? " on" : "") + '"></span>';
+      }
+      dots.innerHTML = dh;
+      ov.querySelector(".onboard-next").textContent = (cur === steps.length - 1) ? "开始学习 🚀" : "下一步 →";
+    }
+    function finish(){
+      ov.classList.add("hide");
+      setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }, 300);
+      try{ localStorage.setItem(ON_KEY, "1"); }catch(e){}
+    }
+    ov.querySelector(".onboard-next").onclick = function(){
+      if(cur < steps.length - 1){ cur++; render(); }
+      else{ finish(); }
+    };
+    ov.querySelector(".onboard-skip").onclick = finish;
+    render();
+  }
+
+  /* ---------- 打印按钮(导航右侧) ---------- */
+  function initPrintBtn(){
+    var nav = document.querySelector(".topnav .nav-inner");
+    if(!nav) return;
+    var b = document.createElement("button");
+    b.className = "nav-print";
+    b.textContent = "🖨️";
+    b.title = "打印 / 导出 PDF";
+    b.onclick = function(){ window.print(); };
+    nav.appendChild(b);
+  }
+
   document.addEventListener("keydown", function(e){
     if((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")){
       e.preventDefault(); S.openSearch();
@@ -351,8 +487,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); initPrintBtn(); initOnboarding(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); initPrintBtn(); initOnboarding();
   }
 })();

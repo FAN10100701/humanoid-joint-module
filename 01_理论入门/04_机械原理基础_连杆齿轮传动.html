@@ -353,6 +353,54 @@ P(W) ≈ T(N·m) × n(rpm) / 9.55
     <div class="quiz-explain">💡 解析:τ = m × g × L = 2 × 10 × 0.5 = 10 N·m。这只是"托住"的最小静力矩;实际还要加上手臂自重、动态加速和安全系数(通常 ×1.5~2),峰值需求会明显大于 10 N·m。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 人形机器人前臂/手指常用"行星滚柱丝杠"作直线执行器,它的核心作用是什么?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 把电机旋转运动变成直线推拉(旋转→直线),且承载大、刚度高</button>
+      <button data-v="B">B. 把直线运动反向变成旋转运动</button>
+      <button data-v="C">C. 只减速不改变运动形式,输出仍是旋转</button>
+      <button data-v="D">D. 主要起散热与减振作用</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:行星滚柱丝杠在丝杠周围行星布置多个带螺纹滚柱,与螺母啮合,把旋转变成直线,是典型的"旋转→直线"线性执行器;接触点极多→承载大、刚度高、寿命长,体积比同承载的滚珠丝杠更小,因此近年人形机器人(如特斯拉 Optimus 等)的前臂/手指直线执行器大量采用它(见 4.2 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 为什么人形机器人关节要"斤斤计较"、优先给远端连杆减重(如用碳纤维替代铝合金)?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 纯粹为了外观好看、节省材料费</button>
+      <button data-v="B">B. 降低转动惯量→减少能耗,且远端减重有"连锁放大"效应,电机/减速器可同步缩小</button>
+      <button data-v="C">C. 碳纤维比铝合金更便宜,减重能大幅降成本</button>
+      <button data-v="D">D. 让机器人更重、站得更稳</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:摆动惯量直接决定能耗(能耗 ∝ 转动惯量),腿越"头重脚轻"越费电;负载链逐级放大——"远端每减 1 g,近端可连锁减 3~5 g",扭矩需求下降后电机、减速器、电池等可同步缩小,动态性能更好、碰撞伤害更小(见 5.2 节)。碳纤维比强度最高但贵且怕局部挤压,并非更便宜(C 错)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 格鲁布勒公式 F = 3(n-1) - 2j - h 中,n、j、h 分别代表什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. n = 电机数,j = 减速比,h = 效率</button>
+      <button data-v="B">B. n = 构件总数(含机架),j = 低副数,h = 高副数</button>
+      <button data-v="C">C. n = 低副数,j = 高副数,h = 构件总数</button>
+      <button data-v="D">D. n = 自由度,j = 关节数,h = 连杆数</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:n 是构件总数(含机架/地面),j 是低副数(转动副、移动副,每个限制 2 个自由度),h 是高副数(齿轮副、凸轮副,每个限制 1 个自由度)。代入四连杆:F = 3×(4-1) - 2×4 - 0 = 1(见 2.2 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. 电机 3000 rpm,经两级减速(第一级 1:10、第二级 1:5)串联,总减速比和输出转速各是多少?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. i总 = 50,输出 60 rpm</button>
+      <button data-v="B">B. i总 = 15,输出 200 rpm</button>
+      <button data-v="C">C. i总 = 50,输出 150000 rpm</button>
+      <button data-v="D">D. i总 = 2,输出 1500 rpm</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:多级减速的总减速比 = 各级乘积,i总 = 10 × 5 = 50;输出转速 = 3000 / 50 = 60 rpm(见 3.3 节原文算例)。单对齿轮减速比有限(一般 1~10),要得到 50:1、100:1 就用多级串联。<a href="../00_3D解剖/减速器剖面图详解.html">对照减速器剖面图 →</a></div>
+  </div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>人形机器人机械系统分骨架/关节/执行器/壳体四层,核心矛盾是"小体积大扭矩、轻重量高载荷"。机构学上用格鲁布勒公式 F = 3(n-1) - 2j - h 判断自由度,四连杆膝关节、平行四边形肩关节都是单自由度连杆机构的典型应用。减速器本质是"用转速换扭矩",传动比 i = Z₂/Z₁、多级相乘、功率守恒 P = T·ω 三条规律贯穿始终;谐波/行星/RV 三类减速器各司其职,交叉滚子轴承是关节输出的标配。选材看比强度,减重优先减远端。估算关节先算静力矩 τ ≈ m·g·L,再按最不利工况乘安全系数,选电机永远看持续扭矩、用峰值兜底。

@@ -45,6 +45,62 @@
   .legend-color { width: 20px; height: 12px; border-radius: 3px; }
 
   .footer { text-align: center; margin-top: 24px; color: #64748b; font-size: 12px; }
+
+  /* ===== 统一播放控制条（速度 / 暂停 / 单步） ===== */
+  .ani-controlbar {
+    position: sticky;
+    top: 10px;
+    z-index: 999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 14px;
+    padding: 8px 16px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(71, 85, 105, 0.55);
+    border-radius: 999px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .ani-controlbar .ani-btn {
+    padding: 7px 14px;
+    border: 1px solid #475569;
+    border-radius: 999px;
+    background: #334155;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .ani-controlbar .ani-btn:hover { background: #475569; }
+  .ani-controlbar .ani-btn:disabled { opacity: 0.35; cursor: not-allowed; background: #334155; }
+  .ani-controlbar .ani-btn.active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+  }
+  .ani-controlbar .ani-sep { width: 1px; height: 20px; background: #475569; }
+  .ani-controlbar .ani-label { color: #94a3b8; font-size: 12px; }
+  .ani-controlbar .ani-speed-val {
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: Consolas, monospace;
+    min-width: 44px;
+    text-align: center;
+  }
+  .ani-controlbar .ani-play-btn { border-color: #10b981; background: #065f46; }
+  .ani-controlbar .ani-play-btn:hover { background: #059669; }
+  .ani-controlbar .ani-play-btn.paused {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-color: #f59e0b;
+  }
 </style>
 <link rel="stylesheet" href="../_assets/chrome.css">
 </head>
@@ -53,6 +109,18 @@
 <div class="header">
   <h1>⚡ 人形机器人学习站 · 原理动画演示</h1>
   <p>交互式动画演示 · 切换标签查看不同工作原理</p>
+</div>
+
+<div class="ani-controlbar" id="aniControlbar">
+  <button type="button" class="ani-btn ani-play-btn" id="aniPlayBtn" onclick="togglePlay()" title="暂停动画">⏸ 暂停</button>
+  <button type="button" class="ani-btn" id="aniStepBtn" onclick="stepOnce()" title="单步（仅暂停时可用）" disabled>单步 ▶|</button>
+  <span class="ani-sep"></span>
+  <span class="ani-label">速度</span>
+  <button type="button" class="ani-btn ani-speed-btn" data-speed="0.25" onclick="setSpeedBtn(0.25)" title="慢速播放 0.25 倍">0.25x</button>
+  <button type="button" class="ani-btn ani-speed-btn" data-speed="0.5" onclick="setSpeedBtn(0.5)" title="慢速播放 0.5 倍">0.5x</button>
+  <button type="button" class="ani-btn ani-speed-btn active" data-speed="1" onclick="setSpeedBtn(1)" title="正常速度 1 倍">1x</button>
+  <button type="button" class="ani-btn ani-speed-btn" data-speed="2" onclick="setSpeedBtn(2)" title="快速播放 2 倍">2x</button>
+  <span class="ani-speed-val" id="aniSpeedVal">1x</span>
 </div>
 
 <div class="tabs">
@@ -111,19 +179,12 @@ function switchTab(tab, btn) {
 
 function togglePlay() {
   playing = !playing;
-  const btn = document.getElementById('playBtn');
-  if (playing) {
-    btn.textContent = '⏸ 暂停动画';
-    btn.classList.remove('paused');
-    lastTime = performance.now();
-  } else {
-    btn.textContent = '▶ 播放动画';
-    btn.classList.add('paused');
-  }
+  if (playing) lastTime = performance.now();
+  syncPlayUI();
 }
 
 function resetAnim() { animTime = 0; }
-function setSpeed(v) { speed = parseFloat(v); document.getElementById('speedVal').textContent = v + 'x'; }
+function setSpeed(v) { speed = parseFloat(v); syncSpeedUI(); }
 
 function updateInfo() {
   const titles = {
@@ -908,7 +969,12 @@ function roundRect(ctx,x,y,w,h,r) {
 function animate(now) {
   const dt = (now - lastTime) / 1000;
   lastTime = now;
-  if (playing) animTime += dt * speed;
+  if (playing) {
+    animTime += dt * speed;
+  } else if (stepPending) {
+    animTime += STEP_DT * speed; // 单步：只推进一帧
+    stepPending = false;
+  }
   if (currentTab === 'structure') drawStructure(animTime);
   else if (currentTab === 'foc') drawFOC(animTime);
   else if (currentTab === 'threeloop') drawThreeLoop(animTime);
@@ -917,7 +983,55 @@ function animate(now) {
   requestAnimationFrame(animate);
 }
 
+// ============ 统一播放控制条（速度 / 暂停 / 单步） ============
+var STEP_DT = 1 / 60;      // 单步前进一帧（按 60fps 的单帧时间）
+var stepPending = false;   // 单步标志：true 时下一帧只推进一帧
+
+function syncPlayUI() {
+  var pb = document.getElementById('playBtn');
+  var ab = document.getElementById('aniPlayBtn');
+  var sb = document.getElementById('aniStepBtn');
+  if (playing) {
+    if (pb) { pb.textContent = '⏸ 暂停动画'; pb.classList.remove('paused'); }
+    if (ab) { ab.textContent = '⏸ 暂停'; ab.classList.remove('paused'); ab.title = '暂停动画'; }
+    if (sb) { sb.disabled = true; sb.title = '单步（仅暂停时可用）'; }
+  } else {
+    if (pb) { pb.textContent = '▶ 播放动画'; pb.classList.add('paused'); }
+    if (ab) { ab.textContent = '▶ 继续'; ab.classList.add('paused'); ab.title = '继续动画'; }
+    if (sb) { sb.disabled = false; sb.title = '单步：每点一次前进一帧'; }
+  }
+}
+
+function syncSpeedUI() {
+  var i, btns = document.querySelectorAll('.ani-speed-btn');
+  for (i = 0; i < btns.length; i++) {
+    if (parseFloat(btns[i].getAttribute('data-speed')) === speed) {
+      btns[i].classList.add('active');
+    } else {
+      btns[i].classList.remove('active');
+    }
+  }
+  var sv = document.getElementById('aniSpeedVal');
+  if (sv) sv.textContent = speed + 'x';
+  var oldSv = document.getElementById('speedVal');
+  if (oldSv) oldSv.textContent = speed + 'x';
+  var slider = document.querySelector('.speed-control input[type=range]');
+  if (slider && parseFloat(slider.value) !== speed) slider.value = speed;
+}
+
+function setSpeedBtn(v) {
+  speed = parseFloat(v);
+  syncSpeedUI();
+}
+
+function stepOnce() {
+  if (playing) return;   // 仅在暂停时生效
+  stepPending = true;
+}
+
 updateInfo();
+syncPlayUI();
+syncSpeedUI();
 requestAnimationFrame(animate);
 </script>
 <script>

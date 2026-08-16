@@ -6,7 +6,7 @@
 <title>人形机器人学习站 · 从关节模组到具身智能</title>
 <meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具,软件+硬件全覆盖。">
 <meta property="og:title" content="人形机器人学习站 · 从关节模组到具身智能">
-<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,30 个学习页面,零基础可学。">
+<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,35 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <link rel="stylesheet" href="_assets/site.css">
@@ -26,10 +26,9 @@
     { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03"] },
     { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05"] },
     { key:"04", name:"升级进阶", ids:["04-01","04-02"] },
-    { key:"05", name:"HdriveV2 工程", ids:["05-01","05-02"] },
     { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08"] },
     { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04"] },
-    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04"] }
+    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06"] }
   ];
 </script>
 </head>
@@ -62,10 +61,11 @@
   <div class="hero">
     <h1>🤖 人形机器人学习站</h1>
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
-    零基础可学 · 100% 免费 · 支持离线浏览 · 持续更新</div>
+    零基础可学 · 100% 免费 · 3D 解剖页支持离线 · 持续更新</div>
     <div class="stats">
-      <div class="stat"><div class="v">30</div><div class="k">学习页面</div></div>
-      <div class="stat"><div class="v">9</div><div class="k">大学习板块</div></div>
+      <div class="stat"><div class="v" id="statPages">35</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v" id="statTracked">32</div><div class="k">可打卡页面</div></div>
+      <div class="stat"><div class="v">8</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
       <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
     </div>
@@ -281,21 +281,21 @@
     </div>
   </div>
 
-  <!-- ================= 5 · HdriveV2 ================= -->
+  <!-- ================= 5 · HdriveV2(规划中) ================= -->
   <div class="sec" id="sec5">
-    <div class="sec-title"><span class="num">5</span>第五部分 · HdriveV2 新版工程 <span class="en">ENGINEERING</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">5</span>第五部分 · HdriveV2 工程 <span class="en">PLANNED · 原理图/PCB/BOM/固件目录规划中,设计文档见 03</span><span class="bar"></span></div>
     <div class="grid">
-      <a class="card" href="05_HdriveV2工程/00_设计规范与决策/Hdrive新版方案_交叉认证与芯片选型报告.html">
+      <a class="card" href="03_项目实操/10_Hdrive新版方案_交叉认证与芯片选型报告.html">
         <span class="go">进入 →</span>
         <div class="ic">🧠</div>
         <div class="t">Hdrive 新版方案 · 设计规范与决策</div>
-        <div class="d">交叉认证报告:芯片选型、方案对比、已知 Bug 逐条核实(原理图/PCB/BOM/固件/测试记录工程目录)。</div>
+        <div class="d">交叉认证报告:芯片选型、方案对比、已知 Bug 逐条核实(收录于 03 实操部分;05 工程目录规划中)。</div>
       </a>
-      <a class="card" href="05_HdriveV2工程/00_设计规范与决策/电源管理功率链路分析/电源管理功率链路分析.html">
+      <a class="card" href="03_项目实操/11_电源管理功率链路分析/">
         <span class="go">进入 →</span>
         <div class="ic">⚡</div>
         <div class="t">HdriveV2 · 电源管理功率链路分析</div>
-        <div class="d">HdriveV2 工程内嵌版电源链路分析:输入保护、Buck、LDO、采样完整链路与 Bug 复盘。</div>
+        <div class="d">电源链路分析:输入保护、Buck、LDO、采样完整链路与 Bug 复盘(收录于 03 实操部分)。</div>
       </a>
     </div>
   </div>
@@ -430,6 +430,20 @@
         <div class="t">代码实验室</div>
         <div class="d">零安装浏览器实验:PID 整定模拟器、FOC 电流矢量可视化、倒立摆平衡控制(含位置控制高级模式)。</div>
       </a>
+      <a class="card" href="08_学习工具/05_传动与控制实验台.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🎛️</div>
+        <div class="t">传动与控制实验台</div>
+        <div class="d">交互实验台:减速比/效率/扭矩关系、FOC 三环阶跃响应与参数作用,拖参数看曲线。</div>
+      </a>
+      <a class="card" href="08_学习工具/06_学习地图.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🗺️</div>
+        <div class="t">学习地图</div>
+        <div class="d">全站页面学习地图:可点击节点直达页面、进度点亮、推荐下一站高亮。</div>
+      </a>
     </div>
   </div>
 
@@ -442,7 +456,7 @@
         <button class="lab-btns" style="margin:0" onclick="Site.exportProgress()">⬇️ 导出进度</button>
         <button class="lab-btns" style="margin:0" onclick="Site.importProgress()">⬆️ 导入进度</button>
       </div>
-      <div class="box box-tip" style="margin:14px 0 0"><b>💡 关于进度与登录:</b>进度保存在<b>当前浏览器本地</b>(不上传、无账号)。换设备/换手机时,先在本机"⬇️ 导出进度"得到 JSON 文件,再在新设备"⬆️ 导入进度"即可延续。<b>真正的多设备云端同步需要登录系统与服务器</b>(静态托管无后端),如需要我可以在后续版本接入免费云同步(需你提供一个账号)。</div>
+      <div class="box box-tip" style="margin:14px 0 0"><b>💡 关于进度与登录:</b>进度保存在<b>当前浏览器本地</b>(不上传、无账号)。换设备/换手机时,先在本机"⬇️ 导出进度"得到 JSON 文件,再在新设备"⬆️ 导入进度"即可延续。<b>真正的多设备云端同步需要登录系统与服务器</b>(静态托管无后端),如需要我可以在后续版本接入免费云同步(需你提供一个账号)。<br>注:3D 主页面与"05 HdriveV2 工程(规划中)"暂不参与打卡统计。</div>
     </div>
   </div>
 
@@ -450,12 +464,16 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.4.3</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-15</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.5.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · 一致性修复 + 体验升级</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.5.0 · 2026-08-16 · 一致性修复 + 搜索升级 + 新手引导</summary>
+        <div class="faq-a">修复首页重复导航/页脚注入;版本号收敛为单一数据源(S.VERSION);首页统计改为动态计算;导航补 HdriveV2;05 目录标注"规划中"并去重(重定向到 03);搜索升级(多词相关度排序+命中高亮+HTML 转义);新增新手引导(仅首页首次访问)与打印按钮;3D 页移动端性能优化(关抗锯齿/阴影,提升 iPhone 显示成功率);新增一键自检脚本。</div>
+      </details>
+      <details class="faq">
         <summary>V1.4.3 · 2026-08-15 · 三页深度知识 + 极简切换升级</summary>
-        <div class="faq-a">新增 <b>VLA 与世界模型详解</b>(06-08:RT-1→π0→Helix/GR00T 逐个详解+世界模型)、<b>灵巧手专题</b>(07-04)、<b>全身控制与步态规划 WBC/MPC</b>(04-02);首页新增<b>深色/极简浅色分段开关</b>(更醒目),浅色风格更纯白。</div>
+        <div class="faq-a">新增 <b>VLA 与世界模型详解</b>(06-08)、<b>灵巧手专题</b>(07-04)、<b>全身控制与步态规划 WBC/MPC</b>(04-02);首页新增<b>深色/极简浅色分段开关</b>,浅色风格更纯白。</div>
       </details>
       <details class="faq">
         <summary>V1.4.2 · 2026-08-15 · 文档式目录 + 三页新教学</summary>
@@ -493,7 +511,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.4.3(2026-08-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.5.0(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -526,7 +544,17 @@
       + '<div class="pbar"><i style="width:' + totalPct + '%"></i></div>'
       + '<span class="pv">' + totalDone + '/' + totalAll + '</span></div>' + html;
     rows.innerHTML = html;
+    /* 统计数字:可打卡页数 + 学习页数(搜索索引加载后更新) */
+    var elT = document.getElementById("statTracked");
+    if(elT) elT.textContent = totalAll;
+    var elP = document.getElementById("statPages");
+    if(elP && window.SITE_SEARCH_INDEX){ elP.textContent = Math.max(window.SITE_SEARCH_INDEX.length - 1, 0); }
   }
+  function updateStatPages(){
+    var elP = document.getElementById("statPages");
+    if(elP && window.SITE_SEARCH_INDEX){ elP.textContent = Math.max(window.SITE_SEARCH_INDEX.length - 1, 0); }
+  }
+  Site.onSearchIndexReady = updateStatPages;
   Site.refreshHomeProgress = renderProgress;
   document.addEventListener("DOMContentLoaded", renderProgress);
 </script>
