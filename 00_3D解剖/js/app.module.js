@@ -121,12 +121,33 @@ window.__3D_LOAD_LOG__=[];
 function probe(msg){try{window.__3D_LOAD_LOG__.push(String(msg).slice(0,200));}catch(e){}}
 function loadDeps(cb){
   if(THREE){cb(true);return;}
-  probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+(sessionStorage.getItem('__three_cdn__')==='1'||location.protocol==='file:'?'CDN':'本地'));
-  /* 依次加载 three 核心 → 轨道控制器 → STL 加载器（加载官方 URDF 网格用）→ 环境贴图生成器（修复金属材质发黑）→ Draco 加载器（优先加载 .drc 超压缩模型） */
-  import('three').then(function(M){THREE=M;window.__THREE_LOADED__=true;probe('three 核心 OK');window.__SHOW_DIAG__&&window.__SHOW_DIAG__();return import('three/addons/controls/OrbitControls.js');})
-    .then(function(O){OrbitControls=O.OrbitControls;probe('OrbitControls OK');return import('three/addons/loaders/STLLoader.js');})
-    .then(function(S){STLLoader=S.STLLoader;probe('STLLoader OK');return import('three/addons/environments/RoomEnvironment.js');})
-    .then(function(R){RoomEnv=R.RoomEnvironment;probe('RoomEnvironment OK');return import('three/addons/loaders/DRACOLoader.js');})
+  /* 【importmap 无关加载】直接使用相对路径/绝对 URL 动态导入——不依赖 importmap 与 es-module-shims,
+     兼容任何支持 ES module 的浏览器(老内核套壳浏览器无原生 importmap 也能用):
+     本地相对路径优先,失败自动切 npmmirror CDN 绝对 URL(file:// 协议直接走 CDN)。 */
+  var LOC='./lib/', CDN='https://registry.npmmirror.com/three/0.160.0/files/';
+  var A=[
+    ['three.module.js','build/three.module.js'],
+    ['addons/controls/OrbitControls.js','examples/jsm/controls/OrbitControls.js'],
+    ['addons/loaders/STLLoader.js','examples/jsm/loaders/STLLoader.js'],
+    ['addons/environments/RoomEnvironment.js','examples/jsm/environments/RoomEnvironment.js'],
+    ['addons/loaders/DRACOLoader.js','examples/jsm/loaders/DRACOLoader.js']
+  ];
+  var file=location.protocol==='file:';
+  var useCdn=file||sessionStorage.getItem('__three_cdn__')==='1';
+  probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+(useCdn?'CDN':'本地'));
+  function imp(i){
+    if(useCdn)return import(CDN+A[i][1]);
+    return import(LOC+A[i][0]).catch(function(e){
+      /* 本地失败:切 CDN 并记住(下次直接 CDN),同一次会话内不再回本地循环 */
+      probe('本地 '+A[i][0]+' 失败,切 CDN');
+      try{sessionStorage.setItem('__three_cdn__','1');}catch(err){}
+      return import(CDN+A[i][1]);
+    });
+  }
+  imp(0).then(function(M){THREE=M;window.__THREE_LOADED__=true;probe('three 核心 OK');window.__SHOW_DIAG__&&window.__SHOW_DIAG__();return imp(1);})
+    .then(function(O){OrbitControls=O.OrbitControls;probe('OrbitControls OK');return imp(2);})
+    .then(function(S){STLLoader=S.STLLoader;probe('STLLoader OK');return imp(3);})
+    .then(function(R){RoomEnv=R.RoomEnvironment;probe('RoomEnvironment OK');return imp(4);})
     .then(function(D){DRACOLoader=D.DRACOLoader;probe('DRACOLoader OK');cb(true);})
     .catch(function(e){
       var em=(e&&e.message)?String(e.message):String(e);
@@ -134,23 +155,6 @@ function loadDeps(cb){
       console.warn('[Robot3D] 引擎加载失败:',e);
       probe('❌ 加载失败: '+em+' '+(es?('('+es.slice(0,120)+')'):''));
       window.__3D_FAILED__=true;
-      /* 【防误触发+防死循环】状态机：无标记→切CDN；CDN失败→回本地并标记(2)；本地再失败→报错提示不再循环。
-         file:// 模式已固定走 CDN(见 HTML 顶部脚本),不参与回退循环,直接报错提示 */
-      var isFile=location.protocol==='file:';
-      var cdn=null;try{cdn=sessionStorage.getItem('__three_cdn__');}catch(err){}
-      if(!cdn&&!isFile){
-        probe('→ 切换到 CDN 重载');
-        try{sessionStorage.setItem('__three_cdn__','1');}catch(err){}
-        try{location.reload();}catch(err){}
-        return;
-      }
-      if(cdn==='1'&&!isFile){
-        /* CDN 也失败：恢复本地并标记，避免永久卡在 CDN 上 */
-        probe('→ CDN 也失败,恢复本地');
-        try{sessionStorage.setItem('__three_cdn__','2');}catch(err){}
-        try{location.reload();}catch(err){}
-        return;
-      }
       cb(false);
     });
 }

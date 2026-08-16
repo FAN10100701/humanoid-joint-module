@@ -342,65 +342,9 @@ body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:va
 </style></head><body>
 <!-- 返回学习站首页悬浮按钮(独立页无全站导航,交接文档遗留项) -->
 <a href="../index.html" style="position:fixed;top:14px;right:14px;z-index:99;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:18px;background:rgba(13,18,30,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(120,140,180,.35);color:#cdd8ea;font:600 12px/1 'Segoe UI','Microsoft YaHei',sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.25)" onmouseover="this.style.borderColor='var(--accent,#2563eb)'" onmouseout="this.style.borderColor='rgba(120,140,180,.35)'">🏠 学习站首页</a>
-<!-- 【es-module-shims 条件加载】浏览器原生支持 importmap(Chrome89+/Edge89+/Safari16.4+/Firefox108+)时
-     不加载 shims——shims 与原生 importmap 共存会破坏动态 import 的子路径解析
-     ("three/addons/..." 报 Failed to resolve module specifier "three")；
-     仅旧内核(微信/QQ 内置浏览器、iOS Safari <16.4 等)才加载 polyfill。
-     必须先于下方 importmap 与模块脚本执行(本地文件,离线可用) -->
-<script>
-if(!window.HTMLScriptElement || !HTMLScriptElement.supports || !HTMLScriptElement.supports('importmap')){
-  document.write('<script src="./lib/es-module-shims.js"><\/script>');
-}else{
-  /* 原生 importmap:清除历史 CDN 回退标记,回到本地库模式(离线可用、速度最快);
-     若本地库真有问题,加载失败仍会由状态机自动切回 CDN 兜底 */
-  try{sessionStorage.removeItem('__three_cdn__');}catch(e){}
-}
-</script>
-<!-- 【iOS 兼容】importmap 改用静态标签(比 document.write 注入更可靠,iOS 18 上 document.write 的 importmap 有失效报告) -->
-<script type="importmap">
-{"imports":{"three":"./lib/three.module.js","three/addons/":"./lib/addons/"}}
-</script>
-<!-- Three.js 本地优先加载：默认使用本地 lib/ 文件夹，完全离线可用；加载失败自动回退 CDN -->
-<script>
-/* 本地优先/CDN回退逻辑：通过sessionStorage标记避免无限循环 */
-(function(){
-  /* 【file:// 兼容】直接双击本地 HTML 打开时，浏览器禁止加载本地 ES 模块(file 协议 CORS)，
-     自动改用 CDN 模块(npmmirror 有 CORS 头,file:// 下可用)；http/https 仍默认本地库 */
-  var USE_CDN = sessionStorage.getItem('__three_cdn__')==='1' || location.protocol==='file:';
-  if(USE_CDN){
-    /* 【大陆可达性修复】CDN回退地址由 unpkg.com 改为 npmmirror 阿里镜像：
-       unpkg 在大陆无VPN时常超时，一旦触发回退会导致 3D 引擎永久加载失败（白屏）；
-       npmmirror 大陆直连可达（已验证 200），回退链真正可用 */
-    var old=document.querySelector('script[type="importmap"]');if(old)old.remove();
-    var imports={"three":"https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js","three/addons/":"https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/"};
-    document.write('<script type="importmap">'+JSON.stringify({imports:imports})+'<\/script>');
-    console.log('[3D] 使用CDN模式加载Three.js');
-  }
-  /* 模块加载失败自动切换CDN并刷新：
-     【iOS 修复】同时监听 error 与 unhandledrejection——iOS 上报的模块错误 message 常为空。
-     【防误触发】只匹配明确的模块加载错误(收窄条件,避免无关报错含 three/module 字样就切 CDN);
-     【防死循环】状态机:无标记→切CDN(1);CDN也失败→回本地(2);本地再失败→不再循环,由 loadDeps 报错提示 */
-  if(!USE_CDN){
-    var tryCdn=function(reason){
-      if(sessionStorage.getItem('__three_cdn__'))return;
-      sessionStorage.setItem('__three_cdn__','1');
-      console.warn('[3D] 本地Three.js加载失败，自动切换到CDN:',reason||'');
-      location.reload();
-    };
-    var isModuleErr=function(msg){
-      return msg.indexOf('Failed to resolve module')>=0 || msg.indexOf('Importing a module script failed')>=0 || /three\.module\.js/.test(msg) || /three\/addons/.test(msg);
-    };
-    window.addEventListener('error',function(e){
-      var msg=(e&&e.message)?String(e.message):'';
-      if(isModuleErr(msg))tryCdn(e&&e.message);
-    },true);
-    window.addEventListener('unhandledrejection',function(e){
-      var r=(e&&e.reason)||{}, msg=String((r&&r.message)||r||'');
-      if(isModuleErr(msg))tryCdn(e&&e.reason);
-    },true);
-  }
-})();
-</script>
+<!-- 【加载方式说明】three 依赖由 js/app.module.js 的 loadDeps 以"相对路径+CDN绝对URL"方式动态导入，
+     不依赖 importmap、不加载 es-module-shims——兼容任何支持 ES module 的浏览器(含无原生 importmap 的老内核)，
+     file:// 协议自动走 CDN。此处无需任何模块配置。 -->
 <script>
 /* 检测是否为 file:// 协议：file:// 下 STL/URDF 文件无法通过fetch加载，使用内置参数化模型 */
 window.__IS_FILE_PROTO__=location.protocol==='file:';
@@ -1471,7 +1415,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v6.7';  /* 2026-08-17 · 修复es-module-shims与原生importmap冲突(动态import子路径解析失败)——原生支持时不加载shims */
+var DIAG_VER='v6.8';  /* 2026-08-17 · 彻底摆脱importmap/shims:loadDeps改相对路径+CDN绝对URL动态导入,兼容所有ES module浏览器 */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;
@@ -1523,8 +1467,12 @@ var DIAG_VER='v6.7';  /* 2026-08-17 · 修复es-module-shims与原生importmap�
     if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ prompt('请手动复制以下诊断信息:',txt); done(); }); }
     else prompt('请手动复制以下诊断信息:',txt);
   });
-  setInterval(refresh,2000);
-  if(isCoarse)fab.style.display='flex';   /* 触屏常驻；桌面端由上方 9 秒失败检测控制显示 */
+  setInterval(function(){
+    refresh();
+    /* 桌面端:引擎失败后 2 秒内自动显示诊断浮标(不再等 9 秒) */
+    if(!isCoarse&&window.__3D_FAILED__)fab.style.display='flex';
+  },2000);
+  if(isCoarse)fab.style.display='flex';   /* 触屏常驻；桌面端由失败检测控制显示 */
 })();
 </script>
 </body></html>
