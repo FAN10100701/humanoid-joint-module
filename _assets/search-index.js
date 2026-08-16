@@ -45,6 +45,7 @@ window.SITE_SEARCH_INDEX = [
   { t:"视觉 SLAM 与状态估计", u:"06_软件与算法/06_视觉SLAM与状态估计.html", s:"软件与算法", d:"同时定位与建图:前端里程计、图优化、回环检测、ORB-SLAM3/VINS/LIO-SAM、高斯泼溅", k:"SLAM 定位 建图 里程计 图优化 回环 ORB-SLAM3 VINS LIO-SAM 高斯泼溅 3DGS 位姿 SE3 状态估计" },
   { t:"sim2real 部署步骤拆解", u:"06_软件与算法/07_sim2real部署步骤拆解.html", s:"软件与算法", d:"仿真到真机十步流程:建模、参数辨识、域随机化、延迟/噪声注入、策略导出、真机部署、数据闭环", k:"sim2real 仿真到真机 域随机化 延迟注入 策略导出 ONNX 部署 数据闭环 gap" },
   { t:"VLA 与世界模型详解", u:"06_软件与算法/08_视觉语言动作模型VLA与世界模型详解.html", s:"软件与算法", d:"RT-1/RT-2/OpenVLA/π0/Helix/GR00T 逐个详解、世界模型(Genie/Cosmos)、数据训练、评测与局限", k:"VLA 世界模型 视觉语言动作 RT-1 RT-2 OpenVLA pi0 Helix GR00T GO-1 Genie Cosmos 世界模型 具身智能 大模型" },
+  { t:"ROS2 入门实战 · 第一个节点", u:"06_软件与算法/09_ROS2入门实战_第一个节点.html", s:"软件与算法", d:"乐高比喻、概念类比表、ROS1/2 判别速查、小鱼一键安装、Zsh 终端优化、发布者节点完整代码与命令流程", k:"ROS2 实战 第一个节点 小鱼安装 fishros colcon 工作空间 rclpy 发布者 订阅者 topic echo Zsh Oh My Zsh 终端 入门" },
 
   /* ---- 7 · 前沿知识库(新) ---- */
   { t:"全球人形机器人机型全景", u:"07_前沿知识库/01_全球人形机器人机型全景.html", s:"前沿知识库", d:"Optimus、Figure、宇树 H1/G1、智元、Atlas、小米、傅利叶等 10+ 机型参数对比与趋势", k:"人形机器人 机型 特斯拉 Optimus Figure 宇树 H1 G1 智元 远征 灵犀 波士顿动力 Atlas 小米 CyberOne 傅利叶 星动纪元 众擎 参数对比 行业趋势" },

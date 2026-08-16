@@ -97,6 +97,23 @@
     a.download = "人形机器人学习进度-" + new Date().toISOString().slice(0,10) + ".json";
     document.body.appendChild(a); a.click(); a.remove();
   };
+  /* 退出自动保存: 本页进度有变化且开关开启时,pagehide 自动导出一次 */
+  var AUTO_KEY = "site-autosave-v1";
+  var snapAtLoad = null;
+  S.autoSaveEnabled = function(){
+    try{ return localStorage.getItem(AUTO_KEY) !== "0"; }catch(e){ return true; }
+  };
+  S.setAutoSave = function(on){
+    try{ localStorage.setItem(AUTO_KEY, on ? "1" : "0"); }catch(e){}
+  };
+  function initAutoSave(){
+    snapAtLoad = JSON.stringify(getProgress());
+    window.addEventListener("pagehide", function(){
+      if(!S.autoSaveEnabled()) return;
+      if(JSON.stringify(getProgress()) === snapAtLoad) return;  /* 本页无变化,不重复下载 */
+      S.exportProgress();
+    });
+  }
   /* 进度导入(合并进当前进度) */
   S.importProgress = function(){
     var input = document.createElement("input");
@@ -398,7 +415,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V1.5.1(2026-08-16)";
+  S.VERSION = "V1.5.2(2026-08-16)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -514,8 +531,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave();
   }
 })();

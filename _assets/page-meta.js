@@ -31,6 +31,7 @@ window.SITE_PAGE_META = {
   "06-06": { time:"25 分钟", prereq:"无", updated:"2026-08-16", verified:"已联网核实", goals:["理解前端里程计 / 图优化 / 回环检测","认识 ORB-SLAM3 / VINS / LIO-SAM 等主流方案"] },
   "06-07": { time:"20 分钟", prereq:"06-04", updated:"2026-08-16", verified:"流程拆解", goals:["能按十步流程规划一次仿真到真机部署"] },
   "06-08": { time:"30 分钟", prereq:"06-05", updated:"2026-08-16", verified:"已联网核实", goals:["理解端到端 VLA 模型架构与世界模型","了解 VLA 的数据训练、评测与局限"] },
+  "06-09": { time:"60-90 分钟", prereq:"无", updated:"2026-08-16", verified:"实战教程(参考西交笃行队)", goals:["用比喻向别人解释 ROS 是什么","能分辨 ROS1/ROS2 教程","独立跑通第一个发布者节点"] },
   "07-01": { time:"20 分钟", prereq:"无", updated:"2026-08-15", verified:"已联网核实(17 次检索)", goals:["记住主流机型的关键参数","能横向对比不同技术路线与趋势"] },
   "07-02": { time:"25 分钟", prereq:"无", updated:"2026-08-15", verified:"已联网核实(12 次检索)", goals:["了解七大前沿技术专题的现状与方向"] },
   "07-03": { time:"30 分钟", prereq:"无", updated:"2026-08-15", verified:"链接已核实", goals:["挑 3 篇论文精读并记录笔记","知道去哪里找数据集与开源项目"] },
