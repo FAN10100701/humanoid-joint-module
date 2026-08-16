@@ -340,6 +340,9 @@ body[data-theme="dark"] #diagFab{background:rgba(20,28,42,.92);border-color:var(
 #diagPanel{position:fixed;left:10px;bottom:52px;z-index:999;display:none;width:min(330px,calc(100vw - 20px));padding:12px 14px;border-radius:12px;border:1px solid var(--rule);background:rgba(255,255,255,.97);color:var(--ink);font-size:12px;line-height:2;box-shadow:var(--sh3);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-family:var(--mono)}
 body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:var(--rule2)}
 #diagPanel .dp-copy{float:right;border:1px solid var(--rule);background:transparent;color:var(--accent);font-size:11px;padding:2px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
+#diagPanel .dp-close{position:absolute;right:4px;top:2px;border:none;background:transparent;color:var(--faint);font-size:13px;cursor:pointer;font-family:inherit;padding:2px 6px}
+#diagPanel .dp-close:hover{color:var(--bad)}
+#diagFab.mini{opacity:.35;padding:4px 8px;font-size:10.5px;border-style:dashed}
 #diagPanel .dp-ok{color:var(--ok)}#diagPanel .dp-bad{color:var(--bad)}#diagPanel .dp-wait{color:var(--warn)}
 @media(min-width:861px){#diagFab,#diagPanel{display:none!important}}
 </style></head><body>
@@ -1437,11 +1440,11 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 </script>
 <!-- 移动端常驻诊断浮标:启动遮罩消失后仍可查看/复制设备与引擎状态,便于反馈排障 -->
 <div id="diagFab" title="设备诊断">📱 诊断</div>
-<div id="diagPanel"><button class="dp-copy" id="diagCopy" type="button">复制</button><div id="diagBody"></div></div>
+<div id="diagPanel"><button class="dp-close" id="diagClose" type="button" title="收起诊断(缩小为圆点)">✕</button><button class="dp-copy" id="diagCopy" type="button">复制</button><div id="diagBody"></div></div>
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v7.0';  /* 2026-08-17 · 兼容性终极方案:本地库相对路径零依赖(全浏览器可用)+CDN模式importmap三源+失败自愈状态机 */
+var DIAG_VER='v7.1';  /* 2026-08-17 · 诊断浮标可收起(✕缩小为圆点)+显示浏览器/系统(不限iOS) */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;
@@ -1466,11 +1469,34 @@ var DIAG_VER='v7.0';  /* 2026-08-17 · 兼容性终极方案:本地库相对路�
   },true);
   window.addEventListener('unhandledrejection',function(e){ var r=(e&&e.reason)||{}; errs.push('Promise:'+String((r&&r.message)||r).slice(0,120)); refresh(); },true);
   function row(k,v,st){ return '<span style="color:var(--faint)">'+k+'</span> <span class="'+(st===1?'dp-ok':st===0?'dp-bad':'dp-wait')+'">'+(st===1?'✓':st===0?'✗':'…')+'</span> '+v+'<br>'; }
+  /* 浏览器/系统识别(诊断不只针对 iOS,也覆盖 Edge/Chrome/Android 等) */
+  function uaInfo(){
+    var u=navigator.userAgent||'';
+    var os='未知';
+    if(/Windows NT 10/.test(u))os='Windows 10/11';
+    else if(/Windows NT 6/.test(u))os='Windows 7/8';
+    else if(/iPhone|iPad|iPod/.test(u))os='iOS';
+    else if(/Android/.test(u))os='Android';
+    else if(/Mac OS X|Macintosh/.test(u))os='macOS';
+    else if(/Linux/.test(u))os='Linux';
+    var b='未知';
+    if(/Edg\//.test(u))b='Edge '+(u.match(/Edg\/([\d.]+)/)||[])[1];
+    else if(/OPR\//.test(u))b='Opera '+(u.match(/OPR\/([\d.]+)/)||[])[1];
+    else if(/Chrome\//.test(u))b='Chrome '+(u.match(/Chrome\/([\d.]+)/)||[])[1];
+    else if(/Firefox\//.test(u))b='Firefox '+(u.match(/Firefox\/([\d.]+)/)||[])[1];
+    else if(/Safari\//.test(u))b='Safari '+(u.match(/Version\/([\d.]+)/)||[])[1];
+    if(/MicroMessenger/.test(u))b='微信内置浏览器('+b+')';
+    else if(/QQ\//.test(u))b='QQ内置浏览器('+b+')';
+    return {os:os,b:b};
+  }
+  var _ua=uaInfo();
   function refresh(){
     var d=window.__DIAG__||{};
     var h='';
     h+=row('诊断代码',DIAG_VER,1);
-    h+=row('iOS 版本',d.ios||'未知',1);
+    h+=row('浏览器',_ua.b,1);
+    h+=row('系统',_ua.os,1);
+    h+=row('iOS 版本',d.ios||'—',1);
     h+=row('importmap',d.imp?'原生支持':'兼容补丁',d.imp?1:2);
     h+=row('WebGL',d.gl?'可用':'不可用',d.gl?1:0);
     h+=row('WASM',d.wasm?'可用':'不可用',d.wasm?1:0);
@@ -1485,10 +1511,20 @@ var DIAG_VER='v7.0';  /* 2026-08-17 · 兼容性终极方案:本地库相对路�
     if(errs.length){ h+='<span class="dp-bad">运行期错误 ×'+errs.length+'</span><br>'+errs.slice(-3).join('<br>')+'<br>'; }
     bodyEl.innerHTML=h;
   }
-  fab.addEventListener('click',function(){ var on=panel.style.display!=='block'; panel.style.display=on?'block':'none'; if(on)refresh(); });
+  fab.addEventListener('click',function(){
+    var on=panel.style.display!=='block';
+    fab.classList.remove('mini');       /* 点开时恢复完整样式 */
+    panel.style.display=on?'block':'none';
+    if(on)refresh();
+  });
+  var closeBtn=document.getElementById('diagClose');
+  if(closeBtn)closeBtn.addEventListener('click',function(){
+    panel.style.display='none';
+    fab.classList.add('mini');          /* 缩小为半透明小圆点,不再遮挡 */
+  });
   copyBtn.addEventListener('click',function(){
     var d=window.__DIAG__||{};
-    var txt='诊断代码 '+DIAG_VER+' | iOS '+d.ios+' | importmap='+(d.imp?'原生':'补丁')+' | WebGL='+(d.gl?'可用':'不可用')+' | WASM='+(d.wasm?'可用':'不可用')+' | three='+(d.three||'?')+' | 引擎='+(d.mod||'?')+' | 渲染='+(window.__RENDERED__?'是':'否')+' | Three来源='+(sessionStorage.getItem('__three_cdn__')==='1'?'CDN':'本地')+(errs.length?(' | 错误:'+errs.join(' ;; ')):'');
+    var txt='诊断代码 '+DIAG_VER+' | 浏览器='+_ua.b+' | 系统='+_ua.os+' | iOS='+(d.ios||'—')+' | importmap='+(d.imp?'原生':'补丁')+' | WebGL='+(d.gl?'可用':'不可用')+' | WASM='+(d.wasm?'可用':'不可用')+' | three='+(d.three||'?')+' | 引擎='+(d.mod||'?')+' | 渲染='+(window.__RENDERED__?'是':'否')+' | Three来源='+(sessionStorage.getItem('__three_cdn__')==='1'?'CDN':'本地')+(errs.length?(' | 错误:'+errs.join(' ;; ')):'');
     function done(){ copyBtn.textContent='已复制'; setTimeout(function(){ copyBtn.textContent='复制'; },1500); }
     if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ prompt('请手动复制以下诊断信息:',txt); done(); }); }
     else prompt('请手动复制以下诊断信息:',txt);
