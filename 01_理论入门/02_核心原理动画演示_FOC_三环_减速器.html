@@ -129,6 +129,7 @@
   <button class="tab" onclick="switchTab('threeloop', this)">📊 三环闭环控制</button>
   <button class="tab" onclick="switchTab('harmonic', this)">⚙️ 谐波减速器原理</button>
   <button class="tab" onclick="switchTab('planetary', this)">🪐 行星减速器原理</button>
+  <button class="tab" onclick="switchTab('cycloidal', this)">🌀 摆线减速器原理</button>
 </div>
 
 <div class="canvas-area">
@@ -192,9 +193,10 @@ function updateInfo() {
     foc: 'FOC磁场定向控制原理',
     threeloop: '三环闭环控制系统',
     harmonic: '谐波减速器工作原理',
-    planetary: '行星减速器工作原理'
+    planetary: '行星减速器工作原理',
+    cycloidal: '摆线减速器工作原理'
   };
-  const colors = { structure: '#3b82f6', foc: '#8b5cf6', threeloop: '#10b981', harmonic: '#f97316', planetary: '#06b6d4' };
+  const colors = { structure: '#3b82f6', foc: '#8b5cf6', threeloop: '#10b981', harmonic: '#f97316', planetary: '#06b6d4', cycloidal: '#ec4899' };
   document.getElementById('infoTitleText').textContent = titles[currentTab];
   document.querySelector('.info-dot').style.background = colors[currentTab];
 
@@ -273,6 +275,21 @@ function updateInfo() {
       <div class="legend-item"><div class="legend-color" style="background:#f97316"></div>行星轮×3</div>
       <div class="legend-item"><div class="legend-color" style="background:#3b82f6"></div>内齿圈(固定)</div>
       <div class="legend-item"><div class="legend-color" style="background:#10b981"></div>行星架(输出)</div>
+    `;
+  } else if (currentTab === 'cycloidal') {
+    infoGrid.innerHTML = `
+      <div class="info-item"><div class="info-label">输入转速</div><div class="info-value" style="color:#ef4444">3000 rpm</div></div>
+      <div class="info-item"><div class="info-label">摆线轮齿数</div><div class="info-value" style="color:#f97316">20</div></div>
+      <div class="legend-item"></div>
+      <div class="info-item"><div class="info-label">针齿数</div><div class="info-value" style="color:#3b82f6">21</div></div>
+      <div class="info-item"><div class="info-label">减速比</div><div class="info-value" style="color:#10b981">1:20(反向)</div></div>
+    `;
+    infoDesc.textContent = '摆线针轮减速器核心部件：偏心套（输入，带动摆线轮做偏心"公摆"）、摆线轮（具有Zd个摆线齿廓的轮盘，实际产品常为两片180°错位安装以抵消偏心力）、针齿壳（固定的针齿销环，针齿数=Zd+1）、输出机构（摆线轮上的销孔套住输出法兰柱销，实现同轴低速输出）。摆线轮中心公摆一圈，自身反向转过1个齿，因此减速比=摆线轮齿数（本例20），输出与输入转向相反。多齿同时啮合带来极强的抗冲击能力与寿命；RV减速器在其基础上再复合一级行星减速，减速比可达100以上，是工业机器人关节的经典选择，人形机器人中常与谐波、行星方案搭配使用。';
+    legendPanel.innerHTML = `
+      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>偏心套(输入)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#f97316"></div>摆线轮(输出)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#3b82f6"></div>针齿壳(固定)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#10b981"></div>输出法兰(输出)</div>
     `;
   }
 }
@@ -928,6 +945,145 @@ function drawPlanetary(t) {
   });
 }
 
+// ============ 摆线减速器原理动画（新增，对齐 3D 解剖页五场景体系） ============
+// 齿数：摆线轮 Zd=20、针齿 Zp=Zd+1=21（固定），减速比 i=Zd=20，输出与输入反向
+function drawCycloidal(t) {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // 背景网格（与其他页签一致）
+  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth=0.5;
+  for (let x=0;x<W;x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y=0;y<H;y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  const cx = W/2 - 100, cy = H/2;
+  const Zd = 20, Zp = Zd + 1;            // 摆线轮齿数 / 针齿数 → 减速比 i = Zd = 20
+  const eccA = t * 2.0;                  // 偏心套（输入）高速角
+  const diskA = -eccA / Zd;              // 摆线轮反向慢速自转（i=20）
+  const e = 9;                           // 偏心距(px，示意放大)
+  const Rpin = 113, rpin = 6.5;          // 针齿分布半径 / 针齿销半径
+  const R0 = 96, amp = 7;                // 摆线轮基圆半径 / 齿形波动幅值
+
+  // ---- 针齿壳（蓝色，固定不动）----
+  ctx.fillStyle = '#1e3a8a';
+  ctx.beginPath(); ctx.arc(cx, cy, Rpin+18, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#3b82f6'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.arc(cx, cy, Rpin+18, 0, Math.PI*2); ctx.stroke();
+  // 针齿销：固定圆环上均布 Zp 根
+  for (let i=0;i<Zp;i++) {
+    const a = i * Math.PI*2/Zp;
+    ctx.fillStyle = '#60a5fa';
+    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*Rpin, cy+Math.sin(a)*Rpin, rpin, 0, Math.PI*2); ctx.fill();
+  }
+
+  // ---- 摆线轮（橙色，偏心"公摆" + 反向慢速自转）----
+  const dcx = cx + Math.cos(eccA)*e;     // 摆线轮中心绕输入轴公转（半径 e）
+  const dcy = cy + Math.sin(eccA)*e;
+  // 偏心轨迹虚线圆：提示摆线轮中心在"公摆"
+  ctx.setLineDash([4,4]); ctx.strokeStyle = 'rgba(239,68,68,0.55)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(cx, cy, e, 0, Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.save(); ctx.translate(dcx,dcy); ctx.rotate(diskA);
+  // 齿形轮廓：Zd 个波峰的摆线近似形
+  ctx.beginPath();
+  for (let i=0;i<=Zd*14;i++) {
+    const th = i * Math.PI*2/(Zd*14);
+    const r = R0 + amp*Math.cos(Zd*th);
+    const px = Math.cos(th)*r, py = Math.sin(th)*r;
+    if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(249,115,22,0.82)'; ctx.fill();
+  ctx.strokeStyle = '#fdba74'; ctx.lineWidth=2; ctx.stroke();
+  // 输出销孔×6（开在摆线轮上，套住输出法兰柱销）
+  for (let i=0;i<6;i++) {
+    const a = i * Math.PI*2/6;
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(Math.cos(a)*48, Math.sin(a)*48, 9, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#7c2d12'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  // 自转指示标记（辐条，让反向慢转可见）
+  ctx.strokeStyle = '#7c2d12'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-R0+16); ctx.stroke();
+  ctx.restore();
+
+  // ---- 输出法兰（绿色，柱销插入摆线轮销孔，同速慢转反向输出）----
+  ctx.fillStyle = '#10b981';
+  for (let i=0;i<6;i++) {
+    const a = diskA + i * Math.PI*2/6;   // 与摆线轮销孔同相位（世界系坐标）
+    const px = dcx + Math.cos(a)*48, py = dcy + Math.sin(a)*48;
+    ctx.beginPath(); ctx.arc(px, py, 5.5, 0, Math.PI*2); ctx.fill();
+  }
+  // 同轴输出轴（随摆线轮慢转的绿色虚线轴）
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(diskA);
+  ctx.strokeStyle = '#10b981'; ctx.lineWidth=4; ctx.setLineDash([8,6]);
+  ctx.beginPath(); ctx.moveTo(Rpin+18,0); ctx.lineTo(Rpin+52,0); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // ---- 偏心套 + 输入轴（红色，高速，中心最上层）----
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(eccA);
+  ctx.fillStyle = '#dc2626';
+  ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#fca5a5'; ctx.lineWidth=2; ctx.stroke();
+  // 键槽标记线，让高速旋转可见
+  ctx.strokeStyle = '#fca5a5'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,-17); ctx.lineTo(0,-7); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#991b1b';
+  ctx.beginPath(); ctx.arc(cx,cy,11,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fca5a5'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('输入', cx, cy+4);
+
+  // ---- 输入/输出转速指示 ----
+  drawRotArrow(cx+165, cy-105, 25, '#ef4444', '输入(高速)');
+  ctx.save(); ctx.translate(cx+165, cy-105); ctx.rotate(eccA*0.35);
+  ctx.strokeStyle='#ef4444'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*1.3); ctx.stroke();
+  ctx.restore();
+  drawRotArrow(cx-160, cy+125, 25, '#10b981', '输出(低速反向 1/20)');
+  ctx.save(); ctx.translate(cx-160, cy+125); ctx.rotate(diskA*8);
+  ctx.strokeStyle='#10b981'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(0,0,18,Math.PI*0.3,Math.PI*1.8,true); ctx.stroke();
+  ctx.restore();
+
+  // ---- 右侧原理说明面板 ----
+  const infoX = W - 220;
+  ctx.fillStyle = 'rgba(15,23,42,0.9)';
+  roundRect(ctx, infoX-20, cy-170, 230, 340, 10); ctx.fill();
+  ctx.strokeStyle = '#334155'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle = '#f8fafc'; ctx.font='bold 15px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('🌀 工作原理', infoX-5, cy-145);
+  ctx.font='12px sans-serif';
+  const lines = [
+    '',
+    '1. 偏心套(红色)高速旋转',
+    '   推动摆线轮中心绕',
+    '   输入轴做偏心"公摆"',
+    '',
+    '2. 摆线轮(橙色)20个齿',
+    '   齿面贴针齿(蓝色)滚动',
+    '   公摆1圈→反向自转1齿',
+    '',
+    '3. 减速比 i = 摆线轮齿数',
+    '   本例 20:1·输出反向',
+    '   销孔→柱销→法兰(绿)输出',
+    '',
+    '4. 特点:',
+    '   ✓ 多齿啮合·抗冲击',
+    '   ✓ 单级减速比大(20~80)',
+    '   ✓ 寿命长',
+    '   ✗ 偏心机构需动平衡',
+    '案例: RV二级复合 i可达100+'
+  ];
+  lines.forEach((line,i) => {
+    if (line.startsWith('✓')) ctx.fillStyle = '#34d399';
+    else if (line.startsWith('✗')) ctx.fillStyle = '#f87171';
+    else if (line.startsWith('案例')) ctx.fillStyle = '#22d3ee';
+    else ctx.fillStyle = '#cbd5e1';
+    ctx.fillText(line, infoX-5, cy-125+i*16);
+  });
+}
+
 // ============ 辅助函数 ============
 function drawBlock(x,y,w,h,fill,stroke,text,tc) {
   ctx.fillStyle = fill;
@@ -980,6 +1136,7 @@ function animate(now) {
   else if (currentTab === 'threeloop') drawThreeLoop(animTime);
   else if (currentTab === 'harmonic') drawHarmonic(animTime);
   else if (currentTab === 'planetary') drawPlanetary(animTime);
+  else if (currentTab === 'cycloidal') drawCycloidal(animTime);
   requestAnimationFrame(animate);
 }
 

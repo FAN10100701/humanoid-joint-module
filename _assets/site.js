@@ -274,7 +274,7 @@
 
   /* ---------- Giscus 评论区(配置驱动,见 _assets/giscus-config.js) ---------- */
   function initGiscus(){
-    if(!window.GISCUS_CONFIG || !GISCUS_CONFIG.repoId) return;   /* 未配置:不加载 */
+    if(!window.GISCUS_CONFIG || !window.GISCUS_CONFIG.repoId) return;   /* 未配置:不加载 */
     var P = page();
     if(!P.pageId) return;
     var c = document.querySelector(".container");
@@ -284,8 +284,9 @@
     box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="giscusEl"></div>';
     c.appendChild(box);
     var theme = document.body.getAttribute("data-theme") === "light" ? "light" : "dark";
-    /* 主源 giscus.app 在大陆可能不可达：失败后改用 jsdelivr 的 giscus Web Component(giscus.mjs)重建 */
-    function buildWidgetFallback(){
+    /* 用 giscus 官方 Web Component(giscus.mjs)直接加载:
+       主源 jsdelivr(国内可达性远好于 giscus.app),失败回退 fastly 节点 */
+    function mount(src){
       var el = document.getElementById("giscusEl");
       if(!el) return;
       el.innerHTML = "";
@@ -304,30 +305,15 @@
       el.appendChild(w);
       var m = document.createElement("script");
       m.type = "module";
-      m.src = "https://cdn.jsdelivr.net/npm/giscus@1.6.0/dist/giscus.mjs";
+      m.src = src;
+      m.onerror = function(){
+        if(m.getAttribute("data-fb")) return;
+        m.setAttribute("data-fb", "1");
+        mount("https://fastly.jsdelivr.net/npm/giscus@1.6.0/dist/giscus.mjs");
+      };
       document.body.appendChild(m);
     }
-    var s = document.createElement("script");
-    s.src = "https://giscus.app/client.js";
-    s.onerror = function(){
-      if(s.getAttribute("data-fb")) return;
-      s.setAttribute("data-fb", "1");
-      buildWidgetFallback();
-    };
-    s.setAttribute("data-repo", window.GISCUS_CONFIG.repo);
-    s.setAttribute("data-repo-id", window.GISCUS_CONFIG.repoId);
-    s.setAttribute("data-category", window.GISCUS_CONFIG.category);
-    s.setAttribute("data-category-id", window.GISCUS_CONFIG.categoryId);
-    s.setAttribute("data-mapping", "pathname");
-    s.setAttribute("data-strict", "0");
-    s.setAttribute("data-reactions-enabled", "1");
-    s.setAttribute("data-emit-metadata", "0");
-    s.setAttribute("data-input-position", "bottom");
-    s.setAttribute("data-theme", theme);
-    s.setAttribute("data-lang", "zh-CN");
-    s.crossOrigin = "anonymous";
-    s.async = true;
-    document.getElementById("giscusEl").appendChild(s);
+    mount("https://cdn.jsdelivr.net/npm/giscus@1.6.0/dist/giscus.mjs");
   }
 
   /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ---------- */

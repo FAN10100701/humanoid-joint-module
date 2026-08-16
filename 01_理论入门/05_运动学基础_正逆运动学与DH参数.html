@@ -11,6 +11,26 @@
   .my-ascii{font-size:12.5px;line-height:1.6}
   .my-mono{font-family:Consolas,"Courier New",monospace;color:#9ecbff}
   body[data-theme="light"] .my-mono{color:#1d4ed8}
+  /* ===== 5.4 FK/IK 交互实验(命名加 my-ik 前缀) ===== */
+  .my-iklab{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:14px;margin:20px 0;background:rgba(15,23,42,.45)}
+  body[data-theme="light"] .my-iklab{background:rgba(255,255,255,.6);border-color:rgba(37,99,235,.28)}
+  .my-ikbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;font-size:13px}
+  .my-ikbar button{border:1px solid rgba(59,130,246,.45);background:rgba(59,130,246,.12);color:#9ecbff;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px}
+  .my-ikbar button.active{background:#2563eb;color:#fff;border-color:#2563eb}
+  .my-ikbar button:hover{border-color:#60a5fa}
+  .my-ikmain{display:flex;gap:12px;flex-wrap:wrap}
+  .my-ikmain canvas{flex:1 1 560px;max-width:100%;height:auto;border-radius:10px;background:#0b1626;touch-action:none;cursor:crosshair}
+  .my-ikside{flex:0 0 250px;min-width:220px;font-size:13px;line-height:1.7}
+  .my-ikside .my-ikro{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(100,116,139,.35);padding:2px 0}
+  .my-ikside .my-ikro b{font-family:Consolas,monospace;color:#9ecbff}
+  body[data-theme="light"] .my-ikside .my-ikro b{color:#1d4ed8}
+  .my-ikside .my-ikwarn{color:#f87171;font-weight:700}
+  .my-ikside .my-ikok{color:#34d399}
+  .my-ikside input[type=range]{width:100%;accent-color:#2563eb}
+  .my-ikside .my-iktip{margin-top:8px;color:#94a3b8;font-size:12px}
+  .my-ikside label{color:#94a3b8}
+  body[data-theme="light"] .my-ikside label{color:#5a6a85}
+  body[data-theme="light"] .my-ikside .my-iktip{color:#5a6a85}
 </style>
 <script>
   /* 页面配置:导航/面包屑/前后翻页/打卡 全部由 site.js 读取 */
@@ -221,6 +241,37 @@ q ← q + Δq              更新后重算 FK,直到 ‖Δx‖ 足够小</code><
   <pre><code>Δq = Jᵀ (J·Jᵀ + λ²I)⁻¹ · Δx</code></pre>
   <p>λ 越大越稳但收敛越慢。数值法的坑是:初值选得差可能不收敛、或收敛到不是你想要的那个解。</p>
 
+  <h3>5.4 交互实验:2 连杆臂 FK/IK 演练场</h3>
+  <p>把 5.2 的解析公式做成可动手的实验:<b>IK 模式</b>直接拖红色目标点,页面实时用余弦定理反解 θ1/θ2,"肘朝上/肘朝下"两组解同时画出(实线为当前解,虚线为另一组解);<b>FK 模式</b>改为拖关节角滑杆,看末端 (x, y) 落到哪。把目标拖出蓝色可达域,就能亲眼看到"c2 超界→无解";把手臂拖到接近伸直,观察 det(J)=L1·L2·sinθ2 趋近 0 的<strong>奇异位形</strong>。</p>
+
+  <div class="my-iklab">
+    <div class="my-ikbar">
+      <button id="myikModeIK" class="active" onclick="myikSetMode('ik')">🎯 IK:拖目标点</button>
+      <button id="myikModeFK" onclick="myikSetMode('fk')">🎛 FK:拖关节滑杆</button>
+      <button id="myikElbow" onclick="myikFlipElbow()">🔁 肘朝上</button>
+      <button onclick="myikReset()">🔄 重置</button>
+      <label style="margin-left:auto">L1 <input type="range" id="myikL1" min="0.2" max="0.7" step="0.01" value="0.5" oninput="myikSetLen()"> <b id="myikL1v">0.50m</b></label>
+      <label>L2 <input type="range" id="myikL2" min="0.2" max="0.7" step="0.01" value="0.3" oninput="myikSetLen()"> <b id="myikL2v">0.30m</b></label>
+    </div>
+    <div class="my-ikmain">
+      <canvas id="myikCanvas" width="880" height="430"></canvas>
+      <div class="my-ikside">
+        <div class="my-ikro"><span>θ1 (肩关节)</span><b id="myikT1">--</b></div>
+        <div class="my-ikro"><span>θ2 (肘关节)</span><b id="myikT2">--</b></div>
+        <div class="my-ikro"><span>末端 x</span><b id="myikX">--</b></div>
+        <div class="my-ikro"><span>末端 y</span><b id="myikY">--</b></div>
+        <div class="my-ikro"><span>c2 = cosθ2</span><b id="myikC2">--</b></div>
+        <div class="my-ikro"><span>det(J)=L1·L2·sinθ2</span><b id="myikDet">--</b></div>
+        <div id="myikStatus" class="my-ikok">✔ 有解(两组姿态)</div>
+        <div id="myikFkCtl" style="display:none;margin-top:8px">
+          <label>θ1 <input type="range" id="myikS1" min="-180" max="180" step="1" value="35" oninput="myikSetAngles()"></label>
+          <label>θ2 <input type="range" id="myikS2" min="-180" max="180" step="1" value="-60" oninput="myikSetAngles()"></label>
+        </div>
+        <div class="my-iktip">💡 IK 模式:在画布任意处按下并拖动即可移动目标;肩部灰色扇环为可达范围(半径 |L1−L2| ~ L1+L2)。奇异警告:手臂接近完全伸直或折回时 det(J)→0。</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= 6. 雅可比矩阵 ================= -->
   <h2><span class="h2-num">6</span> 雅可比矩阵:速度、奇异点与力的桥梁</h2>
   <p>正/逆运动学回答"位置对不对",<strong>雅可比矩阵 J</strong>回答"快不快、用多大力",它把<strong>关节速度</strong>和<strong>末端速度</strong>线性地联系起来,是机器人动力学的第一块基石。</p>
@@ -383,6 +434,266 @@ pin.computeJointJacobians(model, data, q)</code></pre>
   </ul>
 
 </div><!-- /container -->
+
+<!-- ===== 5.4 FK/IK 交互实验脚本(与 5.2 解析公式同源:余弦定理求 θ2,atan2 求 θ1) ===== -->
+<script>
+(function () {
+  "use strict";
+  var cv = document.getElementById('myikCanvas');
+  if (!cv) return;
+  var ctx = cv.getContext('2d');
+  var S = 340;                    // 比例尺 px/m
+  var OX = 120, OY = 310;         // 肩关节原点(canvas 像素,y 向下)
+  var st = {
+    mode: 'ik',                   // 'ik' | 'fk'
+    L1: 0.5, L2: 0.3,
+    t1: 35 * Math.PI / 180, t2: -60 * Math.PI / 180,   // 当前解(rad)
+    elbow: +1,                    // +1 肘朝上(θ2>0) / -1 肘朝下
+    target: { x: 0.55, y: 0.35 }, // IK 目标(m)
+    clamped: false                // 目标是否超出可达域被截断
+  };
+
+  // ---- 坐标变换:世界(m,y向上) ↔ 画布(px,y向下) ----
+  function w2c(x, y) { return [OX + x * S, OY - y * S]; }
+  function c2w(px, py) { return [(px - OX) / S, (OY - py) / S]; }
+
+  // ---- FK:x = L1·c1 + L2·c12, y = L1·s1 + L2·s12 ----
+  function fk(t1, t2) {
+    return { x: st.L1 * Math.cos(t1) + st.L2 * Math.cos(t1 + t2),
+             y: st.L1 * Math.sin(t1) + st.L2 * Math.sin(t1 + t2) };
+  }
+
+  // ---- IK(5.2 解析解):返回 {t1,t2,ok} ;ok=false 表示无解 ----
+  function ik(x, y, elbowSign) {
+    var r2 = x * x + y * y;
+    var c2 = (r2 - st.L1 * st.L1 - st.L2 * st.L2) / (2 * st.L1 * st.L2);
+    if (c2 < -1.0001 || c2 > 1.0001) return null;
+    var cc = Math.max(-1, Math.min(1, c2));
+    var t2 = elbowSign * Math.acos(cc);
+    var t1 = Math.atan2(y, x) - Math.atan2(st.L2 * Math.sin(t2), st.L1 + st.L2 * Math.cos(t2));
+    return { t1: t1, t2: t2, c2: c2 };
+  }
+
+  // ---- 求解当前状态(IK 模式:解目标;FK 模式:直接用角度) ----
+  function solve() {
+    if (st.mode === 'fk') { st.clamped = false; return; }
+    var x = st.target.x, y = st.target.y;
+    var r = Math.hypot(x, y), rMax = st.L1 + st.L2, rMin = Math.abs(st.L1 - st.L2);
+    st.clamped = false;
+    if (r > rMax || r < rMin) {          // 超出可达域:截断到边界(可视化"无解")
+      var rr = (r > rMax) ? rMax * 0.999 : (rMin > 0 ? rMin * 1.001 : 0);
+      if (r > 1e-9) { x = x / r * rr; y = y / r * rr; } else { x = rr; y = 0; }
+      st.clamped = true;
+      st.target = { x: x, y: y };        // 目钉在边界,避免视觉跳跃
+    }
+    var sol = ik(x, y, st.elbow);
+    if (!sol) {                          // 数值边界保护(理论不会走到)
+      sol = { t1: st.t1, t2: st.t2, c2: 1 };
+      st.clamped = true;
+    }
+    st.t1 = sol.t1; st.t2 = sol.t2;
+  }
+
+  // ---- 绘制 ----
+  function drawArm(t1, t2, ghost) {
+    var elbow = fk(t1, 0), end = fk(t1, t2);
+    var b = w2c(0, 0), e = w2c(elbow.x, elbow.y), f = w2c(end.x, end.y);
+    ctx.save();
+    if (ghost) { ctx.globalAlpha = 0.45; ctx.setLineDash([7, 6]); }
+    // 连杆1(蓝)
+    ctx.strokeStyle = ghost ? '#94a3b8' : '#3b82f6'; ctx.lineWidth = 10; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(b[0], b[1]); ctx.lineTo(e[0], e[1]); ctx.stroke();
+    // 连杆2(橙)
+    ctx.strokeStyle = ghost ? '#94a3b8' : '#f97316'; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.moveTo(e[0], e[1]); ctx.lineTo(f[0], f[1]); ctx.stroke();
+    // 关节
+    ctx.fillStyle = ghost ? '#64748b' : '#1e3a8a';
+    ctx.beginPath(); ctx.arc(e[0], e[1], ghost ? 6 : 8, 0, Math.PI * 2); ctx.fill();
+    if (!ghost) {
+      ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 2; ctx.stroke();
+      // 末端执行器
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath(); ctx.arc(f[0], f[1], 7, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#6ee7b7'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function draw() {
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    // 背景
+    ctx.fillStyle = '#0b1626'; ctx.fillRect(0, 0, W, H);
+    // 网格(0.2m 细,1m 粗+标注)
+    ctx.lineWidth = 1;
+    for (var gx = -0.2; gx * S + OX < W; gx += 0.2) {
+      var major = Math.abs(gx % 1) < 1e-9;
+      ctx.strokeStyle = major ? 'rgba(59,130,246,.22)' : 'rgba(30,58,95,.55)';
+      var p = w2c(gx, 0);
+      ctx.beginPath(); ctx.moveTo(p[0], 0); ctx.lineTo(p[0], H); ctx.stroke();
+    }
+    for (var gy = -0.2; OY - gy * S > 0; gy += 0.2) {
+      var majorY = Math.abs(gy % 1) < 1e-9;
+      ctx.strokeStyle = majorY ? 'rgba(59,130,246,.22)' : 'rgba(30,58,95,.55)';
+      var py = w2c(0, gy);
+      ctx.beginPath(); ctx.moveTo(0, py[1]); ctx.lineTo(W, py[1]); ctx.stroke();
+    }
+    ctx.fillStyle = '#64748b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+    for (var lx = 0; lx * S + OX < W; lx += 0.5) {
+      var pp = w2c(lx, 0); ctx.fillText(lx.toFixed(1) + 'm', pp[0] + 3, Math.min(OY - 4, H - 6));
+    }
+
+    // 可达域(环形 |L1−L2| ~ L1+L2)
+    var rMax = (st.L1 + st.L2) * S, rMin = Math.abs(st.L1 - st.L2) * S;
+    ctx.fillStyle = 'rgba(59,130,246,.07)';
+    ctx.beginPath(); ctx.arc(OX, OY, rMax, 0, Math.PI * 2); ctx.fill();
+    ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(59,130,246,.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(OX, OY, rMax, 0, Math.PI * 2); ctx.stroke();
+    if (rMin > 2) {
+      ctx.beginPath(); ctx.arc(OX, OY, rMin, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // IK 目标点(红色十字)
+    if (st.mode === 'ik') {
+      var tg = w2c(st.target.x, st.target.y);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tg[0] - 12, tg[1]); ctx.lineTo(tg[0] + 12, tg[1]);
+      ctx.moveTo(tg[0], tg[1] - 12); ctx.lineTo(tg[0], tg[1] + 12);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(tg[0], tg[1], 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#f87171'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText('目标 (' + st.target.x.toFixed(2) + ', ' + st.target.y.toFixed(2) + ')m', tg[0] + 14, tg[1] - 8);
+      if (st.clamped) {
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText('⚠ 原目标超出臂展,已截断到边界(无解→够不着)', tg[0] + 14, tg[1] + 10);
+      }
+    }
+
+    // 另一组解(IK 模式且非奇异时画虚线)
+    if (st.mode === 'ik') {
+      var other = ik(st.target.x, st.target.y, -st.elbow);
+      if (other) drawArm(other.t1, other.t2, true);
+    }
+    // 当前解(实线)
+    drawArm(st.t1, st.t2, false);
+
+    // 肩关节底座
+    ctx.fillStyle = '#334155';
+    ctx.beginPath(); ctx.arc(OX, OY, 14, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#cbd5e1'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('肩(基座)', OX + 18, OY + 4);
+
+    // 角度圆弧标注 θ1 / θ2
+    var elb = fk(st.t1, 0);
+    ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(OX, OY, 42, 0, -st.t1, st.t1 > 0); ctx.stroke();
+    var mid1 = st.t1 / 2;
+    ctx.fillStyle = '#93c5fd'; ctx.font = '11px sans-serif';
+    ctx.fillText('θ1', OX + 48 * Math.cos(mid1), OY - 48 * Math.sin(mid1));
+    var e2 = w2c(elb.x, elb.y);
+    ctx.strokeStyle = '#fdba74';
+    ctx.beginPath(); ctx.arc(e2[0], e2[1], 26, -(st.t1), -(st.t1 + st.t2), st.t2 > 0); ctx.stroke();
+    ctx.fillStyle = '#fdba74';
+    var mid2 = st.t1 + st.t2 / 2;
+    ctx.fillText('θ2', e2[0] + 32 * Math.cos(mid2), e2[1] - 32 * Math.sin(mid2));
+  }
+
+  // ---- 读数面板 ----
+  function updatePanel() {
+    var e = fk(st.t1, st.t2);
+    var deg = function (r) { var d = r * 180 / Math.PI; while (d > 180) d -= 360; while (d < -180) d += 360; return d; };
+    var d1 = deg(st.t1), d2 = deg(st.t2);
+    var c2 = (e.x * e.x + e.y * e.y - st.L1 * st.L1 - st.L2 * st.L2) / (2 * st.L1 * st.L2);
+    var det = st.L1 * st.L2 * Math.sin(st.t2);
+    document.getElementById('myikT1').textContent = d1.toFixed(1) + '°';
+    document.getElementById('myikT2').textContent = d2.toFixed(1) + '°';
+    document.getElementById('myikX').textContent = e.x.toFixed(3) + ' m';
+    document.getElementById('myikY').textContent = e.y.toFixed(3) + ' m';
+    document.getElementById('myikC2').textContent = c2.toFixed(3);
+    document.getElementById('myikDet').textContent = det.toFixed(4) + ' m²';
+    var status = document.getElementById('myikStatus');
+    if (st.clamped) {
+      status.textContent = '✘ 目标超出可达域 → 无解(已按最近可达点演示)';
+      status.className = 'my-ikwarn';
+    } else if (Math.abs(Math.sin(st.t2)) < 0.12) {
+      status.textContent = '⚠ 接近奇异位形:|sinθ2|<0.12,det(J)→0';
+      status.className = 'my-ikwarn';
+    } else {
+      status.textContent = st.mode === 'ik' ? '✔ 有解(实线=当前解,虚线=另一组解)' : '✔ 正运动学:关节角 → 末端位置';
+      status.className = 'my-ikok';
+    }
+  }
+
+  function render() { solve(); draw(); updatePanel(); }
+
+  // ---- 交互 ----
+  function setTargetFromEvent(ev) {
+    var rect = cv.getBoundingClientRect();
+    var sx = cv.width / rect.width, sy = cv.height / rect.height;
+    var w = c2w((ev.clientX - rect.left) * sx, (ev.clientY - rect.top) * sy);
+    st.target = { x: Math.max(-0.3, Math.min(2.0, w[0])), y: Math.max(-0.15, Math.min(1.25, w[1])) };
+    render();
+  }
+  var dragging = false;
+  cv.addEventListener('pointerdown', function (ev) {
+    if (st.mode !== 'ik') return;
+    dragging = true; cv.setPointerCapture(ev.pointerId); setTargetFromEvent(ev); ev.preventDefault();
+  });
+  cv.addEventListener('pointermove', function (ev) {
+    if (dragging && st.mode === 'ik') setTargetFromEvent(ev);
+  });
+  cv.addEventListener('pointerup', function () { dragging = false; });
+  cv.addEventListener('pointercancel', function () { dragging = false; });
+
+  // ---- 按钮/滑杆 ----
+  window.myikSetMode = function (m) {
+    st.mode = m;
+    document.getElementById('myikModeIK').classList.toggle('active', m === 'ik');
+    document.getElementById('myikModeFK').classList.toggle('active', m === 'fk');
+    document.getElementById('myikFkCtl').style.display = (m === 'fk') ? 'block' : 'none';
+    document.getElementById('myikElbow').style.display = (m === 'ik') ? '' : 'none';
+    if (m === 'fk') {   // 切到 FK 时,滑杆对齐当前角度
+      var d1 = st.t1 * 180 / Math.PI, d2 = st.t2 * 180 / Math.PI;
+      document.getElementById('myikS1').value = Math.round(d1);
+      document.getElementById('myikS2').value = Math.round(d2);
+    }
+    render();
+  };
+  window.myikSetAngles = function () {
+    st.t1 = parseFloat(document.getElementById('myikS1').value) * Math.PI / 180;
+    st.t2 = parseFloat(document.getElementById('myikS2').value) * Math.PI / 180;
+    render();
+  };
+  window.myikFlipElbow = function () {
+    st.elbow = -st.elbow;
+    document.getElementById('myikElbow').textContent = st.elbow > 0 ? '🔁 肘朝上' : '🔁 肘朝下';
+    render();
+  };
+  window.myikSetLen = function () {
+    st.L1 = parseFloat(document.getElementById('myikL1').value);
+    st.L2 = parseFloat(document.getElementById('myikL2').value);
+    document.getElementById('myikL1v').textContent = st.L1.toFixed(2) + 'm';
+    document.getElementById('myikL2v').textContent = st.L2.toFixed(2) + 'm';
+    render();
+  };
+  window.myikReset = function () {
+    st.L1 = 0.5; st.L2 = 0.3; st.target = { x: 0.55, y: 0.35 }; st.elbow = 1; st.mode = 'ik';
+    document.getElementById('myikL1').value = '0.5'; document.getElementById('myikL2').value = '0.3';
+    document.getElementById('myikL1v').textContent = '0.50m'; document.getElementById('myikL2v').textContent = '0.30m';
+    document.getElementById('myikElbow').textContent = '🔁 肘朝上';
+    document.getElementById('myikModeIK').classList.add('active');
+    document.getElementById('myikModeFK').classList.remove('active');
+    document.getElementById('myikFkCtl').style.display = 'none';
+    document.getElementById('myikElbow').style.display = '';
+    render();
+  };
+
+  render();
+})();
+</script>
 
 <!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
 <script src="../_assets/site.js"></script>

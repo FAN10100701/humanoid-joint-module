@@ -1770,7 +1770,15 @@ function onClick(e){
   }
 }
 
+var _szW=0,_szH=0;   /* 舞台尺寸自检:iOS 布局延迟/地址栏伸缩时自动修正 canvas 尺寸 */
 function loop(){
+  /* 【移动端尺寸自检】每帧对比舞台实际尺寸,变化则重算渲染尺寸与相机宽高比
+     (iOS Safari 地址栏伸缩/布局延迟常导致初始尺寸错误,点按钮后"突然出现"即此原因) */
+  var _st=document.getElementById('stage');
+  if(_st){
+    var _w=_st.clientWidth,_h=_st.clientHeight;
+    if(_w&&_h&&(_w!==_szW||_h!==_szH)){_szW=_w;_szH=_h;onResize();}
+  }
   /* 拆解场景动画驱动：顺序拆解动画 > 自动拆解（往返/单向）> 旋转展示 */
   if(tdActive){
     if(tdSeqOn){
