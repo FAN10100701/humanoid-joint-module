@@ -397,6 +397,9 @@ body[data-theme="light"] .search-hit mark{background:rgba(250,204,21,.45);color:
 .nav-print:hover{background:rgba(59,130,246,.28);color:#fff}
 body[data-theme="light"] .nav-print{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
 .page-goals{margin-top:6px}
+/* 更新日期+核实状态印章 */
+.page-stamp{text-align:center;font-size:12px;color:#6b7280;margin:12px 0 0}
+body[data-theme="light"] .page-stamp{color:#94a3b8}
 
 /* ---------- 新手引导 ---------- */
 .onboard-overlay{position:fixed;inset:0;z-index:300;background:rgba(4,8,14,.78);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}

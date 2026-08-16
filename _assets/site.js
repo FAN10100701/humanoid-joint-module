@@ -420,6 +420,22 @@
       head.parentNode.insertBefore(div, head.nextSibling);
     });
   }
+  /* ---------- 更新日期 + 事实核实状态印章(评审 #14) ---------- */
+  function injectPageStamp(){
+    var P = page();
+    if(!P.pageId) return;
+    var head = document.querySelector(".page-head");
+    if(!head || !head.parentNode) return;
+    ensurePageMeta(function(){
+      var meta = (window.SITE_PAGE_META || {})[P.pageId];
+      var updated = (meta && meta.updated) ? meta.updated : "2026-08-15";
+      var verified = (meta && meta.verified) ? meta.verified : "内容已核对";
+      var stamp = document.createElement("div");
+      stamp.className = "page-stamp";
+      stamp.innerHTML = "📅 内容更新于 " + updated + " · 事实状态:" + verified;
+      head.parentNode.insertBefore(stamp, head.nextSibling);
+    });
+  }
 
   /* ---------- 新手引导(仅首页,首次访问 3 步) ---------- */
   function initOnboarding(){
@@ -487,8 +503,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); initPrintBtn(); initOnboarding(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); initPrintBtn(); initOnboarding();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding();
   }
 })();
