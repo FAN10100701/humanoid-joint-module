@@ -196,6 +196,16 @@ body[data-theme="dark"] .status{background:rgba(13,18,30,.8);border-color:var(--
 .drw-h{width:100%;font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.5px;margin:8px 4px 0;text-transform:uppercase}
 /* 底部栏分组标签(桌面) */
 .bb-grp{font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.6px;margin:0 2px}
+/* 底部栏收起/展开 */
+.bottom-bar{transition:transform .25s ease}
+.bottom-bar.collapsed{transform:translateY(calc(100% + 8px))}
+.bb-fold{border:none;background:transparent;color:var(--faint);font-size:12px;padding:4px 8px;cursor:pointer;font-family:inherit;flex-shrink:0}
+.bb-fold:hover{color:var(--muted)}
+.bb-expand{position:fixed;right:14px;bottom:12px;z-index:98;display:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--rule);background:rgba(255,255,255,.9);color:var(--muted);font-size:17px;cursor:pointer;box-shadow:var(--sh2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);align-items:center;justify-content:center;font-family:inherit}
+body[data-theme="dark"] .bb-expand{background:rgba(20,28,42,.9);border-color:var(--rule2)}
+.bb-expand.show{display:flex}
+.bb-expand:hover{color:var(--accent)}
+@media(max-width:860px){.bb-expand{display:none!important}}
 /* 拆解模式下整机按钮置灰提示(不可点,避免"点了没反应") */
 .bottom-bar.td-on .bb-btn:not(.td-only),.bottom-bar.td-on .bb-switch:not(.td-only),.bottom-bar.td-on .bb-sel:not(.td-only):not(#bbSceneSel){opacity:.32;pointer-events:none}
 /* 桌面端 exbar 的"自动拆解/旋转"与底部栏重复,隐藏按钮只留滑杆(移动端保留) */
@@ -534,7 +544,9 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   <button class="bb-btn td-only" id="bbLabels" title="显示 / 隐藏零件名称标签">🏷️ 零件标签</button>
   <div class="bb-sep"></div>
   <div class="bb-perf" id="bbPerf" title="实时帧率与零件数量">📊 -- FPS · -- 件</div>
+  <button class="bb-fold" id="bbFold" title="收起底部栏（展开请点右下角 ⚙️）">▾ 收起</button>
 </div>
+<button class="bb-expand" id="bbExpand" title="展开底部栏">⚙️</button>
 <div class="navbg" id="navbg"></div>
 <div class="drw mdl" id="drwModel">
   <button class="vb" data-m="x1">智元 X1</button>
@@ -1311,7 +1323,13 @@ function init(){
         selectPart('whole');
       }else{
         var ldtip=document.getElementById('ldtip');
-        if(ldtip){ldtip.textContent='⚠ 3D引擎加载失败，请使用Chrome/Edge浏览器通过【启动教学页面.bat】打开';ldtip.classList.add('show');}
+        if(ldtip){
+          var lg=(window.__3D_LOAD_LOG__||[]).slice(-3).join('<br>');
+          var escLg=(lg||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          ldtip.innerHTML='⚠ 3D引擎加载失败'+(escLg?('<br><span style="font-size:11px;opacity:.85">'+escLg+'</span>'):'')
+            +'<br><span style="font-size:11px;opacity:.7">若为本地双击打开:请改用 <b>_本地工具/启动教学页面.bat</b> 启动后访问;或把左下角「📱 诊断」内容发给站长</span>';
+          ldtip.classList.add('show');
+        }
       }
     });
   }
@@ -1385,6 +1403,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     else if(window.RobotApp){window.RobotApp.reset();}
   });
 
+  // -------- 底部栏收起/展开(桌面端) --------
+  (function(){
+    var bar=document.getElementById('bottomBar'),fold=document.getElementById('bbFold'),exp=document.getElementById('bbExpand');
+    if(fold&&bar)fold.addEventListener('click',function(){bar.classList.add('collapsed');if(exp)exp.classList.add('show');});
+    if(exp&&bar)exp.addEventListener('click',function(){bar.classList.remove('collapsed');exp.classList.remove('show');});
+  })();
+
   // -------- 模型精细度切换(流畅压缩模型 ↔ 原始 STL 精细模型,切换后重载) --------
   (function(){
     var fine=!1;try{fine=localStorage.getItem('robot-fine-mode')==='1';}catch(e){}
@@ -1435,7 +1460,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v6.5';  /* 2026-08-17 · 底部栏自动换行(修复智元按钮被裁)+file://自动CDN模式+回退状态机 */
+var DIAG_VER='v6.6';  /* 2026-08-17 · 调试探针(加载日志+失败原因)+失败提示显示日志+底部栏可收起 */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;
@@ -1472,6 +1497,10 @@ var DIAG_VER='v6.5';  /* 2026-08-17 · 底部栏自动换行(修复智元按钮�
     h+=row('模型引擎',d.mod==='ok'?'已启动':'等待中',d.mod==='ok'?1:2);
     h+=row('机器人渲染',window.__RENDERED__?'已渲染':'未见渲染',window.__RENDERED__?1:0);
     h+=row('Three 来源',sessionStorage.getItem('__three_cdn__')==='1'?'CDN 回退':'本地库',sessionStorage.getItem('__three_cdn__')!=='1'?1:2);
+    if(window.__3D_LOAD_LOG__&&window.__3D_LOAD_LOG__.length){
+      h+='<span style="color:var(--faint)">加载日志</span><br>'
+        +window.__3D_LOAD_LOG__.slice(-4).map(function(s){return '· '+String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'<br>';}).join('');
+    }
     if(errs.length){ h+='<span class="dp-bad">运行期错误 ×'+errs.length+'</span><br>'+errs.slice(-3).join('<br>')+'<br>'; }
     bodyEl.innerHTML=h;
   }

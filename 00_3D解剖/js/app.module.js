@@ -116,27 +116,37 @@ function restoreEnvPreset(){
 }
 curEnv=restoreEnvPreset();           /* 启动时恢复上次选择的环境预设（无记录则默认无环境） */
 
+/* 调试探针:记录加载过程每一步与失败原因,供诊断浮标/失败提示展示 */
+window.__3D_LOAD_LOG__=[];
+function probe(msg){try{window.__3D_LOAD_LOG__.push(String(msg).slice(0,200));}catch(e){}}
 function loadDeps(cb){
   if(THREE){cb(true);return;}
+  probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+(sessionStorage.getItem('__three_cdn__')==='1'||location.protocol==='file:'?'CDN':'本地'));
   /* 依次加载 three 核心 → 轨道控制器 → STL 加载器（加载官方 URDF 网格用）→ 环境贴图生成器（修复金属材质发黑）→ Draco 加载器（优先加载 .drc 超压缩模型） */
-  import('three').then(function(M){THREE=M;window.__THREE_LOADED__=true;window.__SHOW_DIAG__&&window.__SHOW_DIAG__();return import('three/addons/controls/OrbitControls.js');})
-    .then(function(O){OrbitControls=O.OrbitControls;return import('three/addons/loaders/STLLoader.js');})
-    .then(function(S){STLLoader=S.STLLoader;return import('three/addons/environments/RoomEnvironment.js');})
-    .then(function(R){RoomEnv=R.RoomEnvironment;return import('three/addons/loaders/DRACOLoader.js');})
-    .then(function(D){DRACOLoader=D.DRACOLoader;cb(true);})
+  import('three').then(function(M){THREE=M;window.__THREE_LOADED__=true;probe('three 核心 OK');window.__SHOW_DIAG__&&window.__SHOW_DIAG__();return import('three/addons/controls/OrbitControls.js');})
+    .then(function(O){OrbitControls=O.OrbitControls;probe('OrbitControls OK');return import('three/addons/loaders/STLLoader.js');})
+    .then(function(S){STLLoader=S.STLLoader;probe('STLLoader OK');return import('three/addons/environments/RoomEnvironment.js');})
+    .then(function(R){RoomEnv=R.RoomEnvironment;probe('RoomEnvironment OK');return import('three/addons/loaders/DRACOLoader.js');})
+    .then(function(D){DRACOLoader=D.DRACOLoader;probe('DRACOLoader OK');cb(true);})
     .catch(function(e){
+      var em=(e&&e.message)?String(e.message):String(e);
+      var es=(e&&e.stack)?String(e.stack).split('\n').slice(0,2).join(' | '):'';
       console.warn('[Robot3D] 引擎加载失败:',e);
+      probe('❌ 加载失败: '+em+' '+(es?('('+es.slice(0,120)+')'):''));
+      window.__3D_FAILED__=true;
       /* 【防误触发+防死循环】状态机：无标记→切CDN；CDN失败→回本地并标记(2)；本地再失败→报错提示不再循环。
          file:// 模式已固定走 CDN(见 HTML 顶部脚本),不参与回退循环,直接报错提示 */
       var isFile=location.protocol==='file:';
       var cdn=null;try{cdn=sessionStorage.getItem('__three_cdn__');}catch(err){}
       if(!cdn&&!isFile){
+        probe('→ 切换到 CDN 重载');
         try{sessionStorage.setItem('__three_cdn__','1');}catch(err){}
         try{location.reload();}catch(err){}
         return;
       }
       if(cdn==='1'&&!isFile){
         /* CDN 也失败：恢复本地并标记，避免永久卡在 CDN 上 */
+        probe('→ CDN 也失败,恢复本地');
         try{sessionStorage.setItem('__three_cdn__','2');}catch(err){}
         try{location.reload();}catch(err){}
         return;
