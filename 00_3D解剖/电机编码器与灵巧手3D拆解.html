@@ -120,7 +120,28 @@ function x3Tab(i){
   x3BuildInfo();
 }
 
-import('./lib/three.module.js').then(function(THREE){
+/* 加载策略(参照主页面经验):本地优先 → CDN 逐个回退 → 明确报错;file:// 直开自动走 CDN */
+(function loadThree(){
+  var SOURCES = [
+    './lib/three.module.js',
+    'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
+    'https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js',
+    'https://fastly.jsdelivr.net/npm/three@0.160.0/build/three.module.js'
+  ];
+  var i = 0;
+  function tryNext(){
+    if(i >= SOURCES.length){
+      document.getElementById('x3info').innerHTML = '<b>3D 库加载失败:</b>本地与 3 个 CDN 均不可达。请检查网络,或通过本地服务器 http:// 访问本页后重试。';
+      return;
+    }
+    import(/* @vite-ignore */ SOURCES[i]).then(function(m){
+      if(!m || !m.WebGLRenderer){ throw new Error('bad module'); }
+      boot(m);
+    }).catch(function(){ i++; tryNext(); });
+  }
+  tryNext();
+})();
+function boot(THREE){
   x3.T = THREE;
   var cv = document.getElementById('x3cv');
   var renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
@@ -171,9 +192,7 @@ import('./lib/three.module.js').then(function(THREE){
   })(last);
   x3BuildCtl();
   x3BuildInfo();
-}).catch(function(err){
-  document.getElementById('x3info').innerHTML = '<b>3D 库加载失败:</b>' + err.message + '(请通过本地服务器 http:// 访问本页;file:// 直开不支持模块)';
-});
+}
 
 /* ---------- ① 无刷电机 ---------- */
 function buildMotor(THREE){
