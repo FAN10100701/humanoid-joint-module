@@ -1282,7 +1282,8 @@ function init(){
           var lg=(window.__3D_LOAD_LOG__||[]).slice(-3).join('<br>');
           var escLg=(lg||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
           ldtip.innerHTML='⚠ 3D引擎加载失败'+(escLg?('<br><span style="font-size:11px;opacity:.85">'+escLg+'</span>'):'')
-            +'<br><span style="font-size:11px;opacity:.7">若为本地双击打开:请改用 <b>_本地工具/启动教学页面.bat</b> 启动后访问;或把左下角「📱 诊断」内容发给站长</span>';
+            +'<br><span style="font-size:11px;opacity:.7">若为本地双击打开:请改用 <b>_本地工具/启动教学页面.bat</b> 启动后访问;或把左下角「📱 诊断」内容发给站长</span>'
+            +'<br><span style="font-size:10px;opacity:.5">诊断代码 '+(window.DIAG_VER||'?')+'</span>';
           ldtip.classList.add('show');
         }
       }
