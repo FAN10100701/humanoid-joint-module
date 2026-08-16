@@ -451,12 +451,28 @@
   <div class="sec" id="progress-sec">
     <div class="sec-title"><span class="num">✓</span>我的学习进度 <span class="en">PROGRESS · 在各页面点右上角"✓ 完成"打卡</span><span class="bar"></span></div>
     <div class="progress-panel" id="progressPanel">
+      <div class="progress-vis">
+        <div class="ring-wrap" id="progressRing"></div>
+        <div class="heat-wrap">
+          <div class="heat-title">📆 学习热力图 · 近 14 周学习活动(打卡即记录)</div>
+          <div class="heat-grid" id="heatGrid"></div>
+          <div class="heat-legend">少 <i style="background:rgba(59,130,246,.3)"></i><i style="background:rgba(59,130,246,.55)"></i><i style="background:rgba(37,99,235,.8)"></i><i style="background:#3b82f6"></i> 多</div>
+        </div>
+      </div>
       <div id="progressRows">加载中…</div>
       <div style="margin:14px 0 0;display:flex;gap:8px;flex-wrap:wrap">
         <button class="lab-btns" style="margin:0" onclick="Site.exportProgress()">⬇️ 导出进度</button>
         <button class="lab-btns" style="margin:0" onclick="Site.importProgress()">⬆️ 导入进度</button>
       </div>
       <div class="box box-tip" style="margin:14px 0 0"><b>💡 关于进度与登录:</b>进度保存在<b>当前浏览器本地</b>(不上传、无账号)。换设备/换手机时,先在本机"⬇️ 导出进度"得到 JSON 文件,再在新设备"⬆️ 导入进度"即可延续。<b>真正的多设备云端同步需要登录系统与服务器</b>(静态托管无后端),如需要我可以在后续版本接入免费云同步(需你提供一个账号)。<br>注:3D 主页面与"05 HdriveV2 工程(规划中)"暂不参与打卡统计。</div>
+    </div>
+  </div>
+
+  <!-- ================= 今日复习(SRS 间隔重复) ================= -->
+  <div class="sec" id="srs-sec">
+    <div class="sec-title"><span class="num">🧠</span>今日复习 <span class="en">SPACED REPETITION · 学-练-测-复习闭环,答对间隔自动拉长(1→2→4→8→16 天)</span><span class="bar"></span></div>
+    <div class="progress-panel">
+      <div id="srsPanel">加载中…</div>
     </div>
   </div>
 
@@ -468,8 +484,8 @@
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V1.5.0 · 2026-08-16 · 一致性修复 + 搜索升级 + 新手引导</summary>
-        <div class="faq-a">修复首页重复导航/页脚注入;版本号收敛为单一数据源(S.VERSION);首页统计改为动态计算;导航补 HdriveV2;05 目录标注"规划中"并去重(重定向到 03);搜索升级(多词相关度排序+命中高亮+HTML 转义);新增新手引导(仅首页首次访问)与打印按钮;3D 页移动端性能优化(关抗锯齿/阴影,提升 iPhone 显示成功率);新增一键自检脚本。</div>
+        <summary>V1.5.0 · 2026-08-16 · 学习闭环 + 教学演示 + 一致性 + 开源化</summary>
+        <div class="faq-a">🆕 <b>今日复习 SRS</b>(间隔重复:答对 1→2→4→8→16 天,答错当天重试,含错题本/随机练习);🆕 <b>学习地图</b>(08-06,可点击节点+进度点亮+推荐下一站);🆕 <b>传动与控制实验台</b>(08-05,减速器参数实验台 + FOC 三环示波器);🆕 <b>每页学习目标</b>自动注入(建议用时+前置知识);<b>进度可视化</b>(环形图 + 14 周学习热力图);<b>原理动画速度控制</b>(0.25x~2x + 暂停/单步);<b>页内自测</b>(减速器剖面图、机械原理基础补 8 题);3D 页<b>移动端优化</b>;搜索升级(多词排序+高亮+防 XSS);新手引导(仅首页首次);打印按钮;<b>一致性修复</b>(首页去重复导航、版本号单一数据源 S.VERSION、统计动态计算、05 标注"规划中"去重重定向);<b>开源化</b>:MIT LICENSE + 贡献指南 + 仓库描述与话题标签;新增一键自检脚本。</div>
       </details>
       <details class="faq">
         <summary>V1.4.3 · 2026-08-15 · 三页深度知识 + 极简切换升级</summary>
@@ -515,6 +531,8 @@
   </footer>
 </div>
 
+<script src="_assets/quiz-bank.js"></script>
+<script src="_assets/srs.js"></script>
 <script src="_assets/site.js"></script>
 <script>
   /* 首页搜索框 → 打开搜索浮层并填入关键词 */
@@ -524,6 +542,36 @@
   }
 
   /* 学习进度统计 */
+  function renderRing(done, all){
+    var box = document.getElementById("progressRing");
+    if(!box) return;
+    var pct = all ? Math.round(done / all * 100) : 0;
+    var r = 50, c = 2 * Math.PI * r;
+    box.innerHTML = '<svg width="120" height="120" viewBox="0 0 120 120">'
+      + '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>'
+      + '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="#3b82f6" stroke-width="10" stroke-linecap="round"'
+      + ' stroke-dasharray="' + (c * pct / 100) + ' ' + c + '"/>'
+      + "</svg>"
+      + '<div class="ring-center"><div class="v">' + pct + '%</div><div class="k">已完成</div></div>';
+  }
+  function renderHeatmap(){
+    var grid = document.getElementById("heatGrid");
+    if(!grid) return;
+    var act = (window.Site && Site.getActivity) ? Site.getActivity() : {};
+    var cells = "", today = new Date();
+    today.setHours(0,0,0,0);
+    for(var i = 97; i >= 0; i--){
+      var d = new Date(today);
+      d.setDate(d.getDate() - i);
+      var key = d.getFullYear() + "-" + (d.getMonth()+1 < 10 ? "0" : "") + (d.getMonth()+1) + "-" + (d.getDate() < 10 ? "0" : "") + d.getDate();
+      var n = act[key] || 0;
+      var cls = "";
+      if(n >= 4) cls = "l4"; else if(n === 3) cls = "l3"; else if(n === 2) cls = "l2"; else if(n === 1) cls = "l1";
+      if(i === 0) cls += " today";
+      cells += '<div class="heat-day ' + cls + '" title="' + key + (n ? " · " + n + " 次打卡" : "") + '"></div>';
+    }
+    grid.innerHTML = cells;
+  }
   function renderProgress(){
     var rows = document.getElementById("progressRows");
     var p = {};
@@ -544,6 +592,8 @@
       + '<div class="pbar"><i style="width:' + totalPct + '%"></i></div>'
       + '<span class="pv">' + totalDone + '/' + totalAll + '</span></div>' + html;
     rows.innerHTML = html;
+    renderRing(totalDone, totalAll);
+    renderHeatmap();
     /* 统计数字:可打卡页数 + 学习页数(搜索索引加载后更新) */
     var elT = document.getElementById("statTracked");
     if(elT) elT.textContent = totalAll;

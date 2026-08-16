@@ -78,10 +78,10 @@
   <!-- ================= 页面头部 ================= -->
   <div class="page-head">
     <h1>🗺️ 学习地图</h1>
-    <div class="sub">一图看清全站 38 个页面与推荐学习顺序,学过的自动点亮</div>
+    <div class="sub">全站页面学习地图:按板块推荐顺序浏览,学过的自动点亮,一目了然</div>
     <div class="tags">
       <span class="tag">9 大板块</span>
-      <span class="tag">38 个页面</span>
+      <span class="tag">36 个页面节点</span>
       <span class="tag">进度自动点亮</span>
       <span class="tag">可点击跳转</span>
     </div>
@@ -94,7 +94,7 @@
       <span class="map-progress-num">已完成 <b id="mapDone">0</b> / <b id="mapTotal">38</b></span>
     </div>
     <div class="map-progress-track"><div class="map-progress-fill" id="mapFill" style="width:0%"></div></div>
-    <div class="map-progress-note">地图收录 36 页 · 全站共 38 页(含首页与本页)</div>
+    <div class="map-progress-note">地图收录 36 个页面节点(含 HdriveV2 工程页);全站学习页 37,含首页与本页共 38。进度数据与全站"✓ 完成"打卡同源(localStorage)。</div>
     <div class="map-next" id="mapNext"></div>
   </div>
 
@@ -181,8 +181,8 @@
   ];
 
   var STORE = "humanoid-site-progress-v1";
-  /* 全站总页数 = 地图节点 36 + 首页 + 本页(学习地图),如需与节点严格一致可改为 PAGES.length */
-  var TOTAL = 38;
+  /* 全站总页数 = 地图节点数(与节点清单保持一致,新增节点自动跟随) */
+  var TOTAL = PAGES.length;
 
   function getProgress() {
     try { return JSON.parse(localStorage.getItem(STORE) || "{}"); }
