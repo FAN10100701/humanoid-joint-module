@@ -173,8 +173,27 @@
     <div class="box box-warn" style="margin-top:12px"><b>🤔 思考题:</b>为什么角度环必须"快"、位置环必须"慢"?如果把两个环的带宽反过来会怎样?这和你调三环(电流→速度→位置)的顺序有什么关系?</div>
   </div>
 
+  <!-- ================= 关卡挑战(把"会调"变成"调得准") ================= -->
+  <h2><span class="h2-num">4</span> 🎮 关卡挑战:把"会调"变成"调得准"</h2>
+  <div class="cl-mission" id="clMission">
+    <b>📐 挑战规则:</b>在<b>实验一(PID 位置控制)</b>里调 Kp/Ki/Kd,点"提交挑战"按当前指标评级(选阶跃模式、关闭扰动)。
+    <div class="cl-ms" id="clMs1">⭐ <b>青铜 · 能收敛</b>:稳态误差 &lt; 0.02 rad</div>
+    <div class="cl-ms" id="clMs2">⭐⭐ <b>白银 · 又快又稳</b>:调节时间 &lt; 2.0 s 且超调 &lt; 10%</div>
+    <div class="cl-ms" id="clMs3">⭐⭐⭐ <b>黄金 · 极限手调</b>:调节时间 &lt; 1.5 s 且超调 &lt; 5%</div>
+    <button id="clSubmit" type="button">🚀 提交挑战</button>
+    <span id="clVerdict"></span>
+  </div>
+
+  <!-- ================= FOC 代码走读 ================= -->
+  <h2><span class="h2-num">5</span> 📖 代码走读:实验二背后的六行代码</h2>
+  <p>实验二的每个旋钮,对应 FOC 中断里的一行代码。点击下面的代码行,下方给出解释并<b>联动上方实验二</b>(自动暂停旋转、把电角度设到该行的典型值),对照矢量图与波形阅读:</p>
+  <div class="cl-code" id="clCodeWalk">
+    <pre id="clCodePre"></pre>
+    <div class="cl-exp" id="clCodeExp">👆 点击任意一行代码开始</div>
+  </div>
+
   <!-- ================= 自测 ================= -->
-  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <h2><span class="h2-num">6</span> 本节自测</h2>
 
   <div class="quiz">
     <div class="quiz-q">1. 实验中把 Kd 从 0 逐渐增大,最直接的效果是什么?</div>
@@ -224,7 +243,7 @@
   </div>
 
   <!-- ================= 参考来源 ================= -->
-  <h2><span class="h2-num">5</span> 参考来源</h2>
+  <h2><span class="h2-num">7</span> 参考来源</h2>
   <ul>
     <li><a href="https://en.wikipedia.org/wiki/Inverted_pendulum" target="_blank" rel="noopener">Wikipedia: Inverted pendulum(倒立摆动力学模型)</a></li>
     <li><a href="https://docs.simplefoc.com/" target="_blank" rel="noopener">SimpleFOC 文档(FOC 电流环 / 位置环实现)</a></li>
@@ -673,6 +692,92 @@
   requestAnimationFrame(loop);
 })();
 </script>
+<script>
+/* ============ 关卡挑战 + FOC 代码走读(只读 DOM,不改实验内部状态) ============ */
+(function(){
+  "use strict";
+  function $(id){ return document.getElementById(id); }
+
+  /* ---- 关卡挑战:按实验一实时指标评级 ---- */
+  var submit = $("clSubmit");
+  if(submit){
+    submit.addEventListener("click", function(){
+      /* 从读数面板解析当前指标(超调 xx.x% / 调节时间 x.xx s 或 — / 误差 0.xx) */
+      var osTxt = ($("pidOS") || {}).textContent || "";
+      var stTxt = ($("pidST") || {}).textContent || "";
+      var errTxt = ($("pidErr") || {}).textContent || "";
+      var os = parseFloat(osTxt);
+      var st = parseFloat(stTxt);          /* "—" → NaN */
+      var err = parseFloat(errTxt);
+      var m1 = isFinite(err) && Math.abs(err) < 0.02;
+      var m2 = m1 && isFinite(st) && st > 0 && st < 2.0 && isFinite(os) && os < 10;
+      var m3 = m2 && st < 1.5 && os < 5;
+      [["clMs1", m1], ["clMs2", m2], ["clMs3", m3]].forEach(function(m){
+        $(m[0]).classList.toggle("pass", m[1]);
+      });
+      var v = $("clVerdict");
+      if(m3){ v.innerHTML = "🏆 <b style='color:#fbbf24'>黄金达成!</b>这就是临界阻尼附近的手感——去 02-08 调参手册对照带宽法验证你的参数。"; }
+      else if(m2){ v.innerHTML = "🥈 白银达成!再压一压超调(加 Kd 或微降 Kp)冲黄金。"; }
+      else if(m1){ v.innerHTML = "🥉 青铜达成!想更快:升 Kp;想更稳:加 Kd。"; }
+      else { v.innerHTML = "❌ 未达标:先保证收敛(Ki 消差),再拼速度。当前 超调=" + osTxt + " 调节=" + stTxt + " 误差=" + errTxt; }
+    });
+  }
+
+  /* ---- FOC 代码走读:点击代码行 → 解释 + 联动实验二 ---- */
+  var WALK = [
+    { code: "theta_e = encoder.readAngle();",
+      theta: 40, exp: "<b>① 读电角度:</b>编码器给出转子 d 轴位置 θe(实验二的\u201c电角度\u201d滑杆)。它决定整个坐标系旋转到哪——θe 错,后面全错,所以零位标定(02-12)是 FOC 的地基。已把 θe 设为 40°。" },
+    { code: "(ia, ib) = ADC_sample() * gain;   // 双电阻采样",
+      theta: 40, exp: "<b>② 采相电流:</b>低边/在线电阻把两相电流变成电压(02-11 采样计算器)。i<sub>c</sub> = −i<sub>a</sub> −i<sub>b</sub> 由基尔霍夫电流定律补全——实验二右侧的三相波形就是它。" },
+    { code: "(i_alpha, i_beta) = Clarke(ia, ib, ic);",
+      theta: 40, exp: "<b>③ Clarke 变换(3→2):</b>三相静止坐标 → 两相静止 αβ 坐标,去掉冗余。数学上就是一个矩阵乘法,信息量不变、维数变小。看实验二左侧:三个相电流合成一个旋转矢量。" },
+    { code: "(id, iq) = Park(i_alpha, i_beta, theta_e);",
+      theta: 40, exp: "<b>④ Park 变换(静止→旋转):</b>αβ 坐标系再旋转 −θe,得到随转子转动的 dq 坐标。妙处:静止坐标系里的正弦量,在 dq 里变成<b>直流量</b>——PI 控制器管直流量零稳态误差,这就是 FOC 的全部动机。实验二右下的 dq 表:拖动 θe,看 id/iq 保持不变!" },
+    { code: "v_d = PI_d(id_ref - id);  v_q = PI_q(iq_ref - iq);",
+      theta: 90, exp: "<b>⑤ 电流环 PI:</b>两个直流量各自做 PI(02-08 带宽法整定的就是它们)。id_ref 通常=0(不励磁、最省铜损),iq_ref 由上层速度环给——力矩 τ = 1.5·p·ψ·iq,电流即力矩。" },
+    { code: "(v_alpha, v_beta) = invPark(v_d, v_q, theta_e);  SVPWM(v_alpha, v_beta);",
+      theta: 150, exp: "<b>⑥ 反 Park + SVPWM:</b>dq 电压转回 αβ,再经 SVPWM 分配到三相 PWM 占空比(02-10 拓扑实验室就是这一步的可视化)。六行代码,一个中断,万转不歇——这就是 FOC。" }
+  ];
+  var pre = $("clCodePre"), exp = $("clCodeExp");
+  if(pre){
+    WALK.forEach(function(w, i){
+      var span = document.createElement("span");
+      span.className = "cl-line";
+      span.textContent = (i+1) + "  " + w.code;
+      span.addEventListener("click", function(){
+        document.querySelectorAll(".cl-line").forEach(function(el){ el.classList.remove("on"); });
+        span.classList.add("on");
+        exp.innerHTML = w.exp;
+        /* 联动实验二:关闭自动旋转,θe 设为该行典型值(触发页面自己的 oninput/onchange) */
+        var auto = document.getElementById("focAuto");
+        if(auto){ auto.checked = false; auto.dispatchEvent(new Event("change")); }
+        var th = document.getElementById("focTheta");
+        if(th){ th.value = w.theta; th.dispatchEvent(new Event("input")); }
+      });
+      pre.appendChild(span);
+    });
+  }
+})();
+</script>
+<style>
+  .cl-mission{border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:14px 18px;margin:14px 0;background:rgba(245,158,11,.06);font-size:13.5px;line-height:2}
+  .cl-mission .cl-ms{padding:2px 0;color:#94a3b8}
+  .cl-mission .cl-ms.pass{color:#34d399;font-weight:700}
+  .cl-mission button{border:1px solid #f59e0b;background:rgba(245,158,11,.15);color:#fbbf24;border-radius:8px;padding:6px 16px;cursor:pointer;font-family:inherit;font-weight:700}
+  .cl-mission button:hover{background:#f59e0b;color:#111827}
+  body[data-theme="light"] .cl-mission{background:rgba(245,158,11,.08)}
+  body[data-theme="light"] .cl-mission .cl-ms{color:#64748b}
+  body[data-theme="light"] .cl-mission .cl-ms.pass{color:#047857}
+  .cl-code{border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:14px;margin:14px 0;background:rgba(15,23,42,.5);font-size:13px}
+  body[data-theme="light"] .cl-code{background:rgba(255,255,255,.65)}
+  .cl-code pre{margin:0;font-family:Consolas,'Courier New',monospace;line-height:2.1;white-space:pre-wrap}
+  .cl-code .cl-line{display:block;cursor:pointer;padding:1px 8px;border-radius:6px;color:#cbd5e1}
+  .cl-code .cl-line:hover{background:rgba(59,130,246,.12)}
+  .cl-code .cl-line.on{background:rgba(59,130,246,.25);outline:1px solid rgba(59,130,246,.5);color:#e2e8f0}
+  .cl-code .cl-exp{margin-top:10px;border-left:3px solid #2563eb;padding:8px 12px;line-height:1.9;color:#cbd5e1;font-size:13px}
+  body[data-theme="light"] .cl-code .cl-line{color:#334155}
+  body[data-theme="light"] .cl-code .cl-exp{color:#334155}
+</style>
 <script src="../_assets/site.js"></script>
 </body>
 </html>

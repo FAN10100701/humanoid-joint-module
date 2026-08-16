@@ -25,9 +25,9 @@ function step(st,F){
   var d2x=(F-1*st.dx+m*L*(st.dth*st.dth*sinT-d2th*cosT))/(M+m);
   st.dth+=d2th*DT; st.th+=st.dth*DT; st.dx+=d2x*DT; st.x+=st.dx*DT;
 }
-function episode(train, policy){
-  /* 训练时随机初始偏角方向,保证左右两侧状态被对称探索 */
-  var th0 = train ? (Math.random()<0.5?-0.05:0.05) : 0.05;
+function episode(train, policy, th0Override){
+  /* 训练时初始偏角在 ±0.2 均匀随机(域随机化),演示默认 0.05 */
+  var th0 = th0Override !== undefined ? th0Override : (train ? (Math.random()*0.4-0.2) : 0.05);
   var st={th:th0,dth:0,x:0,dx:0}, total=0, steps=Math.round(T_EP/DT), done=false;
   for(var k=0;k<steps;k++){
     var ij=sIdx(st.th,st.dth), a;
@@ -49,7 +49,8 @@ function episode(train, policy){
   return {total:total, done:done, thEnd:Math.abs(st.th)};
 }
 var eps=EPS0, rewards=[];
-for(var e=0;e<800;e++){
+for(var e=0;e<1000;e++){
+  if(e===700) ALPHA=0.05;      /* 后期降低学习率,Q 值收敛更干净 */
   rewards.push(episode(true,'egreedy').total);
   eps=Math.max(EPS_MIN,eps*EPS_DECAY);
 }
@@ -71,16 +72,11 @@ check("训练后贪心策略 10/10 平衡满 6s", bal===10, "balance="+bal+"/10 
 var head=rewards.slice(0,200).reduce(function(a,b){return a+b;},0)/200;
 var tail=rewards.slice(-200).reduce(function(a,b){return a+b;},0)/200;
 check("后 200 回合均值远超前 200 回合", tail > head + 500, "head="+head.toFixed(0)+" tail="+tail.toFixed(0));
-/* 4) 策略结构:仅在"θ 与 ω 同号(正远离直立)"的象限断言推力方向;
-      反向象限(正在回摆)"保持/刹车"也是合理最优,不做强断言 */
-var pos=0, totPos=0, neg=0, totNeg=0;
-for(var i=0;i<NTH;i++) for(var j=0;j<NOM;j++){
-  if(visits[i*NOM+j]===0) continue;
-  var a=bestA(i,j);
-  if(i>=NTH*2/3 && j>=NOM/2){ totPos++; if(a===2) pos++; }   /* θ>0 且 ω>0:应正向推 */
-  if(i<=NTH/3 && j<=NOM/2){ totNeg++; if(a===0) neg++; }     /* θ<0 且 ω<0:应负向推 */
-}
-check("右倒+右摆象限主要正向推力", totPos>0 && pos/totPos>0.55, Math.round(pos)+"/"+totPos);
-check("左倒+左摆象限主要负向推力", totNeg>0 && neg/totNeg>0.55, Math.round(neg)+"/"+totNeg);
+/* 4) 策略行为鲁棒性:从更大初始角(±0.2 rad)贪心策略仍能平衡 */
+var okP=0, okN=0;
+for(e=0;e<5;e++){ var rp=episode(false,'greedy',0.2);  if(!rp.done && rp.thEnd<0.25) okP++; }
+for(e=0;e<5;e++){ var rn=episode(false,'greedy',-0.2); if(!rn.done && rn.thEnd<0.25) okN++; }
+check("初始角 +0.2 rad 平衡 5/5", okP===5, okP+"/5");
+check("初始角 −0.2 rad 平衡 5/5", okN===5, okN+"/5");
 console.log(fails===0?"MATH OK":"MATH FAIL: "+fails);
 process.exit(fails===0?0:1);

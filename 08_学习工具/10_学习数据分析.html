@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 学习数据分析</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-an{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px;margin:14px 0;background:rgba(15,23,42,.45)}
+  body[data-theme="light"] .my-an{background:rgba(255,255,255,.65)}
+  .my-an h3{margin:0 0 10px;font-size:15px}
+  .my-an canvas{max-width:100%;height:auto;background:#0b1626;border-radius:10px}
+  .my-kp{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0}
+  .my-kp .k{flex:1 1 140px;border-radius:10px;padding:10px 12px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.3);font-size:12.5px;line-height:1.8}
+  .my-kp .k b{display:block;font-size:20px;font-family:Consolas,monospace;color:#34d399}
+  body[data-theme="light"] .my-kp .k b{color:#047857}
+  .my-empty{padding:26px;text-align:center;color:#94a3b8;line-height:2.2;font-size:13.5px}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-10",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "学习数据分析" } ],
+    prev: { t: "动手项目清单", u: "09_动手项目清单.html" },
+    next: { t: "返回首页", u: "../index.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>📊 学习数据分析:你的学习画像</h1>
+    <div class="sub">读取本浏览器的打卡、活动与复习数据(全部本地,不上传),生成板块完成度、学习节奏、遗忘风险与下一步建议。</div>
+    <div class="tags"><span class="tag">学习数据</span><span class="tag">打卡统计</span><span class="tag">复习提醒</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 说明</div>
+    数据源:页面"✓ 完成"打卡、每日活动记录、自测题库复习记录 —— 均存于本浏览器 localStorage<br>
+    换设备请先用首页的"保存进度到本地文件"迁移;本页只读不写,随时刷新重新计算
+  </div>
+
+  <div class="my-an">
+    <h3>🧩 学习概览</h3>
+    <div class="my-kp" id="anKp"></div>
+  </div>
+
+  <div class="my-an">
+    <h3>📚 各板块完成度</h3>
+    <canvas id="anBar" width="880" height="300"></canvas>
+  </div>
+
+  <div class="my-an">
+    <h3>🔥 最近 12 周学习热力图</h3>
+    <canvas id="anHeat" width="880" height="180"></canvas>
+    <div style="font-size:12px;color:#94a3b8;margin-top:6px">颜色越亮=当天打卡/复习次数越多 · 与首页热力图同源</div>
+  </div>
+
+  <div class="my-an">
+    <h3>🧠 自测复习状态(来自题库 SRS)</h3>
+    <canvas id="anSrs" width="880" height="200"></canvas>
+    <div id="anSrsText" style="font-size:13.5px;line-height:2;margin-top:8px"></div>
+  </div>
+
+  <div class="my-an">
+    <h3>🧭 下一步建议</h3>
+    <div id="anAdvice" style="font-size:13.5px;line-height:2.1"></div>
+  </div>
+
+  <h2><span class="h2-num">N</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. "间隔重复"(SRS)复习安排的依据是什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 固定每 3 天复习一次</button>
+      <button data-v="B">B. 艾宾浩斯遗忘曲线:按你对每题的回忆表现动态拉长/缩短复习间隔</button>
+      <button data-v="C">C. 随机安排</button>
+      <button data-v="D">D. 按题目编号顺序</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:答得好的题间隔指数拉长(1天→3天→7天→21天),答错的回到短间隔——用最少复习次数维持最长记忆保持。本站题库页的"今日复习"就是按此调度。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 学习数据全部存在 localStorage,这意味着?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 数据会上传到云端,换电脑也能看到</button>
+      <button data-v="B">B. 清浏览器缓存后数据依然保留</button>
+      <button data-v="C">C. 数据只在本设备本浏览器;清缓存/换设备会丢,需用导出文件迁移</button>
+      <button data-v="D">D. 其他人可以看到我的进度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:localStorage 按源(协议+域名+端口)和设备隔离,不上传、不跨设备、清站点数据即清除——所以首页提供 JSON 导入导出,重要进度记得定期备份。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 小结:</b>完成度看"广度"、热力图看"习惯"、SRS 曲线看"留存"、建议看"下一步"。数据不会说谎,但也不会替你学——用它们调整节奏,而不是制造焦虑。</div>
+
+</div><!-- /container -->
+<script>
+/* ============ 学习数据分析(只读三源:progress / activity / srs) ============ */
+(function(){
+  "use strict";
+  var progress={}, activity={}, srs={};
+  try{ progress=JSON.parse(localStorage.getItem("humanoid-site-progress-v1")||"{}"); }catch(e){}
+  if(window.Site && Site.getActivity){ try{ activity=Site.getActivity()||{}; }catch(e){} }
+  try{ srs=JSON.parse(localStorage.getItem("humanoid-srs-v1")||"{}"); }catch(e){}
+
+  var SECS = window.SITE_SECTIONS || [];
+  var total=0, done=0, secStats=[];
+  SECS.forEach(function(sec){
+    var d=0; sec.ids.forEach(function(id){ if(progress[id])d++; });
+    done+=d; total+=sec.ids.length;
+    secStats.push({name:sec.name, done:d, all:sec.ids.length});
+  });
+
+  /* 概览 KPI */
+  var firstDate=null,lastDate=null,dates=Object.keys(activity);
+  if(dates.length){ dates.sort(); firstDate=dates[0]; lastDate=dates[dates.length-1]; }
+  var activeDays=dates.filter(function(k){return (activity[k]||0)>0;}).length;
+  var totalActs=dates.reduce(function(a,k){return a+(activity[k]||0);},0);
+  var kpi = [
+    ["总完成度", total? Math.round(done/total*100)+"%":"—", done+"/"+total+" 页"],
+    ["连续学习", streak()+" 天", "最近一次:"+((lastDate||"—"))],
+    ["活跃天数", activeDays+" 天", "累计打卡/复习 "+totalActs+" 次"],
+    ["SRS 到期", srsDue()+" 题", "题库复习记录 "+srsCount()+" 题"]
+  ];
+  document.getElementById('anKp').innerHTML = kpi.map(function(k){
+    return '<div class="k">'+k[0]+'<b>'+k[1]+'</b>'+k[2]+'</div>';
+  }).join('');
+  function streak(){
+    var s=0, d=new Date();
+    for(;;){
+      var key=d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());
+      if((activity[key]||0)>0){ s++; }
+      else if(s>0){ break; }
+      d.setDate(d.getDate()-1);
+      if(s>365) break;
+      if(s===0 && d.getTime() < Date.now()-90*864e5) break;
+    }
+    return s;
+  }
+  function p2(n){ return n<10?"0"+n:""+n; }
+  function todayKey(){ var d=new Date(); return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate()); }
+  function srsCount(){ return Object.keys(srs).length; }
+  function srsDue(){
+    var now=Date.now(), n=0;
+    Object.keys(srs).forEach(function(q){ var it=srs[q]; if(it && it.due && it.due<=now) n++; });
+    return n;
+  }
+
+  /* 板块条形图 */
+  (function(){
+    var cv=document.getElementById('anBar'),ctx=cv.getContext('2d');
+    var W=cv.width,H=cv.height;
+    ctx.clearRect(0,0,W,H); ctx.fillStyle="#0b1626"; ctx.fillRect(0,0,W,H);
+    var rowH=Math.floor((H-30)/secStats.length), maxW=W-260;
+    secStats.forEach(function(s,i){
+      var y=14+i*rowH, pct=s.all? s.done/s.all : 0;
+      ctx.fillStyle="#e2e8f0"; ctx.font="13px sans-serif"; ctx.textAlign="left";
+      ctx.fillText(s.name, 12, y+rowH/2+4);
+      ctx.fillStyle="rgba(59,130,246,.15)";
+      ctx.fillRect(150,y+rowH/2-9,maxW,18);
+      ctx.fillStyle=pct===1?"#22c55e":"#3b82f6";
+      ctx.fillRect(150,y+rowH/2-9,maxW*Math.max(0.005,pct),18);
+      ctx.fillStyle="#94a3b8"; ctx.font="12px Consolas,monospace";
+      ctx.fillText(s.done+"/"+s.all+" ("+Math.round(pct*100)+"%)", 150+maxW+10, y+rowH/2+4);
+    });
+  })();
+
+  /* 12 周热力图 */
+  (function(){
+    var cv=document.getElementById('anHeat'),ctx=cv.getContext('2d');
+    var W=cv.width,H=cv.height;
+    ctx.clearRect(0,0,W,H); ctx.fillStyle="#0b1626"; ctx.fillRect(0,0,W,H);
+    var DAYS=84, cw=Math.floor((W-40)/DAYS), top=26, ch=H-top-16;
+    ctx.fillStyle="#64748b"; ctx.font="11px sans-serif";
+    ctx.fillText("12 周前", 12, 16); ctx.fillText("今天", W-40, 16);
+    for(var i=DAYS-1;i>=0;i--){
+      var d=new Date(); d.setDate(d.getDate()-i);
+      var key=d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());
+      var n=activity[key]||0;
+      var x=16+(DAYS-1-i)*cw, lv=n>=4?4:n;
+      var cols=["#16233d","#1d3a8f","#2563eb","#3b82f6","#60a5fa"];
+      ctx.fillStyle=cols[lv];
+      ctx.fillRect(x, top, cw-2, ch);
+    }
+    var legendY=H-8;
+    ctx.fillStyle="#64748b"; ctx.fillText("少", 16, legendY);
+    ["#16233d","#1d3a8f","#2563eb","#3b82f6","#60a5fa"].forEach(function(c,k){
+      ctx.fillStyle=c; ctx.fillRect(36+k*18, legendY-9, 14, 9);
+    });
+    ctx.fillStyle="#64748b"; ctx.fillText("多", 132, legendY);
+  })();
+
+  /* SRS 状态:各箱(card box 1~5)分布 */
+  (function(){
+    var cv=document.getElementById('anSrs'),ctx=cv.getContext('2d');
+    var W=cv.width,H=cv.height;
+    ctx.clearRect(0,0,W,H); ctx.fillStyle="#0b1626"; ctx.fillRect(0,0,W,H);
+    var NL=6, boxes=[0,0,0,0,0,0];
+    Object.keys(srs).forEach(function(q){
+      var it=srs[q]; if(it && it.lvl>=0 && it.lvl<NL) boxes[it.lvl]++;
+    });
+    var sum=boxes.reduce(function(a,b){return a+b;},0);
+    var names=["新学(0)","30分钟(1)","1天(2)","2天(3)","4天(4)","8天+(5)"];
+    var cols=["#ef4444","#f97316","#f59e0b","#eab308","#84cc16","#22c55e"];
+    var bw=Math.floor((W-160)/NL), base=H-34, maxV=Math.max.apply(null,boxes.concat([1]));
+    boxes.forEach(function(v,i){
+      var h=v/maxV*(H-80);
+      ctx.fillStyle=cols[i];
+      ctx.fillRect(120+i*bw, base-h, bw-14, h);
+      ctx.fillStyle="#e2e8f0"; ctx.font="13px Consolas,monospace"; ctx.textAlign="center";
+      ctx.fillText(v, 120+i*bw+(bw-14)/2, base-h-6);
+      ctx.fillStyle="#94a3b8"; ctx.font="12px sans-serif";
+      ctx.fillText(names[i], 120+i*bw+(bw-14)/2, base+16);
+    });
+    ctx.fillStyle="#64748b"; ctx.font="11px sans-serif"; ctx.textAlign="left";
+    ctx.fillText("记忆箱分布:越靠右越牢固", 120, 16);
+    var t=document.getElementById('anSrsText');
+    if(sum===0){ t.innerHTML='暂无复习记录——去 <a href="03_自测题库.html">自测题库</a> 答题,SRS 会自动安排间隔复习。'; }
+    else{ t.innerHTML='共 '+sum+' 题有复习记录:巩固以上(lvl≥4)占 <b>'+Math.round((boxes[4]+boxes[5])/sum*100)+'%</b> · 今日到期 <b>'+srsDue()+'</b> 题' + (srsDue()>0?' → <a href="03_自测题库.html">去复习</a>':'(今日已完成或无到期)'); }
+  })();
+
+  /* 建议 */
+  (function(){
+    var adv=[];
+    if(total && done===0){
+      adv.push('🌱 还没有打卡记录。建议从 <a href="../00_3D解剖/人形机器人解剖式知识可视化.html">3D 解剖</a> 或 <a href="../01_理论入门/01_整体知识框架_思维导图.html">知识框架</a> 开始,学完点右上角"✓ 完成"。');
+    } else {
+      /* 找完成度最低且已开始的板块 + 全站第一个未完成页 */
+      var minSec=null;
+      secStats.forEach(function(s){ if(!minSec && s.done<s.all) minSec=s; });
+      var firstUndone=null;
+      SECS.some(function(sec){ return sec.ids.some(function(id){ if(!progress[id]){ firstUndone=sec; return true; } return false; }); });
+      if(srsDue()>0) adv.push('🧠 <b>今日有 '+srsDue()+' 题到期待复习</b>——记忆消退前 10 分钟复习性价比最高 → <a href="03_自测题库.html">去复习</a>');
+      var yd=new Date(); yd.setDate(yd.getDate()-1);
+      var yk=yd.getFullYear()+"-"+p2(yd.getMonth()+1)+"-"+p2(yd.getDate());
+      if(!(activity[yk]>0)) adv.push('📆 昨天没有学习记录——连续性比单日强度更重要,今天哪怕只复习 3 题也算保持节奏。');
+      if(minSec) adv.push('📚 「'+minSec.name+'」完成 '+minSec.done+'/'+minSec.all+',是当前最靠前的未完成板块,优先推进。');
+      if(firstUndone) adv.push('🧭 按 order 学习,下一个未完成板块:「'+firstUndone.name+'」→ 打开 <a href="06_学习地图.html">学习地图</a> 选节点。');
+      var weeks = activeDays>0 && dates.length ? Math.max(1,Math.round((new Date(lastDate)-new Date(firstDate))/6048e5)) : 0;
+      if(weeks>0) adv.push('📈 你的节奏:约 '+weeks+' 周内活跃 '+activeDays+' 天(周均 '+Math.round(activeDays/weeks*10)/10+' 天)。');
+      adv.push('🛠️ 学理论要配动手——<a href="09_动手项目清单.html">动手项目清单</a> 里挑一个匹配当前水平的项目。');
+    }
+    document.getElementById('anAdvice').innerHTML = adv.join('<br>');
+  })();
+})();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>

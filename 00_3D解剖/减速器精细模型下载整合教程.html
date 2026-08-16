@@ -67,6 +67,19 @@
     <p style="color:#6b7280;font-size:13px">（文件夹不存在就新建这两个文件夹。放好后告诉助手「已放好」，助手统一点击零件让他们在网页里正确装配。）</p>
   </div>
 
+  <h2>六、延伸资源：电机与编码器 3D 模型(已调研核实 · 2026-08)</h2>
+  <p>规划中的「电机内部 3D」与「编码器 3D 拆解」场景,模型不必自建——以下开源/官方资源已核实可直接下载(优先选择<strong>零件命名规范、带装配结构</strong>的模型,便于做爆炸拆解):</p>
+  <div class="table-wrap"><table>
+    <tr><th>目标</th><th>资源</th><th>说明</th></tr>
+    <tr><td rowspan="3">无刷电机<br>(定子/转子/绕组)</td><td><a href="https://community.makesea.com/web/claimer/brushless-motor" target="_blank" rel="noopener">makeSEA · Brushless Motor</a></td><td>★首选:全打印电机,<b>STL 按零件命名</b>(BL_StatorShield / BL_Rotor 等),天然适合爆炸拆解教学</td></tr>
+    <tr><td><a href="https://community.simplefoc.com/t/3d-printed-bldc-out-runner-motor/726" target="_blank" rel="noopener">SimpleFOC 社区 · 20 极 18 槽外转子</a></td><td>与本站 FOC 教学同生态,极对数概念可直接演示</td></tr>
+    <tr><td><a href="https://www.instructables.com/600-Watt-3d-printed-Halbach-Array-Brushless-DC-Ele/" target="_blank" rel="noopener">Instructables · 600W Halbach 阵列电机</a></td><td>含 Halbach 磁阵列转子,讲"聚磁"的好素材</td></tr>
+    <tr><td rowspan="3">磁编码器</td><td><a href="https://www.monolithicpower.com/en/ma732.html" target="_blank" rel="noopener">MPS 官方 · MA732 3D Model</a></td><td>★官方模型(设计资源区,15 个 3D 文件),尺寸权威</td></tr>
+    <tr><td><a href="https://grabcad.com/library/tag/as5600" target="_blank" rel="noopener">GrabCAD · AS5600 模型合集</a></td><td>含模块/支架/与电机集成多种形态(注册后免费)</td></tr>
+    <tr><td><a href="https://blog.mjbots.com/tags/ma732/" target="_blank" rel="noopener">mjbots · moteus 开源关节(含 MA732 集成)</a></td><td>业界知名开源关节驱动,GitHub 含完整 CAD;编码器与电机的<b>集成安装方式</b>最有参考价值</td></tr>
+  </table></div>
+  <p style="font-size:13px;color:#8a94a4">选型建议:优先 makeSEA 电机 + MPS 官方编码器组合——前者零件结构完整可拆解,后者尺寸官方可信。下载后按本页第三、四节的同一流程放入 <code>00_3D解剖/models/</code> 对应子目录即可复用现有管线(转载前确认各站许可条款,教学用途一般无碍)。</p>
+
   <h2>五、放好后，助手会做什么</h2>
   <ol>
     <li>读取每个 STL 的真实尺寸，统一按真实比例缩放（避免现在的「独立缩放+假堆叠」导致的重合错乱）。</li>
@@ -84,7 +97,7 @@
 window.PAGE = { pageId:"00-03", root:"..",
   breadcrumb:[ {t:"3D 解剖可视化", u:"../index.html#sec0"}, {t:"减速器精细模型下载教程"} ],
   prev:{t:"三种减速器 · 剖面图解", u:"减速器剖面图详解.html"},
-  next:{t:"整体知识框架 · 思维导图", u:"../01_理论入门/01_整体知识框架_思维导图.html"} };
+  next: { t: "电机/编码器/灵巧手 3D 拆解", u: "电机编码器与灵巧手3D拆解.html" } };
 </script>
 <script src="../_assets/site.js"></script>
 </body>

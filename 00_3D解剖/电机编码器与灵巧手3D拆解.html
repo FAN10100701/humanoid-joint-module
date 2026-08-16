@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 电机/编码器/灵巧手 3D 拆解</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-x3{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:14px;margin:16px 0;background:rgba(15,23,42,.45)}
+  body[data-theme="light"] .my-x3{background:rgba(255,255,255,.65)}
+  .my-x3 .my-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .my-x3 .my-tabs button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13.5px;font-family:inherit}
+  body[data-theme="light"] .my-x3 .my-tabs button{background:#fff;color:#334155}
+  .my-x3 .my-tabs button.on{background:#2563eb;color:#fff;border-color:#2563eb;font-weight:700}
+  .my-x3 canvas{width:100%;height:auto;display:block;border-radius:10px;cursor:grab;touch-action:none}
+  .my-x3 canvas:active{cursor:grabbing}
+  .my-ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:10px;font-size:13px}
+  .my-ctl label{display:inline-flex;align-items:center;gap:6px}
+  .my-ctl input[type=range]{width:150px;accent-color:#2563eb}
+  .my-ctl button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:12.5px}
+  body[data-theme="light"] .my-ctl button{background:#fff;color:#334155}
+  .my-ctl button.on{background:#16a34a;color:#fff;border-color:#16a34a}
+  .my-info{margin-top:10px;font-size:13.5px;line-height:2;border-left:3px solid #2563eb;background:rgba(37,99,235,.06);padding:8px 12px;border-radius:0 8px 8px 0}
+  body[data-theme="light"] .my-info{color:#334155}
+  .my-info b{color:#60a5fa}
+  body[data-theme="light"] .my-info b{color:#1d4ed8}
+  .my-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:12px;color:#94a3b8}
+  .my-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "00-04",
+    root: "..",
+    breadcrumb: [ { t: "3D 解剖可视化", u: "../index.html#sec0" }, { t: "电机/编码器/灵巧手 3D 拆解" } ],
+    prev: { t: "减速器精细模型下载教程", u: "减速器精细模型下载整合教程.html" },
+    next: { t: "整体知识框架思维导图", u: "../01_理论入门/01_整体知识框架_思维导图.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🔩 电机 / 编码器 / 灵巧手 3D 拆解</h1>
+    <div class="sub">three.js 程序化建模(零模型下载):外转子无刷电机内部结构与旋转磁场、磁/光电编码器、灵巧手关节——拖动旋转、滑杆爆炸、点击看原理。</div>
+    <div class="tags"><span class="tag">无刷电机</span><span class="tag">旋转磁场</span><span class="tag">磁编码器</span><span class="tag">灵巧手</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 认识外转子无刷电机四大件(定子铁芯/绕组/转子磁钢/轴),理解 14 块磁钢=7 对极<br>
+    2. 看懂磁编码器(磁铁+芯片)与光电编码器(码盘+槽+光电管)的结构差异<br>
+    3. 数出灵巧手的自由度,理解"每指 2~3 关节 + 拇指外展"的布局<br>
+    <b>建议用时:</b>约 25 分钟 · 🖱 左键拖动旋转 / 滚轮缩放
+  </div>
+
+  <div class="my-x3">
+    <div class="my-tabs">
+      <button class="on" id="x3t0" onclick="x3Tab(0)">🧲 ① 无刷电机内部(含旋转磁场)</button>
+      <button id="x3t1" onclick="x3Tab(1)">🎯 ② 编码器(磁/光电)</button>
+      <button id="x3t2" onclick="x3Tab(2)">🤲 ③ 灵巧手关节</button>
+    </div>
+    <canvas id="x3cv" width="960" height="560"></canvas>
+    <div class="my-ctl" id="x3ctl"></div>
+    <div class="my-info" id="x3info"></div>
+    <div class="my-legend" id="x3legend"></div>
+  </div>
+
+  <h2><span class="h2-num">2</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 外转子无刷电机"外转子"指的是什么在转?对人形关节有什么好处?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 定子在外侧旋转,结构更简单</button>
+      <button data-v="B">B. 磁钢转子在外圈包着定子转——同样体积下转矩臂更大、转矩密度更高,适合关节直接输出大力矩</button>
+      <button data-v="C">C. 外壳转,内部不动</button>
+      <button data-v="D">D. 轴承在外侧转</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:外转子=磁钢贴在外圈旋转,力作用半径大,转矩密度高;云台电机/无框力矩电机都是外转子或类似结构,人形关节靠它+减速器输出大力矩。内转子则转速高、惯量小,适合高速场景。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 磁编码器相对光电编码器的核心优势是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 分辨率一定更高</button>
+      <button data-v="B">B. 不需要供电</button>
+      <button data-v="C">C. 无接触(磁感应)、抗灰尘油污振动、体积小——适合关节内狭小恶劣环境</button>
+      <button data-v="D">D. 温度越高精度越高</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:磁编码器(AS5600/MA732 类)靠芯片感测磁铁角度,非接触、抗震动污染、便宜小巧,是关节模组电机端编码器主流;光电编码器精度可做极高(码盘线数多),但怕污损,常用于输出端高精测量。两者不是简单谁好,而是分工。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 演示里的五指灵巧手,典型的自由度配置是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 每指 1 个,共 5 个</button>
+      <button data-v="B">B. 四指各 2~3 个屈曲 + 拇指 2~3 个(含外展/对掌),共 12~17 个</button>
+      <button data-v="C">C. 全手只有 1 个总自由度</button>
+      <button data-v="D">D. 30 个以上,每关节 3 个</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:人类手 21+ 自由度;工程灵巧手在重量/线束/成本约束下取 6~17:Shadow Hand 20 个、LEAP Hand 16 个、Inspire 仿生手 6 个(欠驱动)。欠驱动是用 1 个电机带多关节弯曲的减自由度策略。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①电机=定子(铁芯+绕组)+转子(磁钢)+轴,极对数=磁钢数÷2,FOC 让定子磁场始终领先转子一个负载角同步旋转;②编码器分磁(非接触、抗恶劣)与光电(高精、怕污)两类;③灵巧手自由度 6~17,欠驱动是减重减线的常用策略。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 把演示里的负载角滑杆拉到 60° 会发生什么(提示:失步)?这说明 FOC 的电流环在限制什么?<br>2. 为什么编码器磁铁用"径向充磁"(一半红一半蓝)而不是轴向?对着演示转一圈想想。</div>
+
+</div><!-- /container -->
+<script src="../_assets/site.js"></script>
+<script>
+/* ============ 电机/编码器/灵巧手 3D(three.js 动态加载本地库,程序化建模) ============ */
+var x3 = { T:null, renderer:null, scene:null, cam:null, tab:0, raf:0, yaw:0.9, pitch:0.35, dist:5.4, drag:null,
+           motor:{}, enc:{}, hand:{}, spin:true, explode:0, loadAngle:0.25, encType:0, pose:"open", poseT:1 };
+var x3Groups = [];
+
+function x3Tab(i){
+  x3.tab = i;
+  for(var k=0;k<3;k++){ document.getElementById('x3t'+k).classList.toggle('on', k===i); }
+  if(x3Groups.length===3){ x3Groups.forEach(function(g,k){ g.visible = (k===i); }); }
+  x3BuildCtl();
+  x3BuildInfo();
+}
+
+import('./lib/three.module.js').then(function(THREE){
+  x3.T = THREE;
+  var cv = document.getElementById('x3cv');
+  var renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  x3.renderer = renderer;
+  var scene = new THREE.Scene();
+  x3.scene = scene;
+  var cam = new THREE.PerspectiveCamera(45, 960/560, 0.1, 100);
+  x3.cam = cam;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  var d1 = new THREE.DirectionalLight(0xffffff, 1.1); d1.position.set(3,5,4); scene.add(d1);
+  var d2 = new THREE.DirectionalLight(0x93c5fd, 0.4); d2.position.set(-4,-2,-3); scene.add(d2);
+  var grid = new THREE.GridHelper(14, 28, 0x1e3a5f, 0x16233d);
+  grid.position.y = -2.6; scene.add(grid);
+
+  x3Groups = [ buildMotor(THREE), buildEncoder(THREE), buildHand(THREE) ];
+  x3Groups.forEach(function(g,i){ g.visible = (i===0); scene.add(g); });
+
+  /* 轨道控制(自实现,零依赖) */
+  cv.addEventListener('pointerdown', function(e){ x3.drag={x:e.clientX,y:e.clientY}; try{cv.setPointerCapture(e.pointerId);}catch(err){} });
+  cv.addEventListener('pointermove', function(e){
+    if(!x3.drag) return;
+    x3.yaw -= (e.clientX-x3.drag.x)*0.008;
+    x3.pitch = Math.max(-1.2, Math.min(1.35, x3.pitch + (e.clientY-x3.drag.y)*0.006));
+    x3.drag = {x:e.clientX, y:e.clientY};
+  });
+  cv.addEventListener('pointerup', function(){ x3.drag=null; });
+  cv.addEventListener('wheel', function(e){
+    e.preventDefault();
+    x3.dist = Math.max(2.2, Math.min(11, x3.dist + (e.deltaY>0?0.35:-0.35)));
+  }, { passive:false });
+
+  var last = performance.now();
+  (function loop(now){
+    var dt = Math.min((now-last)/1000, 0.05); last = now;
+    if(!document.hidden){
+      if(x3.spin){ x3.animT = (x3.animT||0) + dt; }
+      var t = x3.animT || 0;
+      updateMotor(t, dt);
+      updateEncoder(t, dt);
+      updateHand(dt);
+      cam.position.set(Math.sin(x3.yaw)*Math.cos(x3.pitch)*x3.dist, Math.sin(x3.pitch)*x3.dist, Math.cos(x3.yaw)*Math.cos(x3.pitch)*x3.dist);
+      cam.lookAt(0,0,0);
+      renderer.render(scene, cam);
+    }
+    requestAnimationFrame(loop);
+  })(last);
+  x3BuildCtl();
+  x3BuildInfo();
+}).catch(function(err){
+  document.getElementById('x3info').innerHTML = '<b>3D 库加载失败:</b>' + err.message + '(请通过本地服务器 http:// 访问本页;file:// 直开不支持模块)';
+});
+
+/* ---------- ① 无刷电机 ---------- */
+function buildMotor(THREE){
+  var g = new THREE.Group();
+  var m = x3.motor;
+  function mat(c, extra){ return new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:0.45, metalness:0.35}, extra||{})); }
+  /* 定子铁芯:轭 + 12 齿 */
+  m.stator = new THREE.Group();
+  var yoke = new THREE.Mesh(new THREE.CylinderGeometry(0.86,0.86,0.6,48,1,true), mat(0x94a3b8,{side:THREE.DoubleSide}));
+  yoke.rotation.x = Math.PI/2; m.stator.add(yoke);
+  m.teeth = []; m.coils = [];
+  for(var i=0;i<12;i++){
+    var a = i*Math.PI/6;
+    var tooth = new THREE.Mesh(new THREE.BoxGeometry(0.18,0.6,0.3), mat(0xb8c2cc));
+    tooth.position.set(Math.cos(a)*0.62, 0, Math.sin(a)*0.62);
+    tooth.rotation.y = -a;
+    tooth.userData.dir = new THREE.Vector3(Math.cos(a),0,Math.sin(a));
+    m.stator.add(tooth); m.teeth.push(tooth);
+    var coil = new THREE.Mesh(new THREE.TorusGeometry(0.13,0.06,10,20), mat(0xd97706,{metalness:0.7,roughness:0.3}));
+    coil.position.set(Math.cos(a)*0.86, 0, Math.sin(a)*0.86);
+    coil.rotation.y = -a + Math.PI/2; coil.rotation.x = Math.PI/2;
+    coil.userData.dir = new THREE.Vector3(Math.cos(a),0,Math.sin(a));
+    m.stator.add(coil); m.coils.push(coil);
+  }
+  /* 转子:轭 + 14 磁钢(7 对极) */
+  m.rotor = new THREE.Group();
+  var ry = new THREE.Mesh(new THREE.CylinderGeometry(1.12,1.12,0.56,48,1,true), mat(0x64748b,{side:THREE.DoubleSide}));
+  ry.rotation.x = Math.PI/2; m.rotor.add(ry);
+  m.magnets = [];
+  for(i=0;i<14;i++){
+    a = i*Math.PI*2/14;
+    var mag = new THREE.Mesh(new THREE.CylinderGeometry(1.14,1.14,0.5,8,1,false,0,Math.PI*2/14-0.05),
+                             mat(i%2? 0x3b82f6 : 0xef4444, {metalness:0.2, roughness:0.5}));
+    mag.rotation.x = Math.PI/2; mag.rotation.z = -a;
+    mag.userData.baseA = a;
+    m.rotor.add(mag); m.magnets.push(mag);
+  }
+  /* 轴 + 端盖 */
+  m.shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,2.2,20), mat(0x334155,{metalness:0.8,roughness:0.2}));
+  m.shaft.rotation.x = Math.PI/2; 
+  m.cap1 = new THREE.Mesh(new THREE.CylinderGeometry(1.24,1.24,0.08,48), mat(0xcbd5e1,{transparent:true,opacity:0.5}));
+  m.cap1.rotation.x = Math.PI/2; m.cap1.position.z = -0.45;
+  m.cap2 = m.cap1.clone(); m.cap2.position.z = 0.45;
+  /* 磁场箭头:定子合成场(绿) + 转子 d 轴(橙) */
+  m.fieldArr = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1.5, 0x22c55e, 0.22, 0.12);
+  m.rotorArr = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1.2, 0xf97316, 0.2, 0.11);
+  g.add(m.stator, m.rotor, m.shaft, m.cap1, m.cap2, m.fieldArr, m.rotorArr);
+  return g;
+}
+function updateMotor(t){
+  var T = x3.T, m = x3.motor;
+  if(!m.rotor || x3.tab!==0) return;
+  var elec = t * 2.2;                       /* 电角度速度(示意) */
+  var polePairs = 7;
+  var mech = elec / polePairs;              /* 机械角=电角/极对数 */
+  m.rotor.rotation.z = mech;
+  m.rotorArr.rotation.z = mech;
+  m.fieldArr.rotation.z = elec - x3.loadAngle/polePairs + x3.loadAngle;  /* 场领先负载角 */
+  /* 爆炸:磁钢外扩、绕组外扩、端盖轴向分离 */
+  var e = x3.explode;
+  m.magnets.forEach(function(mg){
+    var a = mg.userData.baseA;
+    mg.position.set(Math.cos(a)*0.22*e, 0, Math.sin(a)*0.22*e);
+  });
+  m.coils.forEach(function(c){ c.position.setLength(0.86 + 0.5*e); });
+  m.cap1.position.z = -0.45 - 1.4*e;
+  m.cap2.position.z = 0.45 + 1.4*e;
+  /* 转子与定子整体分离一点,看清内部 */
+  m.rotor.position.y = 1.2*e;
+  m.stator.position.y = -0.5*e;
+  m.shaft.position.y = 0.35*e;
+}
+
+/* ---------- ② 编码器 ---------- */
+function buildEncoder(THREE){
+  var g = new THREE.Group();
+  var m = x3.enc;
+  function mat(c, extra){ return new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:0.5, metalness:0.3}, extra||{})); }
+  m.pcb = new THREE.Mesh(new THREE.BoxGeometry(2.4,0.08,2.4), mat(0x15803d));
+  m.ic = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.09,0.5), mat(0x0f172a));
+  m.ic.position.set(0,0.09,0);
+  m.pins = [];
+  for(var i=0;i<8;i++){
+    var pin = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.05,0.18), mat(0xd1d5db,{metalness:0.9,roughness:0.2}));
+    var a = i*Math.PI/4 + Math.PI/8;
+    pin.position.set(Math.cos(a)*0.42, 0.07, Math.sin(a)*0.42);
+    pin.rotation.y = -a;
+    m.pins.push(pin); g.add(pin);
+  }
+  /* 径向充磁磁铁:两个半圆柱(红/蓝) */
+  m.magnetR = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.18,24,1,false,0,Math.PI), mat(0xef4444));
+  m.magnetB = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.18,24,1,false,Math.PI,Math.PI), mat(0x3b82f6));
+  m.magnet = new THREE.Group();
+  m.magnet.add(m.magnetR, m.magnetB);
+  m.magnet.position.y = 0.55;
+  /* 轴 */
+  m.axle = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,1.8,16), mat(0x94a3b8,{metalness:0.85,roughness:0.15}));
+  /* 光电码盘组(默认隐藏) */
+  m.disc = new THREE.Group();
+  var plate = new THREE.Mesh(new THREE.CylinderGeometry(0.95,0.95,0.04,48), mat(0x1e293b));
+  plate.rotation.x = Math.PI/2; m.disc.add(plate);
+  m.slots = [];
+  for(i=0;i<20;i++){
+    var slot = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.06,0.16), mat(0xfbbf24,{emissive:0xf59e0b,emissiveIntensity:0.4}));
+    var b = i*Math.PI/10;
+    slot.position.set(Math.cos(b)*0.82, 0, Math.sin(b)*0.82);
+    slot.rotation.y = -b;
+    m.disc.add(slot); m.slots.push(slot);
+  }
+  m.led = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,0.16), mat(0xf87171,{emissive:0xef4444,emissiveIntensity:0.8}));
+  m.led.position.set(0,1.0,0.9);
+  m.pd = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.08,0.2), mat(0x475569));
+  m.pd.position.set(0,-0.6,0.9);
+  m.disc.add(m.led, m.pd);
+  g.add(m.pcb, m.ic, m.magnet, m.axle, m.disc);
+  return g;
+}
+function updateEncoder(t){
+  var m = x3.enc;
+  if(!m.magnet || x3.tab!==1) return;
+  var ang = t * 1.8;
+  m.magnet.rotation.y = ang;
+  m.disc.rotation.y = m.encType ? ang : 0;
+  m.disc.visible = !!m.encType;
+  m.magnet.visible = !m.encType;
+  m.ic.visible = !m.encType;
+  var e = x3.explode;
+  m.magnet.position.y = 0.55 + 0.8*e;
+  m.pcb.position.y = -0.2*e;
+  m.disc.position.y = 0.6*e;
+  var deg = ((ang*180/Math.PI)%360+360)%360;
+  x3.encDeg = deg;
+}
+
+/* ---------- ③ 灵巧手 ---------- */
+function buildHand(THREE){
+  var T = THREE, g = new THREE.Group();
+  var m = x3.hand;
+  function mat(c){ return new T.MeshStandardMaterial({color:c, roughness:0.6, metalness:0.15}); }
+  m.palm = new T.Mesh(new T.BoxGeometry(1.9,0.5,2.0), mat(0x60a5fa));
+  g.add(m.palm);
+  m.fingers = [];
+  var skin = 0x93c5fd, jointC = 0xf59e0b;
+  for(var f=0; f<5; f++){
+    var isThumb = (f===0);
+    var rootX = isThumb ? -1.0 : -0.62 + f*0.42;
+    var rootZ = isThumb ? 0.6 : 1.05;
+    var root = new T.Group();
+    root.position.set(rootX, 0, rootZ);
+    if(isThumb){ root.rotation.y = -0.9; }
+    var segs = [];
+    var parent = root;
+    var nSeg = isThumb ? 2 : 3;
+    for(var sgi=0; sgi<nSeg; sgi++){
+      var seg = new T.Group();
+      seg.position.z = sgi===0 ? 0 : 0.42;
+      var len = isThumb ? 0.36 : 0.46 - sgi*0.08;
+      var link = new T.Mesh(new T.BoxGeometry(isThumb?0.24:0.2, 0.2, len), mat(sgi===0?skin:skin));
+      link.position.z = len/2;
+      var jcap = new T.Mesh(new T.CylinderGeometry(0.1,0.1,0.24,12), mat(jointC));
+      jcap.rotation.z = Math.PI/2; jcap.position.z = 0.02;
+      seg.add(link, jcap);
+      parent.add(seg); parent = seg;
+      segs.push(seg);
+    }
+    g.add(root);
+    m.fingers.push({root:root, segs:segs, isThumb:isThumb});
+  }
+  return g;
+}
+var X3_POSES = {
+  open:  { curl:0, thumb:0, spread:1 },
+  fist:  { curl:1.45, thumb:1.2, spread:0 },
+  pinch: { curl:0.9, thumb:0.9, spread:0.55 },
+  point: { curl:0, thumb:1.2, spread:0.2 }
+};
+function updateHand(dt){
+  var m = x3.hand;
+  if(!m.fingers || !m.fingers.length || x3.tab!==2) return;
+  var target = X3_POSES[x3.pose] || X3_POSES.open;
+  m.cur = m.cur || { curl:0, thumb:0, spread:1 };
+  var k = Math.min(1, dt*5);
+  m.cur.curl += (target.curl - m.cur.curl)*k;
+  m.cur.thumb += (target.thumb - m.cur.thumb)*k;
+  m.cur.spread += (target.spread - m.cur.spread)*k;
+  m.fingers.forEach(function(f, fi){
+    var amount = f.isThumb ? m.cur.thumb : m.cur.curl;
+    f.segs.forEach(function(seg, si){
+      seg.rotation.x = -amount * (si===0 ? 0.45 : 0.62);
+    });
+    if(f.isThumb){ f.root.rotation.y = -0.9 - m.cur.spread*0.5; }
+    else { f.root.rotation.y = (fi-2.5)*0.12*m.cur.spread; }
+  });
+  if(x3.spin){ /* 慢速摆动展示 */ m.palm.parent.rotation.y = Math.sin((x3.animT||0)*0.5)*0.25; }
+}
+
+/* ---------- 控制面板与说明 ---------- */
+function x3BuildCtl(){
+  var el = document.getElementById('x3ctl');
+  if(!x3.T){ el.innerHTML = '3D 库加载中…'; return; }
+  if(x3.tab===0){
+    el.innerHTML = '<label>爆炸度 <input type="range" min="0" max="1" step="0.02" value="'+x3.explode+'" oninput="x3.explode=+this.value"></label>'
+      + '<label>负载角(磁场领先) <input type="range" min="0" max="1.1" step="0.05" value="'+x3.loadAngle+'" oninput="x3.loadAngle=+this.value"></label>'
+      + '<button class="'+(x3.spin?'on':'')+'" onclick="x3.spin=!x3.spin;this.classList.toggle(\'on\',x3.spin)">'+(x3.spin?'⏸ 暂停旋转':'▶ 恢复旋转')+'</button>'
+      + '<button onclick="x3.explode=0;x3BuildCtl()">复位爆炸</button>';
+  } else if(x3.tab===1){
+    el.innerHTML = '<label>爆炸度 <input type="range" min="0" max="1" step="0.02" value="'+x3.explode+'" oninput="x3.explode=+this.value"></label>'
+      + '<button class="'+(x3.encType?'':'on')+'" onclick="x3.encType=0;x3BuildCtl();x3BuildInfo()">🧲 磁编码器</button>'
+      + '<button class="'+(x3.encType?'on':'')+'" onclick="x3.encType=1;x3BuildCtl();x3BuildInfo()">💡 光电编码器</button>'
+      + '<button class="'+(x3.spin?'on':'')+'" onclick="x3.spin=!x3.spin;this.classList.toggle(\'on\',x3.spin)">'+(x3.spin?'⏸ 暂停':'▶ 旋转')+'</button>';
+  } else {
+    var names = { open:'张开', fist:'握拳', pinch:'捏合', point:'点赞' };
+    var html = '';
+    Object.keys(names).forEach(function(p){
+      html += '<button class="'+(x3.pose===p?'on':'')+'" onclick="x3.pose=\''+p+'\';x3BuildCtl()">'+names[p]+'</button>';
+    });
+    html += '<button class="'+(x3.spin?'on':'')+'" onclick="x3.spin=!x3.spin;this.classList.toggle(\'on\',x3.spin)">挥手展示</button>';
+    el.innerHTML = html;
+  }
+}
+function x3BuildInfo(){
+  var el = document.getElementById('x3info'), lg = document.getElementById('x3legend');
+  if(x3.tab===0){
+    el.innerHTML = '<b>外转子无刷电机</b>(程序化示意:12 槽定子 / 14 极转子 = <b>7 对极</b>)。绿色箭头=定子合成磁场,橙色=转子 d 轴——<b>磁场始终领先转子一个"负载角"同步旋转</b>,这就是 FOC;负载角拉太大会"失步"(电机骤停抖动)。爆炸后可看到:定子铁芯(硅钢片轭+齿)、铜绕组、转子磁钢(N 红/S 蓝交替)、轴与端盖。';
+    lg.innerHTML = '<span><i style="background:#94a3b8"></i>定子铁芯</span><span><i style="background:#d97706"></i>铜绕组</span><span><i style="background:#ef4444"></i>N 极磁钢</span><span><i style="background:#3b82f6"></i>S 极磁钢</span><span><i style="background:#22c55e"></i>定子磁场</span><span><i style="background:#f97316"></i>转子 d 轴</span>';
+  } else if(x3.tab===1){
+    var extra = x3.encType ? '光电式:码盘随轴转动,<b>LED(红)发射 → 20 条缝隙 → 光电管(灰)接收</b>,每转过一条缝计一个脉冲;增量式只给"变化",上电需回零——绝对式码盘则每位置唯一编码。' : '磁式:<b>径向充磁磁铁(红/蓝两半)+ 磁传感芯片</b>,芯片感测磁场方向即得绝对角度,完全非接触。当前读数 ≈ <b>' + Math.round(x3.encDeg||0) + '°</b>(随旋转实时变化)。';
+    el.innerHTML = '<b>' + (x3.encType?'光电编码器':'磁编码器') + '</b>:' + extra + ' 两种编码器的分工见自测第 2 题;关节里"电机端磁编+输出端高精编"双编码器是常见配置(见 02-12 标定专题)。';
+    lg.innerHTML = x3.encType ? '<span><i style="background:#fbbf24"></i>码盘缝隙</span><span><i style="background:#f87171"></i>LED</span><span><i style="background:#475569"></i>光电管</span>' : '<span><i style="background:#15803d"></i>PCB</span><span><i style="background:#ef4444"></i>磁铁 N 半</span><span><i style="background:#3b82f6"></i>磁铁 S 半</span><span><i style="background:#0f172a"></i>传感芯片</span>';
+  } else {
+    el.innerHTML = '<b>灵巧手</b>(程序化示意:四指各 3 关节 + 拇指 2 关节带对掌,共 <b>14 个可动关节</b>;橙色为关节铰)。工程手常做欠驱动(一个电机带多指节)减到 6 自由度。切换预设观察关节联动:捏合时拇指与其余指的"对掌"运动是人手最独特的自由度。';
+    lg.innerHTML = '<span><i style="background:#60a5fa"></i>手掌/指节</span><span><i style="background:#f59e0b"></i>关节铰</span>';
+  }
+}
+x3BuildCtl();
+x3BuildInfo();
+</script>
+</body>
+</html>

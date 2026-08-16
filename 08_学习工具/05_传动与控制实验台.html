@@ -112,6 +112,7 @@
   <div class="lab-tabs">
     <button class="lab-tab on" id="tabBtn1" title="切换到减速器传动参数实验台">⚙️ 实验台一 · 减速器传动参数</button>
     <button class="lab-tab" id="tabBtn2" title="切换到 FOC 三环控制示波器">📈 实验台二 · FOC 三环控制示波器</button>
+    <button class="lab-tab" id="tabBtn3" title="切换到虚拟关节台架(负载惯量/力矩 + 位置阶跃)">🏋️ 实验台三 · 虚拟关节台架</button>
   </div>
 
   <!-- ============================================================
@@ -245,6 +246,31 @@
     <div class="box box-tip"><b>📘 教育提示 · 为什么电流环带宽最高、位置环最慢:</b>电流环要控制的对象是<b>电气回路</b>(电感时间常数毫秒级),能跑到 10~40kHz,所以带宽最高;位置环要等<b>机械系统</b>(转动惯量 + 减速器)响应,机械时间常数大,带宽只有约 1kHz——因此级联控制的铁律是「内环必须快于外环」,由内向外带宽递减,系统才稳定。</div>
   </div>
 
+  <!-- ================= 实验台三:虚拟关节台架 ================= -->
+  <div class="lab-panel" id="labPanel3" style="display:none">
+    <h2 style="margin-top:0"><span class="h2-num">3</span> 🏋️ 虚拟关节台架:负载变了,参数怎么办?</h2>
+    <p style="font-size:13.5px;line-height:1.9">一个电机(J<sub>m</sub>=0.002 kg·m²)直接带负载(刚联接,无减速器)。拖"负载惯量倍数"再按"阶跃",看<b>同一组 PID 在不同负载下表现天差地别</b>;再点"按惯量整定"体验 Kp∝J、Kd∝√J 的带宽法直觉(对应 02-08 手册)。</p>
+    <div class="lab-ctl">
+      <label>负载惯量 ×<input type="range" id="bkJ" min="1" max="50" step="1" value="10"><span class="lab-val" id="bkJV">10×Jm</span></label>
+      <label>恒定阻力矩<input type="range" id="bkTL" min="0" max="4" step="0.1" value="0"><span class="lab-val" id="bkTLV">0.0 N·m</span></label>
+      <label>Kp<input type="range" id="bkKp" min="5" max="600" step="5" value="80"><span class="lab-val" id="bkKpV">80</span></label>
+      <label>Kd<input type="range" id="bkD" min="0" max="40" step="0.5" value="4"><span class="lab-val" id="bkDV">4.0</span></label>
+    </div>
+    <div class="lab-btns">
+      <button id="bkStepBtn">⚡ 位置阶跃(θr=1 rad)</button>
+      <button id="bkTuneBtn" title="Kp=J·ωn²(ωn=8rad/s),Kd=2ζ√(Kp·J)(ζ=0.8)">🪄 按当前惯量整定(带宽法)</button>
+      <button id="bkBadBtn" title="演示:大负载沿用小负载参数">❌ 复现"忘了重调参"</button>
+    </div>
+    <canvas id="bkCanvas" width="760" height="280" style="max-width:100%"></canvas>
+    <div class="lab-metrics">
+      <div class="lab-card"><div class="lab-k">总惯量 J</div><div class="lab-v" id="bkJTot">0.022 kg·m²</div></div>
+      <div class="lab-card"><div class="lab-k">超调</div><div class="lab-v" id="bkOS">—</div></div>
+      <div class="lab-card"><div class="lab-k">调节时间(±5%)</div><div class="lab-v" id="bkST">—</div></div>
+      <div class="lab-card"><div class="lab-k">稳态误差</div><div class="lab-v" id="bkErr">—</div></div>
+    </div>
+    <div class="lab-note"><b>怎么读:</b>负载×10 后沿用 Kp=80:阶跃变得又慢又飘(增益对大惯量严重不足);点"按惯量整定"立刻恢复干脆。"❌ 复现"按钮先把参数调回小负载的最优值再看大负载曲线——这就是装机后忘记按负载重整定的经典事故。阻力矩抬到 2 N·m 且 Kd 大时,留意稳态误差:纯 PD 不消恒定负载的静差,需要积分(速度环 Ki)或前馈。</div>
+  </div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>①减速器把「高速小扭矩」变「低速大扭矩」:n₂=n₁÷i、τ₁=τ₂÷(i·η);功率链条 P₂=τ₂·ω₂、P₁=P₂÷η,差值就是发热损耗。②FOC 三环由内向外为电流环→速度环→位置环,带宽递减;电流环输出力矩、速度环输出电流指令、位置环输出速度指令,层层级联。③选型口诀:行星 3~10 准直驱、谐波 30~160 零背隙、RV 重载抗冲击。
@@ -277,14 +303,11 @@
 
   /* ---------- 标签页切换 ---------- */
   function switchLab(n){
-    var b1 = $("tabBtn1"), b2 = $("tabBtn2");
-    var p1 = $("labPanel1"), p2 = $("labPanel2");
-    if(n === 1){
-      b1.className = "lab-tab on"; b2.className = "lab-tab";
-      p1.style.display = "block"; p2.style.display = "none";
-    }else{
-      b2.className = "lab-tab on"; b1.className = "lab-tab";
-      p1.style.display = "none"; p2.style.display = "block";
+    var b = [$("tabBtn1"), $("tabBtn2"), $("tabBtn3")];
+    var p = [$("labPanel1"), $("labPanel2"), $("labPanel3")];
+    for(var k = 0; k < 3; k++){
+      b[k].className = "lab-tab" + (n === k+1 ? " on" : "");
+      p[k].style.display = (n === k+1) ? "block" : "none";
     }
   }
 
@@ -532,6 +555,7 @@
     /* 标签页 */
     $("tabBtn1").onclick = function(){ switchLab(1); };
     $("tabBtn2").onclick = function(){ switchLab(2); };
+    $("tabBtn3").onclick = function(){ switchLab(3); };
 
     /* 实验台一:预设 + 滑块 */
     $("presetHarmonic").onclick = function(){ preset1("harmonic"); };
@@ -571,6 +595,109 @@
 
   init();
   requestAnimationFrame(loop);
+})();
+</script>
+
+<script>
+/* ============ 实验台三:虚拟关节台架(独立脚本,仅操作本面板 DOM) ============ */
+(function(){
+  "use strict";
+  function $(id){ return document.getElementById(id); }
+  var JM = 0.02;                 /* 电机转子惯量 kg·m² */
+  var TAU_MAX = 20, DT = 0.0005, T_END = 3.0;   /* 力矩限幅/步长/时长 */
+  var hist = [];
+
+  function params(){
+    return {
+      k:   parseFloat($("bkJ").value),
+      TL:  parseFloat($("bkTL").value),
+      Kp:  parseFloat($("bkKp").value),
+      Kd:  parseFloat($("bkD").value)
+    };
+  }
+  function syncLabels(p){
+    $("bkJV").textContent = p.k + "×Jm";
+    $("bkTLV").textContent = p.TL.toFixed(1) + " N·m";
+    $("bkKpV").textContent = String(p.Kp);
+    $("bkDV").textContent = p.Kd.toFixed(1);
+    $("bkJTot").textContent = (JM * (1 + p.k)).toFixed(3) + " kg·m²";
+  }
+  function simulate(p){
+    var J = JM * (1 + p.k), b = 0.02;
+    var th = 0, w = 0, t = 0, n = Math.round(T_END / DT);
+    hist = [];
+    var peak = 0, settleT = -1, since = 0;
+    for(var i = 0; i <= n; i++){
+      if(i % 4 === 0) hist.push([t, th]);
+      var tau = p.Kp * (1 - th) - p.Kd * w;          /* θr = 1 rad */
+      var load = p.TL * Math.tanh(w * 5);            /* 恒阻力矩,近似库仑摩擦 */
+      tau = Math.max(-TAU_MAX, Math.min(TAU_MAX, tau - load));
+      var acc = (tau - b * w) / J;
+      w += acc * DT; th += w * DT; t += DT;
+      if(th > peak) peak = th;
+      if(Math.abs(th - 1) < 0.05){ since += DT; if(since > 0.1 && settleT < 0) settleT = t - 0.1; }
+      else since = 0;
+    }
+    var os = Math.max(0, (peak - 1) * 100);
+    $("bkOS").textContent = os.toFixed(1) + "%";
+    $("bkST").textContent = settleT > 0 ? settleT.toFixed(2) + " s" : "未收敛";
+    $("bkErr").textContent = Math.abs(th - 1).toFixed(3) + " rad";
+  }
+  function draw(){
+    var cv = $("bkCanvas"), ctx = cv.getContext("2d");
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "#0b1626"; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "#1e3a5f"; ctx.lineWidth = 1;
+    for(var g = 0; g < W; g += 30){ ctx.beginPath(); ctx.moveTo(g, 0); ctx.lineTo(g, H); ctx.stroke(); }
+    for(g = 0; g < H; g += 30){ ctx.beginPath(); ctx.moveTo(0, g); ctx.lineTo(W, g); ctx.stroke(); }
+    var padL = 40, padT = 16, pw = W - padL - 16, ph = H - padT - 34;
+    var yMax = 1.35;
+    var X = function(tm){ return padL + tm / T_END * pw; };
+    var Y = function(v){ return padT + ph - (v + 0.05) / yMax * ph; };
+    /* 参考线 */
+    ctx.strokeStyle = "#f59e0b"; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(padL, Y(1)); ctx.lineTo(W - 16, Y(1)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#64748b"; ctx.font = "11px sans-serif";
+    ctx.fillText("θr = 1.0 rad", padL + 4, Y(1) - 5);
+    ctx.fillText("0", padL - 10, padT + ph + 4);
+    [1, 2, 3].forEach(function(s){ ctx.fillText(s + "s", X(s) - 6, padT + ph + 16); });
+    /* 响应曲线 */
+    ctx.strokeStyle = "#22c55e"; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    hist.forEach(function(pt, i){
+      var x = X(pt[0]), y = Y(Math.max(-0.05, Math.min(yMax, pt[1])));
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8"; ctx.font = "12px sans-serif";
+    ctx.fillText("位置响应 θ(t)  ·  绿=位置  橙虚线=目标(力矩限幅 ±20 N·m,含库仑阻力矩)", padL, H - 8);
+  }
+  function run(){
+    var p = params();
+    syncLabels(p);
+    simulate(p);
+    draw();
+  }
+  ["bkJ", "bkTL", "bkKp", "bkD"].forEach(function(id){
+    $(id).addEventListener("input", run);
+  });
+  $("bkStepBtn").addEventListener("click", run);
+  $("bkTuneBtn").addEventListener("click", function(){
+    /* 带宽法:ωn=12 rad/s,ζ=0.8 → Kp=J·ωn²,Kd=2ζ√(Kp·J) */
+    var J = JM * (1 + parseFloat($("bkJ").value));
+    var wn = 12, zt = 0.8;
+    $("bkKp").value = Math.max(5, Math.min(600, Math.round(J * wn * wn)));
+    $("bkD").value = Math.max(0, Math.min(40, 2 * zt * Math.sqrt(parseFloat($("bkKp").value) * J)));
+    run();
+  });
+  $("bkBadBtn").addEventListener("click", function(){
+    /* 复现事故:沿用 ×1 负载的最优参数,却装上 30 倍惯量 */
+    $("bkKp").value = 12; $("bkD").value = 1.0; $("bkJ").value = 30;
+    run();
+  });
+  run();
 })();
 </script>
 

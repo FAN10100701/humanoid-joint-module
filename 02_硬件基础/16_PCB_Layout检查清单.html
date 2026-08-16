@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · PCB Layout 检查清单(交互式)</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-lc{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px 18px;margin:14px 0;background:rgba(15,23,42,.45)}
+  body[data-theme="light"] .my-lc{background:rgba(255,255,255,.65)}
+  .my-lc h3{margin:0 0 10px}
+  .my-lc .my-it{display:flex;align-items:flex-start;gap:9px;padding:6px 4px;font-size:13.5px;line-height:1.8;border-bottom:1px dashed rgba(100,116,139,.25)}
+  .my-lc .my-it input{margin-top:5px;accent-color:#2563eb;width:15px;height:15px;flex:none}
+  .my-lc .my-it .my-why{display:block;font-size:12px;color:#94a3b8}
+  .my-lc .my-it.done label{text-decoration:line-through;color:#64748b}
+  .my-score{position:sticky;top:8px;z-index:5;background:rgba(15,23,42,.92);backdrop-filter:blur(8px);border:1px solid rgba(59,130,246,.4);border-radius:12px;padding:10px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:14px}
+  body[data-theme="light"] .my-score{background:rgba(255,255,255,.94)}
+  .my-score b{font-family:Consolas,monospace;color:#34d399;font-size:16px}
+  .my-score button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:12.5px}
+  body[data-theme="light"] .my-score button{background:#fff;color:#334155}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "02-13",
+    root: "..",
+    breadcrumb: [ { t: "硬件基础", u: "../index.html#sec2" }, { t: "PCB Layout 检查清单" } ],
+    prev: { t: "传感器与关节标定专题", u: "15_传感器与关节标定专题.html" },
+    next: { t: "Hdrive 融合方案完整指南", u: "../03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🧾 PCB Layout 检查清单(交互式)</h1>
+    <div class="sub">打勾即存(本地)、实时评分、一键导出评审报告——功率板 Layout 的 24 条硬规则,每条附"为什么"。发给板厂/自查两用。</div>
+    <div class="tags"><span class="tag">Layout</span><span class="tag">功率环路</span><span class="tag">DFM</span><span class="tag">检查清单</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 使用方法</div>
+    1. 投板前逐条对照打勾,勾选自动保存在本浏览器<br>
+    2. 评分 100% 再投板;有争议的条目保留空勾并记入导出报告<br>
+    3. 本清单面向 FOC 关节驱动板(2~4 层板);高压板(>60V)需追加爬电间距专项<br>
+    <b>建议用时:</b>投板前 30 分钟
+  </div>
+
+  <div class="my-score">
+    <span>完成度 <b id="lcPct">0%</b></span>
+    <span>(<span id="lcNum">0/24</span>)</span>
+    <button onclick="lcExport()">📋 导出评审报告</button>
+    <button onclick="lcReset()">🔄 清空重查</button>
+    <span style="font-size:12px;color:#94a3b8" id="lcSaveState"></span>
+  </div>
+  <div id="lcList"></div>
+
+  <div class="box box-tip"><b>💡 三条总纲(清单的哲学):</b>①<strong>功率环路最小面积</strong>——所有 EMI 问题的根源是 di/dt 环路面积,缩短"电容→上管→电机→下管→电容"这个环;②<strong>模拟小信号"躲着"功率走</strong>——采样走差分、就近滤波、远离开关节点;③<strong>地不是地</strong>——功率地/模拟地/数字地分区单点汇接,让大电流不流过小信号的参考点。</div>
+
+  <h2><span class="h2-num">2</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 功率环路(母线电容→MOSFET→电机线→电容)面积过大,最直接的后果是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 效率下降 50%</button>
+      <button data-v="B">B. di/dt 环路辐射 EMI 剧增,干扰编码器/电流采样,严重时桥臂自激振荡</button>
+      <button data-v="C">C. 电机扭矩变小</button>
+      <button data-v="D">D. 没有后果</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:EMI ∝ μ₀·I·A/(4πr)(环路电流×面积)。开关节点的 dv/dt 与环路的 di/dt 一起构成辐射源与地弹噪声源——这是"功率环路最小化"排在所有规则第一条的原因。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 电流采样电阻的下述布局,哪种是对的?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 尽量靠近母线电容,单端走线长一点没关系</button>
+      <button data-v="B">B. 放在板边方便散热</button>
+      <button data-v="C">C. 差分对走线从电阻焊盘直接引出、紧耦合等长,就近 RC 滤波再进运放,远离开关节点</button>
+      <button data-v="D">D. 与栅驱线并排走线减少过孔</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:采样是毫伏级信号,共模抑制靠差分紧耦合;开关节点 dv/dt 会容性耦合进高阻抗走线;栅驱是强干扰源,并排走线=主动引入串扰。"就近、差分、远离"六字诀。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 自举电容(高侧栅驱供电)布局的要点是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 尽量靠近栅驱 IC 的 VB/VS 引脚,回路最短;VS 直接接到开关节点焊盘</button>
+      <button data-v="B">B. 放哪都行,反正是电容</button>
+      <button data-v="C">C. 靠近母线电容</button>
+      <button data-v="D">D. 远离功率级以免发热</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:自举回路在每次 PWM 下方波瞬间充放电,回路电感大→高侧供电跌落→上管开通不足→发热甚至关不断。VS 必须凯尔文连接到相位焊盘,否则电机大电流的压降会污染参考。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>功率环路最小面积、差分采样就近滤波、地分区单点、自举/栅驱回路最短、热与工艺(DFM)收尾——24 条清单就是这五句话的展开。清单打满 100% 再投板,省的是三轮打样的两周时间。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 四层板该怎么排层叠(信号/地/功率/信号)?地平面完整性与功率回流路径如何兼得?<br>2. 为什么编码器磁环要远离电机绕组端?板上的磁编码器又该避开哪些器件?</div>
+
+</div><!-- /container -->
+<script>
+/* ============ 24 条 Layout 检查清单(勾选本地保存) ============ */
+var LC = [
+ ["功率环路","1. 功率环路面积最小化","母线电容→桥臂→电机端子的换流环路最短、最宽;实测环路面积 &lt; 5 cm² 量级。EMI 与地弹的根源。"],
+ ["功率环路","2. 母线电容紧贴桥臂","电解/大电容 + 0.1µF MLCC 就近并联,高频去耦直接跨在半桥两端。"],
+ ["功率环路","3. 相线(输出)短而宽","按载流查宽(1oz 铜约 40mil/A@10℃温升外置参考),过孔多打并联。"],
+ ["功率环路","4. 开关节点铜面积克制","相位焊盘只留散热所需,不做成大天线;下方底层禁止走敏感线。"],
+ ["栅驱","5. 栅极回路最短","栅驱 IC → 栅极电阻 → MOSFET 栅极,环路 &lt; 1~2cm;源极直接从功率管 kelvin 脚回去。"],
+ ["栅驱","6. 自举电容靠近 VB/VS","自举二极管回路短;VS 凯尔文接相位焊盘。"],
+ ["栅驱","7. 死区与下拉电阻落实","每个栅极有下拉(10kΩ量级)防悬空半导通;栅阻与下拉焊盘便于改值。"],
+ ["采样","8. 电流采样差分紧耦合","从采样电阻焊盘对称引出差分对,等长紧邻,远离开关节点与栅驱。"],
+ ["采样","9. 采样就近 RC 滤波","截止频率对准 PWM 频率(如 20kHz PWM 取 100~500kHz 滤波),别把有效带宽滤掉。"],
+ ["采样","10. 运放参考与 ADC 共地","运放偏置中点、ADC 参考与采样地在模拟区单点相连;禁止穿越功率地。"],
+ ["地","11. 三地分区单点汇接","功率地/模拟地/数字地分区,一点(或电阻/磁珠)相连;大电流回流不进模拟区。"],
+ ["地","12. 地平面完整","信号线下方地平面不割裂;必须开槽处信号禁止跨槽(跨槽=环路面积暴涨)。"],
+ ["电源","13. DCDC 功率环路同功率级规则","BUCK 的输入环路与续流环路同样最小化;电感下方不走线。"],
+ ["电源","14. 上电时序与软启动","大电容充电有限流(NTC/PMOS);多路电源按序(MCU 先于功率使能)。"],
+ ["信号","15. CAN 差分等长","CANH/CANL 等长差分(±1%)+ 双端 120Ω 位置确认;远离电机线。"],
+ ["信号","16. 编码器线屏蔽与串接","长线编码器用屏蔽线/双绞,板上入口加 ESD/滤波;磁编码器远离功率电感。"],
+ ["信号","17. 晶振/时钟区域隔离","晶振下方铺地,远离高频开关节点;IMU 靠近结构安装点。"],
+ ["热","18. 发热器件铺铜+过孔阵列","MOSFET/DCDC 热焊盘下拉过孔阵列到底层大铜;铜厚与板层数按损耗核算(02-11 计算器)。"],
+ ["热","19. 温度传感点布置","NTC/板温传感贴近发热源但不被其热区误导;电机温度传感走线防护。"],
+ ["DFM","20. 丝印与极性齐全","二极管/电解/IC1 脚/接插件方向全部可读;测试点标注网络名。"],
+ ["DFM","21. 测试点布置","关键网络(母线电压/三相/电流采样/地)留 ≥1mm 测试点,示波器地环路好下针。"],
+ ["DFM","22. 安装孔与禁布区","螺丝孔禁布区 ≥ 孔径 2 倍;外壳/结构件投影区不走线;接插件不悬臂受力。"],
+ ["DFM","23. 可维修性","易损件(栅驱/驱动芯片)周边 3mm 无高件;0402 以下器件慎用(手焊难)。"],
+ ["DFM","24. 版本与日期丝印","板上印版本号+日期,与 BOM/原理图版本对应——返修事故的头号来源是版本错配。"]
+];
+(function(){
+  var KEY='humanoid-lc-v1';
+  var saved={};
+  try{ saved=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
+  var list=document.getElementById('lcList');
+  /* 按组渲染 */
+  var groups={};
+  LC.forEach(function(it,i){ (groups[it[0]]=groups[it[0]]||[]).push([i,it]); });
+  html='';
+  Object.keys(groups).forEach(function(g){
+    html+='<div class="my-lc"><h3>'+g+'</h3>';
+    groups[g].forEach(function(pair){
+      var i=pair[0], it=pair[1];
+      html+='<div class="my-it" id="lcIt'+i+'">'
+        +'<input type="checkbox" id="lcCk'+i+'"'+(saved[i]?' checked':'')+' onchange="lcSave()">'
+        +'<label for="lcCk'+i+'"><b>'+it[1]+'</b><span class="my-why">💡 '+it[2]+'</span></label></div>';
+    });
+    html+='</div>';
+  });
+  list.innerHTML=html;
+  window.lcSave=function(){
+    var st={};
+    LC.forEach(function(_,i){ if(document.getElementById('lcCk'+i).checked) st[i]=1; });
+    try{ localStorage.setItem(KEY,JSON.stringify(st)); }catch(e){}
+    lcScore('已保存');
+  };
+  window.lcReset=function(){
+    LC.forEach(function(_,i){ document.getElementById('lcCk'+i).checked=false; });
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    lcScore('已清空');
+  };
+  window.lcExport=function(){
+    var lines=['# PCB Layout 评审报告','生成时间: '+new Date().toLocaleString(),''];
+    var done=0;
+    LC.forEach(function(it,i){
+      var ok=document.getElementById('lcCk'+i).checked;
+      if(ok)done++;
+      lines.push((ok?'[x] ':'[ ] ')+it[0]+' | '+it[1]);
+    });
+    lines.push('','完成度: '+Math.round(done/LC.length*100)+'% ('+done+'/'+LC.length+')');
+    var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='layout评审报告.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  function lcScore(msg){
+    var done=0;
+    LC.forEach(function(_,i){ if(document.getElementById('lcCk'+i).checked){done++;document.getElementById('lcIt'+i).classList.add('done');} else document.getElementById('lcIt'+i).classList.remove('done'); });
+    document.getElementById('lcNum').textContent=done+'/'+LC.length;
+    document.getElementById('lcPct').textContent=Math.round(done/LC.length*100)+'%';
+    if(msg)document.getElementById('lcSaveState').textContent=msg;
+  }
+  lcScore();
+})();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>

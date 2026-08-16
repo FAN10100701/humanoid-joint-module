@@ -104,6 +104,13 @@
     <div class="step-title"><span class="step-num">1</span>原 HdriveV1.1 电源架构拆解</div>
     <p>根据你上传的原理图截图 + 立创开源工程 BOM 交叉验证，原方案电源链路如下：<sup><a href="#cite-1">[1]</a></sup></p>
 
+    <!-- 交互式电压树:点击节点查看该级的作用/常见故障(下方的 mermaid 流程图保持不动) -->
+    <div id="ptreeBox" style="border:1px solid rgba(37,99,235,.3);border-radius:12px;padding:14px 16px;margin:14px 0;background:rgba(248,250,252,.7)">
+      <div style="font-size:13px;color:#475569;margin-bottom:8px"><b>🔌 交互电压树:</b>点击任一节点,查看该级的电压/电流职责与常见故障 ↓</div>
+      <div id="ptreeNodes" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
+      <div id="ptreeDesc" style="margin-top:10px;border-left:3px solid #2563eb;background:rgba(37,99,235,.06);padding:8px 12px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.9;color:#334155">👆 点击节点查看详解</div>
+    </div>
+
     <figure class="diagram">
       <pre class="mermaid">
 flowchart TD
@@ -790,6 +797,39 @@ flowchart TD
 
 <!-- REQUIRED: place before </body> -->
 <script src="./_shared/js/mermaid.min.js"></script>
+<script>
+/* ============ 交互式电压树(轻量 DOM,不依赖 mermaid) ============ */
+(function(){
+  var NODES = [
+    { t:"🔋 VCC 12/24V 输入", d:"整机母线输入。关注:接插件压降(线径)、防反接之后的第一颗电解电容(浪涌吸入)。常见故障:电源线过细导致堵转瞬间母线塌陷 → MCU 复位。" },
+    { t:"🛡 D4 防反接", d:"B5819WS 肖特基:反接时截止保护后级。代价:正向压降 0.4~0.5V × 电流 = 持续发热(1A≈0.5W)。大电流场合应改用 PMOS/NMOS 防反接(压降毫伏级)。" },
+    { t:"⚡ 第一级 Buck → 5V", d:"主降压级(如 MP2451/TPS54331 类)。设计要点:电感按纹波系数反推(02-11 计算器)、自举电容、续流二极管布局最短回路。常见故障:轻载啸叫、补偿网络错导致启动振荡。" },
+    { t:"⚙ 三相逆变栅驱供电", d:"5V(或 12V)给栅驱+自举电容:高侧管靠自举浮供电,每相一颗自举电容+二极管——自举失效=上管不开通(缺相,电机嗡叫不出力)。" },
+    { t:"🔋 第二级 Buck → 3.3V(原方案还有 TLV431)", d:"原方案的冗余级:TLV431 基准源被当 LDO 用,驱动能力弱,R49 阻值错(100Ω→0Ω)直接烧毁——本页三大 Bug 之一。改进:直接用 Buck 或 LDO 到 3.3V,废掉 TLV431。" },
+    { t:"🧠 MCU/编码器/IMU 3.3V", d:"数字负载:MCU+磁编码器+IMU。要点:模拟部分(IMU/编码器)单独 LC 滤波、与功率地单点相连(原方案 AGND-GND 只靠 0Ω 电阻 = Bug 之二);上电时序防浪涌。" }
+  ];
+  var wrap = document.getElementById('ptreeNodes'), desc = document.getElementById('ptreeDesc');
+  if(!wrap) return;
+  NODES.forEach(function(n, i){
+    if(i > 0){
+      var arrow = document.createElement('span');
+      arrow.textContent = '→';
+      arrow.style.cssText = 'color:#94a3b8;font-size:15px;font-weight:700';
+      wrap.appendChild(arrow);
+    }
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = n.t;
+    b.style.cssText = 'border:1px solid #cbd5e1;background:#fff;color:#334155;font-size:12.5px;padding:6px 11px;border-radius:8px;cursor:pointer;font-family:inherit;transition:.15s';
+    b.addEventListener('click', function(){
+      wrap.querySelectorAll('button').forEach(function(x){ x.style.borderColor = '#cbd5e1'; x.style.background = '#fff'; });
+      b.style.borderColor = '#2563eb'; b.style.background = 'rgba(37,99,235,.1)';
+      desc.innerHTML = '<b>' + n.t + ':</b><br>' + n.d;
+    });
+    wrap.appendChild(b);
+  });
+})();
+</script>
 <script>
   mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { curve: 'basis' } });
 </script>

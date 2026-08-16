@@ -39,18 +39,82 @@
   body[data-theme="light"] .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(255,255,255,.92));border-color:rgba(37,99,235,.32)}
   body[data-theme="light"] .rm-links a{color:#1d4ed8;background:rgba(37,99,235,.09);border-color:rgba(37,99,235,.28)}
   body[data-theme="light"] .rm-step p{color:#4b5c74}
+/* 性能:首屏外的板块惰性渲染(大 DOM 首帧提速;滚动到附近才布局绘制) */
+@media (min-width: 861px){
+  .sec{content-visibility:auto;contain-intrinsic-size:auto 640px}
+}
+/* ================= 风格方案皮肤(下拉切换,存 localStorage) ================= */
+:root{--sk-accent:#3b82f6}
+/* ② 玻璃拟态 */
+[data-skin="glass"] body,[data-skin="glass"]{background:radial-gradient(1200px 500px at 15% -5%,rgba(59,130,246,.14),transparent 60%),radial-gradient(1000px 460px at 88% 8%,rgba(34,197,94,.1),transparent 55%)}
+[data-skin="glass"] .card{backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);background:rgba(125,150,200,.10);border-color:rgba(140,170,220,.28)}
+[data-skin="glass"] body[data-theme="light"] .card{background:rgba(255,255,255,.55);border-color:rgba(255,255,255,.85)}
+[data-skin="glass"] .stat,[data-skin="glass"] .progress-panel{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+/* ③ 极光渐变 */
+[data-skin="aurora"]{--sk-accent:#22c55e}
+[data-skin="aurora"] body,[data-skin="aurora"]{background:linear-gradient(115deg,#0b1224 0%,#10233d 38%,#0e3b32 72%,#132a44 100%);background-attachment:fixed;animation:auroraShift 26s ease-in-out infinite alternate}
+[data-skin="aurora"] .hero h1{background:linear-gradient(92deg,#7dd3fc,#86efac,#fde047);-webkit-background-clip:text;background-clip:text;color:transparent}
+[data-skin="aurora"] .card{border-color:rgba(134,239,172,.22)}
+[data-skin="aurora"] .card:hover{border-color:rgba(134,239,172,.5)}
+[data-skin="aurora"] .card.featured{background:linear-gradient(135deg,rgba(34,197,94,.14),rgba(59,130,246,.1))}
+[data-skin="aurora"] .quicknav a{border-color:rgba(134,239,172,.35);color:#86efac}
+[data-skin="aurora"] body[data-theme="light"]{background:linear-gradient(115deg,#f0f9ff,#f0fdf4 55%,#fefce8);background-attachment:fixed}
+[data-skin="aurora"] body[data-theme="light"] .hero h1{background:none;color:#166534}
+@keyframes auroraShift{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(18deg)}}
+/* ④ 科技网格 */
+[data-skin="grid"]{--sk-accent:#38bdf8}
+[data-skin="grid"] body,[data-skin="grid"]{background-image:linear-gradient(rgba(56,189,248,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.05) 1px,transparent 1px);background-size:34px 34px}
+[data-skin="grid"] .card{border-radius:4px;border-color:rgba(56,189,248,.25)}
+[data-skin="grid"] .card .t::before{content:"▸ ";color:#38bdf8}
+[data-skin="grid"] .sec-title .en{font-family:Consolas,monospace;letter-spacing:.08em}
+[data-skin="grid"] .sec-title{border-bottom:1px solid rgba(56,189,248,.35)}
+[data-skin="grid"] .quicknav a{border-radius:4px;font-family:Consolas,monospace}
+/* ⑤ 极简纸感 */
+[data-skin="paper"]{--sk-accent:#b45309}
+[data-skin="paper"] .card{box-shadow:none;border-radius:6px;border-color:rgba(120,100,70,.35);background:transparent}
+[data-skin="paper"] .card:hover{background:rgba(180,83,9,.05);border-color:#b45309}
+[data-skin="paper"] .card .ic{filter:saturate(.35)}
+[data-skin="paper"] .hero h1{letter-spacing:.5px}
+[data-skin="paper"] .stat .v{color:#b45309}
+[data-skin="paper"] body[data-theme="light"]{background:#faf6ef}
+[data-skin="paper"] body[data-theme="light"] .card{border-color:rgba(120,100,70,.3)}
+/* ⑥ 3D 机器人头图(轻量 canvas 线框,选中才初始化) */
+#botHero{display:none;position:relative;width:270px;height:300px;flex:none;margin:0 auto}
+[data-skin="bot"] #botHero{display:block}
+[data-skin="bot"] .hero{display:flex;gap:26px;align-items:center;flex-wrap:wrap;justify-content:center;text-align:left}
+[data-skin="bot"] .hero>*{flex:1 1 340px}
+[data-skin="bot"] .hero h1{font-size:30px}
+#botHero canvas{width:100%;height:100%;cursor:grab;touch-action:none}
+.skinbar{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#9aa4b2}
+.skinbar select{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.35);color:inherit;border-radius:8px;padding:5px 10px;font-family:inherit;font-size:12.5px;cursor:pointer}
+body[data-theme="light"] .skinbar{color:#5a6a85}
+body[data-theme="light"] .skinbar select{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.3);color:#1d4ed8}
+
+/* 浅色模式对比度修复:进度条轨道/文字/进度环轨道 */
+body[data-theme="light"] .pbar{background:rgba(15,23,42,.1)}
+body[data-theme="light"] .pbar-row .pl{color:#475569}
+body[data-theme="light"] .pbar-row .pv{color:#334155}
+.ring-track{stroke:rgba(255,255,255,.08)}
+body[data-theme="light"] .ring-track{stroke:rgba(15,23,42,.1)}
+
+/* 快速导航条 */
+.quicknav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px auto 4px;max-width:900px}
+.quicknav a{font-size:12.5px;color:#9ecbff;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:999px;padding:5px 13px;text-decoration:none;transition:.15s;white-space:nowrap}
+.quicknav a:hover{background:rgba(59,130,246,.25);color:#fff}
+.quicknav a b{font-weight:700;margin-right:2px}
+body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07)}
 </style>
 <script>
   /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
   window.SITE_SECTIONS = [
-    { key:"00", name:"3D 解剖可视化", ids:["00-02","00-03"] },
+    { key:"00", name:"3D 解剖可视化", ids:["00-02","00-03","00-04"] },
     { key:"01", name:"理论入门", ids:["01-01","01-02","01-03","01-04","01-05","01-06"] },
-    { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03","02-04","02-05","02-06","02-07","02-08","02-09","02-10","02-11","02-12"] },
+    { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03","02-04","02-05","02-06","02-07","02-08","02-09","02-10","02-11","02-12","02-13"] },
     { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05","03-06"] },
-    { key:"04", name:"升级进阶", ids:["04-01","04-02"] },
+    { key:"04", name:"升级进阶", ids:["04-01","04-02","04-03"] },
     { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08","06-09","06-10","06-11","06-12","06-13","06-14","06-15"] },
     { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07","07-08"] },
-    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07"] }
+    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07","08-08","08-09","08-10"] }
   ];
   /* 学习页面/可打卡页面统计：由 SITE_SECTIONS 自动计算（新增页面只需更新上面的 ids，无需手改数字） */
   (function(){
@@ -108,8 +172,8 @@
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
     零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</div>
     <div class="stats">
-      <div class="stat"><div class="v" id="statPages">51</div><div class="k">学习页面</div></div>
-      <div class="stat"><div class="v" id="statTracked">50</div><div class="k">可打卡页面</div></div>
+      <div class="stat"><div class="v" id="statPages">65</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v" id="statTracked">64</div><div class="k">可打卡页面</div></div>
       <div class="stat"><div class="v">8</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
       <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
@@ -123,7 +187,18 @@
         <button data-t="dark" onclick="Site.setTheme('dark')">🌙 深色风格</button>
         <button data-t="light" onclick="Site.setTheme('light')">☀️ 极简浅色</button>
       </div>
+      <div class="skinbar" style="margin-left:14px">🎨 风格方案
+        <select id="skinSel" onchange="applySkin(this.value)" title="选择首页美化方案(保存在本机)">
+          <option value="">默认</option>
+          <option value="glass">玻璃拟态</option>
+          <option value="aurora">极光渐变</option>
+          <option value="grid">科技网格</option>
+          <option value="paper">极简纸感</option>
+          <option value="bot">3D 机器人头图</option>
+        </select>
+      </div>
     </div>
+    <div id="botHero" aria-hidden="true"></div>
     <div class="tags">
       <span class="tag">宇树 H1 / G1 / 智元 X1 官方模型</span>
       <span class="tag">FOC 三环控制</span>
@@ -188,6 +263,21 @@
   </div>
 
   <!-- ================= 0 · 3D 解剖 ================= -->
+  <nav class="quicknav" aria-label="板块快速导航">
+    <a href="#sec0"><b>3D</b>解剖</a>
+    <a href="#sec1"><b>01</b>理论</a>
+    <a href="#sec2"><b>02</b>硬件</a>
+    <a href="#sec3"><b>03</b>实操</a>
+    <a href="#sec4"><b>04</b>进阶</a>
+    <a href="#sec6"><b>06</b>软件算法</a>
+    <a href="#sec7"><b>07</b>前沿</a>
+    <a href="#sec8"><b>08</b>学习工具</a>
+    <a href="08_学习工具/08_仿真中心.html">🕹️ 仿真中心</a>
+    <a href="08_学习工具/06_学习地图.html">🗺️ 学习地图</a>
+    <a href="08_学习工具/09_动手项目清单.html">🛠️ 动手项目</a>
+    <a href="#progress-sec">✓ 我的进度</a>
+  </nav>
+
   <div class="sec" id="sec0">
     <div class="sec-title"><span class="num">0</span>3D 解剖式知识可视化 <span class="en">ANATOMY</span><span class="bar"></span></div>
     <div class="grid">
@@ -208,6 +298,13 @@
         <div class="ic">📦</div>
         <div class="t">减速器精细模型 · 下载整合教程</div>
         <div class="d">谐波/行星/摆线精细 3D 模型下载与整合到 3D 系统的完整步骤。</div>
+      </a>
+      <a class="card" href="00_3D解剖/电机编码器与灵巧手3D拆解.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🔩</div>
+        <div class="t">电机 / 编码器 / 灵巧手 3D 拆解</div>
+        <div class="d">程序化 three.js:电机内部与旋转磁场、磁/光电编码器、灵巧手关节,可爆炸可旋转。</div>
       </a>
     </div>
   </div>
@@ -248,6 +345,13 @@
         <div class="t">运动学基础 · 正逆运动学与 DH 参数</div>
         <div class="d">位姿描述(四元数/欧拉角)、齐次变换、DH 参数、正逆运动学、雅可比与人形机器人应用。</div>
       </a>
+      <a class="card" href="01_理论入门/06_控制数学工具箱.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">📐</div>
+        <div class="t">控制数学工具箱 · 拉普拉斯与 Bode 图</div>
+        <div class="d">拖动 ζ/ωn 实时看阶跃响应与 Bode 图联动;传递函数、带宽、超调与谐振峰一次读懂。</div>
+      </a>
     </div>
   </div>
 
@@ -286,6 +390,60 @@
         <div class="ic">🌡️</div>
         <div class="t">热管理与散热设计专题</div>
         <div class="d">热阻/损耗基础、关节热路径、电机与驱动板散热、整机热管理、热设计五步法与结温计算器。</div>
+      </a>
+      <a class="card" href="02_硬件基础/09_FOC驱动器硬件深挖.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🔌</div>
+        <div class="t">FOC 驱动器硬件深挖:功率级与电路设计</div>
+        <div class="d">半桥/栅驱/自举/母线电容/电流采样逐级拆解,面向想真正设计驱动板的读者。</div>
+      </a>
+      <a class="card" href="02_硬件基础/10_传感器专题_IMU力矩与触觉.html">
+        <span class="go">进入 →</span>
+        <div class="ic">📡</div>
+        <div class="t">传感器专题:IMU / 力矩 / 触觉</div>
+        <div class="d">角度/力矩/姿态本体感知到触觉外感知,选型清单与集成避坑。</div>
+      </a>
+      <a class="card" href="02_硬件基础/11_FOC调参整定实战手册.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🎛️</div>
+        <div class="t">FOC 调参整定实战手册</div>
+        <div class="d">三环整定顺序流程单、电流环带宽法计算器(Kp=ωcL/Ki=ωcR)、症状-参数速查表。</div>
+      </a>
+      <a class="card" href="02_硬件基础/12_故障诊断决策树.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🩺</div>
+        <div class="t">故障诊断决策树</div>
+        <div class="d">交互问诊:选症状→走分支→定位根因与处置,覆盖电源/驱动/传感/控制四层。</div>
+      </a>
+      <a class="card" href="02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">⚡</div>
+        <div class="t">功率级拓扑与 SVPWM 交互实验室</div>
+        <div class="d">点击 8 个电压矢量看逆变桥开关与电流路径;拖调制比/转速看扇区切换与马鞍波。</div>
+      </a>
+      <a class="card" href="02_硬件基础/14_硬件公式计算器矩阵.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🧮</div>
+        <div class="t">硬件公式计算器矩阵</div>
+        <div class="d">MOSFET 损耗/母线电容/采样电阻/BUCK 电感/Kt↔Ke/惯量匹配,六个计算器一键算。</div>
+      </a>
+      <a class="card" href="02_硬件基础/15_传感器与关节标定专题.html">
+      <a class="card" href="02_硬件基础/16_PCB_Layout检查清单.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🧾</div>
+        <div class="t">PCB Layout 检查清单(交互式)</div>
+        <div class="d">24 条功率板硬规则逐条自查:功率环路/栅驱/采样/地/热/DFM,打勾即存、导出评审报告。</div>
+      </a>
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🎯</div>
+        <div class="t">传感器与关节标定专题</div>
+        <div class="d">电角度零位/IMU 六面/关节零位/力矩砝码标定的完整流程、避坑与复标时机。</div>
       </a>
     </div>
   </div>
@@ -338,6 +496,13 @@
         <div class="d">CAN/EtherCAT 通信与 ADRC/MPC/RL 控制算法的进阶升级路线。</div>
       </a>
       <a class="card" href="04_升级进阶/02_全身控制与步态规划_WBC与MPC.html">
+      <a class="card" href="04_升级进阶/03_整机电气架构与安全设计.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🛡️</div>
+        <div class="t">整机电气架构与安全设计</div>
+        <div class="d">三域电气架构/电源树线束、急停链交互演示、电池与实验室安全、功能安全入门。</div>
+      </a>
         <span class="new-badge">NEW</span>
         <span class="go">进入 →</span>
         <div class="ic">🚶</div>
@@ -439,6 +604,37 @@
         <div class="ic">🤖</div>
         <div class="t">ROS2 实战进阶 · URDF 与 MoveIt2</div>
         <div class="d">URDF/xacro 深入、RViz2 实操、TF2、launch 管理、ros2_control 与 MoveIt2 机械臂仿真。</div>
+      </a>
+      <a class="card" href="06_软件与算法/11_ROS2导航_Navigation2实战.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🧭</div>
+        <div class="t">ROS2 导航 Navigation2 实战</div>
+        <div class="d">从建图到避障导航:SLAM 建图 → AMCL 定位 → 全局/局部规划,手把手跑通 Nav2。</div>
+      </a>
+      <a class="card" href="06_软件与算法/12_机器人感知专题_相机激光雷达点云.html">
+        <span class="go">进入 →</span>
+        <div class="ic">👁️</div>
+        <div class="t">机器人感知专题:相机、激光雷达与点云</div>
+        <div class="d">针孔相机/深度相机/固态雷达原理,点云滤波分割配准,落到宇树 G1 实例。</div>
+      </a>
+      <a class="card" href="06_软件与算法/13_MoveIt2进阶_运动规划与抓取管线.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🦾</div>
+        <div class="t">MoveIt2 进阶:运动规划与抓取管线</div>
+        <div class="d">OMPL 规划器、约束规划、避障感知、Task Constructor 抓取管线全打通。</div>
+      </a>
+      <a class="card" href="06_软件与算法/14_ros2_control实战深挖.html">
+        <span class="go">进入 →</span>
+        <div class="ic">⚙️</div>
+        <div class="t">ros2_control 实战深挖:控制器与硬件接口</div>
+        <div class="d">controller_manager/硬件接口/自定义 HardwareInterface,轨迹如何真正驱动电机。</div>
+      </a>
+      <a class="card" href="06_软件与算法/15_浏览器内强化学习实验室.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🧠</div>
+        <div class="t">浏览器内强化学习实验室 · Q-Learning 倒立摆</div>
+        <div class="d">一键训练看奖励曲线爬升、策略热图成形,与 PD 控制同台对比,可"推一把"测抗扰。</div>
       </a>
     </div>
   </div>
@@ -545,6 +741,27 @@
         <div class="t">学习地图</div>
         <div class="d">全站页面学习地图:可点击节点直达页面、进度点亮、推荐下一站高亮。</div>
       </a>
+      <a class="card featured" href="08_学习工具/08_仿真中心.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🕹️</div>
+        <div class="t">仿真中心 · 全站交互实验总入口</div>
+        <div class="d">20+ 个交互功能一网打尽:3D 拆解、原理动画、实验台、RL 实验室、硬件计算器、工程工具分类直达。</div>
+      </a>
+      <a class="card" href="08_学习工具/09_动手项目清单.html">
+      <a class="card" href="08_学习工具/10_学习数据分析.html">
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">📊</div>
+        <div class="t">学习数据分析</div>
+        <div class="d">你的学习画像:板块完成度、12 周热力图、SRS 记忆箱、到期提醒与下一步建议(纯本地)。</div>
+      </a>
+        <span class="new-badge">NEW</span>
+        <span class="go">进入 →</span>
+        <div class="ic">🛠️</div>
+        <div class="t">动手项目清单 · L1~L5</div>
+        <div class="d">十二个分级实战项目:前置知识、硬件清单、验收标准,从点亮电机到双关节腿组。</div>
+      </a>
     </div>
   </div>
 
@@ -584,10 +801,22 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.6.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 摆线动画场景 + 运动学交互实验 + 剖面图动画化</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 首页6套美化方案 + 电机/编码器/灵巧手3D + ZMP交互 + 对比度修复</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.9.0 · 2026-08-17 · 首页美化方案 + D1/D2/D4 3D 新页 + ZMP 交互 + 体验修复</summary>
+        <div class="faq-a">🎨 <b>首页 6 套美化方案下拉切换</b>(玻璃拟态/极光渐变/科技网格/极简纸感/<b>3D 机器人头图</b>——2D canvas 手写投影线框,零依赖不卡顿,可拖动旋转,保存在本机);🔩 <b>电机/编码器/灵巧手 3D 拆解</b>新页(程序化建模零下载:12槽14极电机+旋转磁场与负载角、磁/光电编码器可切换、灵巧手四姿势关节联动);📊 <b>CoM/ZMP 交互实验</b>加入步态页(LIPM 判稳,亲眼看 ZMP 先于 CoM 失稳);🛠 <b>体验修复</b>:浅色模式进度条/进度环对比度、3D 页手机版底部标签栏新增"🏠 首页"(顶栏按钮原本被移动端隐藏);全站 65 个学习页面,根 sw v1.9.0、3D sw v15。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.8.0 · 2026-08-17 · 轻量化与首页优化 + 电气安全/Layout清单/学习数据 3 新页</summary>
+        <div class="faq-a">⚡ <b>性能与首页</b>:内容区块惰性渲染(content-visibility)提速首帧;新增板块快速导航条;补齐 6 张历史缺失卡片,全站页面首次 100% 有首页入口;🆕 <b>3 新页</b>:整机电气架构与安全设计(急停链交互演示+电池/实验室安全)、PCB Layout 检查清单(24 条规则打勾评分导出)、学习数据分析(完成度/热力图/SRS 记忆箱/到期提醒);📦 电机/编码器真实 3D 模型源调研已写入下载教程页(makeSEA/SimpleFOC/MPS 官方/mjbots),为下一步「电机内部 3D」备料;全站 64 个学习页面、65 条索引,根 sw v1.8.0。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.7.0 · 2026-08-17 · 大扩充:9 新页 + 实验台三/关卡化 + 仿真中心</summary>
+        <div class="faq-a">🆕 <b>9 个新页</b>:仿真中心(全站 20+ 交互实验总入口)、FOC 调参整定实战手册(带宽法计算器+症状速查)、故障诊断决策树(交互问诊)、功率级拓扑与 SVPWM 交互实验室(8 电压矢量+马鞍波)、硬件公式计算器矩阵(6 计算器)、传感器与关节标定专题、控制数学工具箱(ζ/ωn 拖动+Bode 联动)、浏览器内强化学习实验室(Q-Learning 倒立摆一键训练)、动手项目清单(L1~L5 十二项目);🆕 <b>实验台三·虚拟关节台架</b>(惯量/阻力矩扫参+按惯量整定)与代码实验室<b>关卡挑战+FOC 代码走读</b>;🏠 3D 页返回首页按钮、🏅 进度满额徽章、🔌 电源页交互电压树、📅 机型页数据截至标注+季度维护清单;全站 61 个学习页面、63 节点学习地图,登记完整(索引/sitemap/翻页链),根 sw v1.7.0。</div>
+      </details>
+      <details class="faq">
         <summary>V1.6.2 · 2026-08-17 · 摆线动画场景 + 运动学交互实验 + 剖面图动画化</summary>
         <div class="faq-a">🌀 <b>动画页补齐摆线减速器场景</b>(第 6 个页签,对齐 3D 解剖页五场景体系:偏心套高速输入 → 摆线轮"公摆"+反向慢自转 → 销孔带动法兰同轴输出,i=齿数 20,附原理说明面板);🧭 <b>运动学页新增 5.4 交互实验</b>:2 连杆 FK/IK 演练场——IK 模式拖目标点实时解析反解、肘上/肘下双解同屏、可达域环形显示、目标超臂展演示"无解"、det(J) 实时显示与奇异位形警告;FK 模式拖关节滑杆看末端落点;连杆长度 L1/L2 可调(新增配套数值校验脚本,9 项断言全过);🎬 <b>减速器剖面图详解页动画化</b>:三张剖面图各配"播放传动动画"开关——谐波啮合点跟踪长轴两端、行星轮公转+自转+行星架 1/4 同向输出、摆线盘公摆+输出法兰匀速销,暂停自动还原静态标注图;🧹 <b>一致性修复</b>:og:description 35→52 页、首页统计兜底 51/50、README 数字同步(19 机型/134 术语/40 题/08 目录补全/05 目录如实标注规划中)、清理 models 空目录与孤儿 mermaid.min.js;根 sw 缓存升级 v1.6.2。</div>
       </details>
@@ -651,7 +880,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.6.2(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.9.0(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -677,7 +906,7 @@
     var pct = all ? Math.round(done / all * 100) : 0;
     var r = 50, c = 2 * Math.PI * r;
     box.innerHTML = '<svg width="120" height="120" viewBox="0 0 120 120">'
-      + '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>'
+      + '<circle class="ring-track" cx="60" cy="60" r="' + r + '" fill="none" stroke-width="10"/>'
       + '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="#3b82f6" stroke-width="10" stroke-linecap="round"'
       + ' stroke-dasharray="' + (c * pct / 100) + ' ' + c + '"/>'
       + "</svg>"
@@ -712,12 +941,12 @@
       sec.ids.forEach(function(id){ if(p[id]) done++; });
       totalDone += done; totalAll += sec.ids.length;
       var pct = Math.round(done / sec.ids.length * 100);
-      html += '<div class="pbar-row"><span class="pl">' + sec.name + '</span>'
+      html += '<div class="pbar-row"><span class="pl">' + sec.name + (pct === 100 ? ' 🏅' : '') + '</span>'
         + '<div class="pbar"><i style="width:' + pct + '%"></i></div>'
         + '<span class="pv">' + done + '/' + sec.ids.length + '</span></div>';
     });
     var totalPct = totalAll ? Math.round(totalDone / totalAll * 100) : 0;
-    html = '<div class="pbar-row" style="font-weight:700"><span class="pl">总进度</span>'
+    html = '<div class="pbar-row" style="font-weight:700"><span class="pl">总进度' + (totalPct === 100 ? ' 🏆' : '') + '</span>'
       + '<div class="pbar"><i style="width:' + totalPct + '%"></i></div>'
       + '<span class="pv">' + totalDone + '/' + totalAll + '</span></div>' + html;
     rows.innerHTML = html;
@@ -740,6 +969,106 @@
     var abs = document.getElementById("autoSaveBox");
     if(abs){ abs.checked = Site.autoSaveEnabled(); }
   });
+</script>
+<script>
+/* ============ 风格方案皮肤切换 + 轻量 3D 机器人(2D canvas 投影,零依赖) ============ */
+var SKIN_KEY = "humanoid-skin-v1";
+function applySkin(v){
+  document.documentElement.setAttribute("data-skin", v);
+  try{ localStorage.setItem(SKIN_KEY, v); }catch(e){}
+  if(v === "bot"){ initBotHero(); } else { stopBotHero(); }
+}
+(function(){
+  var sel = document.getElementById("skinSel");
+  var saved = "";
+  try{ saved = localStorage.getItem(SKIN_KEY) || ""; }catch(e){}
+  if(sel){ sel.value = saved; }
+  applySkin(saved);
+})();
+
+/* ---------- 轻量线框机器人:手工 3D→2D 投影(节点<120,任何设备 60fps) ---------- */
+var botRaf = 0, botCv = null;
+function botStop(){ if(botRaf){ cancelAnimationFrame(botRaf); botRaf = 0; } }
+function stopBotHero(){ botStop(); var box=document.getElementById("botHero"); if(box){ box.innerHTML=""; delete box.dataset.on; } }
+function initBotHero(){
+  var box = document.getElementById("botHero");
+  if(!box) return;
+  if(box.dataset.on){ botResume(); return; }
+  box.dataset.on = "1";
+  var cv = document.createElement("canvas");
+  cv.width = 540; cv.height = 600;
+  box.appendChild(cv);
+  botCv = cv;
+  /* 部件:中心+半尺寸(头/躯干/肩×2/前臂×2/大腿×2/小腿×2) */
+  var parts = [
+    {c:[0,2.5,0], h:[0.62,0.5,0.55], col:"#60a5fa"},
+    {c:[0,1.45,0], h:[0.52,0.85,0.32], col:"#3b82f6"},
+    {c:[-0.78,1.95,0], h:[0.16,0.42,0.16], col:"#93c5fd"},
+    {c:[ 0.78,1.95,0], h:[0.16,0.42,0.16], col:"#93c5fd"},
+    {c:[-0.78,1.0,0], h:[0.14,0.45,0.14], col:"#60a5fa"},
+    {c:[ 0.78,1.0,0], h:[0.14,0.45,0.14], col:"#60a5fa"},
+    {c:[-0.28,0.28,0], h:[0.2,0.55,0.2], col:"#22d3ee"},
+    {c:[ 0.28,0.28,0], h:[0.2,0.55,0.2], col:"#22d3ee"},
+    {c:[-0.28,-0.5,0], h:[0.17,0.5,0.17], col:"#34d399"},
+    {c:[ 0.28,-0.5,0], h:[0.17,0.5,0.17], col:"#34d399"}
+  ];
+  var yaw = 0.6, pitch = -0.12, drag = null;
+  cv.addEventListener("pointerdown", function(e){ drag = {x:e.clientX, y:e.clientY}; try{ cv.setPointerCapture(e.pointerId); }catch(err){} });
+  cv.addEventListener("pointermove", function(e){
+    if(!drag) return;
+    yaw += (e.clientX - drag.x) * 0.012;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch + (e.clientY - drag.y) * 0.008));
+    drag = {x:e.clientX, y:e.clientY};
+  });
+  cv.addEventListener("pointerup", function(){ drag = null; });
+  cv.addEventListener("pointercancel", function(){ drag = null; });
+  function proj(p, t){
+    var y0 = p[1] + Math.sin(t*1.6)*0.06;
+    var cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    var x = p[0]*cy + p[2]*sy, z = -p[0]*sy + p[2]*cy;
+    var y = y0*cp - z*sp, z2 = y0*sp + z*cp;
+    var f = 300/(6.2 + z2);
+    return [270 + x*f, 330 - y*f, z2];
+  }
+  function frame(now){
+    var t = now/1000;
+    if(!drag) yaw += 0.006;
+    var ctx = cv.getContext("2d");
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.strokeStyle = "rgba(59,130,246,.25)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(270, 512, 120, 26, 0, 0, Math.PI*2); ctx.stroke();
+    parts.forEach(function(pt){
+      var hx=pt.h[0], hy=pt.h[1], hz=pt.h[2];
+      var V = [];
+      for(var i=0;i<8;i++){
+        V.push(proj([pt.c[0]+(i&1?1:-1)*hx, pt.c[1]+(i&2?1:-1)*hy, pt.c[2]+(i&4?1:-1)*hz], t));
+      }
+      var E = [[0,1],[1,3],[3,2],[2,0],[4,5],[5,7],[7,6],[6,4],[0,4],[1,5],[2,6],[3,7]];
+      ctx.strokeStyle = pt.col; ctx.lineWidth = 2; ctx.globalAlpha = 0.95;
+      ctx.beginPath();
+      E.forEach(function(e){ ctx.moveTo(V[e[0]][0], V[e[0]][1]); ctx.lineTo(V[e[1]][0], V[e[1]][1]); });
+      ctx.stroke();
+      ctx.globalAlpha = 0.10; ctx.fillStyle = pt.col;
+      ctx.beginPath();
+      ctx.moveTo(V[4][0],V[4][1]); ctx.lineTo(V[5][0],V[5][1]); ctx.lineTo(V[7][0],V[7][1]); ctx.lineTo(V[6][0],V[6][1]);
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+    var e1 = proj([-0.2, 2.55, 0.58], t), e2 = proj([0.2, 2.55, 0.58], t);
+    if(e1[2] < 0.4){
+      ctx.fillStyle = "#22d3ee";
+      ctx.beginPath(); ctx.arc(e1[0], e1[1], 4, 0, Math.PI*2); ctx.arc(e2[0], e2[1], 4, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle = "rgba(148,163,184,.8)"; ctx.font = "13px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("🖱 拖动旋转 · 2D canvas 线框(非 three.js,零依赖不卡顿)", 270, 580);
+    botRaf = requestAnimationFrame(frame);
+  }
+  function botResume(){ botStop(); botRaf = requestAnimationFrame(frame); }
+  botResume();
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden){ botStop(); } else if(document.documentElement.getAttribute("data-skin")==="bot"){ botResume(); }
+  });
+}
 </script>
 </body>
 </html>

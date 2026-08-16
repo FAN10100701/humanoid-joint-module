@@ -60,6 +60,7 @@
       <button onclick="rlTrain(1000)">🚀 训练 1000 回合</button>
       <button onclick="rlDemo('rl')">🎬 用学到的策略演示</button>
       <button onclick="rlDemo('pd')">⚖️ PD 控制对比演示</button>
+      <button onclick="rlPoke()">👉 推一把(+冲击)</button>
       <button onclick="rlReset()">🗑️ 重置 Q 表</button>
     </div>
     <canvas id="rlPole" width="920" height="250"></canvas>
@@ -70,7 +71,7 @@
     <div class="my-stat" id="rlStat"></div>
   </div>
 
-  <div class="box box-tip"><b>💡 怎么玩:</b>①先点"训练 1000 回合"(几秒完成,看奖励曲线从 −300 左右爬到 1000+,回合上限约 1200=每步满分×1200 步);②看右图热图——左半蓝(向左推)、右半红(向右推)、中间一条竖直"保持不推"的窄带,这就是学出来的策略结构;③点"演示"对比 RL 与 PD:PD 立刻就稳(模型已知时经典控制仍是王者),RL 的价值在于<b>不需要模型、能学奖励定义的任意目标</b>。</div>
+  <div class="box box-tip"><b>💡 怎么玩:</b>①先点"训练 1000 回合"(几秒完成,看奖励曲线从 −300 左右爬到 1000+,回合上限约 1200=每步满分×1200 步);②看右图热图——左半蓝(向左推)、右半红(向右推)、中间一条竖直"保持不推"的窄带,这就是学出来的策略结构;③点"演示"对比 RL 与 PD:PD 立刻就稳(模型已知时经典控制仍是王者),RL 的价值在于<b>不需要模型、能学奖励定义的任意目标</b>;④演示中点"推一把":PD 与训练充分的 RL 都能抗住小冲击——但把训练回合数调少再推大点,策略立刻崩,<b>RL 只在训练分布内可靠</b>(本页训练初始角随机 ±0.2 rad,超出这个范围的偏差没学过)。</div>
 
   <h2><span class="h2-num">2</span> 奖励设计:RL 的"编程语言"</h2>
   <p>同一个摆,换奖励就换行为:r=+1(存活)→ 学会"苟住不动";r=1−3|θ| → 贴近竖直;r 加上 −0.01|F| → 学会省力;若奖励写成"角度绝对值越大越好",它学会主动摔倒。工程实践的三条铁律:<strong>①奖励要可微地引导目标(阶梯式奖励=迷宫);②别给"作弊捷径"(reward hacking,机器人会把传感器挡住如果那能得高分);③生存奖励+失败大罚是最常用的骨架</strong>。人形机器人整机 RL 的奖励函数通常有 20~50 项(速度跟踪/能耗/碰撞/姿态…),调奖励占项目时间的一半。</p>
@@ -167,8 +168,9 @@ function rlStep(st, F){   /* 与校验代码实验室.js 同源的 cart-pole 动
   st.dx += d2x*DT; st.x += st.dx*DT;
 }
 function rlRunEpisode(train){
-  /* 训练时随机初始偏角方向,保证左右两侧状态被对称探索(最小的"域随机化") */
-  var th0 = train ? (Math.random()<0.5?-0.05:0.05) : 0.05;
+  /* 训练时初始偏角在 ±0.2 均匀随机(最小的"域随机化"):
+     只用固定小角度训练的策略,遇到大一点的初始偏差立刻失效——分布外脆弱性 */
+  var th0 = train ? (Math.random()*0.4 - 0.2) : 0.05;
   var st = { th: th0, dth: 0, x: 0, dx: 0 };
   var total = 0, steps = Math.round(RL.T_EP / RL.DT);
   for(var k=0; k<steps; k++){
@@ -199,6 +201,7 @@ function rlTrain(n){
   var done = 0;
   (function chunk(){
     for(var k=0; k<4 && done<n; k++, done++){
+      if(RL.episodes === 700) RL.ALPHA = 0.05;   /* 后期降低学习率,Q 值收敛更干净 */
       var res = rlRunEpisode(true);
       RL.episodes++;
       RL.rewards.push(res.total);
@@ -219,6 +222,7 @@ function rlReset(){
 function rlDemo(mode){
   if(RL.training) return;
   var st = { th: 0.05, dth: 0, x: 0, dx: 0 };
+  RL.pokeState = st;   /* 供"推一把"按钮注入冲击 */
   var t0 = performance.now(), acc = 0, lastT = t0, label = mode==='rl' ? 'Q-Learning 策略' : 'PD 控制 (Kp=40, Kd=6)';
   if(RL.demo) cancelAnimationFrame(RL.demo);
   (function loop(now){
@@ -239,6 +243,12 @@ function rlDemo(mode){
       RL.demo = requestAnimationFrame(loop);
     } else { RL.demo = 0; }
   })(t0);
+}
+
+function rlPoke(){
+  if(RL.pokeState && RL.demo){
+    RL.pokeState.dth += 1.2;   /* 注入角速度冲击:策略能否抗扰? */
+  }
 }
 
 /* ============ 渲染 ============ */

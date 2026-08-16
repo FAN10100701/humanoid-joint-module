@@ -23,7 +23,7 @@
     root: "..",
     breadcrumb: [ { t: "升级进阶", u: "../index.html#sec4" }, { t: "全身控制与步态规划" } ],
     prev: { t: "通信与控制算法升级路线", u: "09_通信与控制算法升级路线.html" },
-    next: { t: "HdriveV2 交叉认证报告", u: "../05_HdriveV2工程/00_设计规范与决策/Hdrive新版方案_交叉认证与芯片选型报告.html" }
+    next: { t: "整机电气架构与安全设计", u: "03_整机电气架构与安全设计.html" }
   };
 </script>
 </head>
@@ -122,6 +122,25 @@
   </div>
 
   <!-- ================= 4 全身控制 WBC ================= -->
+  <h3>3.x 交互实验:重心(CoM)与零力矩点(ZMP)</h3>
+  <p>双足直立(正面视角):拖动"侧移摆幅"与"摆动频率",看 <b>CoM(重心)</b>与 <b>ZMP(零力矩点)</b>如何联动。核心关系(线性倒立摆 LIPM):</p>
+  <div class="formula">ZMP_{x} = CoM_{x} - rac{z_c}{g}\,\ddot{CoM}_{x}</div>
+  <p>摆得越快,惯性项越大,<b>ZMP 摆幅超过 CoM</b>;一旦 ZMP 跑出脚掌支撑范围(红色区域),机器人就倾覆——这正是步态规划要"压住 ZMP"的原因。</p>
+  <div class="zmp-lab">
+    <label>侧移摆幅 A: <input type="range" id="zpA" min="0.02" max="0.14" step="0.005" value="0.03" oninput="zpDraw()"><b id="zpAv">0.030 m</b></label>
+    <label>摆动频率 f: <input type="range" id="zpF" min="0.2" max="2.2" step="0.05" value="0.5" oninput="zpDraw()"><b id="zpFv">0.50 Hz</b></label>
+    <label>质心高度 z_c 固定 0.8 m · 脚掌半宽 0.06 m</label>
+  </div>
+  <canvas id="zpCv" width="880" height="330" style="max-width:100%"></canvas>
+  <div class="zmp-read" id="zpRead"></div>
+  <style>
+    .zmp-lab{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;font-size:13px;align-items:center}
+    .zmp-lab input[type=range]{vertical-align:middle;accent-color:#2563eb;width:150px}
+    .zmp-read{font-size:13.5px;line-height:2;margin-top:8px}
+    .zmp-read b{font-family:Consolas,monospace;color:#34d399}
+    body[data-theme="light"] .zmp-read b{color:#047857}
+  </style>
+
   <h2><span class="h2-num">4</span> 全身控制(WBC):一个 QP 算出所有关节力矩</h2>
 
   <h3>核心思想:任务分层</h3>
@@ -400,6 +419,78 @@
 
 </div><!-- /container -->
 
-<script src="../_assets/site.js"></script>
+<script>
+/* ============ CoM/ZMP 交互(LIPM: ZMP = CoM - (zc/g)·CoM̈) ============ */
+var zpT = 0, zpRaf = 0, zpLast = null, zpTrailC = [], zpTrailZ = [];
+function zpDraw(){
+  var A = parseFloat(document.getElementById('zpA').value);
+  var f = parseFloat(document.getElementById('zpF').value);
+  document.getElementById('zpAv').textContent = A.toFixed(3) + ' m';
+  document.getElementById('zpFv').textContent = f.toFixed(2) + ' Hz';
+  var cv = document.getElementById('zpCv'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height, cx = W/2, ground = H - 60, scale = 900; /* px per m(横向) */
+  var zc = 0.8, g = 9.81, w = 2*Math.PI*f, footHalf = 0.06;
+  var zAmp = A * (1 + zc*w*w/g);          /* ZMP 摆幅(LIPM 解析) */
+  var stable = zAmp <= footHalf;
+  function paint(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#0b1626'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = '#1e3a5f';
+    for(var gx=0; gx<W; gx+=30){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
+    /* 地面与双脚(位置固定 ±0.12m) */
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(40, ground); ctx.lineTo(W-40, ground); ctx.stroke();
+    [-0.12, 0.12].forEach(function(fx){
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(cx + (fx-footHalf)*scale - 0, ground, footHalf*2*scale, 12);
+    });
+    /* 支撑域(两只脚外缘之间) */
+    var domL = cx + (-0.12-footHalf)*scale, domR = cx + (0.12+footHalf)*scale;
+    ctx.fillStyle = stable ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.15)';
+    ctx.fillRect(domL, ground-70, domR-domL, 82);
+    ctx.fillStyle = stable ? '#34d399' : '#f87171'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(stable ? '✔ ZMP 在支撑域内(稳定)' : '✘ ZMP 超出支撑域(倾覆!)', cx, ground-76);
+    /* 躯干(摆动的倒立摆) */
+    var comX = A * Math.sin(zpT * w * Math.PI);   /* 便于动画节奏,用 zpT 累计相位 */
+    var comPx = cx + comX * scale, comPy = ground - zc * (scale*0.35);
+    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(cx + comX*0.2*scale*0.2, ground); ctx.lineTo(comPx, comPy); ctx.stroke();
+    ctx.fillStyle = '#60a5fa';
+    ctx.beginPath(); ctx.arc(comPx, comPy, 14, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#93c5fd'; ctx.font='12px sans-serif';
+    ctx.fillText('CoM', comPx, comPy - 20);
+    /* ZMP 标记 */
+    var zmpX = A*Math.sin(zpT * w * Math.PI) * (1 + zc*w*w/g);
+    var zmpPx = cx + zmpX * scale;
+    ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(zmpPx-9, ground-4); ctx.lineTo(zmpPx+9, ground-4);
+    ctx.moveTo(zmpPx, ground-13); ctx.lineTo(zmpPx, ground+5); ctx.stroke();
+    /* 轨迹带(上一周期包络) */
+    ctx.strokeStyle = 'rgba(96,165,250,.5)'; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(cx - A*scale, ground-100); ctx.lineTo(cx + A*scale, ground-100); ctx.stroke();
+    ctx.strokeStyle = 'rgba(34,197,94,.6)';
+    ctx.beginPath(); ctx.moveTo(cx - zAmp*scale, ground-116); ctx.lineTo(cx + zAmp*scale, ground-116); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(148,163,184,.85)'; ctx.font='11.5px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('上虚线=CoM 摆幅包络 · 下虚线=ZMP 摆幅包络(ZMP 更宽!)', 44, ground-130);
+    document.getElementById('zpRead').innerHTML =
+      'CoM 摆幅 = <b>' + A.toFixed(3) + ' m</b> · ZMP 摆幅 = A·(1 + z_c·ω²/g) = <b>' + zAmp.toFixed(3) + ' m</b>' +
+      ' · 支撑半宽 = <b>0.060 m</b> ' +
+      (stable ? '<span style="color:#34d399">✔ 稳定:ZMP 未出脚掌,踝关节转矩扛得住</span>'
+              : '<span style="color:#f87171">✘ 倾覆:需要加快迈步转移支撑(这正是"步频快了才稳"的数学)</span>') +
+      ' · 提示:频率拉高或摆幅拉大,看 ZMP 如何先于 CoM 失稳。';
+  }
+  if(!zpRaf){
+    zpLast = performance.now();
+    (function loop(now){
+      var dt = Math.min((now - zpLast)/1000, 0.05); zpLast = now;
+      zpT += dt * 2;              /* 相位推进 */
+      paint();
+      zpRaf = requestAnimationFrame(loop);
+    })(performance.now());
+  } else { paint(); }
+}
+zpDraw();
+</script>
 </body>
 </html>
