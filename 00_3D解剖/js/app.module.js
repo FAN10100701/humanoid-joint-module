@@ -118,30 +118,57 @@ curEnv=restoreEnvPreset();           /* 启动时恢复上次选择的环境预�
 
 /* 调试探针:记录加载过程每一步与失败原因,供诊断浮标/失败提示展示 */
 window.__3D_LOAD_LOG__=[];
-function probe(msg){try{window.__3D_LOAD_LOG__.push(String(msg).slice(0,200));}catch(e){}}
+function probe(msg){try{window.__3D_LOAD_LOG__.push(String(msg).slice(0,220));}catch(e){}}
+function errtxt(e){var m=(e&&e.message)?String(e.message):String(e);return m.slice(0,160);}
 function loadDeps(cb){
   if(THREE){cb(true);return;}
-  /* 【importmap 无关加载】直接使用相对路径/绝对 URL 动态导入——不依赖 importmap 与 es-module-shims,
-     兼容任何支持 ES module 的浏览器(老内核套壳浏览器无原生 importmap 也能用):
-     本地相对路径优先,失败自动切 npmmirror CDN 绝对 URL(file:// 协议直接走 CDN)。 */
-  var LOC='./lib/', CDN='https://registry.npmmirror.com/three/0.160.0/files/';
+  /* 【importmap 无关加载】相对路径+多 CDN 绝对 URL 动态导入,不依赖 importmap 与 es-module-shims。
+     顺序:本地 → npmmirror(gzip) → jsdelivr → unpkg;每级失败自动降级,全部失败则清标记下次回本地重试。 */
+  var LOC='./lib/';
+  function C(base,sub){return base+sub;}
   var A=[
-    ['three.module.js','build/three.module.js'],
-    ['addons/controls/OrbitControls.js','examples/jsm/controls/OrbitControls.js'],
-    ['addons/loaders/STLLoader.js','examples/jsm/loaders/STLLoader.js'],
-    ['addons/environments/RoomEnvironment.js','examples/jsm/environments/RoomEnvironment.js'],
-    ['addons/loaders/DRACOLoader.js','examples/jsm/loaders/DRACOLoader.js']
+    ['three.module.js',
+      C('https://registry.npmmirror.com/three/0.160.0/files/build/','three.module.js'),
+      C('https://cdn.jsdelivr.net/npm/three@0.160.0/build/','three.module.js'),
+      C('https://unpkg.com/three@0.160.0/build/','three.module.js')],
+    ['addons/controls/OrbitControls.js',
+      C('https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/controls/','OrbitControls.js'),
+      C('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/','OrbitControls.js'),
+      C('https://unpkg.com/three@0.160.0/examples/jsm/controls/','OrbitControls.js')],
+    ['addons/loaders/STLLoader.js',
+      C('https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/loaders/','STLLoader.js'),
+      C('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/','STLLoader.js'),
+      C('https://unpkg.com/three@0.160.0/examples/jsm/loaders/','STLLoader.js')],
+    ['addons/environments/RoomEnvironment.js',
+      C('https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/environments/','RoomEnvironment.js'),
+      C('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/','RoomEnvironment.js'),
+      C('https://unpkg.com/three@0.160.0/examples/jsm/environments/','RoomEnvironment.js')],
+    ['addons/loaders/DRACOLoader.js',
+      C('https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/loaders/','DRACOLoader.js'),
+      C('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/','DRACOLoader.js'),
+      C('https://unpkg.com/three@0.160.0/examples/jsm/loaders/','DRACOLoader.js')]
   ];
   var file=location.protocol==='file:';
-  var useCdn=file||sessionStorage.getItem('__three_cdn__')==='1';
-  probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+(useCdn?'CDN':'本地'));
+  var mode=file||sessionStorage.getItem('__three_cdn__')==='1'?'CDN':'本地';
+  probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+mode);
+  function tryList(list,idx){
+    if(idx>=list.length){
+      probe('❌ 全部 CDN 源均失败');
+      return Promise.reject(new Error('all sources failed'));
+    }
+    return import(list[idx]).catch(function(e){
+      probe('CDN['+idx+'] '+list[idx].split('/').slice(-2, -1)[0]+'/'+list[idx].split('/').pop()+' 失败: '+errtxt(e));
+      return tryList(list,idx+1);
+    });
+  }
   function imp(i){
-    if(useCdn)return import(CDN+A[i][1]);
+    if(file||sessionStorage.getItem('__three_cdn__')==='1'){
+      return tryList(A[i].slice(1),0);
+    }
     return import(LOC+A[i][0]).catch(function(e){
-      /* 本地失败:切 CDN 并记住(下次直接 CDN),同一次会话内不再回本地循环 */
-      probe('本地 '+A[i][0]+' 失败,切 CDN');
+      probe('本地 '+A[i][0]+' 失败: '+errtxt(e)+' → 切 CDN');
       try{sessionStorage.setItem('__three_cdn__','1');}catch(err){}
-      return import(CDN+A[i][1]);
+      return tryList(A[i].slice(1),0);
     });
   }
   imp(0).then(function(M){THREE=M;window.__THREE_LOADED__=true;probe('three 核心 OK');window.__SHOW_DIAG__&&window.__SHOW_DIAG__();return imp(1);})
@@ -150,11 +177,11 @@ function loadDeps(cb){
     .then(function(R){RoomEnv=R.RoomEnvironment;probe('RoomEnvironment OK');return imp(4);})
     .then(function(D){DRACOLoader=D.DRACOLoader;probe('DRACOLoader OK');cb(true);})
     .catch(function(e){
-      var em=(e&&e.message)?String(e.message):String(e);
-      var es=(e&&e.stack)?String(e.stack).split('\n').slice(0,2).join(' | '):'';
       console.warn('[Robot3D] 引擎加载失败:',e);
-      probe('❌ 加载失败: '+em+' '+(es?('('+es.slice(0,120)+')'):''));
+      probe('❌ 加载失败: '+errtxt(e));
       window.__3D_FAILED__=true;
+      /* 全部失败:清 CDN 标记,下次加载重新从本地开始(网络恢复后可自愈) */
+      try{sessionStorage.removeItem('__three_cdn__');}catch(err){}
       cb(false);
     });
 }

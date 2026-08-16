@@ -1416,7 +1416,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v6.8';  /* 2026-08-17 · 彻底摆脱importmap/shims:loadDeps改相对路径+CDN绝对URL动态导入,兼容所有ES module浏览器 */
+var DIAG_VER='v6.9';  /* 2026-08-17 · 多CDN冗余(npmmirror/jsdelivr/unpkg)逐级降级+失败清标记回本地自愈+详细错误探针 */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;
