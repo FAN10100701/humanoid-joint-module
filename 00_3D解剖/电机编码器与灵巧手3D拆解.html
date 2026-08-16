@@ -134,10 +134,15 @@ function x3Tab(i){
       document.getElementById('x3info').innerHTML = '<b>3D 库加载失败:</b>本地与 3 个 CDN 均不可达。请检查网络,或通过本地服务器 http:// 访问本页后重试。';
       return;
     }
-    import(/* @vite-ignore */ SOURCES[i]).then(function(m){
-      if(!m || !m.WebGLRenderer){ throw new Error('bad module'); }
-      boot(m);
-    }).catch(function(){ i++; tryNext(); });
+    var src = SOURCES[i];
+    /* 超时保护(主代理 2026-08-17 补):网络黑洞(连接挂起不失败)时 15s 强制跳到下一源,避免卡 loading */
+    Promise.race([
+      import(/* @vite-ignore */ src).then(function(m){
+        if(!m || !m.WebGLRenderer){ throw new Error('bad module'); }
+        boot(m);
+      }),
+      new Promise(function(res, rej){ setTimeout(function(){ rej(new Error('加载超时(15s)')); }, 15000); })
+    ]).catch(function(){ i++; tryNext(); });
   }
   tryNext();
 })();
