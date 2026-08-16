@@ -133,7 +133,8 @@ function loadDeps(cb){
   var LOCS=['three.module.js','addons/controls/OrbitControls.js','addons/loaders/STLLoader.js','addons/environments/RoomEnvironment.js','addons/loaders/DRACOLoader.js'];
   var BARE=['three','three/addons/controls/OrbitControls.js','three/addons/loaders/STLLoader.js','three/addons/environments/RoomEnvironment.js','three/addons/loaders/DRACOLoader.js'];
   probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+(cdnMode?('CDN('+(mark||'file')+')'):'本地'));
-  /* 失败推进状态机:返回 true=已切换并 reload,false=停止报错 */
+  /* 失败推进状态机:返回 true=已切换并 reload,false=停止报错;每次切换都写时间戳(30分钟过期,防止永久卡CDN) */
+  function stamp(){try{sessionStorage.setItem('__three_cdn_ts__',String(Date.now()));}catch(e){}}
   function advance(){
     var m=null;try{m=sessionStorage.getItem('__three_cdn__');}catch(e){}
     if(isFile){
@@ -141,6 +142,7 @@ function loadDeps(cb){
       else if(m==='1'){try{sessionStorage.setItem('__three_cdn__','3');}catch(e){}}
       else if(m==='3'){try{sessionStorage.setItem('__three_cdn__','4');}catch(e){}}
       else return false;
+      stamp();
       try{location.reload();}catch(e){}
       return true;
     }
@@ -149,12 +151,19 @@ function loadDeps(cb){
     else if(m==='3'){try{sessionStorage.setItem('__three_cdn__','4');}catch(e){}}
     else if(m==='4'){try{sessionStorage.setItem('__three_cdn__','9');}catch(e){}}
     else return false;   /* '9':本地也失败,停止 */
+    stamp();
     try{location.reload();}catch(e){}
     return true;
   }
+  /* 超时包装:网络黑洞(连接挂起不失败)时强制推进状态机,避免 three=loading 卡死 */
+  function withTimeout(p,ms,who){
+    return Promise.race([p,new Promise(function(res,rej){
+      setTimeout(function(){rej(new Error(who+' 加载超时('+(ms/1000)+'s)'));},ms);
+    })]);
+  }
   function imp(i){
-    if(cdnMode)return import(BARE[i]).catch(function(e){probe('CDN '+BARE[i]+' 失败: '+errtxt(e));throw e;});
-    return import(LOC+LOCS[i]).catch(function(e){
+    if(cdnMode)return withTimeout(import(BARE[i]),15000,BARE[i]).catch(function(e){probe('CDN '+BARE[i]+' 失败: '+errtxt(e));throw e;});
+    return withTimeout(import(LOC+LOCS[i]),25000,LOCS[i]).catch(function(e){
       probe('本地 '+LOCS[i]+' 失败: '+errtxt(e));
       throw e;
     });

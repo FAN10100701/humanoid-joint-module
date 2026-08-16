@@ -337,6 +337,8 @@ body[data-theme="dark"] .bb-perf{color:var(--muted)}
 #diagPanel{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);z-index:999;display:none;width:min(380px,calc(100vw - 24px));padding:12px 14px;border-radius:12px;border:1px solid var(--rule);background:rgba(255,255,255,.97);color:var(--ink);font-size:12px;line-height:2;box-shadow:var(--sh3);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-family:var(--mono)}
 body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:var(--rule2)}
 #diagPanel .dp-copy{float:right;border:1px solid var(--rule);background:transparent;color:var(--accent);font-size:11px;padding:2px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
+#diagPanel .dp-reset{float:right;margin-right:8px;border:1px solid var(--rule);background:transparent;color:var(--warn);font-size:11px;padding:2px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
+#diagPanel .dp-reset:hover{border-color:var(--warn)}
 #diagPanel .dp-close{position:absolute;right:4px;top:2px;border:none;background:transparent;color:var(--faint);font-size:13px;cursor:pointer;font-family:inherit;padding:2px 6px}
 #diagPanel .dp-close:hover{color:var(--bad)}
 #diagPanel .dp-ok{color:var(--ok)}#diagPanel .dp-bad{color:var(--bad)}#diagPanel .dp-wait{color:var(--warn)}
@@ -348,7 +350,13 @@ body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:va
        老内核浏览器(无原生 importmap)自动加载 es-module-shims polyfill。 -->
 <script>
 (function(){
+  /* CDN 标记 30 分钟过期：一次网络抖动导致的标记不会永久卡在 CDN（手机弱网自愈关键） */
   var mark=null;try{mark=sessionStorage.getItem('__three_cdn__');}catch(e){}
+  var ts=null;try{ts=sessionStorage.getItem('__three_cdn_ts__');}catch(e){}
+  if(mark&&mark!=='9'&&(!ts||(Date.now()-Number(ts))>30*60*1000)){
+    try{sessionStorage.removeItem('__three_cdn__');}catch(e){}
+    mark=null;
+  }
   var isFile=location.protocol==='file:';
   var IS_CDN=isFile||mark==='1'||mark==='3'||mark==='4';
   window.__THREE_CDN_MODE__=IS_CDN;
@@ -1437,11 +1445,11 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 }
 </script>
 <!-- 诊断面板（入口：桌面底部栏「🔧 诊断」/ 移动端底部标签栏「🔧 诊断」；引擎失败时自动弹出） -->
-<div id="diagPanel"><button class="dp-close" id="diagClose" type="button" title="关闭诊断">✕</button><button class="dp-copy" id="diagCopy" type="button">复制</button><div id="diagBody"></div></div>
+<div id="diagPanel"><button class="dp-close" id="diagClose" type="button" title="关闭诊断">✕</button><button class="dp-copy" id="diagCopy" type="button">复制</button><button class="dp-reset" id="diagReset" type="button" title="清除 CDN 标记并重新加载(网络恢复后回本地模式)">重置加载</button><div id="diagBody"></div></div>
 <script>
 /* 诊断面板:入口=桌面底部栏「🔧 诊断」/ 移动端底部标签栏「🔧 诊断」;引擎失败时自动弹出;✕ 关闭 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v7.2';  /* 2026-08-17 · 诊断嵌入底部工具栏(桌面🔧按钮/移动端btab),移除悬浮浮标不再遮挡 */
+var DIAG_VER='v7.3';  /* 2026-08-17 · import超时防挂起+CDN标记30分钟过期+诊断面板重置加载按钮(一键回本地) */
 (function(){
   var panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!panel||!bodyEl)return;
@@ -1502,6 +1510,12 @@ var DIAG_VER='v7.2';  /* 2026-08-17 · 诊断嵌入底部工具栏(桌面🔧按
   function toggleDiag(){var on=panel.style.display!=='block';if(on)openDiag();else closeDiag();}
   var closeBtn=document.getElementById('diagClose');
   if(closeBtn)closeBtn.addEventListener('click',closeDiag);
+  var resetBtn=document.getElementById('diagReset');
+  if(resetBtn)resetBtn.addEventListener('click',function(){
+    try{sessionStorage.removeItem('__three_cdn__');}catch(e){}
+    try{sessionStorage.removeItem('__three_cdn_ts__');}catch(e){}
+    try{location.reload();}catch(e){}
+  });
   var bbDiag=document.getElementById('bbDiag');
   if(bbDiag)bbDiag.addEventListener('click',toggleDiag);
   /* 暴露给移动端 btab 与失败自动弹出使用 */
