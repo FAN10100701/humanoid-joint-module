@@ -288,7 +288,7 @@ body[data-theme="dark"] .simbox{background:linear-gradient(135deg,#101724 0%,#0c
 body[data-theme="dark"] .simbox canvas{background:#0a0e17;border-color:var(--rule)}
 
 /* ===== 底部功能栏（桌面端） ===== */
-.bottom-bar{position:fixed;left:0;right:0;bottom:0;height:44px;z-index:100;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-top:1px solid var(--rule);border-radius:14px 14px 0 0;box-shadow:0 -2px 20px rgba(0,0,0,.06);overflow-x:auto;scrollbar-width:thin;flex-wrap:nowrap}
+.bottom-bar{position:fixed;left:0;right:0;bottom:0;z-index:100;display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-top:1px solid var(--rule);border-radius:14px 14px 0 0;box-shadow:0 -2px 20px rgba(0,0,0,.06);flex-wrap:wrap;min-height:44px}
 .bb-btn{border:1px solid var(--rule);background:rgba(255,255,255,.7);color:var(--muted);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;transition:.14s;font-family:inherit;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
 .bb-btn:hover{color:var(--ink);background:#fff;box-shadow:var(--sh1)}
 .bb-btn.on{color:#fff;background:var(--accent);border-color:var(--accent)}
@@ -330,6 +330,8 @@ body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:va
 #diagPanel .dp-ok{color:var(--ok)}#diagPanel .dp-bad{color:var(--bad)}#diagPanel .dp-wait{color:var(--warn)}
 @media(min-width:861px){#diagFab,#diagPanel{display:none!important}}
 </style></head><body>
+<!-- 返回学习站首页悬浮按钮(独立页无全站导航,交接文档遗留项) -->
+<a href="../index.html" style="position:fixed;top:14px;right:14px;z-index:99;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:18px;background:rgba(13,18,30,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(120,140,180,.35);color:#cdd8ea;font:600 12px/1 'Segoe UI','Microsoft YaHei',sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.25)" onmouseover="this.style.borderColor='var(--accent,#2563eb)'" onmouseout="this.style.borderColor='rgba(120,140,180,.35)'">🏠 学习站首页</a>
 <!-- 【iOS 兼容修复】es-module-shims:为不支持 importmap 的旧内核(iOS Safari <16.4 等)提供 polyfill。
      必须先于下方 importmap 与模块脚本加载(本地文件,离线可用) -->
 <script src="./lib/es-module-shims.js"></script>
@@ -341,7 +343,9 @@ body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:va
 <script>
 /* 本地优先/CDN回退逻辑：通过sessionStorage标记避免无限循环 */
 (function(){
-  var USE_CDN = sessionStorage.getItem('__three_cdn__')==='1';
+  /* 【file:// 兼容】直接双击本地 HTML 打开时，浏览器禁止加载本地 ES 模块(file 协议 CORS)，
+     自动改用 CDN 模块(npmmirror 有 CORS 头,file:// 下可用)；http/https 仍默认本地库 */
+  var USE_CDN = sessionStorage.getItem('__three_cdn__')==='1' || location.protocol==='file:';
   if(USE_CDN){
     /* 【大陆可达性修复】CDN回退地址由 unpkg.com 改为 npmmirror 阿里镜像：
        unpkg 在大陆无VPN时常超时，一旦触发回退会导致 3D 引擎永久加载失败（白屏）；
@@ -1431,7 +1435,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v6.4';  /* 2026-08-17 · CDN回退防误触发+状态机(CDN失败自动回本地)+桌面端失败自动显示诊断+浮标避开底部栏 */
+var DIAG_VER='v6.5';  /* 2026-08-17 · 底部栏自动换行(修复智元按钮被裁)+file://自动CDN模式+回退状态机 */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;

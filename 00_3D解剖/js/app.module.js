@@ -126,14 +126,16 @@ function loadDeps(cb){
     .then(function(D){DRACOLoader=D.DRACOLoader;cb(true);})
     .catch(function(e){
       console.warn('[Robot3D] 引擎加载失败:',e);
-      /* 【防误触发+防死循环】状态机：无标记→切CDN；CDN失败→回本地并标记(2)；本地再失败→报错提示不再循环 */
+      /* 【防误触发+防死循环】状态机：无标记→切CDN；CDN失败→回本地并标记(2)；本地再失败→报错提示不再循环。
+         file:// 模式已固定走 CDN(见 HTML 顶部脚本),不参与回退循环,直接报错提示 */
+      var isFile=location.protocol==='file:';
       var cdn=null;try{cdn=sessionStorage.getItem('__three_cdn__');}catch(err){}
-      if(!cdn){
+      if(!cdn&&!isFile){
         try{sessionStorage.setItem('__three_cdn__','1');}catch(err){}
         try{location.reload();}catch(err){}
         return;
       }
-      if(cdn==='1'){
+      if(cdn==='1'&&!isFile){
         /* CDN 也失败：恢复本地并标记，避免永久卡在 CDN 上 */
         try{sessionStorage.setItem('__three_cdn__','2');}catch(err){}
         try{location.reload();}catch(err){}
