@@ -189,6 +189,17 @@
     });
   }
 
+  /* ---------- 全站 PWA:注册 Service Worker + manifest ---------- */
+  function initSW(){
+    if(!("serviceWorker" in navigator)) return;
+    var root = page().root || "";
+    navigator.serviceWorker.register((root ? root + "/" : "") + "sw.js").catch(function(){});
+    var link = document.createElement("link");
+    link.rel = "manifest";
+    link.href = (root ? root + "/" : "") + "manifest.json";
+    document.head.appendChild(link);
+  }
+
   /* ---------- 顶部导航 + 面包屑 + 上一篇/下一篇 + 页脚 ---------- */
   function injectChrome(){
     var P = page();
@@ -387,7 +398,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V1.5.0(2026-08-16)";
+  S.VERSION = "V1.5.1(2026-08-16)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -503,8 +514,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW();
   }
 })();

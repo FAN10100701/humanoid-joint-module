@@ -9,6 +9,7 @@
 <meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,35 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="_assets/site.css">
 <style>
   .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(13,17,23,.6));border:1px solid rgba(59,130,246,.35);border-radius:16px;padding:22px;margin:26px 0}
@@ -61,7 +62,7 @@
   <div class="hero">
     <h1>🤖 人形机器人学习站</h1>
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
-    零基础可学 · 100% 免费 · 3D 解剖页支持离线 · 持续更新</div>
+    零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</div>
     <div class="stats">
       <div class="stat"><div class="v" id="statPages">35</div><div class="k">学习页面</div></div>
       <div class="stat"><div class="v" id="statTracked">32</div><div class="k">可打卡页面</div></div>
@@ -480,10 +481,14 @@
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.5.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · 一致性修复 + 体验升级</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.5.1</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-16 · 代码实验室热修复</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.5.1 · 2026-08-16 · 代码实验室热修复</summary>
+        <div class="faq-a">修复 <b>代码实验室整页冻结</b>的根因:FOC 实验(实验二)的 `updateReadouts` 返回值缺失 `iqVal` 字段,导致 `drawDq` 首帧抛 TypeError、整个动画循环中断 —— 表现为"三个实验调参数都没反应"。已补上字段并回归验证 11/11 通过;<b>交互升级</b>:实验一拖动任何参数自动<b>重放</b>响应曲线(含目标角滑块即时生效),实验三摆杆倒下时调参自动<b>重置</b>重新起摆 —— 调参效果立即可见。</div>
+      </details>
+      <details class="faq">
         <summary>V1.5.0 · 2026-08-16 · 学习闭环 + 教学演示 + 一致性 + 开源化</summary>
         <div class="faq-a">🆕 <b>今日复习 SRS</b>(间隔重复:答对 1→2→4→8→16 天,答错当天重试,含错题本/随机练习);🆕 <b>学习地图</b>(08-06,可点击节点+进度点亮+推荐下一站);🆕 <b>传动与控制实验台</b>(08-05,减速器参数实验台 + FOC 三环示波器);🆕 <b>每页学习目标</b>自动注入(建议用时+前置知识);<b>进度可视化</b>(环形图 + 14 周学习热力图);<b>原理动画速度控制</b>(0.25x~2x + 暂停/单步);<b>页内自测</b>(减速器剖面图、机械原理基础补 8 题);3D 页<b>移动端优化</b>;搜索升级(多词排序+高亮+防 XSS);新手引导(仅首页首次);打印按钮;<b>一致性修复</b>(首页去重复导航、版本号单一数据源 S.VERSION、统计动态计算、05 标注"规划中"去重重定向);<b>开源化</b>:MIT LICENSE + 贡献指南 + 仓库描述与话题标签;新增一键自检脚本。</div>
       </details>
@@ -527,7 +532,7 @@
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.5.0(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.5.1(2026-08-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

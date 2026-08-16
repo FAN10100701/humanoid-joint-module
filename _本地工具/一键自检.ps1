@@ -48,7 +48,7 @@ Check "JS syntax (pages=" + $pages.Count + ")" ($synFail -eq 0) ($synFail.ToStri
 
 # ---- 1b) external JS files syntax (site.js etc.) ----
 $jsFail = 0
-$jsFiles = Get-ChildItem -Path $root -Recurse -File -Include *.js | Where-Object {
+$jsFiles = Get-ChildItem -Path $root -Recurse -File -Include *.js,*.mjs | Where-Object {
   $_.FullName -notmatch 'edge_prof|node_modules|\.git' -and $_.FullName -notmatch '\\_本地工具\\'
 }
 foreach($j in $jsFiles){

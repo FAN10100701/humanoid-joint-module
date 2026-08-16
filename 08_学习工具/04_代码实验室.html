@@ -61,7 +61,7 @@
     <b>建议用时:</b>30-60 分钟(每个实验 10-20 分钟)
   </div>
 
-  <div class="box box-tip"><b>💡 使用说明:</b>三个实验全部在浏览器本地实时计算(JavaScript 物理仿真),<b>不联网、不上传、零安装</b>。滑块即调即生效;点"重置"回到初始状态。每个实验下方都有"现象解释"与"思考题",先玩、再想、最后对照解释。</div>
+  <div class="box box-tip"><b>💡 使用说明:</b>三个实验全部在浏览器本地实时计算(JavaScript 物理仿真),<b>不联网、不上传、零安装</b>。<b>拖动参数即调即生效</b>:实验一拖动任何滑块会自动<b>重放</b>响应曲线,实验三若摆已倒下会自动<b>重置</b>——每次拖动都能立刻看到新参数的效果,方便对比;点"重置"可随时回到初始状态。每个实验下方都有"现象解释"与"思考题",先玩、再想、最后对照解释。</div>
 
   <!-- ============================================================
        实验一 · PID 位置控制整定模拟器
@@ -95,7 +95,8 @@
       · <b>Kp</b> 决定"回正力度"—— 太小到位慢、稳态有残差(重力/摩擦场景);太大开始振荡。<br>
       · <b>Kd</b> 决定"刹车力度"(对速度的阻尼)—— 抑制超调与振荡;过大则响应迟钝甚至抖动。<br>
       · <b>Ki</b> 消除稳态误差 —— 本模型无重力,纯 P 已无静差,可把 Ki 设为 0 对比;真实关节有摩擦和重力,才需要 Ki。<br>
-      · 先调 Kp 到"刚好开始振荡",再加大 Kd 压住振荡 —— 这是工程上最常用的整定顺序。点"力矩扰动"观察恢复能力:好的参数能快速回稳。
+      · 先调 Kp 到"刚好开始振荡",再加大 Kd 压住振荡 —— 这是工程上最常用的整定顺序。点"力矩扰动"观察恢复能力:好的参数能快速回稳。<br>
+      · <b>小技巧:</b>曲线稳定成平线后拖动参数看不到变化是正常的 —— 本实验拖动滑块会自动重放响应,直接观察新曲线对比即可;也可以点"阶跃重置"重新看暂态。
     </div>
     <div class="box box-warn" style="margin-top:12px"><b>🤔 思考题:</b>为什么本模型里 Ki 不起作用?如果把"目标角"换成"目标速度"(速度环),P 项应该怎么改?</div>
   </div>
@@ -164,6 +165,7 @@
     <div class="lab-note">
       <b>现象解释:</b>
       · 默认的<b>纯平衡模式</b>只有角度 PD:Kp 把摆杆拉回竖直,Kd 提供阻尼防止来回晃。调参口诀:先加 Kp 到"刚好开始晃",再加 Kd 压住晃动。<b>能立住后</b>点"推它一把",好的参数应在 1-2 秒内回稳(摆角不超过约 15°)。<br>
+      · <b>小技巧:</b>摆杆倒下(推力限幅救不回来)后调参看似无效 —— 本实验在倒下状态下拖动 Kp/Kd 会自动重置重新起摆,新参数立刻可见。<br>
       · 小车带滚动摩擦,平衡后它会自己慢慢停下 —— 真机上"站住不动"同样靠关节内部的阻尼与摩擦力矩。<br>
       · <b>高级 · 位置控制</b>:位置误差先换算成"期望倾斜角"(限幅 ±0.3 rad 且斜率受限),再交给角度环。你会看到小车移向目标位置,但会伴随<b>缓慢晃动</b> —— 这是"位置环与平衡环耦合"的必然结果:想往右走,必须先向右倾;倾斜又产生加速度,位置环再回来纠偏。内环(角度)带宽必须远高于外环(位置),否则会越晃越大直至摔倒。<br>
       · 真实的人形机器人平衡远比这复杂:脚踝/髋/膝关节协同、ZMP 约束、模型预测控制(MPC)与强化学习步态(参见 <a href="../04_升级进阶/09_通信与控制算法升级路线.html">04-01 升级路线</a>、<a href="../06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html">06-04 仿真与 RL</a>),但"先稳住内环、再调外环"的思路完全一致。
@@ -361,10 +363,14 @@
       $("pidKdV").textContent = $("pidKd").value;
       reset("step");
     }
-    var els = ["pidKp", "pidKi", "pidKd"];
+    var els = ["pidRef", "pidKp", "pidKi", "pidKd"];
     for(var i = 0; i < els.length; i++){
       (function(id){
-        $(id).oninput = function(){ $(id + "V").textContent = $(id).value; };
+        $(id).oninput = function(){
+          $(id + "V").textContent = $(id).value;
+          /* 拖动参数即自动重放当前模式的响应曲线 —— 调参效果立即可见 */
+          reset(mode);
+        };
       })(els[i]);
     }
     return { reset: reset, step: step, draw: draw, disturb: disturb, preset: preset };
@@ -386,7 +392,7 @@
       $("focMag").textContent = fmt(Math.abs(I), 1);
       $("focPhi").textContent = Math.round(phi * 180 / Math.PI) % 360 + "°";
       $("focIabc").textContent = "ia=" + fmt(ia, 1) + " / ib=" + fmt(ib, 1) + " / ic=" + fmt(ic, 1);
-      return { phi: phi, ia: ia, ib: ib, ic: ic };
+      return { phi: phi, ia: ia, ib: ib, ic: ic, iqVal: iqVal };
     }
     function drawMain(thetaRad, r){
       var W = cMain.width, H = cMain.height;
@@ -640,7 +646,11 @@
     var els = ["cpKp", "cpKd", "cpXref"];
     for(var i = 0; i < els.length; i++){
       (function(id){
-        $(id).oninput = function(){ $(id + "V").textContent = $(id).value; };
+        $(id).oninput = function(){
+          $(id + "V").textContent = $(id).value;
+          /* 摆杆已倒下时调参自动重置 —— 新参数立即生效可见 */
+          if(Math.abs(th) > 1.0 && id !== "cpXref"){ reset(); }
+        };
       })(els[i]);
     }
     $("cpAdv").onchange = function(){
