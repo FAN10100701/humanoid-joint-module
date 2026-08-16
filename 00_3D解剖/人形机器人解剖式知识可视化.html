@@ -1417,6 +1417,8 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <div id="diagPanel"><button class="dp-copy" id="diagCopy" type="button">复制</button><div id="diagBody"></div></div>
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
+/* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
+var DIAG_VER='v6.2';  /* 2026-08-16 · 静态importmap+双通道回退+精细度切换+诊断版本标识 */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;
@@ -1434,6 +1436,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
   function refresh(){
     var d=window.__DIAG__||{};
     var h='';
+    h+=row('诊断代码',DIAG_VER,1);
     h+=row('iOS 版本',d.ios||'未知',1);
     h+=row('importmap',d.imp?'原生支持':'兼容补丁',d.imp?1:2);
     h+=row('WebGL',d.gl?'可用':'不可用',d.gl?1:0);
@@ -1448,7 +1451,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
   fab.addEventListener('click',function(){ var on=panel.style.display!=='block'; panel.style.display=on?'block':'none'; if(on)refresh(); });
   copyBtn.addEventListener('click',function(){
     var d=window.__DIAG__||{};
-    var txt='iOS '+d.ios+' | importmap='+(d.imp?'原生':'补丁')+' | WebGL='+(d.gl?'可用':'不可用')+' | WASM='+(d.wasm?'可用':'不可用')+' | three='+(d.three||'?')+' | 引擎='+(d.mod||'?')+' | 渲染='+(window.__RENDERED__?'是':'否')+(errs.length?(' | 错误:'+errs.join(' ;; ')):'');
+    var txt='诊断代码 '+DIAG_VER+' | iOS '+d.ios+' | importmap='+(d.imp?'原生':'补丁')+' | WebGL='+(d.gl?'可用':'不可用')+' | WASM='+(d.wasm?'可用':'不可用')+' | three='+(d.three||'?')+' | 引擎='+(d.mod||'?')+' | 渲染='+(window.__RENDERED__?'是':'否')+' | Three来源='+(sessionStorage.getItem('__three_cdn__')==='1'?'CDN':'本地')+(errs.length?(' | 错误:'+errs.join(' ;; ')):'');
     function done(){ copyBtn.textContent='已复制'; setTimeout(function(){ copyBtn.textContent='复制'; },1500); }
     if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ prompt('请手动复制以下诊断信息:',txt); done(); }); }
     else prompt('请手动复制以下诊断信息:',txt);

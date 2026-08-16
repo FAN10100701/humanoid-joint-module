@@ -283,13 +283,36 @@
     box.className = "giscus-wrap";
     box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="giscusEl"></div>';
     c.appendChild(box);
+    var theme = document.body.getAttribute("data-theme") === "light" ? "light" : "dark";
+    /* 主源 giscus.app 在大陆可能不可达：失败后改用 jsdelivr 的 giscus Web Component(giscus.mjs)重建 */
+    function buildWidgetFallback(){
+      var el = document.getElementById("giscusEl");
+      if(!el) return;
+      el.innerHTML = "";
+      var w = document.createElement("giscus-widget");
+      w.setAttribute("repo", window.GISCUS_CONFIG.repo);
+      w.setAttribute("repoid", window.GISCUS_CONFIG.repoId);
+      w.setAttribute("category", window.GISCUS_CONFIG.category);
+      w.setAttribute("categoryid", window.GISCUS_CONFIG.categoryId);
+      w.setAttribute("mapping", "pathname");
+      w.setAttribute("strict", "0");
+      w.setAttribute("reactionsenabled", "1");
+      w.setAttribute("emitmetadata", "0");
+      w.setAttribute("inputposition", "bottom");
+      w.setAttribute("theme", theme);
+      w.setAttribute("lang", "zh-CN");
+      el.appendChild(w);
+      var m = document.createElement("script");
+      m.type = "module";
+      m.src = "https://cdn.jsdelivr.net/npm/giscus@1.6.0/dist/giscus.mjs";
+      document.body.appendChild(m);
+    }
     var s = document.createElement("script");
-    /* 主源 giscus.app 在大陆可能不可达:加载失败自动回退 jsdelivr CDN(同一份 client.js) */
     s.src = "https://giscus.app/client.js";
     s.onerror = function(){
       if(s.getAttribute("data-fb")) return;
       s.setAttribute("data-fb", "1");
-      s.src = "https://cdn.jsdelivr.net/npm/giscus@1/dist/client.js";
+      buildWidgetFallback();
     };
     s.setAttribute("data-repo", window.GISCUS_CONFIG.repo);
     s.setAttribute("data-repo-id", window.GISCUS_CONFIG.repoId);
@@ -300,7 +323,7 @@
     s.setAttribute("data-reactions-enabled", "1");
     s.setAttribute("data-emit-metadata", "0");
     s.setAttribute("data-input-position", "bottom");
-    s.setAttribute("data-theme", document.body.getAttribute("data-theme") === "light" ? "light" : "dark");
+    s.setAttribute("data-theme", theme);
     s.setAttribute("data-lang", "zh-CN");
     s.crossOrigin = "anonymous";
     s.async = true;
