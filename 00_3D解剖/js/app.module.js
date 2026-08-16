@@ -483,6 +483,7 @@ function buildRobot(m){
   buildFallbackRobot(m);
   applyColorScheme(curScheme);   /* 参数化回退模型也应用当前配色方案 */
   fitCameraToObject(body3d);
+  window.__RENDERED__=true;      /* 诊断浮标:首屏参数化模型已渲染 */
   loadUrdfRobot(m);
 }
 

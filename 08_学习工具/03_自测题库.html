@@ -33,25 +33,25 @@
     <div class="sub">按章节检验学习成果,点击选项即时判分;答错自动显示解析并回链对应章节,把知识盲区逐个消灭。</div>
     <div class="tags">
       <span class="tag">4 组</span>
-      <span class="tag">24 题</span>
+      <span class="tag">40 题</span>
       <span class="tag">即时反馈</span>
     </div>
   </div>
 
   <!-- ================= 得分栏 ================= -->
-  <div class="qz-scorebar" id="scoreBar"><span class="qz-dot"></span>已答 0/24 · 答对 0</div>
+  <div class="qz-scorebar" id="scoreBar"><span class="qz-dot"></span>已答 0/40 · 答对 0</div>
 
   <!-- ================= 今日复习(间隔重复 SRS) ================= -->
   <div class="srs-wrap">
     <h2><span class="h2-num">S</span> 今日复习 · 间隔重复 SRS</h2>
-    <p style="font-size:13px;color:#9aa4b2">基于本页 24 题题库,按"学-练-测-复习"闭环自动安排复习:答对间隔逐级拉长(30分钟→1天→2天→4天→8天→16天),答错 30 分钟后重试。进度保存在本地浏览器。</p>
+    <p style="font-size:13px;color:#9aa4b2">基于本页 40 题题库,按"学-练-测-复习"闭环自动安排复习:答对间隔逐级拉长(30分钟→1天→2天→4天→8天→16天),答错 30 分钟后重试。进度保存在本地浏览器。</p>
     <div id="srsPanel"></div>
   </div>
 
   <!-- ================= 学习目标与使用说明 ================= -->
   <div class="key-point">
     <div class="kp-title">🎯 本页学习目标</div>
-    1. 完成 4 组共 24 道自测题,覆盖理论 / 硬件 / 软件 / 前沿四大板块,检验第 1~7 部分的学习成果<br>
+    1. 完成 4 组共 40 道自测题,覆盖理论 / 硬件 / 软件 / 前沿四大板块,检验第 1~7 部分的学习成果<br>
     2. 建立个人知识盲区清单,掌握「错题 → 回链章节 → 复读 → 重测」的复习闭环<br>
     3. 通过解析中的知识回顾,把零散概念串成完整体系,为项目实操打底<br>
     <b>建议用时:</b>约 20~30 分钟
@@ -61,12 +61,12 @@
     <b>💡 使用说明:</b><br>
     ① 点击选项即时判分,每题只计第一次作答,作答后该题锁定计分;<br>
     ② 每题解析在作答后自动显示,答错的同学请顺着解析里的链接回到对应章节复习;<br>
-    ③ 顶部得分栏实时统计「已答 X/24 · 答对 Y」,建议正确率 ≥ 70% 再进入下一部分学习。
+    ③ 顶部得分栏实时统计「已答 X/40 · 答对 Y」,建议正确率 ≥ 70% 再进入下一部分学习。
   </div>
 
   <!-- ================= 组一 · 理论入门 ================= -->
   <h2><span class="h2-num">1</span> 组一 · 理论入门</h2>
-  <p class="qz-group-intro">先检验机械传动与电机控制的基础概念:减速器三大件、减速比公式、FOC 三环、编码器与背隙。全部掌握后再进入硬件部分。</p>
+  <p class="qz-group-intro">先检验机械传动与电机控制的基础概念:减速器三大件、减速比公式、FOC 三环、编码器、背隙与电流环带宽。全部掌握后再进入硬件部分。</p>
 
   <div class="quiz">
     <div class="quiz-q">1. 谐波减速器的三大核心部件是?</div>
@@ -140,9 +140,21 @@
     <div class="quiz-explain">💡 解析:<b>背隙(回差)</b>指输入轴反向转动时,输出轴开始转动前的空转角,由齿侧间隙、弹性变形等引起。背隙过大会导致位置精度下降、换向冲击与抖动。谐波减速器柔轮齿始终与刚轮啮合、无齿侧间隙,因此几乎<b>零背隙</b>,是人形关节高精度定位的关键;行星减速器则存在一定背隙。<a href="../00_3D解剖/减速器剖面图详解.html">减速器剖面图 →</a></div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">25. 在 FOC 三环中,为什么电流环的带宽要最高?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 电流环负责最终输出位置,精度要求最高</button>
+      <button data-v="B">B. 电流环控制的是电感-电阻(RL)回路,时间常数最小,且电流直接决定力矩</button>
+      <button data-v="C">C. 电流环的电流采样传感器最便宜,容易做到高带宽</button>
+      <button data-v="D">D. 电流环在最外层,所以需要最高的采样频率</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电流环控制电机<b>电感-电阻(RL)回路</b>,时间常数亚毫秒级、动态最快;力矩正比于电流,电流环慢则力矩跟不上。带宽须与被控对象动态匹配:越内环对象越快、带宽越高;位置环对象是大惯量刚体,频率反而最低。<a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">FOC 三环动画 →</a></div>
+  </div>
+
   <!-- ================= 组二 · 硬件基础 ================= -->
   <h2><span class="h2-num">2</span> 组二 · 硬件基础</h2>
-  <p class="qz-group-intro">围绕 FOC 关节驱动板的电源、驱动、采样、Layout 与通信展开,检验你读原理图与 Layout 的能力。</p>
+  <p class="qz-group-intro">围绕 FOC 关节驱动板的电源、驱动、采样(自举电容、三电阻、Kelvin 连接)、Layout、差分通信与 IMU 传感器展开,检验你读原理图与 Layout 的能力。</p>
 
   <div class="quiz">
     <div class="quiz-q">7. 栅极驱动(Gate Driver)的主要作用是什么?</div>
@@ -216,9 +228,69 @@
     <div class="quiz-explain">💡 解析:120Ω 终端电阻用于匹配线缆阻抗、抑制信号反射,<b>只在总线物理两端各加一个</b>;每个节点都加会拉低总线阻抗,导致通信失败。常见收发器:TJA1050 / TJA1042 / TCAN1042。人形机器人多关节场景常用 CAN(最高 1Mbps)与 EtherCAT 实时总线。<a href="../02_硬件基础/04_硬件设计通用要点_避坑指南.html">避坑指南 →</a></div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">26. 栅极预驱中「自举电容」的核心作用是什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 给 MCU 提供稳定的 3.3V 电源</button>
+      <button data-v="B">B. 为下桥 MOS 提供栅极驱动电压</button>
+      <button data-v="C">C. 为上桥 MOS 提供高于母线的浮动栅极驱动电压</button>
+      <button data-v="D">D. 滤除母线电压的高频纹波</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:上桥 MOS 导通时源极被抬到接近母线电压,栅极需比母线更高的电压才能继续导通。自举电容在下桥 MOS 导通时经自举二极管充电,之后给上桥提供「悬浮」驱动电压,保证上桥可靠开通。<a href="../02_硬件基础/04_硬件设计通用要点_避坑指南.html">避坑指南 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">27. 工业 FOC 关节普遍采用三电阻下桥采样,相比单电阻母线采样,其核心优势是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 成本最低、器件最少</button>
+      <button data-v="B">B. 能同时直接采样三相电流,无需 SVPWM 扇区重构,精度更高</button>
+      <button data-v="C">C. 不需要任何运放放大</button>
+      <button data-v="D">D. 只测母线电流,与 PWM 开关无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:<b>三电阻方案</b>给每相下桥各配一个采样电阻,可同时直接读到三相电流,精度高、算法简单;单电阻只在母线串一个电阻,同一时刻只能测一路电流,须按 SVPWM 扇区分时重构,受占空比限制。<a href="../02_硬件基础/04_硬件设计通用要点_避坑指南.html">避坑指南 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">28. FOC 电流采样电阻为什么要用开尔文(Kelvin)连接?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 增大采样电阻阻值,提高信号强度</button>
+      <button data-v="B">B. 从电阻焊盘内侧单独引线,避免主回路大电流在铜箔上的压降被计入采样</button>
+      <button data-v="C">C. 降低采样电阻的温漂</button>
+      <button data-v="D">D. 让采样电阻散热更好</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:主回路大电流流过焊盘与铜箔会产生额外压降,若与采样共用焊盘,该压降会被当成「电流信号」采进去。<b>Kelvin 四线法</b>从电阻焊盘内侧单独引出两根细线到运放,只测电阻本体两端电压,误差被消除。<a href="../02_硬件基础/04_硬件设计通用要点_避坑指南.html">避坑指南 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">29. CAN / RS485 等差分信号抗干扰能力强,其核心原理是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 差分信号电压幅值更大,不易被干扰淹没</button>
+      <button data-v="B">B. 干扰作为共模噪声等量叠加到两根线上,接收端做差后相互抵消</button>
+      <button data-v="C">C. 差分信号使用屏蔽线,物理隔离干扰</button>
+      <button data-v="D">D. 差分信号的频率更高,干扰跟不上</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:差分对传一对大小相等、方向相反的信号,外部干扰(共模噪声)会等量耦合到两根线上;接收端取两者之差,共模成分相减抵消,只保留差模有用信号。故 CAN、RS485、编码器 AB 相都用差分传输抗干扰。<a href="../02_硬件基础/04_硬件设计通用要点_避坑指南.html">避坑指南 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">30. IMU 中的「陀螺仪」测量的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 线加速度(比力)</button>
+      <button data-v="B">B. 角速度</button>
+      <button data-v="C">C. 磁场方向</button>
+      <button data-v="D">D. 绝对地理位置</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:IMU 由<b>加速度计</b>与<b>陀螺仪</b>组成:加速度计测三轴线加速度(含重力),陀螺仪测三轴角速度,姿态靠对角速度积分得到;九轴 IMU 另含磁力计测磁场方向,用于航向修正,不是陀螺仪的职责。<a href="../06_软件与算法/06_视觉SLAM与状态估计.html">视觉 SLAM 与状态估计 →</a></div>
+  </div>
+
   <!-- ================= 组三 · 软件与算法 ================= -->
   <h2><span class="h2-num">3</span> 组三 · 软件与算法</h2>
-  <p class="qz-group-intro">覆盖 SimpleFOC、坐标变换、ROS2 话题模型、仿真强化学习与 sim-to-real,检验软件栈的掌握程度。</p>
+  <p class="qz-group-intro">覆盖 SimpleFOC、坐标变换、ROS2 话题模型、仿真强化学习、sim-to-real,以及步态控制(ZMP / 捕获点 / WBC / MPC)与 Nav2 导航 / 感知,检验软件栈的掌握程度。</p>
 
   <div class="quiz">
     <div class="quiz-q">13. SimpleFOC 是什么?</div>
@@ -292,9 +364,105 @@
     <div class="quiz-explain">💡 解析:PPO 是 OpenAI 提出的<b>策略梯度强化学习算法</b>,通过裁剪目标函数限制每次更新步长,训练稳定、超参数鲁棒,是机器人 RL 训练(Isaac Lab / MuJoCo 环境)最常用的算法之一,常配合域随机化实现 sim-to-real 迁移。<a href="../06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html">仿真与强化学习 →</a></div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">31. 人形机器人步态控制中的 ZMP(零力矩点)是指?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 机器人质心的水平投影点</button>
+      <button data-v="B">B. 地面反作用力合力(含摩擦)在地面上的作用点</button>
+      <button data-v="C">C. 踝关节的中心点</button>
+      <button data-v="D">D. 摆动脚落地时的脚尖位置</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:ZMP 是<b>地面反作用力合力(含摩擦力)的作用点</b>,由 Vukobratović 1968 年提出。判稳条件:ZMP 落在支撑多边形内部就不会绕支撑边缘翻转;静止时 ZMP 即质心投影,加速/减速时 ZMP 会偏离质心投影。<a href="../04_升级进阶/02_全身控制与步态规划_WBC与MPC.html">全身控制与步态规划 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">32. 步态控制中「捕获点(Capture Point,CP)」的作用是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 指出把支撑点(落脚点)放到哪里才能让机器人完全停住</button>
+      <button data-v="B">B. 计算电机的最大输出扭矩</button>
+      <button data-v="C">C. 检测机器人与障碍物的距离</button>
+      <button data-v="D">D. 估计电池剩余电量</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:被推一下后,若把落脚点移到捕获点 <b>CP = x + ẋ/ω(ω = √(g/h))</b> 处,机器人就能捕获自身动量、完全停下来。当 CP 超出当前支撑区时踝关节策略失效,须「迈一步」把支撑点放到 CP 下方接住自己。<a href="../04_升级进阶/02_全身控制与步态规划_WBC与MPC.html">全身控制与步态规划 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">33. 现代人形机器人控制栈中,MPC 与 WBC 的正确分工是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. MPC 用全身模型高频解出关节力矩,WBC 用简化模型低频给出期望轨迹</button>
+      <button data-v="B">B. 两者完全等价,只是实现语言不同</button>
+      <button data-v="C">C. MPC 用简化模型(SRBM)低频给出期望轨迹与落点,WBC 用全身模型高频解出关节力矩</button>
+      <button data-v="D">D. WBC 只负责手臂规划,不涉及接触力</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:<b>MPC</b> 用单刚体模型(SRBM)在 30~100Hz 低频滚动优化,决定「该往哪走」(质心/姿态/落点);<b>WBC</b> 用全身动力学 + QP 在 500~1000Hz 高频解出每个关节力矩。上层想得粗看得远,下层想得细看得近。<a href="../04_升级进阶/02_全身控制与步态规划_WBC与MPC.html">全身控制与步态规划 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">34. 步态 MPC 中「单刚体模型(SRBM)」的核心思想是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 把机器人整体当成一块只保留质心平动与姿态转动的刚体,折叠掉关节内部自由度</button>
+      <button data-v="B">B. 把每个关节都建模成独立刚体,精度最高</button>
+      <button data-v="C">C. 只考虑足底的弹性变形</button>
+      <button data-v="D">D. 用神经网络替代全部动力学方程</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:全动力学模型几十个自由度,实时滚动优化太慢。<b>SRBM</b> 把机器人看成一块质量 m、惯量 I 的刚体,假设关节执行够快、内部动量小,只留质心平动与姿态转动两条方程,抓住「接触力如何分配」这一平衡本质。<a href="../04_升级进阶/02_全身控制与步态规划_WBC与MPC.html">全身控制与步态规划 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">35. ROS2 Nav2 导航栈中,AMCL 的作用是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 根据激光扫描与里程计,在已知栅格地图上用粒子滤波估计机器人位姿</button>
+      <button data-v="B">B. 生成全局路径</button>
+      <button data-v="C">C. 控制电机转速</button>
+      <button data-v="D">D. 构建三维点云地图</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:<b>AMCL(自适应蒙特卡洛定位)</b>用粒子滤波,把激光扫描与里程计/IMU 数据融合到已有栅格地图上,估计机器人的位置与朝向,是 Nav2 二维定位的核心;它只做定位,不建图、不规划。<a href="../06_软件与算法/03_ROS2与机器人软件栈.html">ROS2 与机器人软件栈 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">36. Nav2 代价地图(Costmap)中「膨胀半径」的作用是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 决定障碍物向外膨胀多远,在其周围生成代价梯度,让规划器保持安全距离</button>
+      <button data-v="B">B. 决定激光雷达的扫描距离</button>
+      <button data-v="C">C. 决定地图的分辨率</button>
+      <button data-v="D">D. 决定机器人移动的最大速度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:<b>膨胀层</b>在障碍物周围由内向外生成递减的代价(越靠近越危险),膨胀半径即该代价向外传播的最大距离。这样可把机器人当作一个「点」来规划,同时又给它留出与障碍物的安全间距。<a href="../06_软件与算法/03_ROS2与机器人软件栈.html">ROS2 与机器人软件栈 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">37. 点云处理中「体素栅格降采样」的主要目的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 在保持整体形状的前提下大幅减少点数,降低计算量、加速后续处理</button>
+      <button data-v="B">B. 增加点云的点密度,提高细节</button>
+      <button data-v="C">C. 给每个点添加颜色信息</button>
+      <button data-v="D">D. 把点云转换成二维图像</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:<b>体素降采样</b>把空间划分成均匀三维小格(体素),每个体素内用一个代表点(如重心)代替全部点,点数可骤降几十倍、计算量大减,同时保留点云整体几何形状,是配准、建图、SLAM 前的常规预处理。<a href="../06_软件与算法/06_视觉SLAM与状态估计.html">视觉 SLAM 与状态估计 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">38. 相机标定的「内参」通常包括?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 焦距(fx, fy)、主点(cx, cy)与畸变系数</button>
+      <button data-v="B">B. 相机在世界坐标系中的位置与朝向</button>
+      <button data-v="C">C. 激光雷达的外参</button>
+      <button data-v="D">D. 图像的分辨率与帧率</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:<b>内参</b>描述相机自身的成像几何:焦距 fx/fy、主点 cx/cy 构成内参矩阵 K,畸变系数刻画镜头畸变;外参才是相机在世界中的位置与朝向。内参由 Kalibr 或棋盘格标定得到,标定决定系统精度下限。<a href="../06_软件与算法/06_视觉SLAM与状态估计.html">视觉 SLAM 与状态估计 →</a></div>
+  </div>
+
   <!-- ================= 组四 · 前沿与行业 ================= -->
   <h2><span class="h2-num">4</span> 组四 · 前沿与行业</h2>
-  <p class="qz-group-intro">用整机参数与前沿概念检验你对行业现状的了解:自由度、减速比选型、VLA、世界模型、灵巧手与直线执行器。</p>
+  <p class="qz-group-intro">用整机参数与前沿概念检验你对行业现状的了解:自由度、减速比选型、VLA、世界模型、灵巧手、直线执行器,以及力 / 触觉传感。</p>
 
   <div class="quiz">
     <div class="quiz-q">19. 宇树 G1 整机自由度大致在什么范围?</div>
@@ -368,10 +536,34 @@
     <div class="quiz-explain">💡 解析:<b>行星滚柱丝杠</b>将电机旋转运动转化为直线运动,承载力大、寿命长、刚度高,主要用于<b>线性执行器</b>——典型如特斯拉 Optimus 腿部直线关节;而旋转关节(肩、肘、髋等)多用谐波减速器。行业主流方案因此分两派:旋转关节谐波 + 直线关节丝杠的混合方案,以及全准直驱(QDD)方案。<a href="../00_3D解剖/人形机器人解剖式知识可视化.html">3D 解剖 →</a></div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">39. 惠斯通电桥在六维力/力矩传感器中的核心作用是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 把弹性体上应变片微小的电阻变化转换成可测量的差分电压</button>
+      <button data-v="B">B. 为传感器提供供电电源</button>
+      <button data-v="C">C. 直接输出六维力/力矩的数值</button>
+      <button data-v="D">D. 给传感器散热</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:受力时弹性体微米级形变导致贴在其上的应变片电阻极微小变化,<b>惠斯通电桥</b>把这种电阻差转换为差分电压输出,灵敏度高、还能抑制共模干扰与温漂;多组电桥输出再经标定矩阵解耦成 6 个力/力矩分量。<a href="../07_前沿知识库/02_前沿技术专题库.html">前沿技术专题库 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">40. 当前灵巧手触觉传感器最常用的两类传感原理是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 压阻式与电容式(阵列)</button>
+      <button data-v="B">B. 热电偶式与光电式</button>
+      <button data-v="C">C. 超声波式与雷达式</button>
+      <button data-v="D">D. 电磁感应式与机械开关式</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:主流触觉传感器用<b>压阻式</b>(受压改变电阻)、<b>电容式</b>(受压改变极板电容)阵列测接触力与压力分布;另有视触觉(GelSight 类)用相机「看」软胶表面形变。三类共同目标是检测接触、压力与滑动。<a href="../07_前沿知识库/04_灵巧手专题.html">灵巧手专题 →</a></div>
+  </div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 小结 · 如何利用错题复习:</b>
-    把答错的题号记下来,顺着解析中的链接回到对应章节复读一遍,再回来重测一次。建议按「错题 → 回链章节 → 复读 → 重测」的闭环处理,直到该题一次答对。全部 24 题完成后,统计各组正确率:正确率低于 70% 的组就是你的薄弱板块,优先安排该部分的系统复习;高于 70% 的组可以进入下一阶段学习。得分数据仅保存在当前页面,刷新即清零,方便反复自测。
+    把答错的题号记下来,顺着解析中的链接回到对应章节复读一遍,再回来重测一次。建议按「错题 → 回链章节 → 复读 → 重测」的闭环处理,直到该题一次答对。全部 40 题完成后,统计各组正确率:正确率低于 70% 的组就是你的薄弱板块,优先安排该部分的系统复习;高于 70% 的组可以进入下一阶段学习。得分数据仅保存在当前页面,刷新即清零,方便反复自测。
   </div>
 
   <div class="box box-warn">
@@ -399,7 +591,7 @@
 <script>
   /* 自测得分统计:监听整页点击,命中 .quiz-options 内按钮且该题未作答时计分 */
   (function(){
-    var TOTAL = 24;
+    var TOTAL = 40;
     var answered = 0;
     var correct = 0;
 

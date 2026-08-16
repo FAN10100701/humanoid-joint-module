@@ -1,17 +1,13 @@
 /* ============================================================
-   Giscus 评论配置(可选功能,默认关闭)
-   启用步骤:
-   1) 在 GitHub 仓库 Settings → Discussions 开启 Discussions
-   2) 打开 https://giscus.app ,选择你的仓库,生成如下配置
-   3) 把下方 null 换成对象并填 repo/repoId/category/categoryId
-   4) 部署后每个内容页底部会出现"讨论与反馈"评论区
+   Giscus 评论配置(可选功能)
+   已启用(2026-08-16):repoId/categoryId 通过 GitHub API 获取,
+   无需打开 giscus.app 即可工作。
+   前提:仓库已开启 Discussions,且已安装 giscus GitHub App
+   (打开 https://github.com/apps/giscus → Install → 选择本仓库)。
    ============================================================ */
-window.GISCUS_CONFIG = null;
-/* 示例(填好后删掉本注释):
 window.GISCUS_CONFIG = {
   repo: "FAN10100701/humanoid-joint-module",
-  repoId: "R_kgDOxxxx",
-  category: "Announcements",
-  categoryId: "DIC_kwDOxxxx"
+  repoId: "R_kgDOT3gc7A",
+  category: "Ideas",
+  categoryId: "DIC_kwDOT3gc7M4DDgee"
 };
-*/

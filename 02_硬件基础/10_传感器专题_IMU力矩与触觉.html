@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 传感器专题:IMU / 力矩 / 触觉
+  页面 ID: 02-07 | 硬件基础 第 7 页
+  严格遵循 _assets/页面模板.html 的结构与组件类名编写
+  CSS 补充样式一律使用 my- 前缀,避免与全局冲突
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 传感器专题:IMU / 力矩 / 触觉</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(命名带 my- 前缀):用于「选型决策树」视觉 */
+  .my-tree{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+  .my-tree-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .my-tree-node{background:rgba(22,27,34,.8);border:1px solid rgba(59,130,246,.4);border-radius:10px;padding:10px 14px;font-size:13.5px;color:#e6edf3;line-height:1.7}
+  .my-tree-node b{color:#9ecbff}
+  .my-tree-arrow{color:#64748b;font-size:18px;font-weight:700}
+  body[data-theme="light"] .my-tree-node{background:rgba(255,255,255,.7);border-color:rgba(37,99,235,.3);color:#0f172a}
+  body[data-theme="light"] .my-tree-node b{color:#1d4ed8}
+</style>
+<script>
+  /* ============================================================
+     window.PAGE 配置(每页必填)
+     pageId 02-07:硬件基础第 7 页(文件夹编号 10,页面序号 02-07)
+     ============================================================ */
+  window.PAGE = {
+    pageId: "02-07",
+    root: "..",
+    breadcrumb: [
+      { t: "硬件基础", u: "../index.html#sec2" },
+      { t: "传感器专题 · IMU/力矩/触觉" }
+    ],
+    prev: { t: "FOC 驱动器硬件深挖", u: "09_FOC驱动器硬件深挖.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>📡 传感器专题:IMU / 力矩 / 触觉</h1>
+    <div class="sub">关节要「知道自己转了多少、受了多大力、指尖摸到了什么」,靠的是一整套传感器。本页从本体感知(角度/力矩/姿态)讲到外部感知(触觉),再落到选型清单与集成避坑,读完能独立为关节模组拉出一张传感器 BOM。</div>
+    <div class="tags">
+      <span class="tag">IMU / 姿态解算</span>
+      <span class="tag">关节力矩传感器</span>
+      <span class="tag">触觉 / 灵巧手</span>
+      <span class="tag">编码器选型</span>
+      <span class="tag">传感器融合与同步</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出人形机器人的<b>传感器全景图</b>:分清「本体感知」(角度/力矩/姿态)与「外部感知」(视觉/触觉),说出每类传感器的位置、作用与典型接口。<br>
+    2. 能解释 <b>MEMS 加速度计 / 陀螺仪 / 磁力计的原理</b>(质量块电容检测、科里奥利效应、地磁参考),并读懂<b>零偏、噪声密度、量程、温漂</b>四大指标及其对姿态漂移的影响。<br>
+    3. 能对比<b>应变片 / 磁弹式 / 电容式</b>三种力矩传感器原理,说出惠斯通电桥、温补、仪表放大器 + Σ-Δ ADC 的信号调理链,以及<b>关节力矩传感器 vs 电流估计力矩</b>的取舍。<br>
+    4. 能区分<b>压阻 / 电容 / 压电 / 光学(GelSight)</b>四类触觉传感器,并说出它们在灵巧手(Dex3-1、Shadow Hand、Optimus 等)中的角色与滑动检测思路。<br>
+    5. 能按<b>量程 → 精度 → 带宽 → 成本 → 可靠性</b>的顺序,用决策树为关节模组选出一套传感器组合,并写出 1 段 I2C 读取与 1 段姿态融合伪代码。<br>
+    <b>建议用时:</b>约 45 分钟(含完成 7 道自测题)
+  </div>
+
+  <!-- ================= 1. 传感器全景 ================= -->
+  <h2><span class="h2-num">1</span> 传感器全景:人形机器人需要哪些感知</h2>
+  <p>人形机器人的感知可以一刀切成两大类:<b>本体感知(Proprioception)</b>回答「我自己现在是什么状态」,<b>外部感知(Exteroception)</b>回答「外面的世界是什么样、我摸到了什么」。关节模组主要吃的是本体感知,而灵巧手和头部则是外部感知的重灾区。理解这张全景图,是后面每一节选型讨论的地基。</p>
+
+  <h3>1.1 本体感知 vs 外部感知</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>类别</th><th>感知内容</th><th>典型传感器</th><th>典型安装位置</th><th>典型接口</th></tr>
+      <tr>
+        <td rowspan="3"><b>本体感知</b></td>
+        <td>关节角度 / 转速</td>
+        <td>磁编码器(AMR/TMR)、光编码器、旋变</td>
+        <td>电机转子端 / 减速器输出端</td>
+        <td>SPI / ABI / I2C / 旋变信号</td>
+      </tr>
+      <tr>
+        <td>关节力矩 / 六维力</td>
+        <td>应变片式力矩传感器、六维力传感器</td>
+        <td>减速器输出法兰、踝关节、腕部</td>
+        <td>模拟桥 / SPI(Σ-Δ ADC 后)</td>
+      </tr>
+      <tr>
+        <td>躯干姿态 / 角速度 / 加速度</td>
+        <td>IMU(加速度计 + 陀螺仪 + 磁力计)</td>
+        <td>躯干质心、头部、脚掌</td>
+        <td>SPI / I2C</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><b>外部感知</b></td>
+        <td>视觉 / 深度</td>
+        <td>RGB 相机、深度相机、事件相机</td>
+        <td>头部、胸前</td>
+        <td>MIPI / USB / Ethernet</td>
+      </tr>
+      <tr>
+        <td>触觉 / 压力 / 滑觉</td>
+        <td>压阻 / 电容 / 压电 / 光学触觉阵列</td>
+        <td>指尖、指腹、脚掌</td>
+        <td>SPI / I2C / 模拟多路</td>
+      </tr>
+      <tr>
+        <td>听觉 / 距离 / 温度</td>
+        <td>麦克风阵列、ToF、热敏(NTC)</td>
+        <td>头部、壳体、功率器件旁</td>
+        <td>I2S / I2C / ADC</td>
+      </tr>
+    </table>
+  </div>
+  <div class="box box-tip">
+    <b>📐 一个有用的心智模型:</b>把每类传感器看成「<b>被测量 → 物理换能 → 电信号 → 数字化 → 融合</b>」的一条链。选型时先问「我要测什么物理量、量程和带宽是多少」,再问「它输出什么接口、噪声和漂移能否接受」,最后问「它装在哪、怎么标定、怎么和别的传感器对齐时间」。整页内容都围绕这条链展开。
+  </div>
+
+  <!-- ================= 2. IMU 深入 ================= -->
+  <h2><span class="h2-num">2</span> IMU 深入:加速度计、陀螺仪、磁力计与姿态解算</h2>
+  <p>IMU(Inertial Measurement Unit,惯性测量单元)是「姿态感知」的基石,通常把三轴加速度计、三轴陀螺仪集成在一块芯片上,部分还内置三轴磁力计(那时称 9 轴)。它回答的问题是:<b>躯干在空间中的朝向、角速度、加速度是多少</b>——这是全身平衡、步态控制、摔倒检测、头部稳定的输入源头。</p>
+
+  <h3>2.1 三大器件原理:都是 MEMS 微机械结构</h3>
+  <ul>
+    <li><b>① 加速度计(Accelerometer)</b>:核心是一个挂在弹簧上的<b>质量块(proof mass)</b>,两侧是梳齿电容极板。发生加速度时质量块相对极板位移,<b>电容变化 → 电压变化 → 加速度</b>。它测的是<b>比力(specific force)</b>,静止时输出的是重力分量(约 1 g 朝下),所以能反推「哪边是下」,用于俯仰/横滚的长期参考。MEMS 加速度计内部常做「质量块 + 电容检测 + 闭环力平衡」以提高线性度。</li>
+    <li><b>② 陀螺仪(Gyroscope)</b>:靠<b>科里奥利效应(Coriolis effect)</b>。芯片内有一块持续振动的质量块(驱动轴),当载体绕敏感轴旋转时,振动质量块受到垂直于「振动方向 × 旋转轴」的科里奥利力,激发次级振动,再用电容检测这个次级振动幅度,正比于<b>角速度</b>。它测的是「转得多快」,积分后得到角度——高频准、长期漂。</li>
+    <li><b>③ 磁力计(Magnetometer)</b>:测量<b>地磁场</b>(通常用 AMR / 霍尔 / 磁通门原理)得到「哪边是北」,为<b>航向角 yaw</b>提供长期绝对参考(陀螺仪无法从零恢复 yaw,只能靠磁力计或视觉给绝对方向)。缺点是极易受电机、铁磁结构、电流干扰,必须做<b>软铁/硬铁校准</b>。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠ 一句话记住三者分工:</b>加速度计「长期准、高频抖」,陀螺仪「高频准、长期漂」,磁力计「给绝对航向、但怕磁干扰」。姿态解算的本质就是把它们的长处缝合起来——这正是第 2.4 节互补滤波 / Mahony / 卡尔曼要做的事。
+  </div>
+
+  <h3>2.2 IMU 关键指标:零偏、噪声密度、量程、温漂</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>指标</th><th>含义</th><th>典型单位</th><th>对系统的影响</th></tr>
+      <tr><td><b>零偏 / 零位(Bias)</b></td><td>零输入时的输出,不随时间积分会被放大</td><td>dps(陀螺)、mg(加计)</td><td>陀螺零偏直接造成角度随时间线性漂移</td></tr>
+      <tr><td><b>噪声密度(Noise Density)</b></td><td>单位带宽内的随机噪声</td><td>dps/√Hz、µg/√Hz</td><td>乘 √带宽 得 RMS 噪声;决定短时分辨率</td></tr>
+      <tr><td><b>量程(Range)</b></td><td>可测的最大输入</td><td>±125~±2000 dps、±2~±24 g</td><td>量程太大会牺牲分辨率,太小会饱和削顶</td></tr>
+      <tr><td><b>温漂(温漂系数)</b></td><td>零偏/灵敏度随温度的变化</td><td>dps/°C、%/°C</td><td>关节发热导致零偏慢漂,需温度补偿</td></tr>
+      <tr><td><b>偏置不稳定性(Bias Instability)</b></td><td>艾伦方差曲线谷底,长期零偏的「最稳点」</td><td>dps、mg</td><td>决定长时间积分的姿态精度下限</td></tr>
+    </table>
+  </div>
+  <div class="box box-tip">
+    <b>📐 噪声密度 → RMS 噪声换算:</b>RMS 噪声 ≈ 噪声密度 × √(带宽)。例如陀螺噪声密度 <b>0.01 dps/√Hz</b>、带宽 <b>100 Hz</b>,则 RMS 噪声 ≈ 0.01 × 10 = <b>0.1 dps</b>。带宽越窄,噪声越低但响应越慢——「带宽」和「噪声」是同一枚硬币的两面。
+  </div>
+
+  <h3>2.3 常用型号:从无人机 IMU 到机器人 IMU</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>型号</th><th>厂商</th><th>轴数</th><th>亮点(典型值,以手册为准)</th><th>常见接口</th><th>典型场景</th></tr>
+      <tr><td><b>BMI088</b></td><td>Bosch(博世)</td><td>6 轴</td><td>陀螺噪声密度约 0.014 dps/√Hz、量程 ±125~±2000 dps;加速度计噪声约 175 µg/√Hz、量程 ±3~±24 g,抗振好</td><td>SPI</td><td>无人机 / 机器人飞控与姿态</td></tr>
+      <tr><td><b>ICM-42688-P</b></td><td>TDK InvenSense</td><td>6 轴</td><td>低噪声变体,陀螺噪声密度约 0.0018 dps/√Hz、加速度计噪声约 70 µg/√Hz(约)</td><td>SPI / I2C</td><td>高精度姿态、机器人/可穿戴</td></tr>
+      <tr><td><b>MPU-6050</b></td><td>TDK InvenSense</td><td>6 轴</td><td>经典入门款,资料极多,精度一般</td><td>I2C</td><td>教学、原型验证</td></tr>
+      <tr><td><b>LSM6DSO</b></td><td>ST(意法)</td><td>6 轴</td><td>低功耗 + 内嵌机器学习核(MLC),陀螺噪声约 0.004 dps/√Hz(约)</td><td>SPI / I2C</td><td>低功耗、端侧事件检测</td></tr>
+    </table>
+  </div>
+  <div class="box box-warn">
+    <b>⚠ 选型提醒:</b>以上指标为<b>典型值或约值</b>,量产务必以官方数据手册为准。人形机器人对<b>抗振性、零偏稳定性、量程(奔跑/跳跃时角速度可达数百 dps)</b>要求高,推荐优先看 BMI088、ICM-42688-P 这类面向高动态应用的低噪声型号,而不是只看价格最低的消费级型号。
+  </div>
+
+  <h3>2.4 安装位置与减振:IMU 的「位置学」</h3>
+  <ul>
+    <li><b>装在躯干质心附近</b>:躯干是全身姿态的代表点,装得越靠近质心,线加速度耦合越小,姿态解算越干净。头部、脚掌也可各放一颗做「头部稳定」与「触地/步态检测」。</li>
+    <li><b>减振是硬需求</b>:电机振动、关节冲击会以高频噪声形式灌进加速度计。常用<b>硅胶垫、泡棉、弹性柱</b>做隔振,并把 IMU 的固有频率与结构共振错开;减振过度反而会引入低频摆动,需实测权衡。</li>
+    <li><b>远离磁源与电流</b>:磁力计要避开电机永磁体、铁磁外壳和大电流走线;实在躲不开就做<b>软铁/硬铁校准</b>并接受 yaw 在电机工作时不可靠,必要时用视觉/编码器融合补 yaw。</li>
+    <li><b>标定就地做</b>:IMU 焊上 PCB 后零偏会变化,量产要做<b>六面法标定</b>(见下),把零偏和比例因子写回固件。</li>
+  </ul>
+
+  <h3>2.5 数据融合与姿态解算:互补滤波 / Mahony / 卡尔曼</h3>
+  <pre><code>/* ── 互补滤波(最简单):高通陀螺 + 低通加速度计 ── */
+// 陀螺积分提供高频动态;加速度计提供低频重力参考(俯仰/横滚)
+alpha = dt / (RC + dt);            // RC 为互补时间常数,约 0.5~2 s
+pitch = alpha * (pitch + gy * dt) + (1 - alpha) * pitch_accel;
+roll  = alpha * (roll  + gx * dt) + (1 - alpha) * roll_accel;
+// yaw 无法由重力恢复,需另接磁力计/视觉参考,否则长期漂移
+
+/* ── Mahony 滤波(四元数 + PI 反馈,非线性互补) ── */
+// 1) 用当前姿态估计重力方向 v_est,与加速度计测量 v_meas 做叉乘得误差 e
+// 2) 积分误差修正陀螺偏置: bias += Ki * e * dt
+// 3) 修正角速度: omega = gyro + Kp * e + bias
+// 4) 四元数更新: q += 0.5 * q ⊗ omega * dt,再归一化
+// Kp/Ki 决定收敛速度与抗噪;磁力计参与时额外修正 yaw 误差
+
+/* ── 扩展卡尔曼(EKF):最优估计 ── */
+// 状态 x = [q0 q1 q2 q3 | bias_gx bias_gy bias_gz]
+// 预测:由陀螺积分推进四元数(含噪声协方差 Q)
+// 更新:用加速度计(重力方向)+ 磁力计(北向)观测修正(量测协方差 R)</code></pre>
+  <div class="box box-tip">
+    <b>💡 选型建议:</b>初学者/资源紧张用<b>互补滤波或 Mahony</b>(计算量小、易调);对精度和鲁棒性要求高、且有磁干扰与多 IMU 融合需求的,用<b>EKF</b>。无论哪种,陀螺零偏估计都必须在滤波器中一并估计,否则角度会持续漂移。
+  </div>
+
+  <h3>2.6 IMU 校准:六面法 + 艾伦方差</h3>
+  <ul>
+    <li><b>六面法(加速度计/磁力计标定)</b>:把 IMU 分别沿 ±X、±Y、±Z 六个方向静止摆放,采集多组数据,拟合出加速度计的<b>零偏(offset)</b>与<b>比例因子(scale)</b>;磁力计同理,再加<b>硬铁(球心偏移)/软铁(椭球畸变)</b>校准。</li>
+    <li><b>艾伦方差(Allan Variance)</b>:把长时间静止数据按不同平均时间 τ 分组求方差,画出艾伦方差曲线。曲线不同斜率段分别对应<b>角度随机游走(ARW,τ 负斜率段)</b>、<b>偏置不稳定性(谷底)</b>、<b>速率随机游走(τ 正斜率段)</b>——谷底值就是「这颗 IMU 长期零偏到底能稳到什么程度」的天花板。</li>
+    <li><b>陀螺零偏标定</b>:静止采集一段时间求均值即可得到当前零偏;更精细的要标温漂(在温箱里扫温度记录零偏变化,做一阶补偿)。</li>
+  </ul>
+
+  <!-- ================= 3. 力矩传感器 ================= -->
+  <h2><span class="h2-num">3</span> 力矩传感器:从应变片电桥到关节力控</h2>
+  <p>「力控」是人形机器人安全交互、柔顺落地、精细操作的前提——而力控最直接的输入就是<b>关节力矩传感器</b>。它不像编码器测「转了多少」,而是测「输出端真正传递了多大力/力矩」。这一节讲原理、信号链、标定,以及它和「电流估计力矩」的经典对决。</p>
+
+  <h3>3.1 三种原理:应变片 / 磁弹式 / 电容式</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>原理</th><th>物理机制</th><th>精度</th><th>带宽</th><th>成本/体积</th><th>典型应用</th></tr>
+      <tr><td><b>应变片(惠斯通电桥)</b></td><td>弹性体受力变形 → 贴片电阻变化 → 全桥/半桥失衡输出电压</td><td>高</td><td>高(受弹性体谐振限制)</td><td>中 / 需弹性体</td><td>关节力矩、六维力传感器(主流)</td></tr>
+      <tr><td><b>磁弹式(逆磁致伸缩)</b></td><td>轴受力后磁导率变化(Villari 效应)→ 线圈测磁通变化</td><td>中</td><td>高</td><td>中 / 非接触、耐脏</td><td>传动轴/驱动轴非接触扭矩</td></tr>
+      <tr><td><b>电容式</b></td><td>受力位移 → 极板间距/面积变化 → 电容变化</td><td>中高</td><td>中</td><td>较低 / 结构简单</td><td>小型压力/力测量</td></tr>
+    </table>
+  </div>
+  <div class="box box-tip">
+    <b>📐 惠斯通电桥为什么是「全桥」:</b>单个应变片电阻变化极其微弱(微应变级),且受温度影响大。工程上用<b>四片应变片组成全桥(Wheatstone bridge)</b>,两片受拉、两片受压,不仅把信号放大到 mV 级,还能<b>抵消温度引起的共模变化</b>——这是力矩传感器信噪比和温漂表现的关键。
+  </div>
+
+  <h3>3.2 应变片粘贴与温度补偿</h3>
+  <ul>
+    <li><b>粘贴是手艺活</b>:应变片要贴在弹性体<b>应变最大、应力均匀</b>的位置(通常由有限元仿真确定),粘贴层要薄而均匀,气泡、胶层过厚都会引入非线性与漂移。贴完要<b>固化、老化、再标定</b>。</li>
+    <li><b>温补三板斧</b>:① 用<b>自温度补偿应变片</b>(匹配弹性体热膨胀系数);② 用<b>全桥/半桥</b>让温度共模变化相互抵消;③ 外接<b>零漂/温漂补偿网络</b>或固件里做温度查表补偿。</li>
+    <li><b>过载保护</b>:弹性体要设计<b>过载止挡</b>,防止超量程冲击把贴片撕坏或弹性体屈服。</li>
+  </ul>
+
+  <h3>3.3 信号调理:仪表放大器 + Σ-Δ ADC</h3>
+  <pre><code>/* ── 力矩传感器信号链(典型) ── */
+应变片全桥(1~2 mV/V 量级)
+  → 仪表放大器(INA118 / AD8221 等):高共模抑制、低噪声、增益 100~1000×
+  → 低通滤波(RC,滤除电机 PWM 与机械振动高频)
+  → Σ-Δ ADC(ADS1232 / ADS1262 等):24 bit,高分辨率、内置 PGA 与滤波
+  → MCU(SPI 读取)→ 标定矩阵 → 力/力矩输出</code></pre>
+  <p>选择 <b>仪表放大器(instrumentation amplifier)</b>而不是普通运放,是因为它<b>共模抑制比(CMRR)高、输入阻抗大、增益稳定</b>,正好匹配电桥的差分小信号。Σ-Δ ADC 则用「过采样 + 噪声整形」换取 24 bit 级分辨率,代价是<b>输出速率较低</b>(几十到几千 SPS),所以力矩环带宽通常被 ADC 输出速率限制。</p>
+
+  <h3>3.4 标定:加载台 + 串扰补偿</h3>
+  <ul>
+    <li><b>加载台标定</b>:用标定机/砝码在多轴方向施加<b>已知力与力矩</b>,记录传感器各通道输出,拟合出<b>灵敏度矩阵</b>。六维力传感器要做 6 个自由度(x/y/z 力、x/y/z 力矩)的加载与解耦。</li>
+    <li><b>串扰补偿(解耦矩阵)</b>:传感器某一轴受力时,其他轴往往也有微弱输出(串扰)。标定出一个 <b>6×6 解耦矩阵</b>,把原始电压乘矩阵得到真实六维力:<code>F_real = C × (V_measured − V_zero)</code>。这是六维力传感器「准不准」的核心。</li>
+    <li><b>零点与温漂标定</b>:记录不同温度下的零漂,写入补偿表。</li>
+  </ul>
+
+  <h3>3.5 关节力矩传感器 vs 电流估计力矩:一场经典取舍</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>对比维度</th><th>电流估计力矩(τ ≈ Kt × Iq)</th><th>关节力矩传感器</th></tr>
+      <tr><td>原理</td><td>由相电流 × 转矩常数推算,不额外加硬件</td><td>直接测输出端应变/变形</td></tr>
+      <tr><td>成本/体积</td><td>几乎为零(已有电流采样)</td><td>高(传感器 + 弹性体 + 调理 + 标定)</td></tr>
+      <tr><td>精度</td><td>受摩擦、减速比、齿隙、温度影响,误差大</td><td>直接反映输出端真实力矩,精度高</td></tr>
+      <tr><td>带宽</td><td>高(电流环很快)</td><td>受 ADC 输出速率/弹性体谐振限制</td></tr>
+      <tr><td>测量位置</td><td>电机端(不含减速器损耗)</td><td>输出端(含全部传动链,更真实)</td></tr>
+      <tr><td>典型应用</td><td>低成本关节、QDD 直驱(减速比小)</td><td>踝/髋关节力控、腕部六维力、精细操作</td></tr>
+    </table>
+  </div>
+  <div class="box box-warn">
+    <b>⚠ 关键结论:</b>减速比越大、摩擦和齿隙越大,电流估计力矩就越不可信(比如谐波减速器大减速比 + 大摩擦时,电流算出的力矩与输出端真实值差距巨大)。<b>MIT Mini Cheetah 之所以能用电流估计力矩,正是因为它是准直驱(QDD)、减速比极小(约 6:1),摩擦小、反驱好</b>;而需要高精度力控的踝/髋关节、腕部,通常会加关节力矩传感器或六维力传感器。这是「结构决定传感器方案」的典型例子。
+  </div>
+
+  <h3>3.6 人形机器人应用与代表产品</h3>
+  <ul>
+    <li><b>应用位置</b>:踝关节(落地缓冲、ZMP 力控)、髋关节(支撑与摆动相控制)、腕部六维力(装配、拖动示教)、手指力控(抓取力闭环)。</li>
+    <li><b>代表产品(据公开资料,具体参数多未公布)</b>:<b>坤维(KUNWEI)</b>主攻人形机器人<b>六维力传感器</b>,已完成 B+/B++ 轮融资;<b>鑫精诚(深圳市鑫精诚传感)</b>提供六维力传感器与力控系统方案,获深圳国资领投;<b>宇树(Unitree)</b>自研关节力控(机械臂/灵巧手),但具体传感器参数<b>官方未公布</b>。选型时以各家官方规格书为准。</li>
+  </ul>
+
+  <!-- ================= 4. 触觉传感器 ================= -->
+  <h2><span class="h2-num">4</span> 触觉传感器:让指尖「摸得到」</h2>
+  <p>触觉是灵巧手从「能抓」到「抓得巧」的分水岭:抓鸡蛋要控制压力、捏起一张纸要检测滑动、旋螺丝要感知接触位置与法向力。触觉传感器按原理分四类,各有擅长。</p>
+
+  <h3>4.1 四类触觉原理:压阻 / 电容 / 压电 / 光学</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>类型</th><th>原理</th><th>静态力</th><th>动态/滑动</th><th>阵列化</th><th>代表</th></tr>
+      <tr><td><b>压阻式</b></td><td>压力 → 电阻变化(FSR / 压阻弹性体)</td><td>✔ 好</td><td>一般</td><td>易</td><td>FSR 力敏电阻、压阻阵列</td></tr>
+      <tr><td><b>电容式</b></td><td>压力 → 极板间距变化 → 电容变化</td><td>✔ 好</td><td>一般</td><td>易</td><td>电容阵列(高密度、低功耗)</td></tr>
+      <tr><td><b>压电式</b></td><td>形变 → 压电材料(PVDF)产生电荷</td><td>✘(只测变化)</td><td>✔ 极好(高频)</td><td>中</td><td>PVDF 薄膜、滑觉检测</td></tr>
+      <tr><td><b>光学式(视触觉)</b></td><td>相机拍弹性体形变 + 反光涂层,重建三维接触</td><td>✔ 好</td><td>✔ 好</td><td>高(像素级)</td><td>GelSight / GelSlim / DIGIT</td></tr>
+    </table>
+  </div>
+  <div class="box box-tip">
+    <b>💡 GelSight 视触觉原理(约):</b>一块软弹性体(凝胶)表面涂反光涂层,内部相机从下方拍摄。物体压上去时弹性体表面凹陷,相机拍到高分辨率形变图像,通过光度立体/几何重建得到<b>接触面的三维形状、法向力、纹理甚至切向滑动</b>——分辨率可达亚毫米级(相当于一个「会拍照的指尖」)。MIT 于 2009 年前后提出 GelSight,GelSlim、DIGIT 是其后续/开源变体。
+  </div>
+
+  <h3>4.2 阵列化与动态触觉(滑动检测)</h3>
+  <ul>
+    <li><b>阵列化</b>:把触觉单元排成矩阵(如指尖 <b>16×16</b> 等规模,视产品而异),每个单元独立测压力,得到「压力热力图」,用于定位接触点、判断抓取是否居中、检测边缘/纹理。</li>
+    <li><b>动态触觉 / 滑动检测</b>:物体要滑走时,接触面产生<b>高频微振动</b>。压电式天然擅长(只响应变化、带宽高);压阻/电容式则靠<b>对压力信号求导、检测高频分量</b>。检测到滑动就<b>瞬时加大抓力</b>——这是防滑抓取的标准动作。</li>
+    <li><b>与抓取控制闭环</b>:触觉数据 → 力/位置/滑动估计 → 实时调整手指力与位姿 → 稳定抓取。触觉采样率通常要 <b>数百 Hz 以上</b>才能跟上滑觉检测。</li>
+  </ul>
+
+  <h3>4.3 灵巧手上的应用(据公开资料,参数多标「约/官方未公布」)</h3>
+  <ul>
+    <li><b>宇树 Dex3-1</b>:宇树(Unitree)推出的<b>三指力控灵巧手</b>,主打「力控 + 触觉」操作;其同门产品线 Dex5 宣传「单手 20 自由度、94 个灵敏触点」(约,以官方发布为准)。Dex3-1 的具体触觉单元数量与指标<b>官方未系统公布</b>。</li>
+    <li><b>Shadow Hand(Shadow Dexterous Hand)</b>:英国 Shadow Robot 的经典仿人多指灵巧手,指尖可选配 <b>BioTac 触觉传感器</b>(基于流体 + 电极测量压力/振动/温度),是触觉研究的标杆平台。</li>
+    <li><b>特斯拉 Optimus</b>:马斯克公开了 Optimus 灵巧手相关专利(媒体称「上帝之手」专利),涉及<b>指尖触觉传感</b>方向;但<b>官方未公布具体触觉传感器型号与参数</b>,以官方发布为准。</li>
+  </ul>
+
+  <!-- ================= 5. 编码器补充 ================= -->
+  <h2><span class="h2-num">5</span> 编码器补充:磁编码器 vs 光编码器与关节集成要点</h2>
+  <p>编码器是关节里「使用频率最高、却最容易在集成时翻车」的传感器——转子和定子差 0.1 mm 气隙或一点偏心,角度就可能跳变、产生速度毛刺,进而毁掉整个 FOC 闭环。这一节补上磁/光编码器的选型与集成要点(与 <a href="04_硬件设计通用要点_避坑指南.html">避坑指南</a> 的编码器接口部分互补)。</p>
+
+  <h3>5.1 磁编码器(AMR/TMR)vs 光编码器</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>维度</th><th>磁编码器(AMR/TMR)</th><th>光编码器</th></tr>
+      <tr><td>原理</td><td>磁铁旋转 → 磁阻元件(AMR/TMR)感测磁场角度</td><td>LED/激光 + 码盘 + 光电检测</td></tr>
+      <tr><td>绝对式单圈</td><td>天然支持(直接测磁场角度)</td><td>需绝对码道(成本更高)</td></tr>
+      <tr><td>分辨率</td><td>TMR 可达 12~15 bit(AS5047P 14 bit、TLE5012B 15 bit)</td><td>增量可达很高(线数 × 倍频),绝对值也高</td></tr>
+      <tr><td>抗污/抗油</td><td>✔ 好(非接触、不怕油污)</td><td>✘ 差(怕灰尘/油污遮光)</td></tr>
+      <tr><td>体积/成本</td><td>小、便宜,关节主流</td><td>较大、较贵</td></tr>
+      <tr><td>温度/磁场干扰</td><td>受强外磁场、温漂影响</td><td>基本不受磁干扰</td></tr>
+    </table>
+  </div>
+  <div class="box box-tip">
+    <b>💡 AMR vs TMR:</b>都是磁阻效应,<b>AMR(各向异性磁阻)</b>灵敏度较低、常用于低成本; <b>TMR(隧穿磁阻)</b>灵敏度高、温度稳定性更好、可做更高分辨率,是当前高精度关节磁编码器的主流(如 TLE5012B、MT6701 等)。
+  </div>
+
+  <h3>5.2 绝对式单圈与多圈方案</h3>
+  <ul>
+    <li><b>绝对式单圈</b>:上电即知当前角度(0~360°),无需回零。关节模组强烈建议选绝对式,省去每次上电找零的麻烦。</li>
+    <li><b>多圈方案</b>:① <b>电池保持计数</b>(断电后靠电池继续计数,最常用);② <b>齿轮减速 + 磁编码器</b>(机械多圈,纯机械、无电池);③ <b>游标/双编码器</b>(两个不同极对数组合解算多圈);④ 软件记录 + 绝对单圈(配合断电不动的关节)。人形关节通常<b>单圈绝对式 + 上电回零/限位</b>即可满足,多圈需求看应用。</li>
+  </ul>
+
+  <h3>5.3 编码器在关节里的集成要点(偏心、气隙)</h3>
+  <ul>
+    <li><b>气隙(Air Gap)</b>:磁编码器要求磁铁与芯片保持手册规定的气隙(常见 0.5~2 mm 量级)。气隙过大信号弱、噪声大;过小可能撞磁/非线性。安装公差要按手册留。</li>
+    <li><b>偏心(Eccentricity)</b>:磁铁轴心、芯片中心、旋转轴三者必须<b>尽量同心</b>。偏心会引入角度误差的<b>一次谐波</b>,表现为速度周期性波动。高精度场合要做<b>偏心标定/谐波补偿</b>。</li>
+    <li><b>磁铁与芯片对准</b>:径向磁化磁铁要让磁场穿过芯片敏感方向;芯片下方避免铁磁体/大电流走线干扰。</li>
+    <li><b>信号完整性</b>:SPI 走线短、串阻尼电阻、远离三相线与 PWM 节点(避坑指南已详述)。</li>
+  </ul>
+
+  <!-- ================= 6. 传感器融合与同步 ================= -->
+  <h2><span class="h2-num">6</span> 传感器融合与同步:时间、外参、总线与噪声</h2>
+  <p>单颗传感器再准,也只是「孤证」。真正的问题在于:力矩、角度、IMU、触觉、视觉这些数据<b>必须在同一个时间基准上对齐</b>,否则融合算法拿到的是「不同时刻的切片」,会引入致命误差。</p>
+
+  <h3>6.1 多传感器时间同步</h3>
+  <ul>
+    <li><b>时间戳(Time-stamping)</b>:每个传感器采样打上统一时钟的时间戳(如 MCU 定时器计数 / PTP 时间),融合时按时间戳插值对齐。</li>
+    <li><b>同步触发</b>:用一根硬件同步线(或 PPS 脉冲)让多传感器<b>同时采样</b>,避免逐传感器轮询造成的相位差。</li>
+    <li><b>网络时钟同步</b>:分布式(EtherCAT/CAN/以太网)系统用 <b>PTP/gPTP</b> 把各节点时钟同步到亚微秒级,视觉与关节数据才能对齐。</li>
+  </ul>
+
+  <h3>6.2 外参标定</h3>
+  <ul>
+    <li><b>手眼标定(Hand-Eye)</b>:标定相机与机械臂末端/关节之间的刚体变换(旋转 + 平移),用 AX = XB 或 Tsai 等方法。</li>
+    <li><b>IMU-相机外参</b>:标定 IMU 与相机的时间偏置与空间位姿,是视觉惯性里程计(VIO)的前提。</li>
+    <li><b>关节零位/力矩零点</b>:编码器零位与力矩传感器零点要在整机装配后重新标定。</li>
+  </ul>
+
+  <h3>6.3 CAN / SPI / I2C 总线布局</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>总线</th><th>特点</th><th>典型用途</th><th>布局要点</th></tr>
+      <tr><td><b>CAN / CAN-FD</b></td><td>差分、抗干扰强、多主、带仲裁</td><td>关节间、整机骨干通信</td><td>两端 120 Ω 终端电阻,双绞/屏蔽,分支要短</td></tr>
+      <tr><td><b>SPI</b></td><td>高速、点对点为主</td><td>磁编码器、IMU、Σ-Δ ADC</td><td>走线短、等长、串阻尼电阻、远离功率区</td></tr>
+      <tr><td><b>I2C</b></td><td>两线、多从机、速度低</td><td>低速率传感器(温湿度、低端编码器)</td><td>上拉电阻匹配、注意总线电容与地址冲突</td></tr>
+    </table>
+  </div>
+
+  <h3>6.4 供电与噪声:ADC 参考与滤波</h3>
+  <ul>
+    <li><b>ADC 参考要干净</b>:力矩/触觉这类微弱模拟信号,ADC 的<b>参考电压(Vref)</b>必须低噪声、低漂移,并与数字电源隔离(磁珠/独立 LDO);否则 ADC 读数随负载抖动。</li>
+    <li><b>差分 + 屏蔽</b>:小信号用差分走线、包地,远离 PWM/开关节点;必要时用屏蔽线。</li>
+    <li><b>滤波分层</b>:模拟端 RC 低通滤高频,数字端再做平均/陷波(如陷掉 PWM 频率及其谐波);滤波器截止频率要与控制环带宽匹配,避免把有用信号也滤掉。</li>
+    <li><b>I2C 读取示例(读磁编码器原始角度)</b>:</li>
+  </ul>
+  <pre><code>/* ── I2C 读取 AS5600 磁编码器原始角度(12 bit,地址 0x36) ── */
+// 寄存器 0x0C(高字节)/ 0x0D(低字节)存 RAW ANGLE
+uint8_t reg = 0x0C;
+uint8_t buf[2] = {0};
+// 1) 写寄存器指针
+Wire.beginTransmission(0x36);
+Wire.write(reg);
+Wire.endTransmission(false);        // 不产生 STOP,继续读
+// 2) 读 2 字节
+Wire.requestFrom(0x36, (uint8_t)2);
+buf[0] = Wire.read();
+buf[1] = Wire.read();
+uint16_t raw = (buf[0] << 8) | buf[1];      // 0~4095
+float angle_deg = raw * 360.0f / 4096.0f;   // 换算成角度</code></pre>
+
+  <!-- ================= 7. 选型指南 ================= -->
+  <h2><span class="h2-num">7</span> 选型指南:如何为关节模组选传感器</h2>
+  <p>选型的坑不在「不知道该选什么」,而在「<b>跳过量程和带宽,直接看价格和精度</b>」。下面这套决策树按「量程 → 精度 → 带宽 → 成本 → 可靠性」的顺序,给出一张可执行的清单。</p>
+
+  <div class="my-tree">
+    <div class="my-tree-row">
+      <div class="my-tree-node"><b>① 量程够不够?</b><br>关节角度 0~360°(绝对式);力矩按峰值负载 × 1.5~2 留余量;IMU 角速度要覆盖奔跑/跳跃(数百 dps);触觉压力覆盖轻触~硬捏。</div>
+      <div class="my-tree-arrow">→</div>
+      <div class="my-tree-node"><b>② 精度/分辨率?</b><br>角度 12 bit(0.088°)以上,高精度力控上 14 bit;力矩看力控环需求;姿态看零偏与噪声密度。</div>
+      <div class="my-tree-arrow">→</div>
+      <div class="my-tree-node"><b>③ 带宽?</b><br>电流/姿态采样 kHz 级;力矩环受 ADC 输出速率限制(几十~几百 Hz);触觉滑觉需数百 Hz 以上。</div>
+    </div>
+    <div class="my-tree-row">
+      <div class="my-tree-node"><b>④ 成本/体积?</b><br>磁编码器 &lt; 光编码器;电流估计力矩「免费」但精度低;力矩传感器贵但换力控精度。</div>
+      <div class="my-tree-arrow">→</div>
+      <div class="my-tree-node"><b>⑤ 可靠性/环境?</b><br>抗振、抗油污(选磁)、温度漂移、电磁干扰、寿命;标定与装配公差要可量产。</div>
+      <div class="my-tree-arrow">→</div>
+      <div class="my-tree-node"><b>⑥ 集成与同步?</b><br>接口(CAN/SPI/I2C)、时间同步、外参标定、供电与 ADC 参考——都对齐才算选完。</div>
+    </div>
+  </div>
+
+  <h3>7.1 关节模组传感器选型清单(示例)</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>需求</th><th>推荐方案</th><th>关键参数(约)</th><th>接口</th></tr>
+      <tr><td>转子角度(绝对式单圈)</td><td>磁编码器 TMR(AS5047P / MT6701 / TLE5012B)</td><td>12~15 bit,气隙 0.5~2 mm</td><td>SPI / ABI / I2C</td></tr>
+      <tr><td>躯干姿态</td><td>BMI088 / ICM-42688-P 六轴 IMU</td><td>陀螺噪声 ≤0.01 dps/√Hz、量程 ±2000 dps</td><td>SPI</td></tr>
+      <tr><td>关节力矩(力控)</td><td>应变片关节力矩传感器 / 六维力传感器</td><td>量程按峰值 ×1.5~2,24 bit Σ-Δ ADC</td><td>模拟桥 → SPI</td></tr>
+      <tr><td>低成本力矩(可接受误差)</td><td>电流估计力矩(QDD / 小减速比)</td><td>依赖 Kt 与摩擦模型标定</td><td>已有电流采样</td></tr>
+      <tr><td>指尖触觉</td><td>压阻/电容阵列 或 GelSight 视触觉</td><td>阵列 16×16(约)、采样 ≥数百 Hz</td><td>SPI / I2C</td></tr>
+      <tr><td>滑觉检测</td><td>压电(PVDF)或视触觉动态通道</td><td>高频响应、对变化敏感</td><td>模拟/数字</td></tr>
+    </table>
+  </div>
+  <div class="box box-warn">
+    <b>⚠ 常见翻车点:</b>① 选了增量式编码器又不想每次上电回零 → 换绝对式;② 大减速比却指望电流估计力矩做力控 → 加力矩传感器;③ IMU 直接硬装在电机旁不隔振 → 姿态噪声爆表;④ 力矩/触觉的 ADC 参考接在数字电源上 → 读数随 PWM 抖动;⑤ 多传感器时间戳没对齐 → 融合算法输出「错位」结果。
+  </div>
+
+  <!-- ================= 8. 小结与思考 ================= -->
+  <h2><span class="h2-num">8</span> 小结与思考</h2>
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>人形机器人的感知分为<b>本体感知(角度/力矩/姿态)</b>与<b>外部感知(视觉/触觉)</b>,关节模组主要靠编码器 + 力矩传感器 + IMU。IMU 的加速度计(重力长期参考)、陀螺仪(科里奥利效应、高频准)与磁力计(绝对航向)各司其职,靠<b>互补滤波/Mahony/卡尔曼</b>融合;选型看<b>零偏、噪声密度、量程、温漂</b>,校准靠六面法与艾伦方差。力矩传感器主流是<b>应变片惠斯通电桥</b>,经仪表放大器 + Σ-Δ ADC 调理、加载台标定 + 串扰解耦;它比电流估计力矩更准但更贵,减速比越大越值得上。触觉四类(压阻/电容/压电/光学 GelSight)各有分工,滑觉检测靠动态信号。最后,<b>时间同步、外参标定、总线布局与干净供电</b>是把「一堆传感器」变成「一套感知系统」的最后一步。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 一颗陀螺仪零偏 0.05 dps,只靠它积分 10 分钟,角度会漂多少度?为什么必须引入加速度计/磁力计参考?<br>
+    2. 同一个关节,用「1:6 准直驱 + 电流估计力矩」和「1:100 谐波减速器 + 电流估计力矩」,哪个力控误差更大?为什么?<br>
+    3. 为什么压电式触觉「测不出静态压力」却非常适合滑觉检测?如果要同时测静态压力和滑动,你会怎么组合传感器?
+  </div>
+
+  <!-- ================= 9. 自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 【陀螺仪原理】MEMS 陀螺仪测量角速度的核心物理效应是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 压电效应</button>
+      <button data-v="B">B. 科里奥利效应</button>
+      <button data-v="C">C. 霍尔效应</button>
+      <button data-v="D">D. 逆磁致伸缩效应</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:MEMS 陀螺仪内部质量块持续振动,载体旋转时振动质量块受到垂直于振动方向与旋转轴的科里奥利力,激发次级振动,其幅度正比于角速度。压电效应常用于压电触觉,霍尔效应用于磁力计/电流检测,逆磁致伸缩是磁弹式力矩传感器原理。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 【指标理解】陀螺仪「零偏」直接导致的后果是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 角度随时间线性漂移</button>
+      <button data-v="B">B. 只能测加速度不能测角速度</button>
+      <button data-v="C">C. 量程变小</button>
+      <button data-v="D">D. 采样率下降</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:零偏是零输入时的非零输出,对陀螺仪而言,把零偏当角速度积分,角度会随时间线性漂移。这正是姿态解算必须同时估计并补偿陀螺零偏的原因。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 【力矩传感器】应变片式力矩传感器为什么常采用「四片全桥(惠斯通电桥)」?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 为了把传感器做得更小</button>
+      <button data-v="B">B. 为了测量角度</button>
+      <button data-v="C">C. 放大差分信号并抵消温度共模变化</button>
+      <button data-v="D">D. 为了直接输出数字信号</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:全桥用两片受拉、两片受压,既把微弱的电阻变化放大为 mV 级差分电压,又能抵消温度引起的共模变化,显著改善信噪比与温漂表现。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 【姿态融合】互补滤波中,加速度计与陀螺仪分别承担什么角色?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 都是低通滤波</button>
+      <button data-v="B">B. 都是高通滤波</button>
+      <button data-v="C">C. 加速度计高通、陀螺仪低通</button>
+      <button data-v="D">D. 加速度计低通、陀螺仪高通</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:陀螺仪积分高频准但长期漂,取「高通」部分;加速度计长期准但高频抖,取「低通」部分。两者互补叠加,得到既跟得上动态又长期不漂的姿态。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 【触觉原理】GelSight 这类「视触觉传感器」的本质是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 用电容阵列测压力</button>
+      <button data-v="B">B. 用相机拍摄弹性体形变,重建三维接触</button>
+      <button data-v="C">C. 用压电薄膜测振动</button>
+      <button data-v="D">D. 用霍尔元件测磁场</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:视触觉 = 相机 + 软弹性体(表面反光涂层)。物体压上时弹性体形变,相机拍到高分辨率形变图像,重建接触面三维形状、法向力甚至纹理滑动,分辨率可达亚毫米级。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 【编码器】关于磁编码器 AMR 与 TMR,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. AMR 灵敏度高于 TMR</button>
+      <button data-v="B">TMR 无法用于绝对式角度测量</button>
+      <button data-v="C">TMR 灵敏度更高、温度稳定性更好,是高精度磁编码器主流</button>
+      <button data-v="D">光编码器比磁编码器更抗油污</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:TMR(隧穿磁阻)比 AMR(各向异性磁阻)灵敏度高、温度稳定性好、可做更高分辨率,是高精度关节磁编码器主流(如 TLE5012B、MT6701)。磁编码器非接触、抗油污,而光编码器怕灰尘/油污遮光。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 【力控取舍】大减速比(如 1:100 谐波)关节若只用「电流估计力矩」做力控,主要问题是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 摩擦/齿隙/减速比被忽略,误差大</button>
+      <button data-v="B">B. 电流环带宽过高</button>
+      <button data-v="C">C. 无法测量角度</button>
+      <button data-v="D">D. 无法测量温度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电流估计力矩 τ ≈ Kt × Iq 只反映电机端电磁转矩,不含减速器的摩擦、齿隙与减速比,大减速比下输出端真实力矩与估计值差距巨大。需要高精度力控时应加关节力矩传感器或六维力传感器。</div>
+  </div>
+
+  <!-- ================= 10. 参考资料 ================= -->
+  <h2><span class="h2-num">10</span> 参考资料</h2>
+  <p style="color:#9aa4b2;font-size:13px">本页关键事实经 web_search 核实;型号指标多为典型值/约值,量产以官方数据手册为准。<b>资料整理更新至 2026-08</b>。</p>
+  <ul>
+    <li><a href="https://www.bosch-sensortec.com/products/motion-sensors/imus/bmi088/" target="_blank" rel="noopener">Bosch Sensortec · BMI088 官方产品页</a>(六轴 IMU 数据手册,量程/噪声指标)</li>
+    <li><a href="https://product.tdk.com/en/search/sensor/mortion-inertial/imu/info?part_no=ICM-42688-P" target="_blank" rel="noopener">TDK InvenSense · ICM-42688-P 官方产品页</a>(低噪声六轴 IMU)</li>
+    <li><a href="https://www.arrow.de/research-and-events/articles/bosch-bmi088-high-performance-inertial-measurement-unit" target="_blank" rel="noopener">Arrow · Bosch 高性能 IMU BMI088 介绍</a>(无人机/机器人 IMU 应用)</li>
+    <li><a href="https://docs.simplefoc.com/sensors" target="_blank" rel="noopener">SimpleFOC · Position Sensors(官方文档)</a>(支持的磁编码器/传感器列表)</li>
+    <li><a href="https://robotsguide.com/robots/minicheetah" target="_blank" rel="noopener">ROBOTS Guide · MIT Mini Cheetah</a>(准直驱 QDD 关节与单编码器方案背景)</li>
+    <li><a href="https://news.pedaily.cn/20260327/126468.shtml" target="_blank" rel="noopener">投资界 · 坤维科技 B+ 轮融资</a>(人形机器人六维力传感器方向)</li>
+    <li><a href="https://www.xjc18.com/CompanyNews/3454.html" target="_blank" rel="noopener">鑫精诚传感器 · 六维力传感器核心技术</a>(力传感器/力控方案)</li>
+    <li><a href="https://www.leaderobot.com/news/5205" target="_blank" rel="noopener">Leaderobot · 鑫精诚传感器首轮融资(深圳国资领投)</a>(力控系统解决方案)</li>
+    <li><a href="https://www.unitree.com/cn/Dex3-1" target="_blank" rel="noopener">宇树 Unitree · Dex3-1 力控灵巧手</a>(三指力控灵巧手)</li>
+    <li><a href="https://www.163.com/dy/article/JS2Q5RC50511B8LM.html" target="_blank" rel="noopener">网易 · 宇树发布 Dex5 灵巧手(单手 20 自由度、94 个灵敏触点)</a>(触觉触点数量,约)</li>
+    <li><a href="https://www.shadowrobot.com/wp-content/uploads/2022/03/shadow_dexterous_hand_e_technical_specification.pdf" target="_blank" rel="noopener">Shadow Robot · Shadow Dexterous Hand 技术规格</a>(灵巧手 + BioTac 触觉)</li>
+    <li><a href="https://ar5iv.labs.arxiv.org/html/2509.02478" target="_blank" rel="noopener">arXiv · Classification of Vision-Based Tactile Sensors(综述)</a>(GelSight 等视触觉传感器原理与分类)</li>
+    <li><a href="https://knowledge.hket.com/article/4117549/" target="_blank" rel="noopener">香港经济日报 · 马斯克公开 Optimus「上帝之手」专利</a>(Optimus 灵巧手触觉专利方向,官方参数未公布)</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

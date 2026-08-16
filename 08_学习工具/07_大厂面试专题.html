@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 大厂面试专题</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(命名加 my- 前缀,避免与全局冲突) */
+  .my-fw{border-left:3px solid #22c55e;background:rgba(34,197,94,.06);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:13.5px;line-height:1.9;color:#aab8c8}
+  .my-fw b{color:#86efac}
+  .my-sub{font-size:13.5px;color:#9aa4b2;margin:6px 0 10px}
+  .my-check li{margin:5px 0}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-07",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "大厂面试专题" } ],
+    prev: { t: "学习地图", u: "06_学习地图.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>💼 大厂面试专题:机器人 / 具身智能岗位</h1>
+    <div class="sub">面向「机器人控制 / 电机驱动 / ROS / 具身智能算法」求职者:岗位地图、六大专题高频问答题、项目深挖题、场景开放题、手撕题与答题方法论,一套页把面试从「临时抱佛脚」变成「有框架地输出」。</div>
+    <div class="tags">
+      <span class="tag">面试求职</span>
+      <span class="tag">FOC 电机驱动</span>
+      <span class="tag">控制算法</span>
+      <span class="tag">ROS2</span>
+      <span class="tag">具身智能</span>
+    </div>
+  </div>
+
+  <!-- ================= 本页目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页目标</div>
+    1. 能画出机器人 / 具身智能五类岗位地图,说出各自的技能树与典型面试轮次<br>
+    2. 能对六大专题(电机驱动 / 机械传动 / 控制 / ROS2 / 感知规划 / 具身智能)的 20+ 高频问答题给出「框架化参考回答要点」<br>
+    3. 掌握流程题、项目深挖题、场景开放题的回答套路(拆解 → 决策点 → 验证),并会用 STAR 法则讲项目<br>
+    <b>建议用时:</b>约 50~60 分钟(含 8 道自测)
+  </div>
+
+  <!-- ================= 1. 岗位地图 ================= -->
+  <h2><span class="h2-num">1</span> 岗位地图:五类岗位、技能树与面试轮次</h2>
+  <p>人形机器人 / 具身智能公司(宇树、智元、小鹏、小米、特斯拉、Figure、星动纪元、松延动力等)的校招与社招岗位,大体可归为五类。先看清「自己投的是哪一类」,面试准备才有靶子——不同岗位的深挖方向完全不同。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>岗位分类</th><th>核心技能树</th><th>典型面试轮次</th></tr>
+    <tr>
+      <td><b>嵌入式 / 电机驱动</b></td>
+      <td>MCU(STM32G4 等)、C 语言、FOC 与三环、电力电子(MOS / 栅极驱动 / 电流采样)、编码器、CAN / EtherCAT、示波器调试</td>
+      <td>电话面(C/嵌入式基础)→ 技术面(FOC 深挖 + 硬件题)→ 项目深挖(调过什么板)→ HR</td>
+    </tr>
+    <tr>
+      <td><b>机器人控制算法</b></td>
+      <td>控制理论(PID / 前馈 / MPC / LQR)、运动学动力学、力控与阻抗控制、WBC / 轨迹规划、Simulink / MuJoCo</td>
+      <td>技术面(推公式)→ 手撕(矩阵 / 动力学 / 差分)→ 项目深挖(整机调参)→ HR</td>
+    </tr>
+    <tr>
+      <td><b>ROS / 系统集成</b></td>
+      <td>ROS2(话题 / 服务 / 动作 / TF)、DDS / QoS、硬件接口与总线、Linux、部署与调试、行为树</td>
+      <td>电话面(Linux / ROS 基础)→ 技术面(ROS2 概念 + 工程题)→ 项目(集成过什么平台)→ HR</td>
+    </tr>
+    <tr>
+      <td><b>感知 / 规划</b></td>
+      <td>视觉与 SLAM、点云处理、相机标定、路径规划(A* / RRT)、深度学习、PCL / OpenCV</td>
+      <td>技术面(算法推导)→ 手撕(数据结构 / 图搜索 / LeetCode)→ 项目(跑过什么 SLAM)→ HR</td>
+    </tr>
+    <tr>
+      <td><b>具身智能算法</b></td>
+      <td>强化学习 / 模仿学习、VLA、世界模型、sim2real、PyTorch / Isaac Lab / MuJoCo、数据处理</td>
+      <td>电话面(ML / RL 基础)→ 技术面(VLA / RL 原理)→ 项目深挖(训过什么策略)→ 手撕(概率 / 优化 / LeetCode)→ HR</td>
+    </tr>
+  </table></div>
+
+  <div class="box box-tip"><b>💡 通用轮次规律:</b>大厂技术岗常见 3~5 轮。<b>电话面</b>一般 20~40 分钟,考基础与简历真实性;<b>技术面</b>考原理 + 手撕;<b>项目深挖(交叉面)</b>围绕简历项目问「为什么这么做、踩了什么坑、数据如何」;<b>HR 面</b>考动机、稳定性、薪酬。电机驱动与控制岗最看重<b>公式能不能现场推</b>,具身智能岗最看重<b>项目有没有真跑通</b>。</div>
+
+  <!-- ================= 2. 高频问答题 ================= -->
+  <h2><span class="h2-num">2</span> 高频问答题(六大专题 · 每题带参考回答要点)</h2>
+  <p class="my-sub">点击问题展开参考回答。回答时记住原则:<b>先给结论 → 再讲机制 → 最后落到「对机器人关节意味着什么」</b>,比背定义更能拿分。下面每题先写「一句话结论」,再列展开要点。</p>
+
+  <h3>2.1 电机驱动</h3>
+
+  <details class="faq">
+    <summary>Q1 FOC 为什么用双环 / 三环?各环之间什么关系?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>因为电机是「转矩 → 加速度 → 速度 → 位置」的积分链,每层物理量用一个环去控制,环环嵌套。<br><br>
+      <b>要点:</b>① 从内到外依次是<b>电流环 → 速度环 → 位置环</b>;② 电流环直接控制绕组电流(≈直接控电磁转矩),速度环输出电流指令,位置环输出速度指令;③ 外环把内环「当理想执行器」用,因此<b>外环带宽必须显著低于内环</b>(通常差 5~10 倍),否则内外耦合会振荡;④ 双环(电流+速度)用于扭矩/速度模式,三环再加位置模式——人形关节常三环齐用。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q2 为什么电流环是最快的环?带宽大概多少?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>电流环控的是电气量,时间常数最小,所以带宽最高。<br><br>
+      <b>要点:</b>① 电流环的时间常数由电机<b>电气时间常数 L/R</b> 决定,典型毫秒级;速度环由机械时间常数 J/B 决定,几十毫秒以上,位置环更慢;② 电流环采样频率最高(典型 10~40kHz),速度环 1~5kHz,位置环 1kHz 左右;③ 电流环带宽可达数百 Hz~1kHz+,速度环通常几十 Hz,位置环几 Hz~十几 Hz;④ <b>内环快才能给外环提供「近似理想的力矩源」</b>,这是整个三环能稳定的前提。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q3 Clark / Park 变换的推导直觉是什么?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>把三相正弦交流量「换到转子上看」,变成两个直流分量,从而能用 PI 控制器无静差控制。<br><br>
+      <b>要点:</b>① <b>Clark</b>:三相 abc(相差 120°)投影到两相正交 αβ 静止坐标系,减少一维冗余(幅值不变或功率不变两种约定);② <b>Park</b>:αβ 静止坐标系乘旋转矩阵 R(θ)转到随转子旋转的 dq 坐标系,d 轴对齐转子磁场(直轴 / 励磁),q 轴正交(交轴 / 转矩);③ 变换后三相正弦量变成<b>两个直流分量</b> Id、Iq,直流量的 PI 控制没有稳态相位误差;④ Id 控励磁(d 轴电流常设 0 或 MTPA),Iq 控转矩,实现励磁与转矩<b>解耦</b>;⑤ 逆变换(SVPWM)把 dq 电压送回三相占空比。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q4 SVPWM 与 SPWM 有什么区别?为什么 FOC 用 SVPWM?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>SVPWM 把三相合成电压当作「旋转电压矢量」用伏秒平衡合成,母线电压利用率比 SPWM 高约 15%,谐波更优。<br><br>
+      <b>要点:</b>① SPWM 是三相各自与三角载波比较,相电压幅值最高只能到 Vdc/2,线电压利用率约 86.6%;② SVPWM 用 6 个基本电压矢量(6 个扇区)+ 2 个零矢量,按伏秒平衡合成任意旋转矢量,相电压幅值可达 Vdc/√3,利用率高约 15.5%;③ SVPWM 谐波更小、开关损耗更可控;④ 所以 FOC 标准输出调制用 SVPWM(或等价的空间矢量实现)。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q5 编码器有哪些类型?关节里怎么选型?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>先分「增量 / 绝对」,再按「磁 / 光 / 旋变」与接口、环境选。<br><br>
+      <b>要点:</b>① <b>增量式</b>(ABZ):便宜、结构简单,但上电要回零,丢步会累积;② <b>绝对式</b>(单圈 / 多圈):上电即知绝对位置,免回零,人形关节首选;③ 按原理:<b>磁编码器</b>(AS5047P / MT6816 / TLE5012B)抗油污、便宜、分辨率中高,关节主流;<b>光电编码器</b>分辨率与精度最高,但怕油污;<b>旋变(Resolver)</b>抗振抗高温,汽车 / 重工业用;④ 选型维度:分辨率 / 精度、绝对 or 增量、接口(SPI / ABI / BISS / SSI / 模拟)、环境(油污、温度、振动)、成本;⑤ 人形关节常用<b>双编码器</b>:电机端磁编码器跑 FOC,输出端编码器消除减速器误差。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q6 编码器 / 通信为什么用差分信号?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>差分靠「两根线同时受到同样的噪声、接收端做差」把共模噪声抵消掉,抗干扰能力强。<br><br>
+      <b>要点:</b>① 差分对(RS422 / LVDS / 差分时钟)利用<b>共模抑制</b>——电磁噪声同时耦合到两线上,接收端相减即消除;② 电机驱动板 PWM 开关噪声极大,单端信号易被误触发,高速编码器(ABI 数 MHz 或 BISS/SSI 时钟)尤其需要差分;③ 差分允许更长线缆、更好信号完整性;④ 典型:ABZ 走 RS422 差分,时钟 / 数据走 LVDS。
+    </div>
+  </details>
+
+  <h3>2.2 机械 / 传动</h3>
+
+  <details class="faq">
+    <summary>Q7 谐波 vs 行星 vs 摆线(RV)怎么对比选型?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>谐波「零背隙 + 大减速比」、行星「反驱透明 + 便宜」、RV/摆线「刚度大 + 承载大」,各取所需。<br><br>
+      <div class="table-wrap"><table>
+        <tr><th>指标</th><th>谐波</th><th>行星</th><th>RV / 摆线</th></tr>
+        <tr><td>减速比(单级)</td><td>30~160</td><td>3~10</td><td>30~200+</td></tr>
+        <tr><td>背隙</td><td>≈0(零背隙)</td><td>有,多级累积</td><td>极低</td></tr>
+        <tr><td>刚度</td><td>中(柔轮弹性)</td><td>中</td><td>高</td></tr>
+        <tr><td>反驱透明度</td><td>一般</td><td>好(准直驱首选)</td><td>一般</td></tr>
+        <tr><td>成本 / 重量</td><td>较高 / 轻</td><td>低 / 轻</td><td>高 / 重</td></tr>
+      </table></div>
+      <b>落点:</b>轻载高精度旋转关节(肩 / 肘 / 髋)用小谐波;追求力控 / 冲击鲁棒的用行星准直驱(QDD,如 CyberGear 3.5:1);重载底座 / 大关节用 RV。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q8 减速器背隙(回差)怎么测?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>固定一端,在另一端正反加载,测输出轴转角差即背隙(单位弧分)。<br><br>
+      <b>要点:</b>① 常用法:锁住输入轴,给输出轴施加正、反向小额定扭矩,用高精度角度传感器(光栅 / 编码器)测两次位置差,即回差;② 等价法:锁输出、正反转输入,测得输入转角除以减速比;③ 工业上专用<b>回差检测仪</b>测「加载-卸载」滞回曲线;④ 人形关节一般要求背隙 ≤1 弧分(约),谐波接近 0;⑤ 背隙过大导致换向冲击、末端定位误差与抖动。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q9 减速比与输出扭矩、负载惯量是什么关系?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>理想下 τ_out = τ_in × i × η,ω_out = ω_in / i;负载惯量折合到电机端按 i² 缩小。<br><br>
+      <b>要点:</b>① 减速比 i 越大,输出扭矩越大、输出转速越低(功率不变,损失在效率 η);② 负载惯量 J_load 折合到电机端为 J_eff = J_load / i²,减速器让负载「看起来更轻」,更易控制;③ 但 i 过大→反驱透明度变差、摩擦与背隙放大、带宽受限;④ 选型是「扭矩够不够」与「反驱 / 带宽要不要」的权衡。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q10 丝杠和皮带(同步带)怎么选?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>丝杠「精度高、刚度大、承载力大」,皮带「长行程、高速、低成本低惯量」,看需求取舍。<br><br>
+      <b>要点:</b>① <b>丝杠</b>(滚珠 / 行星滚柱):旋转转直线,精度高、刚度大、承载大,梯形丝杠可自锁,适合直线关节 / 直线执行器(如 Optimus 腿部);缺点是速度低、成本高;② <b>皮带 / 同步带</b>:适合长行程、高速、低惯量,成本低;缺点是刚度低、有弹性与回差、精度一般、需张紧;③ 判断维度:行程、速度、精度、负载、刚度、是否需自锁。
+    </div>
+  </details>
+
+  <h3>2.3 控制</h3>
+
+  <details class="faq">
+    <summary>Q11 PID 调参的标准流程是什么?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>由内而外、先 P 后 I 再 D,先稳后准。<br><br>
+      <b>要点:</b>① 先只加 P,逐步增大到「临界振荡」附近再略回退;② 加 I 消除静差(I 会引入相位滞后,别贪大);③ 必要时加 D 抑制超调(D 放大噪声,机械系统慎用);④ 电流环常用 PI(不加 D),速度环 PI,位置环 P 或 PI;⑤ 注意<b>积分饱和 anti-windup</b>与输出限幅;⑥ 系统化方法:Ziegler-Nichols 临界比例法 / 阶跃响应法,或频域法看相位裕度(30°~60°)整定。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q12 前馈(feedforward)的作用是什么?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>反馈是「先有误差才纠正」,前馈是「知道要往哪走,提前把控制量给上」,提高跟踪、减小滞后。<br><br>
+      <b>要点:</b>① 典型:速度前馈、加速度前馈(惯性前馈)、力矩前馈(重力 / 动力学补偿);② 前馈在反馈回路之外,<b>不改变系统稳定性</b>;③ 能显著减小跟随误差、提高响应速度,尤其高速 / 大惯量关节;④ 前提是模型较准,前馈量 = 逆模型 × 期望轨迹;⑤ 与反馈互补:「反馈治偏差、前馈治滞后」。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q13 为什么双足稳定用 ZMP 判据?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>ZMP 把「会不会翻」转化为「一个点是否落在支撑多边形内」的几何判断,直观可算。<br><br>
+      <b>要点:</b>① ZMP(零力矩点):地面上使地面反力水平力矩为零的点;② 判据:ZMP 落在足底支撑凸包(单脚 / 双脚多边形)内则动态平衡,否则会绕足边翻倒;③ 它把全身动力学压成「一点对一多边形」,适合在线规划与反馈;④ 经典做法:离线生成 ZMP 参考轨迹 + 在线跟踪(如 ASIMO 的步行模式生成);⑤ 局限:ZMP 是「足底无反作用力矩」的假设,对脚底打滑、抓地力变化等场景需额外处理。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q14 MPC 与 LQR 有什么区别?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>都是最优控制;LQR 是「无限时域 + 线性 + 无约束」的解析解,MPC 是「有限时域 + 在线优化 + 可显式处理约束」。<br><br>
+      <b>要点:</b>① LQR:代价函数二次,解代数 Riccati 方程得固定状态反馈增益,离线一次算好,计算轻;② MPC:每步在有限预测时域内解带约束优化,滚动优化,能显式处理输入限幅 / 状态约束 / 避障,可做非线性 MPC;③ LQR 可视为「无约束 + 无限时域 + 线性」的 MPC 特例;④ 腿式机器人常用 MPC / WBC(全身控制)做落脚点与地面反力规划,因为它天然要处理接触约束。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q15 什么是频率响应 / 带宽?带宽是不是越高越好?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>带宽是闭环能有效跟踪 / 抑制的频率范围(常取 -3dB 点);不是越高越好,受机械谐振与噪声约束。<br><br>
+      <b>要点:</b>① 带宽越高,响应越快、抗扰越好;② 但受限于采样频率、传感器延迟、以及<b>机械谐振频率</b>(关节柔性 / 减速器刚度引入),带宽逼近谐振会自激;③ 相位裕度(穿越频率处离 -180° 的余量)决定稳定性与超调,一般要求 30°~60°;④ 工程上电流环带宽 &gt; 速度环 &gt; 位置环,且都要避开机械谐振;⑤ 面试点:<b>「控制带宽与机械谐振的关系」</b>是关节控制核心约束。
+    </div>
+  </details>
+
+  <h3>2.4 ROS2</h3>
+
+  <details class="faq">
+    <summary>Q16 ROS2 话题 / 服务 / 动作三者区别?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>话题是异步多对多的数据流,服务是同步一问一答,动作是「带反馈、可取消的长任务」。<br><br>
+      <b>要点:</b>① <b>话题</b>:发布 / 订阅,异步、多对多、无应答,适合连续数据(关节状态 / IMU / 图像);② <b>服务</b>:请求 / 响应,同步一问一答,适合短任务(参数设置、触发一次计算);③ <b>动作</b>:客户端 / 服务器,含 goal / feedback / result / cancel 状态机,适合长任务(导航、抓取),可反馈进度、可取消;④ 选型口诀:<b>连续流用话题、短问答用服务、长任务用动作</b>。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q17 TF 树是什么?常见坑有哪些?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>TF 维护坐标系间变换,构成一棵「每个坐标系有且仅有一个父」的树,供各传感器 / 关节数据统一到一个坐标系。<br><br>
+      <b>要点:</b>① tf2 缓存带时间戳的变换并支持插值,lookupTransform 可查任意两系关系;② 常见坑:<b>TF 树断裂</b>(父子链缺一环)、<b>时间戳不匹配</b>(查未来 / 过期帧)、<b>成环</b>(一系多父)、静态 / 动态变换混用;③ 定位、导航、机械臂抓取都依赖 TF 对齐。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q18 launch 文件的作用?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>一次启动多个节点、配参数、remap 话题、组织命名空间。<br><br>
+      <b>要点:</b>① ROS2 主推 Python launch(.py),支持条件、事件、参数文件、命名空间;② 可 remap 话题 / 服务名,解决节点间名称对接;③ 对比 ROS1 的 XML launch:Python launch 更可编程、更灵活;④ 工程意义:整机几十个节点靠 launch 一键拉起。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q19 ROS2 的 DDS 与 QoS 是什么?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>ROS2 底层通信走 DDS,QoS 决定通信的可靠性 / 历史 / 持久性等策略,QoS 不兼容则节点连不上。<br><br>
+      <b>要点:</b>① DDS 提供分布式、实时、跨语言、去中心化(自动发现)的通信;② 常用 QoS:<b>Reliability</b>(Reliable / BestEffort)、<b>History</b>(KeepLast / KeepAll)、<b>Durability</b>(Volatile / TransientLocal)、Deadline、Lifespan、Liveliness;③ <b>QoS 兼容规则</b>:发布者的可靠性 ≥ 订阅者要求,否则无法匹配(常见「收不到消息」的坑);④ 实时控制常配 BestEffort + 小队列,参数 / 状态常配 Reliable + TransientLocal。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q20 Nav2 的完整流程是什么?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>感知建图 → 定位 → 全局规划 → 局部规划 / 控制 → 行为树编排 + 恢复行为。<br><br>
+      <b>要点:</b>① 传感器 + 滤波(点云 / 激光)→ 建图(slam_toolbox / cartographer);② 定位(AMCL 自适应蒙特卡洛);③ 全局规划(代价地图 + NavFn / A* 等)算全局路径;④ 局部规划 / 控制器(DWB / MPPI 等)输出 cmd_vel;⑤ <b>行为树</b>编排导航动作,失败触发恢复行为(原地旋转清障、重规划);⑥ 输入目标位姿 → 输出速度指令,是移动底盘导航的标配。
+    </div>
+  </details>
+
+  <h3>2.5 感知 / 规划</h3>
+
+  <details class="faq">
+    <summary>Q21 点云滤波的典型流程?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>降采样降噪 → 去离群点 → (可选)地面分割 / 去畸变,再做配准或特征提取。<br><br>
+      <b>要点:</b>① <b>体素滤波 VoxelGrid</b>:降采样、统一密度、大幅减数据量;② <b>统计离群点去除</b>(StatisticalOutlierRemoval):按邻域距离分布剔除噪点;③ (可选)<b>地面分割</b>(RANSAC 平面拟合 / 渐进形态学)、去运动畸变;④ 之后接配准(ICP / NDT)、聚类 / 特征提取;⑤ 常用库 PCL。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q22 相机标定标的是什么?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>求内参(焦距 / 主点 / 畸变系数)与外参(相机在世界的位姿),建立像素 ↔ 世界坐标的映射。<br><br>
+      <b>要点:</b>① <b>内参</b>:fx、fy、cx、cy 与畸变系数(径向 k1k2k3 + 切向 p1p2);② <b>外参</b>:相机相对世界 / 机械臂基座的位姿(手眼标定是外参特例);③ 常用<b>张正友标定法</b>:拍多张不同位姿棋盘格 → 求单应矩阵 → 求内参初值 → LM 优化;④ 用途:去畸变、像素坐标 ↔ 相机坐标转换、视觉伺服。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q23 A* / Dijkstra / RRT 的区别与适用?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>Dijkstra 无启发、完备最优但慢;A* 加启发式更快且(启发可采纳时)仍最优;RRT 采样式适合高维连续空间。<br><br>
+      <b>要点:</b>① <b>Dijkstra</b>:代价扩散,完备且最优(均匀代价),但搜索空间大;② <b>A*</b>:f = g + h,用启发式 h 引导,当 h 可采纳(不高估)时仍最优,比 Dijkstra 快,适合栅格图;③ <b>RRT / RRT*</b>:随机采样 + 树生长,适合机械臂关节空间(高维连续),概率完备,RRT* 渐进最优;缺点是路径抖、需平滑;④ 选型:栅格 / 图用 A*,高维连续用 RRT*。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q24 SLAM 前端和后端分别做什么?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>前端「建约束」(帧间位姿估计),后端「优图」(全局一致性优化)。<br><br>
+      <b>要点:</b>① <b>前端</b>:特征提取与匹配、点云配准(ICP / NDT)、里程计,得到相邻帧之间的相对位姿约束;② <b>后端</b>:位姿图优化,消除累积漂移,闭环检测 + 回环约束,方法分滤波法(EKF / 粒子滤波)与优化法(g2o / GTSAM);③ 视觉前端(特征点) vs 激光前端(scan 匹配);④ 一句话:<b>前端给后端喂约束,后端把这些约束全局「拉平」</b>。
+    </div>
+  </details>
+
+  <h3>2.6 具身智能</h3>
+
+  <details class="faq">
+    <summary>Q25 VLA 与传统分层控制有什么区别?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>传统是「感知 → 规划 → 控制」分模块级联;VLA 是视觉 + 语言指令端到端直接输出动作。<br><br>
+      <b>要点:</b>① 传统:模块化、可解释、鲁棒、可独立调试,但工程量大、泛化弱、误差逐级累积;② VLA(视觉-语言-动作):输入图像 + 自然语言,输出动作 token,泛化好、免繁规则,代表 RT-2 / OpenVLA / π0 / Helix;③ VLA 短板:数据需求大、可解释差、高频精细控制不足;④ 趋势:<b>VLA 做高层语义决策 + 传统底层控制做精细执行</b>的混合架构。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q26 世界模型(World Model)是什么?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>学习环境转移动力学 p(s′|s,a)、能在模型内「想象」动作后果并做规划的模型。<br><br>
+      <b>要点:</b>① 学习「状态如何演化、动作导致什么后果」;② 价值:样本效率、离线规划、评估动作后果、合成数据、作为 VLA 的训练器;③ 代表:UniSim、Genie、Sora(视频世界模型);④ 与 VLA 关系:世界模型可预测未来、给策略「试错」,是当前前沿方向。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q27 sim2real 的主要难点与手段?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>难点是仿真与真实的 gap(物理 / 视觉 / 延迟),手段以域随机化为核心,辅以辨识与真机微调。<br><br>
+      <b>要点:</b>① gap 来源:摩擦、接触、惯量、执行器动态不准,视觉纹理 / 光照差异,传感器噪声与通信延迟;② 手段:<b>域随机化</b>(随机质量 / 摩擦 / 延迟 / 噪声 / 光照)、系统辨识、仿真 + 真实数据混合、课程学习、奖励塑形、真机微调;③ 现象:仿真满分、真机摔倒,是具身智能岗最常被追问的项目坑。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Q28 具身智能的训练数据从哪来?</summary>
+    <div class="faq-a">
+      <b>一句话结论:</b>遥操作示范 + 仿真合成 + 人类视频 + 真机自主,混合来源、形成数据闭环。<br><br>
+      <b>要点:</b>① <b>遥操作采集</b>:手柄 / 动捕 / AirPilot 类遥操直接录真机轨迹,质量高但贵、慢;② <b>仿真合成</b>:大规模 RL + 域随机化,便宜可扩,但有 gap;③ <b>人类示范视频</b>:被动学习,量大但无动作标签、跨 embodiment 难;④ <b>真机自主数据</b>:在线自监督 / RL,形成闭环;⑤ 难点:<b>真实操作数据稀缺昂贵、标注难、跨本体泛化难</b>,趋势是仿真 + 遥操作 + 真实数据混合。
+    </div>
+  </details>
+
+  <!-- ================= 3. 流程题 / 项目深挖题 ================= -->
+  <h2><span class="h2-num">3</span> 流程题 / 项目深挖题(8 题 · 用框架答题)</h2>
+  <p class="my-sub">这类题考的是「你能不能把一个开放目标拆成可执行工程」。统一答题框架:<b>拆解问题 → 关键决策点 → 验证方法 → 风险与取舍</b>。</p>
+
+  <details class="faq">
+    <summary>P1 设计一个关节模组的研发流程?</summary>
+    <div class="faq-a">
+      <div class="my-fw"><b>答题框架:</b>需求定义 → 电机 / 减速器选型 → 结构设计 → 硬件设计 → 固件控制 → 集成标定 → 性能验证。</div>
+      <b>展开要点:</b>① 先定义指标:峰值 / 持续扭矩、转速、背隙、重量、尺寸、供电电压、通信;② 由负载与反驱需求选减速器(谐波 or 行星 QDD)与无框电机;③ 结构:同轴排布、中空走线、散热;④ 硬件:MOS / 栅驱 / 三电阻采样 / 双编码器接口 / CAN-EtherCAT;⑤ 固件:FOC 三环 + 前馈 + 标定;⑥ 验证:扭矩-转速曲线、背隙、带宽、温升、寿命。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>P2 如何从 0 搭建一台机器人整机?</summary>
+    <div class="faq-a">
+      <div class="my-fw"><b>答题框架:</b>整机架构 → 关节模组 → 骨架结构 → 电气与总线 → 软件栈 → 联调。</div>
+      <b>展开要点:</b>① 定自由度与关节布局(肩 / 肘 / 髋 / 膝 / 踝),据此定关节数量与规格;② 关节模组(见 P1)按部位分扭矩等级;③ 骨架 / 外壳结构 + 走线;④ 电源分配、CAN/EtherCAT 总线、主控;⑤ 软件:低层 FOC → 关节控制 → 全身控制(WBC / 步态)→ 上层感知 / 决策;⑥ 联调里程碑:先单关节、再单腿、再整机站立、再行走。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>P3 你的项目遇到的最大问题是什么?怎么解决的?</summary>
+    <div class="faq-a">
+      <div class="my-fw"><b>答题框架(套 STAR):</b>情境 → 任务 → 行动 → 结果,重点放在「你做了什么」。</div>
+      <b>要点:</b>① 选一个<b>真踩过、能说清数据</b>的坑(如电机啸叫 / 编码器零位漂移 / sim2real 摔倒);② 情境一句话交代,任务说清目标;③ <b>行动</b>是核心:如何定位(示波器看相电流 / 二分法缩小范围 / 域随机化对照实验)、如何验证、改了什么;④ 结果给量化(超调从 X% 降到 Y%、成功率从 a% 到 b%);⑤ 结尾补一句反思:下次如何更早发现。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>P4 如何评估一个减速器方案?</summary>
+    <div class="faq-a">
+      <div class="my-fw"><b>答题框架:</b>指标定义 → 静态指标 → 动态指标 → 环境 / 成本 → 实测验证。</div>
+      <b>要点:</b>① 先对齐需求:扭矩、减速比、背隙、重量、寿命、成本;② 静态:减速比、额定 / 峰值扭矩、背隙、刚度、效率、转动惯量;③ 动态:反驱透明度(反驱力矩)、摩擦、传动误差;④ 环境:温升、噪声、油污 / 润滑、寿命;⑤ 验证:装机测背隙(回差)、测传动误差、测温升与效率,交叉对比 2~3 家样件。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>P5 如何做一个关节模组的性能测试与验收?</summary>
+    <div class="faq-a">
+      <div class="my-fw"><b>答题框架:</b>电气安全 → 静态性能 → 动态性能 → 可靠性与寿命。</div>
+      <b>要点:</b>① 电气:耐压、绝缘、上电限流;② 静态:扭矩-转速曲线、峰值 / 持续扭矩、堵转;③ 动态:阶跃响应、带宽、背隙、跟随误差、温升;④ 可靠性:耐久、振动、高低温;⑤ 出测试报告,和规格书逐项对表,不合格项回溯到减速器 / 电机 / 采样 / 结构。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>P6 如何定位机械臂末端抖动问题?</summary>
+    <div class="faq-a">
+      <div class="my-fw"><b>答题框架:</b>现象分层 → 电气 / 机械 / 控制三路排查 → 逐层定位。</div>
+      <b>要点:</b>① 先看抖动频率:低频抖动多与控制带宽 / 刚度有关,高频多与机械谐振或电气噪声有关;② <b>电气</b>:电流采样噪声、PWM 毛刺、编码器信号干扰;③ <b>机械</b>:背隙、联轴器松动、结构刚度不足、谐振;④ <b>控制</b>:增益过高、前馈过冲、带宽逼近谐振、积分饱和;⑤ 用示波器 / 频谱 + 扫频实验定位谐振峰,再针对性降增益 / 加陷波。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>P7 如何设计一块 FOC 驱动板(硬件选型流程)?</summary>
+    <div class="faq-a">
+      <div class="my-fw"><b>答题框架:</b>需求 → 电源链路 → 功率级 → 采样 → 控制 → Layout → 调试。</div>
+      <b>要点:</b>① 需求:母线电压、相电流、开关频率、通信接口;② 电源:母线电容 → Buck → LDO,模拟 / 数字电源隔离;③ 功率级:MOS(耐压 / 内阻)+ 栅极驱动(自举、死区)+ 母线电容;④ 采样:三电阻下桥 + 运放偏置,Kelvin 连接;⑤ 控制:STM32G4(带 HRTIM / 硬件触发 ADC);⑥ Layout 最小化功率环路、采样线远离开关点;⑦ 调试:先限流上电、测采样波形、再开环、再闭环。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>P8 如何做一个 sim2real 落地项目?</summary>
+    <div class="faq-a">
+      <div class="my-fw"><b>答题框架:</b>环境建模 → 策略训练 → gap 分析 → 域随机化 / 辨识 → 真机验证 → 迭代。</div>
+      <b>要点:</b>① 在 MuJoCo / Isaac 建高保真模型(惯量、摩擦、延迟、噪声);② 训策略(PPO 等)+ 域随机化;③ 分析真实与仿真差异来源;④ 系统辨识 + 参数对齐 + 真机微调;⑤ 量化指标(成功率 / 跟踪误差);⑥ 强调「仿真不是终点,真机闭环才是」。
+    </div>
+  </details>
+
+  <!-- ================= 4. 场景题 / 开放题 ================= -->
+  <h2><span class="h2-num">4</span> 场景题 / 开放题(5 题 · 给分析思路)</h2>
+  <p class="my-sub">开放题没有标准答案,考「思路是否成体系、能否抓住关键约束」。答题先明确<b>约束与假设</b>,再分层给方案。</p>
+
+  <details class="faq">
+    <summary>S1 让机器人端一杯水不洒,你怎么做?</summary>
+    <div class="faq-a">
+      <b>分析思路:</b>① 先分「水不洒」的两类要求:<b>位姿平稳</b>(杯口不倾斜、不剧烈加减速)与<b>末端柔顺</b>(接触 / 碰撞不硬怼);② 规划层:轨迹用平滑插值(如三次 / 五次多项式),限制加加速度(jerk),避免急停;③ 控制层:加<b>重力补偿 + 前馈</b>,必要时把末端做「阻抗控制」保证柔顺;④ 感知层:视觉检测杯口液面 / 位姿做闭环补偿;⑤ 加分点:考虑动态平衡(托盘 / 双臂)、力反馈防溢出。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>S2 机械臂定位精度不够,怎么排查?</summary>
+    <div class="faq-a">
+      <b>分析思路:</b>① 先分清<b>重复精度 vs 绝对精度</b>:重复精度差看机械与电气,绝对精度差看标定与模型;② 机械:背隙、减速器传动误差、结构刚度、装配松动;③ 电气:编码器分辨率 / 零位、双编码器是否对齐;④ 模型:DH 参数误差、连杆变形,做运动学标定;⑤ 控制:稳态误差、摩擦补偿不足;⑥ 顺序:<b>先测重复性(机械电气)→ 再校准(标定 / 零位)→ 最后控制补偿</b>。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>S3 电机啸叫 / 异响,怎么排查?</summary>
+    <div class="faq-a">
+      <b>分析思路:</b>① 先判断啸叫频率:与 PWM 载波相关→电气噪声;与转速相关→机械或编码器;② 电气:电流采样毛刺(采样时机 / 滤波)、PWM 载波过低、死区过大;③ 机械:轴承、联轴器松动、减速器啮合;④ 控制:增益过高自激、带宽逼近机械谐振;⑤ 工具:示波器看相电流频谱、扫频找谐振峰,对照现象分层定位。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>S4 机器人走路不稳 / 会摔,从哪些方面排查?</summary>
+    <div class="faq-a">
+      <b>分析思路:</b>① 分层:<b>感知 → 状态估计 → 控制 → 执行</b>;② 状态估计:IMU 漂移、接触检测误判(脚是否着地);③ 控制:步态周期 / 落脚点、ZMP 是否在支撑域、MPC / WBC 约束;④ 执行:关节跟踪滞后(带宽不足 / 前馈缺)、扭矩不够;⑤ 地面:摩擦、坡度;⑥ 方法:先仿真复现,再真机打日志逐环节对,优先怀疑「状态估计」与「接触判断」。
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>S5 训练的策略在仿真里很好,真机完全不行,怎么分析?</summary>
+    <div class="faq-a">
+      <b>分析思路:</b>① 先确认 gap 类别:是「物理 gap」还是「观测 gap」;② 物理:摩擦 / 接触 / 惯量 / 延迟不匹配→系统辨识 + 域随机化重训;③ 观测:真机传感器噪声、视觉分布漂移→加噪声训练、真机数据微调;④ 执行:动作频率、控制环带宽不足;⑤ 手段阶梯:<b>域随机化 → 参数辨识 → 真机数据混合微调 → 课程学习</b>;⑥ 结论:「真机数据 + 仿真数据混合」通常是最快解。
+    </div>
+  </details>
+
+  <!-- ================= 5. 手撕题提示 ================= -->
+  <h2><span class="h2-num">5</span> 现场手撕题提示</h2>
+  <p>技术面「手撕」不一定是 LeetCode,很多是<b>本岗位的公式 / 推导白板题</b>。常见几类:</p>
+  <div class="table-wrap"><table>
+    <tr><th>手撕类型</th><th>典型题</th><th>出现场景</th></tr>
+    <tr><td>坐标变换 / 矩阵</td><td>手写 Clark / Park 矩阵、旋转矩阵、四元数乘法</td><td>电机驱动岗、控制岗</td></tr>
+    <tr><td>控制离散化</td><td>PID 位置式 / 增量式离散化、一阶低通滤波、前馈表达式</td><td>控制岗、嵌入式岗</td></tr>
+    <tr><td>状态估计</td><td>一维卡尔曼滤波推导(预测-更新两式)、互补滤波</td><td>控制 / 感知岗</td></tr>
+    <tr><td>运动学</td><td>二连杆正 / 逆运动学、雅可比矩阵</td><td>控制岗</td></tr>
+    <tr><td>数据结构 / 编程</td><td>二叉树遍历、图搜索(BFS/DFS)、链表反转等 LeetCode 常见题</td><td>各岗通用编程环节</td></tr>
+  </table></div>
+  <div class="box box-warn"><b>⚠️ 提醒:</b>手撕题重点是<b>把过程讲清楚</b>而非背结果。写公式时边写边解释「这一步为什么」;编程题先说思路与复杂度再写码,写不出完整代码就写伪代码 + 讲清边界条件。</div>
+
+  <!-- ================= 6. 答题方法论 ================= -->
+  <h2><span class="h2-num">6</span> 答题方法论与面试自检清单</h2>
+
+  <h3>6.1 项目叙述:STAR 法则</h3>
+  <p><b>S(Situation)</b>一句话背景 → <b>T(Task)</b>你的目标 → <b>A(Action)</b>你做了什么(重点,占 60% 篇幅)→ <b>R(Result)</b>量化结果。反面教材是「我们团队做了 X」——面试官要的是<b>「我」做了什么</b>。</p>
+
+  <h3>6.2 技术题:先框架后细节</h3>
+  <ul>
+    <li><b>先给结论</b>(一句话答案)→ 再展开机制 → 最后落到「对机器人关节意味着什么」;</li>
+    <li>不会的题别硬编,诚实说「这块我了解不深,我的理解是……,下来我会补」,比瞎编更稳;</li>
+    <li>被追问「为什么」时,往<b>物理本质</b>(能量 / 带宽 / 稳定性 / 时域频域)上靠。</li>
+  </ul>
+
+  <h3>6.3 反问环节建议</h3>
+  <p>反问能展示你关心的是「业务本质」而非待遇。可问:团队目前在攻的<b>最难技术问题</b>是什么?该岗位<b>前 6 个月</b>最看重的产出?机器人 <b>量产 / 落地</b>到了什么阶段?避免一上来问加班与薪资。</p>
+
+  <h3>6.4 面试自检清单</h3>
+  <ul class="my-check">
+    <li>✅ 简历里每个项目都能用 STAR 讲 2 分钟,且能说出 3 个被追问的坑;</li>
+    <li>✅ FOC 三环、Clark/Park、SVPWM、编码器、背隙能不看稿讲通;</li>
+    <li>✅ PID / 前馈 / MPC-LQR / 带宽能现场推或画框图;</li>
+    <li>✅ ROS2 话题 / 服务 / 动作、TF、QoS 能举例说明;</li>
+    <li>✅ 准备 2 个场景题(端水、精度排查)的分析框架;</li>
+    <li>✅ 准备 2 个反问问题;</li>
+    <li>✅ 手撕:LeetCode 高频题刷过一轮 + 会手写 Clark/Park 与 PID 离散化。</li>
+  </ul>
+
+  <!-- ================= 7. 本节自测 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. FOC 三环从内到外的正确顺序是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 位置环 → 速度环 → 电流环</button>
+      <button data-v="B">B. 电流环 → 速度环 → 位置环</button>
+      <button data-v="C">C. 速度环 → 电流环 → 位置环</button>
+      <button data-v="D">D. 电流环 → 位置环 → 速度环</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:三环从内到外是<b>电流环(最内、最快)→ 速度环 → 位置环(最外)</b>。外环带宽须显著低于内环(约差 5~10 倍),这是三环能稳定的前提。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 关于 SVPWM 与 SPWM,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. SPWM 的母线电压利用率更高</button>
+      <button data-v="B">B. SVPWM 只能合成 6 个离散电压矢量,无法连续旋转</button>
+      <button data-v="C">C. SVPWM 用伏秒平衡合成旋转电压矢量,相电压幅值可达 Vdc/√3,利用率更高</button>
+      <button data-v="D">D. 两者谐波表现完全相同</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SVPWM 用 6 个基本矢量 + 零矢量按伏秒平衡合成任意旋转矢量,相电压幅值可达 Vdc/√3,比 SPWM(相电压 Vdc/2)利用率高约 15%,谐波也更优。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 人形机器人关节常用「双编码器」方案,其作用是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 电机端编码器跑 FOC,输出端编码器消除减速器传动误差</button>
+      <button data-v="B">B. 两个编码器互为热备份,一个坏了另一个顶上</button>
+      <button data-v="C">C. 一个测温度,一个测角度</button>
+      <button data-v="D">D. 一个用于 CAN 通信,一个用于 EtherCAT</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电机端(高速)编码器提供转子电角度供 FOC 换相与解耦;输出端(低速)编码器测真实输出角度,消除减速器背隙与弹性带来的误差,保证末端位置精度。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 关于减速器选型,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 谐波减速器单级减速比大(约 30~160)且几乎零背隙</button>
+      <button data-v="B">B. 行星减速器反驱透明度好,适合准直驱(QDD)关节</button>
+      <button data-v="C">C. RV/摆线减速器刚度大、承载大,适合重载关节</button>
+      <button data-v="D">D. 减速比越大,输出转速越高</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:D 错。理想下 ω_out = ω_in / i,减速比越大<b>输出转速越低</b>、输出扭矩越大(τ_out = τ_in × i × η)。其余三项均正确。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 前馈(feedforward)的主要作用是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 提高系统的稳定性裕度</button>
+      <button data-v="B">B. 根据期望轨迹提前给控制量,减小跟随误差与滞后</button>
+      <button data-v="C">C. 消除传感器噪声</button>
+      <button data-v="D">D. 替代反馈控制器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:前馈在反馈回路之外,利用「已知期望轨迹 × 逆模型」提前输出控制量,改善跟踪、减小相位滞后,且<b>不改变系统稳定性</b>;反馈治偏差、前馈治滞后。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. ROS2 中适合「长任务、可反馈进度、可取消」的通信机制是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 话题(Topic)</button>
+      <button data-v="B">B. 服务(Service)</button>
+      <button data-v="C">C. 动作(Action)</button>
+      <button data-v="D">D. 参数(Parameter)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:动作(Action)含 goal / feedback / result / cancel 状态机,适合导航、抓取等长任务;话题是异步多对多数据流,服务是同步一问一答。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于 SLAM 前端与后端,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 前端做帧间位姿估计建约束,后端做全局一致性优化消除漂移</button>
+      <button data-v="B">B. 前端只负责建图,后端只负责定位</button>
+      <button data-v="C">C. 前端用位姿图优化,后端用特征匹配</button>
+      <button data-v="D">D. 前端和后端功能完全相同,只是顺序不同</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:前端(特征提取匹配 / ICP / 里程计)建立相邻帧相对位姿约束;后端(滤波法或 g2o/GTSAM 位姿图优化)做全局一致性优化、闭环修正,消除累积漂移。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. VLA(视觉-语言-动作)模型的核心特点是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 仍按「感知→规划→控制」分模块级联执行</button>
+      <button data-v="B">B. 输入视觉与语言指令,端到端直接输出机器人动作</button>
+      <button data-v="C">C. 只做视觉识别,不涉及动作生成</button>
+      <button data-v="D">D. 专门用于电机 FOC 底层控制</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:VLA 把视觉感知 + 自然语言指令端到端映射为动作(代表 RT-2 / OpenVLA / π0 / Helix),区别于传统分层控制;短板是数据需求大、可解释差、高频精细控制不足。</div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>机器人 / 具身智能面试的本质是「用结构化框架展示你对系统从底层(FOC、减速器)到上层(VLA、规划)的通透理解」。把岗位地图看清楚,六大专题高频题各准备一句「结论 + 机制 + 落点」,流程题与场景题统一用「拆解 → 决策点 → 验证」框架,项目用 STAR 讲清「我做了什么 + 量化结果」,手撕会推核心公式——这套组合比临时背题稳得多。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果面试官追问「为什么电流环带宽必须高于速度环?反过来会怎样」,你怎么从「内外环耦合」的角度回答?<br>
+    2. 选一个你做过的项目,用 STAR 法则写一段 2 分钟口头稿,并预想面试官会问的 3 个坑。<br>
+    3. 「让机器人端一杯水不洒」如果要你现场给出<b>更细的控制方案</b>(具体到加什么补偿、用什么控制器),你会补充什么?
+  </div>
+
+  <!-- ================= 参考来源 ================= -->
+  <h2><span class="h2-num">8</span> 参考资料</h2>
+  <p class="my-sub">本页高频题与趋势经 web_search 核实(2025~2026 常见面经 / 题库 / 招聘 JD);涉及型号参数以官网为准。资料整理更新至 2026-08。</p>
+  <ul>
+    <li><a href="https://github.com/WinstonJQ/embodied-interview-qa" target="_blank" rel="noopener">具身智能高频面试题库(embodied-interview-qa,GitHub)</a>——VLA / 世界模型 / 工程落地 / 开放题高频题来源</li>
+    <li><a href="https://winstonjq.github.io/embodied-interview-qa/interviews/05_engineering.html" target="_blank" rel="noopener">工程落地 / 系统设计 / 开放题 · 高频面试题</a></li>
+    <li><a href="https://winstonjq.github.io/embodied-interview-qa/interviews/08_coding_systemdesign.html" target="_blank" rel="noopener">LeetCode 高频 + 系统设计 · 高频面试题</a></li>
+    <li><a href="https://mianshidashi.cn/interview-questions/xiaomi/algorithm-engineer/xiaomi-algorithm-vla-world-model-rl" target="_blank" rel="noopener">小米算法面经解析:VLA 模型和世界模型的区别、VLA+RL 场景</a></li>
+    <li><a href="https://blog.csdn.net/qq_57427700/article/details/146151237" target="_blank" rel="noopener">电机控制常见面试问题(CSDN)</a>——FOC / 三环 / SVPWM / 编码器</li>
+    <li><a href="https://phxin.top/index.php/archives/873/" target="_blank" rel="noopener">电机控制面试常问问题</a></li>
+    <li><a href="https://m.nowcoder.com/feed/main/detail/e23f93d6ae1747629e1975ebc27fe1e5" target="_blank" rel="noopener">小鹏机器人 offer 一面面经(牛客)</a>——机器人岗真实面经</li>
+    <li><a href="https://zhuanlan.zhihu.com/p/544043873" target="_blank" rel="noopener">SLAM 面试题汇总(知乎)</a>——前端 / 后端 / 图优化 / 滤波</li>
+    <li><a href="https://www.zondrive.com/newsinfo/11231589.html" target="_blank" rel="noopener">背隙 0 弧分减速机实测(中大创远)</a>——背隙 / 回差检测与精度概念</li>
+    <li><a href="https://www.liepin.com/job/1979304995.shtml" target="_blank" rel="noopener">强化学习运动控制工程师招聘 JD(猎聘)</a>——岗位技能要求与轮次参考</li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

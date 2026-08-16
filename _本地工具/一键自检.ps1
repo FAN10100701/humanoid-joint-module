@@ -120,6 +120,41 @@ $changelog = [IO.File]::ReadAllText((Join-Path $root "CHANGELOG.md"), [Text.Enco
 $clHas = $changelog -match [regex]::Escape(($ver -split '\(')[0])
 Check "Version single-source" ($idxHas -and $clHas) ($ver + " in index=" + $idxHas + " changelog=" + $clHas)
 
+# ---- 6) quiz/glossary data sync (data files vs display pages) ----
+# NOTE: no Chinese literals here - PS 5.1 reads BOM-less UTF-8 scripts as GBK and mangles them
+$quizBank = [IO.File]::ReadAllText((Join-Path $root "_assets\quiz-bank.js"), [Text.Encoding]::UTF8)
+$quizPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\03_[^\\]*\.html$' } | Select-Object -First 1
+$gh1 = 0
+if($quizPage){ $quizHtml = [IO.File]::ReadAllText($quizPage.FullName, [Text.Encoding]::UTF8); $gh1 = [regex]::Matches($quizHtml, 'class="quiz-q"').Count }
+$qbCount = [regex]::Matches($quizBank, '\bq:"').Count
+Check "Quiz bank sync" (($qbCount -eq $gh1) -and ($gh1 -gt 0)) ($qbCount.ToString() + " vs " + $gh1)
+$glossJs = [IO.File]::ReadAllText((Join-Path $root "_assets\glossary-tip.js"), [Text.Encoding]::UTF8)
+$glossPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\01_[^\\]*\.html$' } | Select-Object -First 1
+$gh2 = 0
+if($glossPage){ $glossHtml = [IO.File]::ReadAllText($glossPage.FullName, [Text.Encoding]::UTF8); $gh2 = [regex]::Matches($glossHtml, 'class="term-card"').Count }
+$gjCount = [regex]::Matches($glossJs, '(?m)^\s*"[^"]+":\s*"').Count
+Check "Glossary tips <= dict page" (($gjCount -le $gh2) -and ($gjCount -gt 0)) ($gjCount.ToString() + " vs " + $gh2)
+
+# ---- 7) pageId vs page-meta / SITE_SECTIONS ----
+$metaContent = [IO.File]::ReadAllText((Join-Path $root "_assets\page-meta.js"), [Text.Encoding]::UTF8)
+$metaKeys = [regex]::Matches($metaContent, '"(\d\d-\d\d)":\s*\{') | ForEach-Object { $_.Groups[1].Value }
+$pageIds = @()
+foreach($p in $indexablePages){
+  $c = [IO.File]::ReadAllText($p.FullName, [Text.Encoding]::UTF8)
+  $m = [regex]::Match($c, 'pageId:\s*"(\d\d-\d\d)"')
+  if($m.Success){ $pageIds += $m.Groups[1].Value }
+}
+$missingMeta = $pageIds | Where-Object { $_ -notin $metaKeys }
+$orphanMeta = $metaKeys | Where-Object { $_ -notin $pageIds }
+Check "pageId vs page-meta" (($missingMeta.Count -eq 0) -and ($orphanMeta.Count -eq 0)) (("meta=" + $metaKeys.Count) + " pages=" + $pageIds.Count)
+$missingMeta | Select-Object -First 8 | ForEach-Object { Write-Host "   META-MISSING: $_" }
+$orphanMeta | Select-Object -First 8 | ForEach-Object { Write-Host "   META-ORPHAN: $_" }
+$secContent = [IO.File]::ReadAllText((Join-Path $root "index.html"), [Text.Encoding]::UTF8)
+$secIds = [regex]::Matches($secContent, '"(\d\d-\d\d)"') | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique
+$secOnly = $secIds | Where-Object { $_ -notin $metaKeys }
+Check "SITE_SECTIONS vs page-meta" ($secOnly.Count -eq 0) (("sections=" + $secIds.Count) + " meta=" + $metaKeys.Count)
+$secOnly | Select-Object -First 8 | ForEach-Object { Write-Host "   SECTION-ONLY: $_" }
+
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }
 Write-Host ("CHECKS FAILED: " + $fail)

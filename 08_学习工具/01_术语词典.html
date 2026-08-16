@@ -92,6 +92,9 @@
   <div class="term-card" data-cat="机械结构"><span class="term-name">扭矩密度</span><span class="term-en">Torque Density</span><div class="term-desc">单位质量或体积输出的扭矩,是人形机器人关节轻量化设计的核心指标。</div></div>
 
   <div class="term-card" data-cat="机械结构"><span class="term-name">重力补偿</span><span class="term-en">Gravity Compensation</span><div class="term-desc">通过弹簧、配重或前馈力矩抵消重力影响,降低静态功耗与电机负担。</div></div>
+  <div class="term-card" data-cat="机械结构"><span class="term-name">灵巧手</span><span class="term-en">Dexterous Hand</span><div class="term-desc">仿人手多指末端执行器,通过多自由度与触觉实现精细抓取操作。</div></div>
+  <div class="term-card" data-cat="机械结构"><span class="term-name">欠驱动</span><span class="term-en">Underactuated</span><div class="term-desc">驱动数少于自由度数的机构,靠弹簧/耦合/接触约束自适应包络抓取。</div></div>
+  <div class="term-card" data-cat="机械结构"><span class="term-name">腱驱动</span><span class="term-en">Tendon-Driven</span><div class="term-desc">电机后置、用腱绳/钢丝传动手指关节,减轻手部重量与惯量。</div></div>
   </div>
 
   <!-- ================= 二、电机与驱动 ================= -->
@@ -133,6 +136,8 @@
   <div class="term-card" data-cat="电机与驱动"><span class="term-name">槽满率</span><span class="term-en">Slot Fill Factor</span><div class="term-desc">绕组铜线占定子槽面积的比率,影响铜阻、发热与功率密度。</div></div>
 
   <div class="term-card" data-cat="电机与驱动"><span class="term-name">电机常数 Km</span><span class="term-en">Motor Constant</span><div class="term-desc">扭矩与发热损耗平方根的比值,衡量电机在给定热预算下的扭矩能力。</div></div>
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">自举电容</span><span class="term-en">Bootstrap Capacitor</span><div class="term-desc">为半桥上管栅极供电的电容,靠下管导通时充电,实现自举升压驱动。</div></div>
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">采样电阻</span><span class="term-en">Sense Resistor</span><div class="term-desc">串在功率回路的毫欧级精密电阻,把电流转为小电压供 ADC 采样。</div></div>
   </div>
 
   <!-- ================= 三、控制算法 ================= -->
@@ -174,6 +179,16 @@
   <div class="term-card" data-cat="控制算法"><span class="term-name">弱磁控制</span><span class="term-en">Flux Weakening</span><div class="term-desc">施加负直轴电流抵消永磁磁链,以牺牲扭矩换取超过额定转速的运行。</div></div>
 
   <div class="term-card" data-cat="控制算法"><span class="term-name">三相逆变器</span><span class="term-en">Three-Phase Inverter</span><div class="term-desc">由三个半桥六个开关管组成,将直流母线电压变换为三相交流驱动电机。<a class="term-link" href="../01_理论入门/03_驱动电路模块认知_交互式图解.html">电路图解 →</a></div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">ZMP 零力矩点</span><span class="term-en">Zero Moment Point</span><div class="term-desc">地面反作用合力作用点,落在支撑多边形内即双足稳定行走的经典判据。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">捕获点</span><span class="term-en">Capture Point</span><div class="term-desc">与质心速度相关的"不倒点",迈一步即可停下,是步态调整的关键参考。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">WBC 全身控制</span><span class="term-en">Whole-Body Control</span><div class="term-desc">任务分层+逆动力学+QP 求解,协调多接触全身运动生成关节力矩。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">MPC 模型预测控制</span><span class="term-en">Model Predictive Control</span><div class="term-desc">用简化模型滚动优化未来一段时域的控制量,步态控制中算期望落脚与姿态。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">单刚体模型 SRBM</span><span class="term-en">Single Rigid Body Model</span><div class="term-desc">把整机近似为一个刚体做质心动力学,MPC 步态规划的主流简化模型。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">摆动相</span><span class="term-en">Swing Phase</span><div class="term-desc">步态周期中脚离地向前摆动的阶段,负责迈步与跨越障碍。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">支撑相</span><span class="term-en">Stance Phase</span><div class="term-desc">步态周期中脚与地面接触承重的阶段,承担推进与平衡。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">步态周期</span><span class="term-en">Gait Cycle</span><div class="term-desc">从一步开始到下一步开始的完整过程,含支撑相与摆动相的交替。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">雅可比矩阵</span><span class="term-en">Jacobian Matrix</span><div class="term-desc">关节速度到末端速度的映射矩阵,也用于力/力矩传递与奇异分析。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">逆动力学</span><span class="term-en">Inverse Dynamics</span><div class="term-desc">由期望运动反解所需力矩/力,是全身控制与力控的核心计算。</div></div>
   </div>
 
   <!-- ================= 四、通信总线 ================= -->
@@ -252,6 +267,12 @@
   <div class="term-card" data-cat="软件与仿真"><span class="term-name">RViz</span><span class="term-en">RViz</span><div class="term-desc">ROS 可视化工具,可显示机器人模型、传感器数据、TF 与路径规划结果。</div></div>
 
   <div class="term-card" data-cat="软件与仿真"><span class="term-name">Gazebo</span><span class="term-en">Gazebo</span><div class="term-desc">经典开源机器人仿真器,支持传感器模型与物理仿真,常用于算法验证。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">Nav2</span><span class="term-en">Navigation2</span><div class="term-desc">ROS2 官方导航栈,集成行为树、规划器、控制器、代价地图与定位。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">AMCL 定位</span><span class="term-en">Adaptive Monte Carlo Localization</span><div class="term-desc">粒子滤波定位算法,在已知地图上融合激光与里程计估计机器人位姿。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">代价地图</span><span class="term-en">Costmap</span><div class="term-desc">把障碍物与膨胀区域编码为代价的栅格地图,供全局/局部规划避障。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">行为树</span><span class="term-en">Behavior Tree</span><div class="term-desc">用树状节点组织任务逻辑(顺序/选择/条件),Nav2 导航流程的编排方式。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">全局路径规划</span><span class="term-en">Global Path Planning</span><div class="term-desc">在全局代价地图上规划起点到目标的无碰撞路径,如 A*、Navfn。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">局部路径规划</span><span class="term-en">Local Path Planning</span><div class="term-desc">在局部代价地图上实时生成平滑轨迹并避让动态障碍,如 DWB、TEB。</div></div>
   </div>
 
   <!-- ================= 六、感知与AI ================= -->
@@ -289,6 +310,15 @@
   <div class="term-card" data-cat="感知与AI"><span class="term-name">模仿学习</span><span class="term-en">Imitation Learning</span><div class="term-desc">从专家示教数据中学习策略,常用于机器人操作技能的学习。</div></div>
 
   <div class="term-card" data-cat="感知与AI"><span class="term-name">端到端学习</span><span class="term-en">End-to-End Learning</span><div class="term-desc">从原始感知输入直接学习到动作输出的范式,省略中间模块的手工设计。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">相机标定</span><span class="term-en">Camera Calibration</span><div class="term-desc">求解相机内参(焦距/主点/畸变)与外参(位姿)的过程,常用棋盘格法。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">畸变校正</span><span class="term-en">Distortion Correction</span><div class="term-desc">修正镜头径向/切向畸变造成的图像变形,还原真实投影关系。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">体素降采样</span><span class="term-en">Voxel Downsampling</span><div class="term-desc">把点云空间划分成体素格子、每格保留一个代表点,大幅减点降计算量。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">ICP 配准</span><span class="term-en">Iterative Closest Point</span><div class="term-desc">迭代最近点算法,通过最小化点对距离对齐两片点云,用于位姿估计。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">RANSAC</span><span class="term-en">Random Sample Consensus</span><div class="term-desc">随机采样一致性算法,从含噪点云中稳健拟合平面/球等几何模型。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">陀螺仪</span><span class="term-en">Gyroscope</span><div class="term-desc">测量角速度的 MEMS 传感器,积分可得姿态,是 IMU 的核心部件。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">加速度计</span><span class="term-en">Accelerometer</span><div class="term-desc">测量线性加速度的 MEMS 传感器,静态时可用重力方向估计倾角。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">应变片</span><span class="term-en">Strain Gauge</span><div class="term-desc">随形变改变电阻的传感元件,粘贴在弹性体上即可测力/力矩。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">惠斯通电桥</span><span class="term-en">Wheatstone Bridge</span><div class="term-desc">四个电阻构成的差分测量电路,把应变片的微小阻变转为电压信号。</div></div>
   </div>
 
   <!-- ================= 小结与思考 ================= -->

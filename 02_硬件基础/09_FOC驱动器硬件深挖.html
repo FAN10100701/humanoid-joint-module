@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 02-06 FOC 驱动器硬件深挖
+  内容: 驱动器总体架构 / 功率级选型(MOSFET+栅驱) / 电流采样 /
+        母线设计 / PCB Layout / 保护电路 / 调试实战 /
+        开源参考(ODrive/VESC/SimpleFOC/CyberGear) / 与本项目关联
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  本页聚焦「硬件功率级」,与 06-02 的「软件/固件」内容互补不重复
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · FOC 驱动器硬件深挖:功率级与电路设计</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(命名加 my- 前缀,避免与全局冲突) */
+  .my-diagram{background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px 18px;margin:14px 0;overflow-x:auto;font-family:Consolas,"Courier New",monospace;font-size:12.5px;line-height:1.55;color:#a8c7e8;white-space:pre}
+  .my-formula{display:block;text-align:center;margin:12px auto;padding:10px 14px;background:rgba(13,17,23,.6);border:1px solid rgba(59,130,246,.35);border-radius:10px;font-size:15px;color:#e6edf3;font-family:KaTeX_Main,"Times New Roman",serif}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "02-06",
+    root: "..",
+    breadcrumb: [
+      { t: "硬件基础", u: "../index.html#sec2" },
+      { t: "FOC 驱动器硬件深挖" }
+    ],
+    prev: { t: "热管理与散热设计专题", u: "08_热管理与散热设计专题.html" },
+    next: { t: "传感器专题 · IMU/力矩/触觉", u: "10_传感器专题_IMU力矩与触觉.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🔌 FOC 驱动器硬件深挖:功率级与电路设计</h1>
+    <div class="sub">面向已经懂基本 FOC 概念、想真正设计或调试一块关节驱动板(如本项目 Hdrive)的读者。
+      从功率级 MOSFET 选型、栅极驱动、电流采样到母线设计、PCB Layout 与保护电路,把「能转」和「能扛住」之间的每一层硬件细节讲透。</div>
+    <div class="tags">
+      <span class="tag">FOC 驱动</span>
+      <span class="tag">功率级</span>
+      <span class="tag">MOSFET</span>
+      <span class="tag">栅极驱动</span>
+      <span class="tag">电流采样</span>
+      <span class="tag">PCB Layout</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出关节驱动板的「控制板 + 功率板」分层框图,并讲清 MCU→栅驱→半桥→电机的完整信号流<br>
+    2. 能依据母线电压与相电流,独立完成 MOSFET(Vds/Id/Rds(on)/Qg)与栅极驱动芯片(自举 vs 隔离)的选型<br>
+    3. 能说清三电阻/双电阻/单电阻三种电流采样方案的原理、精度与采样时刻(PWM 同步 ADC)要求<br>
+    4. 能用 I=C·dv/dt 估算母线电容容量,并搭出 48V/24V→12V→5V→3.3V 的电源树<br>
+    5. 能按功率环路最小化、开尔文连接、地平面分割三大铁律规划功率级 PCB Layout,并看懂常见故障波形<br>
+    <b>建议用时:</b>约 50 分钟
+  </div>
+
+  <!-- ================= 1 驱动器总体架构 ================= -->
+  <h2><span class="h2-num">1</span> 驱动器总体架构:分层与信号流</h2>
+  <p>一块成熟的关节驱动板,几乎从不把 MCU 和功率级挤在同一张小板上一锅烩,而是按「信号强弱」和「发热量」分成两层。理解这种分层,是读懂所有开源驱动板(ODrive、VESC、CyberGear)图纸的共同前提。</p>
+
+  <h3>1.1 控制板 + 功率板的分层思想</h3>
+  <ul>
+    <li><strong>控制板(Control Board):</strong>MCU、编码器接口、CAN/通信收发器、调试口、各路 LDO。它跑的是「干净」的小信号,工作电流在毫安级,对噪声极度敏感。</li>
+    <li><strong>功率板(Power Stage):</strong>栅极驱动、MOSFET 半桥、电流采样电阻与运放、母线电容、保护电路。这里流过的是几十安培的电流、纳秒级跳变的高频开关波形,是整块板子发热和 EMI 的源头。</li>
+  </ul>
+  <div class="box box-tip"><b>💡 为什么分层:</b>把功率级独立成一块板(或用铝基板/厚铜层),可以让大电流回路、高频开关节点与 MCU 的模拟小信号在物理上拉开距离,同时方便单独散热与单独更换——功率级炸了只换功率板,不必报废整块控制板。</div>
+
+  <h3>1.2 信号流总览</h3>
+  <div class="my-diagram">                  ┌────────────────────────────────────────────┐
+                  │              控制板 (Control Board)               │
+                  │  ┌────────┐  6路互补PWM   ┌────────┐              │
+                  │  │  MCU   │──────────────▶│ 栅极驱动│              │
+                  │  │(G4/F4) │   (含死区)     │(预驱)  │              │
+                  │  └───┬────┘               └───┬────┘              │
+                  │      │ ADC(定时器同步触发)     │ HO/LO 强驱动        │
+                  │      │                        ▼                    │
+                  └──────┼─────────────────────────────────────────────┘
+                         │                          ┌────────────┐
+                         │             母线 VBUS ──▶│ 三相全桥   │──▶ U/V/W 相输出
+                         │                          │ 6×N-MOSFET │    ──▶ 电机
+                         │                          └─────┬──────┘
+                         │         电流信号            │ 相电流
+                         │   ┌──────────┐   ┌──────────┴────────┐
+                         └───│ ADC 采样  │◀──│ 电流采样(采样电阻  │
+                             └──────────┘   │  + 差分运放放大)   │
+                                            └───────────────────┘
+   信号闭环:MCU 算 FOC → 栅驱放大 PWM → 半桥斩波 → 电机;相电流 → 采样电阻 → 运放 → ADC → FOC</div>
+  <p>这条链路上有两个「生死攸关」的细节:① PWM 从 MCU 到 MOSFET 栅极,必须由栅驱放大成 10~15V 的强驱动信号,并插入<strong>死区</strong>防止上下管直通;② 电流采样必须在<strong>功率管开关动作完成、电流稳定</strong>的时刻由定时器同步触发 ADC,否则采到的是开关毛刺而非真实相电流(详见第 3 节)。</p>
+
+  <h3>1.3 典型 BOM 组成</h3>
+  <div class="table-wrap"><table>
+    <tr><th>模块</th><th>典型器件</th><th>数量 / 说明</th></tr>
+    <tr><td>主控 MCU</td><td>STM32G431 / STM32G474 / STM32F405</td><td>1 颗,选带高级定时器 + 同步 ADC 的电机控制型</td></tr>
+    <tr><td>栅极驱动</td><td>DRV8301 / DRV8323 / MP6540H / IR2104(半桥)</td><td>三相驱 1 颗,或半桥驱 3 颗</td></tr>
+    <tr><td>功率 MOSFET</td><td>IPT007N06N、AOD4184、IRFS7530 等</td><td>6 颗 N-MOS 组成 3 个半桥</td></tr>
+    <tr><td>电流采样电阻</td><td>合金采样电阻 0.5~20mΩ、2512 封装</td><td>2~3 颗(低边),1% 精度、低温漂</td></tr>
+    <tr><td>电流采样运放</td><td>INA240 / AD8418,或预驱内置 CSA</td><td>2~3 路差分放大</td></tr>
+    <tr><td>母线电容</td><td>电解 220~1000μF + 陶瓷 0.1~10μF×N</td><td>储能 + 高频去耦组合</td></tr>
+    <tr><td>电源树</td><td>Buck(48V→12V/5V)+ LDO(5V→3.3V)</td><td>TPS54560、MP2451、AMS1117 等</td></tr>
+    <tr><td>保护器件</td><td>TVS、防反接 PMOS、NTC、比较器</td><td>过压/过流/过温/防反接</td></tr>
+    <tr><td>编码器接口</td><td>AS5047P / MT6816(SPI)</td><td>1 路磁编码器,关节定位用</td></tr>
+  </table></div>
+
+  <!-- ================= 2 功率级选型 ================= -->
+  <h2><span class="h2-num">2</span> 功率级选型:MOSFET 与栅极驱动</h2>
+  <p>功率级是驱动板的「肌肉」。选型选错了,不是发热烫手,就是上电瞬间炸管。这一节把 MOSFET 和栅极驱动两块最难啃的骨头讲透。</p>
+
+  <h3>2.1 MOSFET 五大关键参数</h3>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>含义</th><th>选型经验值</th><th>踩坑点</th></tr>
+    <tr><td><strong>Vds</strong>(漏源耐压)</td><td>MOS 关断时能承受的最大电压</td><td>≥ 1.5~2 倍母线电压(留开关振铃过冲余量)</td><td>24V 母线选 40~60V;48V 母线选 80~100V,选 60V 会因振铃击穿</td></tr>
+    <tr><td><strong>Id</strong>(连续漏极电流)</td><td>常温下持续可过的电流(受封装散热限制)</td><td>≥ 2~3 倍电机额定相电流</td><td>datasheet 的 Id 是在理想散热下的值,实际要按结温降额</td></tr>
+    <tr><td><strong>Rds(on)</strong>(导通电阻)</td><td>导通损耗 P=I²·R 的来源</td><td>越低越好(毫欧级),与 Qg 折中</td><td>Rds(on) 随温度升高而增大(正温度系数),按 100°C 核算</td></tr>
+    <tr><td><strong>Qg</strong>(总栅极电荷)</td><td>开关一次的电荷量,决定开关损耗与驱动电流</td><td>低 Qg 利于高频与低开关损耗</td><td>Qg 越小通常 Rds(on) 越大,是硬性折中</td></tr>
+    <tr><td><strong>雪崩耐量 EAS</strong></td><td>单脉冲雪崩能量,漏感/反电动势能量泄放能力</td><td>电机驱动尽量选有明确 EAS 规格的型号</td><td>电机绕组漏感在关断时回灌能量,雪崩不足会击穿</td></tr>
+  </table></div>
+  <p><strong>损耗与驱动的两个核心公式:</strong></p>
+  <div class="my-formula">导通损耗 P<sub>cond</sub> = I<sup>2</sup> · Rds(on) · D(占空比)</div>
+  <div class="my-formula">栅极驱动电流 I<sub>g</sub> = Qg / t<sub>r</sub>(t<sub>r</sub> 为目标开关上升时间)</div>
+  <pre><code>// 原理性计算示例:48V 母线、相电流峰值 20A 的 MOS 损耗估算
+// 导通损耗(占空比 0.5、Rds(on)@100°C 约 3mΩ):
+Pcond = I^2 * Rds * D = 20^2 * 0.003 * 0.5 = 0.6 W/颗(单管导通占空比约一半)
+// 开关损耗(开关频率 fsw=20kHz、单次开关能量约 Esw):
+Psw = fsw * Esw ≈ 20000 * (0.5*Vds*Id*(tr+tf))  // 粗略估算,tr/tf 取 20ns
+     ≈ 20000 * (0.5*48*20*(40e-9)) ≈ 0.38 W/颗
+// 结论:此工况下导通损耗与开关损耗同量级,选 Rds(on) 与 Qg 都要兼顾</code></pre>
+  <div class="box box-warn"><b>⚠️ 温度核算:</b>MOSFET 结温 Tj = 环境温度 + P总 × Rθja(结到环境热阻)。散热不良时,2W 的损耗在 Rθja=50°C/W 下就会让结温升高 100°C。选型时一定要把「最坏工况电流下的损耗 × 热阻」算一遍,而不是只看 Id 标称值。</div>
+
+  <h3>2.2 半桥与三相全桥拓扑</h3>
+  <ul>
+    <li><strong>半桥(Half-Bridge):</strong>一个上管 + 一个下管,输出一相。三个半桥并排就是<strong>三相全桥</strong>(三相逆变器),输出 U/V/W 三路。</li>
+    <li><strong>为什么全用 N 沟道 MOS:</strong>N-MOS 的 Rds(on) 和开关性能显著优于同规格 P-MOS。上管用 N-MOS 需要栅压「浮」到高于源极(相电压)之上,这正是自举或隔离栅驱存在的意义。</li>
+    <li><strong>相电压本质:</strong>半桥输出在 VBUS 与 GND 之间高频斩波,配合 SVPWM 让三相电压矢量合成旋转磁场。</li>
+  </ul>
+
+  <h3>2.3 栅极驱动芯片选型</h3>
+  <div class="table-wrap"><table>
+    <tr><th>型号</th><th>厂商</th><th>结构</th><th>特点</th><th>适用</th></tr>
+    <tr><td><strong>IR2104</strong></td><td>Infineon(原 IR)</td><td>单半桥驱动</td><td>自举高边 N-MOS,外围极简,一个半桥一颗</td><td>入门学习、分立半桥</td></tr>
+    <tr><td><strong>DRV8301</strong></td><td>TI</td><td>三相栅驱</td><td>三相栅驱 + 2 路电流采样运放 + Buck 降压</td><td>ODrive v3.6 同款,经典整板方案</td></tr>
+    <tr><td><strong>DRV8323</strong></td><td>TI</td><td>三相栅驱</td><td>SPI 可配死区/增益/过流阈值,内置 3 路 CSA 电流放大</td><td>工业关节首选,集成度最高</td></tr>
+    <tr><td><strong>DRV8353</strong></td><td>TI</td><td>三相栅驱</td><td>DRV83 系列高压版,母线支持至约 100V</td><td>48V 以上高母线系统</td></tr>
+    <tr><td><strong>MP6540H</strong></td><td>MPS</td><td>三相栅驱</td><td>硬件引脚配置(免 SPI),内置过流保护,高性价比</td><td>国产替代、立创开源常用</td></tr>
+  </table></div>
+
+  <h3>2.4 自举(Bootstrap)vs 隔离式(Isolated)</h3>
+  <ul>
+    <li><strong>自举驱动:</strong>用一颗自举电容 + 快恢复二极管,把下管导通时「接地」的瞬间作为充电窗口,把高边栅压抬到相电压之上约 10~15V。优点是便宜、简单,缺点是<strong>高边占空比不能长期 100%</strong>(自举电容需要下管周期性导通来补电),极低速/满占空比场景受限。</li>
+    <li><strong>隔离式驱动:</strong>用隔离栅驱(如 UCC21520 / Si823x 类隔离半桥驱动)或隔离电源,把高边驱动完全「浮」起来。优点是可长期 100% 占空比、抗共模能力强,缺点是贵、占面积、需要隔离电源。</li>
+  </ul>
+  <div class="box box-tip"><b>💡 怎么选:</b>人形关节驱动(48V 以内、PWM 常停在 50% 附近)用<strong>自举</strong>完全够用,这也是 ODrive、VESC、CyberGear 的主流选择;只有高压大功率、需要长时间满占空比或强抗共模的场景才上隔离式。自举电容务必贴预驱 BOOT/PHASE 引脚放置(走线 ≤5mm)。</div>
+
+  <h3>2.5 死区时间(Dead Time)</h3>
+  <p>上下两个 MOSFET 绝不能同时导通,否则 VBUS 直接对地短路,瞬间电流可达数百安培,这就是「直通炸管」的物理本质。死区就是在下管关断与上管导通之间留出的「空窗」。</p>
+  <ul>
+    <li><strong>典型值:</strong>100ns~2μs。死区太小 → 直通;死区太大 → 电流谐波大、效率低、低速抖动。</li>
+    <li><strong>依据:</strong>死区必须大于 MOSFET 的关断延迟时间(td(off))与栅极驱动传播延迟之和,再留裕量;实际由 MCU 高级定时器寄存器或栅驱芯片(如 DRV8323 的 SPI)配置。</li>
+    <li><strong>验证:</strong>示波器双通道同时看同相上下管栅极波形,确认两波形无任何重叠。</li>
+  </ul>
+
+  <!-- ================= 3 电流采样 ================= -->
+  <h2><span class="h2-num">3</span> 电流采样:让 FOC「看见」电流</h2>
+  <p>FOC 控制力矩的前提是精确知道相电流(τ = Kt·Iq)。电流采样是整块驱动板最敏感、也最容易被新手搞砸的模拟部分——采样不准,FOC 算法写得再好也跑不起来。</p>
+
+  <h3>3.1 采样电阻选型</h3>
+  <ul>
+    <li><strong>阻值(毫欧级):</strong>典型 0.5~20mΩ。阻值越大,相同电流下压降越大、信噪比越高,但损耗 P=I²·R 也越大。选型原则:让满量程电流下的压降落在运放输入范围附近(如 10mΩ × 20A = 200mV,再放大 10 倍到 2V)。</li>
+    <li><strong>精度与温漂:</strong>1% 精度、温漂 ≤50ppm/°C 的合金电阻(2512 或更小封装)。普通电阻温漂大,电流一大电阻发热,阻值漂移直接引入测量误差。</li>
+    <li><strong>功率余量:</strong>P=I²·R,峰值功率按 3 倍以上留余量,大功率时电阻自身发热会反过来恶化温漂。</li>
+  </ul>
+  <pre><code>// 原理性计算示例:采样电阻阻值选取
+// 目标:满量程相电流 Ipk = 20A,希望电阻压降 Vsh = 150mV(留运放增益裕量)
+Rsh = Vsh / Ipk = 0.15V / 20A = 7.5mΩ  → 取标称 7.5mΩ 或 10mΩ
+// 采样电阻损耗(满量程时):
+P = Ipk^2 * Rsh = 20^2 * 0.0075 = 3W  → 选 3W×3 余量 = 需 5W 以上封装或并联
+// 运放增益(目标输出满量程 2.5V 进 ADC):
+Gain = Vout / Vsh = 2.5V / 0.15V ≈ 16.7  → 取预驱内置 CSA 可选增益 20V/V</code></pre>
+
+  <h3>3.2 三种采样方案对比</h3>
+  <div class="table-wrap"><table>
+    <tr><th>方案</th><th>原理</th><th>采样器件数</th><th>精度</th><th>算法复杂度</th><th>推荐度</th></tr>
+    <tr><td><strong>三电阻(低边)</strong></td><td>每相下桥源极各串一个采样电阻到地,三相全采</td><td>3 电阻 + 3 运放</td><td>⭐⭐⭐⭐⭐</td><td>低(直接读出三相)</td><td>⭐⭐⭐⭐⭐ 工业首选</td></tr>
+    <tr><td><strong>双电阻</strong></td><td>只采两相,第三相由基尔霍夫 Ic=−(Ia+Ib) 算出</td><td>2 电阻 + 2 运放</td><td>⭐⭐⭐⭐</td><td>低(多一步求和)</td><td>⭐⭐⭐⭐ 最常用</td></tr>
+    <tr><td><strong>单电阻(母线)</strong></td><td>母线串一个电阻,借 SVPWM 不同扇区时序重构三相电流</td><td>1 电阻 + 1 运放</td><td>⭐⭐⭐</td><td>高(需扇区重构)</td><td>⭐⭐ 成本极限方案</td></tr>
+    <tr><td>霍尔传感器</td><td>ACS712/ACS758 等非接触隔离测量</td><td>2~3 颗</td><td>⭐⭐⭐</td><td>低</td><td>⭐⭐ 大电流隔离场景</td></tr>
+  </table></div>
+  <p><strong>结论:</strong>关节驱动板主流是<strong>双电阻</strong>(省一路成本、利用 Ia+Ib+Ic=0)或<strong>三电阻</strong>(精度最高)。单电阻方案因为要在极窄的 PWM 窗口里「抢时间」采样,对 MCU 时序和死区约束苛刻,新手慎用。</p>
+
+  <h3>3.3 采样时刻与 PWM 同步(ADC 触发)</h3>
+  <p>这是电流采样最关键的时序纪律:<strong>功率管开关瞬间会产生巨大的 di/dt 尖峰,此时采到的电流是「毛刺」而非真实相电流。</strong>正确做法是让定时器在 PWM 中心对齐时刻触发 ADC,在开关动作结束、电流回落后采样。</p>
+  <pre><code>// 伪代码:定时器更新事件(中心对齐 PWM 的谷底)触发 ADC 采样两相电流
+void TIM1_BRK_UP_TRG_COM_IRQHandler(void) {
+  if (触发源 == 定时器更新事件) {
+    float ia = adc_read(CH_A);      // A 相电流(经运放放大后按增益换算)
+    float ib = adc_read(CH_B);      // B 相电流
+    float ic = -(ia + ib);          // 电流重构:基尔霍夫 Ia+Ib+Ic=0
+    // 送入 Clark → Park → PID ...
+  }
+}</code></pre>
+  <ul>
+    <li><strong>触发源:</strong>STM32 高级定时器(TIM1/TIM8)的更新事件或比较事件,硬件直接触发 ADC,无需软件轮询,保证采样时刻固定、抖动小。</li>
+    <li><strong>采样窗口:</strong>中心对齐 PWM 在「上下管都稳定」的时段采样;避免在 PWM 上升沿/下降沿附近采样。</li>
+  </ul>
+
+  <h3>3.4 运放放大:仪表放大器 / 差分放大器</h3>
+  <ul>
+    <li><strong>差分(电流检测)放大器:</strong>INA240、AD8418 这类专用电流检测运放,共模抑制比(CMRR)高,能直接承受采样电阻两端相对地的共模电压。这是主流方案。</li>
+    <li><strong>预驱内置 CSA:</strong>DRV8301 内置 2 路、DRV8323 内置 3 路电流采样放大器,增益可选(如 10/20/40/80 V/V),省去外置运放,布局更紧凑。</li>
+    <li><strong>仪表放大器:</strong>高精度场景用,但成本和复杂度更高,关节驱动一般不必要。</li>
+  </ul>
+
+  <h3>3.5 增益、偏置与零点校准</h3>
+  <ul>
+    <li><strong>偏置电压:</strong>单电源供电时,运放输出叠加约 1.65V(VDD/2)偏置,把双向电流映射到 0~3.3V 全量程。偏置必须用运放缓冲或精密分压,不能直接电阻分压(会被采样负载拉偏)。</li>
+    <li><strong>零点校准:</strong>电机未通电时,采样输出理论应为偏置电压(1.65V),把此时 ADC 读数记为「零电流」偏移量,运行中扣除。温度变化后建议重新校准。</li>
+    <li><strong>增益校准:</strong>通入已知小电流,反算实际增益,消除采样电阻和运放增益的容差。</li>
+  </ul>
+
+  <!-- ================= 4 母线设计 ================= -->
+  <h2><span class="h2-num">4</span> 母线设计:储能、滤波与电源树</h2>
+  <p>母线(Bus)是功率级的「能量池」。电机是强感性负载,电流快速通断会在母线上激起剧烈电压波动,母线电容、TVS、软启动和电源树就是为「稳住这个池子」而生的。</p>
+
+  <h3>4.1 母线电容:电解 + 陶瓷组合</h3>
+  <p>母线电容承担两个角色:<strong>储能</strong>(PWM 斩波导致的电流脉动由电容补给,避免母线电压跌落)和<strong>高频去耦</strong>(吸收开关瞬间的高频电流尖峰)。两种角色对应两类电容:</p>
+  <ul>
+    <li><strong>电解电容(大容量储能):</strong>220~1000μF,耐压 ≥1.5 倍母线电压,提供低频能量缓冲。</li>
+    <li><strong>陶瓷电容(高频去耦):</strong>0.1~10μF × N 颗,ESR 极低,必须<strong>紧贴 MOSFET 半桥</strong>放置,吸收高频尖峰。</li>
+  </ul>
+  <h3>4.2 容量估算:I = C·dv/dt</h3>
+  <pre><code>// 原理性计算示例:母线电容容量估算(核心公式 I = C · dv/dt)
+// 目标:峰值纹波电流 Iripple = 10A、开关周期内允许母线跌落 ΔV = 0.5V
+// 电流脉动持续时间 Δt ≈ 半个开关周期(取 fsw=20kHz → 25μs 的一半 ≈ 12.5μs)
+// C = I · Δt / ΔV = 10A × 12.5e-6 s / 0.5V = 250μF
+// → 取 220~470μF 电解 + 多颗 1~10μF 陶瓷;实际还要叠加制动回灌与温度降额,留 1.5~2 倍余量</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>类型</th><th>典型容值</th><th>耐压选择</th><th>作用</th><th>布局要求</th></tr>
+    <tr><td>电解电容</td><td>220~1000μF</td><td>≥1.5×VBUS</td><td>低频储能、抗母线跌落</td><td>靠近功率级入口</td></tr>
+    <tr><td>陶瓷电容(MLCC)</td><td>0.1~10μF × 多颗</td><td>≥2×VBUS(注意直流偏置容量衰减)</td><td>高频去耦、吸收开关尖峰</td><td>紧贴每个半桥</td></tr>
+    <tr><td>高频小电容</td><td>1~10nF</td><td>≥2×VBUS</td><td>抑制栅驱/Buck 的更高频噪声</td><td>就近 IC 引脚</td></tr>
+  </table></div>
+
+  <h3>4.3 TVS、防反接与软启动(预充)</h3>
+  <ul>
+    <li><strong>TVS 浪涌保护:</strong>电源入口并联 TVS 钳位瞬态过压。24V 系统用 SMBJ33CA 类,48V 系统用 SMBJ58CA 类(见 02-04 避坑指南)。</li>
+    <li><strong>防反接:</strong>推荐 PMOS 方案(压降小、大电流不发热),简单方案用肖特基二极管(有 0.3~0.5V 压降)。</li>
+    <li><strong>软启动/预充:</strong>上电瞬间母线电容相当于短路,瞬间浪涌电流可能烧保险丝或打坏接插件。做法:串入预充电阻(如 10~100Ω)限制充电电流,电容充满后再用 MOS/继电器把电阻短路旁路。预充时间由 RC 决定(τ=R·C)。</li>
+    <li><strong>制动泄放:</strong>电机减速/制动时能量回灌母线,母线电压会被抬高,需制动电阻 + NMOS 泄放回路,防止母线过压炸电容。</li>
+  </ul>
+
+  <h3>4.4 电源树:48V/24V → 12V → 5V → 3.3V</h3>
+  <div class="my-diagram">  VBUS(48V/24V 母线)
+      │
+      ├─ Buck(48V→12V)──▶ 12V ──▶ 栅极驱动 GVDD / 抱闸 / 风扇
+      │                         └─ Buck(12V→5V)──▶ 5V ──▶ CAN 收发器 / 编码器 / USB
+      │                                              └─ LDO(5V→3.3V)──▶ 3.3V ──▶ MCU VDD
+      └─ (可选)直接 Buck(48V→5V)──▶ 5V 支路
+   要点:① 模拟 3.3V(VDDA 给 ADC 参考)与数字 3.3V 用磁珠/0Ω 隔离;
+        ② Buck 环路(输入电容→IC→电感→输出电容)面积最小化,SW 节点铜皮尽量小</div>
+  <ul>
+    <li><strong>拓扑选择:</strong>高压差(48V→5V)用 Buck(如 TPS54560、MP2451),低压差(5V→3.3V)用 LDO(如 AMS1117、ME6211)更安静。</li>
+    <li><strong>VDDA 隔离:</strong>MCU 的模拟电源(VDDA,ADC 参考)必须和数字 3.3V 通过磁珠/0Ω 电阻 + 电容隔离,防止数字开关噪声耦合进 ADC。</li>
+  </ul>
+
+  <!-- ================= 5 PCB Layout ================= -->
+  <h2><span class="h2-num">5</span> PCB Layout:功率级布线要点</h2>
+  <p>电力电子里有一句铁律:<strong>Layout = Design</strong>。原理图画对了、Layout 错了,板子照样炸。这一节在 02-04 通用避坑的基础上,聚焦功率级的三大环路与地平面处理。</p>
+
+  <h3>5.1 主功率环路最小化(第一优先级)</h3>
+  <p>路径:<strong>母线电容 + → 上桥 MOS → 相输出 → 下桥 MOS → 母线电容 −</strong>。这条回路承载数百 A/μs 的 di/dt,环路面积每增大一点,寄生电感就增大,开关振铃和 EMI 就急剧恶化。</p>
+  <div class="box box-danger"><b>🔴 铁律:</b>母线陶瓷电容必须「贴脸」放在 MOSFET 半桥旁边,正负极直接连到上下管的漏/源,中间不要绕任何长走线。高频电流只认最短环路,远水解不了近渴——远处那颗大电解救不了半桥旁的高频尖峰。</div>
+
+  <h3>5.2 栅极驱动走线与开尔文连接</h3>
+  <ul>
+    <li><strong>栅极电阻 Rg 位置:</strong>Rg 必须<strong>紧贴 MOSFET 栅极焊盘</strong>(不是贴栅驱),利用电阻阻尼抑制栅极 LC 振铃,走线长度 ≤10mm。</li>
+    <li><strong>开尔文(Kelvin)连接:</strong>驱动回路的「源极返回」要单独从 MOS 源极焊盘引一根细线回栅驱的返回脚,不能和大电流主回路共用同一条铜箔——否则大电流在铜箔上的压降会叠加进栅极驱动电压,造成误导通。</li>
+    <li><strong>等长:</strong>同相 HO/LO 走线长度差 ≤2mm,保持上下管开关时序一致。</li>
+  </ul>
+
+  <h3>5.3 采样走线:差分对、远离功率区</h3>
+  <ul>
+    <li><strong>开尔文采样:</strong>从采样电阻焊盘<strong>内侧</strong>单独引两根细线到运放输入端,避开电流主回路的铜箔压降。</li>
+    <li><strong>差分走线:</strong>采样电阻两端到运放的两根线等长、平行、紧耦合,像差分对一样走,并全程包地。</li>
+    <li><strong>远离开关节点:</strong>与所有 PHASE/HO/LO 开关节点保持 ≥3mm 间距,绝不平行走线,必须交叉时 90° 垂直交叉。</li>
+  </ul>
+
+  <h3>5.4 地平面分割:功率地 / 模拟地 / 数字地</h3>
+  <div class="table-wrap"><table>
+    <tr><th>地类型</th><th>承载信号</th><th>处理方式</th></tr>
+    <tr><td>功率地 PGND</td><td>下桥 MOS 源极、母线电容负极、采样电阻</td><td>星形汇聚到同一点,铜皮尽量宽</td></tr>
+    <tr><td>模拟地 AGND</td><td>电流采样运放、ADC 参考</td><td>采样区下方独立铜皮,与 PGND <strong>单点</strong>连接</td></tr>
+    <tr><td>数字地 DGND</td><td>MCU、通信</td><td>直接接 PGND(数字噪声比功率回路小很多)</td></tr>
+  </table></div>
+  <div class="box box-warn"><b>⚠️ 单点连接:</b>AGND 与 PGND 只能在<strong>采样电阻附近一个点</strong>用 0Ω 电阻/过孔连接。多点连接会形成地环路,大电流在地平面上的压降会让 AGND 电位「漂」起来,直接污染采样信号。</div>
+
+  <h3>5.5 热设计:铜皮、过孔阵列、铝基板</h3>
+  <ul>
+    <li><strong>铜皮散热:</strong>MOSFET 漏极焊盘下方打 3×3 以上过孔阵列(孔径 0.3mm),连通到内层/底层大面积铺铜,把热量导走。</li>
+    <li><strong>铜厚:</strong>大功率选 2oz(70μm)铜厚,可降低 MOS 结温约数摄氏度。</li>
+    <li><strong>铝基板:</strong>超大功率或散热要求苛刻时,功率级单独做铝基板(Aluminum PCB),导热性远超 FR4。</li>
+    <li><strong>采样电阻发热:</strong>不要在采样电阻上方放电解电容等温度敏感器件。</li>
+  </ul>
+
+  <!-- ================= 6 保护电路 ================= -->
+  <h2><span class="h2-num">6</span> 保护电路:不炸板的最后防线</h2>
+  <p>软件保护(限流、过温降额)响应在毫秒级,而功率管直通、过流可能在<strong>微秒级</strong>就炸管。因此真正的「保命」防线必须落在硬件上,与固件互为备份。</p>
+
+  <h3>6.1 过流保护:比较器快速关断 + 栅驱 OCP/DESAT</h3>
+  <ul>
+    <li><strong>硬件比较器逐波限流:</strong>用高速比较器(或 MCU 内置比较器)监视电流采样信号,一旦超过阈值,硬件直接封锁 PWM,逐波(cycle-by-cycle)限流,不经过软件。</li>
+    <li><strong>栅驱 OCP/DESAT:</strong>DRV83 系列内置过流保护(OCP),检测到过流自动关闭栅极并拉低 nFAULT 通知 MCU;IGBT/大功率 MOS 常用 DESAT(去饱和)检测,通过监测导通压降判断短路。</li>
+    <li><strong>nFAULT 必须接外部中断:</strong>过流/过温/欠压时栅驱拉低 nFAULT,MCU 立即关断 PWM——这条线不接,保护等于白设。</li>
+  </ul>
+
+  <h3>6.2 过压 / 欠压保护</h3>
+  <ul>
+    <li><strong>过压(OVP):</strong>制动回灌会使母线电压抬高,电阻分压采样母线电压进 ADC/比较器,超阈值时开启制动泄放或封锁 PWM。TVS 在硬件层兜底钳位瞬态尖峰。</li>
+    <li><strong>欠压(UVLO):</strong>母线电压过低时,栅驱的欠压锁定(UVLO)会主动关闭,防止 MOSFET 进入线性区过热;栅驱芯片本身也内置 UVLO。</li>
+  </ul>
+
+  <h3>6.3 过温保护(NTC)</h3>
+  <ul>
+    <li><strong>NTC 热敏电阻:</strong>放在 MOSFET 旁或功率板热点,分压后进 ADC,如 10k NTC(1% 精度、B 值约 3950)。</li>
+    <li><strong>降额策略:</strong>超过 85°C 软件降功率,超过阈值直接停机;硬件上可配合温度开关做硬保护。</li>
+  </ul>
+
+  <h3>6.4 堵转保护与反电动势检测</h3>
+  <ul>
+    <li><strong>堵转保护:</strong>电机堵转时转速为 0 但电流持续拉满,电流 × 时间会快速积累热量。固件检测到「高电流 + 零速度」持续超时即停机。</li>
+    <li><strong>反电动势(BEMF)检测:</strong>反电动势与转速成正比,既可用于无感观测转子位置,也可用于判断「高速运行中突然断驱动」的工况——此时 BEMF 可能高于母线电压,通过 MOS 体二极管整流回灌母线,需要制动泄放或母线过压保护兜底。</li>
+  </ul>
+  <pre><code>// 伪代码:保护状态机(硬件 + 软件两层协同)
+void protection_loop(void) {
+  if (栅驱 nFAULT 拉低) {  // 硬件已触发 OCP/UVLO/OTSD
+    disable_pwm();          // 立即封锁 PWM
+    latch_fault(FAULT_DRIVER);
+  }
+  if (母线电压 > OVP阈值)  { enable_brake(); disable_pwm(); }
+  if (母线电压 < UVLO阈值) { disable_pwm(); }
+  if (NTC温度 > 85°C)     { derate_current(0.5); }      // 降功率
+  if (NTC温度 > 105°C)    { disable_pwm(); }
+  if (|速度| < 阈值 && |电流| > 堵转阈值 && 持续 > 超时) { disable_pwm(); }  // 堵转
+}</code></pre>
+
+  <!-- ================= 7 调试实战 ================= -->
+  <h2><span class="h2-num">7</span> 调试实战:示波器测量点与故障波形</h2>
+  <p>驱动板调不通,九成是「没量对地方」。这一节列出必测点和最常见的三类故障波形,以及电机发热/炸管的排查思路。</p>
+
+  <h3>7.1 必测点(设计时就要预留测试点 TP)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>测量点</th><th>看什么</th><th>正常形态</th></tr>
+    <tr><td>TP_VBUS / TP_3V3 / TP_12V</td><td>各路电源是否正常</td><td>电压稳定、纹波小</td></tr>
+    <tr><td>TP_GND(多放几个)</td><td>示波器探头接地夹用</td><td>—</td></tr>
+    <tr><td>栅极波形 Vgs(上下管)</td><td>驱动电压幅值、死区、振铃</td><td>10~15V 方波、无重叠、振铃 <1V</td></tr>
+    <tr><td>相电压 V_U/V_V/V_W</td><td>SVPWM 斩波波形</td><td>干净的 VBUS/GND 斩波,过冲小</td></tr>
+    <tr><td>采样输出 TP_IU/TP_IV</td><td>电流采样波形</td><td>正弦、无开关毛刺</td></tr>
+    <tr><td>TP_nFAULT</td><td>保护是否触发</td><td>常态高电平,故障拉低</td></tr>
+  </table></div>
+
+  <h3>7.2 三类常见故障波形</h3>
+  <ul>
+    <li><strong>振铃(Ringing):</strong>栅极或相电压波形在开关沿出现衰减振荡。原因:栅极回路/功率回路寄生电感大、Rg 太小。对策:Rg 移到 MOS 栅极旁并增大到 20~33Ω、缩小功率环路、加 RC 缓冲。</li>
+    <li><strong>直通(Shoot-Through):</strong>上下管栅极波形有重叠,或相电压出现「半导通平台」。原因:死区不足、栅极误导通。对策:增大死区、检查开尔文连接与下拉电阻,直通会瞬间大电流——务必先低压限流验证。</li>
+    <li><strong>采样毛刺(Sampling Glitch):</strong>采样输出波形在开关沿出现尖峰。原因:采样时刻落在开关沿、采样线耦合开关节点。对策:把 ADC 触发点移到 PWM 中心、采样线差分包地远离开关节点。</li>
+  </ul>
+
+  <h3>7.3 电机发热 / 驱动器炸管排查流程</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>看电源</b><br>限流供电,测各路电压与静态电流</div>
+    <div class="step-item"><span class="n">2</span><b>看栅极</b><br>50% 占空比,查死区与振铃</div>
+    <div class="step-item"><span class="n">3</span><b>看相电压</b><br>查斩波波形与过冲</div>
+    <div class="step-item"><span class="n">4</span><b>看采样</b><br>开环看三相电流正弦度</div>
+    <div class="step-item"><span class="n">5</span><b>查零位</b><br>编码器方向与电流采样零点</div>
+    <div class="step-item"><span class="n">6</span><b>加负载</b><br>闭环逐步加载,盯温度和 Id≈0</div>
+  </div>
+  <div class="box box-warn"><b>⚠️ 排查纪律:</b>电机异常发热先查 Id(励磁电流)是否 ≈0——Id 不为 0 说明电角度偏移或 PI 参数不对;炸管先万用表测 DS 是否击穿短路,同时检查栅极电阻和栅驱是否连带损坏。任何时候先低压(12V)小电流、限流电源验证,再上高压。</div>
+
+  <!-- ================= 8 开源参考 ================= -->
+  <h2><span class="h2-num">8</span> 开源参考:ODrive / VESC / SimpleFOC / CyberGear</h2>
+  <p>功率级设计最好的老师是成熟开源项目。逐个拆它们的硬件骨架,能直接对照本页前几节的每个知识点。</p>
+
+  <h3>8.1 ODrive 硬件(功率板 24V/56V)</h3>
+  <p>ODrive 是最著名的开源高功率 FOC 驱动板。经典板卡 <strong>v3.6</strong> 基于 <strong>STM32F405 + DRV8301</strong>(三相栅驱 + 双电流采样运放 + Buck),母线电压支持约 <strong>24V~56V</strong> 量级,双轴驱动。它的电流采样采用低边采样电阻 + DRV8301 内置 CSA,母线电容、栅驱、采样电阻布局规范,是学习功率级 Layout 的教科书级图纸(硬件原理图与 PCB 在 GitHub 全开源)。</p>
+
+  <h3>8.2 VESC 硬件</h3>
+  <p><strong>VESC</strong>(本杰明电调,github.com/vedderb/bldc)是另一块经过多年迭代验证的开源 FOC 驱动板。其经典硬件同样采用 <strong>DRV8301 栅驱 + 低边三电阻采样</strong>的架构,功率级从低压到高压有多个版本,社区对「三电阻低边采样 + DRV 放大器」的讨论非常充分,是理解第 3 节采样方案的绝佳对照。</p>
+
+  <h3>8.3 SimpleFOC 硬件示例</h3>
+  <p>SimpleFOC 主要是一套<strong>固件库</strong>,但它配套了多个参考硬件(SimpleFOC Shield、Mini、以及与各类三相驱动板的接线范例)。SimpleFOC 的价值在「软件侧」,本页不展开(见 06-02);硬件侧它默认的参考驱动板普遍是「三相半桥驱动模块 + 可选低边采样」,适合作为理解功率级信号流的入门跳板。</p>
+
+  <h3>8.4 小米 CyberGear 拆解分析</h3>
+  <p><strong>CyberGear</strong>(2023 年发布,首发价约 499 元)是一颗开源准直驱关节模组,把电机、减速器、编码器、驱动器集成一体,通过 CAN(1Mbps)通信。据多方拆解报告,其内部编码器采用 <strong>ams AS5047P 磁编码器</strong>;主控与驱动芯片的具体型号在不同批次/拆解中说法不一,官方未完整公布,建议以实际拆解图为准(标「约」)。它最大的价值是展示了一块高功率关节驱动如何被「压缩」进一个模组:功率级、母线电容、采样全部紧贴电机本体,散热与体积的权衡极具参考意义。</p>
+
+  <h3>8.5 开源项目硬件骨架对照</h3>
+  <div class="table-wrap"><table>
+    <tr><th>项目</th><th>主控</th><th>栅驱</th><th>采样方案</th><th>母线</th></tr>
+    <tr><td>ODrive v3.6</td><td>STM32F405</td><td>DRV8301</td><td>低边采样电阻 + 内置 CSA</td><td>约 24~56V</td></tr>
+    <tr><td>VESC 6 系</td><td>STM32F4 系</td><td>DRV8301</td><td>低边三电阻 + DRV 放大器</td><td>多版本(低压~高压)</td></tr>
+    <tr><td>SimpleFOC 参考板</td><td>STM32/ESP32 等</td><td>各类三相半桥模块</td><td>可选低边采样</td><td>通常 ≤24V</td></tr>
+    <tr><td>CyberGear</td><td>国产 MCU(约)</td><td>集成方案(约)</td><td>低边采样(约)</td><td>约 24~48V(约)</td></tr>
+  </table></div>
+
+  <!-- ================= 9 与本项目关联 ================= -->
+  <h2><span class="h2-num">9</span> 与本项目关联:Hdrive 驱动器硬件要点回顾</h2>
+  <p>本项目的 <strong>Hdrive 融合方案</strong>是一套面向人形机器人关节的驱动模组。回到硬件功率级,它的驱动器部分需要同时满足「高功率密度 + 高可靠 + 可量产」三件事,本页的每个知识点都能直接映射到设计决策上:</p>
+  <ul>
+    <li><strong>分层:</strong>控制板与功率板分离,Hdrive 的 MCU 控制板与功率级分开,便于散热与量产维护(呼应第 1 节)。</li>
+    <li><strong>功率级:</strong>母线 48V 量级时,功率 MOSFET 需选 <strong>80~100V Vds、毫欧级 Rds(on)、低 Qg</strong> 的型号,栅驱优先 <strong>DRV8323/DRV8353</strong> 这类集成 CSA + 死区 + OCP 的三相驱,把保护收敛进芯片(呼应第 2 节)。</li>
+    <li><strong>采样:</strong>采用 <strong>双电阻或三电阻低边采样</strong> + 差分放大,ADC 由定时器在 PWM 中心同步触发,零点与增益做上电校准(呼应第 3 节)。</li>
+    <li><strong>母线:</strong>电解 + 陶瓷组合,按 I=C·dv/dt 估算容量,预留软启动预充与制动泄放(呼应第 4 节)。</li>
+    <li><strong>Layout:</strong>主功率环路最小化、栅极开尔文连接、采样差分对远离功率区、PGND/AGND 单点连接(呼应第 5 节)。</li>
+    <li><strong>保护:</strong>硬件比较器逐波限流 + 栅驱 OCP + nFAULT 中断 + NTC 过温 + 堵转检测,软硬两层兜底(呼应第 6 节)。</li>
+  </ul>
+  <div class="box box-ok"><b>✅ 一句话总结:</b>Hdrive 的驱动器硬件,本质是把本页 1~6 节的「分层、选型、采样、母线、Layout、保护」六件事,按功率密度与可量产约束重新权衡一遍——原理完全通用,差别只在「取舍」。</div>
+
+  <!-- ================= 10 本节自测 ================= -->
+  <h2><span class="h2-num">10</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 48V 母线的关节驱动板,功率 MOSFET 的 Vds 耐压最合理的量级是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 40V,与母线电压接近即可</button>
+      <button data-v="B">B. 60V,略高于母线电压</button>
+      <button data-v="C">C. 80~100V,留出开关振铃过冲余量</button>
+      <button data-v="D">D. 200V 以上,越高越安全</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Vds 要 ≥1.5~2 倍母线电压,48V 母线选 80~100V,因为开关瞬间的振铃过冲会远高于母线电压;选 40~60V 会被振铃击穿。也不是越高越好——耐压越高通常 Rds(on) 越大、导通损耗越高,200V 以上是过度设计。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 三相全桥为什么普遍使用 N 沟道 MOSFET(而不是 P 沟道)做上管?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. N-MOS 更便宜且不需要栅极驱动</button>
+      <button data-v="B">B. N-MOS 的 Rds(on) 与开关性能显著优于同规格 P-MOS,配合自举/隔离栅驱即可浮地驱动</button>
+      <button data-v="C">C. P-MOS 无法承受反向电压</button>
+      <button data-v="D">D. N-MOS 不会发热</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:同规格下 N-MOS 导通电阻和开关速度都优于 P-MOS。上管用 N-MOS 的难点在于栅压要「浮」到高于源极(相电压),这正是自举电容或隔离栅驱的用途;P-MOS 不存在「不能承受反向电压」的问题,只是性能差。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 关于电流采样的采样时刻,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 由定时器在 PWM 中心对齐、开关动作结束后的窗口内同步触发 ADC</button>
+      <button data-v="B">B. 在功率管开关瞬间采样,信号最「新鲜」</button>
+      <button data-v="C">C. 任意时刻采样后多取几次平均即可</button>
+      <button data-v="D">D. 只在电机停止时采样</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:开关瞬间 di/dt 巨大,采到的是毛刺而非真实相电流,必须避开;取平均也无法消除开关噪声。正确做法是定时器同步触发 ADC,在 PWM 中心对齐、电流稳定的窗口内采样。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 双电阻采样方案中,第三相电流如何获得?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 用第三个运放直接测量</button>
+      <button data-v="B">B. 从母线电压换算得到</button>
+      <button data-v="C">C. 用霍尔传感器补测</button>
+      <button data-v="D">D. 利用基尔霍夫电流定律 Ic = −(Ia + Ib) 重构</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:三相电流满足 Ia+Ib+Ic=0,采两相即可算出第三相,省一路采样电阻和运放成本。这也是双电阻方案比三电阻方案少一路器件、精度仍够用的原因。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 母线电容容量的核心估算公式是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. P = I²·R</button>
+      <button data-v="B">B. I = C·dv/dt,即 C = I·Δt/ΔV</button>
+      <button data-v="C">C. τ = R·C</button>
+      <button data-v="D">D. V = L·di/dt</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:母线电容按 I=C·dv/dt 估算——在电流脉动持续时间 Δt 内,允许母线电压跌落 ΔV,反解出所需电容 C。τ=RC 是软启动预充时间常数,V=L·di/dt 是电感伏秒关系,P=I²R 是损耗公式。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于功率地(PGND)与模拟地(AGND)的处理,正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 全部铺成一块完整地平面,AGND 与 PGND 多点相连,阻抗越低越好</button>
+      <button data-v="B">B. AGND 与 PGND 完全隔离,永不连接</button>
+      <button data-v="C">C. 物理分离,仅在采样电阻附近用单点(0Ω/过孔)连接,避免地环路</button>
+      <button data-v="D">D. 用细走线随便连一下即可</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:AGND 与 PGND 必须物理分离,且只在采样电阻附近单点连接。多点连接会形成地环路,大电流在地平面上的压降会让 AGND 电位漂移、污染采样信号;完全隔离则会因无参考电位导致运放/ADC 异常。连接点必须是低阻抗宽铜皮或过孔,不能是细走线。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 上下桥 MOSFET 直通(Shoot-Through)最根本的防范手段是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 在互补 PWM 中插入足够的死区时间</button>
+      <button data-v="B">B. 加大采样电阻阻值</button>
+      <button data-v="C">C. 提高 PWM 频率</button>
+      <button data-v="D">D. 增大母线电容容量</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:直通的物理本质是上下管同时导通、母线对地短路。死区时间在下管关断与上管导通之间留出空窗,避免重叠导通;死区太小会直通,太大则谐波大、效率低。采样电阻、PWM 频率、母线电容都与直通无直接关系。</div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>FOC 驱动器硬件的核心是「功率级」:分层把大电流与模拟小信号隔开,MOSFET 选型在 Vds/Id/Rds(on)/Qg/雪崩之间权衡,栅驱用自举或隔离把 PWM 放大并插入死区防直通,电流采样用低边采样电阻 + 差分运放、在 PWM 中心同步触发 ADC,母线用电解+陶瓷按 I=C·dv/dt 估算容量并配 TVS/预充/制动,Layout 死守功率环路最小化、开尔文连接、地平面单点连接三条铁律,保护靠比较器逐波限流 + 栅驱 OCP + 过温/堵转多层兜底。开源项目里 ODrive(DRV8301)、VESC、CyberGear 是最好的对照教材。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果一块驱动板在 48V 下正常,但升到 56V 后上桥 MOS 频繁击穿,你会优先排查哪几个参数(Vds 余量?振铃过冲?母线电容位置?)<br>
+    2. 单电阻采样方案为什么在「占空比接近 0% 或 100%」时会采不到电流?它和自举驱动「高边不能长期 100% 占空比」之间有什么关系?<br>
+    3. 假设 Hdrive 要支持 48V/峰值 30A,请用本页公式粗算:母线电容容量、采样电阻阻值、以及至少需要的 MOS Vds 等级。
+  </div>
+
+  <!-- ================= 11 参考资料 ================= -->
+  <h2><span class="h2-num">11</span> 参考资料</h2>
+  <p style="color:#6b7280;font-size:12.5px;">资料整理更新至 2026-08 · 芯片参数与开源项目信息经 web_search 核实,未官方公布之处已标注「约」。</p>
+  <ul>
+    <li><a href="https://www.ti.com.cn/product/cn/DRV8301" target="_blank" rel="noopener">TI DRV8301:三相栅极驱动 + 双电流采样运放 + Buck 降压(官方产品页)</a></li>
+    <li><a href="https://www.ti.com.cn/document-viewer/cn/DRV8301/datasheet" target="_blank" rel="noopener">DRV8301 数据手册(TI 官方,栅驱/CSA 参数)</a></li>
+    <li><a href="https://www.ti.com/product/DRV8323" target="_blank" rel="noopener">TI DRV8323:三相智能栅驱(SPI 配置死区/增益/OCP,官方)</a></li>
+    <li><a href="https://www.digikey.com/en/products/detail/infineon-technologies/IR2104PBF/812198" target="_blank" rel="noopener">Infineon IR2104:自举半桥栅极驱动(DigiKey 产品页)</a></li>
+    <li><a href="https://wwshop.odriverobotics.com/products/odrive-v36" target="_blank" rel="noopener">ODrive v3.6 官方商店页(NRND,母线电压与板卡信息)</a></li>
+    <li><a href="https://github.com/odriverobotics/ODrive" target="_blank" rel="noopener">ODrive 开源仓库:硬件原理图与 PCB(GitHub)</a></li>
+    <li><a href="https://discourse.odriverobotics.com/t/location-of-shunt-resistors-on-odrive-3-6/6332" target="_blank" rel="noopener">ODrive v3.6 采样电阻位置与电路讨论(ODrive 社区)</a></li>
+    <li><a href="https://github.com/vedderb/bldc" target="_blank" rel="noopener">VESC 开源仓库(github.com/vedderb/bldc)</a></li>
+    <li><a href="https://vesc-project.com/node/788" target="_blank" rel="noopener">VESC 6 三电阻低边采样方案讨论(vesc-project 社区)</a></li>
+    <li><a href="https://docs.simplefoc.com/" target="_blank" rel="noopener">SimpleFOC 官方文档(含参考硬件与接线范例)</a></li>
+    <li><a href="https://www.cnblogs.com/FBsharl/p/18572093" target="_blank" rel="noopener">小米 CyberGear 微电机拆解分析(博客园)</a></li>
+    <li><a href="https://www.elecfans.com/d/6616580.html" target="_blank" rel="noopener">CyberGear 拆解:ams AS5047P 磁编码器解析(电子发烧友)</a></li>
+    <li><a href="https://zhuanlan.zhihu.com/p/436563910" target="_blank" rel="noopener">电机控制器母线电容选择及容量计算(知乎专栏)</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

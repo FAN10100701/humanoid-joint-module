@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · ROS2 导航 Navigation2 实战</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(前缀 my-) */
+  .my-term{display:inline-block;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:#9ecbff;border-radius:6px;padding:1px 8px;font-size:12px;margin:0 4px 4px 0}
+  body[data-theme="light"] .my-term{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#1d4ed8}
+  .my-flow{font-family:ui-monospace,Consolas,monospace;font-size:13px;color:#9ecbff;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:6px;padding:2px 10px;white-space:nowrap}
+  body[data-theme="light"] .my-flow{color:#1d4ed8;background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.2)}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-11",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec6" },
+      { t: "ROS2 导航 Navigation2 实战" }
+    ],
+    prev: { t: "ROS2 实战进阶 · URDF 与 MoveIt2", u: "10_ROS2实战进阶_URDF与MoveIt2.html" },
+    next: { t: "机器人感知专题 · 相机激光雷达点云", u: "12_机器人感知专题_相机激光雷达点云.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🧭 ROS2 导航 Navigation2 实战:从建图到避障导航</h1>
+    <div class="sub">面向已会 ROS2 基础(话题 / 服务 / launch)的读者 —— 手把手跑通 Nav2 导航栈:建图 → 保存地图 → AMCL 定位 → 全局规划 → 局部控制 → 避障与恢复,参考 Navigation2 官方文档整理。</div>
+    <div class="tags">
+      <span class="tag">Nav2</span>
+      <span class="tag">SLAM 建图</span>
+      <span class="tag">AMCL 定位</span>
+      <span class="tag">代价地图</span>
+      <span class="tag">行为树</span>
+      <span class="tag">路径规划</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出 Nav2 的六大核心模块(行为树 BT Navigator、规划器、控制器、代价地图、AMCL、恢复行为)并说清各自职责<br>
+    2. 能用 SLAM Toolbox 或 Cartographer 建一张栅格地图,读懂 <code>.pgm + .yaml</code> 地图格式与代价含义<br>
+    3. 能看懂 <code>nav2_params.yaml</code> 的关键参数(代价地图 inflation_radius、规划器插件、控制器插件、行为树流程)<br>
+    4. 能独立完成:启动仿真 → 建图 → map_saver 保存地图 → 加载地图导航 → RViz 2D Goal Pose 导航 → 避障与恢复<br>
+    5. 能解释 <code>map → odom → base_link</code> 的 TF 树关系,以及 AMCL 粒子滤波定位原理<br>
+    6. 能说清人形机器人为什么也用 Nav2,以及轮式与足式导航的差异<br>
+    <b>建议用时:</b>90-150 分钟(含动手)。<b>前置:</b>建议先读本站 <a href="09_ROS2入门实战_第一个节点.html">06-09 ROS2 入门实战</a> 与 <a href="10_ROS2实战进阶_URDF与MoveIt2.html">06-10 URDF 与 MoveIt2</a>,本页默认你已会话题、launch 文件与 RViz2。
+  </div>
+
+  <h2><span class="h2-num">1</span> Nav2 是什么:ROS2 的「生产级」导航栈</h2>
+  <p><b>Navigation2(Nav2)</b>是 ROS2 官方生态下的生产级自主导航框架,由 Open Robotics 与社区共同维护,截至 2025 年已有超过 100 家公司采用。它把「从 A 点安全走到 B 点」这一件事拆成一组<b>松耦合、可插拔的模块</b>,你既可以用默认插件快速跑通,也可以像换乐高积木一样替换其中的规划器、控制器、行为树。</p>
+
+  <h3>1.1 与 ROS1 move_base 的关系</h3>
+  <p>Nav2 是 ROS1 <b>move_base</b> 的「精神继承者」,但架构有本质区别:</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>ROS1 move_base</th><th>ROS2 Nav2</th></tr>
+    <tr><td>调度方式</td><td>写死的状态机(global planner → local planner)</td><td><b>行为树(Behavior Tree)</b>驱动,可自由编排任务逻辑</td></tr>
+    <tr><td>通信</td><td>Topic/Service,依赖 Master</td><td>Topic/Service/<b>Action</b>(导航目标用 Action,带进度反馈),DDS 去中心化</td></tr>
+    <tr><td>规划器</td><td>global_planner / navfn 为主</td><td>Navfn / SmacPlanner(Hybrid-A*) / ThetaStar 等多种插件</td></tr>
+    <tr><td>控制器</td><td>DWA / TEB(ROS1 版)</td><td>DWB / RegulatedPurePursuit / TEB(ROS2 版)/ MPPI</td></tr>
+    <tr><td>代码组织</td><td>navigation 单一仓库</td><td>navigation2 仓库拆成数十个 nav2_* 包,独立迭代</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💡 一句话记忆:</b>move_base 是「固定的流水线」,Nav2 是「可编程的行为树」—— 同一套底层算法,但任务编排能力远超 move_base。</div>
+
+  <h3>1.2 核心模块地图</h3>
+  <p>Nav2 的六大核心模块以及它们在导航中的分工:</p>
+  <div class="table-wrap"><table>
+    <tr><th>模块</th><th>对应包</th><th>职责</th><th>类比</th></tr>
+    <tr><td>行为树 BT Navigator</td><td>nav2_bt_navigator</td><td>顶层调度:按 XML 行为树决定「先规划→再跟随→失败就恢复」的流程</td><td>大脑皮层(总指挥)</td></tr>
+    <tr><td>规划器 Planner</td><td>nav2_planner(nav2_navfn_planner / nav2_smac_planner 等)</td><td>全局路径:在地图上算一条从起点到目标的长距离路径</td><td>导航软件(看路)</td></tr>
+    <tr><td>控制器 Controller</td><td>nav2_controller(nav2_dwb_controller / nav2_regulated_pure_pursuit_controller 等)</td><td>局部控制:把全局路径变成速度指令(cmd_vel),实时避障</td><td>双手方向盘(开车)</td></tr>
+    <tr><td>代价地图 Costmap</td><td>nav2_costmap_2d</td><td>维护「哪里能走、哪里不能走」的 2D 代价网格(全局 + 局部两张)</td><td>实时地图(眼睛+记忆)</td></tr>
+    <tr><td>定位 AMCL</td><td>nav2_amcl</td><td>粒子滤波定位:根据激光+里程计估计机器人在 map 坐标系里的位姿</td><td>GPS(我在哪)</td></tr>
+    <tr><td>恢复行为 Recovery</td><td>nav2_recoveries(nav2_behaviors)</td><td>卡住时自救:Spin(原地转)、BackUp(后退)、Wait(等待障碍清除)</td><td>脱困技巧(自救)</td></tr>
+  </table></div>
+  <p>整条数据流大致是:<span class="my-flow">目标 pose → BT Navigator → Planner 算全局路径 → Controller 算 cmd_vel → 底盘执行</span>,期间<b>Costmap</b> 持续更新障碍、<b>AMCL</b> 持续更新位姿,一旦控制器卡住就触发 <b>Recovery</b>。</p>
+
+  <h2><span class="h2-num">2</span> 环境准备:Ubuntu + ROS2 + Nav2</h2>
+  <p>推荐 <b>Ubuntu 22.04 + ROS2 Humble</b>(最稳、教程最多),或 <b>Ubuntu 24.04 + ROS2 Jazzy</b>(更新,但个别包如 cartographer_ros 官方源暂未发布,需源码编译)。安装 Nav2 与建图工具:</p>
+  <pre><code>sudo apt update
+sudo apt install ros-humble-navigation2 ros-humble-nav2-bringup   # Nav2 核心
+sudo apt install ros-humble-slam-toolbox                          # 建图:SLAM Toolbox
+sudo apt install ros-humble-cartographer ros-humble-cartographer-ros  # 建图:Cartographer(Humble 有,Jazzy 需源码编译)
+# 可选:小乌龟仿真(最常用的 Nav2 入门载体)
+sudo apt install ros-humble-turtlebot3*</code></pre>
+  <div class="box box-warn"><b>⚠️ 版本提示:</b>Jazzy 下把 <code>ros-humble-*</code> 换成 <code>ros-jazzy-*</code>;<code>cartographer_ros</code> 在 Jazzy 官方源<b>暂未发布</b>(约截至 2025 年),想用 Cartographer 建议留在 Humble,或从 GitHub 源码编译。</div>
+  <p>每次新开终端都要先 source 环境(可把<b>全局</b> setup.bash 写进 <code>~/.bashrc</code>,工作空间的 setup.bash 手动 source,详见 06-09 页):</p>
+  <pre><code>source /opt/ros/humble/setup.bash          # 全局环境
+echo "source /opt/ros/humble/setup.bash" &gt;&gt; ~/.bashrc   # 可选:写进 .bashrc 免重复</code></pre>
+  <p>仿真载体可选<b>小乌龟 TurtleBot3</b>(教程最多)、<b>Nav2 官方示例机器人</b>,或你自己的差速/阿克曼底盘。人形机器人的<b>轮式移动底座</b>完全可以直接套用差速小车这一套。</p>
+
+  <h2><span class="h2-num">3</span> 建图两种方式:SLAM Toolbox 与 Cartographer</h2>
+  <p>导航的第一步是<b>建一张栅格地图(Occupancy Grid Map)</b>——把环境切成一个个小格子,每个格子标注「空闲 / 占用 / 未知」。这由 SLAM(同时定位与建图)算法完成:机器人一边走、一边用激光雷达扫环境、一边估计自己的位姿。</p>
+
+  <h3>3.1 三种建图方案对比</h3>
+  <div class="table-wrap"><table>
+    <tr><th>方案</th><th>算法特点</th><th>优点</th><th>缺点</th><th>适用</th></tr>
+    <tr><td>SLAM Toolbox</td><td>基于粒子滤波(GMapping 的 ROS2 正规继承者)+ 图优化可选</td><td>安装简单、稳定、支持终生建图与地图序列化</td><td>大场景回环能力弱于 Cartographer</td><td>绝大多数入门与中小场景</td></tr>
+    <tr><td>Cartographer</td><td>Google 开源,基于图优化 + 子图(submap)+ 回环检测</td><td>大场景、回环鲁棒、可 2D/3D、可多传感器融合</td><td>参数多、调参门槛高、Jazzy 未发布</td><td>大型/复杂环境、追求精度</td></tr>
+    <tr><td>GMapping(ROS1 经典)</td><td>纯粒子滤波 FastSLAM 2.0</td><td>历史悠久、资料多</td><td><b>ROS1 专属</b>,ROS2 里已被 SLAM Toolbox 取代</td><td>仅 ROS1 项目对照参考</td></tr>
+  </table></div>
+  <p>日常推荐 <b>SLAM Toolbox 起步</b>;场景很大、回环很多时再上 Cartographer。两者输出的都是同一种栅格地图,下游 Nav2 用法完全一致。</p>
+
+  <h3>3.2 用 SLAM Toolbox 建图(命令)</h3>
+  <pre><code># 终端 1:启动机器人仿真(以小乌龟为例,含底盘+雷达+TF)
+export TURTLEBOT3_MODEL=burger
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+
+# 终端 2:启动 SLAM Toolbox(在线同步建图)
+ros2 launch slam_toolbox online_async_launch.py
+
+# 终端 3:启动 RViz2 看地图,再用键盘/手柄遥控小车走遍房间
+ros2 run turtlebot3_teleop teleop_keyboard</code></pre>
+  <p>遥控小车<b>慢速、完整地走遍整个房间</b>,让激光雷达扫到每一面墙,RViz2 里地图会逐渐被填满。</p>
+
+  <h3>3.3 保存地图(map_saver)与地图文件格式</h3>
+  <p>建图满意后,保存地图(RViz 打开时地图不变即可保存):</p>
+  <pre><code># Nav2 用 map_saver_cli(注意不是 ROS1 的 map_server map_saver)
+ros2 run nav2_map_server map_saver_cli -f ~/map</code></pre>
+  <p>会生成两个文件:<code>map.pgm</code>(灰度图片)与 <code>map.yaml</code>(元数据)。示例 <code>map.yaml</code>:</p>
+  <pre><code>image: map.pgm
+mode: trinary          # trinary(三值)/ scale / raw
+resolution: 0.05       # 每像素 = 0.05 米
+origin: [-1.0, -1.0, 0.0]   # 地图左下角像素在 map 坐标系下的位姿 [x,y,yaw]
+negate: 0              # 0 = 黑是占用;1 = 反转
+occupied_thresh: 0.65  # 占用概率 &gt;= 0.65 视为「占用」
+free_thresh: 0.196     # 占用概率 &lt;= 0.196 视为「空闲」</code></pre>
+
+  <h3>3.4 地图代价解释</h3>
+  <p><code>.pgm</code> 是普通灰度图,黑 = 障碍,白 = 可通行,灰(常为 205)= 未知。加载到 Nav2 后,代价地图把这些像素换算成 <b>0~255 的代价值</b>,数值越大越「危险」:</p>
+  <div class="table-wrap"><table>
+    <tr><th>代价类别</th><th>数值</th><th>含义</th><th>RViz 中颜色</th></tr>
+    <tr><td>FREE_SPACE(空闲)</td><td>0</td><td>完全可走</td><td>浅色/白</td></tr>
+    <tr><td>INSCRIBED_INFLATED(内切膨胀)</td><td>253</td><td>机器人「内切圆」会撞到的区域,致死</td><td>深色/紫红</td></tr>
+    <tr><td>LETHAL_OBSTACLE(致死障碍)</td><td>254</td><td>真实障碍物本体</td><td>黑</td></tr>
+    <tr><td>NO_INFORMATION(未知)</td><td>255</td><td>没扫到、不知道能否走</td><td>灰/蓝紫</td></tr>
+  </table></div>
+  <p>关键概念是<b>膨胀(Inflate)</b>:为了不让机器人「贴墙走」,代价地图会以 <code>inflation_radius</code> 为半径,把障碍物附近的格子代价值从 254 向外<b>逐级衰减</b>到 0。机器人中心离障碍越近,代价越高,规划器和控制器就自然绕开。</p>
+
+  <h2><span class="h2-num">4</span> 导航配置详解:nav2_params.yaml</h2>
+  <p>Nav2 的所有行为都由一个参数文件控制,默认叫 <code>nav2_params.yaml</code>(由 <code>ros2 launch nav2_bringup bringup_launch.py</code> 加载)。下面拆解最关键的几块。</p>
+
+  <h3>4.1 代价地图参数(全局 + 局部两张)</h3>
+  <p>全局代价地图(global_costmap)给<b>规划器</b>用、范围大、更新慢;局部代价地图(local_costmap)给<b>控制器</b>用、范围小、更新快(跟随机器人移动)。两者结构相同:</p>
+  <pre><code>local_costmap:
+  ros__parameters:
+    update_frequency: 5.0      # 更新频率(Hz)
+    publish_frequency: 2.0     # 发布频率(Hz)
+    global_frame: odom         # 局部地图坐标系(跟随机器人,用 odom)
+    robot_base_frame: base_link
+    rolling_window: true       # 局部地图用滚动窗口
+    width: 3                   # 窗口宽(米),rolling_window 时生效
+    height: 3
+    resolution: 0.05           # 分辨率(米/格)
+    robot_radius: 0.22         # 机器人半径(圆形底盘);footprint 二选一
+    plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+    inflation_layer:
+      plugin: "nav2_costmap_2d::InflationLayer"
+      inflation_radius: 0.55   # ★ 膨胀半径:越大越远离障碍,越大越难钻窄缝
+      cost_scaling_factor: 3.0 # ★ 代价衰减因子:越大衰减越快(越贴墙)
+    obstacle_layer:
+      plugin: "nav2_costmap_2d::ObstacleLayer"
+      observation_sources: scan
+      scan: {topic: /scan, data_type: LaserScan, clearing: true, marking: true}</code></pre>
+  <div class="box box-warn"><b>⚠️ 两个最常调的参数:</b><code>inflation_radius</code> 决定「离障碍多远开始绕」,<b>要大于机器人半径</b>、略小于最窄门宽的一半;<code>cost_scaling_factor</code> 越大,代价从障碍向外衰减越快,机器人越「敢贴墙」。贴墙蹭到家具调大前者,太保守钻不过门调小前者。</div>
+
+  <h3>4.2 全局规划器插件(Planner)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>插件</th><th>包名(plugin 字段)</th><th>算法</th><th>适用</th></tr>
+    <tr><td>NavfnPlanner</td><td>nav2_navfn_planner/NavfnPlanner</td><td>Dijkstra(在势场/栅格上)</td><td>差速、全向,入门默认</td></tr>
+    <tr><td>SmacPlanner2D</td><td>nav2_smac_planner/SmacPlanner2D</td><td>2D A* / Hybrid-A*</td><td>差速,较快</td></tr>
+    <tr><td>SmacPlannerHybrid</td><td>nav2_smac_planner/SmacPlannerHybrid</td><td>Hybrid-A*(考虑朝向,支持 Dubin/Reeds-Shepp)</td><td><b>阿克曼/车式底盘</b></td></tr>
+    <tr><td>ThetaStarPlanner</td><td>nav2_theta_star_planner/ThetaStarPlanner</td><td>Theta*(任意角度路径)</td><td>追求更短更直路径</td></tr>
+  </table></div>
+  <pre><code>planner_server:
+  ros__parameters:
+    plugins: ["GridBased"]
+    use_sim_time: true
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5            # 目标点容差(米)
+      use_astar: false</code></pre>
+
+  <h3>4.3 局部控制器插件(Controller)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>插件</th><th>plugin 字段</th><th>算法</th><th>适用</th></tr>
+    <tr><td>DWB</td><td>dwb_core::DWBLocalPlanner</td><td>采样轨迹打分(ROS1 DWA 的继承者)</td><td>差速,经典稳妥</td></tr>
+    <tr><td>RegulatedPurePursuit</td><td>nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController</td><td>纯追踪 + 速度调节</td><td>差速,默认推荐,参数少</td></tr>
+    <tr><td>TEB(ROS2)</td><td>teb_local_planner::TebLocalPlannerROS</td><td>时间弹性带(Timed Elastic Band),优化时间与位姿</td><td>车式/阿克曼,需源码编译(非 Nav2 官方包)</td></tr>
+    <tr><td>MPPI</td><td>nav2_mppi_controller::MPPIController</td><td>模型预测路径积分(采样+GPU 可选)</td><td>高动态、对平滑要求高</td></tr>
+  </table></div>
+  <pre><code>controller_server:
+  ros__parameters:
+    plugins: ["FollowPath"]
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.22    # 期望线速度(m/s)
+      max_linear_vel: 0.26
+      min_lookahead_dist: 0.3     # 前视距离(纯追踪核心参数)
+      max_lookahead_dist: 0.9</code></pre>
+  <div class="box box-tip"><b>💡 选型建议:</b>差速/小乌龟用 <b>RegulatedPurePursuit</b> 起步(参数最少、最不易抖);要平滑跟车用 <b>DWB</b>;阿克曼车式底盘用 <b>TEB</b> 或 <b>SmacPlannerHybrid</b> 搭配。</div>
+
+  <h3>4.4 行为树(BT Navigator)流程</h3>
+  <p>Nav2 用<b>行为树 XML</b> 描述导航逻辑,默认行为树叫 <code>navigate_to_pose_w_replanning_and_recovery.xml</code>,核心流程:</p>
+  <pre><code>bt_navigator:
+  ros__parameters:
+    default_nav_to_pose_bt_xml: "&lt;path&gt;/navigate_to_pose_w_replanning_and_recovery.xml"</code></pre>
+  <p>该行为树大致按顺序执行这些节点(节选,实际 XML 里是 <code>&lt;Sequence&gt;</code> / <code>&lt;Fallback&gt;</code> / <code>&lt;RecoveryNode&gt;</code> 组合):</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>ComputePathToPose</b><br>调用规划器,算一条全局路径</div>
+    <div class="step-item"><span class="n">2</span><b>FollowPath</b><br>调用控制器,沿路径走(实时避障)</div>
+    <div class="step-item"><span class="n">3</span><b>判断失败</b><br>路径被挡 / 卡住时进入 RecoveryNode 恢复</div>
+    <div class="step-item"><span class="n">4</span><b>Recovery 恢复行为</b><br>依次 Spin(原地转)→ BackUp(后退)→ Wait(等待),每执行一次再重试导航</div>
+  </div>
+  <p>行为树的好处:你可以自己写 XML,插入「到门口先停一下」「绕行检测」等自定义逻辑,而不必改 C++ 源码 —— 这是 Nav2 相比 move_base 最大的升级点。</p>
+
+  <h2><span class="h2-num">5</span> 定位:AMCL 粒子滤波</h2>
+  <p>机器人要在地图里导航,必须先知道「<b>我在地图里的哪个位置、朝哪个方向</b>」。Nav2 默认用 <b>AMCL(Adaptive Monte Carlo Localization,自适应蒙特卡洛定位)</b>。</p>
+
+  <h3>5.1 粒子滤波原理</h3>
+  <p>AMCL 是<b>粒子滤波</b>的一种:MCL 在整张地图上撒一堆「粒子」(每个粒子是一个可能的位姿假设),然后反复做两步 —— <b>运动更新</b>(里程计动了,粒子跟着动)与<b>测量更新</b>(激光扫到墙,离真实墙更吻合的粒子获得更高权重,并重采样)。几轮之后粒子收敛成一团,就是机器人的真实位姿。「Adaptive」指它用 KLD 采样<b>动态调整粒子数量</b>:不确定时粒子多(最多 max_particles),确定时粒子少(最少 min_particles),省算力。</p>
+  <div class="box box-tip"><b>💡 直观理解:</b>想象地图是一张「找自己」的游戏,你闭眼被随机丢进房间,只靠「走几步 + 摸墙」逐步猜出自己站哪。粒子越多、墙摸得越多,猜得越准。</div>
+
+  <h3>5.2 初始位姿估计与重定位</h3>
+  <p>AMCL 刚启动时粒子<b>均匀撒满整张地图</b>,所以第一件事是告诉它「我大概在哪」——在 RViz2 里用 <b>2D Pose Estimate</b> 按钮(或发布 <code>/initialpose</code> 话题)在地图上点一下机器人真实位置并拖出朝向:</p>
+  <pre><code>ros2 topic pub /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
+  "{header: {frame_id: 'map'}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, \
+  orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}, }" --once</code></pre>
+  <h3>5.3 重定位技巧(被「绑架」问题)</h3>
+  <ul>
+    <li><b>主动重定位:</b>机器人被抱起挪走(kidnapped robot)后,AMCL 会因粒子错位而发散 —— 直接再点一次 2D Pose Estimate 即可快速收敛。</li>
+    <li><b>增大粒子:</b>定位老是漂,把 <code>max_particles</code> 调大(如 5000),但会增加 CPU 占用。</li>
+    <li><b>运动要够:</b>纯旋转或短距离移动时粒子不易收敛,先走一段、转一圈再继续。</li>
+    <li><b>新版备选:</b>社区还推出了 <b>Beluga AMCL</b>(beluga_amcl)参考实现,接口兼容、精度更稳,可作为 Nav2 amcl 的替代插件。</li>
+  </ul>
+
+  <h2><span class="h2-num">6</span> 实战步骤:一条完整导航链路</h2>
+  <p>把前面全部串起来,跑通「建图 → 保存 → 导航 → 避障」的完整闭环。</p>
+
+  <h3>6.1 ① 启动仿真 + ② 建图(见第 3 节)</h3>
+  <pre><code>export TURTLEBOT3_MODEL=burger
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py   # 终端 1:仿真
+ros2 launch slam_toolbox online_async_launch.py            # 终端 2:建图
+ros2 run turtlebot3_teleop teleop_keyboard                 # 终端 3:遥控建图</code></pre>
+
+  <h3>6.2 ③ 保存地图 → ④ 加载地图导航</h3>
+  <pre><code>ros2 run nav2_map_server map_saver_cli -f ~/map    # 保存 ~/map.pgm + ~/map.yaml
+
+# 建图完成后,关掉 slam_toolbox,改跑导航(加载刚保存的地图 + 启动 AMCL + Nav2)
+ros2 launch nav2_bringup bringup_launch.py map:=/home/$USER/map.yaml use_sim_time:=true</code></pre>
+  <p><code>bringup_launch.py</code> 会一次性启动:map_server(加载地图)、AMCL(定位)、planner_server、controller_server、bt_navigator、代价地图、RViz2 等,并自动读取 <code>nav2_params.yaml</code>。</p>
+
+  <h3>6.3 ⑤ RViz 里点 2D Goal Pose 导航</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>设初始位姿</b><br>RViz 工具栏点「2D Pose Estimate」,在地图上机器人真实位置单击并拖出朝向</div>
+    <div class="step-item"><span class="n">2</span><b>给目标点</b><br>点「Nav2 Goal」(2D Goal Pose),在地图上点目标位置并拖朝向</div>
+    <div class="step-item"><span class="n">3</span><b>观察链路</b><br>绿色全局路径(Planner 算的)出现,机器人开始沿路径走;局部代价地图实时避障</div>
+    <div class="step-item"><span class="n">4</span><b>到达</b><br>机器人停在目标点,状态由 ACTIVE 变为 SUCCEEDED</div>
+  </div>
+
+  <h3>6.4 ⑥ 遇到障碍物避障与恢复(Recovery)</h3>
+  <p>导航途中在机器人前方扔一个箱子(或让一个人挡路),观察两件事:</p>
+  <ul>
+    <li><b>避障:</b>局部代价地图的 obstacle_layer 立刻把箱子标成障碍,控制器<b>实时重规划</b>绕过去 —— 如果绕得开,全局路径不必重算。</li>
+    <li><b>恢复:</b>把机器人逼进死角 / 障碍完全堵死路径,控制器报失败,BT Navigator 进入恢复序列:<b>Spin(原地转一圈看)→ BackUp(后退一段)→ Wait(等 2 秒)</b>,每轮恢复后再尝试导航;恢复 N 次仍失败,任务以 ABORTED 结束。</li>
+  </ul>
+  <div class="box box-ok"><b>✅ 通关标准:</b>点 2D Goal Pose 后,机器人能自主规划路径、途中绕开临时障碍、被堵住时触发 Spin/BackUp 恢复并最终到达目标 —— Nav2 导航栈就完整跑通了。</div>
+
+  <h2><span class="h2-num">7</span> 人形机器人为什么也用 Nav2</h2>
+  <p>人形机器人的导航需求与轮式机器人高度重叠:<b>自主移动到指定点、跟随人、巡游、避障</b>。这些「去那里」的顶层能力完全可以直接复用 Nav2 的成熟框架,而不用重复造轮子。</p>
+  <h3>7.1 与 3D 感知 / 激光雷达的配合</h3>
+  <ul>
+    <li><b>2D 代价地图靠 2D 扫描:</b>人形机器人常配 <b>3D 激光雷达</b>,可把 3D 点云「投影到 2D 平面」得到 <code>/scan</code>(LaserScan),直接喂给 Nav2 的 obstacle_layer;或单独用一个 2D 雷达 + 一个 3D 雷达分层使用。</li>
+    <li><b>相机点云 → 体素 → 2D:</b>深度相机的点云经体素滤波 + 投影也可转成 2D 代价,与雷达互补(玻璃、悬空物等)。</li>
+    <li><b>3D 感知另做:</b>台阶、扶手、头顶障碍等 2D 代价地图表达不了,由 3D 感知模块(如第 12 节)单独处理,与 Nav2 并行。</li>
+  </ul>
+  <h3>7.2 轮式 vs 足式导航差异</h3>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>轮式(差速/阿克曼)</th><th>足式(双足人形 / 四足)</th></tr>
+    <tr><td>全局规划</td><td>Nav2 Planner(2D 代价地图)</td><td>Nav2 Planner 同样适用(把足式整体当作一个「点」)</td></tr>
+    <tr><td>局部规划/控制</td><td>DWB / RegulatedPurePursuit 输出 cmd_vel</td><td><b>常用深度强化学习(DRL)运动控制器</b>输出步态/落脚点,而非简单 cmd_vel</td></tr>
+    <tr><td>障碍表达</td><td>2D 代价足够</td><td>需额外考虑台阶、斜坡、崎岖地形(3D/高程)</td></tr>
+    <tr><td>恢复行为</td><td>Spin / BackUp / Wait</td><td>需配合步态:原地转向、侧移、跨步,难度更高</td></tr>
+  </table></div>
+  <p>结论:<b>全局「去哪儿」用 Nav2,局部「怎么走」分家</b>—— 轮式用经典规划控制器,足式常见做法是 Nav2 出全局路径 + 强化学习局部策略负责落足与平衡(如四足/人形常用的 RL 步态控制器)。这也是为什么「Nav2 是人形机器人导航的地基,而不是全部」。</p>
+
+  <h2><span class="h2-num">8</span> 常见坑(排查清单)</h2>
+  <div class="table-wrap"><table>
+    <tr><th>症状</th><th>原因</th><th>解法</th></tr>
+    <tr><td>「Timed out waiting for transform from base_link to map」</td><td>TF 树断了:map → odom 或 odom → base_link 缺一环</td><td>确认 AMCL(发布 map→odom)与里程计/robot_localization(发布 odom→base_link)都在跑;用 <code>ros2 run tf2_tools view_frames</code> 看 TF 树</td></tr>
+    <tr><td>机器人在 RViz 里飘 / 穿墙</td><td>AMCL 初始位姿给错,或里程计漂移</td><td>重新点 2D Pose Estimate;检查里程计标定</td></tr>
+    <tr><td>导航「抖」或原地打转</td><td>控制器前视距离 / 速度参数不合适</td><td>调 min/max_lookahead_dist、max_linear_vel,或换 RegulatedPurePursuit</td></tr>
+    <tr><td>CPU 满载、地图卡顿</td><td>代价地图分辨率太高 / 更新频率太高</td><td>resolution 从 0.05 降到 0.1,降低 update_frequency</td></tr>
+    <tr><td>找不到对方节点 / 通信异常</td><td>DDS 发现失败(多机、Docker、混杂 RMW)</td><td>统一用 CycloneDDS:<code>sudo apt install ros-humble-rmw-cyclonedds-cpp</code> 并 <code>export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp</code></td></tr>
+    <tr><td>仿真里 TF 老报错</td><td>use_sim_time 没对齐</td><td>所有 launch 都加 <code>use_sim_time:=true</code>(或参数文件里统一设)</td></tr>
+  </table></div>
+  <div class="box box-warn"><b>⚠️ 坐标系关系记牢:</b><span class="my-flow">map → odom → base_footprint → base_link</span>。其中 <b>map→odom</b> 由 AMCL 发布(修正累积漂移),<b>odom→base_link</b> 由里程计发布(高频、连续)。map 是「世界固定」系,odom 是「里程计累积」系,两者靠 AMCL 对齐。</div>
+
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. Nav2 相比 ROS1 move_base 最本质的架构升级是什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 换成了 C++17 编写</button>
+      <button data-v="B">B. 不再需要激光雷达</button>
+      <button data-v="C">C. 用行为树(BT Navigator)驱动,任务逻辑可自由编排</button>
+      <button data-v="D">D. 去掉了全局规划器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 move_base 是写死的状态机,Nav2 用行为树 XML 编排「规划→跟随→恢复」,这是最核心的架构升级。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 保存建图结果时,Nav2 应该用哪个命令?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. ros2 run map_server map_saver -f map</button>
+      <button data-v="B">B. ros2 run nav2_map_server map_saver_cli -f ~/map</button>
+      <button data-v="C">C. ros2 run slam_toolbox save_map</button>
+      <button data-v="D">D. ros2 bag record -a</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 Nav2 里地图保存由 nav2_map_server 的 map_saver_cli 完成;ROS1 才是 map_server map_saver。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 代价地图中 LETHAL_OBSTACLE(致死障碍)的代价值通常是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 0</button>
+      <button data-v="B">B. 100</button>
+      <button data-v="C">C. 205</button>
+      <button data-v="D">D. 254</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 0 = 空闲,253 = 内切膨胀,254 = 致死障碍,255 = 未知(NO_INFORMATION)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. inflation_radius 参数的作用是什么?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 决定障碍物向外的膨胀半径,越大机器人离障碍越远</button>
+      <button data-v="B">B. 决定地图的物理分辨率</button>
+      <button data-v="C">C. 决定 AMCL 的粒子数量</button>
+      <button data-v="D">D. 决定控制器输出的最大线速度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 inflation_radius 是 InflationLayer 的核心参数,把障碍代价向外逐级衰减,让规划绕开障碍。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 map → odom → base_link 的 TF 关系,下列哪项正确?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. odom→map 由 AMCL 发布,map→base_link 由里程计发布</button>
+      <button data-v="B">B. map→odom 由 AMCL 发布,odom→base_link 由里程计发布</button>
+      <button data-v="C">C. 三者由同一个节点发布</button>
+      <button data-v="D">D. 导航只需要 odom→base_link,不需要 map</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 AMCL 发布 map→odom(校正漂移),里程计/robot_localization 发布 odom→base_link(高频连续)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 机器人被堵死时,Nav2 默认的恢复行为顺序通常是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 直接放弃并关机</button>
+      <button data-v="B">B. 重新全局规划一次就结束</button>
+      <button data-v="C">C. Spin(原地转)→ BackUp(后退)→ Wait(等待),再重试导航</button>
+      <button data-v="D">D. 呼叫人工并停止所有节点</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 默认行为树在控制器失败后进入 RecoveryNode,依次执行 Spin、BackUp、Wait 恢复行为后再重试。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">7. 人形机器人做「全局去哪儿」的规划时,最常见的做法是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 完全不使用 Nav2,全部手写</button>
+      <button data-v="B">B. 只用 Nav2 的代价地图,不用规划器</button>
+      <button data-v="C">C. 用 Nav2 直接输出落足点步态</button>
+      <button data-v="D">D. 用 Nav2 出全局路径,局部用强化学习步态控制器负责落足与平衡</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 轮式局部用经典规划控制器,足式常见做法是 Nav2 全局 + RL 局部策略,分层解耦。</div>
+  </div>
+
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>Nav2 是 ROS2 的生产级导航栈,核心是行为树驱动的六大模块(BT Navigator / Planner / Controller / Costmap / AMCL / Recovery);建图用 SLAM Toolbox 或 Cartographer,产出 <code>.pgm + .yaml</code> 栅格地图;导航配置集中在 <code>nav2_params.yaml</code>(代价地图 inflation_radius、规划器、控制器、行为树);AMCL 用粒子滤波定位,靠 <code>map→odom→base_link</code> 的 TF 链串联;实战按「仿真→建图→存图→加载导航→2D Goal Pose→避障恢复」跑通,人形机器人复用 Nav2 做全局规划、局部再分轮式与足式处理。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果把 <code>inflation_radius</code> 调得比房间门宽的一半还大,会发生什么?为什么?<br>
+    2. 机器人被抱起来换了个房间放下,AMCL 还能自己恢复吗?为什么必须重新给初始位姿?<br>
+    3. 把 3D 激光点云「投影成 2D 扫描」喂给 Nav2,可能丢失哪些信息?这些信息对足式机器人重要吗?
+  </div>
+
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://docs.nav2.org/getting_started/" target="_blank" rel="noopener">Navigation2 官方文档 · Getting Started(入门与安装)</a></li>
+    <li><a href="https://docs.nav2.org/tutorials/docs/navigation2_with_slam.html" target="_blank" rel="noopener">Navigation2 官方教程 · Navigating While Mapping(SLAM 建图导航)</a></li>
+    <li><a href="https://docs.nav2.org/configuration/packages/costmap-plugins/inflation.html" target="_blank" rel="noopener">Nav2 官方 · Inflation Layer(膨胀层)参数说明</a></li>
+    <li><a href="https://docs.nav2.org/behavior_trees/trees/nav_to_pose_recovery.html" target="_blank" rel="noopener">Nav2 官方 · Behavior Tree Nav To Pose(导航行为树)</a></li>
+    <li><a href="https://github.com/ros-navigation/navigation2" target="_blank" rel="noopener">ros-navigation/navigation2 · GitHub 源码仓库</a></li>
+    <li><a href="https://github.com/SteveMacenski/slam_toolbox" target="_blank" rel="noopener">SteveMacenski/slam_toolbox · GitHub(SLAM Toolbox)</a></li>
+    <li><a href="https://github.com/cartographer-project/cartographer_ros" target="_blank" rel="noopener">cartographer-project/cartographer_ros · GitHub(Cartographer ROS 集成)</a></li>
+    <li><a href="https://github.com/rst-tu-dortmund/teb_local_planner" target="_blank" rel="noopener">rst-tu-dortmund/teb_local_planner · GitHub(TEB 局部规划器 ROS2 版)</a></li>
+    <li><a href="https://github.com/ros-navigation/navigation2_tutorials" target="_blank" rel="noopener">ros-navigation/navigation2_tutorials · GitHub(Nav2 官方教程源码)</a></li>
+  </ul>
+  <p class="my-term">📅 资料整理更新至 2026-08 · 关键事实(包名、命令、参数名、插件名)已经 web_search 核实。</p>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

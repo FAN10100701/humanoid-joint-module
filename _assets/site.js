@@ -284,7 +284,13 @@
     box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="giscusEl"></div>';
     c.appendChild(box);
     var s = document.createElement("script");
+    /* 主源 giscus.app 在大陆可能不可达:加载失败自动回退 jsdelivr CDN(同一份 client.js) */
     s.src = "https://giscus.app/client.js";
+    s.onerror = function(){
+      if(s.getAttribute("data-fb")) return;
+      s.setAttribute("data-fb", "1");
+      s.src = "https://cdn.jsdelivr.net/npm/giscus@1/dist/client.js";
+    };
     s.setAttribute("data-repo", window.GISCUS_CONFIG.repo);
     s.setAttribute("data-repo-id", window.GISCUS_CONFIG.repoId);
     s.setAttribute("data-category", window.GISCUS_CONFIG.category);
@@ -541,7 +547,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V1.5.6(2026-08-16)";
+  S.VERSION = "V1.6.0(2026-08-16)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){

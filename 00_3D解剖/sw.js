@@ -7,7 +7,7 @@
    3) HTML 导航请求：network-first（保证教学内容更新及时），断网回退缓存
    4) 改 SW_VERSION 版本号即可整体刷新全部缓存
    ============================================================ */
-var SW_VERSION='robot-3d-v4';            /* 【可调】缓存版本号：改动后旧缓存自动清除（v4：E4 配置数据拆分 js/config.js，老缓存用户需刷新取新代码） */
+var SW_VERSION='robot-3d-v5';            /* 【可调】缓存版本号：改动后旧缓存自动清除（v5：诊断浮标 + modulepreload + 渲染状态标记） */
 var CORE_CACHE=SW_VERSION+'-core';       /* 核心资源缓存名（install 预缓存） */
 var RUNTIME_CACHE=SW_VERSION+'-runtime'; /* 运行时缓存名（模型等按需缓存） */
 

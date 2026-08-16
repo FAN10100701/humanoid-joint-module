@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · MoveIt2 进阶:运动规划与抓取管线</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(可选),命名加前缀避免冲突 */
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-13",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec6" },
+      { t: "MoveIt2 进阶 · 运动规划与抓取管线" }
+    ],
+    prev: { t: "机器人感知专题 · 相机激光雷达点云", u: "12_机器人感知专题_相机激光雷达点云.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🦾 MoveIt2 进阶:运动规划与抓取管线</h1>
+    <div class="sub">从「让机械臂动起来」到「让机械臂真正干活」—— 深入 OMPL 规划器、约束规划、避障感知、MoveIt Task Constructor 抓取管线,并打通 MoveIt2 与 ros2_control 真机部署的最后一公里。前置是本站 06-10 的 URDF 与 MoveIt2 入门。</div>
+    <div class="tags">
+      <span class="tag">OMPL</span>
+      <span class="tag">C-space</span>
+      <span class="tag">笛卡尔路径</span>
+      <span class="tag">碰撞矩阵</span>
+      <span class="tag">Octomap</span>
+      <span class="tag">Task Constructor</span>
+      <span class="tag">ros2_control</span>
+      <span class="tag">双臂协同</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说清<b>构型空间(C-space)</b>是什么,以及正/逆运动学在运动规划中各自扮演的角色,能区分<b>采样规划</b>与<b>解析规划</b><br>
+    2. 能讲出 RRT / RRTConnect / RRTstar / PRM / BiTRRT / EST / LazyPRM 的直觉与适用场景,会看 <code>ompl_planning.yaml</code> 里的 <code>planner_id</code> 并调规划时间/尝试次数<br>
+    3. 能解释<b>路径约束</b>与 <b>computeCartesianPath</b> 的区别,知道 fraction(完成比例)小于 1 意味着什么<br>
+    4. 能说清碰撞矩阵(ACM)、自碰撞/环境碰撞、Octomap 感知避障的机制,以及动态障碍下如何规划重试<br>
+    5. 能用 <b>MoveIt Task Constructor</b> 描述一个「接近 → 抓取 → 抬升 → 放置」的抓取流程,理解各 Stage 的作用<br>
+    6. 能讲清 MoveIt2 与 ros2_control 集成的部署链路(joint_trajectory_controller),并列出真机规划失败的常见排查点<br>
+    <b>建议用时:</b>90-120 分钟(含动手)。<b>前置:</b>建议先读本站 <a href="10_ROS2实战进阶_URDF与MoveIt2.html">06-10 ROS2 实战进阶:URDF 与 MoveIt2</a>(已讲 URDF、Setup Assistant、MoveGroup 入门),本页默认你已会拖动 RViz 规划、读懂 moveit_config 包结构。
+  </div>
+
+  <h2><span class="h2-num">1</span> 运动规划问题定义</h2>
+  <p>上一页我们只「用了」规划器,这一页要回答一个更根本的问题:<b>规划器到底在解什么?</b>运动规划的形式化定义是:给定机器人当前状态、目标状态、障碍物集合,找一条<b>从起点到终点、全程无碰撞、满足运动学约束</b>的轨迹(按时间排列的位形序列)。</p>
+
+  <h3>1.1 构型空间 C-space:规划的「主战场」</h3>
+  <p>机器人一条手臂若有 n 个关节,它的完整状态可以用一个 n 维向量 <b>q = (q₁, q₂, …, qₙ)</b> 表示。所有可能 q 组成的空间叫<b>构型空间(Configuration Space,简称 C-space)</b>。规划器不在三维物理空间里搜索,而是在 C-space 里搜索:</p>
+  <div class="table-wrap"><table>
+    <tr><th>概念</th><th>含义</th><th>在本页语境中的角色</th></tr>
+    <tr><td><code>C-space</code>(构型空间)</td><td>所有关节角度向量的集合,维数 = 自由度(DoF)</td><td>规划的搜索空间;一条 7-DoF 手臂的 C-space 是 7 维</td></tr>
+    <tr><td><code>C-obstacle</code>(障碍空间)</td><td>C-space 中会导致碰撞的 q 的集合</td><td>规划要绕开的「禁区」</td></tr>
+    <tr><td><code>C-free</code>(自由空间)</td><td>C-space 减去障碍空间后的可行区域</td><td>合法轨迹必须始终落在 C-free 内</td></tr>
+    <tr><td><b>位形(q)</b></td><td>一个具体的关节角组合</td><td>轨迹 = 一串按时间排布的 q</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 为什么绕开 C-space 直接算?</b>物理空间里「手臂能否通过」的约束,在 C-space 里会变成形状复杂的「禁区」。但把问题搬到 C-space 后,机器人就退化成一个「点」,障碍物变成「块」,搜索问题统一了——这正是所有采样规划器的共同前提。
+  </div>
+
+  <h3>1.2 正/逆运动学在规划中的角色</h3>
+  <ul>
+    <li><b>正运动学(FK,Forward Kinematics)</b>:给定关节角 q,算出末端位姿。它是<b>确定、唯一、快</b>的,规划器每采样一个 q 都要用它把「关节态」映射到「物理空间」去做碰撞检测。</li>
+    <li><b>逆运动学(IK,Inverse Kinematics)</b>:给定末端位姿,反解关节角 q。它<b>可能有 0/1/多解</b>(冗余手臂有无数解),且可能无解(目标够不着)或遇到奇异位形。</li>
+    <li><b>分工</b>:采样规划器主要在<b>关节空间(C-space)</b>采样,用 FK 检验碰撞,几乎不依赖 IK;只有当目标是「末端位姿」时,才在最后用 IK 把位姿目标转成关节角目标(或由规划器把 IK 作为目标采样器)。<b>笛卡尔路径规划</b>(第 3 节)则是反过来,密集调用 IK。</li>
+  </ul>
+
+  <h3>1.3 采样规划 vs 解析规划</h3>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>采样规划(Sampling-based)</th><th>解析/优化规划</th></tr>
+    <tr><td>代表</td><td>OMPL 全家(RRT/RRTConnect/PRM…)、MoveIt2 默认路径</td><td>CHOMP、STOMP、TrajOpt、Time-Optimal 等</td></tr>
+    <tr><td>思想</td><td>在 C-space 里随机撒点 + 连线,构造一张「路网」再搜索</td><td>把轨迹参数化,用梯度/优化器最小化代价(平滑、避障)</td></tr>
+    <tr><td>完备性</td><td>概率完备:时间越长越可能找到解(若解存在)</td><td>通常只保证局部最优,依赖好初值</td></tr>
+    <tr><td>优点</td><td>高维、复杂障碍下鲁棒;不依赖初值</td><td>轨迹平滑、可显式加约束与代价</td></tr>
+    <tr><td>缺点</td><td>轨迹「乱」、不平滑,需后处理(简化/平滑/时间参数化)</td><td>易陷局部最优,高维时慢</td></tr>
+  </table></div>
+  <p>MoveIt2 默认是<b>采样规划</b>(OMPL),并在规划后追加「轨迹简化 + 时间参数化」步骤,把采样出的锯齿轨迹变平滑、再配上速度时间戳——这就是 <code>request_adapters</code> 干的活(见第 2 节 yaml)。</p>
+
+  <h2><span class="h2-num">2</span> OMPL 规划器详解</h2>
+  <p>OMPL(Open Motion Planning Library)是 MoveIt2 默认的规划后端,一个<b>与机器人无关的采样规划算法库</b>。MoveIt2 通过 <code>ompl_interface</code> 插件把 OMPL 挂进来,自带 RRT / RRTConnect / RRTstar / PRM / PRMstar / BiTRRT / EST / KPIECE / LazyPRM / STRIDE / SPARS 等 20 余种算法(不同版本略有增减)。</p>
+
+  <h3>2.1 常用算法:直觉与适用场景</h3>
+  <div class="table-wrap"><table>
+    <tr><th>算法</th><th>直觉</th><th>特点与适用场景</th></tr>
+    <tr><td><b>RRT</b></td><td>从起点长一棵随机「树」,朝随机方向探索</td><td>单树探索;简单直观但慢,轨迹质量一般</td></tr>
+    <tr><td><b>RRTConnect</b></td><td>起点、终点<b>两棵树</b>同时长,快速「对接」</td><td>收敛快、鲁棒,是 MoveIt2 <b>默认</b>;日常首选</td></tr>
+    <tr><td><b>RRTstar</b></td><td>RRT + 不断「重连」优化路径长度</td><td>渐近最优,路径更短更平滑;但更慢,需更长规划时间</td></tr>
+    <tr><td><b>PRM</b></td><td>先铺满一张「路网」(roadmap),再多次查询</td><td>适合<b>同一环境多次规划</b>;建图开销大,动态障碍下要重建</td></tr>
+    <tr><td><b>BiTRRT</b></td><td>双向 RRT + 控制与障碍的距离(clearance)</td><td>擅长<b>狭窄通道</b>,尽量贴着「中间」走,避免擦边</td></tr>
+    <tr><td><b>EST</b></td><td>在「能扩展」的区域附近集中采样</td><td>老牌算法;某些约束场景下比 RRT 稳,速度中等</td></tr>
+    <tr><td><b>LazyPRM</b></td><td>先连线、后「偷懒」延迟碰撞检查</td><td>边检查很贵时快;但可能频繁碰壁重试</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 选型心法:</b>没有「万能规划器」。默认 <b>RRTConnect</b> 打底;追求路径短/平滑换 <b>RRTstar</b>;狭窄缝隙用 <b>BiTRRT</b>;同一环境反复抓取用 <b>PRM</b>。真机建议「多个规划器排队 + 失败切换」:先 RRTConnect 快试,不行再上 BiTRRT/RRTstar。
+  </div>
+
+  <h3>2.2 planner_id 配置:ompl_planning.yaml</h3>
+  <p>MoveIt2 的规划器在 <code>ompl_planning.yaml</code> 里声明。关键结构:<code>planner_configs</code> 定义「算法库」,每个规划组的 <code>planner_configs</code> 列出「本组可用哪些」,<code>default_planner_config</code> 指定默认项。</p>
+  <pre><code>planning_plugin: ompl_interface/OMPLPlanner
+
+request_adapters: &gt;-
+    default_planner_request_adapters/AddTimeParameterization
+    default_planner_request_adapters/FixWorkspaceBounds
+    default_planner_request_adapters/FixStartStateBounds
+    default_planner_request_adapters/FixStartStateCollision
+    default_planner_request_adapters/FixStartStatePathConstraints
+
+start_state_max_bounds_error: 0.1
+
+planner_configs:
+  RRTConnectkConfigDefault:
+    type: geometric::RRTConnect   # 算法类型,决定用哪个 OMPL 规划器
+    range: 0.0                    # 单步扩展上限;0=按状态空间自动取默认
+  RRTstarkConfigDefault:
+    type: geometric::RRTstar
+    range: 0.0
+  BiTRRTkConfigDefault:
+    type: geometric::BiTRRT
+    range: 0.0
+  PRMkConfigDefault:
+    type: geometric::PRM
+    max_nearest_neighbors: 10
+
+arm:
+  default_planner_config: RRTConnectkConfigDefault
+  planner_configs:
+    - RRTConnectkConfigDefault
+    - RRTstarkConfigDefault
+    - BiTRRTkConfigDefault
+    - PRMkConfigDefault
+  planning_time: 5.0        # 单次规划时间上限(秒)
+  planning_attempts: 10     # 最多尝试几次
+  max_solutions: 10         # 最多保留几条候选解再选优</code></pre>
+  <p>运行时可临时改规划器(不重启):RViz MotionPlanning 面板里直接选,或代码里 <code>move_group.setPlannerId("RRTstarkConfigDefault")</code>。</p>
+
+  <h3>2.3 规划参数:时间、次数与质量</h3>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>含义</th><th>典型默认</th><th>调参建议</th></tr>
+    <tr><td><code>planning_time</code></td><td>单次规划的时间预算</td><td>5.0 s</td><td>复杂环境/高维臂可加到 10 s;实时性要求高则降到 1~2 s</td></tr>
+    <tr><td><code>planning_attempts</code></td><td>尝试次数(每次内各自跑 planning_time)</td><td>10</td><td>失败率高时增大;但真机别让它无限重试</td></tr>
+    <tr><td><code>max_solutions</code></td><td>保留候选解数量,从中选「最短/最平滑」</td><td>10</td><td>调大更容易拿到平滑路径,代价是更慢</td></tr>
+    <tr><td><code>range</code></td><td>树单步扩展的最大步长</td><td>0(自动)</td><td>越大探索越「粗」,越小越「细」;一般保持自动</td></tr>
+    <tr><td><code>goal_position_tolerance</code></td><td>末端位置容差(米)</td><td>0.0001</td><td>抓取前可适当放宽到毫米级,提高成功率</td></tr>
+    <tr><td><code>goal_orientation_tolerance</code></td><td>末端姿态容差(弧度)</td><td>0.001</td><td>拧螺丝等姿态敏感任务要收紧</td></tr>
+  </table></div>
+
+  <h3>2.4 规划结果质量评估</h3>
+  <p>「规划成功」≠「轨迹好用」。评估一条轨迹至少要盯三件事:</p>
+  <ul>
+    <li><b>路径长度</b>:在 C-space 里从起点到终点累计走过的距离,越短通常越快、越省能量;</li>
+    <li><b>平滑度</b>:相邻关节角的「抖动」程度。采样规划常产出锯齿,MoveIt2 用 <code>AddTimeParameterization</code> 与轨迹简化缓解;</li>
+    <li><b>clearance(间隙)</b>:轨迹上每一点离最近障碍的<b>最小距离</b>。间隙越大越安全;BiTRRT 正是为最大化间隙而生。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠️ 别被「绿了」骗了:</b>RViz 里轨迹变绿只代表<b>通过了碰撞检测与约束</b>,不代表它平滑、不撞到「没建进场景的物体」、也不代表真机执行时不会因关节速度/力矩超限而失败。真机执行前务必看轨迹回放与速度曲线。
+  </div>
+
+  <h2><span class="h2-num">3</span> 约束规划与笛卡尔路径</h2>
+  <p>很多任务要求末端<b>全程保持某种姿态或轨迹形状</b>——端一杯水不能倾斜、插销要沿直线插入、焊接要贴面滑行。这就要用到 MoveIt2 的<b>路径约束(Path Constraints)</b>。</p>
+
+  <h3>3.1 三类路径约束</h3>
+  <div class="table-wrap"><table>
+    <tr><th>约束类型</th><th>含义</th><th>人形机器人典型用途</th></tr>
+    <tr><td><b>方向约束(OrientationConstraint)</b></td><td>末端坐标系的某一轴要指向某方向(或与参考方向夹角 ≤ 容差)</td><td>端水平托盘、保持掌心向上</td></tr>
+    <tr><td><b>位置约束(PositionConstraint)</b></td><td>末端(或其上某点)要落在某区域内(球/盒)</td><td>沿直线插入、贴面焊接</td></tr>
+    <tr><td><b>关节约束(JointConstraint)</b></td><td>某关节角度需落在给定区间</td><td>限制肘部方向、避免反关节</td></tr>
+  </table></div>
+  <p>注意区分两个层级:<b>目标约束(goal constraints)</b>只约束「终点」,<b>路径约束(path constraints)</b>约束「全程每一点」。方向约束既可做目标也可做路径,含义完全不同——这是新手常踩的坑。</p>
+
+  <h3>3.2 笛卡尔路径 computeCartesianPath</h3>
+  <p>当你需要末端<b>沿一条直线(或给定路径点序列)</b>运动时,关节空间规划会「乱绕」,要用笛卡尔路径规划:<b>在笛卡尔空间按步长插值出密集途经点,对每个点解 IK,再串成轨迹</b>。核心接口(C++ MoveGroupInterface):</p>
+  <pre><code>// waypoints: 一串末端位姿(几何直线就取起点与终点间等距插值)
+std::vector&lt;geometry_msgs::msg::Pose&gt; waypoints;
+// ... 填充 waypoints ...
+
+moveit_msgs::msg::RobotTrajectory trajectory;
+// eef_step:末端每步移动距离(m);jump_threshold:允许关节最大跳变(0=禁用)
+double fraction = move_group.computeCartesianPath(
+    waypoints, eef_step, jump_threshold, trajectory);
+
+// fraction ∈ [0,1]:= 1 表示走完全程;小于 1 表示中途卡住(奇异/碰撞/不可达)
+if (fraction &gt;= 0.999) {
+    move_group.execute(trajectory);
+} else {
+    RCLCPP_WARN(node-&gt;get_logger(),
+                "笛卡尔路径仅完成 %.1f%%,剩余段未解出", fraction * 100);
+}</code></pre>
+  <p>Python 侧(MoveIt2 官方绑定为 <b>MoveItPy</b>,前身是 ROS1 的 moveit_commander)做「规划 + 执行」的最小示例:</p>
+  <pre><code>import rclpy
+from rclpy.node import Node
+from moveit_py import MoveItPy
+
+rclpy.init()
+node = Node("moveit_py_demo")
+
+# 初始化 MoveItPy(会加载 moveit_config 包)
+moveit_py = MoveItPy(node_name="moveit_py")
+arm = moveit_py.get_planning_component("arm")
+
+# 起点=当前状态,目标=命名位姿 "home"
+arm.set_start_state_to_current_state()
+arm.set_goal_state(configuration_name="home")
+
+# 规划
+plan_result = arm.plan()
+if plan_result:
+    # plan_result.trajectory 是 RobotTrajectory,可交给控制器执行
+    moveit_py.execute(plan_result.trajectory, controllers=[])
+else:
+    node.get_logger().warn("规划失败,请检查目标/约束/碰撞")
+</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ fraction 与奇异位形:</b>笛卡尔路径每一步都在解 IK,遇到<b>奇异位形</b>(如手臂完全伸直、腕关节轴线重合)或目标在<b>工作空间外</b>,IK 会无解,<code>fraction</code> 停在小于 1 的位置。常见对策:缩短 <code>eef_step</code>、换初始位形、或改用关节空间目标绕开奇异点。
+  </div>
+
+  <h3>3.3 人形机器人手臂常用约束</h3>
+  <ul>
+    <li><b>端平托盘</b>:末端坐标系 Z 轴始终朝上(方向约束,夹角容差约 ±10°);</li>
+    <li><b>插销/插线</b>:末端沿销孔轴线直线推进(位置约束绑定轴线 + 方向约束锁定指向);</li>
+    <li><b>双臂合抱搬运</b>:两末端之间保持<b>相对位姿约束</b>(见第 7 节双臂协同);</li>
+    <li><b>避让躯干/头部</b>:用关节约束限制肘部朝外,防止手臂扫过「脸」。</li>
+  </ul>
+
+  <h2><span class="h2-num">4</span> 避障与碰撞检测</h2>
+  <p>规划器「避障」靠的是碰撞检测,而 MoveIt2 的碰撞检测分两层:<b>自碰撞</b>(机器人自己打自己)与<b>环境碰撞</b>(机器人与周围物体)。</p>
+
+  <h3>4.1 碰撞矩阵 ACM:允许碰撞矩阵</h3>
+  <p>机器人的某些连杆<b>天生就是贴着的</b>(如相邻连杆、夹爪的两指),如果处处检测会误报大量「碰撞」。ACM(Allowed Collision Matrix,允许碰撞矩阵)声明「哪些连杆对之间<b>不检查</b>碰撞」,从而避免误报、加速检测。它由 Setup Assistant 采样生成,存于 SRDF 的 <code>&lt;disable_collisions&gt;</code> 段,并以 <code>default</code> 表示「默认允许、其它情况才查」。</p>
+  <pre><code>&lt;!-- SRDF 片段:声明 link1 与 link2 之间永不检查碰撞 --&gt;
+&lt;disable_collisions link1="link1" link2="link2" reason="Adjacent"/&gt;
+&lt;!-- 或:默认允许,只有列出的「危险对」才检查 --&gt;
+&lt;disable_collisions link1="base_link" link2="gripper_link" reason="Default"/&gt;</code></pre>
+  <div class="box box-tip">
+    <b>💡 语义要分清:</b>ACM 里的「默认允许」意思是<b>这一对默认不查碰撞</b>(被「豁免」),不是「允许真的撞上」。给两个根本不会碰到的连杆设置豁免,是省算力;给相邻关节设豁免,是避免「贴脸即报错」。而真正会互撞的组合(如手与胸)必须保留检查。
+  </div>
+
+  <h3>4.2 自碰撞 vs 环境碰撞</h3>
+  <ul>
+    <li><b>自碰撞(self-collision)</b>:机器人不同连杆之间的碰撞。用简化碰撞几何 + ACM 检查,Setup Assistant 生成。</li>
+    <li><b>环境碰撞(environment collision)</b>:机器人与<b>外部物体</b>(桌、箱、人、工件)的碰撞。外部物体通过 <code>PlanningScene</code> 加入,用 <code>collision_object</code> 或 <code>attached_collision_object</code>(抓在手上的物体)表示。</li>
+  </ul>
+
+  <h3>4.3 Octomap:点云 → 八叉树 → 规划场景</h3>
+  <p>真实场景里障碍物是<b>动态、未知</b>的,靠深度相机/激光雷达的<b>点云</b>来「看」。MoveIt2 的感知避障链路:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>采集</b><br>深度相机发布点云(sensor_msgs/PointCloud2)</div>
+    <div class="step-item"><span class="n">2</span><b>转八叉树</b><br>Occupancy Map Monitor 把点云插入 <b>Octomap</b>(八叉树占用栅格)</div>
+    <div class="step-item"><span class="n">3</span><b>入场景</b><br>Octomap 作为 PlanningScene 的碰撞来源</div>
+    <div class="step-item"><span class="n">4</span><b>规划</b><br>规划器绕开八叉树里的占用体素</div>
+  </div>
+  <p>Octomap 的优势是<b>内存友好 + 多分辨率</b>:空旷区用粗大格子,障碍边缘用细密格子,适合大范围场景。配置要点是 <code>sensors_3d.yaml</code>(声明点云话题、更新频率、过滤范围)与 <code>octomap</code> 参数(体素分辨率,典型 0.05 m)。</p>
+
+  <h3>4.4 动态障碍与规划重试</h3>
+  <div class="box box-warn">
+    <b>⚠️ 规划与执行是「两个时间点」:</b>规划时点云 A,执行时障碍可能已移动到 B。真机常见「规划通过、执行撞上」,根因就是<b>规划场景与实际不同步</b>。对策:<b>①</b>提高点云更新率;<b>②</b>执行前重新校验一次当前状态是否碰撞;<b>③</b>发现碰撞立即中止并重新规划;<b>④</b>用 <code>PlanningSceneMonitor</code> 持续订阅最新场景,而不是用一份「快照」。
+  </div>
+
+  <h2><span class="h2-num">5</span> 抓取管线:MoveIt Task Constructor</h2>
+  <p>「抓起一个东西」不是一个规划动作,而是一连串<b>有依赖关系的子任务</b>:先规划到抓取点、再闭夹、再抬升、再搬运、再放置。若把整件事塞进一次 MoveGroup 规划,成功率极低且难调试。<b>MoveIt Task Constructor(MTC)</b> 就是为此设计的:把复杂操作拆成<b>有向图上的多个 Stage(阶段)</b>,每个 Stage 可独立求解、可回溯,前一个 Stage 的成功结果作为后一个的起点。</p>
+
+  <h3>5.1 MTC 核心概念</h3>
+  <ul>
+    <li><b>Task(任务)</b>:一张由 Stage 组成的图,定义「这件事怎么做」;</li>
+    <li><b>Stage(阶段)</b>:图上的节点,分三大类——<b>Generator</b>(生成候选解,如抓取姿态)、<b>Propagator</b>(单进单出,如沿路运动)、<b>Connector</b>(连接两个状态,如两段轨迹的拼接);</li>
+    <li><b>Interface State</b>:在 Stage 之间流动的「机器人状态快照」,携带当前位形、夹爪状态、附着的物体;</li>
+    <li><b>Solution</b>:从起始 Stage 走到终止 Stage 的一条完整路径,即一套可执行的抓取方案。</li>
+  </ul>
+
+  <h3>5.2 抓取流程的典型 Stage</h3>
+  <div class="table-wrap"><table>
+    <tr><th>阶段</th><th>常用 Stage</th><th>做什么</th></tr>
+    <tr><td>① 接近</td><td><code>MoveTo</code>(预抓位姿)</td><td>把手臂移到物体上方的「预抓取点」</td></tr>
+    <tr><td>② 生成抓取</td><td><code>GenerateGraspPose</code></td><td>围绕物体生成多个候选抓取姿态(角度/位置采样)</td></tr>
+    <tr><td>③ 求解 IK</td><td><code>ComputeIK</code></td><td>对每个抓取姿态解出关节解</td></tr>
+    <tr><td>④ 伸手</td><td><code>MoveRelative</code></td><td>沿接近方向小步移动,把夹爪送到物体处</td></tr>
+    <tr><td>⑤ 抓取</td><td><code>ModifyPlanningScene</code></td><td>夹爪闭合 + 把物体 attach 到末端(附着)</td></tr>
+    <tr><td>⑥ 抬升</td><td><code>MoveRelative</code></td><td>沿垂直方向抬起物体</td></tr>
+    <tr><td>⑦ 放置</td><td><code>Place</code> / <code>MoveTo</code> + <code>AllowCollision</code></td><td>移到放置点、松爪、解除附着</td></tr>
+  </table></div>
+  <p>MTC 官方仓库自带 <code>demo/scripts/pickplace.py</code> 与 C++ 版 <code>Pick and Place</code> 示例,可作为起点改写。配置好后的启动方式:</p>
+  <pre><code># 官方 Pick and Place 示例(以 panda 为例,不同版本包名略有差异)
+ros2 launch moveit_task_constructor_demo pick_place_demo.launch.py
+# 或跑 Python 脚本版
+python3 pickplace.py</code></pre>
+
+  <h3>5.3 感知集成与夹爪配合</h3>
+  <ul>
+    <li><b>感知:</b>抓取姿态由感知给出——物体位姿估计(如 06-12 的 6D 位姿估计)后,在物体坐标系里离线生成 <b>Grasp 数据库</b>(类似 GraspIt!/GraspGenerator 的思路),运行时按位姿变换到当前物体位置;MTC 的 <code>GenerateGraspPose</code> 就是把抓取库「铺」到物体上。</li>
+    <li><b>夹爪:</b>抓取流程里夹爪开合是<b>独立于手臂规划</b>的动作,通常由夹爪控制器直接下发开/合指令,并在场景里同步 <code>attached_collision_object</code>(物体随末端一起运动,才能正确检测「抬着箱子时会不会撞」)。</li>
+  </ul>
+  <div class="box box-tip">
+    <b>💡 何时用 MTC:</b>简单的「单段点到点」用 MoveGroup 即可;一旦涉及<b>抓取-抬升-放置、多末端、条件分支(失败重试)</b>,就用 MTC。它把「一堆 if-else + 多次 plan」收敛成一张可复用、可调试的图。
+  </div>
+
+  <h2><span class="h2-num">6</span> MoveIt2 与真实机器人</h2>
+  <p>仿真里 MoveIt2 规划的轨迹「凭空」执行;真机上轨迹必须经 <b>ros2_control</b> 下发给关节模组,并由硬件接口读回编码器反馈。</p>
+
+  <h3>6.1 集成链路:controller manager + joint_trajectory_controller</h3>
+  <pre><code>MoveIt2 规划轨迹(MoveGroup / MoveItPy)
+        │  发布 moveit_msgs/msg/JointTrajectory
+        ▼
+joint_trajectory_controller(ros2_control)
+        │  每个控制周期(如 100 Hz)插值下发位置/速度
+        ▼
+hardware_interface(真机驱动:CAN/EtherCAT 或仿真插件)
+        │  写入电机命令 / 读回编码器
+        ▼
+关节模组(伺服电机 + 减速器)
+</code></pre>
+  <p>真机配置示例(<code>ros2_controllers.yaml</code>):</p>
+  <pre><code>controller_manager:
+  ros__parameters:
+    update_rate: 100   # 控制循环 Hz
+
+arm_controller:
+  ros__parameters:
+    type: joint_trajectory_controller/JointTrajectoryController
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+    command_interfaces:
+      - position           # 位置控制接口(也可加 velocity/effort)
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.01
+      goal_time: 0.0</code></pre>
+
+  <h3>6.2 真实机械臂部署流程</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>准备 moveit_config 包</b><br>Setup Assistant 生成,SRDF/ompl_planning.yaml/kinematics.yaml 齐全</div>
+    <div class="step-item"><span class="n">2</span><b>接入硬件接口</b><br>实现 SystemInterface,把关节命令映射到电机驱动器</div>
+    <div class="step-item"><span class="n">3</span><b>起控制器</b><br>spawner 启动 joint_state_broadcaster + joint_trajectory_controller 并激活</div>
+    <div class="step-item"><span class="n">4</span><b>启动 MoveIt</b><br>demo.launch.py 连上真机控制器</div>
+    <div class="step-item"><span class="n">5</span><b>减速试跑</b><br>先 setMaxVelocityScalingFactor(0.1~0.2) 空载走一遍</div>
+  </div>
+  <div class="box box-danger">
+    <b>🔴 真机安全铁律:</b>关节名在 <b>URDF、控制器配置、MoveIt 配置</b>三处必须逐字一致;首次执行务必<b>低速缩放 + 手按急停</b>;先空载后带载。
+  </div>
+
+  <h3>6.3 伺服 servoing:绕过「规划」的实时控制</h3>
+  <p>规划适合「点到点」;而<b>遥操作、力引导、人机协作</b>需要机器人<b>实时跟随</b>外部输入(手柄、手部追踪、力矩)。<b>moveit_servo</b> 提供高频率(约百 Hz 级)的末端速度伺服:输入「末端期望速度/增量」,直接解出关节速度下发,不做完整规划。它常与视觉遥操作、临场感控制配合,是实现「人手带着机械臂走」的关键模块。</p>
+
+  <h3>6.4 常见失败与调试</h3>
+  <div class="box box-warn">
+    <b>⚠️ motion planning failure 排查清单:</b><br>
+    1. <b>目标不可达</b>:末端位姿超出工作空间,或方向约束与姿态互相矛盾 → 换目标/放宽容差;<br>
+    2. <b>奇异位形</b>:IK 无解或关节速度爆炸 → 换初始位形、绕开奇异点;<br>
+    3. <b>规划场景不同步</b>:场景里没加障碍(导致「穿模」)或加了幽灵障碍(导致「处处撞」)→ 刷新 PlanningScene;<br>
+    4. <b>规划时间/次数不足</b>:复杂场景 RRT 没搜完 → 调大 planning_time / 换 RRTConnect / BiTRRT;<br>
+    5. <b>控制器没激活或关节名不匹配</b>:规划成功但执行不动 → 查 <code>ros2 control list_controllers</code> 与三处关节名;<br>
+    6. <b>碰撞几何过细</b>:用高精度 mesh 做 collision,检测慢到超时 → 换凸体简化几何。
+  </div>
+
+  <h2><span class="h2-num">7</span> 人形机器人场景</h2>
+  <p>人形机器人的手臂规划与桌面机械臂最大的不同:<b>双臂、双足浮动基座、全身平衡</b>。这里只谈手臂层面的落地现状,整机平衡与步态见本站其它章节。</p>
+
+  <h3>7.1 双臂协同规划(dual-arm)</h3>
+  <p>双臂协同通常有两种做法:</p>
+  <ul>
+    <li><b>两个独立 MoveGroup</b>:左右臂各一个规划组,各自规划,再用<b>相对位姿约束</b>把两末端「绑」在一起(如合抱箱子时两掌心相对、距离固定)。简单,但难保证两臂轨迹时序同步。</li>
+    <li><b>合并为一个大规划组</b>:把左右臂关节并入一个 14-DoF 组,一次规划出双臂联合轨迹;时序天然同步,但 C-space 维数翻倍、规划更慢,且碰撞矩阵更复杂。</li>
+  </ul>
+  <p>实际工程里常用「<b>主子臂</b>」模式:主臂走笛卡尔/关节规划,从臂用相对约束跟随,兼顾成功率与同步性。</p>
+
+  <h3>7.2 宇树 H1:整机 URDF 与双臂规划</h3>
+  <p>宇树 H1 是双臂人形机器人,官方 <code>unitree_ros</code> 仓库提供了 <code>h1_description</code>(<b>URDF 与 MJCF 两种描述</b>),以及 H1-2 型号描述;同时社区有基于 H1 的 ROS2 SDK 与 MoveIt 配置实践。在 H1 上跑 MoveIt2 的典型路径是:用官方 URDF 经 Setup Assistant 生成 moveit_config,建 <code>left_arm</code> / <code>right_arm</code> 规划组,再接入宇树的关节控制接口。<b>注意:</b>H1 双臂的 MoveIt 配置多由社区维护,官方公开资料以描述文件与 SDK 为主,具体型号的规划组命名与控制器需以对应仓库为准(约)。</p>
+
+  <h3>7.3 智元(稚晖君团队)开源实践</h3>
+  <p>智元机器人(AgiBot)在 2024 年 10 月开源了 <b>灵犀 X1</b> 的软硬件资料(官方称「0 元购」软硬件全套图纸与代码),含推理代码仓库 <code>AgibotTech/agibot_x1_infer</code> 等,以及自研开源通信中间件 <b>AimRT</b>。这套资料为「整机 + 双臂操作」的学习与二次开发提供了从模型到算法的完整参考。手臂层面的规划仍可复用 MoveIt2 生态(约,具体以各仓库 README 为准)。</p>
+
+  <div class="box box-tip">
+    <b>📌 人形机器人规划的现实:</b>当前人形机器人手臂大多沿用「<b>固定基座假设</b>」做规划(把躯干当基座),再由整机控制器协调平衡;「规划时把双足/质心也纳入约束」的全身规划(whole-body)仍在快速演进,难度更高,不在本页展开。
+  </div>
+
+  <h2><span class="h2-num">8</span> 性能与进阶资源</h2>
+  <p>继续深入的方向与官方入口(均为核实过的官方文档,详见文末「参考来源」):</p>
+  <ul>
+    <li><b>MoveIt2 官方文档</b>:<a href="https://moveit.picknik.ai/main/index.html" target="_blank" rel="noopener">moveit.picknik.ai</a> —— 概念、教程、API 一体,首选;</li>
+    <li><b>MoveIt Task Constructor</b>:官方仓库 <code>moveit/moveit_task_constructor</code> 与 <a href="https://moveit.picknik.ai/main/doc/tutorials/pick_and_place_with_moveit_task_constructor/pick_and_place_with_moveit_task_constructor.html" target="_blank" rel="noopener">Pick and Place with MTC 教程</a>;</li>
+    <li><b>OMPL</b>:<a href="https://ompl.kavrakilab.org/" target="_blank" rel="noopener">ompl.kavrakilab.org</a> —— 算法库官网与各类规划器的形式化描述;</li>
+    <li><b>ros2_control</b>:<a href="https://control.ros.org/" target="_blank" rel="noopener">control.ros.org</a> —— 控制器与硬件接口文档;</li>
+    <li><b>servo</b>:<a href="https://moveit.picknik.ai/main/doc/examples/realtime_servo/realtime_servo_tutorial.html" target="_blank" rel="noopener">Realtime Arm Servoing 教程</a>。</li>
+  </ul>
+  <div class="box box-tip">
+    <b>🚀 性能小抄:</b>想「快」就 RRTConnect + 缩短 planning_time;想「短而顺」就 RRTstar/PRM + 调大 max_solutions 再选优;想「安全贴中走」就 BiTRRT;想「边走边感知」就把点云更新与 PlanningSceneMonitor 配到位,并在执行前重校验。
+  </div>
+
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 采样规划器(RRT 类)主要在哪个空间里搜索?正运动学(FK)在其中起什么作用?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 在三维物理空间里搜索;FK 用于生成障碍物</button>
+      <button data-v="B">B. 在构型空间(C-space)里搜索;FK 把采样到的关节角映射到物理空间,用于碰撞检测</button>
+      <button data-v="C">C. 在图像空间里搜索;FK 用于渲染</button>
+      <button data-v="D">D. 只在笛卡尔空间里搜索;FK 完全用不到</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 采样规划器把机器人看成 C-space 里的一个「点」,在关节角空间采样;每采样一个 q 都要用 FK 算出连杆位姿,才能判断是否与环境/自碰撞。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 关于 OMPL 规划器的默认与选型,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. MoveIt2 默认规划器是 PRM</button>
+      <button data-v="B">B. RRTstar 比 RRTConnect 更快、更适合实时场景</button>
+      <button data-v="C">C. MoveIt2 默认是 RRTConnect(双向快速探索),追求路径更短更平滑可换 RRTstar,狭窄通道可换 BiTRRT</button>
+      <button data-v="D">D. LazyPRM 一定比 RRTConnect 规划得更快</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 RRTConnect 是双向搜索、收敛快,是 MoveIt2 默认;RRTstar 渐近最优但更慢;BiTRRT 通过控制 clearance 擅长狭窄通道;LazyPRM 只在「边检查昂贵」时占优。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. computeCartesianPath 返回的 fraction = 0.6 意味着什么?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 规划耗时 0.6 秒</button>
+      <button data-v="B">B. 有 60% 的概率会碰撞</button>
+      <button data-v="C">C. 末端移动了 0.6 米</button>
+      <button data-v="D">D. 笛卡尔路径只成功解出了约 60% 的途经点,剩余段因奇异/碰撞/不可达而中断</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 fraction 是「成功解出的路径比例」,∈[0,1];小于 1 表示中途 IK 无解(常见奇异位形或目标超工作空间),需缩短步长或换初始位形。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 关于碰撞矩阵 ACM(允许碰撞矩阵),正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 它声明「哪些连杆对之间不检查碰撞」,用于避免相邻连杆的误报并加速检测</button>
+      <button data-v="B">B. 它声明「哪些连杆对允许真的撞在一起」</button>
+      <button data-v="C">C. 它由用户在运行时手动实时修改,与 SRDF 无关</button>
+      <button data-v="D">D. 环境障碍物也要写进 ACM 才能被检测</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 ACM 是「豁免检测」清单,由 Setup Assistant 采样生成、存于 SRDF 的 disable_collisions 段;它是为了防误报与提速,而不是允许真碰撞;环境障碍走 PlanningScene 而非 ACM。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. Octomap 在 MoveIt2 感知避障链路中的角色是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 一个运动规划算法</button>
+      <button data-v="B">B. 把点云转成八叉树占用栅格,作为 PlanningScene 的碰撞来源</button>
+      <button data-v="C">C. 一个夹爪控制器</button>
+      <button data-v="D">D. 一种 IK 求解器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 深度相机点云经 Occupancy Map Monitor 插入 Octomap(八叉树),再作为规划场景的障碍来源,让规划器绕开实时感知到的物体。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 关于 MoveIt Task Constructor(MTC),错误的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. MTC 把复杂操作拆成有向图上的多个 Stage,前一个 Stage 的结果作为后一个的起点</button>
+      <button data-v="B">B. GenerateGraspPose 用于围绕物体生成候选抓取姿态,ComputeIK 对抓取姿态求关节解</button>
+      <button data-v="C">C. MTC 只能用 C++ 编写,完全没有 Python 接口</button>
+      <button data-v="D">D. 抓取流程通常包含 接近→生成抓取→求解IK→抓取→抬升→放置 等阶段</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 MTC 既有 C++ 也有 Python 接口(官方示例含 demo/scripts/pickplace.py);它用 Generator/Propagator/Connector 三类 Stage 把抓取流程拆成图。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">7. MoveIt2 真机上「规划成功但机械臂不动」,最不可能的原因是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. joint_trajectory_controller 尚未激活</button>
+      <button data-v="B">B. 三处关节名(URDF/控制器/MoveIt)不一致</button>
+      <button data-v="C">C. 硬件接口未正确连接电机驱动器</button>
+      <button data-v="D">D. 电脑屏幕分辨率太低导致 RViz 卡顿</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 规划成功=算法层通过;执行不动通常是控制器未激活、关节名不匹配或硬件接口没接好;RViz 卡顿只影响显示,不影响轨迹下发。</div>
+  </div>
+
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>运动规划本质是在<b>C-space</b>里避开 C-obstacle 找一条 C-free 路径;MoveIt2 默认用 <b>OMPL 采样规划</b>,以 RRTConnect 打底,靠 <code>ompl_planning.yaml</code> 里的 planner_id / planning_time / planning_attempts 调参。约束规划与 <code>computeCartesianPath</code> 解决「直线/定姿态」类任务,避障靠 ACM + 自/环境碰撞 + <b>Octomap 感知</b>。复杂抓取用 <b>MoveIt Task Constructor</b> 拆成 Stage 图;真机落地靠 <b>ros2_control</b>(joint_trajectory_controller)+ moveit_servo 伺服;人形机器人则叠加<b>双臂协同</b>与整机平衡,宇树 H1 与智元灵犀 X1 的开源资料是重要实践参考。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 若一条 7-DoF 手臂用 RRTConnect 在密集货架里规划反复失败,你会依次尝试哪三个调整?为什么?<br>
+    2. 端一杯水走直线,为什么 <code>computeCartesianPath</code> 比关节空间规划更合适?fraction 停在 0.4 时最可能是哪里出了问题?<br>
+    3. 抓取时把物体 <code>attach</code> 到末端与不 attach,对后续「抬升搬运」的碰撞检测结果有什么本质区别?<br>
+    4. 自己动手:用官方 MTC 的 pickplace.py 在仿真里跑通一次「接近→抓取→抬升→放置」,并尝试把 <code>GenerateGraspPose</code> 的采样角度从 90° 改成 180°,观察成功率与候选解数量的变化。
+  </div>
+
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://moveit.picknik.ai/main/index.html" target="_blank" rel="noopener">MoveIt 2 官方文档</a></li>
+    <li><a href="https://moveit.picknik.ai/main/doc/concepts/planning_scene_monitor.html" target="_blank" rel="noopener">MoveIt2 · Planning Scene Monitor(规划场景与感知同步)</a></li>
+    <li><a href="https://ompl.kavrakilab.org/" target="_blank" rel="noopener">OMPL 官方文档(采样规划算法库)</a></li>
+    <li><a href="https://moveit.github.io/moveit_task_constructor/" target="_blank" rel="noopener">MoveIt Task Constructor 官方文档</a></li>
+    <li><a href="https://moveit.picknik.ai/main/doc/tutorials/pick_and_place_with_moveit_task_constructor/pick_and_place_with_moveit_task_constructor.html" target="_blank" rel="noopener">MoveIt2 · Pick and Place with MoveIt Task Constructor 教程</a></li>
+    <li><a href="https://github.com/moveit/moveit_task_constructor" target="_blank" rel="noopener">MoveIt Task Constructor GitHub 仓库(demo/scripts/pickplace.py)</a></li>
+    <li><a href="https://control.ros.org/" target="_blank" rel="noopener">ros2_control 官方文档</a></li>
+    <li><a href="https://control.ros.org/humble/doc/ros2_controllers/joint_trajectory_controller/doc/userdoc.html" target="_blank" rel="noopener">joint_trajectory_controller 用户文档</a></li>
+    <li><a href="https://moveit.picknik.ai/main/doc/examples/realtime_servo/realtime_servo_tutorial.html" target="_blank" rel="noopener">MoveIt2 · Realtime Arm Servoing(servo)教程</a></li>
+    <li><a href="https://github.com/moveit/moveit2_tutorials" target="_blank" rel="noopener">MoveIt2 官方教程仓库(moveit2_tutorials)</a></li>
+    <li><a href="https://github.com/unitreerobotics/unitree_ros" target="_blank" rel="noopener">宇树官方 unitree_ros 仓库(h1_description:URDF 与 MJCF)</a></li>
+    <li><a href="https://github.com/AgibotTech" target="_blank" rel="noopener">智元机器人 AgibotTech 开源组织(灵犀 X1 开源资料、AimRT 中间件)</a></li>
+    <li><a href="10_ROS2实战进阶_URDF与MoveIt2.html">本站 06-10 · ROS2 实战进阶:URDF 与 MoveIt2(本页前置)</a></li>
+  </ul>
+  <p>资料整理更新至 2026-08;版本与参数以各官方文档当前版本为准,本文中未能逐一核实之处均标注「约」。</p>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

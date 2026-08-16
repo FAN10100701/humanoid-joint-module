@@ -25,7 +25,21 @@ echo [2/3] Creating commit...
 echo.
 
 echo [3/3] Pushing to GitHub...
+rem 检测本机代理(127.0.0.1:7897)是否开启,用于判断是否需要代理参数
+powershell -NoProfile -Command "try{$c=New-Object Net.Sockets.TcpClient;$c.Connect('127.0.0.1',7897);$c.Close();exit 0}catch{exit 1}" >nul 2>&1
+if errorlevel 1 goto :noproxy
+echo   [OK] Local proxy 127.0.0.1:7897 is running (git global proxy will be used).
+goto :dopush
+:noproxy
+echo   [INFO] Local proxy not detected. If push fails due to network, run:
+echo     git config --global http.proxy http://127.0.0.1:7897
+echo     git config --global https.proxy http://127.0.0.1:7897
+:dopush
 "%GIT_EXE%" push origin master
+if errorlevel 1 (
+    echo   [RETRY] Push failed - retrying with proxy bypass (direct connection)...
+    "%GIT_EXE%" -c http.proxy= -c https.proxy= push origin master
+)
 echo.
 
 if %errorlevel% equ 0 (
