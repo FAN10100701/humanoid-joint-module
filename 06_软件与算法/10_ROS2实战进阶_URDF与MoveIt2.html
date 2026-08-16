@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · ROS2 实战进阶:URDF 与 MoveIt2</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<script>
+  window.PAGE = {
+    pageId: "06-10",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec6" },
+      { t: "ROS2 实战进阶 · URDF 与 MoveIt2" }
+    ],
+    prev: { t: "ROS2 入门实战 · 第一个节点", u: "09_ROS2入门实战_第一个节点.html" },
+    next: { t: "全球人形机器人机型全景", u: "../07_前沿知识库/01_全球人形机器人机型全景.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🦾 ROS2 实战进阶:URDF 与 MoveIt2 机械臂仿真</h1>
+    <div class="sub">从"用 URDF 描述一个机器人"到"用 MoveIt2 让机械臂动起来" —— 打通模型 → 可视化 → 坐标变换 → 控制器 → 运动规划的完整链路,参考 ROS2 官方教程与 MoveIt2 官方文档整理。</div>
+    <div class="tags">
+      <span class="tag">URDF</span>
+      <span class="tag">xacro</span>
+      <span class="tag">RViz2</span>
+      <span class="tag">TF2</span>
+      <span class="tag">ros2_control</span>
+      <span class="tag">MoveIt2</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能读懂 URDF 的 link / joint 完整标签,区分<b>可视化几何、碰撞几何、惯性</b>三种几何的作用<br>
+    2. 能独立从零写一个 2 连杆机械臂的 URDF,并用 xacro 宏把它参数化、复用<br>
+    3. 能在 RViz2 里正确加载 URDF(含 Fixed Frame 设置),并用 TF2 查任意两个坐标系之间的变换<br>
+    4. 能读懂一个 launch.py 多节点启动文件,说明参数 / 包含 / 分组三种写法<br>
+    5. 能讲清 ros2_control 的 controller_manager / hardware_interface 架构,并配置 joint_state_broadcaster<br>
+    6. 能用 MoveIt2 的 MoveGroup 接口完成一次"规划 + 执行",并在 RViz 里拖拽目标执行<br>
+    <b>建议用时:</b>90-120 分钟(含动手)。<b>前置:</b>建议先读本站 <a href="09_ROS2入门实战_第一个节点.html">06-09 ROS2 入门实战</a>,本页默认你已跑通过第一个节点、会用 colcon 与 ros2 topic。
+  </div>
+
+  <h2><span class="h2-num">1</span> URDF 深入:link 与 joint 的完整语法</h2>
+  <p>URDF(Unified Robot Description Format,统一机器人描述格式)是 ROS 描述机器人<b>几何、运动学、动力学</b>的 XML 文件。人形机器人的每一个关节模组(髋、膝、踝、肩、肘、腕)在 URDF 里最终都落成两样东西:<b>link(连杆,刚体)</b>和 <b>joint(关节,连接两个连杆的约束)</b>。</p>
+
+  <h3>1.1 link:一个刚体,三种几何</h3>
+  <p>一个 <code>&lt;link&gt;</code> 通常包含三块内容,它们的几何可以<b>各不相同</b>,这是初学者最容易混的点:</p>
+  <div class="table-wrap"><table>
+    <tr><th>子标签</th><th>作用</th><th>由谁使用</th><th>典型差异</th></tr>
+    <tr><td><code>&lt;visual&gt;</code></td><td>可视化几何:屏幕上长什么样</td><td>RViz2、Gazebo 渲染</td><td>可以用高精度 mesh(.stl/.dae),越精细越像真机</td></tr>
+    <tr><td><code>&lt;collision&gt;</code></td><td>碰撞几何:碰撞检测用什么</td><td>MoveIt2 自碰撞、Gazebo 物理、规划器</td><td>尽量用凸体简化(box/cylinder/sphere 或简化 mesh),越简单算得越快</td></tr>
+    <tr><td><code>&lt;inertial&gt;</code></td><td>惯性:质量与转动惯量</td><td>Gazebo 物理、动力学、逆动力学</td><td>必须给 <code>mass</code>(必须 &gt; 0)和 3×3 惯量张量 <code>inertia</code></td></tr>
+  </table></div>
+  <p>三者的 <code>&lt;origin&gt;</code> 都相对<b>该 link 自身坐标系</b>描述;而 link 之间的相对位姿则由 <code>&lt;joint&gt;</code> 里的 <code>&lt;origin&gt;</code> 定义。</p>
+
+  <h3>1.2 joint:六种类型与关键字段</h3>
+  <p>joint 通过 <code>type</code> 指定约束类型,并通过 <code>parent</code> / <code>child</code> 确定父子关系(<b>child 相对 parent 运动</b>,这是 TF 树的根)。常见六种:</p>
+  <div class="table-wrap"><table>
+    <tr><th>type</th><th>自由度</th><th>典型用途</th></tr>
+    <tr><td><code>revolute</code></td><td>1(绕 axis 旋转,有上下限)</td><td>人形机器人几乎全部旋转关节模组(髋/膝/肘)</td></tr>
+    <tr><td><code>continuous</code></td><td>1(无限旋转)</td><td>轮子、转台</td></tr>
+    <tr><td><code>prismatic</code></td><td>1(沿 axis 平移)</td><td>滑轨、直线执行器</td></tr>
+    <tr><td><code>fixed</code></td><td>0(焊死)</td><td>把相机、IMU 固定到某个 link 上</td></tr>
+    <tr><td><code>floating</code></td><td>6</td><td>整机浮动基座(如四足/人形整机的根,较复杂)</td></tr>
+    <tr><td><code>planar</code></td><td>3(平面内移动+旋转)</td><td>平面移动小车(较少用)</td></tr>
+  </table></div>
+  <p>一个 revolute 关节的关键字段:<code>&lt;origin&gt;</code>(关节坐标系相对父连杆的位姿)、<code>&lt;axis&gt;</code>(旋转轴单位向量,如 <code>0 0 1</code> 表示绕 Z 轴)、<code>&lt;limit&gt;</code>(lower/upper 限位、effort 最大力矩、velocity 最大速度)。</p>
+
+  <div class="box box-tip">
+    <b>💡 坐标系约定:</b>URDF 与 ROS 的位姿都用 <code>x y z</code>(米)和 <code>rpy</code>(弧度,roll/pitch/yaw)表示;欧拉角是"先绕固定轴 roll→pitch→yaw"的 RPY 顺序。颜色用 <code>rgba</code>,四个值都是 0~1。
+  </div>
+
+  <h3>1.3 从零写一个 2 连杆机械臂(纯 URDF)</h3>
+  <p>下面是一个 2 自由度的平面机械臂:基座 + 两节绕 Z 轴旋转的连杆。把下面内容存成 <code>two_link_arm.urdf</code> 即可用于 RViz2 可视化:</p>
+  <pre><code>&lt;?xml version="1.0"?&gt;
+&lt;robot name="two_link_arm"&gt;
+
+  &lt;!-- ===== 基座:静止连杆 ===== --&gt;
+  &lt;link name="base_link"&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;
+        &lt;cylinder radius="0.06" length="0.12"/&gt;
+      &lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.06" rpy="0 0 0"/&gt;
+      &lt;material name="grey"&gt;
+        &lt;color rgba="0.4 0.4 0.4 1.0"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    &lt;collision&gt;
+      &lt;geometry&gt;
+        &lt;cylinder radius="0.06" length="0.12"/&gt;
+      &lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.06" rpy="0 0 0"/&gt;
+    &lt;/collision&gt;
+    &lt;inertial&gt;
+      &lt;origin xyz="0 0 0.06" rpy="0 0 0"/&gt;
+      &lt;mass value="1.0"/&gt;
+      &lt;inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/&gt;
+    &lt;/inertial&gt;
+  &lt;/link&gt;
+
+  &lt;!-- ===== 关节 1:base_link --&gt; link1,绕 Z 轴 --&gt;
+  &lt;joint name="joint1" type="revolute"&gt;
+    &lt;parent link="base_link"/&gt;
+    &lt;child link="link1"/&gt;
+    &lt;origin xyz="0 0 0.12" rpy="0 0 0"/&gt;
+    &lt;axis xyz="0 0 1"/&gt;
+    &lt;limit lower="-3.14" upper="3.14" effort="10" velocity="3.14"/&gt;
+  &lt;/joint&gt;
+
+  &lt;link name="link1"&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;
+        &lt;box size="0.08 0.08 0.3"/&gt;
+      &lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.15" rpy="0 0 0"/&gt;
+      &lt;material name="blue"&gt;
+        &lt;color rgba="0.2 0.5 1.0 1.0"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    &lt;collision&gt;
+      &lt;geometry&gt;
+        &lt;box size="0.08 0.08 0.3"/&gt;
+      &lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.15" rpy="0 0 0"/&gt;
+    &lt;/collision&gt;
+    &lt;inertial&gt;
+      &lt;origin xyz="0 0 0.15" rpy="0 0 0"/&gt;
+      &lt;mass value="1.0"/&gt;
+      &lt;inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/&gt;
+    &lt;/inertial&gt;
+  &lt;/link&gt;
+
+  &lt;!-- ===== 关节 2:link1 --&gt; link2 --&gt;
+  &lt;joint name="joint2" type="revolute"&gt;
+    &lt;parent link="link1"/&gt;
+    &lt;child link="link2"/&gt;
+    &lt;origin xyz="0 0 0.3" rpy="0 0 0"/&gt;
+    &lt;axis xyz="0 0 1"/&gt;
+    &lt;limit lower="-3.14" upper="3.14" effort="10" velocity="3.14"/&gt;
+  &lt;/joint&gt;
+
+  &lt;link name="link2"&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;
+        &lt;box size="0.06 0.06 0.25"/&gt;
+      &lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.125" rpy="0 0 0"/&gt;
+      &lt;material name="red"&gt;
+        &lt;color rgba="1.0 0.3 0.3 1.0"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    &lt;collision&gt;
+      &lt;geometry&gt;
+        &lt;box size="0.06 0.06 0.25"/&gt;
+      &lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.125" rpy="0 0 0"/&gt;
+    &lt;/collision&gt;
+    &lt;inertial&gt;
+      &lt;origin xyz="0 0 0.125" rpy="0 0 0"/&gt;
+      &lt;mass value="0.6"/&gt;
+      &lt;inertia ixx="0.005" ixy="0.0" ixz="0.0" iyy="0.005" iyz="0.0" izz="0.005"/&gt;
+    &lt;/inertial&gt;
+  &lt;/link&gt;
+
+&lt;/robot&gt;</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ 注意:</b>上面的惯量值是<b>教学用近似值</b>(转动惯量取近似)。真实项目里惯量张量应按质量分布计算(如对长方体,Ixx = m/12·(h²+d²));MoveIt2 与 Gazebo 都<b>强制要求 mass &gt; 0</b> 且提供了 <code>&lt;inertial&gt;</code>,否则加载直接报错。
+  </div>
+
+  <h3>1.4 xacro:把 URDF 参数化、复用</h3>
+  <p>URDF 写长了会又臭又长:xacro(XML 宏)给它加上了<b>常量、变量、数学运算、宏函数、文件包含</b>。核心用法:</p>
+  <ul>
+    <li><code>&lt;xacro:property name=".." value=".."/&gt;</code> —— 定义常量;</li>
+    <li><code>${表达式}</code> —— 引用常量或做运算(如 <code>${link1_len / 2}</code>);</li>
+    <li><code>&lt;xacro:macro name=".." params=".."&gt;...&lt;/xacro:macro&gt;</code> —— 定义宏(函数);</li>
+    <li><code>&lt;xacro:include filename=".."/&gt;</code> —— 包含其它 xacro 文件;</li>
+    <li>调用宏:<code>&lt;xacro:宏名 参数="值"/&gt;</code>。</li>
+  </ul>
+  <p>把上面的 2 连杆臂改写成 xacro(节选核心部分):</p>
+  <pre><code>&lt;?xml version="1.0"?&gt;
+&lt;robot name="two_link_arm" xmlns:xacro="http://www.ros.org/wiki/xacro"&gt;
+
+  &lt;!-- 常量:连杆长度,改这里即可整体改变臂长 --&gt;
+  &lt;xacro:property name="link1_len" value="0.3"/&gt;
+  &lt;xacro:property name="link2_len" value="0.25"/&gt;
+  &lt;xacro:property name="radius" value="0.04"/&gt;
+
+  &lt;!-- 宏:生成一节连杆(参数化) --&gt;
+  &lt;xacro:macro name="arm_link" params="name length color"&gt;
+    &lt;link name="${name}"&gt;
+      &lt;visual&gt;
+        &lt;geometry&gt;
+          &lt;box size="${2*radius} ${2*radius} ${length}"/&gt;
+        &lt;/geometry&gt;
+        &lt;origin xyz="0 0 ${length/2}" rpy="0 0 0"/&gt;
+        &lt;material name="m_${name}"&gt;
+          &lt;color rgba="${color}"/&gt;
+        &lt;/material&gt;
+      &lt;/visual&gt;
+      &lt;collision&gt;
+        &lt;geometry&gt;
+          &lt;box size="${2*radius} ${2*radius} ${length}"/&gt;
+        &lt;/geometry&gt;
+        &lt;origin xyz="0 0 ${length/2}" rpy="0 0 0"/&gt;
+      &lt;/collision&gt;
+      &lt;inertial&gt;
+        &lt;origin xyz="0 0 ${length/2}" rpy="0 0 0"/&gt;
+        &lt;mass value="${length}"/&gt;
+        &lt;inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/&gt;
+      &lt;/inertial&gt;
+    &lt;/link&gt;
+  &lt;/xacro:macro&gt;
+
+  &lt;!-- 宏:生成一个 revolute 关节 --&gt;
+  &lt;xacro:macro name="arm_joint" params="name parent child z"&gt;
+    &lt;joint name="${name}" type="revolute"&gt;
+      &lt;parent link="${parent}"/&gt;
+      &lt;child link="${child}"/&gt;
+      &lt;origin xyz="0 0 ${z}" rpy="0 0 0"/&gt;
+      &lt;axis xyz="0 0 1"/&gt;
+      &lt;limit lower="-3.14" upper="3.14" effort="10" velocity="3.14"/&gt;
+    &lt;/joint&gt;
+  &lt;/xacro:macro&gt;
+
+  &lt;!-- 调用宏:三行搞定三节 + 两个关节 --&gt;
+  &lt;arm_link name="link1" length="${link1_len}" color="0.2 0.5 1.0 1.0"/&gt;
+  &lt;arm_link name="link2" length="${link2_len}" color="1.0 0.3 0.3 1.0"/&gt;
+  &lt;arm_joint name="joint1" parent="base_link" child="link1" z="${0.12}"/&gt;
+  &lt;arm_joint name="joint2" parent="link1" child="link2" z="${link1_len}"/&gt;
+
+&lt;/robot&gt;</code></pre>
+  <p>xacro 文件要用 <code>xacro</code> 工具转成 URDF 才能被下游读取:</p>
+  <pre><code>xacro two_link_arm.urdf.xacro &gt; two_link_arm.urdf
+# 也可以直接转成可视化 PDF 检查(部分发行版需装 graphviz/urdfdom)
+check_urdf two_link_arm.urdf        # 校验结构是否合法
+urdf_to_graphiz two_link_arm.urdf   # 生成 tf 结构图(可选)</code></pre>
+
+  <h2><span class="h2-num">2</span> RViz2 实操:把 URDF 显示出来</h2>
+  <p>RViz2 只负责"显示",它自己<b>不解析 URDF</b> —— 解析和发布 TF 靠 <code>robot_state_publisher</code>,关节角度靠 <code>joint_state_publisher</code>。完整流程四步:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>转 xacro</b><br>xacro 文件先转成 URDF(或让 launch 用 Command 自动转)</div>
+    <div class="step-item"><span class="n">2</span><b>robot_state_publisher</b><br>读 URDF,发布 /robot_description 与静态 TF</div>
+    <div class="step-item"><span class="n">3</span><b>joint_state_publisher</b><br>发布关节角度(/joint_states)</div>
+    <div class="step-item"><span class="n">4</span><b>RViz2</b><br>订阅 TF 与 robot_description 渲染模型</div>
+  </div>
+  <pre><code># ① 转 URDF(可选,便于 check_urdf 校验)
+xacro two_link_arm.urdf.xacro &gt; two_link_arm.urdf
+
+# ② 启动 robot_state_publisher,发布模型与 TF
+ros2 run robot_state_publisher robot_state_publisher --ros-args \
+  -p robot_description:="$(xacro /path/to/two_link_arm.urdf.xacro)"
+
+# ③ 启动 joint_state_publisher_gui,可拖动滑杆改关节角
+ros2 run joint_state_publisher_gui joint_state_publisher_gui
+
+# ④ 新开终端,启动 RViz2
+rviz2</code></pre>
+  <p>RViz2 打开后按下面顺序配置(每一步都有坑):</p>
+  <ol>
+    <li><b>设 Fixed Frame</b>:左侧 <b>Global Options → Fixed Frame</b> 填 <code>base_link</code>(注意大小写、不能有前导 <code>/</code>)。设错会整屏报红或模型消失。</li>
+    <li><b>添加 RobotModel</b>:左下角 <b>Add → 按主题(RobotModel)</b>。它默认订阅 <code>/robot_description</code> 话题;若模型不出现,检查话题名是否一致。</li>
+    <li><b>添加 TF</b>:<b>Add → TF</b>,可显示所有坐标系与连线,直观看到 <code>base_link → link1 → link2</code> 的树。</li>
+    <li><b>添加 Grid</b>:<b>Add → Grid</b>,给一个地面参考,方便看方向和尺度。</li>
+    <li>保存配置:<b>File → Save Config As</b>,存成 <code>display.rviz</code>,下次用 <code>rviz2 -d display.rviz</code> 直接加载。</li>
+  </ol>
+  <div class="box box-tip">
+    <b>💡 拖拽验证:</b>打开 joint_state_publisher_gui 的滑杆,拖动 joint1/joint2 的角度,RobotModel 应该跟着转。若模型是"散架/错位"的,通常是某个 <code>&lt;origin&gt;</code> 写错或 Fixed Frame 没设对。
+  </div>
+
+  <h2><span class="h2-num">3</span> TF2:机器人的"坐标变换总线"</h2>
+  <p>TF2 维护一棵<b>有向树</b>上所有坐标系之间的相对位姿,并缓存一段时间让异步消息也能对齐时间戳。人形机器人典型的 tf 树:</p>
+  <pre><code>map ──&gt; odom ──&gt; base_link ──&gt; torso ──&gt; l_arm ──&gt; l_hand ──&gt; l_gripper
+                                        └────&gt; r_arm ──&gt; r_hand ──&gt; r_gripper</code></pre>
+
+  <h3>3.1 三个根级坐标系:map / odom / base_link</h3>
+  <div class="table-wrap"><table>
+    <tr><th>坐标系</th><th>含义</th><th>典型发布者</th></tr>
+    <tr><td><code>base_link</code></td><td>机器人本体基准系(通常位于底盘/躯干)</td><td>robot_state_publisher(由 URDF 决定)</td></tr>
+    <tr><td><code>odom</code></td><td>里程计系:随运动漂移的"世界系"近似</td><td>轮式/腿式里程计节点、IMU 融合</td></tr>
+    <tr><td><code>map</code></td><td>地图系:全局固定、不漂移的参考系</td><td>SLAM/定位节点(如 AMCL)</td></tr>
+  </table></div>
+  <p>为什么要分三层?因为里程计会累积误差(<code>odom → base_link</code> 随运动漂移),而地图需要稳定;定位节点定期发布 <code>map → odom</code> 来"纠正"漂移,从而隔离两种误差源。这是导航栈的标准设计。</p>
+
+  <h3>3.2 发布静态变换</h3>
+  <p>两坐标系若<b>刚性固定</b>(如给机器人装一个固定位置的激光雷达),用 static_transform_publisher 一次发布即可:</p>
+  <pre><code># 形式:xyz + 欧拉角(rpy),再跟 父系 子系
+ros2 run tf2_ros static_transform_publisher 0.1 0 0.2 0 0 0 base_link laser
+
+# 或使用命名参数(更不易写错顺序)
+ros2 run tf2_ros static_transform_publisher --x 0.1 --y 0 --z 0.2 \
+  --roll 0 --pitch 0 --yaw 0 --frame-id base_link --child-frame-id laser</code></pre>
+
+  <h3>3.3 lookupTransform:查任意两系变换</h3>
+  <p>程序里查变换的核心是 <code>Buffer</code> + <code>TransformListener</code>(负责接收),再调 <code>lookup_transform</code>:</p>
+  <pre><code>import rclpy
+from rclpy.node import Node
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+
+class TfLookup(Node):
+    def __init__(self):
+        super().__init__('tf_lookup')
+        self.buffer = Buffer()
+        self.listener = TransformListener(self.buffer, self)
+        self.timer = self.create_timer(1.0, self.lookup)
+
+    def lookup(self):
+        try:
+            # 查 base_link 到 link2 的变换,time 用 Time() 表示"取最新"
+            t = self.buffer.lookup_transform('base_link', 'link2', rclpy.time.Time())
+            pos = t.transform.translation
+            self.get_logger().info('link2 相对 base_link: x=%.3f y=%.3f z=%.3f'
+                                   % (pos.x, pos.y, pos.z))
+        except Exception as e:
+            self.get_logger().warn('查询失败(通常系还没发布): %s' % e)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = TfLookup()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+  <p>调试命令:<code>ros2 run tf2_ros tf2_echo base_link link2</code> 持续打印变换;<code>view_frames</code>(生成 frames.pdf)可视化整棵树。</p>
+
+  <h2><span class="h2-num">4</span> launch 文件:一个文件拉起一堆节点</h2>
+  <p>真实机器人启动时少则几个、多则几十个节点,不可能手动敲。ROS2 推荐 <b>Python 版 launch 文件</b>(<code>*.launch.py</code>),它其实是普通 Python 脚本,入口函数返回一个 <code>LaunchDescription</code>。核心构件:</p>
+  <div class="table-wrap"><table>
+    <tr><th>构件</th><th>导入来源</th><th>作用</th></tr>
+    <tr><td><code>LaunchDescription</code></td><td>launch</td><td>描述要启动什么(所有 Action 的列表)</td></tr>
+    <tr><td><code>Node</code></td><td>launch_ros.actions</td><td>启动一个 ROS2 节点(package/executable/name/parameters)</td></tr>
+    <tr><td><code>DeclareLaunchArgument</code></td><td>launch.actions</td><td>声明可覆盖参数,如 <code>use_sim_time</code></td></tr>
+    <tr><td><code>LaunchConfiguration</code></td><td>launch.substitutions</td><td>读取参数当前值</td></tr>
+    <tr><td><code>IncludeLaunchDescription</code></td><td>launch.actions</td><td>嵌套包含另一个 launch 文件</td></tr>
+    <tr><td><code>GroupAction</code></td><td>launch.actions</td><td>分组,可统一加命名空间/条件</td></tr>
+    <tr><td><code>FindPackageShare</code></td><td>launch_ros.substitutions</td><td>定位包的 share 目录(找 URDF/配置)</td></tr>
+  </table></div>
+  <p>一个把 URDF 显示起来的完整多节点示例(<code>display.launch.py</code>):</p>
+  <pre><code>from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
+def generate_launch_description():
+    # 参数:运行时可用 use_sim_time:=true 覆盖
+    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+
+    robot_description = Command([
+        'xacro ',
+        PathJoinSubstitution([
+            FindPackageShare('my_arm'),
+            'urdf', 'two_link_arm.urdf.xacro',
+        ]),
+    ])
+
+    return LaunchDescription([
+        DeclareLaunchArgument('use_sim_time', default_value='false',
+                              description='是否使用 /clock 仿真时间'),
+
+        # 节点 1:发布模型与 TF
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            parameters=[{'robot_description': robot_description,
+                         'use_sim_time': use_sim_time}],
+            output='screen',
+        ),
+
+        # 节点 2:关节角度(带 GUI 滑杆)
+        Node(
+            package='joint_state_publisher_gui',
+            executable='joint_state_publisher_gui',
+            name='joint_state_publisher_gui',
+        ),
+
+        # 节点 3:可视化
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz2',
+            arguments=['-d', PathJoinSubstitution([
+                FindPackageShare('my_arm'), 'rviz', 'display.rviz'])],
+        ),
+    ])</code></pre>
+  <p>运行:<code>ros2 launch my_arm display.launch.py use_sim_time:=true</code>。若要"分组",把一组 Node 包进 <code>GroupAction([...])</code> 并可加 <code>namespace</code>;若要"包含",用 <code>IncludeLaunchDescription(PythonLaunchDescriptionSource([...]))</code> 复用别的 launch 文件。</p>
+
+  <h2><span class="h2-num">5</span> ros2_control:让关节真正被"控制"</h2>
+  <p>URDF 只描述"长什么样",真正给每个关节模组下发力矩/位置/速度、并读回编码器反馈的是 <b>ros2_control</b>。它的架构把"控制逻辑"和"硬件驱动"解耦:</p>
+  <ul>
+    <li><b>controller_manager</b>:生命周期管理器,负责加载/激活/停用/卸载各个控制器;</li>
+    <li><b>controller(控制器)</b>:计算控制律,读写命令/状态接口(如 joint_state_broadcaster、joint_trajectory_controller);</li>
+    <li><b>hardware_interface(硬件接口)</b>:真实硬件或仿真器的抽象,把"给关节下命令"翻译成电机驱动,把"编码器读数"上报成状态。人形机器人常用 <code>SystemInterface</code> 派生类实现 <code>export_state_interfaces()</code> 与 <code>export_command_interfaces()</code>。</li>
+  </ul>
+  <pre><code>┌───────────── controller_manager ─────────────┐
+│  joint_state_broadcaster   joint_trajectory_controller │
+└───────────────┬───────────────────────────────┘
+                │ 通过 state/cmd 接口
+┌───────────────▼───────────────────────────────┐
+│      hardware_interface (SystemInterface)      │
+│  真机驱动(CAN/EtherCAT) 或 仿真插件(ign_ros2_control) │
+└───────────────────────────────────────────────┘</code></pre>
+
+  <h3>5.1 joint_state_broadcaster 配置要点</h3>
+  <p>它是最基础的控制器:把硬件读到的关节角度/速度/力矩<b>广播</b>到 <code>/joint_states</code>,供 TF 和 MoveIt2 使用。配置文件(<code>controllers.yaml</code>):</p>
+  <pre><code>controller_manager:
+  ros__parameters:
+    update_rate: 50   # 控制循环 Hz
+
+joint_state_broadcaster:
+  ros__parameters:
+    type: joint_state_broadcaster/JointStateBroadcaster
+    publish_rate: 50   # 发布 /joint_states 的频率
+    extra_joints: []   # 可额外并入非受控关节</code></pre>
+  <p>启动与激活(两种方式):</p>
+  <pre><code># 方式 A:spawner(推荐,自动处理 lifecycle)
+ros2 run controller_manager spawner joint_state_broadcaster
+
+# 方式 B:ros2 control 命令行手动管理
+ros2 control load_controller joint_state_broadcaster
+ros2 control set_controller_state joint_state_broadcaster active
+ros2 control list_controllers   # 查看所有控制器状态</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ 高频坑:</b>ros2_control 的控制器是<b>生命周期节点(lifecycle)</b>,加载后处于 <code>inactive</code>,必须 <code>activate</code> 才会真正发布/控制。<b>URDF 里的关节名、控制器配置里的关节名、MoveIt2 里的关节名三者必须完全一致</b>,否则 controller_manager 直接报"no matching joint"。
+  </div>
+
+  <h2><span class="h2-num">6</span> MoveIt2:机械臂运动规划与执行</h2>
+  <p>MoveIt2 是 ROS2 生态里最主流的<b>操作与运动规划</b>框架:给定起始位姿和目标位姿,它在避开障碍和自碰撞的前提下算出一条轨迹,再交给控制器执行。核心对象是 <b>MoveGroup</b>(一组关节/规划组的封装)。</p>
+
+  <h3>6.1 MoveIt Setup Assistant:从 URDF 到配置包</h3>
+  <p>一个交互式 GUI 工具,把 URDF 变成 MoveIt2 可用的配置包。流程:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>启动</b><br>ros2 launch moveit_setup_assistant setup_assistant.launch.py</div>
+    <div class="step-item"><span class="n">2</span><b>导入模型</b><br>New MoveIt Configuration Package → 选 .urdf/.xacro</div>
+    <div class="step-item"><span class="n">3</span><b>自碰撞矩阵</b><br>采样生成"哪些连杆之间允许碰撞"表</div>
+    <div class="step-item"><span class="n">4</span><b>规划组</b><br>建"arm"组(把 joint1/joint2 加入)</div>
+    <div class="step-item"><span class="n">5</span><b>预设位姿</b><br>定义 home/up 等命名位姿(可选)</div>
+    <div class="step-item"><span class="n">6</span><b>生成包</b><br>输出 my_arm_moveit_config</div>
+  </div>
+  <pre><code># 生成后即可在 RViz 里做交互式规划(带 MotionPlanning 插件)
+ros2 launch my_arm_moveit_config demo.launch.py</code></pre>
+
+  <h3>6.2 MoveGroup 接口:规划 + 执行(C++)</h3>
+  <p>程序化规划的最小示例(以规划组名 <code>arm</code> 为例):</p>
+  <pre><code>#include &lt;rclcpp/rclcpp.hpp&gt;
+#include &lt;moveit/move_group_interface/move_group_interface.h&gt;
+#include &lt;moveit/planning_scene_interface/planning_scene_interface.h&gt;
+
+int main(int argc, char** argv)
+{
+  rclcpp::init(argc, argv);
+  auto node = rclcpp::Node::make_shared("move_group_demo");
+
+  // 用默认规划组 "arm" 构造 MoveGroup
+  moveit::planning_interface::MoveGroupInterface move_group(node, "arm");
+
+  // 目标 1:关节空间目标(单位弧度)
+  std::vector&lt;double&gt; joint_goal = {0.0, -0.785, 1.57};
+  move_group.setJointValueTarget(joint_goal);
+
+  // 规划
+  moveit::planning_interface::MoveGroupInterface::Plan plan;
+  bool success = (move_group.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS);
+
+  // 成功才执行
+  if (success) {
+    RCLCPP_INFO(node->get_logger(), "plan ok, executing...");
+    move_group.execute(plan);
+  } else {
+    RCLCPP_WARN(node->get_logger(), "plan failed");
+  }
+
+  rclcpp::shutdown();
+  return 0;
+}</code></pre>
+  <p>常用接口速查:<code>setPoseTarget()</code>(笛卡尔位姿目标)、<code>setJointValueTarget()</code>(关节角目标)、<code>setMaxVelocityScalingFactor()</code>(限速,真机必设)、<code>plan()</code>(只规划)、<code>move()</code>(规划并执行一步到位)、<code>execute(plan)</code>(执行已有轨迹)。</p>
+
+  <h3>6.3 RViz 交互:拖拽目标 + Execute</h3>
+  <p>在 <code>demo.launch.py</code> 打开的 RViz 里:</p>
+  <ol>
+    <li>左下角切换到 <b>MotionPlanning</b> 面板,确认 Planning Group 为 <code>arm</code>;</li>
+    <li>在 3D 视图里拖动机械臂末端的<b>交互标记(interactive marker)</b>到想要的位置/姿态;</li>
+    <li>点 <b>Plan</b>(或 Plan &amp; Execute)查看规划轨迹,绿色为通过;</li>
+    <li>点 <b>Execute</b> 让机器人执行。真机务必先点 Plan 目视确认无碰撞再 Execute。</li>
+  </ol>
+  <div class="box box-danger">
+    <b>🔴 安全提醒:</b>在<b>真机</b>上执行前,务必设置速度缩放(<code>setMaxVelocityScalingFactor(0.1)</code> 之类)并站在急停开关旁。本页示例都是仿真,切勿直接把未经减速的轨迹下发到关节模组。
+  </div>
+
+  <h2><span class="h2-num">7</span> 与仿真器桥接:Gazebo 与 Isaac Sim</h2>
+  <p>URDF 描述模型、MoveIt2 负责规划,而"物理世界"由仿真器提供:重力、接触、传感器、电机。仿真器与 ROS2 之间靠"桥"交换消息(关节状态、力矩命令、TF、时钟等)。两大类桥接:</p>
+  <div class="table-wrap"><table>
+    <tr><th>仿真器</th><th>桥接方案</th><th>说明</th></tr>
+    <tr>
+      <td><b>Gazebo Classic</b>(gazebo11)</td>
+      <td><code>gazebo_ros</code>(gazebo_ros_pkgs)</td>
+      <td>插件式接入;可用 <code>gazebo_ros2_control</code> 把 ros2_control 的硬件接口接到仿真关节上,模型进仿真器即可受控。</td>
+    </tr>
+    <tr>
+      <td><b>Gazebo 新版</b>(Harmonic/Ionic,旧名 Ignition)</td>
+      <td><code>ros_gz_bridge</code></td>
+      <td>独立桥接节点,按需把 Gazebo 话题与 ROS2 话题双向映射(如 /joint_states、/cmd_vel)。</td>
+    </tr>
+    <tr>
+      <td><b>NVIDIA Isaac Sim</b></td>
+      <td>Isaac Sim ROS2 Bridge(Omniverse 扩展)</td>
+      <td>启用后自动提供 ROS2 时钟/TF/话题;配合 Isaac Lab 可做大规模并行强化学习(详见本站 06-04)。</td>
+    </tr>
+  </table></div>
+  <p>典型 Gazebo Classic 启动(URDF 经 gazebo_ros 插件带进仿真):</p>
+  <pre><code># 启动 Gazebo + 加载 URDF 模型(spawn 到仿真)
+ros2 launch gazebo_ros gazebo.launch.py
+ros2 run gazebo_ros spawn_entity.py -topic robot_description -entity my_arm
+
+# 若用 ros2_control 驱动仿真关节(需在 URDF 里配置 gazebo_ros2_control 插件)
+ros2 run controller_manager spawner joint_state_broadcaster
+ros2 run controller_manager spawner joint_trajectory_controller</code></pre>
+  <div class="box box-tip">
+    <b>💡 选型建议:</b>做整机 ROS2 联调、传感器仿真用 <b>Gazebo</b>;做大规模并行强化学习、需要 GPU 吞吐用 <b>Isaac Sim / Isaac Lab</b>。两者的仿真器选型、物理引擎差异与强化学习流水线,详见本站 <a href="04_仿真与强化学习_MuJoCo_Isaac.html">06-04 仿真与强化学习:MuJoCo 与 Isaac Lab</a>。
+  </div>
+
+  <h2><span class="h2-num">8</span> 常见坑(踩过才知道)</h2>
+  <div class="box box-warn">
+    <b>⚠️ 高频坑汇总:</b><br>
+    1. <b>Fixed Frame 设错 → 模型消失/满屏红色错误</b>:RViz2 的 Fixed Frame 必须是 tf 树里真实存在的坐标系,且<b>不能带前导 <code>/</code></b>、区分大小写(常见 <code>base_link</code> 与 <code>base_footprint</code>)。<br>
+    2. <b>忘 source install/setup.bash</b>:每个新终端都要 <code>source ~/ws/install/setup.bash</code>,否则 <code>ros2 launch/run</code> 找不到你的包(详见 06-09 的八步流程)。<br>
+    3. <b>URDF 缺 <code>&lt;inertial&gt;</code> 或 mass=0</b>:MoveIt2 与 Gazebo 加载直接失败;可视化可以没有,物理/规划必须有惯性。<br>
+    4. <b>直接把 .xacro 当 URDF 用</b>:<code>robot_description</code> 参数若直接指向 .xacro 而没经过 <code>xacro</code> 工具或 launch 的 <code>Command(['xacro',...])</code> 处理,会解析失败。<br>
+    5. <b>控制器没激活</b>:ros2_control 加载后处于 inactive,不 <code>activate</code> 就没有 /joint_states,TF 树也不更新。<br>
+    6. <b>三处关节名不一致</b>:URDF、controller 配置、MoveIt2 配置的关节名必须逐字一致(大小写/下划线都要对齐)。
+  </div>
+
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. URDF 里 &lt;visual&gt;、&lt;collision&gt;、&lt;inertial&gt; 三个几何的主要区别是什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 三者必须完全一样,否则报错</button>
+      <button data-v="B">B. 只有 visual 会被使用,其余可省略</button>
+      <button data-v="C">C. 分别用于渲染显示、碰撞检测、质量/惯量,可各不相同,visual 可精细而 collision 应尽量简化</button>
+      <button data-v="D">D. inertial 只决定颜色,与物理无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 visual 供 RViz/Gazebo 渲染;collision 供 MoveIt2 自碰撞与物理检测(应凸体简化);inertial 提供 mass 与惯量张量,物理与规划强制需要。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. RViz2 里 RobotModel 不显示,首先应该检查哪一项?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 电脑显卡驱动版本</button>
+      <button data-v="B">B. Global Options 的 Fixed Frame 是否设为 tf 树中真实存在的坐标系(如 base_link)</button>
+      <button data-v="C">C. 是否需要重装 ROS2</button>
+      <button data-v="D">D. 键盘鼠标是否连接正常</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 Fixed Frame 设错会导致模型消失或满屏红色错误;还应确认 robot_state_publisher 已发布 /robot_description。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. map、odom、base_link 三个坐标系的关系,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 三者都由 robot_state_publisher 发布</button>
+      <button data-v="B">B. odom 是全局不漂移的固定参考系</button>
+      <button data-v="C">C. map 随机器人运动而漂移</button>
+      <button data-v="D">D. map 是全局固定系,odom 是里程计系(会漂移),定位节点发布 map→odom 来纠正漂移</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 odom 由里程计/IMU 融合发布且随运动漂移,map 由 SLAM/定位发布且全局固定,这是导航栈分层设计的关键。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 ros2_control 的 controller_manager 与控制器,正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 控制器是生命周期节点,加载后处于 inactive,必须 activate 才会发布/控制</button>
+      <button data-v="B">B. 控制器加载后自动处于 active 状态</button>
+      <button data-v="C">C. joint_state_broadcaster 负责下发关节力矩</button>
+      <button data-v="D">D. hardware_interface 负责运动规划,controller 负责硬件驱动</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 控制器是 lifecycle 节点,需显式 activate;joint_state_broadcaster 是"广播关节状态"而非下发力矩;运动规划是 MoveIt2 的事,hardware_interface 才是硬件/仿真抽象。</div>
+  </div>
+
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>URDF 用 link/joint 描述机器人,visual/collision/inertial 三种几何各司其职,xacro 让模型参数化可复用;RViz2 显示模型靠 robot_state_publisher + joint_state_publisher,关键是 Fixed Frame;TF2 维护坐标变换树,map/odom/base_link 三层设计隔离漂移;launch.py 用 LaunchDescription 批量起节点;ros2_control 用 controller_manager 管控制器、hardware_interface 接硬件;MoveIt2 经 Setup Assistant 生成配置包,再用 MoveGroup 完成规划+执行。整条链路是:<b>URDF → TF2 → ros2_control → MoveIt2 → 仿真/真机</b>。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 把 2 连杆臂的关节 axis 改成 <code>0 1 0</code>(绕 Y 轴),在 RViz2 里会有什么不同?这对"人形机器人肩关节俯仰"意味着什么?<br>
+    2. 为什么 <code>static_transform_publisher</code> 只适合固定关系,而 <code>robot_state_publisher</code> 才能处理会转动的关节?两者发布 TF 的机制有何区别?<br>
+    3. 若给 MoveGroup 设一个<b>不可达</b>的笛卡尔位姿目标,plan() 会返回什么?你会如何提示用户并重试?<br>
+    4. 试着自己把 2 连杆臂加一个 <code>prismatic</code> 关节,做成"旋转+伸缩"的 2 自由度机构,并跑通 MoveIt2 规划。
+  </div>
+
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://docs.ros.org/en/rolling/Tutorials/Intermediate/URDF/URDF-Main.html" target="_blank" rel="noopener">ROS2 官方 · URDF 系列教程(构建可视化模型 / 添加物理与碰撞属性)</a></li>
+    <li><a href="https://docs.ros.org/en/rolling/Tutorials/Intermediate/Tf2/Tf2-Main.html" target="_blank" rel="noopener">ROS2 官方 · TF2 坐标变换教程</a></li>
+    <li><a href="https://docs.ros.org/en/rolling/Tutorials/Intermediate/Launch/Launch-Main.html" target="_blank" rel="noopener">ROS2 官方 · Launch 文件教程</a></li>
+    <li><a href="https://control.ros.org/rolling/index.html" target="_blank" rel="noopener">ros2_control 官方文档</a></li>
+    <li><a href="https://control.ros.org/rolling/doc/ros2_controllers/joint_state_broadcaster/doc/userdoc.html" target="_blank" rel="noopener">joint_state_broadcaster 用户文档</a></li>
+    <li><a href="https://moveit.picknik.ai/main/index.html" target="_blank" rel="noopener">MoveIt 2 官方文档</a></li>
+    <li><a href="https://moveit.picknik.ai/main/doc/examples/move_group_interface/move_group_interface_tutorial.html" target="_blank" rel="noopener">MoveIt2 · Move Group C++ Interface 教程</a></li>
+    <li><a href="https://docs.isaacsim.omniverse.nvidia.com/4.2.0/ros_ros2_tutorials.html" target="_blank" rel="noopener">NVIDIA Isaac Sim · ROS / ROS2 桥接教程</a></li>
+    <li><a href="https://github.com/gazebosim/ros_gz" target="_blank" rel="noopener">Gazebo · ros_gz_bridge 官方仓库</a></li>
+    <li><a href="09_ROS2入门实战_第一个节点.html">本站 06-09 · ROS2 入门实战:第一个节点(前置)</a></li>
+    <li><a href="04_仿真与强化学习_MuJoCo_Isaac.html">本站 06-04 · 仿真与强化学习:MuJoCo 与 Isaac Lab(仿真器选型)</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

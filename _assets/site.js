@@ -226,6 +226,49 @@
     document.head.appendChild(link);
   }
 
+  /* ---------- 术语悬浮提示(选中术语即出解释,数据来自 _assets/glossary-tip.js) ---------- */
+  function ensureGlossary(cb){
+    if(window.GLOSSARY_TIPS){ cb(); return; }
+    var root = page().root || "";
+    var s = document.createElement("script");
+    s.src = (root ? root + "/" : "") + "_assets/glossary-tip.js";
+    s.onload = function(){ cb(); };
+    s.onerror = function(){ cb(); };
+    document.head.appendChild(s);
+  }
+  function initTermTip(){
+    var tip = null;
+    function hide(){ if(tip){ tip.remove(); tip = null; } }
+    document.addEventListener("mouseup", function(){
+      setTimeout(function(){
+        var sel = window.getSelection ? window.getSelection().toString().trim() : "";
+        if(!sel || sel.length > 30){ hide(); return; }
+        ensureGlossary(function(){
+          var G = window.GLOSSARY_TIPS || {};
+          var key = null;
+          var low = sel.toLowerCase();
+          for(var k in G){
+            if(k.toLowerCase() === low){ key = k; break; }
+            if(sel.indexOf(k) >= 0 && (!key || k.length > key.length)){ key = k; }
+          }
+          if(!key){ hide(); return; }
+          hide();
+          tip = document.createElement("div");
+          tip.className = "term-tip";
+          tip.innerHTML = "<b>" + key + "</b><br>" + G[key];
+          document.body.appendChild(tip);
+          var x = (window.event && window.event.clientX) || 0;
+          var y = (window.event && window.event.clientY) || 0;
+          tip.style.left = Math.min(x + 14, window.innerWidth - 280) + "px";
+          tip.style.top = (y + 16) + "px";
+        });
+      }, 10);
+    });
+    document.addEventListener("click", function(e){ if(tip && e.target !== tip) hide(); });
+    window.addEventListener("scroll", hide);
+    document.addEventListener("keydown", hide);
+  }
+
   /* ---------- 顶部导航 + 面包屑 + 上一篇/下一篇 + 页脚 ---------- */
   function injectChrome(){
     var P = page();
@@ -424,7 +467,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V1.5.3(2026-08-16)";
+  S.VERSION = "V1.5.4(2026-08-16)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -540,8 +583,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip();
   }
 })();

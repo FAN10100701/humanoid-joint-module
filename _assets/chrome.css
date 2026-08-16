@@ -111,3 +111,8 @@ body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.7);bo
   display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(37,99,235,.4);transition:.2s}
 .backtop:hover{transform:translateY(-3px);background:#2563eb}
 body[data-theme="light"] .backtop{background:rgba(37,99,235,.88)}
+/* ---- 术语悬浮提示气泡(存量页外壳) ---- */
+.term-tip{position:fixed;z-index:400;max-width:260px;background:rgba(17,22,30,.95);border:1px solid rgba(59,130,246,.45);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#c9d1d9;line-height:1.7;box-shadow:0 14px 40px rgba(0,0,0,.45);pointer-events:none}
+.term-tip b{color:#9ecbff;margin-right:6px}
+body[data-theme="light"] .term-tip{background:rgba(255,255,255,.97);border-color:rgba(37,99,235,.35);color:#334155}
+body[data-theme="light"] .term-tip b{color:#2563eb}

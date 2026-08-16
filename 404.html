@@ -11,14 +11,54 @@
   .nf404 p{color:#8b949e;font-size:15px;margin:14px 0 26px}
   .nf404 a.btn{display:inline-block;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;padding:11px 26px;border-radius:10px;font-weight:700;text-decoration:none}
   .nf404 a.btn:hover{filter:brightness(1.15)}
+  #jumpMsg{color:#f59e0b;font-size:13px;margin-top:14px;min-height:20px}
 </style>
+<script>
+  /* ============================================================
+     旧链接智能跳转: 站点改版(目录改名)后,把旧路径映射到新路径
+     若命中映射则自动跳转;否则显示 404 与返回首页按钮。
+     ============================================================ */
+  (function(){
+    var MAP = [
+      ["00_解剖式知识可视化/", "00_3D解剖/"],
+      ["01_第一部分_理论入门/", "01_理论入门/"],
+      ["02_第二部分_硬件基础/", "02_硬件基础/"],
+      ["03_第三部分_项目实操/", "03_项目实操/"],
+      ["04_第四部分_升级进阶/", "04_升级进阶/"],
+      ["05_第五部分_HdriveV2新版工程/", "05_HdriveV2工程/"],
+      ["06_第六部分_软件与算法/", "06_软件与算法/"],
+      ["07_第七部分_前沿知识库/", "07_前沿知识库/"],
+      ["08_第八部分_学习工具/", "08_学习工具/"],
+      ["power-analysis/", "03_项目实操/11_电源管理功率链路分析/"]
+    ];
+    function tryJump(){
+      var p = decodeURIComponent(location.pathname || "");
+      for(var i = 0; i < MAP.length; i++){
+        if(p.indexOf(MAP[i][0]) >= 0){
+          var np = p.replace(MAP[i][0], MAP[i][1]);
+          /* 去掉结尾多余的 index.html 拼写差异: 兼容 old/index.html 与 old/ */
+          if(np.charAt(np.length - 1) === "/") np += "index.html";
+          var msg = document.getElementById("jumpMsg");
+          if(msg) msg.innerHTML = "旧地址已更新,正在跳转到新地址…(" + np + ")";
+          setTimeout(function(){ location.replace(np); }, 120);
+          return;
+        }
+      }
+      var m2 = document.getElementById("jumpMsg");
+      if(m2) m2.innerHTML = "";
+    }
+    if(document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", tryJump); }
+    else tryJump();
+  })();
+</script>
 </head>
 <body>
 <div class="container">
   <div class="nf404">
     <div class="code">404</div>
-    <p>页面不存在或已被移动(站点改版后旧链接会失效,请从首页重新进入)</p>
+    <p>页面不存在或已被移动</p>
     <a class="btn" href="index.html">🏠 返回首页</a>
+    <div id="jumpMsg"></div>
   </div>
 </div>
 </body>

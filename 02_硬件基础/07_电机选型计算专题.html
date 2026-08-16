@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 电机选型计算专题
+  页面 ID: 02-04 | 硬件基础 第 4 页
+  严格遵循 _assets/页面模板.html 的结构与组件类名编写
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 电机选型计算专题</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式:扭矩估算器(命名带 motorcalc- 前缀,避免与全局冲突) */
+  .motorcalc{background:rgba(22,27,34,.8);border:1px solid rgba(59,130,246,.35);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .motorcalc-title{font-size:15px;font-weight:800;color:#fff;margin-bottom:14px}
+  .motorcalc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .motorcalc label{display:flex;flex-direction:column;font-size:12.5px;color:#9aa4b2;gap:6px}
+  .motorcalc input{background:rgba(13,17,23,.85);border:1px solid rgba(59,130,246,.4);color:#e6edf3;font-size:14px;padding:9px 12px;border-radius:9px;outline:none;font-family:inherit}
+  .motorcalc input:focus{border-color:#3b82f6}
+  .motorcalc-btn{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:14px;font-weight:700;padding:9px 20px;border-radius:10px;cursor:pointer;font-family:inherit;margin-top:14px}
+  .motorcalc-btn:hover{filter:brightness(1.15)}
+  .motorcalc-out{margin-top:12px;font-size:13.5px;color:#9ecbff;line-height:1.9;background:rgba(13,17,23,.6);border:1px dashed rgba(59,130,246,.3);border-radius:10px;padding:12px 14px}
+  body[data-theme="light"] .motorcalc{background:rgba(255,255,255,.62);border-color:rgba(37,99,235,.28);box-shadow:0 10px 30px rgba(50,80,140,.08)}
+  body[data-theme="light"] .motorcalc-title{color:#0f172a}
+  body[data-theme="light"] .motorcalc label{color:#64748b}
+  body[data-theme="light"] .motorcalc input{background:rgba(255,255,255,.8);border-color:rgba(37,99,235,.3);color:#0f172a}
+  body[data-theme="light"] .motorcalc-out{background:rgba(255,255,255,.7);border-color:rgba(37,99,235,.25);color:#1d4ed8}
+</style>
+<script>
+  /* ============================================================
+     window.PAGE 配置(每页必填)
+     pageId 02-04:硬件基础第 4 页(文件夹编号 07,页面序号 02-04)
+     ============================================================ */
+  window.PAGE = {
+    pageId: "02-04",
+    root: "..",
+    breadcrumb: [
+      { t: "硬件基础", u: "../index.html#sec2" },
+      { t: "电机选型计算专题" }
+    ],
+    prev: { t: "硬件原理图/PCB 学习页", u: "06_硬件原理图与PCB学习页_X1与Hdrive.html" },
+    next: { t: "Hdrive 融合方案指南", u: "../03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>⚙️ 电机选型计算专题</h1>
+    <div class="sub">把"选多大电机"从拍脑袋变成一道可复算的工程题:从负载扭矩估算、峰值/持续校验、减速比与惯量匹配,一路推到髋关节整机算例。</div>
+    <div class="tags">
+      <span class="tag">扭矩估算</span>
+      <span class="tag">惯量匹配</span>
+      <span class="tag">减速比</span>
+      <span class="tag">热校验</span>
+      <span class="tag">FOC 参数</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说出无框 BLDC、有框伺服、空心杯、力矩电机、直线电机五类电机在<b>扭矩密度 / 价格 / 典型应用</b>上的差异,并解释"人形机器人旋转关节为什么主力用无框力矩电机"。<br>
+    2. 能按"选型五步法"独立完成一次负载扭矩估算:写出<b>静载 + 加速 + 摩擦</b>三项的公式,并代入数值算例。<br>
+    3. 能区分<b>峰值扭矩与持续(额定)扭矩</b>,会用有效值(RMS)扭矩做热校验,判断电机是否长期过热。<br>
+    4. 能计算减速比带来的"扭矩放大 × 转速降低"守恒关系,并说明减速器对<b>负载惯量反射</b>的 i² 解耦作用。<br>
+    5. 能读懂 <b>KV 值、极对数、额定/峰值电流、相电阻/相电感</b>等关键参数,并知道它们如何与 FOC 驱动器匹配。<br>
+    <b>建议用时:</b>约 45 分钟(含完成 4 道自测题与 1 次髋关节算例)
+  </div>
+
+  <!-- ================= 1. 电机类型对比 ================= -->
+  <h2><span class="h2-num">1</span> 电机类型对比:先选"电机家族"</h2>
+  <p>电机选型的第一步不是算数字,而是先确定用<b>哪一类电机</b>。不同电机在"扭矩密度(每公斤能输出多少牛米)、体积、价格、控制复杂度"上差异巨大,选错家族,后面所有计算都白搭。下表按人形机器人最常用的五类电机横向对比,扭矩密度为经验区间(不同厂商、不同尺寸差异很大,数据标注"约")。</p>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>电机类型</th><th>扭矩密度(约)</th><th>价格</th><th>典型应用</th><th>关键特点</th></tr>
+      <tr>
+        <td><b>无框力矩电机</b><br>(Frameless BLDC)</td>
+        <td>高(约 3~10 N·m/kg)</td>
+        <td>中高</td>
+        <td>人形机器人旋转关节(髋/膝/肩)主力;与谐波/行星减速器集成</td>
+        <td>无轴承、无外壳,定子转子直接嵌进关节壳体与减速器;<b>中空走线</b>、扭矩密度最高,是当前人形关节的主流选择</td>
+      </tr>
+      <tr>
+        <td><b>有框伺服电机</b><br>(Framed Servo)</td>
+        <td>中(约 1~3 N·m/kg)</td>
+        <td>低~中</td>
+        <td>工业机械臂、SCARA、自动化设备</td>
+        <td>自带轴承/外壳/编码器,即插即用、成熟可靠;但体积重、无法中空走线,整机集成度低</td>
+      </tr>
+      <tr>
+        <td><b>空心杯电机</b><br>(Coreless)</td>
+        <td>低~中</td>
+        <td>中</td>
+        <td>灵巧手手指、微型云台、医疗设备</td>
+        <td>无铁芯,<b>齿槽效应极小</b>、转动惯量低、响应极快;但扭矩小,不适合大负载关节</td>
+      </tr>
+      <tr>
+        <td><b>力矩电机</b><br>(DD Torque Motor)</td>
+        <td>高</td>
+        <td>高</td>
+        <td>直驱关节、协作机械臂大关节</td>
+        <td>极低转速、大力矩,可<b>免减速器</b>直驱;对扭矩密度、低齿槽、散热要求极高</td>
+      </tr>
+      <tr>
+        <td><b>直线电机</b><br>(Linear Motor)</td>
+        <td>(力密度)中高</td>
+        <td>高</td>
+        <td>直线执行器、精密定位平台</td>
+        <td>直接输出直线力,免丝杠传动;定位精度高,但成本高、需要光栅反馈</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="box box-tip">
+    <b>💡 为什么人形关节"无框化"?</b>人形机器人的旋转关节要把<b>电机 + 减速器 + 编码器 + 驱动器</b>全部塞进一个外径几十毫米的关节模组里,还要<b>中空走线</b>让电源/信号线从关节中心穿过。无框力矩电机没有自己的外壳和轴承,转子直接压在减速器输入轴上,定子直接贴在关节壳体上,省掉两套"壳+轴承"的冗余,扭矩密度和空间利用率最高——这正是智元 X1 的 PowerFlow 关节、宇树、特斯拉 Optimus 等主流方案的共同取向(各厂商具体参数官方多未公布)。
+  </div>
+
+  <!-- ================= 2. 选型五步法 ================= -->
+  <h2><span class="h2-num">2</span> 选型五步法:从负载到热校验</h2>
+  <p>选定"无框力矩电机"这条路线后,按下图五步推进。每一步都有可计算的判据,缺一步都可能让电机"装得上、转不动"或"转得动、烫到烧"。先用步骤流建立全局观,再逐步展开公式。</p>
+
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>负载扭矩估算</b><br>静载 + 加速 + 摩擦,得峰值需求</div>
+    <div class="step-item"><span class="n">2</span><b>峰值 vs 持续</b><br>区分两种扭矩额定,定电机的"工作点"</div>
+    <div class="step-item"><span class="n">3</span><b>转速与减速比</b><br>由关节转速反推电机转速,选减速比 i</div>
+    <div class="step-item"><span class="n">4</span><b>惯量匹配</b><br>负载惯量经 i² 反射到电机端,看比值</div>
+    <div class="step-item"><span class="n">5</span><b>热校验</b><br>RMS 有效扭矩 ≤ 连续扭矩,防过热</div>
+  </div>
+
+  <h3>① 负载扭矩估算(静载 + 加速 + 摩擦)</h3>
+  <p>关节所需扭矩由三部分叠加,这是整个选型的起点:</p>
+  <pre><code>静载扭矩(重力矩)   τg = m · g · r        (质量 × 重力加速度 × 质心到转轴的水平距离)
+加速扭矩(惯性矩)   τa = J · α            (负载转动惯量 × 角加速度)
+摩擦扭矩           τf                    (减速器/轴承静摩擦与粘滞,常按经验取或实测)
+峰值需求扭矩       τp = τg + τa + τf     (取三者的代数和,保守起见取同向最大值)
+设计扭矩           τd = τp × SF          (SF 为安全系数,一般取 1.2~1.5)</code></pre>
+  <ul>
+    <li><b>静载扭矩 τg</b>:当连杆(如大腿)处于水平位置时重力矩最大;竖直悬挂时趋近于 0。计算时按"最坏姿态"取质心到转轴的<b>水平</b>距离 r。</li>
+    <li><b>加速扭矩 τa</b>:转动惯量 J 的估算见下方惯量公式;角加速度 α 由运动规划(摆动速度 / 到位时间)反推,通常下肢摆动 α 取 5~15 rad/s²。</li>
+    <li><b>摩擦扭矩 τf</b>:谐波减速器静摩擦不可忽略,常按峰值的 5%~15% 或厂商数据估算。</li>
+  </ul>
+
+  <div class="motorcalc">
+    <div class="motorcalc-title">🧮 负载扭矩估算器(静载 + 加速,点"计算"查看结果)</div>
+    <div class="motorcalc-grid">
+      <label>负载质量 m (kg)<input id="tc-m" type="number" value="8" step="0.1"></label>
+      <label>质心到关节距离 r (m)<input id="tc-r" type="number" value="0.35" step="0.01"></label>
+      <label>角加速度 α (rad/s²)<input id="tc-a" type="number" value="10" step="1"></label>
+      <label>安全系数 SF<input id="tc-sf" type="number" value="1.3" step="0.1"></label>
+    </div>
+    <button class="motorcalc-btn" onclick="calcTorque()">计算</button>
+    <div id="tc-out" class="motorcalc-out">点击「计算」查看 τg / J / τa / τp / τd 结果(默认值为第 6 节髋关节算例参数)。</div>
+  </div>
+
+  <h3>② 峰值扭矩 vs 持续扭矩</h3>
+  <p>电机有两个必须区分的扭矩额定值,新手最容易只盯着一个看:</p>
+  <ul>
+    <li><b>持续扭矩(额定扭矩) τc</b>:电机能<b>长期(热平衡下无限时间)运行</b>而不超过绕组绝缘耐温的扭矩。选型时,周期内的<b>有效(RMS)扭矩必须 ≤ τc</b>。</li>
+    <li><b>峰值扭矩 τpk</b>:电机<b>短时(通常数秒~数十秒)可输出</b>的最大扭矩,受磁饱和与电流限制约束。它只用来覆盖加减速/冲击的瞬时需求,不能长期停留。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠ 关键判断:</b>让电机长期工作在峰值扭矩附近,绕组会因铜损(I²R)持续发热而烧毁。所以正确的选型逻辑是——<b>用峰值扭矩覆盖瞬时需求,用持续扭矩覆盖平均需求</b>,两者都要满足,缺一不可。
+  </div>
+
+  <h3>③ 转速与减速比</h3>
+  <p>根据关节需要的最大角速度 ω<sub>joint</sub>,反推电机端转速:ω<sub>motor</sub> = ω<sub>joint</sub> × i(减速比 i)。要保证 ω<sub>motor</sub> 落在电机的<b>额定转速</b>以下(留 20%~30% 余量),否则电机进入弱磁区、扭矩下降。减速比的完整权衡见第 3 节。</p>
+
+  <h3>④ 惯量匹配(负载惯量 / 电机惯量比)</h3>
+  <p>先估负载转动惯量,再经减速器反射到电机端:</p>
+  <pre><code>质点/集中质量      J = m · r²          (绕关节轴)
+均匀细杆(绕一端)  J = (1/3) · m · L²  (大腿近似)
+圆柱体(绕中心轴)  J = (1/2) · m · R²  (转子/圆盘)
+反射到电机端       J_ref = J_load / i² (减速器把负载惯量"缩小"i² 倍)
+惯量比             R = J_ref / J_motor</code></pre>
+  <ul>
+    <li><b>经验范围(通用伺服轴)</b>:R ≤ 3 为精密,≤ 5 为良好,≤ 10 为可接受;超过 10 系统整定变难、易振荡。</li>
+    <li><b>人形关节的特殊性</b>:高减速比(谐波 i=50~160 或行星 i=9~20)下惯量比常远超 10,这是常态。此时依靠 <b>FOC 电流环的高带宽鲁棒性</b> + 减速器自身刚度来抑制负载扰动;但下肢大关节仍倾向"<b>大直径无框电机 + 相对低减速比</b>"来压低惯量比、提高力控透明度和动态响应。</li>
+  </ul>
+
+  <h3>⑤ 热校验(连续扭矩 vs 热时间常数)</h3>
+  <p>电机发热主要来自铜损 I²R。把运动周期内各段扭矩按时间加权求<b>有效值(RMS)</b>:</p>
+  <pre><code>τ_rms = √( (τ₁²·t₁ + τ₂²·t₂ + ... ) / (t₁ + t₂ + ... ) )
+判据:  τ_rms ≤ τc (连续扭矩)  且   峰值 τpk ≥ 瞬时需求最大值</code></pre>
+  <p><b>热时间常数 τ<sub>th</sub></b>:电机温升达到稳态值 63.2% 所需的时间(典型为几分钟到几十分钟)。它决定了"峰值扭矩能持续多久"——峰值超载的允许时长必须远小于 τ<sub>th</sub>,否则绕组温度一路爬升。若 RMS 校验不通过,应升级到更大持续扭矩的电机、改善散热(壳体/风冷/液冷),而不是简单提高峰值参数。</p>
+
+  <!-- ================= 3. 减速比选择 ================= -->
+  <h2><span class="h2-num">3</span> 减速比选择:扭矩 × 转速守恒</h2>
+  <p>减速器在关节里扮演"<b>扭矩放大器、转速降低器、惯量解耦器</b>"三重角色。理想情况下(忽略损耗)功率守恒:</p>
+  <pre><code>功率守恒:  P = τ_motor · ω_motor = τ_out · ω_out
+扭矩关系:  τ_out = τ_motor · i · η        (η 为减速器效率,行星约 0.8~0.9,谐波约 0.7~0.85)
+转速关系:  ω_out = ω_motor / i            (输出端转速降为 1/i)
+惯量反射:  J_ref = J_load / i²            (减速器把负载惯量"缩小"i² 倍)</code></pre>
+
+  <div class="box box-tip">
+    <b>📐 守恒算例:</b>某电机输出 <b>0.1 N·m @ 4000 rpm</b>(约 419 rad/s),经减速比 <b>i = 50</b>、效率 <b>η = 0.8</b> 减速后:<br>
+    &nbsp;&nbsp;输出扭矩 τ_out = 0.1 × 50 × 0.8 = <b>4 N·m</b>;<br>
+    &nbsp;&nbsp;输出转速 ω_out = 4000 / 50 = <b>80 rpm</b>(约 8.38 rad/s)。<br>
+    电机侧功率约 0.1 × 419 = 41.9 W,输出侧 4 × 8.38 ≈ 33.5 W,差值约 20% 即为减速器发热损耗。扭矩放大 40 倍、转速降到 1/50、负载惯量反射缩到 1/2500——这就是减速器"一进三得"的直观效果。
+  </div>
+
+  <p>减速比不是越大越好,要在四者之间权衡:</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>倾向</th><th>高减速比(谐波 i=50~160)</th><th>低减速比(行星 i=3~20 / 直驱)</th></tr>
+      <tr><td>输出扭矩</td><td>大(小电机也能扛大关节)</td><td>小(需要更大力矩的电机)</td></tr>
+      <tr><td>惯量解耦</td><td>强(负载扰动被 i² 隔离)</td><td>弱(负载惯量更直接作用于电机)</td></tr>
+      <tr><td>效率 / 背隙</td><td>谐波效率略低、背隙极小;高减速比摩擦大</td><td>效率高、更透明、更利于力控</td></tr>
+      <tr><td>体积 / 成本</td><td>谐波减速器成本高</td><td>电机更大更重,但省减速器</td></tr>
+    </table>
+  </div>
+  <p>减速器的机械结构与谐波/行星/摆线各型的原理,请回看 <a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html">机械原理基础(连杆齿轮传动,01-04)</a> 与 <a href="../00_3D解剖/减速器剖面图详解.html">减速器剖面图详解(00-02)</a>;本页只从"扭矩/转速/惯量"三个电气视角做选型计算。</p>
+
+  <!-- ================= 4. 关键参数 ================= -->
+  <h2><span class="h2-num">4</span> 关键参数:KV 值、极对数、电流、电阻电感</h2>
+  <p>选定电机家族和减速比后,还要读懂电机数据手册上的一串"电气名片",它们直接决定这块电机能不能被你手上的 FOC 驱动器"驯服"。</p>
+
+  <h3>KV 值与扭矩常数 Kt(反电动势常数 Ke)</h3>
+  <p><b>KV 值</b>表示"每 1V 电压对应的空载转速"(rpm/V)。它与<b>扭矩常数 Kt</b>(N·m/A)通过反电动势常数 Ke 关联,在 SI 单位制下二者数值相等:</p>
+  <pre><code>KV (rpm/V) 与 Ke 的关系:  Ke = 9.55 / KV   (单位 V·s/rad,即 V/(rad/s))
+扭矩常数:                 Kt = Ke = 9.55 / KV   (单位 N·m/A)
+转矩-电流关系:            τ = Kt · I   (每 1A 电流产生 Kt 牛米扭矩)</code></pre>
+  <ul>
+    <li><b>低 KV = 高 Kt = "力矩型"</b>:同样的电流能产生更大扭矩,是无框力矩电机/直驱关节的典型特征;但同样电压下最高转速更低。</li>
+    <li><b>高 KV = 低 Kt = "速度型"</b>:适合高速小扭矩场合(航模、无人机),不适合大负载关节。</li>
+  </ul>
+  <div class="box box-tip">
+    <b>📌 实机参考(以 CubeMars 无框内转系列官网参数为例):</b>RI60 KV120 → Kt ≈ 9.55/120 ≈ <b>0.08 N·m/A</b>,官网标称最大转矩密度约 <b>10.46 N·m/kg</b>;RI70 KV95 → Kt ≈ 0.10 N·m/A;RI50 KV100 → Kt ≈ 0.096 N·m/A。不同尺寸/极对数差异明显,<b>选型务必以具体型号数据手册为准</b>。
+  </div>
+
+  <h3>极对数 p</h3>
+  <p>极对数决定<b>电角度与机械角度</b>的换算关系,是 FOC 换向的硬参数:<b>电角度 = p × 机械角度</b>(电角速度 = p × 机械角速度)。FOC 控制中,编码器读到的机械角度必须乘以极对数才能得到正确的转子电角度;极对数填错,电机要么不转、要么乱抖甚至反转。</p>
+
+  <h3>额定电流 / 峰值电流</h3>
+  <p>由扭矩常数直接反推:持续电流 I<sub>cont</sub> = τc / Kt,峰值电流 I<sub>pk</sub> = τpk / Kt。驱动器的<b>持续输出电流要 ≥ I<sub>cont</sub></b>、<b>峰值输出电流要 ≥ I<sub>pk</sub></b>,并且峰值电流对应的持续时间要与电机热时间常数匹配。</p>
+
+  <h3>相电阻 R 与相电感 L</h3>
+  <ul>
+    <li><b>相电阻 R</b>:决定铜损 I²R 与满负载压降。R 过大时高速重载下反电动势 + IR 压降可能超出母线电压,出现"电压饱和"。</li>
+    <li><b>相电感 L</b>:决定电流纹波与电流环带宽。电气时间常数 <b>τe = L/R</b>,电流环带宽通常要比速度环高一个数量级以上,且要低于 PWM 频率的 1/10 左右,才能稳定跟踪电流。</li>
+  </ul>
+  <p>这些参数与 FOC 驱动的匹配细节(电流环整定、PWM 频率、弱磁、三电阻采样),请衔接 <a href="../06_软件与算法/02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">固件与电机控制(SimpleFOC/ODrive,06-02)</a> 与 <a href="04_硬件设计通用要点_避坑指南.html">FOC 关节驱动板硬件设计(02-01)</a>。</p>
+
+  <!-- ================= 5. 编码器与传感器需求 ================= -->
+  <h2><span class="h2-num">5</span> 编码器与传感器需求:双编码器方案</h2>
+  <p>电机选型不能只看电机本体,<b>反馈器件决定了它能不能被精确控制</b>。人形关节的典型做法是"双编码器":一个装在<b>电机端</b>、一个装在<b>输出端</b>。</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>位置</th><th>作用</th><th>典型器件</th><th>关键用途</th></tr>
+      <tr><td><b>电机端编码器</b></td><td>测转子机械角度 → 乘极对数得电角度</td><td>磁编码器(如 MT6701)、霍尔、增量式</td><td><b>FOC 换向必需</b>,并提供高分辨率的电机转速/角度</td></tr>
+      <tr><td><b>输出端编码器</b></td><td>测减速器输出轴绝对角度</td><td>磁编码器、绝对式光编</td><td>补偿减速器<b>背隙/柔度</b>带来的角度误差,直接做关节位置/力矩反馈</td></tr>
+    </table>
+  </div>
+  <ul>
+    <li><b>为什么需要输出端编码器?</b>减速器有背隙和弹性变形,电机端角度 × 减速比 ≠ 精确输出角度。输出端编码器直接测真实关节角度,是全身控制(WBC)做运动学/动力学解算的依据。</li>
+    <li><b>力矩/电流反馈</b>:FOC 用电流环做扭矩控制,电流采样(三电阻/霍尔)本身就是"扭矩传感器"的一种低成本近似;高端的关节模组还会加<b>扭矩传感器</b>做更精确的关节力矩闭环。</li>
+    <li>编码器原理与 FOC 三环结构,回看 <a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">核心原理动画演示(FOC 三环,01-02)</a>;Hdrive 开源板用 MT6701 磁编码器做输出端绝对角度的实例,见 <a href="06_硬件原理图与PCB学习页_X1与Hdrive.html">硬件原理图/PCB 学习页</a>。</li>
+  </ul>
+
+  <!-- ================= 6. 算例实战 ================= -->
+  <h2><span class="h2-num">6</span> 算例实战:髋关节电机选型全流程</h2>
+  <p>下面把五步法串起来,完整走一遍"人形机器人<b>髋关节</b>"的电机选型。参数为便于教学的<b>工程估算值</b>(标"约"),真实产品以厂商数据手册为准。</p>
+
+  <h3>6.1 给定条件(约)</h3>
+  <ul>
+    <li>机器人整机质量约 <b>45 kg</b>(中等体型;作为对比,智元 X1 约 30 kg 级,宇树 G1 约 35 kg,特斯拉 Optimus 官方未公布、普遍估约 50~70 kg)。</li>
+    <li>髋关节以下单条摆动腿质量 <b>m = 8 kg</b>;腿质心到髋转轴的距离 <b>r = 0.35 m</b>。</li>
+    <li>髋关节摆动相最大角加速度 <b>α = 10 rad/s²</b>;关节最大转速 <b>ω<sub>joint</sub> = 3 rad/s</b>(约 29 rpm)。</li>
+    <li>摩擦扭矩 <b>τf ≈ 2 N·m</b>;安全系数 <b>SF = 1.3</b>。</li>
+  </ul>
+
+  <h3>6.2 第一步 · 负载扭矩估算</h3>
+  <pre><code>重力矩(腿水平时最大)  τg = m·g·r = 8 × 9.8 × 0.35 ≈ 27.4 N·m
+转动惯量(质心集中近似) J = m·r² = 8 × 0.35² ≈ 0.98 kg·m²
+加速扭矩               τa = J·α = 0.98 × 10 = 9.8 N·m
+峰值需求               τp = τg + τa + τf ≈ 27.4 + 9.8 + 2 = 39.2 N·m
+设计值(含安全系数)     τd = 39.2 × 1.3 ≈ 51 N·m</code></pre>
+
+  <h3>6.3 第二步 · 初选电机(无框力矩电机,约)</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>参数</th><th>数值</th><th>说明</th></tr>
+      <tr><td>峰值扭矩 τpk</td><td>7 N·m</td><td>覆盖瞬时冲击</td></tr>
+      <tr><td>持续扭矩 τc</td><td>2.8 N·m</td><td>覆盖平均负载(见热校验)</td></tr>
+      <tr><td>扭矩常数 Kt</td><td>0.35 N·m/A</td><td>对应 KV ≈ 27 rpm/V 的低 KV 力矩型</td></tr>
+      <tr><td>持续 / 峰值电流</td><td>8 A / 20 A</td><td>I = τ / Kt 反推</td></tr>
+      <tr><td>转子惯量 J<sub>m</sub></td><td>约 0.0002 kg·m²</td><td>约 200 g·cm²(中等无框电机)</td></tr>
+    </table>
+  </div>
+
+  <h3>6.4 第三步 · 减速比与转速校验</h3>
+  <pre><code>所需减速比  i = τd / (τpk · η) = 51 / (7 × 0.85) ≈ 8.6  → 取 i = 9(行星,η≈0.85)
+输出峰值扭矩 τ_out_pk = 7 × 9 × 0.85 ≈ 53.6 N·m  ≥ 51 N·m  ✓
+电机端转速  ω_motor = ω_joint × i = 3 × 9 = 27 rad/s ≈ 258 rpm
+            258 rpm 远低于无框电机额定转速(通常 >3000 rpm)  ✓ 留足余量</code></pre>
+
+  <h3>6.5 第四步 · 惯量匹配</h3>
+  <pre><code>负载惯量反射  J_ref = J_load / i² = 0.98 / 81 ≈ 0.0121 kg·m²
+惯量比        R = J_ref / J_motor = 0.0121 / 0.0002 ≈ 60</code></pre>
+  <p><b>结论与说明</b>:60:1 远超通用伺服"≤10"的经验值——这正是高减速比人形关节的常态。系统依赖 FOC 电流环的高带宽 + 减速器刚度来抑制负载扰动,扭矩型(非位置型)控制对高惯量比的容忍度更高。若追求更强的动态响应与力控透明度,应换<b>更大直径、更大转子惯量的无框电机</b>并<b>降低减速比</b>(如 i=6~9 直驱感更强的方案),代价是电机体积重量上升。</p>
+
+  <h3>6.6 第五步 · 热校验(RMS 有效扭矩)</h3>
+  <p>设步态周期 T = 1 s,各段负载(换算到电机端,除以 i·η = 7.65):</p>
+  <pre><code>支撑/摆动峰值  τ_out=39 N·m → 电机端 39/7.65 ≈ 5.1 N·m,持续 t₁=0.2 s
+巡航段        τ_out=15 N·m → 电机端 15/7.65 ≈ 1.96 N·m,持续 t₂=0.5 s
+摆动腿触地停顿                       0 N·m,持续 t₃=0.3 s
+
+τ_rms = √( (5.1²×0.2 + 1.96²×0.5 + 0) / 1.0 )
+      = √( 5.20 + 1.92 ) ≈ 2.67 N·m  ≤  τc = 2.8 N·m  ✓(勉强通过)</code></pre>
+  <div class="box box-warn">
+    <b>⚠ 算例结论:</b>RMS 有效扭矩 2.67 N·m 已非常接近持续扭矩 2.8 N·m,<b>余量仅约 5%</b>。这提示:要么选持续扭矩更大(如 3.2~3.5 N·m)的电机,要么加强散热、缩短峰值占空比。工程上要留 20% 以上的持续扭矩余量才稳妥。
+  </div>
+
+  <!-- ================= 7. 常见误区 ================= -->
+  <h2><span class="h2-num">7</span> 常见误区</h2>
+  <div class="box box-warn">
+    <b>🚫 误区 1 · 只看峰值扭矩,不看持续扭矩:</b>峰值扭矩是"短跑成绩",持续扭矩才是"长跑能力"。用峰值扭矩选长期工作点,绕组过热烧毁只是时间问题。<b>正确做法:峰值覆盖瞬时、RMS 对比持续。</b>
+  </div>
+  <div class="box box-warn">
+    <b>🚫 误区 2 · 忽略惯量匹配:</b>以为"扭矩够大就行",结果惯量比高达几百倍,系统对负载扰动敏感、电流环整定困难、响应迟滞甚至振荡。<b>减速器的 i² 反射 + 电机转子惯量一起考虑。</b>
+  </div>
+  <div class="box box-warn">
+    <b>🚫 误区 3 · 减速比越大越省电机:</b>减速比放大扭矩的同时也放大摩擦、降低效率、增加背隙与成本,还会抬高电机端转速需求。要同时校验<b>转速上限与热损耗</b>。
+  </div>
+  <div class="box box-warn">
+    <b>🚫 误区 4 · 不核对 KV 与母线电压:</b>低母线电压 + 高 KV(低 Kt)电机,要产生同样扭矩需要极大电流,驱动器吃不消;高 KV + 高母线电压则可能转速失控。要保证 <b>反电动势 + IR 压降 ≤ 母线电压</b>,并留弱磁余量。
+  </div>
+  <div class="box box-warn">
+    <b>🚫 误区 5 · 极对数/编码器方向填错不校验:</b>FOC 里电角度 = 极对数 × 机械角度,极对数或编码器相序错一位,电机轻则抖动异响,重则飞车。上电前务必做<b>开环相序与编码器方向标定</b>。
+  </div>
+
+  <!-- ================= 8. 小结与思考 ================= -->
+  <h2><span class="h2-num">8</span> 小结与思考</h2>
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>电机选型本质是<b>"负载需求 ∩ 电机能力 ∩ 驱动器能力"</b>三重交集的求解。先用<b>静载 + 加速 + 摩擦</b>估算峰值扭矩,用<b>峰值/持续</b>双额定覆盖瞬时与平均,用<b>减速比</b>同时权衡扭矩放大、转速降低与 i² 惯量解耦,最后用 <b>RMS 有效扭矩 ≤ 持续扭矩</b>做热校验。人形关节偏爱无框力矩电机 + 谐波/行星减速器 + 双编码器,正是因为它在这三重交集中同时拿到了最高的扭矩密度与中空集成度。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果把本节髋关节算例的减速比从 i=9 提高到 i=50(谐波),输出扭矩和电机端转速怎么变?惯量比从 60 降到多少?效率和摩擦会付出什么代价?<br>
+    2. 为什么"直驱/准直驱(QDD)"方案在灵巧手和小型关节流行,而在髋膝关节仍以"无框电机 + 减速器"为主?扭矩密度、惯量、散热在其中各扮演什么角色?<br>
+    3. 若一个关节的负载是<b>周期往复</b>运动,静载扭矩忽正忽负(回程时重力矩反向),RMS 计算该如何正确取各段扭矩的符号与平方?试推导。
+  </div>
+
+  <!-- ================= 9. 自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 【扭矩计算】负载质量 m=8 kg 集中在距关节转轴 r=0.35 m 处(取 g=9.8 m/s²),连杆处于<b>水平</b>位置时,重力矩约是多少?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 约 2.7 N·m</button>
+      <button data-v="B">B. 约 27 N·m</button>
+      <button data-v="C">C. 约 274 N·m</button>
+      <button data-v="D">D. 约 4.9 N·m</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:重力矩 τg = m·g·r = 8 × 9.8 × 0.35 = 27.44 N·m ≈ 27 N·m。水平位置时重力力臂最大,故取最大静载。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 【惯量匹配】减速比 i 增大为原来的 2 倍,负载惯量反射到电机端后变为原来的多少?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 1/2</button>
+      <button data-v="B">B. 1/4</button>
+      <button data-v="C">C. 2 倍</button>
+      <button data-v="D">D. 不变</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:反射惯量 J_ref = J_load / i²。i 变为 2 倍,分母变为 4 倍,故反射惯量变为原来的 1/4。这就是减速器"惯量解耦"的平方效应。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 【热校验】用运动周期内的 RMS 有效扭矩做热校验时,应让它满足什么条件?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. RMS 扭矩 ≥ 峰值扭矩</button>
+      <button data-v="B">B. RMS 扭矩 ≤ 峰值扭矩</button>
+      <button data-v="C">C. RMS 扭矩 ≤ 连续(额定)扭矩</button>
+      <button data-v="D">D. RMS 扭矩 ≥ 连续(额定)扭矩</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:峰值扭矩只覆盖瞬时需求,长期发热由 RMS 有效值决定,必须 ≤ 连续扭矩才能保证热平衡、不超绕组耐温。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 【减速比算例】电机峰值扭矩 7 N·m,减速比 i=9,效率 η=0.85,则输出端峰值扭矩约为?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 约 7 N·m</button>
+      <button data-v="B">B. 约 63 N·m</button>
+      <button data-v="C">C. 约 53.6 N·m</button>
+      <button data-v="D">D. 约 6.6 N·m</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:τ_out = τ_motor × i × η = 7 × 9 × 0.85 = 53.55 ≈ 53.6 N·m。注意要乘效率 η,不能只看理想值 63 N·m。</div>
+  </div>
+
+  <!-- ================= 10. 参考来源 ================= -->
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://www.cubemars.com/cn/how-to-choose-hip-and-knee-joint-motors-for-humanoid-robots.html" target="_blank" rel="noopener">CubeMars · 人形机器人膝关节与髋关节电机选型指南解析</a>(髋/膝关节扭矩需求与选型思路)</li>
+    <li><a href="https://www.cubemars.com/cn/2026-robot-actuator-guide-frameless-vs-qdd-vs-integrated.html" target="_blank" rel="noopener">CubeMars · 2026 机器人电机指南:无框电机 vs QDD vs 一体化动力模组</a>(电机家族路线对比)</li>
+    <li><a href="https://www.cubemars.com/cn/product/ri60-kv120-frameless-inrunner-torque-motor.html" target="_blank" rel="noopener">CubeMars · RI60 KV120 无框内转力矩电机</a>(官网标称最大转矩密度约 10.46 N·m/kg)</li>
+    <li><a href="https://www.cubemars.com/cn/product/ri70-kv95-frameless-inrunner-torque-motor.html" target="_blank" rel="noopener">CubeMars · RI70 KV95 无框内转力矩电机</a>(KV/Kt 参考)</li>
+    <li><a href="https://www.cubemars.com/cn/product/ri50-kv100-frameless-inrunner-torque-motor.html" target="_blank" rel="noopener">CubeMars · RI50 KV100 无框内转力矩电机</a>(KV/Kt 参考)</li>
+    <li><a href="https://m.chuandong.com/tech/tech51315.html" target="_blank" rel="noopener">中国传动网 · 无框力矩电机选型指南:从关键参数到供应商考察</a>(无框电机选型参数框架)</li>
+    <li><a href="https://blog.csdn.net/old_tree/article/details/159208542" target="_blank" rel="noopener">一文看懂:人形机器人关节电机、减速器、驱动器选型逻辑</a>(关节级选型逻辑梳理)</li>
+    <li><a href="https://ieeexplore.ieee.org/document/11377346" target="_blank" rel="noopener">IEEE · Design and Analysis of High Torque Density Joint for Humanoid Biped Robot</a>(高扭矩密度关节设计的学术文献)</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+<script>
+/* ============================================================
+   负载扭矩估算器(单一 ES5 块)
+   输入:质量 m、力臂 r、角加速度 α、安全系数 SF
+   输出:重力矩 τg、转动惯量 J、加速扭矩 τa、峰值 τp、设计值 τd
+   ============================================================ */
+function calcTorque() {
+  var m = parseFloat(document.getElementById('tc-m').value);
+  var r = parseFloat(document.getElementById('tc-r').value);
+  var a = parseFloat(document.getElementById('tc-a').value);
+  var sf = parseFloat(document.getElementById('tc-sf').value);
+  var out = document.getElementById('tc-out');
+  if (isNaN(m) || isNaN(r) || isNaN(a) || isNaN(sf) || m <= 0 || r <= 0 || a < 0 || sf <= 0) {
+    out.innerHTML = '⚠ 请填写完整且有效的数值(质量/距离/安全系数须大于 0)。';
+    return;
+  }
+  var g = 9.8;
+  var tg = m * g * r;      /* 重力矩 τg (N·m) */
+  var J  = m * r * r;      /* 转动惯量 J (kg·m²) */
+  var ta = J * a;          /* 加速扭矩 τa (N·m) */
+  var tp = tg + ta;        /* 峰值需求 τp(不含摩擦,可自行加) */
+  var td = tp * sf;        /* 设计值 τd(含安全系数) */
+  function f(x) { return x.toFixed(2); }
+  out.innerHTML = '重力矩 τg = ' + f(tg) + ' N·m　|　转动惯量 J = ' + f(J) + ' kg·m²<br>' +
+    '加速扭矩 τa = ' + f(ta) + ' N·m　|　峰值需求 τp = ' + f(tp) + ' N·m(未含摩擦)<br>' +
+    '设计值 τd = ' + f(td) + ' N·m(安全系数 ×' + f(sf) + ')';
+}
+</script>
+</body>
+</html>

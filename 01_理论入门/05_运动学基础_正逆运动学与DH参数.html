@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 运动学基础:正逆运动学与DH参数</title>
+<!-- 共享样式:二级目录页面用 ../_assets/site.css -->
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(命名加 my- 前缀,避免与全局冲突) */
+  .my-ascii{font-size:12.5px;line-height:1.6}
+  .my-mono{font-family:Consolas,"Courier New",monospace;color:#9ecbff}
+  body[data-theme="light"] .my-mono{color:#1d4ed8}
+</style>
+<script>
+  /* 页面配置:导航/面包屑/前后翻页/打卡 全部由 site.js 读取 */
+  window.PAGE = {
+    pageId: "01-05",
+    root: "..",
+    breadcrumb: [ { t: "理论入门", u: "../index.html#sec1" }, { t: "运动学基础" } ],
+    prev: { t: "机械原理基础", u: "04_机械原理基础_连杆齿轮传动.html" },
+    next: { t: "硬件设计避坑指南", u: "../02_硬件基础/04_硬件设计通用要点_避坑指南.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧭 运动学基础:正逆运动学与 DH 参数</h1>
+    <div class="sub">用数学精确描述"关节转了多少度 → 手和脚在哪儿"。本页从位置、旋转、齐次变换讲起,到 DH 参数、正运动学、逆运动学和雅可比矩阵,读完你就能自己推导一个 2 连杆臂、看懂 URDF 里那串旋转和平移参数。</div>
+    <div class="tags">
+      <span class="tag">运动学</span>
+      <span class="tag">DH参数</span>
+      <span class="tag">正逆运动学</span>
+      <span class="tag">雅可比矩阵</span>
+      <span class="tag">四元数</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说出描述刚体位姿的四种方式(位置+旋转矩阵、欧拉角、四元数、齐次变换矩阵)及各自优缺点<br>
+    2. 能写出标准 DH 参数的四个量(θ、d、a、α)的含义,并为一个 2 连杆平面臂列 DH 表<br>
+    3. 能由 DH 表推导正运动学,算出 2 连杆臂末端位置 (x, y)<br>
+    4. 能区分解析法与数值法求解逆运动学,并说明为什么会出现多解和奇异位形<br>
+    5. 能写出雅可比矩阵 J 的两个用途:速度映射 v = J·q̇ 与力映射 τ = JᵀF<br>
+    <b>建议用时:</b>约 45 分钟(含自测)
+  </div>
+
+  <!-- ================= 1. 位姿描述 ================= -->
+  <h2><span class="h2-num">1</span> 位姿描述:位置、旋转与姿态的四种表示</h2>
+  <p>要让机器人"走到某个点、把手摆成某个角度",首先得能用数学把<strong>位置(在哪)</strong>和<strong>姿态(朝向哪)</strong>写出来,合起来叫<strong>位姿(Pose)</strong>。位置相对简单,姿态(三维旋转)才是难点。</p>
+
+  <h3>1.1 位置向量</h3>
+  <p>在某个参考坐标系(比如固定在机器人骨盆的坐标系)里,一个点的位置就是一个三维列向量:</p>
+  <pre><code>p = [ px ]     px:沿 X 轴的距离
+    [ py ]     py:沿 Y 轴的距离
+    [ pz ]     pz:沿 Z 轴的距离</code></pre>
+  <p>这只能回答"点在哪儿",回答不了"物体朝向哪"。要描述朝向,需要<strong>旋转矩阵</strong>。</p>
+
+  <h3>1.2 旋转矩阵</h3>
+  <p>旋转矩阵 <span class="my-mono">R</span> 是一个 3×3 的正交矩阵,它把坐标系 B 里的向量转到坐标系 A: <span class="my-mono">p_A = R · p_B</span>。它满足两个约束:<span class="my-mono">RᵀR = I</span>(列向量两两垂直且长度为 1)且 <span class="my-mono">det(R) = +1</span>(右手系,不出现镜像)。所有合法的旋转矩阵构成一个集合,记作 <strong>SO(3)</strong>。</p>
+  <p>绕 Z 轴旋转 θ 角的旋转矩阵最常用,记下来:</p>
+  <pre><code>Rz(θ) = [ cosθ   -sinθ   0 ]
+        [ sinθ    cosθ   0 ]
+        [ 0       0      1 ]</code></pre>
+  <p>绕 X、Y 轴同理。旋转矩阵的优点是<strong>无歧义、可直接连乘</strong>;缺点是<strong>9 个数只表达了 3 个自由度</strong>,信息冗余,数值漂移后还可能不再"正交"。</p>
+
+  <h3>1.3 欧拉角</h3>
+  <p>欧拉角把任意旋转拆成<strong>按固定顺序绕三个轴的旋转</strong>,比如常见的 ZYX 顺序(先绕 Z 转偏航角 yaw,再绕 Y 转俯仰角 pitch,最后绕 X 转滚转角 roll):</p>
+  <pre><code>R = Rz(ψ) · Ry(θ) · Rx(φ)
+    ψ = yaw 偏航   θ = pitch 俯仰   φ = roll 滚转</code></pre>
+  <p>欧拉角只有 3 个数,符合直觉(飞行员说"滚转 30 度、俯仰 10 度")。但它有两个致命问题:<strong>旋转顺序必须约定</strong>(ZYX 和 XYZ 结果不同),以及<strong>万向锁(Gimbal Lock)</strong>——当中间那个角(这里是 pitch)转到 ±90° 时,第一条轴和第三条轴重合,系统突然少了一个自由度,无法唯一表示姿态。</p>
+
+  <h3>1.4 四元数</h3>
+  <p>四元数 <span class="my-mono">q = w + xi + yj + zk</span> 是"1 个实部 + 3 个虚部"的超复数。表示旋转时用<strong>单位四元数</strong>(满足 w² + x² + y² + z² = 1)。把向量 v 旋转后得到 v′ 的公式是 <span class="my-mono">v′ = q · v · q⁻¹</span>,旋转的连续合成用四元数乘法(哈密顿积),插值用球面线性插值 slerp。</p>
+  <p><strong>为什么四元数能避免万向锁?</strong>因为它不是"按顺序转三次"这种参数化,而是把旋转当作 4 维空间里的一个点来整体描述;任何姿态都有连续、唯一的表示(最多差一个正负号),不存在"两根轴重合"的退化点。代价是<strong>不直观</strong>——人很难从 (w, x, y, z) 四个数直接看出朝哪。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>表示方式</th><th>参数个数</th><th>优点</th><th>缺点</th><th>典型用途</th></tr>
+    <tr><td>旋转矩阵 R</td><td>9(冗余)</td><td>无歧义、直接连乘、可直接作用于向量</td><td>冗余、数值需正交化、难读</td><td>齐次变换、FK 推导、渲染</td></tr>
+    <tr><td>欧拉角</td><td>3</td><td>直观、好读、适合人机界面</td><td>万向锁、顺序依赖、插值不自然</td><td>遥控、航向姿态显示</td></tr>
+    <tr><td>轴角 (axis-angle)</td><td>4(轴3+角1)</td><td>几何意义清晰</td><td>合成/插值复杂</td><td>误差表示、规划</td></tr>
+    <tr><td>四元数</td><td>4(带单位化约束)</td><td>无万向锁、平滑插值 slerp、合成快</td><td>不直观</td><td>IMU 姿态解算、动作插值、SLAM</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💡 记忆锚点:</b>机器人内部计算基本都用<strong>旋转矩阵或四元数</strong>;只有在"给人看、让人调"时才转成欧拉角。你看到的姿态数据如果是 4 个数,大概率是四元数 (w, x, y, z),注意 w 在前还是在后。</div>
+
+  <!-- ================= 2. 齐次变换矩阵 ================= -->
+  <h2><span class="h2-num">2</span> 齐次变换矩阵:把旋转和平移装进一个 4×4</h2>
+  <p>真实的机器人不是原地转,而是"先转个方向,再挪个位置"。位置(3 个数)+ 姿态(旋转矩阵 3×3)可以合并成一个<strong>齐次变换矩阵 T</strong>,它是 4×4 的分块矩阵:</p>
+  <pre><code>T = [ R | p ]   =   [ r11  r12  r13 | px ]
+    [---+---]       [ r21  r22  r23 | py ]
+    [ 0 | 1 ]       [ r31  r32  r33 | pz ]
+                    [ 0    0    0   | 1  ]
+    R:3×3 旋转矩阵   p:3×1 平移向量</code></pre>
+  <p>它的好处是<strong>一个矩阵乘法就完成"旋转+平移"两步</strong>。点用齐次坐标 [x, y, z, 1]ᵀ 表示,变换就是一次乘法 p′ = T · p。</p>
+
+  <h3>2.1 复合变换的顺序:先旋转后平移</h3>
+  <p>多个变换连乘时,<strong>顺序非常重要,且矩阵乘法不满足交换律</strong>。约定:想"先绕局部坐标旋转、再把坐标系原点平移到 p",写成:</p>
+  <pre><code>T = Trans(p) · Rot(θ)     ← 先算 Rot,再算 Trans(写在左边,后作用)
+
+即:p_world = R · p_local + t
+    (先旋转局部点,再叠加平移)</code></pre>
+  <p>反过来 <span class="my-mono">Rot(θ) · Trans(p)</span> 则意味着"先平移、再绕<strong>全局</strong>原点旋转",结果完全不同。记住口诀:<strong>写在最右边的矩阵最先作用在点上</strong>。</p>
+
+  <h3>2.2 一个 2D 算例</h3>
+  <p>平面里点 (1, 0) 先绕原点逆时针转 90°,再沿 X 平移 3、沿 Y 平移 1:</p>
+  <pre><code>T = Trans(3,1) · Rz(90°)
+
+  = [ 1  0  3 ]   [ 0  -1  0 ]   [ 0  -1  3 ]
+    [ 0  1  1 ] · [ 1   0  0 ] = [ 1   0  1 ]
+    [ 0  0  1 ]   [ 0   0  1 ]   [ 0   0  1 ]
+
+  作用到 (1,0,1):
+  [ 0 -1 3 ]   [ 1 ]   [ 0·1 + (-1)·0 + 3 ]   [ 3 ]
+  [ 1  0 1 ] · [ 0 ] = [ 1·1 + 0·0  + 1 ] = [ 2 ]
+  [ 0  0 1 ]   [ 1 ]   [ 0 + 0 + 1 ]        [ 1 ]
+
+  结果 (3, 2):确实先转到了 (0,1),再平移到 (3,2) ✓</code></pre>
+
+  <!-- ================= 3. DH 参数 ================= -->
+  <h2><span class="h2-num">3</span> DH 参数:给每根连杆"标定"四个数</h2>
+  <p>一台人形机器人有几十个关节,如果每个都手动画旋转矩阵、来回换算,工程上会疯掉。1955 年 Denavit 和 Hartenberg 提出一套<strong>标准化约定(DH 参数)</strong>:只要给每个关节标 4 个数,就能机械地写出相邻连杆之间的齐次变换,进而求出全臂正运动学。这是工业机器人和 URDF 之外最常见的运动学建模语言。</p>
+
+  <h3>3.1 四个参数的含义</h3>
+  <p>在每个关节上建立坐标系,从连杆 i-1 的坐标系到连杆 i 的坐标系,经过"<strong>两次旋转 + 两次平移</strong>"共 4 步,对应 4 个参数:</p>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>名称</th><th>绕/沿哪根轴</th><th>含义</th><th>转动关节里</th></tr>
+    <tr><td>θ (theta)</td><td>关节角</td><td>绕 z<sub>i-1</sub> 轴旋转</td><td>让 x<sub>i-1</sub> 转到与 x<sub>i</sub> 平行</td><td>★ 关节变量(随电机转动变化)</td></tr>
+    <tr><td>d</td><td>连杆偏距</td><td>沿 z<sub>i-1</sub> 轴平移</td><td>两坐标系沿公轴线的距离</td><td>常数(通常 0 或连杆厚度)</td></tr>
+    <tr><td>a</td><td>连杆长度</td><td>沿 x<sub>i</sub> 轴平移</td><td>相邻两关节轴线间公垂线长度</td><td>常数(就是连杆长 L)</td></tr>
+    <tr><td>α (alpha)</td><td>连杆扭转角</td><td>绕 x<sub>i</sub> 轴旋转</td><td>让 z<sub>i-1</sub> 转到与 z<sub>i</sub> 平行</td><td>常数(通常 0 或 ±90°)</td></tr>
+  </table></div>
+  <p>四个参数合成一个变换(注意相乘顺序,正好是"旋转-平移-平移-旋转"):</p>
+  <pre><code>Ai = Rot_z(θi) · Trans_z(di) · Trans_x(ai) · Rot_x(αi)
+
+展开成 4×4(标准 DH):
+       [ cosθi   -sinθi·cosαi    sinθi·sinαi    ai·cosθi ]
+Ai =   [ sinθi    cosθi·cosαi   -cosθi·sinαi    ai·sinθi ]
+       [ 0        sinαi          cosαi           di        ]
+       [ 0        0              0               1         ]</code></pre>
+
+  <h3>3.2 2 连杆平面臂的 DH 表</h3>
+  <p>假设一个平面 2 连杆臂:两根连杆长 L1、L2,两个关节都在同一个平面内转(所有 z 轴平行、指向纸外),没有连杆扭转、没有偏距。它的 DH 表:</p>
+  <div class="table-wrap"><table>
+    <tr><th>关节 i</th><th>θi</th><th>di</th><th>ai</th><th>αi</th></tr>
+    <tr><td>1</td><td>θ1(变量)</td><td>0</td><td>L1</td><td>0</td></tr>
+    <tr><td>2</td><td>θ2(变量)</td><td>0</td><td>L2</td><td>0</td></tr>
+  </table></div>
+  <p>因为 α = 0、d = 0,每段变换简化为:</p>
+  <pre><code>        [ cosθi   -sinθi   0   ai·cosθi ]
+Ai =    [ sinθi    cosθi   0   ai·sinθi ]
+        [ 0        0       1   0         ]
+        [ 0        0       0   1         ]</code></pre>
+  <div class="box box-warn"><b>⚠️ 注意区分标准 DH 与改进 DH(Craig):</b>两者的坐标系原点放的位置不同——<strong>标准 DH</strong> 把连杆 i 的坐标系放在连杆 i 的<strong>远端</strong>(靠近关节 i+1),<strong>改进 DH</strong> 放在<strong>近端</strong>(靠近关节 i)。同样的机械臂,两套参数数值不同,且变换写成 Trans·Rot 的顺序也不同。看别人给的 DH 表或 URDF 时,先确认用的是哪套约定,否则会得到完全错误的姿态。</div>
+
+  <!-- ================= 4. 正运动学 ================= -->
+  <h2><span class="h2-num">4</span> 正运动学 FK:从关节角到末端位姿</h2>
+  <p><strong>正运动学(Forward Kinematics, FK)</strong>回答:"我知道每个关节当前的角度,请问末端(手/脚)现在在空间什么位置、什么朝向?"答案是<strong>唯一确定的</strong>——给定一组关节角,末端位姿就唯一确定。做法就是把 DH 表里每段变换按顺序连乘:</p>
+  <pre><code>T_end = A1 · A2 · ... · An
+
+  输入:q = (θ1, θ2, ..., θn)  关节角向量
+  输出:末端 4×4 齐次变换 T(位置 p + 姿态 R)</code></pre>
+
+  <h3>4.1 2 连杆臂正运动学推导</h3>
+  <p>把 3.2 的两段变换连乘,A1 · A2 的旋转部分等于 <span class="my-mono">Rz(θ1+θ2)</span>(绕 z 轴的两次旋转直接相加),平移部分展开得到著名的结果:</p>
+  <pre><code>x = L1·cosθ1 + L2·cos(θ1+θ2)
+y = L1·sinθ1 + L2·sin(θ1+θ2)
+φ = θ1 + θ2            ← 末端朝向角(平面内)
+
+验证:θ1=0、θ2=0 时,臂完全伸直指向 +X,
+      x = L1 + L2,y = 0 ✓ 与直觉一致</code></pre>
+
+  <h3>4.2 伪代码</h3>
+  <pre><code>function FK(theta):
+    T = identity(4)
+    for i = 1 to n:
+        # 由 DH 参数 (theta[i], d[i], a[i], alpha[i]) 构 Ai
+        Ai = dh_transform(theta[i], d[i], a[i], alpha[i])
+        T = T * Ai            # 连乘
+    p = T[0:3, 3]             # 末端位置
+    R = T[0:3, 0:3]           # 末端姿态
+    return (p, R)</code></pre>
+  <p>正运动学在工程上的三个用途:<strong>①仿真校验</strong>——把规划好的关节角代进去看末端会不会撞墙;<strong>②标定</strong>——比对模型算出的位置和实测位置,反推真实的连杆长度误差;<strong>③作为逆运动学数值法的"打分器"</strong>(见下一节)。</p>
+
+  <!-- ================= 5. 逆运动学 ================= -->
+  <h2><span class="h2-num">5</span> 逆运动学 IK:从末端位姿反推关节角</h2>
+  <p><strong>逆运动学(Inverse Kinematics, IK)</strong>是正运动学的反问题:"我想让手放到 (0.4, 0.3, 0.5) 这个点、朝某个方向,请问各关节要转多少度?"这才是实际控制里最常用的问题,因为人给的指令通常是"末端去哪",而不是"每个关节转几度"。IK 比 FK 难得多:<strong>可能有多个解、可能无解、还可能有奇异点</strong>。</p>
+
+  <h3>5.1 解析法 vs 数值法</h3>
+  <div class="table-wrap"><table>
+    <tr><th></th><th>解析法(闭式解)</th><th>数值法(迭代解)</th></tr>
+    <tr><td>思路</td><td>用几何/三角关系直接推出公式</td><td>从初始猜测出发,一步步逼近目标</td></tr>
+    <tr><td>速度</td><td>极快(微秒级)</td><td>较慢,依赖初值与迭代次数</td></tr>
+    <tr><td>能否求所有解</td><td>能,能看清解的个数与结构</td><td>一般只收敛到离初值最近的解</td></tr>
+    <tr><td>适用性</td><td>只对结构简单、有闭式解的臂有效</td><td>几乎任意结构都能用(通用)</td></tr>
+    <tr><td>典型方法</td><td>三角几何、Pieper 条件(6 轴臂后 3 轴交于一点)</td><td>雅可比迭代、阻尼最小二乘、LM 法</td></tr>
+  </table></div>
+
+  <h3>5.2 2 连杆臂解析解(重点算例)</h3>
+  <p>给末端目标 (x, y),两根连杆长 L1、L2。由余弦定理先求第二个关节角:</p>
+  <pre><code>c2 = (x² + y² - L1² - L2²) / (2·L1·L2)
+θ2 = ±acos(c2)          ← 两个解:肘朝上 / 肘朝下
+
+再由几何关系求 θ1:
+θ1 = atan2(y, x) - atan2(L2·sinθ2, L1 + L2·cosθ2)</code></pre>
+  <pre class="my-ascii"><code>末端同一点 → 两种手臂姿态:
+        θ2>0(肘在上)           θ2<0(肘在下)
+         ▲  ▲                    ▲
+        /    \                  /
+     L1/      \ L2           L1/
+      /        ▼            /  \ 
+   肩└─────────┘终点     肩└────▼终点
+      (肘朝上)               (肘朝下)</code></pre>
+  <div class="box box-tip"><b>💡 解的唯一性:</b>本例有 2 组解;一般 6 轴工业臂最多有 8 组甚至 16 组解。工程上要按约束挑一组——比如"肘部朝下省力""避免撞到本体""离上一时刻最近(连续性)"。当目标点超出臂展(距离大于 L1+L2)时,<span class="my-mono">c2</span> 的绝对值大于 1,acos 无定义,即<strong>无解</strong>,意味着那个点根本够不着。</div>
+
+  <h3>5.3 数值法:雅可比迭代</h3>
+  <p>当没有闭式解时,用迭代:假设当前关节角 q,末端误差 Δx = x_target − FK(q),每步解一个线性方程让末端往目标挪一点:</p>
+  <pre><code>Δx = J(q) · Δq
+Δq = J⁺ · Δx            J⁺ 是 J 的伪逆(最小二乘解)
+q ← q + Δq              更新后重算 FK,直到 ‖Δx‖ 足够小</code></pre>
+  <p>为了让迭代稳定(尤其在奇异点附近),常用<strong>阻尼最小二乘(DLS)</strong>加一个阻尼项 λ:</p>
+  <pre><code>Δq = Jᵀ (J·Jᵀ + λ²I)⁻¹ · Δx</code></pre>
+  <p>λ 越大越稳但收敛越慢。数值法的坑是:初值选得差可能不收敛、或收敛到不是你想要的那个解。</p>
+
+  <!-- ================= 6. 雅可比矩阵 ================= -->
+  <h2><span class="h2-num">6</span> 雅可比矩阵:速度、奇异点与力的桥梁</h2>
+  <p>正/逆运动学回答"位置对不对",<strong>雅可比矩阵 J</strong>回答"快不快、用多大力",它把<strong>关节速度</strong>和<strong>末端速度</strong>线性地联系起来,是机器人动力学的第一块基石。</p>
+
+  <h3>6.1 末端速度与关节速度</h3>
+  <pre><code>v = J(q) · q̇
+
+  v  = [vx, vy, vz, ωx, ωy, ωz]ᵀ   末端线速度 + 角速度(6×1)
+  q̇ = 关节角速度向量(n×1)
+  J  = 6×n 矩阵,元素是 FK 对每个关节角的偏导 Jij = ∂fi/∂qj</code></pre>
+  <p>对 2 连杆平面臂(只关心末端 (x, y)),雅可比是 2×2:</p>
+  <pre><code>J = [ -L1·s1 - L2·s12    -L2·s12 ]
+    [  L1·c1 + L2·c12      L2·c12 ]
+    (s1=sinθ1, s12=sin(θ1+θ2), c1=cosθ1, c12=cos(θ1+θ2))
+
+行列式:det(J) = L1 · L2 · sin(θ2)</code></pre>
+
+  <h3>6.2 奇异位形</h3>
+  <p>当 <span class="my-mono">det(J) = 0</span> 时,矩阵不可逆,称为<strong>奇异位形(Singularity)</strong>。对 2 连杆臂,奇异发生在 <span class="my-mono">θ2 = 0</span>(臂完全伸直)或 <span class="my-mono">θ2 = π</span>(完全折回)时。此时:</p>
+  <ul>
+    <li><strong>末端沿某方向想动,却需要关节速度无穷大</strong>——"伸直的手臂想继续往外够",关节怎么转都推不动末端,这正是伸到极限的物理表现。</li>
+    <li><strong>雅可比迭代会发散</strong>:伪逆里的除法趋近除以零,数值爆炸。这就是为什么运动规划要<strong>避开奇异位形</strong>,或对奇异附近做阻尼/限幅。</li>
+    <li>6 轴臂更典型:腕部三个轴重合(如 UR 臂伸直、手腕对齐)时,瞬时丢一个自由度。</li>
+  </ul>
+
+  <h3>6.3 力传递:τ = JᵀF</h3>
+  <p>雅可比还反向传递<strong>力</strong>。若末端要顶住外力/负载 F,各关节需要输出多大的力矩 τ?</p>
+  <pre><code>τ = Jᵀ · F
+
+  末端 6 维力/力矩 F = [Fx, Fy, Fz, Mx, My, Mz]ᵀ
+  关节力矩       τ = [τ1, τ2, ..., τn]ᵀ</code></pre>
+  <p>直觉:末端挂重物时,力臂越长(离关节越远),关节要出的力矩越大——这正是 Jᵀ 里那堆 sin/cos 系数在做的事。<strong>同一位形下,位置映射用 J,力映射用 Jᵀ</strong>,这是一对"对偶"关系。选关节电机扭矩时,就要拿最恶劣位形下的 τ 峰值来选型。</p>
+
+  <!-- ================= 7. 人形机器人应用 ================= -->
+  <h2><span class="h2-num">7</span> 人形机器人应用:腿、手臂与全身</h2>
+  <h3>7.1 腿:步态里的"脚踝 IK"</h3>
+  <p>走路可以抽象成:规划脚底落点(末端位姿)→ 用 IK 反算髋、膝、踝三个关节的角度。人腿的髋+膝+踝在同一平面内的部分,正好退化成<strong>2~3 连杆平面 IK</strong>,和本页 5.2 的公式几乎一样。工程上会先解出"脚相对于髋的位置",再套解析 IK 得到膝盖角;膝盖的<strong>弯曲方向</strong>(向前弯,不像鸟腿向后)就是"肘朝上/朝下"那个多解选择——选错了解,机器人会做出反关节的怪姿势。</p>
+
+  <h3>7.2 手臂:6~7 自由度 IK</h3>
+  <p>人形机器人手臂(肩 3 + 肘 1 + 腕 3)是 7 自由度<strong>冗余</strong>机械臂——比到达一个位姿所需的 6 个自由度还多 1 个,所以同一末端位姿对应<strong>无穷多组</strong>关节角。这时 IK 不是"求唯一解",而是"在无数解里挑一个最好看的"(肘不夹身体、避开胸口、像人)。</p>
+
+  <h3>7.3 与仿真、全身控制的衔接</h3>
+  <ul>
+    <li><strong>仿真(06-04 MuJoCo/Isaac):</strong>仿真器内部就是拿 URDF 里的关节/连杆参数建 FK 与雅可比,你调出来的姿态、速度、力矩,背后全是本页这套数学。做强化学习时,奖励函数里"脚离目标多远"就是 FK 算出来的距离。</li>
+    <li><strong>全身控制(04-02 WBC/MPC):</strong>全身控制器同时管 30+ 个关节,它的核心是把"质心、双脚、双手"这些任务写成<strong>雅可比 + 任务优先级</strong>:先满足双脚着地(高优先级),再满足手够目标(低优先级),雅可比矩阵 J 就是每条任务对关节的"杠杆"。</li>
+  </ul>
+
+  <!-- ================= 8. 工具链 ================= -->
+  <h2><span class="h2-num">8</span> 工具链:动手算一遍</h2>
+  <div class="table-wrap"><table>
+    <tr><th>工具</th><th>是什么</th><th>典型 API</th></tr>
+    <tr><td>Pinocchio</td><td>C++ 刚体动力学库,带高效 Python 绑定,人形/四足仿真底层最爱</td><td>buildModelFromUrdf / forwardKinematics / computeJacobians</td></tr>
+    <tr><td>Robotics Toolbox for Python</td><td>Peter Corke 的教学向 Python 库,和经典 MATLAB 版一脉相承</td><td>DHRobot / fkine / ikine_LM / jacob0</td></tr>
+    <tr><td>URDF 解析</td><td>把机器人模型文件读成运动学树</td><td>pinocchio.buildModelFromURDF / urdf_parser</td></tr>
+    <tr><td>MATLAB</td><td>Robotics System Toolbox,适合快速验证与论文复现</td><td>rigidBodyTree / getTransform / inverseKinematics</td></tr>
+  </table></div>
+
+  <h3>8.1 Python 上手示例</h3>
+  <pre><code># 方式一:Robotics Toolbox for Python(pip install roboticstoolbox-python)
+import roboticstoolbox as rtb
+import numpy as np
+
+arm = rtb.DHRobot([
+    rtb.RevoluteDH(a=0.5),      # L1 = 0.5 m
+    rtb.RevoluteDH(a=0.3)       # L2 = 0.3 m
+], name="2link")
+q = np.array([0.3, 0.9])
+T = arm.fkine(q)                # 正运动学 → 4×4 齐次变换
+sol = arm.ikine_LM(T)           # 逆运动学 → 数值解
+J = arm.jacob0(q)               # 雅可比
+
+# 方式二:Pinocchio(conda-forge 的 pinocchio,或 PyPI 的 pin 包)
+import pinocchio as pin
+model = pin.buildModelFromUrdf("robot.urdf")
+data = model.createData()
+pin.forwardKinematics(model, data, q)
+pin.computeJointJacobians(model, data, q)</code></pre>
+
+  <div class="box box-tip"><b>🚀 上手建议:</b>①先在纸上(或 Excel/Python)把 2 连杆 FK/IK 手推一遍,再上库,否则你永远分不清是"我算错"还是"库用错";②Robotics Toolbox 适合学概念(API 直白、自带可视化),Pinocchio 适合上真机(快、能和 ROS2/仿真打通);③拿到任何 URDF,先读 <span class="my-mono">joint</span> 标签里的 type(revolute/prismatic)和 axis,再读 <span class="my-mono">origin</span> 的 xyz/rpy——那串数本质上就是"半个 DH 表"。</div>
+
+  <!-- ================= 9. 常见误区 ================= -->
+  <h2><span class="h2-num">9</span> 常见误区</h2>
+  <div class="box box-warn">
+    <b>🚫 误区 1:"IK 就是查表/背公式":</b>只有结构简单、满足特定条件的臂才有闭式解;人形机器人这种冗余、含球关节的系统基本靠数值 IK + 优化,而且永远要先问"哪个解、初值多少"。<br>
+    <b>🚫 误区 2:"忽略奇异点":</b>手臂伸直、手腕对齐这些瞬间,雅可比行列式为 0,速度指令会飙到无穷、力矩估算会失真。规划路径时必须检查 det(J),别让轨迹穿过奇异位形。<br>
+    <b>🚫 误区 3:"四元数只是欧拉角的另一种写法":</b>两者不等价——四元数没有万向锁、能平滑插值;把四元数拆成欧拉角再插值会走"绕远路"甚至抖动,插值要用 slerp。<br>
+    <b>🚫 误区 4:"混用标准 DH 与改进 DH 却不出错":</b>两套约定的 a、d、θ、α 数值和相乘顺序都不同,抄表前先确认约定,否则 FK 会得到镜像/错位的姿态。<br>
+    <b>🚫 误区 5:"雅可比只用于求速度":</b>它同样做力传递 τ = JᵀF 和数值 IK 迭代,是速度、力、优化三者共用的核心结构。
+  </div>
+
+  <!-- ================= 10. 本节自测 ================= -->
+  <h2><span class="h2-num">10</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 标准 DH 约定里,描述相邻关节坐标系之间关系的四个参数是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. θ(关节角)、d(连杆偏距)、a(连杆长度)、α(连杆扭转角)</button>
+      <button data-v="B">B. x、y、z(平移)、θ(旋转)</button>
+      <button data-v="C">C. ρ、θ、φ(球坐标)、ψ</button>
+      <button data-v="D">D. ω、α(角速度与角加速度)、τ、F</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:DH 参数固定为四个——θ 是绕 z_{i-1} 轴的关节角,d 是沿 z_{i-1} 的偏距,a 是沿 x_i 的连杆长度,α 是绕 x_i 的扭转角。B/C/D 都不是标准 DH 的四参数。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 为什么机器人姿态估计常用单位四元数,而不是欧拉角?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 四元数只需要 3 个数,比欧拉角更省内存</button>
+      <button data-v="B">B. 四元数整体描述旋转,没有"两根轴重合"的万向锁,且能做平滑 slerp 插值</button>
+      <button data-v="C">C. 四元数的乘法满足交换律,计算更方便</button>
+      <button data-v="D">D. 四元数本身就是 3×3 旋转矩阵</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:欧拉角按固定顺序转三次,中间角到 ±90° 时首末两轴重合、丢一个自由度(万向锁);四元数用 4 个数(带单位化约束)整体表示旋转,任意姿态连续无退化,插值用 slerp。A 错(是 4 个数),C 错(四元数乘法不交换),D 错(四元数不是矩阵)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 平面 2 连杆臂 L1 = L2 = 1,当 θ1 = 0°、θ2 = 90° 时,末端位置是?(用 FK:x = L1·cosθ1 + L2·cos(θ1+θ2),y = L1·sinθ1 + L2·sin(θ1+θ2))</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. (1, 1)</button>
+      <button data-v="B">B. (2, 0)</button>
+      <button data-v="C">C. (0, 2)</button>
+      <button data-v="D">D. (√2, √2)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:x = cos0° + cos(0°+90°) = 1 + 0 = 1;y = sin0° + sin90° = 0 + 1 = 1,即末端在 (1,1)。B 是 θ2=0° 伸直时的位置;D 是 L1=L2=1、两杆垂直时的错误换算。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 2 连杆平面臂的雅可比行列式 det(J) = L1·L2·sin(θ2)。当 θ2 为多少时,机械臂处于奇异位形?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. θ2 = 45°</button>
+      <button data-v="B">B. θ2 = 90°(臂呈直角,最灵活)</button>
+      <button data-v="C">C. θ2 = 0°(臂完全伸直,sinθ2 = 0)</button>
+      <button data-v="D">D. θ2 = 30°</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:det(J) = L1·L2·sinθ2,当 θ2 = 0 或 π(完全伸直/折回)时行列式为 0,J 不可逆,即奇异位形——此时末端沿臂方向无法用有限关节速度驱动。θ2 = 90° 时 sinθ2 = 1,行列式最大、灵活性最好。</div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>①位姿 = 位置 + 姿态,姿态可用旋转矩阵/欧拉角/四元数表示,计算内部首选矩阵与四元数(避免万向锁);②齐次变换把旋转和平移装进 4×4,连乘时"最右矩阵最先作用",顺序不可交换;③DH 参数用 θ、d、a、α 四个数标准化每根连杆,连乘得正运动学 FK(关节角→末端,解唯一);④逆运动学 IK 从末端反推关节角,解析法快但受限,数值法通用但依赖初值,且有多解/无解/奇异问题;⑤雅可比 J 把关节速度映射到末端速度(v=Jq̇)、把末端力映射到关节力矩(τ=JᵀF),行列式为 0 即奇异位形,必须避开。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 人腿的膝盖只能向前弯。如果用 5.2 的 2 连杆解析公式解"脚落地"的 IK,你如何从 ±θ2 两个解里自动挑出"膝盖向前"的那一个?<br>
+    2. 手臂伸到最直(奇异位形)时,为什么哪怕电机疯狂转,末端也几乎推不出去?结合 det(J) = L1·L2·sinθ2 解释。<br>
+    3. 找一个你手头的机器人 URDF 文件,读出第一个 joint 的 type、axis 和 origin,试着说出它对应标准 DH 里的哪几个参数(θ/d/a/α)。
+  </div>
+
+  <!-- ================= 参考来源 ================= -->
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://en.wikipedia.org/wiki/Denavit%E2%80%93Hartenberg_parameters" target="_blank" rel="noopener">Denavit–Hartenberg parameters — Wikipedia</a>(DH 四参数的标准定义与变换矩阵)</li>
+    <li><a href="https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation" target="_blank" rel="noopener">Quaternions and spatial rotation — Wikipedia</a>(四元数与空间旋转、万向锁的数学背景)</li>
+    <li><a href="https://github.com/stack-of-tasks/pinocchio" target="_blank" rel="noopener">Pinocchio: fast rigid body dynamics — GitHub(stack-of-tasks)</a>(FK/雅可比/URDF 解析的官方实现)</li>
+    <li><a href="https://github.com/petercorke/robotics-toolbox-python" target="_blank" rel="noopener">Robotics Toolbox for Python — GitHub(Peter Corke)</a>(教学向运动学库,含 DHRobot/fkine/ikine)</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

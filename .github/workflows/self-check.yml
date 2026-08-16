@@ -1,0 +1,25 @@
+name: site-self-check
+
+# 每次 push / PR 时,在 GitHub 云端自动运行一键自检
+# (JS 语法 / 外部 JS / 链接 / 搜索索引 / sitemap / 版本一致性)
+# 失败会标红,便于提交前发现漂移与坏链。
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  self-check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run one-click self check
+        shell: powershell
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File "_本地工具\一键自检.ps1"
