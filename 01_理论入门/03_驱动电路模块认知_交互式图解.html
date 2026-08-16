@@ -871,7 +871,7 @@ function showDetail(id) {
   let keyPointsHtml = data.keyPoints.map(k => `<li>${k}</li>`).join('');
   
   let linksHtml = data.links && data.links.length > 0 
-    ? data.links.map(l => `<a class="link-item" href="${l.url}" target="_blank"><span class="link-type">${l.type}</span>${l.text}</a>`).join('')
+    ? data.links.map(l => `<a class="link-item" href="${l.url}" target="_blank" rel="noopener"><span class="link-type">${l.type}</span>${l.text}</a>`).join('')
     : '<div style="font-size:12px;color:#64748b;padding:8px 0">暂无专题参考链接，查看参考资料库页面获取更多资源</div>';
   
   let tagsHtml = data.tags.map((t, i) => `<span class="tag ${t}">${data.tagLabels[i]}</span>`).join('');
