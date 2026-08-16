@@ -202,6 +202,7 @@ body[data-theme="dark"] .status{background:rgba(13,18,30,.8);border-color:var(--
   .ham{display:flex}
   .rz{display:none!important}   /* 移动端走抽屉模式，隐藏桌面端拖宽把手 */
   .app{grid-template-columns:1fr;height:calc(100vh - 54px - 56px)}
+  .app>.stg{grid-column:1;grid-row:1}  /* 【iOS空白修复】移动端单列布局，舞台必须回到第 1 列，否则被放进隐式列宽度塌缩为 0 */
   .stg{height:100%}
   .nav{position:fixed;left:0;top:54px;bottom:56px;width:80%;max-width:320px;z-index:95;background:var(--bg3);border-right:1px solid var(--rule);transform:translateX(-106%);transition:transform .28s cubic-bezier(.2,.8,.3,1);box-shadow:var(--sh2);padding-top:8px}
   body.drawer-nav .nav{transform:none}
@@ -1418,7 +1419,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断浮标逻辑:仅触屏设备显示;收集运行期错误;轮询刷新状态;复制按钮产出可粘贴文本 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v6.2';  /* 2026-08-16 · 静态importmap+双通道回退+精细度切换+诊断版本标识 */
+var DIAG_VER='v6.3';  /* 2026-08-16 · 修复移动端舞台隐式grid列宽度塌缩(模型已渲染但看不见) */
 (function(){
   var fab=document.getElementById('diagFab'),panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!fab||!panel||!bodyEl)return;
