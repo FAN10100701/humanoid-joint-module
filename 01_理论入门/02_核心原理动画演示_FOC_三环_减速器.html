@@ -104,6 +104,8 @@
   body[data-theme="light"] .my-ani-controlbar .my-ani-speed-val{color:#0f172a}
   body[data-theme="light"] .my-ani-controlbar .my-ani-play-btn{background:#059669;color:#fff;border-color:#10b981}
   body[data-theme="light"] .my-ani-controlbar .my-ani-play-btn.my-paused{background:linear-gradient(135deg,#f59e0b,#d97706)}
+  body[data-theme="light"] .my-canvas-wrap{background:#f8fafc;border:1px solid rgba(60,80,120,.14)}
+  body[data-theme="light"] .my-ani-sep{background:#cbd5e1}
 </style>
 <script>
   /* ============ 每页必填:window.PAGE 配置 ============ */
@@ -318,6 +320,40 @@ let animTime = 0;
 let currentTab = 'structure';
 let lastTime = performance.now();
 
+/* ============ 画布配色(深/浅主题,跟随 body[data-theme]) ============ */
+const CANVAS_THEME = {
+  dark: {
+    bg:        '#0f172a',   /* 画布背景 */
+    grid:      '#1e3a5f',   /* 背景网格线 */
+    panel:     'rgba(15,23,42,0.85)', /* 说明面板底色 */
+    panelLine: '#334155',   /* 面板/分区边框 */
+    axis:      '#475569',   /* 轴线/引导线 */
+    muted:     '#94a3b8',   /* 弱化文字 */
+    subtext:   '#cbd5e1',   /* 面板正文 */
+    text:      '#f8fafc'    /* 主文字/标题 */
+  },
+  light: {
+    bg:        '#f8fafc',
+    grid:      '#dbe4f0',
+    panel:     'rgba(241,245,249,0.92)',
+    panelLine: '#cbd5e1',
+    axis:      '#94a3b8',
+    muted:     '#64748b',
+    subtext:   '#334155',
+    text:      '#0f172a'
+  }
+};
+/* 深色主题显式标记为 dark,其余(light / 未设置)按浅色处理,与 site.css 约定一致 */
+function canvasPalette(){
+  return document.body.getAttribute('data-theme') === 'dark' ? CANVAS_THEME.dark : CANVAS_THEME.light;
+}
+/* 清屏并按当前主题铺底色 */
+function clearCanvas(c){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = c.bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
 function switchTab(tab, btn) {
   currentTab = tab;
   document.querySelectorAll('.my-tab').forEach(t => t.classList.remove('my-active'));
@@ -447,10 +483,11 @@ function updateInfo() {
 function drawStructure(t) {
   const W = canvas.width, H = canvas.height;
   const cy = H / 2;
-  ctx.clearRect(0,0,W,H);
+  const c = canvasPalette();
+  clearCanvas(c);
 
   // 背景网格
-  ctx.strokeStyle = '#1e3a5f';
+  ctx.strokeStyle = c.grid;
   ctx.lineWidth = 0.5;
   for (let x=0;x<W;x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y=0;y<H;y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
@@ -466,12 +503,12 @@ function drawStructure(t) {
   ctx.fill(); ctx.stroke();
 
   // 标签
-  ctx.fillStyle = '#64748b';
+  ctx.fillStyle = c.muted;
   ctx.font = '11px Consolas';
   const labels = [['电机端编码器', 140], ['无框力矩电机', 300], ['谐波减速器', 490], ['输出编码器', 640], ['输出法兰', 740], ['抱闸', 810]];
   labels.forEach(([l,x]) => {
     ctx.fillText(l, x-30, cy-125);
-    ctx.beginPath(); ctx.moveTo(x, cy-118); ctx.lineTo(x, cy-110); ctx.strokeStyle='#475569'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, cy-118); ctx.lineTo(x, cy-110); ctx.strokeStyle=c.axis; ctx.stroke();
   });
 
   // === 电机端编码器（绿色）===
@@ -596,10 +633,11 @@ function drawStructure(t) {
 function drawFOC(t) {
   const W = canvas.width, H = canvas.height;
   const cx = W/2, cy = H/2;
-  ctx.clearRect(0,0,W,H);
+  const c = canvasPalette();
+  clearCanvas(c);
 
   // 背景
-  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 0.5;
+  ctx.strokeStyle = c.grid; ctx.lineWidth = 0.5;
   for (let x=0;x<W;x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y=0;y<H;y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
@@ -625,7 +663,7 @@ function drawFOC(t) {
     ctx.beginPath(); ctx.arc(x, y, 18+10*Math.abs(p.current), 0, Math.PI*2); ctx.fill();
     ctx.globalAlpha = 1;
     ctx.strokeStyle = p.color; ctx.lineWidth=2; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle = c.text; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
     ctx.fillText(p.name, x, y+5);
   });
   // 转子（永磁体）
@@ -644,11 +682,11 @@ function drawFOC(t) {
 
   // 右侧：波形图
   const waveX = cx + 100, waveY = cy-80, waveW = 280, waveH = 160;
-  ctx.fillStyle = 'rgba(15,23,42,0.8)';
+  ctx.fillStyle = c.panel;
   roundRect(ctx, waveX-10, waveY-10, waveW+20, waveH+50, 8); ctx.fill();
-  ctx.strokeStyle = '#334155'; ctx.lineWidth=1; ctx.stroke();
+  ctx.strokeStyle = c.panelLine; ctx.lineWidth=1; ctx.stroke();
   // 坐标轴
-  ctx.strokeStyle = '#475569'; ctx.lineWidth=1;
+  ctx.strokeStyle = c.axis; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(waveX, waveY+waveH/2); ctx.lineTo(waveX+waveW, waveY+waveH/2); ctx.stroke();
   // 三相电流波形
   const waveOffset = t * 0.8;
@@ -664,14 +702,14 @@ function drawFOC(t) {
     ctx.fillStyle = p.color; ctx.font='12px sans-serif'; ctx.textAlign='left';
     ctx.fillText('I'+p.name, waveX+waveW-30, waveY+waveH+20+phases.indexOf(p)*16);
   });
-  ctx.fillStyle='#94a3b8'; ctx.font='11px sans-serif';
+  ctx.fillStyle=c.muted; ctx.font='11px sans-serif';
   ctx.fillText('三相正弦电流波形', waveX, waveY-5);
 
   // d/q 坐标系图示
   const dqX = cx + 100, dqY = cy + 110;
-  ctx.fillStyle = 'rgba(15,23,42,0.8)';
+  ctx.fillStyle = c.panel;
   roundRect(ctx, dqX-10, dqY-60, 280, 90, 8); ctx.fill();
-  ctx.strokeStyle = '#334155'; ctx.stroke();
+  ctx.strokeStyle = c.panelLine; ctx.stroke();
   ctx.save(); ctx.translate(dqX+80, dqY); ctx.rotate(theta);
   // d轴（直轴-沿转子磁场方向）
   ctx.strokeStyle = '#f59e0b'; ctx.lineWidth=2;
@@ -688,7 +726,7 @@ function drawFOC(t) {
   ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-35); ctx.stroke();
   ctx.beginPath(); ctx.arc(0,-35,4,0,Math.PI*2); ctx.fillStyle='#ef4444'; ctx.fill();
   ctx.restore();
-  ctx.fillStyle='#94a3b8'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillStyle=c.muted; ctx.font='11px sans-serif'; ctx.textAlign='left';
   ctx.fillText('d/q旋转坐标系', dqX+140, dqY-40);
   ctx.fillStyle='#10b981'; ctx.font='12px sans-serif';
   ctx.fillText('● Iq=5A (产生力矩)', dqX+140, dqY-20);
@@ -703,8 +741,9 @@ function drawFOC(t) {
 
 function drawThreeLoop(t) {
   const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 0.5;
+  const c = canvasPalette();
+  clearCanvas(c);
+  ctx.strokeStyle = c.grid; ctx.lineWidth = 0.5;
   for (let x=0;x<W;x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y=0;y<H;y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
@@ -731,7 +770,7 @@ function drawThreeLoop(t) {
   drawBlock(900-20, cy-130, blockW-20, blockH, '#1e3a8a', '#3b82f6', '输出\nθ/ω/I', '#fff');
 
   // 连线
-  ctx.strokeStyle = '#94a3b8'; ctx.lineWidth=2; ctx.setLineDash([]);
+  ctx.strokeStyle = c.muted; ctx.lineWidth=2; ctx.setLineDash([]);
   drawArrow(160, cy-130+blockH/2, 220, cy-130+blockH/2);
   drawArrow(330, cy-130+blockH/2, 420, cy-130+blockH/2);
   drawArrow(530, cy-130+blockH/2, 620, cy-130+blockH/2);
@@ -775,10 +814,10 @@ function drawThreeLoop(t) {
   // 下方波形展示区
   const waveY = cy + 110;
   // 位置响应
-  ctx.fillStyle = 'rgba(15,23,42,0.8)';
+  ctx.fillStyle = c.panel;
   roundRect(ctx, 40, waveY-40, 880, 80, 8); ctx.fill();
-  ctx.strokeStyle = '#334155'; ctx.stroke();
-  ctx.strokeStyle = '#475569';
+  ctx.strokeStyle = c.panelLine; ctx.stroke();
+  ctx.strokeStyle = c.axis;
   ctx.beginPath(); ctx.moveTo(40, waveY); ctx.lineTo(920, waveY); ctx.stroke();
   // 指令（方波/正弦）
   const cmd = Math.sin(t*0.5)*0.7;
@@ -802,7 +841,7 @@ function drawThreeLoop(t) {
     if (x===0) ctx.moveTo(40+x,y); else ctx.lineTo(40+x,y);
   }
   ctx.stroke();
-  ctx.fillStyle='#94a3b8'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillStyle=c.muted; ctx.font='11px sans-serif'; ctx.textAlign='left';
   ctx.fillText('位置指令 vs 实际响应（蓝色虚线=指令，绿色实线=实际）', 55, waveY-25);
   ctx.fillStyle='#60a5fa'; ctx.fillText('● 指令', 700, waveY-25);
   ctx.fillStyle='#34d399'; ctx.fillText('● 实际', 770, waveY-25);
@@ -822,8 +861,9 @@ function drawThreeLoop(t) {
 
 function drawHarmonic(t) {
   const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth=0.5;
+  const c = canvasPalette();
+  clearCanvas(c);
+  ctx.strokeStyle = c.grid; ctx.lineWidth=0.5;
   for (let x=0;x<W;x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y=0;y<H;y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
@@ -903,12 +943,12 @@ function drawHarmonic(t) {
 
   // 右侧：运动示意/齿数说明
   const infoX = W - 220;
-  ctx.fillStyle = 'rgba(15,23,42,0.9)';
+  ctx.fillStyle = c.panel;
   roundRect(ctx, infoX-20, cy-170, 230, 340, 10); ctx.fill();
-  ctx.strokeStyle = '#334155'; ctx.lineWidth=1; ctx.stroke();
-  ctx.fillStyle = '#f8fafc'; ctx.font='bold 15px sans-serif'; ctx.textAlign='left';
+  ctx.strokeStyle = c.panelLine; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle = c.text; ctx.font='bold 15px sans-serif'; ctx.textAlign='left';
   ctx.fillText('⚙️ 工作原理', infoX-5, cy-145);
-  ctx.font='12px sans-serif'; ctx.fillStyle='#94a3b8';
+  ctx.font='12px sans-serif'; ctx.fillStyle=c.muted;
   const lines = [
     '',
     '1. 波发生器(红色椭圆)',
@@ -932,7 +972,7 @@ function drawHarmonic(t) {
   lines.forEach((line,i) => {
     if (line.startsWith('✓')) ctx.fillStyle = '#34d399';
     else if (line.startsWith('✗')) ctx.fillStyle = '#f87171';
-    else ctx.fillStyle = '#cbd5e1';
+    else ctx.fillStyle = c.subtext;
     ctx.fillText(line, infoX-5, cy-125+i*16);
   });
 }
@@ -941,9 +981,10 @@ function drawHarmonic(t) {
 // 齿轮参数：太阳轮Zs=12、行星轮Zp=18、内齿圈Zr=Zs+2*Zp=48，减速比 i=1+Zr/Zs=5
 function drawPlanetary(t) {
   const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0,0,W,H);
+  const c = canvasPalette();
+  clearCanvas(c);
   // 背景网格（与其他页签一致）
-  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth=0.5;
+  ctx.strokeStyle = c.grid; ctx.lineWidth=0.5;
   for (let x=0;x<W;x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y=0;y<H;y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
@@ -1054,10 +1095,10 @@ function drawPlanetary(t) {
 
   // ---- 右侧原理说明面板 ----
   const infoX = W - 220;
-  ctx.fillStyle = 'rgba(15,23,42,0.9)';
+  ctx.fillStyle = c.panel;
   roundRect(ctx, infoX-20, cy-170, 230, 340, 10); ctx.fill();
-  ctx.strokeStyle = '#334155'; ctx.lineWidth=1; ctx.stroke();
-  ctx.fillStyle = '#f8fafc'; ctx.font='bold 15px sans-serif'; ctx.textAlign='left';
+  ctx.strokeStyle = c.panelLine; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle = c.text; ctx.font='bold 15px sans-serif'; ctx.textAlign='left';
   ctx.fillText('🪐 工作原理', infoX-5, cy-145);
   ctx.font='12px sans-serif';
   const lines = [
@@ -1088,7 +1129,7 @@ function drawPlanetary(t) {
     if (line.startsWith('✓')) ctx.fillStyle = '#34d399';
     else if (line.startsWith('✗')) ctx.fillStyle = '#f87171';
     else if (line.startsWith('案例')) ctx.fillStyle = '#22d3ee';
-    else ctx.fillStyle = '#cbd5e1';
+    else ctx.fillStyle = c.subtext;
     ctx.fillText(line, infoX-5, cy-125+i*16);
   });
 }
@@ -1097,9 +1138,10 @@ function drawPlanetary(t) {
 // 齿数：摆线轮 Zd=20、针齿 Zp=Zd+1=21（固定），减速比 i=Zd=20，输出与输入反向
 function drawCycloidal(t) {
   const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0,0,W,H);
+  const c = canvasPalette();
+  clearCanvas(c);
   // 背景网格（与其他页签一致）
-  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth=0.5;
+  ctx.strokeStyle = c.grid; ctx.lineWidth=0.5;
   for (let x=0;x<W;x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y=0;y<H;y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
@@ -1196,10 +1238,10 @@ function drawCycloidal(t) {
 
   // ---- 右侧原理说明面板 ----
   const infoX = W - 220;
-  ctx.fillStyle = 'rgba(15,23,42,0.9)';
+  ctx.fillStyle = c.panel;
   roundRect(ctx, infoX-20, cy-170, 230, 340, 10); ctx.fill();
-  ctx.strokeStyle = '#334155'; ctx.lineWidth=1; ctx.stroke();
-  ctx.fillStyle = '#f8fafc'; ctx.font='bold 15px sans-serif'; ctx.textAlign='left';
+  ctx.strokeStyle = c.panelLine; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle = c.text; ctx.font='bold 15px sans-serif'; ctx.textAlign='left';
   ctx.fillText('🌀 工作原理', infoX-5, cy-145);
   ctx.font='12px sans-serif';
   const lines = [
@@ -1226,7 +1268,7 @@ function drawCycloidal(t) {
     if (line.startsWith('✓')) ctx.fillStyle = '#34d399';
     else if (line.startsWith('✗')) ctx.fillStyle = '#f87171';
     else if (line.startsWith('案例')) ctx.fillStyle = '#22d3ee';
-    else ctx.fillStyle = '#cbd5e1';
+    else ctx.fillStyle = c.subtext;
     ctx.fillText(line, infoX-5, cy-125+i*16);
   });
 }
@@ -1241,10 +1283,10 @@ function drawBlock(x,y,w,h,fill,stroke,text,tc) {
   lines.forEach((l,i) => ctx.fillText(l, x+w/2, y+h/2 - (lines.length-1)*8 + i*18));
 }
 function drawArrow(x1,y1,x2,y2,color) {
-  ctx.strokeStyle = color || '#94a3b8';
+  ctx.strokeStyle = color || canvasPalette().muted;
   ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   const ang = Math.atan2(y2-y1, x2-x1);
-  ctx.fillStyle = color || '#94a3b8';
+  ctx.fillStyle = color || canvasPalette().muted;
   ctx.beginPath();
   ctx.moveTo(x2,y2);
   ctx.lineTo(x2-10*Math.cos(ang-0.3), y2-10*Math.sin(ang-0.3));

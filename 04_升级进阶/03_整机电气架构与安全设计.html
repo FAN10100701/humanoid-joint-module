@@ -12,8 +12,30 @@
   .my-esn .my-st button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:6px 13px;cursor:pointer;font-size:13px;font-family:inherit}
   body[data-theme="light"] .my-esn .my-st button{background:#fff;color:#334155}
   .my-esn .my-st button.on{background:#16a34a;color:#fff;border-color:#16a34a}
+  body[data-theme="light"] .my-esn .my-st button.on{background:#16a34a;color:#fff;border-color:#16a34a}
   .my-esn svg{max-width:100%;height:auto}
   .my-zone{border-left:3px solid #f59e0b;padding:10px 14px;margin:12px 0;background:rgba(245,158,11,.06);border-radius:0 8px 8px 0;line-height:1.9;font-size:13.5px}
+  body[data-theme="light"] .my-zone{border-left-color:#b45309;background:rgba(245,158,11,.1)}
+  /* 急停链 SVG 主题配色:深色主题沿用原色,浅色主题切深色系 */
+  .esn-r{fill:var(--c,#3b82f6);stroke:var(--c,#3b82f6);fill-opacity:.18;stroke-width:2.5}
+  .esn-g[data-ni="0"]{--c:#3b82f6}
+  .esn-g[data-ni="1"]{--c:#f59e0b}
+  .esn-g[data-ni="2"]{--c:#ef4444}
+  .esn-g[data-ni="3"]{--c:#f97316}
+  .esn-g[data-ni="4"]{--c:#dc2626}
+  .esn-t{fill:#e2e8f0}
+  .esn-line{stroke:#475569}
+  .esn-line.live{stroke:#f97316}
+  .esn-arrow{fill:#f97316}
+  body[data-theme="light"] .esn-g[data-ni="0"]{--c:#1d4ed8}
+  body[data-theme="light"] .esn-g[data-ni="1"]{--c:#b45309}
+  body[data-theme="light"] .esn-g[data-ni="2"]{--c:#b91c1c}
+  body[data-theme="light"] .esn-g[data-ni="3"]{--c:#c2410c}
+  body[data-theme="light"] .esn-g[data-ni="4"]{--c:#991b1b}
+  body[data-theme="light"] .esn-t{fill:#0f172a}
+  body[data-theme="light"] .esn-line{stroke:#334155}
+  body[data-theme="light"] .esn-line.live{stroke:#ea580c}
+  body[data-theme="light"] .esn-arrow{fill:#ea580c}
 </style>
 <script>
   window.PAGE = {
@@ -150,18 +172,16 @@ var ESN = [
 (function(){
   var bar = document.getElementById('esnBtns'), chain = document.getElementById('esnChain'), desc = document.getElementById('esnDesc');
   var NODES = [["主控\n(低压)",80],["安全继电器\n双通道",230],["主接触器\n动力",380],["母线/关节\n动力",530],["急停 NC\n(断)",650]];
-  var COLORS = ["#3b82f6","#f59e0b","#ef4444","#f97316","#dc2626"];
   var html = '';
   NODES.forEach(function(n,i){
-    var lit = false;
-    html += '<g id="esnN'+i+'">';
-    html += '<rect x="'+(n[1]-62)+'" y="52" width="124" height="46" rx="10" fill="'+COLORS[i]+'" fill-opacity="0.18" stroke="'+COLORS[i]+'" stroke-width="2.5"/>';
-    html += '<text x="'+n[1]+'" y="80" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="bold">'+n[0].replace('\n',' ')+'</text>';
+    html += '<g class="esn-g" data-ni="'+i+'" id="esnN'+i+'">';
+    html += '<rect class="esn-r" x="'+(n[1]-62)+'" y="52" width="124" height="46" rx="10"/>';
+    html += '<text class="esn-t" x="'+n[1]+'" y="80" text-anchor="middle" font-size="13" font-weight="bold">'+n[0].replace('\n',' ')+'</text>';
     html += '</g>';
   });
   for(var k=0;k<NODES.length-1;k++){
-    html += '<line id="esnL'+k+'" x1="'+(NODES[k][1]+64)+'" y1="75" x2="'+(NODES[k+1][1]-66)+'" y2="75" stroke="#475569" stroke-width="3"/>';
-    html += '<text id="esnA'+k+'" x="'+((NODES[k][1]+NODES[k+1][1])/2)+'" y="66" text-anchor="middle" font-size="15" fill="#f97316" opacity="0">▶</text>';
+    html += '<line class="esn-line" id="esnL'+k+'" x1="'+(NODES[k][1]+64)+'" y1="75" x2="'+(NODES[k+1][1]-66)+'" y2="75" stroke-width="3"/>';
+    html += '<text class="esn-arrow" id="esnA'+k+'" x="'+((NODES[k][1]+NODES[k+1][1])/2)+'" y="66" text-anchor="middle" font-size="15" opacity="0">▶</text>';
   }
   chain.innerHTML = html;
   ESN.forEach(function(st, i){
@@ -176,7 +196,7 @@ var ESN = [
       NODES.forEach(function(_, ni){ document.getElementById('esnN'+ni).setAttribute('opacity', active.indexOf(ni)>=0 ? '1' : '0.25'); });
       for(k=0;k<NODES.length-1;k++){
         var live = active.indexOf(k)>=0 && active.indexOf(k+1)>=0;
-        document.getElementById('esnL'+k).setAttribute('stroke', live ? '#f97316' : '#475569');
+        document.getElementById('esnL'+k).classList.toggle('live', live);
         document.getElementById('esnA'+k).setAttribute('opacity', live ? '1' : '0');
       }
     };
