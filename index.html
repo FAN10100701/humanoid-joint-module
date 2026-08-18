@@ -795,10 +795,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 全站版本角标 + 修复 V1.9.1 历史卡片缺失</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.3</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 评论系统双方案(Valine 零部署 + Twikoo 自托管)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.9.3 · 2026-08-17 · 评论系统双方案(Valine 零部署 + Twikoo 自托管)</summary>
+        <div class="faq-a">💬 <b>评论区双方案</b>:接入指南改为双通道——<b>Valine</b>(LeanCloud 国内版,纯配置零部署,推荐最快跑通)与 <b>Twikoo</b>(需自托管后端:Zeabur/Vercel 一键部署,或 CloudBase 手动部署云函数),切换只需改一个配置文件;📋 逐页测试清单移除已删除的精细模型页引用。</div>
+      </details>
+      <details class="faq">
         <summary>V1.9.2 · 2026-08-17 · 全站版本角标 + 修复 V1.9.1 历史卡片缺失</summary>
         <div class="faq-a">🏷 <b>版本角标系统</b>:首页 hero 区新增不显眼的版本徽章(点击直达底部版本历史),全站每页顶部导航同步加入 v 角标,3D 主页顶栏同样可跳转——从此不用滑到底部找版本号;🛠 <b>修复</b>:V1.9.1 升版时漏加的版本历史展开卡片(本次补上);锚点跳转增加 scroll-margin 修正顶栏遮挡;新 3D 页加载器补 CDN 逐级回退(本地→jsdelivr→npmmirror→fastly);3D sw v18。</div>
       </details>
@@ -882,7 +886,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.9.2(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.9.3(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

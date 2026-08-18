@@ -2,6 +2,13 @@
 
 > 人形机器人学习站 · 版本历史。每次更新在**顶部**新增一条,并同步登记到首页底部"版本与更新历史"。
 
+## V1.9.3 · 2026-08-17 · 评论系统双方案 + 测试清单修正
+
+- **评论区双方案**:`mountComments` 新增 Valine 分支(jsDelivr→npmmirror 多 CDN 回退,LeanCloud 国内版纯配置零部署);`giscus-config.js` 支持 `provider: "valine"`(appId/appKey/serverURLs)
+- **接入指南重写**:`评论系统接入指南.md` 改为双通道——方案 A Valine(推荐,约 5 分钟),方案 B Twikoo 自托管(Zeabur/Vercel 一键部署,或 CloudBase 手动部署云函数,附官方文档链接)
+- **测试清单修正**:`逐页测试清单.md` 移除已删除的"减速器精细模型下载整合教程"引用,标注"电机编码器与灵巧手3D拆解"为已隐藏待重做
+- 版本单源同步至 V1.9.3(site.js / index.html / sw.js / CHANGELOG 四处一致)
+
 ## V1.9.2 · 2026-08-17 · 协作修复三件套 + 版本同步
 
 - **主题首帧闪烁修复**:`site.css` 浅色样式改为双选择器 `body:not([data-theme]),body[data-theme="light"]`,页面加载不再"瞬间夜间模式"(FOUC)
