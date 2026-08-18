@@ -430,6 +430,8 @@ function boot(THREE){
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   var w = cvWrap.clientWidth, h = cvWrap.clientHeight;
+  /* 2026-08-17:若 CSS 尚未应用导致容器尺寸为 0,用固定兜底尺寸并等下一次 resize 校正 */
+  if(!w || !h){ w = cvWrap.offsetWidth || 640; h = cvWrap.offsetHeight || 480; }
   renderer.setSize(w, h);
   LAB.renderer = renderer;
 
@@ -533,6 +535,20 @@ function boot(THREE){
     LAB.ready = true;
     buildTree(); buildPanel(); buildCtl(); buildInfo();
     switchProd(0);
+    /* 装配探针:打印每个部件的世界位置与包围盒,验证模型在场景内且尺度合理 */
+    try{
+      dlog('🔍 装配探针:共 ' + LAB.parts.length + ' 个部件');
+      var prods = ['RVGH 电机','编码器','LEAP 手'];
+      for(var pi=0; pi<3; pi++){
+        var pts = LAB.parts.filter(function(p){ return p.prod === pi; });
+        var minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9,minZ=1e9,maxZ=-1e9;
+        pts.forEach(function(p){
+          var g = p.mesh.geometry;
+          if(g && g.boundingBox){ var bb=g.boundingBox; minX=Math.min(minX,bb.min.x+p.mesh.position.x); maxX=Math.max(maxX,bb.max.x+p.mesh.position.x); minY=Math.min(minY,bb.min.y+p.mesh.position.y); maxY=Math.max(maxY,bb.max.y+p.mesh.position.y); minZ=Math.min(minZ,bb.min.z+p.mesh.position.z); maxZ=Math.max(maxZ,bb.max.z+p.mesh.position.z); }
+        });
+        dlog('『' + prods[pi] + '』' + pts.length + ' 件 包围盒 x[' + minX.toFixed(2) + ',' + maxX.toFixed(2) + '] y[' + minY.toFixed(2) + ',' + maxY.toFixed(2) + '] z[' + minZ.toFixed(2) + ',' + maxZ.toFixed(2) + ']', (maxX-minX)>0.1 && (maxY-minY)>0.1 && (maxX-minX)<50);
+      }
+    }catch(pe){ dlog('装配探针异常: ' + (pe && pe.message || pe), false); }
   }).catch(function(e){
     console.error('[3D] 构建失败:', e);
     dlog('❌ 模型构建失败: ' + (e && e.message || e), false);
@@ -542,6 +558,7 @@ function boot(THREE){
   });
 
   var last = performance.now();
+  var renderCount = 0;
   (function loop(now){
     var dt = Math.min((now-last)/1000, 0.05); last = now;
     if(!document.hidden && LAB.ready){
@@ -552,6 +569,17 @@ function boot(THREE){
       if(Math.abs(LAB.explode - LAB.explodeTarget) < 0.002){ LAB.explode = LAB.explodeTarget; }
       updateParts();
       renderer.render(scene, cam);
+      /* 渲染探针:首帧后检查画布是否真的画了东西(非全黑),结果写入诊断 */
+      renderCount++;
+      if(renderCount === 3){
+        try{
+          var px = renderer.getContext().readPixels ? null : null;
+          var gl = renderer.getContext();
+          var buf = new Uint8Array(4);
+          gl.readPixels(Math.floor(gl.drawingBufferWidth/2), Math.floor(gl.drawingBufferHeight/2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+          dlog('🎨 渲染探针: 中心像素 RGB=(' + buf[0] + ',' + buf[1] + ',' + buf[2] + ') 画布=' + gl.drawingBufferWidth + 'x' + gl.drawingBufferHeight, buf[0]+buf[1]+buf[2] > 24);
+        }catch(pe){ dlog('渲染探针异常: ' + (pe && pe.message || pe), false); }
+      }
     }
     requestAnimationFrame(loop);
   })(last);
