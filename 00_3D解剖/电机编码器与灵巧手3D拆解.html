@@ -17,10 +17,17 @@
   body[data-theme="light"] .my-prod-tabs button{background:rgba(255,255,255,.75);color:#334155}
   body[data-theme="light"] .my-prod-tabs button.on{background:#2563eb;color:#fff}
   .my-stage{display:flex;gap:10px;min-height:540px;align-items:stretch}
-  .my-left{width:190px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px;max-height:560px;overflow:auto}
+  .my-left{width:190px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px;max-height:560px;overflow:auto;position:relative;transition:width .25s ease}
   body[data-theme="light"] .my-left{background:rgba(255,255,255,.8)}
   .my-left h4{font-size:12px;color:#8b98ab;margin:4px 2px 8px;letter-spacing:.08em;text-transform:uppercase}
   body[data-theme="light"] .my-left h4{color:#64748b}
+  /* 左/右栏收起(2026-08-17):折叠时宽度归零,中间 3D 视口自动扩大 */
+  .my-left.collapsed{width:0;padding:0;border:0;overflow:hidden}
+  .my-right.collapsed{width:0;padding:0;border:0;overflow:hidden}
+  .my-fold{position:absolute;right:6px;top:6px;z-index:5;width:22px;height:22px;line-height:20px;text-align:center;font-size:11px;cursor:pointer;border:1px solid #3a4658;background:rgba(20,26,36,.9);color:#9aa9bc;border-radius:6px;font-family:inherit;padding:0}
+  .my-fold:hover{border-color:#3b82f6;color:#fff}
+  body[data-theme="light"] .my-fold{background:#fff;color:#64748b}
+  .my-right .my-fold{right:auto;left:6px}
   .my-part{display:flex;align-items:center;gap:7px;padding:6px 8px;margin-bottom:3px;border-radius:7px;cursor:pointer;font-size:12.5px;color:#c3ccd9;border:1px solid transparent;transition:all .15s;user-select:none}
   .my-part:hover{background:rgba(59,130,246,.13);color:#fff}
   .my-part.on{background:rgba(59,130,246,.22);border-color:#3b82f6;color:#fff}
@@ -125,7 +132,7 @@
       </div>
     </div>
     <div class="my-stage">
-      <div class="my-left" id="partTree"><h4>部件层级目录</h4><div class="my-pdesc" style="color:#8b98ab">⏳ 等待模型加载…</div></div>
+      <div class="my-left" id="partTree"><button class="my-fold" id="foldLeft" onclick="toggleFold('left')" title="收起/展开部件目录">◀</button><h4>部件层级目录</h4><div class="my-pdesc" style="color:#8b98ab">⏳ 等待模型加载…</div></div>
       <div class="my-view" id="view3d">
         <div class="my-loading" id="loadTip">⏳ 3D 引擎加载中…</div>
         <div class="my-progress" id="loadProg"><div class="bar"><div class="fill" id="loadFill"></div></div><div class="txt" id="loadTxt">准备中…</div></div>
@@ -134,7 +141,7 @@
         <div class="my-clip" style="display:none" id="clipWrap">✂ 剖切 <input type="range" id="clipX" min="-6" max="6" step="0.02" value="99"></div>
         <div class="my-hint">左键旋转 · 右键平移 · 滚轮缩放 · 单击零件查看参数 · 自动旋转时点击暂停</div>
       </div>
-      <div class="my-right" id="paramPanel"><h4>参数信息面板</h4><div class="my-pdesc" style="color:#8b98ab">⏳ 等待模型加载…</div></div>
+      <div class="my-right" id="paramPanel"><button class="my-fold" id="foldRight" onclick="toggleFold('right')" title="收起/展开参数面板">▶</button><h4>参数信息面板</h4><div class="my-pdesc" style="color:#8b98ab">⏳ 等待模型加载…</div></div>
     </div>
     <div class="my-bar" id="ctlBar"><span style="font-size:12.5px;color:#8b98ab">⏳ 控制台待模型加载后启用…</span></div>
     <div class="my-info" id="infoLine"></div>
@@ -601,6 +608,19 @@ function boot(THREE){
     var dt = Math.min((now-last)/1000, 0.05); last = now;
     if(!document.hidden && LAB.ready){
       LAB.animT += dt;
+      /* 镜头:有 camGoal 时平滑趋近,否则 camPos 跟随 LAB.view(拖拽/滚轮生效) */
+      if(LAB.camGoal){
+        var g = LAB.camGoal, v = LAB.view;
+        var ease = Math.min(1, dt * 6);
+        v.yaw += (g.yaw - v.yaw) * ease;
+        v.pitch += (g.pitch - v.pitch) * ease;
+        v.dist += (g.dist - v.dist) * ease;
+        v.tx += (g.tx - v.tx) * ease;
+        v.ty += (g.ty - v.ty) * ease;
+        v.tz += (g.tz - v.tz) * ease;
+        if(Math.abs(g.yaw-v.yaw) < 0.01 && Math.abs(g.dist-v.dist) < 0.02 && Math.abs(g.ty-v.ty) < 0.02){ LAB.camGoal = null; }
+      }
+      camPos();
       if(LAB.spin){ LAB.groups.forEach(function(g,i){ if(g.visible) g.rotation.y = LAB.animT * 0.35; }); }
       var k = Math.min(1, dt*4);
       LAB.explode += (LAB.explodeTarget - LAB.explode)*k;
@@ -679,13 +699,12 @@ var RVGH_FILES = [
     desc:'减速输出法兰,连接负载(关节臂)。', spec:[['减速比','27:1(示意)'],['输出','法兰']] }
 ];
 function buildMotor(group){
-  /* RVGH 各件独立原点、z 轴厚度;按 z 装配坐标叠放后旋转 z→y,整体居中到原点 */
+  /* RVGH 各件独立原点、z 轴厚度;按 z 装配坐标叠放,旋转 -π/2 使 z→+y(向上叠) */
   var DIRS = [null, AX, AY, AZ];
   var jobs = RVGH_FILES.map(function(it){
     return loadSTL('./models/rvgh_servo/' + it.f, it.c, { metalness:0.3, roughness:0.5, scale:RVGH_SCALE, keepPos:true }).then(function(mesh){
-      mesh.rotation.x = Math.PI/2;   /* STL z 轴(厚度方向) → 世界 y 轴 */
-      /* 装配位置:z 轴叠放坐标 × SCALE;旋转后 z→-y,取负使向上叠 */
-      var y = -it.z * RVGH_SCALE;
+      mesh.rotation.x = -Math.PI/2;   /* STL z 轴(厚度) → 世界 +y(向上叠放,不被地面遮挡) */
+      var y = it.z * RVGH_SCALE;      /* 装配位置:z 叠放坐标 × SCALE,正方向向上 */
       mesh.position.set(0, y, 0);
       var home = mesh.position.clone();
       /* 爆炸方向:沿世界 y(装配轴向)分开,距离按部件厚度比例 */
@@ -776,50 +795,49 @@ var LEAP_FILES = {
   t_tip: 'thumb_fingertip.stl'
 };
 function buildHand(group){
-  /* LEAP Hand:STL 为真实装配坐标(各部件相对位置正确),单位 cm。
-     统一缩放因子:让整手(约 22cm 高 × 13cm 宽)缩到 ~3.2 世界单位 */
+  /* LEAP Hand:STL 为真实装配坐标,单位 cm(手掌约 10cm 宽,手指沿 z 展开约 17cm)。
+     统一 scale=0.3(整手 17cm → 5.1 世界单位),保留原始装配坐标(keepPos),
+     整体旋转使手掌平放(掌心朝上),不再手动摆放——部件相对位置天然正确 */
+  var HSCALE = 0.3;
   var cache = {};
   function loadOne(key){
     if(cache[key]) return cache[key];
     var c = 0xcfd6e0;
-    cache[key] = loadSTL('./models/leap_hand/' + LEAP_FILES[key], c, { metalness:0.2, roughness:0.55, keepPos:true, scale:0.15 });
+    cache[key] = loadSTL('./models/leap_hand/' + LEAP_FILES[key], c, { metalness:0.2, roughness:0.55, keepPos:true, scale:HSCALE });
     return cache[key];
   }
   var jobs = [];
-  /* 手掌:装配坐标原点附近;旋转使掌心朝上、手指朝 +z */
+  /* 手掌:装配坐标原点附近 */
   jobs.push(loadOne('palm').then(function(mesh){
-    mesh.rotation.x = -Math.PI/2;   /* 原始 z 轴朝上 → 转成 y 轴朝上 */
-    partRec(2, '手掌(palm lower)', mesh, new LAB.T.Vector3(0, 0, 0), AZ, 0.6, 0xcfd6e0,
+    partRec(2, '手掌(palm lower)', mesh, mesh.position.clone(), AZ, 1.0, 0xcfd6e0,
       'LEAP Hand 手掌下壳,内含 6 个微型电机与腱绳通道。', [['来源','UC Berkeley LEAP Hand'],['许可','MIT']]);
     group.add(mesh);
   }));
-  /* 四指:掌指关节 + 近端 + 远端 + 指尖,按装配坐标放(同 scale 保持相对位置) */
-  var FINGER_X = [-0.36, -0.12, 0.12, 0.36];   /* 四指并排间距(缩放后) */
-  FINGER_X.forEach(function(fx, fi){
-    ['mcp','pip','dip','tip'].forEach(function(key, si){
+  /* 四指 + 拇指:全部保留原始装配坐标(同 scale 保持相对位置),只做整体旋转 */
+  var KEYS = ['mcp','pip','dip','tip'];
+  for(var fi=0; fi<4; fi++){
+    KEYS.forEach(function(key){
       jobs.push(loadOne(key).then(function(mesh){
         var m = mesh.clone(); m.material = m.material.clone();
-        m.rotation.x = -Math.PI/2;
-        /* 装配:指节沿 y 展开,间距按部件尺寸(每个指节 ~0.42 长) */
-        m.position.set(fx, 0.28 - si*0.30, 0.55 + si*0.42);
-        partRec(2, '手指' + (fi+1) + '·' + key, m, m.position.clone(), AY, 0.75, 0xcfd6e0,
+        partRec(2, '手指部件·' + key + '(指' + (fi+1) + ')', m, m.position.clone(), AZ, 1.0, 0xcfd6e0,
           'LEAP Hand 手指部件(' + key + '),腱绳驱动。', [['来源','LEAP Hand'],['许可','MIT']]);
         group.add(m);
       }));
     });
-  });
-  /* 拇指三件:手掌侧方 */
-  [['t_pip',-0.52,0.30,0.50],['t_dip',-0.55,0.05,0.85],['t_tip',-0.56,-0.18,1.15]].forEach(function(t){
-    jobs.push(loadOne(t[0]).then(function(mesh){
+  }
+  ['t_pip','t_dip','t_tip'].forEach(function(key){
+    jobs.push(loadOne(key).then(function(mesh){
       var m = mesh.clone(); m.material = m.material.clone();
-      m.rotation.x = -Math.PI/2; m.rotation.y = 0.4;
-      m.position.set(t[1], t[2], t[3]);
-      partRec(2, '拇指·' + t[0], m, m.position.clone(), AY, 0.75, 0xcfd6e0,
-        'LEAP Hand 拇指部件(' + t[0] + ')。', [['来源','LEAP Hand'],['许可','MIT']]);
+      partRec(2, '拇指·' + key, m, m.position.clone(), AZ, 1.0, 0xcfd6e0,
+        'LEAP Hand 拇指部件(' + key + ')。', [['来源','LEAP Hand'],['许可','MIT']]);
       group.add(m);
     }));
   });
-  return Promise.all(jobs);
+  /* 整体旋转:手掌平放、手指朝前(装配 z 轴 → 世界 y 轴,再绕 y 转 45° 便于观赏) */
+  return Promise.all(jobs).then(function(){
+    group.rotation.x = -Math.PI/2;
+    group.rotation.y = 0.5;
+  });
 }
 
 /* ---------- 构建全部 ---------- */
@@ -880,10 +898,10 @@ function switchProd(i){
   LAB.explodeTarget = 0; LAB.explode = 0;
   /* 自动对准:dist = 半径×2.6(模型占画面 ~40%),注视产品包围盒中心 */
   var f = computeFocus(i);
-  LAB.dist = Math.max(2.5, Math.min(16, f.r * 2.6 + 0.5));
-  LAB.tx = f.x; LAB.ty = f.y; LAB.tz = f.z;
-  dlog('🎯 相机对准: 产品' + i + ' 中心(' + f.x.toFixed(2) + ',' + f.y.toFixed(2) + ',' + f.z.toFixed(2) + ') 半径=' + f.r.toFixed(2) + ' dist=' + LAB.dist.toFixed(1), f.r > 0.3 && f.r < 10);
-  LAB.yaw = 0.9; LAB.pitch = 0.3;
+  var dist = Math.max(2.5, Math.min(16, f.r * 2.6 + 0.5));
+  dlog('🎯 相机对准: 产品' + i + ' 中心(' + f.x.toFixed(2) + ',' + f.y.toFixed(2) + ',' + f.z.toFixed(2) + ') 半径=' + f.r.toFixed(2) + ' dist=' + dist.toFixed(1), f.r > 0.3 && f.r < 10);
+  /* 平滑镜头飞行(camGoal 由 loop 每帧趋近;用户拖拽/滚轮时清空直接接管) */
+  LAB.camGoal = { yaw: 0.9, pitch: 0.3, dist: dist, tx: f.x, ty: f.y, tz: f.z };
   var tabs = document.querySelectorAll('#prodTabs button');
   for(var k=0;k<tabs.length;k++){ tabs[k].classList.toggle('on', k===i); }
   buildTree(); buildPanel(); buildCtl(); buildInfo();
@@ -891,6 +909,21 @@ function switchProd(i){
 }
 
 /* ---------- UI ---------- */
+function toggleFold(side){
+  var el = document.getElementById(side === 'left' ? 'partTree' : 'paramPanel');
+  if(!el) return;
+  var collapsed = el.classList.toggle('collapsed');
+  var btn = document.getElementById(side === 'left' ? 'foldLeft' : 'foldRight');
+  if(btn){ btn.textContent = side === 'left' ? (collapsed ? '▶' : '◀') : (collapsed ? '◀' : '▶'); }
+  /* 折叠后视口尺寸变化,重建 canvas 尺寸 */
+  setTimeout(function(){
+    var cvWrap = document.getElementById('view3d');
+    var w = cvWrap.clientWidth || cvWrap.offsetWidth || 640;
+    var h = cvWrap.clientHeight || cvWrap.offsetHeight || 480;
+    if(LAB.cam){ LAB.cam.aspect = w/h; LAB.cam.updateProjectionMatrix(); }
+    if(LAB.renderer){ LAB.renderer.setSize(w, h); }
+  }, 280);
+}
 function hexOf(c){
   if(typeof c === 'number'){ return '#' + ('000000' + c.toString(16)).slice(-6); }
   return String(c);
