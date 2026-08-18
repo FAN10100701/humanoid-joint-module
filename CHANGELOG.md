@@ -2,6 +2,12 @@
 
 > 人形机器人学习站 · 版本历史。每次更新在**顶部**新增一条,并同步登记到首页底部"版本与更新历史"。
 
+## V2.0.4 · 2026-08-17 · 3D 模型构建修复 + 主题 FOUC 消除
+
+- **3D 拆解页模型构建修复**:`RVGH_FILES` 顶层数组定义时 `AX/AY/AZ` 尚未初始化(JS 数组存值快照),`d:AZ` 等字段为 undefined → `dir.clone()` 报错;改为数字轴索引(1=AX/2=AY/3=AZ),`buildMotor` 启动后经 `DIRS` 表解析
+- **主题 FOUC 消除**:所有页面(含首页)`head` 注入内联脚本——CSS 渲染前同步写 `html[data-theme-early]`;site.css 增加首屏关键元素(背景/卡片/导航/搜索/区块标题/问答/页脚)的 html 级浅色映射;site.js `applyTheme`/`setTheme` 同步写 html 属性——刷新、返回首页、跨页跳转不再闪现深色一帧
+- 3D sw bump v24;版本单源同步至 V2.0.4(site.js / index.html / sw.js / CHANGELOG 四处一致)
+
 ## V2.0.3 · 2026-08-17 · 3D 拆解页崩溃修复 + 动手项目清单前置链接
 
 - **3D 拆解页致命 bug 修复**:真实 STL 重构版漏定义拆解方向向量 `AX/AY/AZ`(仅旧版程序化页有),导致 `partRec` 中 `dir.clone()` 抛「Cannot read properties of undefined」,引擎在 4 个源间反复回退全部失败(诊断日志完整记录了该过程);现于 `boot()` 中初始化三个方向向量(three.js 加载后才能 new Vector3),3D 正常加载

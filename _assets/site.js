@@ -33,6 +33,9 @@
     var t = "light";   /* 默认日间(浅色)模式 */
     try{ t = localStorage.getItem(THEME_KEY) || "light"; }catch(e){}
     document.body.setAttribute("data-theme", t);
+    /* html 级同步(FOUC 消除):head 内联脚本与 CSS 的 html[data-theme-early] 映射共用,
+       切换主题时立即更新,保证跨页跳转/刷新首帧就是目标主题 */
+    try{ document.documentElement.setAttribute("data-theme-early", t); }catch(e){}
     /* 浏览器地址栏/状态栏颜色跟随主题 */
     var mc = document.querySelector('meta[name="theme-color"]');
     if(mc){ mc.setAttribute("content", t === "light" ? "#f6f8fb" : "#0d1117"); }
@@ -49,6 +52,7 @@
   S.setTheme = function(name){
     var next = (name === "light") ? "light" : "dark";
     document.body.setAttribute("data-theme", next);
+    try{ document.documentElement.setAttribute("data-theme-early", next); }catch(e){}
     try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
     applyTheme();
   };
@@ -693,7 +697,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.0.3(2026-08-17)";
+  S.VERSION = "V2.0.4(2026-08-17)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
