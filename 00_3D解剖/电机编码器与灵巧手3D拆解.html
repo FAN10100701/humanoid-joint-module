@@ -438,8 +438,11 @@ function boot(THREE){
   LAB.renderer = renderer;
 
   var scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x141a25);
+  /* 场景背景跟随主题(2026-08-17):浅色=白,深色=深灰,与 3D 解剖页一致 */
+  var isLight = (document.body.getAttribute("data-theme") === "light") || !document.body.getAttribute("data-theme");
+  scene.background = new THREE.Color(isLight ? 0xf5f7fa : 0x141a25);
   LAB.scene = scene;
+  LAB.isLightBg = isLight;
 
   var cam = new THREE.PerspectiveCamera(45, w/h, 0.1, 100);
   cam.position.set(5.2, 3.2, 6.4);
@@ -552,6 +555,19 @@ function boot(THREE){
   LAB.groups = [ new THREE.Group(), new THREE.Group(), new THREE.Group() ];
   LAB.groups.forEach(function(g){ scene.add(g); });
 
+  /* 主题切换时同步场景背景 */
+  if(window.Site && Site.setTheme){
+    var _st = Site.setTheme;
+    Site.setTheme = function(n){
+      _st(n);
+      if(LAB.scene){
+        var light = (n === "light");
+        LAB.scene.background = new THREE.Color(light ? 0xf5f7fa : 0x141a25);
+        LAB.isLightBg = light;
+      }
+    };
+  }
+
   /* 构建三产品(异步加载 STL) */
   buildAll().then(function(){
     LAB.ready = true;
@@ -630,47 +646,50 @@ function updateParts(){
 }
 
 /* ---------- 产品 0:RVGH 一体伺服(真实 STL) ----------
-   部件尺度统一 0.5(loadSTL 默认 target);沿 Y 轴按真实装配序叠放,
-   电机本体在下、减速级在上,整体高约 3 单位 */
+   各件为毫米单位、z 轴厚度方向、独立原点;沿 z 轴按真实装配序叠放,
+   用「每件实际厚度」累计位置(不再用 0.5 尺度的猜值),SCALE=0.075(40mm→3 单位)。
+   y 坐标 = 装配 z 累计 × SCALE(旋转后 z→y),间距 = 厚度和,不再重叠 */
+var RVGH_SCALE = 0.075;
 var RVGH_FILES = [
-  { f:'motor_base-Body.stl',        n:'底座(motor base)',      c:0x9aa5b2, d:3, y:0.00, dist:0.5, mt:0.75, rgh:0.35,
+  { f:'motor_base-Body.stl',        n:'底座(motor base)',      c:0x9aa5b2, z:5,   thick:10, d:2, dist:1.6, mt:0.75, rgh:0.35,
     desc:'电机/减速一体外壳底座,安装法兰与轴承座。', spec:[['类型','RVGH 一体伺服'],['许可','MIT 开源']] },
-  { f:'motor_wall_P28-Body.stl',    n:'电机壁(定子外壳)',      c:0xb9c2cc, d:2, y:0.45, dist:0.5, mt:0.7, rgh:0.4,
+  { f:'motor_wall_P28-Body.stl',    n:'电机壁(定子外壳)',      c:0xb9c2cc, z:20,  thick:10, d:2, dist:1.5, mt:0.7, rgh:0.4,
     desc:'外圈定子壁,内壁贴定子绕组。', spec:[['结构','外转子杯形壁'],['材料','铝合金']] },
-  { f:'magnet_mounter-Body.stl',    n:'磁铁座(转子)',          c:0x3b3f4a, d:2, y:0.85, dist:0.5, mt:0.6, rgh:0.5,
+  { f:'magnet_mounter-Body.stl',    n:'磁铁座(转子)',          c:0x3b3f4a, z:35,  thick:10, d:2, dist:1.5, mt:0.6, rgh:0.5,
     desc:'转子磁钢安装座,磁钢贴于外圈。', spec:[['结构','外转子'],['磁钢','14 极(示意)']] },
-  { f:'motor_cover-Body.stl',       n:'电机盖',                c:0xb9c2cc, d:2, y:1.20, dist:0.5, mt:0.7, rgh:0.4,
+  { f:'motor_cover-Body.stl',       n:'电机盖',                c:0xb9c2cc, z:50,  thick:10, d:2, dist:1.4, mt:0.7, rgh:0.4,
     desc:'电机后端盖,集成编码器安装面。', spec:[['材料','铝合金'],['集成','编码器面']] },
-  { f:'motor_top-Body.stl',         n:'电机顶(前端盖)',        c:0xb9c2cc, d:2, y:1.55, dist:0.5, mt:0.7, rgh:0.4,
+  { f:'motor_top-Body.stl',         n:'电机顶(前端盖)',        c:0xb9c2cc, z:65,  thick:10, d:2, dist:1.4, mt:0.7, rgh:0.4,
     desc:'电机前端盖,支承输入轴。', spec:[['材料','铝合金'],['轴承','深沟球']] },
-  { f:'plagear_29_cam-Body.stl',    n:'行星凸轮(偏心轴)',      c:0x94a3b8, d:3, y:1.90, dist:0.55, mt:0.8, rgh:0.3,
+  { f:'plagear_29_cam-Body.stl',    n:'行星凸轮(偏心轴)',      c:0x94a3b8, z:80,  thick:8,  d:3, dist:1.5, mt:0.8, rgh:0.3,
     desc:'输入偏心轴:电机高速输入,驱动摆线盘公摆。', spec:[['偏心','凸轮结构'],['输入','电机轴']] },
-  { f:'cyclo_disk_T27-Body.stl',    n:'摆线盘 T27',            c:0xc47b2d, d:2, y:2.25, dist:0.55, mt:0.8, rgh:0.35,
+  { f:'cyclo_disk_T27-Body.stl',    n:'摆线盘 T27',            c:0xc47b2d, z:93,  thick:3,  d:2, dist:1.5, mt:0.8, rgh:0.35,
     desc:'摆线减速盘:绕偏心轴公摆,与针齿差 1 齿啮合——输入一圈,盘反向转 1/27 圈。', spec:[['齿数','27'],['类型','摆线(RV)']] },
-  { f:'cyclo_disk_T27u-Body.stl',   n:'摆线盘 T27u(双盘)',     c:0xd97706, d:2, y:2.60, dist:0.55, mt:0.8, rgh:0.35,
+  { f:'cyclo_disk_T27u-Body.stl',   n:'摆线盘 T27u(双盘)',     c:0xd97706, z:99,  thick:3,  d:2, dist:1.5, mt:0.8, rgh:0.35,
     desc:'第二块摆线盘,与 T27 成 180° 相位,抵消偏心振动。', spec:[['相位','180° 对消'],['作用','动平衡']] },
-  { f:'bearing_hub_A-Body.stl',     n:'轴承毂 A',              c:0xd8dde4, d:3, y:2.95, dist:0.5, mt:0.85, rgh:0.3,
+  { f:'bearing_hub_A-Body.stl',     n:'轴承毂 A',              c:0xd8dde4, z:107, thick:6,  d:3, dist:1.4, mt:0.85, rgh:0.3,
     desc:'减速级输入侧轴承座。', spec:[['材料','不锈钢'],['作用','支承减速输入']] },
-  { f:'bearing_hub_B-Body.stl',     n:'轴承毂 B',              c:0xd8dde4, d:3, y:3.30, dist:0.5, mt:0.85, rgh:0.3,
+  { f:'bearing_hub_B-Body.stl',     n:'轴承毂 B',              c:0xd8dde4, z:117, thick:6,  d:3, dist:1.4, mt:0.85, rgh:0.3,
     desc:'减速级输出侧轴承座。', spec:[['材料','不锈钢'],['作用','支承输出法兰']] },
-  { f:'supporter-Body.stl',         n:'支撑架',                c:0x8a95a3, d:2, y:3.65, dist:0.5, mt:0.7, rgh:0.4,
+  { f:'supporter-Body.stl',         n:'支撑架',                c:0x8a95a3, z:127, thick:6,  d:2, dist:1.3, mt:0.7, rgh:0.4,
     desc:'内部支撑结构。', spec:[['材料','铝合金']] },
-  { f:'top_cover-Body.stl',         n:'顶盖(输出端)',          c:0xb9c2cc, d:2, y:4.00, dist:0.5, mt:0.7, rgh:0.4,
+  { f:'top_cover-Body.stl',         n:'顶盖(输出端)',          c:0xb9c2cc, z:137, thick:6,  d:2, dist:1.3, mt:0.7, rgh:0.4,
     desc:'输出端盖。', spec:[['材料','铝合金']] },
-  { f:'top_horn-Body.stl',          n:'输出法兰(horn)',        c:0xd8dde4, d:2, y:4.35, dist:0.55, mt:0.85, rgh:0.3,
+  { f:'top_horn-Body.stl',          n:'输出法兰(horn)',        c:0xd8dde4, z:147, thick:7,  d:2, dist:1.5, mt:0.85, rgh:0.3,
     desc:'减速输出法兰,连接负载(关节臂)。', spec:[['减速比','27:1(示意)'],['输出','法兰']] }
 ];
 function buildMotor(group){
-  /* RVGH 各件为轴向装配坐标(直径 40mm,厚度 10mm,z 轴叠放)。
-     统一 scale=0.075(40mm→3 单位),旋转使 z 轴朝上(y 朝上),整体居中 */
+  /* RVGH 各件独立原点、z 轴厚度;按 z 装配坐标叠放后旋转 z→y,整体居中到原点 */
   var DIRS = [null, AX, AY, AZ];
-  var SCALE = 0.075;
   var jobs = RVGH_FILES.map(function(it){
-    return loadSTL('./models/rvgh_servo/' + it.f, it.c, { metalness:0.3, roughness:0.5, scale:SCALE, keepPos:true }).then(function(mesh){
-      mesh.rotation.x = Math.PI/2;   /* STL z 轴 → 世界 y 轴 */
-      mesh.position.set(0, it.y * SCALE, 0);   /* 轴向叠放(原始 z 厚度 → 世界 y) */
+    return loadSTL('./models/rvgh_servo/' + it.f, it.c, { metalness:0.3, roughness:0.5, scale:RVGH_SCALE, keepPos:true }).then(function(mesh){
+      mesh.rotation.x = Math.PI/2;   /* STL z 轴(厚度方向) → 世界 y 轴 */
+      /* 装配位置:z 轴叠放坐标 × SCALE;旋转后 z→-y,取负使向上叠 */
+      var y = -it.z * RVGH_SCALE;
+      mesh.position.set(0, y, 0);
       var home = mesh.position.clone();
-      partRec(0, it.n, mesh, home, DIRS[it.d] || AZ, it.dist * SCALE * 6, it.c, it.desc, it.spec);
+      /* 爆炸方向:沿世界 y(装配轴向)分开,距离按部件厚度比例 */
+      partRec(0, it.n, mesh, home, AY, (it.thick * RVGH_SCALE + 0.15) * 2.2, it.c, it.desc, it.spec);
       group.add(mesh);
     });
   });
@@ -781,9 +800,9 @@ function buildHand(group){
       jobs.push(loadOne(key).then(function(mesh){
         var m = mesh.clone(); m.material = m.material.clone();
         m.rotation.x = -Math.PI/2;
-        /* 装配:指节沿 z 展开,间距按部件尺寸(每个指节 ~0.42 长) */
+        /* 装配:指节沿 y 展开,间距按部件尺寸(每个指节 ~0.42 长) */
         m.position.set(fx, 0.28 - si*0.30, 0.55 + si*0.42);
-        partRec(2, '手指' + (fi+1) + '·' + key, m, m.position.clone(), AZ, 0.45, 0xcfd6e0,
+        partRec(2, '手指' + (fi+1) + '·' + key, m, m.position.clone(), AY, 0.75, 0xcfd6e0,
           'LEAP Hand 手指部件(' + key + '),腱绳驱动。', [['来源','LEAP Hand'],['许可','MIT']]);
         group.add(m);
       }));
@@ -795,7 +814,7 @@ function buildHand(group){
       var m = mesh.clone(); m.material = m.material.clone();
       m.rotation.x = -Math.PI/2; m.rotation.y = 0.4;
       m.position.set(t[1], t[2], t[3]);
-      partRec(2, '拇指·' + t[0], m, m.position.clone(), AZ, 0.45, 0xcfd6e0,
+      partRec(2, '拇指·' + t[0], m, m.position.clone(), AY, 0.75, 0xcfd6e0,
         'LEAP Hand 拇指部件(' + t[0] + ')。', [['来源','LEAP Hand'],['许可','MIT']]);
       group.add(m);
     }));
