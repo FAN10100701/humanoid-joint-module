@@ -390,17 +390,19 @@ function loadSTL(url, color, opts){
       var g = new T.BufferGeometry();
       g.setAttribute('position', new T.Float32BufferAttribute(geo.positions, 3));
       g.computeVertexNormals();
-      /* 自动缩放:目标最大边 ≈ target 世界单位(2026-08-17:统一部件尺度,
-         避免各部件独立缩放到 3.2 后互相穿模成黑团;部件尺度=0.5,产品整体≈3) */
       g.computeBoundingBox();
       var bb = g.boundingBox;
       var size = new T.Vector3(); bb.getSize(size);
       var maxDim = Math.max(size.x, size.y, size.z);
-      var scale = (opts.target || 0.5) / (maxDim || 1);
+      /* scale 直接指定时优先(装配模型统一缩放);否则按 target 归一化 */
+      var scale;
+      if(opts.scale){ scale = opts.scale; }
+      else { scale = (opts.target || 0.5) / (maxDim || 1); }
       var center = new T.Vector3(); bb.getCenter(center);
-      g.translate(-center.x, -center.y, -center.z);
+      /* keepPos:保留 STL 原始装配坐标(只缩放不平移),用于真实装配模型(如 LEAP 手) */
+      if(!opts.keepPos){ g.translate(-center.x, -center.y, -center.z); }
       g.scale(scale, scale, scale);
-      var mat = new T.MeshStandardMaterial({ color: color, metalness: opts.metalness!=null?opts.metalness:0.55, roughness: opts.roughness!=null?opts.roughness:0.45 });
+      var mat = new T.MeshStandardMaterial({ color: color, metalness: opts.metalness!=null?opts.metalness:0.25, roughness: opts.roughness!=null?opts.roughness:0.55 });
       var mesh = new T.Mesh(g, mat);
       progTick();
       res(mesh);
@@ -428,6 +430,7 @@ function boot(THREE){
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.4;   /* 提亮:金属材质无 envMap 时 ACES 下偏暗 */
   var w = cvWrap.clientWidth, h = cvWrap.clientHeight;
   /* 2026-08-17:若 CSS 尚未应用导致容器尺寸为 0,用固定兜底尺寸并等下一次 resize 校正 */
   if(!w || !h){ w = cvWrap.offsetWidth || 640; h = cvWrap.offsetHeight || 480; }
@@ -454,6 +457,8 @@ function boot(THREE){
   fill.position.set(-4, 2, -3); scene.add(fill);
   var rim = new THREE.DirectionalLight(0xffd9b0, 0.45);
   rim.position.set(0, -3, -4); scene.add(rim);
+  /* 半球光:为金属材质提供环境漫反射基础(高 metalness 无 envMap 时必需,否则纯黑) */
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x404060, 0.9));
   scene.add(new THREE.AmbientLight(0x8090b0, 0.5));
 
   var ground = new THREE.Mesh(new THREE.CircleGeometry(8, 64),
@@ -645,13 +650,16 @@ var RVGH_FILES = [
     desc:'减速输出法兰,连接负载(关节臂)。', spec:[['减速比','27:1(示意)'],['输出','法兰']] }
 ];
 function buildMotor(group){
-  /* d 为数字轴索引:1=AX 2=AY 3=AZ(顶层数组定义时 AX/AY/AZ 尚未初始化,
-     变量引用只会存到 undefined 快照,故启动后按索引解析) */
+  /* RVGH 各件为轴向装配坐标(直径 40mm,厚度 10mm,z 轴叠放)。
+     统一 scale=0.075(40mm→3 单位),旋转使 z 轴朝上(y 朝上),整体居中 */
   var DIRS = [null, AX, AY, AZ];
+  var SCALE = 0.075;
   var jobs = RVGH_FILES.map(function(it){
-    return loadSTL('./models/rvgh_servo/' + it.f, it.c, { metalness:it.mt, roughness:it.rgh, target:0.5 }).then(function(mesh){
-      mesh.position.set(0, it.y, 0);
-      partRec(0, it.n, mesh, new LAB.T.Vector3(0, it.y, 0), DIRS[it.d] || AZ, it.dist, it.c, it.desc, it.spec);
+    return loadSTL('./models/rvgh_servo/' + it.f, it.c, { metalness:0.3, roughness:0.5, scale:SCALE, keepPos:true }).then(function(mesh){
+      mesh.rotation.x = Math.PI/2;   /* STL z 轴 → 世界 y 轴 */
+      mesh.position.set(0, it.y * SCALE, 0);   /* 轴向叠放(原始 z 厚度 → 世界 y) */
+      var home = mesh.position.clone();
+      partRec(0, it.n, mesh, home, DIRS[it.d] || AZ, it.dist * SCALE * 6, it.c, it.desc, it.spec);
       group.add(mesh);
     });
   });
@@ -666,10 +674,10 @@ function buildEncoder(group){
     partRec(1, name, mesh, pos, dir, dist, color, desc, spec);
     group.add(mesh);
   }
-  var shell = new T.MeshStandardMaterial({ color:0xb8bec7, metalness:0.8, roughness:0.45 });
-  var glass = new T.MeshStandardMaterial({ color:0x9fd8ff, metalness:0.1, roughness:0.05, transparent:true, opacity:0.55 });
-  var pcbM = new T.MeshStandardMaterial({ color:0x0d3d1f, roughness:0.6, metalness:0.2 });
-  var gold = new T.MeshStandardMaterial({ color:0xd4af37, metalness:0.95, roughness:0.2 });
+  var shell = new T.MeshStandardMaterial({ color:0xb8bec7, metalness:0.25, roughness:0.5 });
+  var glass = new T.MeshStandardMaterial({ color:0x9fd8ff, metalness:0.05, roughness:0.1, transparent:true, opacity:0.55 });
+  var pcbM = new T.MeshStandardMaterial({ color:0x0d3d1f, roughness:0.6, metalness:0.15 });
+  var gold = new T.MeshStandardMaterial({ color:0xd4af37, metalness:0.35, roughness:0.3 });
   var led = new T.MeshStandardMaterial({ color:0xff4d4d, emissive:0xff2020, emissiveIntensity:0.9 });
   var dark = new T.MeshStandardMaterial({ color:0x22262e, roughness:0.6 });
 
@@ -738,77 +746,49 @@ var LEAP_FILES = {
   t_tip: 'thumb_fingertip.stl'
 };
 function buildHand(group){
+  /* LEAP Hand:STL 为真实装配坐标(各部件相对位置正确),单位 cm。
+     统一缩放因子:让整手(约 22cm 高 × 13cm 宽)缩到 ~3.2 世界单位 */
   var cache = {};
   function loadOne(key){
     if(cache[key]) return cache[key];
     var c = 0xcfd6e0;
-    cache[key] = loadSTL('./models/leap_hand/' + LEAP_FILES[key], c, { metalness:0.35, roughness:0.5, target:0.5 });
+    cache[key] = loadSTL('./models/leap_hand/' + LEAP_FILES[key], c, { metalness:0.2, roughness:0.55, keepPos:true, scale:0.15 });
     return cache[key];
   }
   var jobs = [];
-  /* 手掌(部件尺度 0.5:手掌最大边→0.5,真实占比约手掌 1.1×0.9,掌心朝下 Z 正方向伸出四指) */
+  /* 手掌:装配坐标原点附近;旋转使掌心朝上、手指朝 +z */
   jobs.push(loadOne('palm').then(function(mesh){
-    mesh.rotation.y = Math.PI;   /* 翻转朝上 */
-    partRec(2, '手掌(palm lower)', mesh, new LAB.T.Vector3(0, 0.35, 0), AZ, 0.5, 0xcfd6e0,
+    mesh.rotation.x = -Math.PI/2;   /* 原始 z 轴朝上 → 转成 y 轴朝上 */
+    partRec(2, '手掌(palm lower)', mesh, new LAB.T.Vector3(0, 0, 0), AZ, 0.6, 0xcfd6e0,
       'LEAP Hand 手掌下壳,内含 6 个微型电机与腱绳通道。', [['来源','UC Berkeley LEAP Hand'],['许可','MIT']]);
     group.add(mesh);
   }));
-  /* 四指:掌指关节 + 近端 + 远端 + 指尖,沿 Z 展开(每段 0.42),X 并排 */
-  var FINGER_X = [-0.42, -0.14, 0.14, 0.42];
-  var FINGER_Z0 = 0.28;   /* 掌指关节在手掌前缘 */
+  /* 四指:掌指关节 + 近端 + 远端 + 指尖,按装配坐标放(同 scale 保持相对位置) */
+  var FINGER_X = [-0.36, -0.12, 0.12, 0.36];   /* 四指并排间距(缩放后) */
   FINGER_X.forEach(function(fx, fi){
-    jobs.push(loadOne('mcp').then(function(mesh){
+    ['mcp','pip','dip','tip'].forEach(function(key, si){
+      jobs.push(loadOne(key).then(function(mesh){
+        var m = mesh.clone(); m.material = m.material.clone();
+        m.rotation.x = -Math.PI/2;
+        /* 装配:指节沿 z 展开,间距按部件尺寸(每个指节 ~0.42 长) */
+        m.position.set(fx, 0.28 - si*0.30, 0.55 + si*0.42);
+        partRec(2, '手指' + (fi+1) + '·' + key, m, m.position.clone(), AZ, 0.45, 0xcfd6e0,
+          'LEAP Hand 手指部件(' + key + '),腱绳驱动。', [['来源','LEAP Hand'],['许可','MIT']]);
+        group.add(m);
+      }));
+    });
+  });
+  /* 拇指三件:手掌侧方 */
+  [['t_pip',-0.52,0.30,0.50],['t_dip',-0.55,0.05,0.85],['t_tip',-0.56,-0.18,1.15]].forEach(function(t){
+    jobs.push(loadOne(t[0]).then(function(mesh){
       var m = mesh.clone(); m.material = m.material.clone();
-      m.position.set(fx, 0.30, FINGER_Z0);
-      m.rotation.y = Math.PI;
-      partRec(2, '手指' + (fi+1) + '·掌指关节(mcp)', m, m.position.clone(), AZ, 0.42, 0xcfd6e0,
-        '掌指关节:手指根部的弯曲轴。', [['关节','MCP'],['结构','铰链']]);
-      group.add(m);
-    }));
-    jobs.push(loadOne('pip').then(function(mesh){
-      var m = mesh.clone(); m.material = m.material.clone();
-      m.position.set(fx, 0.26, FINGER_Z0 + 0.42);
-      m.rotation.y = Math.PI;
-      partRec(2, '手指' + (fi+1) + '·近端指节(pip)', m, m.position.clone(), AZ, 0.42, 0xcfd6e0,
-        '近端指节:经连杆由掌内电机驱动。', [['关节','PIP'],['驱动','腱绳/连杆']]);
-      group.add(m);
-    }));
-    jobs.push(loadOne('dip').then(function(mesh){
-      var m = mesh.clone(); m.material = m.material.clone();
-      m.position.set(fx, 0.22, FINGER_Z0 + 0.84);
-      m.rotation.y = Math.PI;
-      partRec(2, '手指' + (fi+1) + '·远端指节(dip)', m, m.position.clone(), AZ, 0.42, 0xcfd6e0,
-        '远端指节:欠驱动链的末端。', [['关节','DIP'],['联动','随 PIP 弯曲']]);
-      group.add(m);
-    }));
-    jobs.push(loadOne('tip').then(function(mesh){
-      var m = mesh.clone(); m.material = m.material.clone();
-      m.position.set(fx, 0.18, FINGER_Z0 + 1.26);
-      m.rotation.y = Math.PI;
-      partRec(2, '手指' + (fi+1) + '·指尖(fingertip)', m, m.position.clone(), AZ, 0.42, 0xcfd6e0,
-        '指尖:可加装触觉传感器。', [['作用','接触表面'],['可扩展','触觉传感']]);
+      m.rotation.x = -Math.PI/2; m.rotation.y = 0.4;
+      m.position.set(t[1], t[2], t[3]);
+      partRec(2, '拇指·' + t[0], m, m.position.clone(), AZ, 0.45, 0xcfd6e0,
+        'LEAP Hand 拇指部件(' + t[0] + ')。', [['来源','LEAP Hand'],['许可','MIT']]);
       group.add(m);
     }));
   });
-  /* 拇指三件:位于手掌一侧(X 负侧),带外展角 */
-  jobs.push(loadOne('t_pip').then(function(mesh){
-    mesh.position.set(-0.52, 0.28, 0.1); mesh.rotation.y = Math.PI - 0.5;
-    partRec(2, '拇指·近端(thumb pip)', mesh, mesh.position.clone(), AZ, 0.42, 0xcfd6e0,
-      '拇指近端,带外展角。', [['关节','TPIP'],['外展','对掌基础']]);
-    group.add(mesh);
-  }));
-  jobs.push(loadOne('t_dip').then(function(mesh){
-    mesh.position.set(-0.60, 0.24, 0.44); mesh.rotation.y = Math.PI - 0.5;
-    partRec(2, '拇指·远端(thumb dip)', mesh, mesh.position.clone(), AZ, 0.42, 0xcfd6e0,
-      '拇指远端。', [['关节','TDIP']]);
-    group.add(mesh);
-  }));
-  jobs.push(loadOne('t_tip').then(function(mesh){
-    mesh.position.set(-0.66, 0.20, 0.74); mesh.rotation.y = Math.PI - 0.5;
-    partRec(2, '拇指·指尖(thumb fingertip)', mesh, mesh.position.clone(), AZ, 0.42, 0xcfd6e0,
-      '拇指指尖,对掌抓握的接触点。', [['作用','对掌抓握']]);
-    group.add(mesh);
-  }));
   return Promise.all(jobs);
 }
 
@@ -837,8 +817,8 @@ function switchProd(i){
   LAB.groups.forEach(function(g, k){ g.visible = (k===i); });
   LAB.focusPart = null; LAB.picked = null;
   LAB.explodeTarget = 0; LAB.explode = 0;
-  var dists = [8.0, 6.0, 6.5];
-  var targetY = [2.2, 0.0, 0.3];
+  var dists = [9.0, 6.0, 8.0];
+  var targetY = [1.7, 0.0, 0.5];
   LAB.dist = dists[i];
   LAB.targetY = targetY[i];
   LAB.yaw = 0.9; LAB.pitch = 0.3;
