@@ -288,14 +288,36 @@
   }
   function mountComments(){
     var cfg = window.COMMENTS_CONFIG;
-    if(!cfg || !cfg.envId) return;   /* 未配置 envId:不显示评论区 */
+    if(!cfg || !cfg.envId) return;   /* 未配置:不显示评论区 */
     var c = document.querySelector(".container");
     if(!c) return;
     var box = document.createElement("div");
     box.className = "giscus-wrap";
     box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="tcomment"></div>';
     c.appendChild(box);
-    /* Twikoo 前端多 CDN 回退:jsdelivr(主) → npmmirror(国内) → unpkg */
+    if(cfg.provider === "valine"){
+      /* Valine:LeanCloud 存储(国内版免费,纯配置零部署);需 appId/appKey */
+      var VCDNS = [
+        "https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js",
+        "https://registry.npmmirror.com/valine/1.5.1/files/dist/Valine.min.js"
+      ];
+      function loadValine(i){
+        if(i >= VCDNS.length) return;
+        var s = document.createElement("script");
+        s.src = VCDNS[i];
+        s.onload = function(){
+          if(window.Valine){
+            try{ new Valine({ el:"#tcomment", appId:cfg.appId, appKey:cfg.appKey, serverURLs:cfg.serverURLs||"", path:location.pathname, placeholder:"友善交流,理性讨论…", avatar:"identicon", visitor:true }); }
+            catch(e){ console.warn("[评论] Valine 初始化失败:", e); }
+          }
+        };
+        s.onerror = function(){ loadValine(i + 1); };
+        document.head.appendChild(s);
+      }
+      loadValine(0);
+      return;
+    }
+    /* Twikoo:需自托管后端(CloudBase 云函数/Vercel/Zeabur),多 CDN 回退 */
     var CDNS = [
       "https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.all.min.js",
       "https://registry.npmmirror.com/twikoo/1.6.39/files/dist/twikoo.all.min.js",

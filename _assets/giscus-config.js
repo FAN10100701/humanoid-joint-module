@@ -1,15 +1,14 @@
-/* ============================================================
-   评论区配置 · Twikoo(2026-08-17 起,替代 giscus)
-   —— giscus 的后端 giscus.app 在国内被墙,评论区永远无法工作;
-      Twikoo 前端走 jsDelivr(国内可达),后端用腾讯云 CloudBase 免费版。
-   启用步骤(详见 _本地工具/评论系统接入指南.md):
-   1) 注册腾讯云 CloudBase,创建环境(免费版即可)
-   2) 在环境里安装「Twikoo 评论」扩展,记下环境 ID(envId)
-   3) 把下方 envId 从 null 改为你的环境 ID
-   4) 部署后每个内容页底部会出现评论区
-   ============================================================ */
+/* 全站评论区配置(统一入口,site.js initComments 动态加载)
+ * provider 二选一:
+ *   "twikoo" —— 需要自托管后端(CloudBase 云函数 / Vercel / Zeabur),envId 为部署后生成的 ID
+ *   "valine" —— LeanCloud 存储(推荐,国内版免费,纯配置零部署),需要 appId/appKey/serverURLs
+ * 切换后无需改动任何页面,刷新即生效;默认走 Valine(最快可用)。
+ */
 window.COMMENTS_CONFIG = {
-  provider: "twikoo",
-  envId: "twikoo-env-d1gjabi5l2e5613b2",
-  region: ""            /* 中国大陆环境留空;海外环境填 "ap-shanghai" 等 */
+  provider: "valine",
+  appId: null,      /* Valine:LeanCloud 应用的 AppID */
+  appKey: null,     /* Valine:LeanCloud 应用的 AppKey */
+  serverURLs: null, /* Valine:LeanCloud 国际版需填 https://xxx.api.lncldglobal.com */
+  envId: "twikoo-env-d1gjabi5l2e5613b2", /* Twikoo:后端部署后生成的 envId */
+  region: ""        /* Twikoo:国内 "" / 海外 "ap-shanghai" 等 */
 };
