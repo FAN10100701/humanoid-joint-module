@@ -347,6 +347,17 @@ body[data-theme="dark"] #diagPanel{background:rgba(13,18,30,.97);border-color:va
 #diagPanel .dp-close:hover{color:var(--bad)}
 #diagPanel .dp-ok{color:var(--ok)}#diagPanel .dp-bad{color:var(--bad)}#diagPanel .dp-wait{color:var(--warn)}
 </style></head><body>
+<script>
+/* 顶栏版本角标:在线抓取 _assets/site.js 的 S.VERSION(单源);失败保持占位,仍可点击跳转
+   cache:'no-store' 避免被 3D sw 缓存旧版 site.js 导致版本号滞后 */
+(function(){
+  fetch('../_assets/site.js',{cache:'no-store'}).then(function(r){ return r.text(); }).then(function(t){
+    var m = t.match(/S\.VERSION\s*=\s*"(V[\d.]+)/);
+    var c = document.getElementById('verChip');
+    if(m && c){ c.innerHTML = '🏷 <span>v' + m[1].replace('V','') + '</span>'; }
+  }).catch(function(){});
+})();
+</script>
 <!-- 【模块加载策略】
      本地模式(默认):零依赖——本地库已改写为相对导入(three.module.js 与 addons 全部相对路径)，
        任何支持 ES module 的浏览器(含无原生 importmap 的老内核)都能直接运行，无需 importmap/shims；
@@ -451,6 +462,7 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
     <button class="vb" id="btnNavToggle" title="收起/展开左侧导航">◀</button>
     <button class="vb" id="btnDetToggle" title="收起/展开右侧详情">▶</button>
     <button class="vb" id="btnIndex" title="返回学习首页（主界面）"><span class="ic">📚</span>学习首页</button>
+    <a class="vb" id="verChip" href="../index.html#version" title="版本与更新历史" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">🏷 v…</a>
     <button class="vb home" id="btnHome" title="返回整机总览"><span class="ic">🏠</span>整机总览</button>
     <button class="vb theme" id="btnTheme"><span class="ic">🌗</span>主题</button>
   </div>
