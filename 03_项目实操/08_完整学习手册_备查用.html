@@ -8,6 +8,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
 <title>人形机器人学习站 · 完整学习手册</title>
 <link rel="stylesheet" href="../_assets/site.css">
 <style>
@@ -30,21 +31,21 @@
   .my-end{text-align:center;color:#8b949e;font-size:13px;margin-top:40px;padding:20px;border-top:1px solid rgba(255,255,255,.08)}
   .my-note{font-size:12.5px;color:#8b949e;margin:6px 0 10px}
   /* ===== 浅色适配 ===== */
-  body:not([data-theme]) .my-toc,body[data-theme="light"] .my-toc{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
-  body:not([data-theme]) .my-toc-title,body[data-theme="light"] .my-toc-title{color:#0f172a}
-  body:not([data-theme]) .my-toc li,body[data-theme="light"] .my-toc li{color:#5a6a85}
-  body:not([data-theme]) .my-toc a,body[data-theme="light"] .my-toc a{color:#2563eb}
-  body:not([data-theme]) .my-hl,body[data-theme="light"] .my-hl{background:linear-gradient(180deg,transparent 60%,rgba(37,99,235,.18) 60%);color:#1e40af}
-  body:not([data-theme]) .my-hr,body[data-theme="light"] .my-hr{border-top-color:rgba(60,80,120,.14)}
-  body:not([data-theme]) .my-tip,body[data-theme="light"] .my-tip{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.3);color:#146c3c}
-  body:not([data-theme]) .my-tip strong,body:not([data-theme]) .my-tip b,body[data-theme="light"] .my-tip strong,body[data-theme="light"] .my-tip b{color:#15803d}
-  body:not([data-theme]) .my-warn,body[data-theme="light"] .my-warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);color:#7c5a12}
-  body:not([data-theme]) .my-warn strong,body:not([data-theme]) .my-warn b,body[data-theme="light"] .my-warn strong,body[data-theme="light"] .my-warn b{color:#92400e}
-  body:not([data-theme]) .my-danger,body[data-theme="light"] .my-danger{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.35);color:#9f3b3b}
-  body:not([data-theme]) .my-danger strong,body:not([data-theme]) .my-danger b,body[data-theme="light"] .my-danger strong,body[data-theme="light"] .my-danger b{color:#b91c1c}
-  body:not([data-theme]) .my-quote,body[data-theme="light"] .my-quote{background:rgba(37,99,235,.06);color:#1e3a8a;border-left-color:#2563eb}
-  body:not([data-theme]) .my-end,body[data-theme="light"] .my-end{color:#94a3b8;border-top-color:rgba(60,80,120,.12)}
-  body:not([data-theme]) .my-note,body[data-theme="light"] .my-note{color:#64748b}
+  body:not([data-theme]) .my-toc,html[data-theme="light"] .my-toc{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  body:not([data-theme]) .my-toc-title,html[data-theme="light"] .my-toc-title{color:#0f172a}
+  body:not([data-theme]) .my-toc li,html[data-theme="light"] .my-toc li{color:#5a6a85}
+  body:not([data-theme]) .my-toc a,html[data-theme="light"] .my-toc a{color:#2563eb}
+  body:not([data-theme]) .my-hl,html[data-theme="light"] .my-hl{background:linear-gradient(180deg,transparent 60%,rgba(37,99,235,.18) 60%);color:#1e40af}
+  body:not([data-theme]) .my-hr,html[data-theme="light"] .my-hr{border-top-color:rgba(60,80,120,.14)}
+  body:not([data-theme]) .my-tip,html[data-theme="light"] .my-tip{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.3);color:#146c3c}
+  body:not([data-theme]) .my-tip strong,body:not([data-theme]) .my-tip b,html[data-theme="light"] .my-tip strong,html[data-theme="light"] .my-tip b{color:#15803d}
+  body:not([data-theme]) .my-warn,html[data-theme="light"] .my-warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);color:#7c5a12}
+  body:not([data-theme]) .my-warn strong,body:not([data-theme]) .my-warn b,html[data-theme="light"] .my-warn strong,html[data-theme="light"] .my-warn b{color:#92400e}
+  body:not([data-theme]) .my-danger,html[data-theme="light"] .my-danger{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.35);color:#9f3b3b}
+  body:not([data-theme]) .my-danger strong,body:not([data-theme]) .my-danger b,html[data-theme="light"] .my-danger strong,html[data-theme="light"] .my-danger b{color:#b91c1c}
+  body:not([data-theme]) .my-quote,html[data-theme="light"] .my-quote{background:rgba(37,99,235,.06);color:#1e3a8a;border-left-color:#2563eb}
+  body:not([data-theme]) .my-end,html[data-theme="light"] .my-end{color:#94a3b8;border-top-color:rgba(60,80,120,.12)}
+  body:not([data-theme]) .my-note,html[data-theme="light"] .my-note{color:#64748b}
 </style>
 <script>
   window.PAGE = {

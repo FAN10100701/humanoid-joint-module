@@ -8,6 +8,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
 <title>人形机器人学习站 · 核心原理动画演示(FOC / 三环 / 减速器)</title>
 <link rel="stylesheet" href="../_assets/site.css">
 <style>
@@ -80,32 +81,32 @@
   .my-ani-controlbar .my-ani-play-btn.my-paused{background:linear-gradient(135deg,#f59e0b,#d97706);border-color:#f59e0b}
 
   /* ===== 浅色主题适配(默认日间模式) ===== */
-  body[data-theme="light"] .my-header h1{color:#0f172a}
-  body[data-theme="light"] .my-header p{color:#5a6a85}
-  body[data-theme="light"] .my-tab{background:#e2e8f0;color:#334155}
-  body[data-theme="light"] .my-tab:hover{background:#cbd5e1}
-  body[data-theme="light"] .my-tab.my-active{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
-  body[data-theme="light"] .my-canvas-area{background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
-  body[data-theme="light"] .my-info-panel{background:rgba(255,255,255,.65);border:1px solid rgba(60,80,120,.12)}
-  body[data-theme="light"] .my-info-title{color:#0f172a}
-  body[data-theme="light"] .my-info-item{background:rgba(241,245,249,.9);border-left-color:#2563eb}
-  body[data-theme="light"] .my-info-label{color:#64748b}
-  body[data-theme="light"] .my-info-value{color:#0f172a}
-  body[data-theme="light"] .my-info-desc{color:#3a4759;border-top-color:rgba(60,80,120,.14)}
-  body[data-theme="light"] .my-legend-item{color:#5a6a85}
-  body[data-theme="light"] .my-speed-control{color:#64748b}
-  body[data-theme="light"] .my-btn-secondary{background:#e2e8f0;color:#334155}
-  body[data-theme="light"] .my-btn-secondary:hover{background:#cbd5e1}
-  body[data-theme="light"] .my-ani-hint{color:#94a3b8}
-  body[data-theme="light"] .my-ani-controlbar{background:rgba(255,255,255,.72);border-color:rgba(60,80,120,.14);box-shadow:0 6px 24px rgba(50,80,140,.08)}
-  body[data-theme="light"] .my-ani-controlbar .my-ani-btn{background:#eef2f7;border-color:#cbd5e1;color:#334155}
-  body[data-theme="light"] .my-ani-controlbar .my-ani-btn:hover{background:#dbe3ec}
-  body[data-theme="light"] .my-ani-controlbar .my-ani-label{color:#64748b}
-  body[data-theme="light"] .my-ani-controlbar .my-ani-speed-val{color:#0f172a}
-  body[data-theme="light"] .my-ani-controlbar .my-ani-play-btn{background:#059669;color:#fff;border-color:#10b981}
-  body[data-theme="light"] .my-ani-controlbar .my-ani-play-btn.my-paused{background:linear-gradient(135deg,#f59e0b,#d97706)}
-  body[data-theme="light"] .my-canvas-wrap{background:#f8fafc;border:1px solid rgba(60,80,120,.14)}
-  body[data-theme="light"] .my-ani-sep{background:#cbd5e1}
+  html[data-theme="light"] .my-header h1{color:#0f172a}
+  html[data-theme="light"] .my-header p{color:#5a6a85}
+  html[data-theme="light"] .my-tab{background:#e2e8f0;color:#334155}
+  html[data-theme="light"] .my-tab:hover{background:#cbd5e1}
+  html[data-theme="light"] .my-tab.my-active{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
+  html[data-theme="light"] .my-canvas-area{background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html[data-theme="light"] .my-info-panel{background:rgba(255,255,255,.65);border:1px solid rgba(60,80,120,.12)}
+  html[data-theme="light"] .my-info-title{color:#0f172a}
+  html[data-theme="light"] .my-info-item{background:rgba(241,245,249,.9);border-left-color:#2563eb}
+  html[data-theme="light"] .my-info-label{color:#64748b}
+  html[data-theme="light"] .my-info-value{color:#0f172a}
+  html[data-theme="light"] .my-info-desc{color:#3a4759;border-top-color:rgba(60,80,120,.14)}
+  html[data-theme="light"] .my-legend-item{color:#5a6a85}
+  html[data-theme="light"] .my-speed-control{color:#64748b}
+  html[data-theme="light"] .my-btn-secondary{background:#e2e8f0;color:#334155}
+  html[data-theme="light"] .my-btn-secondary:hover{background:#cbd5e1}
+  html[data-theme="light"] .my-ani-hint{color:#94a3b8}
+  html[data-theme="light"] .my-ani-controlbar{background:rgba(255,255,255,.72);border-color:rgba(60,80,120,.14);box-shadow:0 6px 24px rgba(50,80,140,.08)}
+  html[data-theme="light"] .my-ani-controlbar .my-ani-btn{background:#eef2f7;border-color:#cbd5e1;color:#334155}
+  html[data-theme="light"] .my-ani-controlbar .my-ani-btn:hover{background:#dbe3ec}
+  html[data-theme="light"] .my-ani-controlbar .my-ani-label{color:#64748b}
+  html[data-theme="light"] .my-ani-controlbar .my-ani-speed-val{color:#0f172a}
+  html[data-theme="light"] .my-ani-controlbar .my-ani-play-btn{background:#059669;color:#fff;border-color:#10b981}
+  html[data-theme="light"] .my-ani-controlbar .my-ani-play-btn.my-paused{background:linear-gradient(135deg,#f59e0b,#d97706)}
+  html[data-theme="light"] .my-canvas-wrap{background:#f8fafc;border:1px solid rgba(60,80,120,.14)}
+  html[data-theme="light"] .my-ani-sep{background:#cbd5e1}
 </style>
 <script>
   /* ============ 每页必填:window.PAGE 配置 ============ */
