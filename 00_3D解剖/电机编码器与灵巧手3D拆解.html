@@ -31,7 +31,7 @@
      避免「3D 框比两边介绍框长很多」的不协调 */
   .my-view{flex:1;position:relative;background:radial-gradient(ellipse at 50% 38%,#232c3b 0%,#141a25 58%,#0d1119 100%);border:1px solid #2a3547;border-radius:12px;overflow:hidden;min-width:0;min-height:540px;max-height:560px}
   body[data-theme="light"] .my-view{background:radial-gradient(ellipse at 50% 38%,#e8edf5 0%,#c8d2e0 58%,#aebacb 100%)}
-  .my-view canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+  .my-view canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none;position:absolute;left:0;top:0;z-index:1}
   .my-view canvas:active{cursor:grabbing}
   .my-hint{position:absolute;left:12px;bottom:10px;font-size:11.5px;color:#7c8a9d;pointer-events:none;letter-spacing:.03em}
   body[data-theme="light"] .my-hint{color:#5a6a85}
@@ -285,8 +285,7 @@ function progDone(){
   if(p) p.classList.add('done');
   var t = document.getElementById('loadTip');
   if(t) t.style.display = 'none';
-}
-function showDiagFail(msg){
+}function showDiagFail(msg){
   dlog(msg, false);
   var panel = document.getElementById('diagPanel');
   var btn = document.getElementById('diagBtn');
@@ -522,10 +521,17 @@ function boot(THREE){
   LAB.clipPlane = clipPlane;
 
   window.addEventListener('resize', function(){
-    var w2 = cvWrap.clientWidth, h2 = cvWrap.clientHeight;
+    var w2 = cvWrap.clientWidth || cvWrap.offsetWidth || 640;
+    var h2 = cvWrap.clientHeight || cvWrap.offsetHeight || 480;
     cam.aspect = w2/h2; cam.updateProjectionMatrix();
     renderer.setSize(w2, h2);
   });
+  /* 布局稳定后再校正一次(首帧渲染前),防止 CSS/flex 尚未布局导致画布 0 尺寸 */
+  setTimeout(function(){
+    var w3 = cvWrap.clientWidth || cvWrap.offsetWidth || 640;
+    var h3 = cvWrap.clientHeight || cvWrap.offsetHeight || 480;
+    if(w3 > 0 && h3 > 0){ cam.aspect = w3/h3; cam.updateProjectionMatrix(); renderer.setSize(w3, h3); }
+  }, 50);
 
   LAB.groups = [ new THREE.Group(), new THREE.Group(), new THREE.Group() ];
   LAB.groups.forEach(function(g){ scene.add(g); });
@@ -569,15 +575,17 @@ function boot(THREE){
       if(Math.abs(LAB.explode - LAB.explodeTarget) < 0.002){ LAB.explode = LAB.explodeTarget; }
       updateParts();
       renderer.render(scene, cam);
-      /* 渲染探针:首帧后检查画布是否真的画了东西(非全黑),结果写入诊断 */
+      /* 渲染探针:第 3 帧后检查画布是否真的画了东西(中心像素),结果写入诊断 */
       renderCount++;
       if(renderCount === 3){
         try{
-          var px = renderer.getContext().readPixels ? null : null;
           var gl = renderer.getContext();
           var buf = new Uint8Array(4);
           gl.readPixels(Math.floor(gl.drawingBufferWidth/2), Math.floor(gl.drawingBufferHeight/2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, buf);
           dlog('🎨 渲染探针: 中心像素 RGB=(' + buf[0] + ',' + buf[1] + ',' + buf[2] + ') 画布=' + gl.drawingBufferWidth + 'x' + gl.drawingBufferHeight, buf[0]+buf[1]+buf[2] > 24);
+          /* 成功渲染:显示诊断按钮(正常加载时也可见,便于反馈) */
+          var db = document.getElementById('diagBtn');
+          if(db && db.style.display !== 'inline-block'){ db.style.display = 'inline-block'; }
         }catch(pe){ dlog('渲染探针异常: ' + (pe && pe.message || pe), false); }
       }
     }
