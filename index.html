@@ -731,10 +731,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 评论区停用,替换为「联系站长」卡片</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.3</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 3D 拆解页崩溃修复 + 动手项目清单前置链接</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V2.0.3 · 2026-08-17 · 3D 拆解页崩溃修复 + 动手项目清单前置链接</summary>
+        <div class="faq-a">🐛 <b>3D 拆解页致命 bug 修复</b>:真实 STL 重构版漏定义拆解方向向量(AX/AY/AZ),导致 `dir.clone()` 抛错、引擎反复回退全部失败(诊断日志可见「Cannot read properties of undefined」);已在 boot 时初始化三个方向向量,3D 正常加载;🔗 <b>动手项目清单前置链接</b>:P1~P12 的「前置」chip 由纯文字改为可点击链接(指向对应学习页),chip 样式新增链接态;📐 3D 视口与左右栏等高协调(统一 560px,不再「3D 框比介绍框长很多」);3D sw v23。</div>
+      </details>
+      <details class="faq">
         <summary>V2.0.2 · 2026-08-17 · 云端评论停用,替换为「联系站长」卡片</summary>
         <div class="faq-a">📮 <b>评论区调整</b>:免费云端评论方案经全量排查均不可行(CloudBase 体验版无文档数据库集合配额、Zeabur 需付费、LeanCloud 停止注册)→ 评论区停用,所有页面自动显示「📮 联系站长」卡片(站长邮箱 2061624805@qq.com,mailto 直达);不再加载任何评论脚本(零网络依赖、零报错);云函数 CORS 补丁等成果已存档,未来开通付费后端可一键恢复。</div>
       </details>
@@ -858,7 +862,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.0.2(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.0.3(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

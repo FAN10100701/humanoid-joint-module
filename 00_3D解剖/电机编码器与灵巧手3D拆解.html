@@ -15,8 +15,8 @@
   .my-prod-tabs button.on{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-color:#3b82f6;font-weight:700}
   body[data-theme="light"] .my-prod-tabs button{background:rgba(255,255,255,.75);color:#334155}
   body[data-theme="light"] .my-prod-tabs button.on{background:#2563eb;color:#fff}
-  .my-stage{display:flex;gap:10px;min-height:540px}
-  .my-left{width:190px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px;max-height:580px;overflow:auto}
+  .my-stage{display:flex;gap:10px;min-height:540px;align-items:stretch}
+  .my-left{width:190px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px;max-height:560px;overflow:auto}
   body[data-theme="light"] .my-left{background:rgba(255,255,255,.8)}
   .my-left h4{font-size:12px;color:#8b98ab;margin:4px 2px 8px;letter-spacing:.08em;text-transform:uppercase}
   body[data-theme="light"] .my-left h4{color:#64748b}
@@ -26,7 +26,9 @@
   .my-part .dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
   body[data-theme="light"] .my-part{color:#475569}
   body[data-theme="light"] .my-part.on{color:#1d4ed8}
-  .my-view{flex:1;position:relative;background:radial-gradient(ellipse at 50% 38%,#232c3b 0%,#141a25 58%,#0d1119 100%);border:1px solid #2a3547;border-radius:12px;overflow:hidden;min-width:0}
+  /* 视口与左右栏等高协调(2026-08-17):左右栏 max-height 560px,视口同限高,
+     避免「3D 框比两边介绍框长很多」的不协调 */
+  .my-view{flex:1;position:relative;background:radial-gradient(ellipse at 50% 38%,#232c3b 0%,#141a25 58%,#0d1119 100%);border:1px solid #2a3547;border-radius:12px;overflow:hidden;min-width:0;min-height:540px;max-height:560px}
   body[data-theme="light"] .my-view{background:radial-gradient(ellipse at 50% 38%,#e8edf5 0%,#c8d2e0 58%,#aebacb 100%)}
   .my-view canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
   .my-view canvas:active{cursor:grabbing}
@@ -51,7 +53,7 @@
   .my-diag-head button:hover{border-color:#f59e0b;color:#fff}
   .my-clip{position:absolute;right:10px;top:10px;font-size:11.5px;color:#9ecbff;background:rgba(13,17,23,.7);border:1px solid rgba(59,130,246,.4);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:6px;z-index:5}
   .my-clip input{width:90px;accent-color:#3b82f6}
-  .my-right{width:230px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:12px;max-height:580px;overflow:auto}
+  .my-right{width:230px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:12px;max-height:560px;overflow:auto}
   body[data-theme="light"] .my-right{background:rgba(255,255,255,.8)}
   .my-right h4{font-size:12px;color:#8b98ab;margin:0 0 8px;letter-spacing:.08em;text-transform:uppercase}
   body[data-theme="light"] .my-right h4{color:#64748b}
@@ -246,6 +248,10 @@
 var LAB = { T:null, renderer:null, scene:null, cam:null, prod:0, parts:[], raf:0,
              explode:0, explodeTarget:0, spin:true, picked:null, focusPart:null, clipOn:false, animT:0,
              yaw:0.9, pitch:0.3, dist:7.5, drag:null };
+/* 拆解方向向量(RVGH_FILES 的 d 字段与 buildEncoder 引用;真实 STL 重构版漏定义导致
+   dir.clone() 抛错、3D 完全加载失败——2026-08-17 修复)。
+   注意:必须在 boot() 里初始化(three.js 加载后才能 new Vector3) */
+var AX, AY, AZ;
 
 /* ============ 诊断探针(2026-08-17 吸取 3D 解剖页教训:加载日志 + 进度条 + 失败自动弹面板) ============ */
 var DIAG_VER = 'v2.1';   /* 诊断代码版本:改本页 JS 时同步 +1,用于确认线上是否为最新 */
@@ -404,6 +410,9 @@ function loadSTL(url, color, opts){
 /* ---------- boot ---------- */
 function boot(THREE){
   LAB.T = THREE;
+  AX = new THREE.Vector3(1,0,0);
+  AY = new THREE.Vector3(0,1,0);
+  AZ = new THREE.Vector3(0,0,1);
   var tip = document.getElementById('loadTip');
   if(tip) tip.style.display = 'none';
   var cvWrap = document.getElementById('view3d');
