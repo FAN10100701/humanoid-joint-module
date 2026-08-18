@@ -479,6 +479,43 @@ arm_controller:
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 规划成功=算法层通过;执行不动通常是控制器未激活、关节名不匹配或硬件接口没接好;RViz 卡顿只影响显示,不影响轨迹下发。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">8. 关于「目标约束(goal constraints)」与「路径约束(path constraints)」的区别,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 两者没有区别,都只约束终点位姿</button>
+      <button data-v="B">B. 路径约束只约束终点,目标约束约束全程每一点</button>
+      <button data-v="C">C. 目标约束只约束「终点」,路径约束约束「全程每一点」;方向约束既可做目标也可做路径,含义完全不同</button>
+      <button data-v="D">D. 只有位置约束能作为路径约束,方向约束不能作为路径约束</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 这是第 3.1 节提到的「新手常踩的坑」:目标约束只管终点,路径约束管全程每一点;同一个方向约束,做目标与做路径含义完全不同(端水平托盘要全程保持掌心朝上,就必须用路径约束而非只给终点目标)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">9. 关于采样规划(OMPL)与解析/优化规划(CHOMP、STOMP 等),下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 采样规划是概率完备的:规划时间越长越可能找到解(若解存在)</button>
+      <button data-v="B">B. 采样规划不依赖初值,在高维、复杂障碍下鲁棒,但轨迹可能「乱」、不平滑</button>
+      <button data-v="C">C. 解析/优化规划通常只保证局部最优,依赖较好的初值</button>
+      <button data-v="D">D. 解析/优化规划保证全局最优,且完全不依赖初值</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 1.3 节对照表:采样规划概率完备、不依赖初值但轨迹不平滑;解析/优化规划轨迹平滑可显式加代价,但通常只保证局部最优且依赖好初值——「保证全局最优且不依赖初值」恰恰说反了。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">10. 关于 moveit_servo 伺服,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 它是另一种完整运动规划器,专门用来替代 RRT 规划器</button>
+      <button data-v="B">B. 它提供高频率(约百 Hz 级)的末端速度伺服,直接解出关节速度下发、不做完整规划,适合遥操作、力引导、人机协作</button>
+      <button data-v="C">C. 它只能做「点到点」的点位控制,无法实时跟随外部输入</button>
+      <button data-v="D">D. 它必须依赖 OMPL 才能运行</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 6.3 节:moveit_servo 输入「末端期望速度/增量」,以约百 Hz 级直接解出关节速度下发,绕过完整规划,因此适合实时跟随类任务(手柄、手部追踪、力矩),而不是替代 OMPL 做点到点规划。</div>
+  </div>
+
+  <div class="box box-tip">
+    <b>📌 本节要点速查:</b>① 规划在<b>构型空间(C-space)</b>里避开 C-obstacle 找 C-free 路径,采样规划靠 <b>FK</b> 做碰撞检测、<b>IK</b> 只用于把位姿目标转成关节角;② MoveIt2 默认 <b>OMPL 采样规划</b>,RRTConnect 打底,短而顺换 RRTstar、狭窄通道用 BiTRRT、同环境多次规划用 PRM,靠 <code>planning_time</code>/<code>planning_attempts</code> 调参;③ <b>目标约束只管终点、路径约束管全程</b>,<code>fraction</code>&lt;1 表示笛卡尔路径中途 IK 无解(奇异/不可达);④ 避障靠 <b>ACM(豁免检测)</b>+ 自/环境碰撞 + <b>Octomap 感知</b>;⑤ 复杂抓取用 <b>MoveIt Task Constructor</b> 拆 Stage 图,真机经 <b>ros2_control</b>(joint_trajectory_controller)下发,实时跟随用 <b>moveit_servo</b>。
+  </div>
 
   <div class="box box-tip">
     <b>📌 本节小结:</b>运动规划本质是在<b>C-space</b>里避开 C-obstacle 找一条 C-free 路径;MoveIt2 默认用 <b>OMPL 采样规划</b>,以 RRTConnect 打底,靠 <code>ompl_planning.yaml</code> 里的 planner_id / planning_time / planning_attempts 调参。约束规划与 <code>computeCartesianPath</code> 解决「直线/定姿态」类任务,避障靠 ACM + 自/环境碰撞 + <b>Octomap 感知</b>。复杂抓取用 <b>MoveIt Task Constructor</b> 拆成 Stage 图;真机落地靠 <b>ros2_control</b>(joint_trajectory_controller)+ moveit_servo 伺服;人形机器人则叠加<b>双臂协同</b>与整机平衡,宇树 H1 与智元灵犀 X1 的开源资料是重要实践参考。

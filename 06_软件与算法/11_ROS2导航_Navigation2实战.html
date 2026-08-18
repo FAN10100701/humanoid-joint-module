@@ -380,6 +380,40 @@ ros2 launch nav2_bringup bringup_launch.py map:=/home/$USER/map.yaml use_sim_tim
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 轮式局部用经典规划控制器,足式常见做法是 Nav2 全局 + RL 局部策略,分层解耦。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">8. 关于 cost_scaling_factor(代价衰减因子),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 越大,代价从障碍向外衰减越慢,机器人越不敢贴墙</button>
+      <button data-v="B">B. 越大,代价从障碍向外衰减越快,机器人越「敢贴墙」</button>
+      <button data-v="C">C. 它决定膨胀半径 inflation_radius 的大小</button>
+      <button data-v="D">D. 它决定 AMCL 的粒子数量</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 4.1:cost_scaling_factor 越大,代价从障碍向外衰减越快,机器人越「敢贴墙」;膨胀半径由 inflation_radius 决定,两者别搞混。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">9. AMCL 名字里的「Adaptive(自适应)」具体指什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 粒子数量固定为 max_particles,始终满负荷运行</button>
+      <button data-v="B">B. 用 KLD 采样动态调整粒子数量:不确定时多、确定时少</button>
+      <button data-v="C">C. 自动切换 SLAM 与导航模式</button>
+      <button data-v="D">D. 自动调节地图分辨率</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 5.1:AMCL 用 KLD 采样动态调整粒子数,不确定时最多 max_particles、确定时最少 min_particles,省算力;不是固定满负荷运行。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">10. 阿克曼(车式)底盘做全局路径规划,更适合选用哪个插件?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. NavfnPlanner</button>
+      <button data-v="B">B. ThetaStarPlanner</button>
+      <button data-v="C">C. SmacPlannerHybrid(混合 A*)</button>
+      <button data-v="D">D. DWB 控制器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 4.2 表格:SmacPlannerHybrid 是 Hybrid-A*,考虑朝向、支持 Dubin/Reeds-Shepp,适合阿克曼/车式底盘;DWB 是控制器而非全局规划器。</div>
+  </div>
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① Nav2 = 行为树驱动的六大模块(BT Navigator / Planner / Controller / Costmap / AMCL / Recovery);② 建图用 SLAM Toolbox(入门)或 Cartographer(大场景),map_saver_cli 保存 <code>.pgm + .yaml</code>;③ 代价地图 0=空闲、254=致死障碍、255=未知,inflation_radius 定绕障距离、cost_scaling_factor 越大越贴墙;④ AMCL 粒子滤波 + KLD 自适应粒子数,靠 <code>map→odom→base_link</code> TF 链定位;⑤ 人形机器人「全局用 Nav2、局部足式用 RL 步态」分层解耦。</div>
 
   <div class="box box-tip">
     <b>📌 本节小结:</b>Nav2 是 ROS2 的生产级导航栈,核心是行为树驱动的六大模块(BT Navigator / Planner / Controller / Costmap / AMCL / Recovery);建图用 SLAM Toolbox 或 Cartographer,产出 <code>.pgm + .yaml</code> 栅格地图;导航配置集中在 <code>nav2_params.yaml</code>(代价地图 inflation_radius、规划器、控制器、行为树);AMCL 用粒子滤波定位,靠 <code>map→odom→base_link</code> 的 TF 链串联;实战按「仿真→建图→存图→加载导航→2D Goal Pose→避障恢复」跑通,人形机器人复用 Nav2 做全局规划、局部再分轮式与足式处理。

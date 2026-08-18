@@ -146,6 +146,40 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:J_ref = 100/3² = 11.1 kg·cm²,惯量比 = 11.1/10 ≈ 1.11,远小于 5,达标。核心是"折算按减速比平方缩小"——这一步算错(忘了平方)就会得出 B 的错误结论。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 母线电容按纹波法 C ≥ I_out·D(1−D)/(f_sw·ΔV_pp) 计算,占空比 D 取多少时所需电容最大?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. D=1(满占空比),纹波最恶劣</button>
+      <button data-v="B">B. D=0(完全关断),无输出</button>
+      <button data-v="C">C. D=0.5,此时 D(1−D) 最大,公式退化为 C ≥ I/(4·f·ΔV)</button>
+      <button data-v="D">D. 与占空比无关,任何 D 都一样</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:D(1−D) 在 D=0.5 处取得最大值 0.25(最坏工况),代入后即 C ≥ I/(4·f·ΔV)。常见误区是以为「占空比越大纹波越恶劣」,其实 D 接近 0 或 1 时 D(1−D) 都趋近于 0。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 电机 datasheet 只标 Ke=8.5 V/KRPM,要得到 Kt(N·m/A) 应如何换算?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 直接取 Kt = 8.5 N·m/A(Kt 与 Ke 数值恒相等)</button>
+      <button data-v="B">B. Kt = 8.5 ÷ 104.7 ≈ 0.081 N·m/A</button>
+      <button data-v="C">C. Kt = 8.5 × 104.7 ≈ 890 N·m/A</button>
+      <button data-v="D">D. 无法换算,必须实测堵转扭矩</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Kt 与 Ke 只在 SI 单位(V·s/rad)下数值才相等;V/KRPM 需先除以 104.72(即 1000/60×2π)换成 SI。8.5 ÷ 104.7 ≈ 0.081 N·m/A。选 A 是常见误区——单位没对齐就直接抄数字。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 其他条件不变,BUCK 的开关频率 f_sw 从 500 kHz 提高到 1 MHz,所需电感 L 如何变化?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 加倍(频率越高储能越多,电感要更大)</button>
+      <button data-v="B">B. 减半(L 与 f_sw 成反比,高频允许更小电感)</button>
+      <button data-v="C">C. 不变(电感只由电流决定)</button>
+      <button data-v="D">D. 与频率成正比,翻 4 倍</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:由 L = Vout(1−Vout/Vin)/(f_sw·ΔI_L) 可知 L 与 f_sw 成反比,频率翻倍、电感减半。常见误区是「高频要用更大电感」,其实高频化正是靠小电感、小电容实现小型化的前提,代价是开关损耗上升(见第 1 节)。</div>
+  </div>
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①MOSFET 损耗=导通(I²R·D)+开关(∝fsw);②母线电容按 D(1−D) 纹波法,最坏 D=0.5 即 C≥I/(4fΔV);③采样链 V=I·R_s·G 留约 80% 量程防削顶;④BUCK 电感 L∝1/fsw,算完校核饱和电流;⑤Kt=Ke(SI),V/KRPM÷104.7 换算;⑥惯量按 i² 折算,惯量比≤5~10。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>①MOSFET 损耗=导通(I²R·D)+开关(∝fsw),配结温计算器闭环;②电容按 ΔQ/ΔV 纹波法+2~3 倍余量;③采样电阻取小、增益凑满量程 80%;④BUCK 电感由纹波系数反推;⑤Kt=Ke(SI),V/KRPM÷104.7 换算;⑥惯量按 i² 折算,惯量比≤5~10。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么 MOSFET 的 Rds(on) 标称值要按"工作结温下的值"(通常约为室温的 1.6~1.8 倍)代入损耗公式?<br>2. 电机 datasheet 只给 Ke=8.5 V/KRPM,如何最快得到 Kt?这套换算在选电池电压时还告诉你什么?(提示:反电动势预算)</div>

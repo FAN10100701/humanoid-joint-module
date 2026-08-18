@@ -351,6 +351,44 @@
     <div class="quiz-explain">💡 解析:GraspNet-1Billion(夹爪 6D,约 12 亿条)与 DexGraspNet(灵巧手,约 132 万条)匹配正确。RoboTurk 是众包<b>遥操作</b>平台;AgiBot World 是百万级<b>真机操作轨迹</b>;Open X-Embodiment 汇聚了 60+ 数据集、22 种机器人形态。故选 A。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于「6D 抓取姿态」的组成,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 6D 指 6 根手指各自的关节角度</button>
+      <button data-v="B">B. 6D = 位置(3 维)+ 朝向(3 维);平行夹爪常再补一个「张开宽度」,于是有 7-DoF 抓取的说法</button>
+      <button data-v="C">C. 6D 指 6 种不同的抓取模式(捏/握/勾等)</button>
+      <button data-v="D">D. 6D 只包含位置,朝向由夹爪宽度决定</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 2.1 节,6D = 位置 3 维 (x,y,z)+ 朝向 3 维(翻滚/俯仰/偏航或四元数)共 6 个自由度;平行夹爪还要再补一个「夹爪张开宽度」,所以有 7-DoF 抓取的说法,再加「接近方向」构成完整抓取动作。6D 既不是手指关节角,也不是抓取模式。故选 B。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于「抓取/装配中视觉与力控的关系」,下列哪种认识属于本页第 8 节指出的常见误区?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 视觉负责「大方向」,力觉负责「最后半毫米」</button>
+      <button data-v="B">B. 插线、拧盖这类任务本质是「力的问题」,必须力控闭环</button>
+      <button data-v="C">C. 有了视觉,力控就可以省掉——视觉已经够准</button>
+      <button data-v="D">D. 力反馈通常要 ≥100Hz、理想 1kHz+,才能及时防滑</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:本页「误区四」明确指正——装配与抓取的最终成败在毫秒级接触事件,视觉存在延迟、遮挡与精度上限,插线、拧盖这类任务本质是「力的问题」,必须力控闭环:视觉管「大方向」、力觉管「最后半毫米」。「有了视觉,力控就可以省」正是被否定的错误认知。故选 C。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. GraspNet-1Billion 所代表的现代抓取检测流水线,正确的顺序是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 打分排序 → 输入场景 → 特征提取 → 候选生成</button>
+      <button data-v="B">B. 输入场景 → 特征提取 → 候选生成 → 打分排序</button>
+      <button data-v="C">C. 候选生成 → 特征提取 → 输入场景 → 打分排序</button>
+      <button data-v="D">D. 输入场景 → 候选生成 → 打分排序 → 特征提取</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 2.2 节的四步——①输入 RGB-D 相机拍到的单帧点云;②PointNet++ 类骨干逐点提取几何特征;③在每点附近预测抓取姿态(位置、朝向、宽度)与质量分;④用质量分 + 碰撞检测过滤,输出 top-k。顺序为「输入场景 → 特征提取 → 候选生成 → 打分排序」。故选 B。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①抓取 = 接触点 + 接触模型 + 封闭性:力封闭(靠摩擦锥内合力抗任意扰动)是工程标准,形封闭(纯几何卡死)更强但不现实;②抓取质量用 ε 度量(可抗最大扰动球半径)等打分,GraspNet-1Billion 走「点云 → 候选 → 打分 → 排序」的 6D 范式,灵巧手因高维动作空间难度陡增;③力控 = 阻抗(控运动)/导纳(控参考)+ 六维力/力矩反馈(≥100Hz、理想 1kHz+)让接触变柔,柔顺操作是装配/拧紧/安全交互的底层能力;④数据靠 GraspNet/DexGraspNet/RoboTurk/AgiBot World 支撑,VLA 与抓取走「大模型出意图 + 低层力控」分层,sim2real 靠域随机化 + 触觉建模 + 标定渐进迁移兜底。</div>
+
   <!-- ================= 11 参考来源 ================= -->
   <h2><span class="h2-num">11</span> 参考来源</h2>
   <p>以下链接均经 web_search 核实为官方 / 稳定地址,数据集规模以官方页面为准。</p>

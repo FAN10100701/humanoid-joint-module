@@ -513,6 +513,44 @@ float angle_deg = raw * 360.0f / 4096.0f;   // 换算成角度</code></pre>
     <div class="quiz-explain">💡 解析:电流估计力矩 τ ≈ Kt × Iq 只反映电机端电磁转矩,不含减速器的摩擦、齿隙与减速比,大减速比下输出端真实力矩与估计值差距巨大。需要高精度力控时应加关节力矩传感器或六维力传感器。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">8. 【噪声换算】某陀螺仪噪声密度为 0.01 dps/√Hz,系统带宽取 100 Hz,其 RMS 噪声约为?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 0.001 dps</button>
+      <button data-v="B">B. 0.1 dps</button>
+      <button data-v="C">C. 1 dps</button>
+      <button data-v="D">D. 10 dps</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:由 2.2 节公式 RMS 噪声 ≈ 噪声密度 × √带宽,代入 0.01 × √100 = 0.01 × 10 = 0.1 dps。带宽越窄噪声越低但响应越慢,「带宽」和「噪声」是同一枚硬币的两面。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 【触觉误区】关于压电式触觉传感器,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 它能长期稳定测量静态压力</button>
+      <button data-v="B">B. 它只在形变(变化)时产生电荷,测不出静态压力,但高频动态响应极好</button>
+      <button data-v="C">C. 它靠相机拍摄弹性体形变来测压力</button>
+      <button data-v="D">D. 它靠极板间距变化引起的电容变化来测压力</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:很多人以为「压力传感器」都能测静态压力,但压电式只响应变化——压电材料(PVDF)在形变时才产生电荷,对恒定压力无持续输出,所以测不了静态力;正因为带宽高、只对变化敏感,它反而天生适合检测滑动时的高频微振动(见 4.1、4.2 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 【编码器误区】关于关节角度编码器的绝对式/增量式选择,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 增量式编码器上电即可直接读到绝对角度,无需回零</button>
+      <button data-v="B">B. 磁编码器天然支持绝对式单圈,上电即知 0~360° 角度,关节建议优先选绝对式</button>
+      <button data-v="C">C. 绝对式编码器无法用于单圈 0~360° 测量</button>
+      <button data-v="D">D. 多圈方案只能靠电池保持计数实现</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:增量式编码器上电不知道绝对位置、需要回零,而磁编码器直接测磁场角度、天然支持绝对式单圈(0~360°),关节强烈建议选绝对式省去每次上电找零(见 5.1、5.2 节)。多圈方案不止电池保持一种,还有齿轮减速+磁编码器、游标/双编码器、软件记录等。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 感知分<b>本体感知</b>(角度/力矩/姿态)与<b>外部感知</b>(视觉/触觉),关节模组主要靠「编码器 + 力矩传感器 + IMU」;② IMU 三件套分工:加速度计「长期准、高频抖」、陀螺仪「高频准、长期漂」、磁力计「给绝对航向、但怕磁干扰」,靠互补滤波/Mahony/卡尔曼缝合,选型看零偏/噪声密度/量程/温漂,RMS 噪声≈噪声密度×√带宽;③ 力矩传感器主流是<b>应变片惠斯通全桥</b>,信号链为「仪表放大器 + Σ-Δ ADC」,加载台标定 + 串扰解耦,<b>减速比越大,电流估计力矩越不可信</b>;④ 触觉四类:压阻/电容(静态好)、压电(只测变化、适合滑觉)、光学 GelSight(亚毫米重建),滑觉采样需数百 Hz 以上;⑤ 磁编码器 TMR 主流、抗油污、建议选绝对式;最后靠<b>时间同步 + 外参标定 + 干净供电</b>把一堆传感器变成一套感知系统。</div>
+
   <!-- ================= 10. 参考资料 ================= -->
   <h2><span class="h2-num">10</span> 参考资料</h2>
   <p style="color:#9aa4b2;font-size:13px">本页关键事实经 web_search 核实;型号指标多为典型值/约值,量产以官方数据手册为准。<b>资料整理更新至 2026-08</b>。</p>

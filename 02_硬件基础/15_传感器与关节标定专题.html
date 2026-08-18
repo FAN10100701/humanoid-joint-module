@@ -110,6 +110,41 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:标定参数属于"硬件个体",应绑定序列号存非易失区(或产线数据库),而非写进固件——换一台电机参数就不同。自动上电标定会打断正常使用且带载时不可靠;温漂/老化/事故都需要按触发条件复标。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. IMU 六面标定中,把 IMU 的 6 个面分别朝上静止采样,核心目的是求解哪组参数?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 加速度计 3 轴零偏(bias)+ 3 轴刻度(scale),非正交项并入刻度矩阵</button>
+      <button data-v="B">B. 电机电角度零位 θe0</button>
+      <button data-v="C">C. 编码器线数 CPR</button>
+      <button data-v="D">D. 减速器背隙与迟滞</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:六面法利用 6 个面的重力读数解出 12 参数——3 轴零偏 + 3 轴刻度(非正交项并入刻度矩阵),公式 b_i=(a_up+a_down)/2、s_i=(a_up−a_down)/2g(见第 3 节)。陀螺仪零偏需另行静止采集 1~5 min 取均值,不是六面法求解的对象。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 关于电角度零位标定,下列做法属于常见误区(错误做法)的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 重复标定 3 次取平均,要求重复性 &lt;0.5° 电角度</button>
+      <button data-v="B">B. 带负载标定——转子被卡住时,定向电流顶住的是负载位置而非 U 轴对齐角</button>
+      <button data-v="C">C. 装减速器前后各标一次(装配应力会改变零位)</button>
+      <button data-v="D">D. 温度剧变后复标(磁编码器温漂)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:这是「✘ 别做」清单里的高频坑(见第 2 节):带负载标定时转子被卡死,读到的机械角不是 U 轴对齐位置,零位必错,越调越糟。正确做法是先卸负载或固定关节、限流 30% 再对齐。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 关于关节零位、限位与方向,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 正方向可以随意定义,与 URDF 不一致只影响仿真、不影响实机</button>
+      <button data-v="B">B. 软限位设在机械限位内缩 2~5°,并配置接近限位自动降速</button>
+      <button data-v="C">C. 电机端编码器与输出端绝对值编码器是同源读数,无需区分</button>
+      <button data-v="D">D. 软限位设在机械限位之外,以充分利用全部行程</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:软限位要内缩 2~5° 留安全余量并加限位减速(见第 4 节);正方向必须与 URDF/仿真一致,否则是 sim2real 首日事故的高频原因;输出端绝对值编码器与电机端编码器不同源,要分别记录。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①电角度零位=U 相通电把 d 轴拉到对齐位置,三步「对齐→读零偏→验方向」,重复 3 次取平均、重复性 &lt;0.5°;②IMU 六面法解 3 轴零偏+3 轴刻度(非正交并入刻度),工装平面度比芯片精度更重要,参数绑定安装位置;③关节零位绑定 URDF 正方向,软限位内缩 2~5° 并加限位减速,电机端/输出端编码器不同源;④力矩标定=砝码力臂+最小二乘拟合(残差 &lt;1% F.S.),大摩擦传动必须补偿否则零附近误差 30%+;⑤先标定、后参数,数据按「硬件个体」管理并设定复标触发条件。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>①标定决定精度天花板,排查永远"先标定后参数";②电角度零位=U 轴通电对齐法,三步:对齐→读零偏→验方向;③IMU 六面法解零偏/刻度,关节零位绑定 URDF 正方向;④力矩标定用砝码力臂+线性拟合,大摩擦传动必须摩擦补偿;⑤标定数据按"硬件个体"管理,设定复标触发条件。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 极对数填错(实际 21 对填成 14)时,零位标定看起来"成功",为什么闭环一定会失败?<br>2. 设计一个批量产线的标定工装:如何在一分钟内完成 6 个关节模组的零位+方向标定?(提示:多轴同时对齐电流)</div>

@@ -121,6 +121,40 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:外环发出的指令频率 ≤ 外环带宽;若内环带宽不足,在这个频段内内环幅值衰减+相位滞后,级联后回路额外损失相位裕度 → 振荡。5~10 倍保证内环在外环工作频段的相位滞后 &lt;~10°,这是级联控制的频域设计准则。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 二阶系统 Bode 图上「−3dB 带宽 ωb」处,输出幅值比约为?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 1.0(完全无衰减)</button>
+      <button data-v="B">B. 0(信号被完全滤除)</button>
+      <button data-v="C">C. 0.707(1/√2)</button>
+      <button data-v="D">D. 0.5(衰减到一半)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:−3dB 由 20·lg(幅值比)=−3 解得幅值比≈0.707(1/√2),对应第 4 节「幅值跌到 0.707 的频率」。常见误区:把 −3dB 当成「衰减一半」(0.5)——那是 −6dB。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 关于一阶惯性环节的时间常数 τ,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 阶跃后经过 1 个 τ,输出达到稳态值的约 63.2%</button>
+      <button data-v="B">B. 3τ 后约 95%,5τ 后约 99%</button>
+      <button data-v="C">C. τ 越大,响应越慢</button>
+      <button data-v="D">D. 经过 1 个 τ,输出刚好走完全程到达稳态</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:惯性环节是指数渐近,永远「接近但不恰好到达」稳态:1τ 只到 63.2%,5τ 才≈99%(见第 2 节)。「过 1 个 τ 就到稳态」是典型错误认知。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 二阶系统 Bode 幅频曲线出现「谐振峰 M<sub>r</sub>」的条件是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 任意 ζ 都会出现</button>
+      <button data-v="B">B. 只有 ζ ≥ 1 才出现</button>
+      <button data-v="C">C. 只有 ζ &lt; 0.707 才出现</button>
+      <button data-v="D">D. 只有 ζ = 1(临界阻尼)才出现</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:谐振峰 M<sub>r</sub>=1/(2ζ√(1−ζ²)),只有当 ζ&lt;0.707 时才有峰值(根号内 1−ζ²>0 且 M<sub>r</sub>>1);ζ≥0.707 幅频单调下坠、无峰(见第 4 节)。</div>
+  </div>
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①拉氏变换把微积分翻译成 s 域代数(微分×s、积分÷s、卷积×),极点位置=系统性格;②一阶看时间常数 τ:1τ 走完剩余 63.2%、3τ≈95%、5τ≈99%;③二阶由 ζ(管超调)与 ωn(管快慢)二维定性,Mp=e^{−πζ/√(1−ζ²)}、ζ=0.707 为无超调甜点;④Bode 三指标:−3dB 带宽(幅值 0.707)、谐振峰 Mr=1/(2ζ√(1−ζ²))(ζ&lt;0.707 出现)、相位滞后(每极点最多 −90°)。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>①拉氏变换把微积分翻译成 s 域代数,极点位置决定系统性格;②一阶看时间常数 τ(63.2%/3τ/5τ),二阶由 ζ 与 ωn 二维定性格:ζ 管超调、ωn 管快慢;③Bode 三指标:−3dB 带宽(跟得动)、谐振峰(共振风险)、相位滞后(稳定性);④整定=搬极点,带宽法公式背后就是这里的数学。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 把 ζ 固定 0.707,ωn 从 6 拖到 20:超调变化吗?上升时间呢?这解释了"带宽与阻尼可以独立整定"吗?<br>2. 为什么机械谐振(柔性关节)会在 Bode 图上表现为高频谐振峰?此时提高速度环增益可能发生什么?</div>

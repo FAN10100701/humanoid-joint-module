@@ -145,6 +145,41 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:超调+振荡是典型增益过高;降 Kp 或加阻尼。加大 Ki 会加剧振荡;加重滤波只掩盖症状还增加相位滞后;电流环与本症状无关(它是内环,已验收合格)。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 关于位置环整定,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 位置环必须靠 Ki 消除静差,纯 P 无法稳定</button>
+      <button data-v="B">B. 位置环 Kp 近似等于期望位置带宽 ωp,响应时间约 3/ωp</button>
+      <button data-v="C">C. 人形关节位置环带宽应做到 200 Hz 以上才够硬</button>
+      <button data-v="D">D. 出现超调时应继续加大 Kp 让跟踪更硬</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:位置环对象含一个积分(速度→位置),纯 P 就能稳定(见第 4 节);Kp(rad/s 量纲)≈ 期望位置带宽 ωp,响应时间约 3/ωp。人形关节 5~30 Hz 已足够,刚性交给上层力控;超调应加 Kd 而非加大 Kp。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 电机速度稳定但发热严重,新手常误判为散热问题,实际首选排查是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 立即更换更大散热器与风扇</button>
+      <button data-v="B">B. 直接调低母线电压</button>
+      <button data-v="C">C. 速度环 hunting 或 Ki 过大</button>
+      <button data-v="D">D. 加大电流环带宽</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 5 节速查表:速度稳但发烫 → 首选速度环 hunting、Ki 过大(高频来回微调产生热耗),其次齿槽转矩/死区/机械卡滞。盲换散热或调母线电压治标不治本,会漏掉真正的控制问题。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 关于电流环目标带宽的选取,下列正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 带宽越高越好,尽量贴近 PWM 频率</button>
+      <button data-v="B">B. 带宽 ≤ PWM 频率的 1/10~1/20,20 kHz PWM 时电流环 ≤ 1~2 kHz</button>
+      <button data-v="C">C. 带宽只由相电阻与相电感决定,与 PWM 频率无关</button>
+      <button data-v="D">D. 带宽设得越高,电机越安静</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 2 节警示框:带宽受 PWM 频率、电流采样噪声与执行延时约束,须 ≤ PWM 的 1/10~1/20(20 kHz PWM → 电流环 ≤ 1~2 kHz)。带宽过高反而嗡嗡声大、电流波形毛刺多,并非越高越好。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①三环由内向外整定,内环带宽 ≥ 外环 5~10 倍;②电流环带宽法 Kp=ωc·L、Ki=ωc·R(ωc=2πf),带宽 ≤ PWM 的 1/10~1/20;③速度环 Kp,v=J·ωv/Kt、Ki 取 Kp 的 1/5~1/10,按症状表看曲线微调;④位置环 Kp≈带宽(5~30 Hz 足够),超调加 Kd;⑤嗡叫/过流/发烫/漂移各有首选排查参数,见第 5 节速查表。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>①级联三环必须由内向外整定,带宽分离 5~10 倍;②电流环用带宽法一步算出初值(Kp=ωcL,Ki=ωcR),上限受 PWM 频率约束;③速度环按"症状-参数表"看曲线微调,位置环 Kp≈带宽、Kd 管阻尼;④嗡叫/过流/发烫/漂移各有首选排查参数,配合故障诊断树页使用。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 若电机参数(相电感)手册值偏小 30%,算出的电流环会发生什么现象?如何在示波器上发现?<br>2. 为什么速度环整定合格后,带上传动比 100:1 的减速器,外环参数通常要重新整定?(提示:折算惯量与反向驱动性)</div>

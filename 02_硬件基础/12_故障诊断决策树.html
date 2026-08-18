@@ -112,6 +112,40 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:安全铁律——高危症状先断电。带故障运行会扩大损坏(功率管炸裂可能连坐母线与电芯)。诊断一律用限流电源(CC 100~300 mA)重新上电。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 电机堵转瞬间整机掉电重启,按高频故障速查表,最常见根因是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 母线电压跌落(堵转电流突增,电源线太细或母线电容太小)</button>
+      <button data-v="B">B. 编码器方向接反</button>
+      <button data-v="C">C. 电流环增益过高</button>
+      <button data-v="D">D. 自举电容失效</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:堵转时电流瞬间拉高,若电源线太细、母线电容太小,母线电压会跌落触发欠压保护而掉电重启(第 3 节速查表)。处置是加大母线电容、加压降保护阈值。编码器方向反、自举电容失效分别对应「闭环疯转」「上电即过流」。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 关节在减速/制动时频繁报 OVERVOLTAGE(过压),最可能的原因是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 电池电压太低</button>
+      <button data-v="B">B. 制动能量回灌母线,而板子没有刹车电阻消耗</button>
+      <button data-v="C">C. 电流采样增益错误</button>
+      <button data-v="D">D. 编码器多圈计数溢出</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:过压报警最常见的触发不是「供电过高」,而是减速/制动时动能回灌母线、无刹车电阻消耗导致母线电压升高(电池满电时下坡/减速最易触发)。处置:加大母线电容、加制动电阻或软件限制减速度。电流采样增益错对应误报过流,编码器溢出对应 ENC_ERROR。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 驱动板功率管「一上电、不转也发烫」,正确的判断是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 正常热机现象,继续运行观察</button>
+      <button data-v="B">B. 加大 PWM 频率即可消除</button>
+      <button data-v="C">C. 更换更大的散热片</button>
+      <button data-v="D">D. 静态直通前兆(死区不足或自举电容失电),立即断电排查</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:这是常见危险误区——把「静态发热」当成热机正常。功率管不转也发烫说明上下管可能同时导通(死区时间不足、栅驱下拉弱或自举电容失电),继续跑会炸管,必须立即断电并用限流电源验证。加大 PWM 频率只会让开关损耗更大。</div>
+  </div>
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①先安全后分层:电源→通信→传感→驱动→控制,高危症状先断电再用限流电源(CC 100~300 mA)排查;②「开环正常闭环疯转」=反馈方向/零位/极对数问题,「嗡叫不出力」=电流环振荡或缺相;③堵转掉电重启=母线电压跌落,减速过压=能量回灌无刹车电阻;④功率管静态发热=直通前兆,须立即断电。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>①排查永远分层:电源→通信→传感→驱动→控制,先安全后诊断;②"开环正常闭环疯转"= 反馈方向/零位问题;"嗡叫不出力"= 电流环振荡或缺相;③决策树的价值在于把"感觉不对"翻译成可执行的检查序列,配合调参手册与标定专题形成完整闭环。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么"偶发"故障(几天一次的过流)比"必现"故障更难排查?你会设计什么复现手段(振动台/温箱/长时间日志)?<br>2. 若三相电流波形一相幅值明显偏小,你的排查树分支会怎么画?</div>

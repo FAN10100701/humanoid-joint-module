@@ -382,6 +382,44 @@
     <div class="quiz-explain">💡 解析:A/B/C 都是真实难点。D 说反了:人形机器人恰恰拥有"免费"的腿式里程计(关节编码器 + 正运动学)和脚底接触约束,它们是抑制漂移的独特优势,代表工作如 Cerberus2.0、Pronto。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 回环检测(Loop Closure)能一次性消除累积漂移,其经典实现 DBoW2 的核心思想是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 用对极几何匹配相邻帧特征点</button>
+      <button data-v="B">B. 把特征描述子聚成「视觉单词」,用 TF-IDF 加权比对历史帧相似度</button>
+      <button data-v="C">C. 直接对 IMU 角速度做两次积分</button>
+      <button data-v="D">D. 把点云体素化成 TSDF 地图</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:回环检测把特征描述子聚类成视觉单词,每帧表示成词频向量,再用 TF-IDF 加权与历史帧比对相似度,超过阈值即判定「我又回到了这里」,给后端加一条全局约束(见 3 节③)。A 是前端里程计的对极几何,C 是 IMU 积分(只会漂),D 是建图模块的表示。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于视觉 SLAM 的「尺度」问题,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 单目相机有尺度模糊,恢复的位姿与地图只能相差一个比例因子</button>
+      <button data-v="B">B. 双目相机同样存在尺度模糊</button>
+      <button data-v="C">C. RGB-D 相机无法提供真实尺度</button>
+      <button data-v="D">D. 尺度问题只影响建图,不影响抓取与避障</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:单目没有深度,只能恢复到「相差一个比例因子」的尺度;双目靠视差、RGB-D 靠逐像素深度,都能直接提供真实尺度(见 2 节)。人形机器人要抓取避障,尺度必须真实,所以主流是双目/RGB-D + IMU 或 LiDAR + IMU。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 下列哪一项是本节第 7 节明确指出要破除的「错误认知」?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 室内 GPS 基本无信号,人形机器人操作避障需要厘米级定位</button>
+      <button data-v="B">B. 传感器越多越好,可以先堆传感器再谈时间同步与外参标定</button>
+      <button data-v="C">C. 跑通 demo 不等于真的会 SLAM</button>
+      <button data-v="D">D. LiDAR SLAM 并非在所有场景都一定强于视觉 SLAM</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:B 正是要破除的误区——未标定、不同步的多传感器会让互相矛盾的数据使优化发散,应先做好时间同步与外参标定再谈融合,宁缺毋滥。A/C/D 都是本节第 7 节所强调的正确认知。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①SLAM=同时定位与建图,输出 SE(3) 上的 6 自由度位姿轨迹+地图,本质是位姿×地图的联合估计;②传感器无「全能冠军」,室内人形首选 RGB-D+IMU,IMU 高频便宜但纯积分必漂;③四模块:前端里程计(短时增量)→后端优化(全局一致)→回环检测(消漂移)→建图(按需选表示);④人形靠腿式里程计+脚底接触约束抑制漂移,难点是运动快、视野低、震动大。</div>
+
   <!-- ================= 9 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>SLAM = 同时定位与建图,核心输出是 SE(3) 上的位姿轨迹与地图,本质是"位姿 × 地图"的联合估计;五种传感器各有所长,主流方案是"视觉/LiDAR + IMU"紧耦合;经典流水线四模块——前端里程计(短时增量)、后端优化(全局一致)、回环检测(消除累积漂移)、建图(按需选表示)——构成了 ORB-SLAM3、VINS、LIO-SAM、RTAB-Map 的共同骨架;2024~2025 年,3D 高斯泼溅 SLAM 与语义 SLAM 正在把"几何地图"升级为"可渲染、可理解"的场景表示;落到人形机器人,腿式里程计与脚底接触约束是抑制漂移的独特武器,而运动快、视野低、震动大是必须正视的三大难点。

@@ -435,6 +435,44 @@ for (int j = 0; j &lt; NUM_JOINTS; j++) {
     <div class="quiz-explain">💡 解析:sim-to-real 的核心思想是"在训练时主动加入不确定性",让策略学会鲁棒——A(域随机化)、B(延迟注入)、D(执行器模型)都是标准做法;而"追求理想仿真"会让策略过度依赖精确信息,部署到有噪声、有延迟的真机上必然失败。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 在 MuJoCo 里,<code>model</code>(MjModel)与 <code>data</code>(MjData)两个对象的分工是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. model 存运行时状态(qpos/qvel/ctrl),data 存静态参数(质量、惯量、约束)</button>
+      <button data-v="B">B. model 是编译后的「静态图纸」(质量、惯量、约束、执行器参数),data 是「运行时状态」(位置/速度/控制量/接触力)</button>
+      <button data-v="C">C. 两者完全等价,可以随意混用</button>
+      <button data-v="D">D. model 只负责渲染,data 只负责物理求解</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 2.4 小节。<code>MjModel</code> 是编译后的静态模型(质量、惯量、关节约束、执行器参数),<code>MjData</code> 是运行时状态(qpos 位置、qvel 速度、ctrl 控制量、接触力等);RL 训练时读 <code>data.qpos/qvel</code> 组成观测、写 <code>data.ctrl</code> 作为动作,再 <code>mj_step</code> 推进。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 想在笔记本上快速验证算法思路、不追求大规模并行,按本页选型口诀应优先选?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. Isaac Lab</button>
+      <button data-v="B">B. Gazebo</button>
+      <button data-v="C">C. PyBullet</button>
+      <button data-v="D">D. RaiSim</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 1 节选型口诀——科研验证/快速原型/CPU 环境选 MuJoCo;大规模并行 RL 训练选 Isaac Lab(需 NVIDIA GPU);ROS 传感器级整机仿真选 Gazebo;「只要快速验证算法思路、笔记本也能跑」选 PyBullet;接触密集、稳定性敏感的研究选 RaiSim。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于策略部署到真机关节模组,下列说法<b>错误</b>的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 训练时的观测顺序/单位必须与部署端完全一致</button>
+      <button data-v="B">B. RL 关节顺序与电机 CAN ID 顺序通常一致,无需额外映射</button>
+      <button data-v="C">C. 仿真里的 PD 增益要与真机关节模组固件配置一致</button>
+      <button data-v="D">D. 人形机器人控制频率常见 50~200 Hz,推理延迟须远小于控制周期</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 6 节部署侧三个易错点。<b>RL 关节顺序 ≠ 电机 CAN ID 顺序</b>,必须显式建立映射表(Unitree H1 尤其如此),所以 B 错误;A(观测对齐)、C(PD 参数一致)、D(控制频率与延迟)都是页面明确列出的正确要求。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 选型:科研/快速原型用 MuJoCo(DeepMind 开源、原生支持 URDF 与 Menagerie),大规模并行 RL 用 Isaac Lab(PhysX GPU、Isaac Gym 继任者),ROS 联调用 Gazebo,快速验证算法用 PyBullet,接触密集研究用 RaiSim;② MuJoCo 三件套:MJCF 四概念 asset/body/joint/actuator,model=静态图纸、data=运行时状态,读 qpos/qvel 作观测、写 ctrl 作动作、mj_step 推进;③ RL 流水线:观察/动作/奖励三件套 + PPO 六步(环境→采样→GAE→clip 更新→评估→导出 ONNX);④ 训练曲线看趋势:reward 上升、episode length 增长、entropy 缓降、critic loss 收敛;⑤ sim-to-real 五技巧:域随机化、动作延迟注入、观测噪声、执行器模型、ZMP 约束;⑥ 部署对齐:观测顺序/单位一致、关节顺序≠CAN ID 需建映射表、PD 增益与 06-02 固件一致。</div>
+
   <!-- ================= 10 参考来源 ================= -->
   <h2><span class="h2-num">10</span> 参考来源</h2>
   <ul>

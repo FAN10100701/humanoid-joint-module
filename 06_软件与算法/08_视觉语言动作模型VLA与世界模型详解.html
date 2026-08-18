@@ -550,6 +550,44 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:Helix 运行在机器人机载 GPU 上(纯端侧),System 2 以 7~9Hz 做语义规划、System 1 以 200Hz(2.0 为 500Hz)做速率控制,是全球首个端侧人形全身 VLA。OpenVLA/π0 需 GPU 服务器推理,UnifoLM-WMA-0 是宇树的世界模型,故 D 正确。</div>  </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 VLA 的训练数据与大规模具身数据集,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. Open X-Embodiment 被称为跨具身学习的「ImageNet」,覆盖 22 种机器人、527 技能、100 万+ 轨迹</button>
+      <button data-v="B">B. DROID 只有几百条演示,规模很小</button>
+      <button data-v="C">C. AgiBot World 是宇树开源的灵巧手数据集</button>
+      <button data-v="D">D. 熟练操作员一天能轻松采集数千条高质量演示</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:B 错,DROID(第 5 节)有 76,000 条演示、350 小时;C 错,AgiBot World 是智元开源、支撑 GO-1 训练,宇树开源的是 G1-Dex1;D 错,第 5 节「现实约束」明确说熟练操作员一天也就采几十条。A 正确。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 针对「数据越多越好」这一常见误区,本页的正确观点是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只要数据量足够大,脏数据也能提升模型表现</button>
+      <button data-v="B">B. 机器人数据质量 > 数量,时间戳不同步、标定错误、本体不一致的脏数据对策略伤害远大于文本模型</button>
+      <button data-v="C">C. 跨本体数据(OXE)完全无用,只能单本体训练</button>
+      <button data-v="D">D. 机器人数据与文本数据一样,数量是唯一决定因素</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 8 节误区三明确指出质量 > 数量,脏数据会「让模型学坏」;C 错,OXE 有用但必须做本体对齐;A、D 把数量当成唯一决定因素,均违背原文。B 正确。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于智元 GO-1 的 ViLLA 架构与 LAPA 潜动作预训练,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. GO-1 完全不用世界模型,只看当前帧直接输出扭矩</button>
+      <button data-v="B">B. ViLLA = VLM(理解)+ 世界模型(预测未来)+ 动作专家(执行),LAPA 先从海量无标注视频学「潜在动作」再小样本微调到真机</button>
+      <button data-v="C">C. LAPA 要求每条视频都有人工动作标注</button>
+      <button data-v="D">D. GO-1 与宇树 UnifoLM 是同一个团队发布</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:A 错,GO-1 的 ViLLA 内含世界模型组件用于预测未来帧,且输出的是潜动作序列而非扭矩;C 错,LAPA 的关键正是「近乎零标注」的视频预训练;D 错,GO-1 属智元,UnifoLM 属宇树。B 正确(第 2 节 GO-1 与第 5 节训练范式③)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①VLA = 「图像 + 语言 → 动作」的端到端模型,演进:RT-1(动作 token)→ RT-2(借网络图文获语义涌现,未见物体泛化约为 RT-1 的 5 倍)→ OpenVLA(开源 7B、256 bin)→ π0(流匹配连续动作块 50Hz)→ 2025 前沿 Helix / GR00T N1 / GO-1 / UnifoLM;②世界模型学「状态 + 动作 → 未来状态」,分像素 / 潜空间 / 奖励三种粒度,代表工作有 Genie、Cosmos、UniSim、Neural Motion Simulator;③分工:VLA 管「现在做什么」(1~50Hz),世界模型管「预演未来」,下层 RL / MPC(50~200Hz)与 FOC 伺服(1kHz+)兜底执行,没有「单模型端到端接管一切」的成功案例;④数据来自遥操作 + OXE / DROID / AgiBot World / G1-Dex1 等开源数据集,训练范式从行为克隆进化到 LAPA 潜动作预训练,质量永远大于数量。</div>
+
   <!-- ================= 11 参考来源 ================= -->
   <h2><span class="h2-num">11</span> 参考来源</h2>
   <p class="my-note">以下链接均经公开渠道核实(VLA / 世界模型领域进展极快,资料整理更新至 <span class="my-year">2025</span> 年,请以官方发布为准)。</p>

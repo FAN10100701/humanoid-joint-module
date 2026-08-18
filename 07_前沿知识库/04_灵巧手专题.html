@@ -407,6 +407,44 @@
     <div class="quiz-explain">💡 解析:GRAB(MPI,2020)是 10 人 × 51 物体 × 1334 段的人手-物体交互动捕数据集,基于 SMPL-X,是学习"人手怎么抓"的首选先验。DexGraspNet 提供的是灵巧手抓取姿态(132 万次)而非整机运动;Open-TeleVision 是 VR 沉浸式遥操作工具;AgiBot World 是百万条真机操作数据,均与 C / D 描述不符。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于「欠驱动」与「全驱动」灵巧手,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 欠驱动是每个关节都配一个驱动器,力控精度最高</button>
+      <button data-v="B">B. 全驱动电机数少于关节数,靠弹簧被动自适应贴合物体</button>
+      <button data-v="C">C. 欠驱动电机数少于关节数,包络抓取时被动自适应、成本低,但单指难以独立控制</button>
+      <button data-v="D">D. 欠驱动一定比全驱动更贵、更重</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:欠驱动的电机数少于关节数,未驱动的关节靠弹簧 / 被动机构自适应贴合物体,优点是轻、便宜、鲁棒,缺点是单指无法独立控制;全驱动则每个可控自由度配一个驱动器,单指独立可控、力控精度高,代价是电机多导致重量 / 体积 / 成本上升。A、B 把两者说反了,D 与「欠驱动省钱省重」相反(见 1.4 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于腱驱动、直驱、连杆三种驱动方案,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 直驱控制带宽高、可靠耐用,但电机全在手上,手部最重</button>
+      <button data-v="B">B. 腱驱动手部最轻,但腱绳磨损、松弛是最大痛点</button>
+      <button data-v="C">C. 连杆输出力大、寿命长,但关节布局受限、手型偏粗壮</button>
+      <button data-v="D">D. 存在一种「绝对最优」的驱动方案,任何任务都能通用</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:本页明确提醒「没有绝对最优方案」:研究力控要带宽 → 直驱,消费级轻量类人 → 腱驱动,高负载工业 → 连杆;选型先问任务要多大指尖力、手装在哪、预算售后谁负责(见 2.1 节及第 2 节末尾警示框)。A、B、C 均与 2.1 节五维对比表一致,只有 D 是常见误区。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 判断一台整机灵巧操作能力更科学的方式是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只看自由度数值,自由度越高一定越强</button>
+      <button data-v="B">B. 看「自由度 × 触觉 × 数据 × 策略」的乘积,而非单一指标</button>
+      <button data-v="C">C. 只看是否开源数据集,与硬件配置无关</button>
+      <button data-v="D">D. 只看成本,越便宜操作能力越强</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:22 DOF 的手如果没有 22 DOF 的触觉、算力与数据支撑,实际表现可能不如「12 DOF + 好触觉 + 好策略」;判断操作能力要看自由度 × 触觉 × 数据 × 策略的乘积,而非单一指标(见 6.3 节警示框与第 8 节误区二)。A 是典型的「自由度军备竞赛」误区。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①夹爪 1~2 DOF 只做 pick &amp; place,灵巧手 6~22 DOF 为在手操作而生;②欠驱动省钱省重适合包络抓取,全驱动贵而准适合精细操作;③驱动四流派——腱驱动最轻但爱松、直驱最快最皮实但最重、连杆力大但笨、混合最贵最全,选型看力 / 速度 / 重量 / 成本 / 可靠性五维;④触觉三件套(指尖阵列、视触觉 / 电子皮肤、六维力)解决滑动检测与力控制,没有触觉的抓取是「盲抓」;⑤控制三线并进(行为克隆 / 强化学习 / 遥操作),数据靠 DexGraspNet / GRAB / Open-TeleVision / AgiBot World 支撑;⑥与 VLA 结合用「大模型出意图、灵巧手出力控」的分层架构;⑦入门从免费仿真起步:抓取生成 → 策略训练 → sim2real → 真手遥操作。</div>
+
   <!-- ================= 11 参考来源 ================= -->
   <h2><span class="h2-num">11</span> 参考来源</h2>
   <p>以下链接均经 web_search 核实为官方 / 稳定地址,产品参数以官网最新为准。</p>

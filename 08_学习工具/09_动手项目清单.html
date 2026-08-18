@@ -152,6 +152,41 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:阻抗律输出的是力矩参考,力矩刻度错 10%,所有 K/D 扫参结论都失真。工程项目的"依赖关系"正是本清单排序的逻辑。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. P1 开环旋转时电机发烫,正确的理解是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 电机烧了,应立即停用换新</button>
+      <button data-v="B">B. 开环下励磁没对准转子,部分电流变成热,属正常现象</button>
+      <button data-v="C">C. 说明电压太低,应加大电压</button>
+      <button data-v="D">D. 编码器接反导致的</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:开环没有编码器反馈,六步换相无法知道转子真实位置,励磁方向与转子没对齐,电流白白变成热——页面 P1 明确写「开环发热是正常的,理解为什么——励磁没对准转子」。把正常发热当故障去换电机,是新手最常见的错误认知。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. P6 CAN 双节点通信的验收标准要求,断掉一个节点后主机应多久内报错?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 10 秒</button>
+      <button data-v="B">B. 1 秒</button>
+      <button data-v="C">C. 100ms</button>
+      <button data-v="D">D. 10ms</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:页面 P6 验收标准为「断节点后主机 100ms 内报错」,这考验的是心跳帧与错误帧的实时性;同一项目还要求连续 1h 丢帧率 &lt;0.01%。验收标准里每个数字都是对系统可靠性的硬性要求。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 关于本页末尾的「三条军规」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. L1 就一步到位买谐波减速器 + 无框力矩电机</button>
+      <button data-v="B">B. 失败照片和调参曲线做完就删,保持整洁</button>
+      <button data-v="C">C. 遇到故障先走决策树(02-12),再动手换硬件</button>
+      <button data-v="D">D. L5 之前不需要吊挂电源与负载</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:三条军规是①预算按级升——L3 之前不要买贵的,L5 之前先吊挂;②每个项目都留档(参数、曲线、失败照片);③遇到故障先走决策树再换硬件。A、B、D 分别违反这三条,是「一步到位」「做完就删」「凭感觉动手」三类常见错误认知。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①12 个项目按 L1~L5 难度分级,从开环点亮(预算 ¥100~200)到整机级(季度级)循序渐进;②项目之间有依赖顺序——先标定(02-12)再整定(02-08),先完成 P5 全套标定再进 P8 力控;③每个项目都有硬性验收标准,达标才算完成(如 P2 静止噪声 &lt;0.1°、P6 丢帧率 &lt;0.01%、P11 摆动误差 &lt;3°);④三条军规:预算按级升、每个项目留档、遇故障先走决策树。</div>
 
   <div class="box box-warn"><b>🤔 思考题:</b>1. 给你的预算(¥500/¥2000/¥10000)分别设计一条最优路径,哪些项目可以合并?<br>2. 如果目标是"一年内做出能走路的双足",P1~P12 里哪些可以跳过?代价是什么?</div>
 

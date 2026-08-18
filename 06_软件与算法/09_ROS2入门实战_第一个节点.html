@@ -225,6 +225,41 @@ rqt_graph                # 可视化计算图:节点 → 话题</code></pre>
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 ros2 topic echo 是调试最常用的命令;录制回放用 ros2 bag,列节点用 ros2 node list。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 ROS 的说法,下列哪一项是正确的?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. ROS 是可以直接安装、替代 Windows/Ubuntu 的操作系统</button>
+      <button data-v="B">B. ROS 是运行在 Linux(主要是 Ubuntu)之上的「元操作系统」/软件框架</button>
+      <button data-v="C">C. ROS2 仍然必须依赖 Master 主节点才能通信</button>
+      <button data-v="D">D. ROS 只能用来控制机械臂</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 1 节「常见误区」:ROS 名字带「操作系统」但不是 Windows/Ubuntu 那样的操作系统,而是运行在 Linux 之上的元操作系统(meta-operating system)。Master 是 ROS1 的中心化组件,ROS2 已去掉(见第 2、3 节)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 发布者代码里 <code>self.create_publisher(String, 'talker_topic', 10)</code> 的第三个参数「10」表示什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 每秒发布 10 条消息</button>
+      <button data-v="B">B. 定时器的触发间隔(单位:秒)</button>
+      <button data-v="C">C. 发布队列长度(QoS 基础)</button>
+      <button data-v="D">D. 消息字符串的最大字符数</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 6.3 代码注释:「队列长度 10(QoS 基础)」。定时器间隔是 0.5 秒(<code>create_timer(0.5, ...)</code>),与 10 无关。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 用 Python 创建 ROS2 功能包时,<code>--build-type</code> 应填哪个值?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. catkin</button>
+      <button data-v="B">B. rosbuild</button>
+      <button data-v="C">C. ament_cmake</button>
+      <button data-v="D">D. ament_python</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 6.2:<code>--build-type ament_python</code> 指定 Python 包(C++ 用 ament_cmake)。catkin 是 ROS1 的构建工具,rosbuild 是更早期的构建方式——混用会卡在各种报错里(见第 3 节)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①ROS 是运行在 Ubuntu 之上的「元操作系统」/软件框架,不是替代 Ubuntu 的操作系统;②分辨版本:ROS1 用 catkin_make/rospy/rosrun,ROS2 用 colcon build/rclpy/ros2 run;③工作空间的 install/setup.bash 不要写进 .bashrc,每个新终端手动 source;④八步跑通节点:建工作空间 → 建包(ament_python)→ 写发布者 → 配 entry_points → colcon build → source → ros2 run → ros2 topic echo;⑤调试最常用:ros2 topic list / echo、rqt_graph。</div>
 
   <div class="box box-tip">
     <b>📌 本节小结:</b>ROS 是"元操作系统",用乐高比喻最容易理解;学 ROS2 前先学会分辨 ROS1/ROS2(关键词/命令/库名);国内安装用小鱼一键安装;配好 Zsh 插件提升效率;按"建工作空间 → 建包 → 写代码 → 配入口点 → colcon build → source → ros2 run → ros2 topic echo"八步跑通第一个节点。

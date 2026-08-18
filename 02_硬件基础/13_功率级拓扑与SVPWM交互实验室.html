@@ -140,6 +140,41 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:功率管开通快、关断慢,无死区时切换瞬间上下管同时导通 → 母线直通炸管。死区是安全代价,其电压畸变再由死区补偿抵消。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 关于零矢量 V0(000)/V7(111),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 零矢量时电机绕组电流一定为零</button>
+      <button data-v="B">B. 端口电压为零,但绕组电流仍经导通的续流管自然衰减</button>
+      <button data-v="C">C. 零矢量会产生最强的有效转矩</button>
+      <button data-v="D">D. 零矢量时同一半桥上下管必须同时导通</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:零矢量只表示三个端口等电位、合成电压矢量为零,不等于「电流为零」。以 V0(000) 为例:三台下管全通,绕组电流经下管续流并按回路阻抗自然衰减;V7(111) 则由上管续流。这正是零矢量能安全插入「不发力」时间片的原理(见实验一矢量说明与思考题 1)。选 A 是常见误区。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 马鞍形调制波的直接来历是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 对母线电压直接低通滤波得到</button>
+      <button data-v="B">B. 三相正弦调制波叠加共模分量 u<sub>cm</sub> = −(max+min)/2 后得到</button>
+      <button data-v="C">C. 由死区补偿电路直接产生</button>
+      <button data-v="D">D. 把载波频率减半得到</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SVPWM 等效为在正弦调制波上注入共模分量 u<sub>cm</sub> = −(max+min)/2,使调制波中间鼓、两头瘪呈马鞍形,把线性调制区上限从 0.785 提升到约 0.907(约 +15% 母线利用率),这正是关节驱动器偏爱 SVPWM 的原因。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 把调制比 m 拖到超过约 0.907 会发生什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 输出谐波被完全消除</button>
+      <button data-v="B">B. 进入过调制,马鞍波削顶、零矢量时间被压到 0,电流环有失控风险</button>
+      <button data-v="C">C. 母线电压利用率突然降为 0</button>
+      <button data-v="D">D. 驱动器自动切换为纯方波且恒稳运行</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:m &gt; 0.907 超出线性区(对应 T1+T2 &gt; 100%),零矢量时间被压到 0,调制波削顶、矢量轨迹不再可线性合成,电流环容易失控。把 m 拉向 0.907 时马鞍顶部越平坦,正是零矢量时间被压缩的直观表现(见实验二图注)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①三相全桥 2³=8 状态 = 6 有效矢量(V1~V6)+ 2 零矢量(V0/V7);②零矢量端口电压为零但绕组电流仍续流,不是「无电流」;③SVPWM 用相邻基本矢量+零矢量按时隙合成,T1/T2/T0 与扇区实时对应;④马鞍波来自共模注入 u<sub>cm</sub>=−(max+min)/2,线性区 m 上限约 0.907(比正弦 0.785 高约 15%);⑤死区防直通是安全底线,0.5~3 μs 间隙,畸变需补偿;⑥m&gt;0.907 过调制削顶,电流环失控风险。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>①三相全桥 8 状态 = 6 有效矢量 + 2 零矢量;②SVPWM 用相邻矢量按时隙合成参考矢量,T1/T2/T0 与扇区实时对应;③马鞍波来自共模注入 −(max+min)/2,直流利用率 +15%;④死区防直通是功率级安全底线,其畸变需补偿。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 设为 V0(000) 时电机绕组还有电流吗?电流经什么器件续流?<br>2. m 拖到 1.0,马鞍波哪里先"削顶"?过调制对电流环意味着什么?</div>

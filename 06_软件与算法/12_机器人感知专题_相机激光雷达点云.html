@@ -483,6 +483,44 @@ rviz2    # 添加 PointCloud2 / LaserScan / Image 显示</code></pre>
     <div class="quiz-explain">💡 解析:融合要求「同一时刻、同一坐标系」的数据。时间戳对不齐(数据错时)与外参不准(坐标系错位)会直接让点云和图像错位,是比数据噪声更致命的工程坑。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">8. 关于相机畸变,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 径向畸变由镜片与成像平面装配不平行造成</button>
+      <button data-v="B">B. 切向畸变由镜片曲面造成,表现为「桶形/枕形」</button>
+      <button data-v="C">C. 径向畸变(k1~k3)源于镜片曲面,离图像中心越远偏折越强</button>
+      <button data-v="D">D. 畸变只与图像分辨率有关,与镜头无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:径向畸变(k1、k2、k3)由镜片曲面导致,光线离中心越远偏折越强,表现为桶形/枕形;切向畸变(p1、p2)才由镜片与成像平面装配不平行造成(见 2.3 节)。把两者成因记反是最常见的错误认知。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 下列哪种激光雷达属于「混合固态(半固态)」?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 速腾聚创 RS-Ruby(机械式 128 线)</button>
+      <button data-v="B">B. 禾赛 Pandar128(机械式 128 线)</button>
+      <button data-v="C">C. 大疆览沃 Livox Mid-360(棱镜非重复扫描)</button>
+      <button data-v="D">D. 思岚 RPLIDAR A1(单线三角测距)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:混合固态用转镜/棱镜/MEMS 微振镜做「小幅度扫描」取代整机旋转,代表有禾赛 AT128 与 Livox Mid-360(棱镜非重复扫描);RS-Ruby、Pandar128 是机械式,RPLIDAR A1 是单线 2D 雷达(见 4.1、4.4 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 把 LiDAR 点云投影到相机图像上「上色」,让点云带颜色,需要的关键参数是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只有 LiDAR 的分辨率与点云强度</button>
+      <button data-v="B">B. 相机内参 K 与激光-相机外参 [R|t]</button>
+      <button data-v="C">C. 只有相机的畸变系数</button>
+      <button data-v="D">D. 只有点云的法线方向</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:投影公式 p_img = K·[R|t]·P_lidar,再归一化除以深度分量——需要相机内参 K 与激光↔相机外参 [R|t],两者缺一不可(见 7.2 节)。只靠分辨率/强度/畸变/法线都无法把 3D 点映射到像素。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①相机 = 针孔模型:内参 K(fx/fy/cx/cy) + 外参 [R|t] + 畸变(k1~k3 径向、p1~p2 切向),用棋盘格/ChArUco + 张正友法标定;②深度相机三路线:结构光(近距高精度、怕强光)、ToF(无纹理依赖、抗光较好)、双目视差(依赖纹理、可室外);③激光雷达分机械式/纯固态/混合固态,线数决定立体程度,点云「稀疏、无序、近密远疏」;④点云流水线:体素降采样→直通/半径滤波→RANSAC 地面分割→欧式/DBSCAN 聚类→法线与 BBox;⑤配准用 ICP(对初值敏感)/NDT(更鲁棒),点云经体素投影转占据栅格/代价地图喂 Nav2;⑥融合分数据级/特征级/决策级,「2D YOLO + 点云提 3D 位姿」是落地最短路径;⑦四大坑:点云带宽、时间戳同步、外参漂移、端侧算力——「数据对不上」比「数据不准」更致命。</div>
+
   <!-- ================= 12 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>感知 = 用传感器把物理世界变成「带几何 + 语义的可靠表达」。相机由针孔模型刻画(内参 K、外参 [R|t]、畸变 k/p),标定用棋盘格/ChArUco + 张正友法;深度相机分结构光/ToF/双目三路线,RealSense 与 Orbbec 各有主力;激光雷达分机械式/固态/混合固态,线数与「近密远疏」决定数据形态,速腾、禾赛、镭神、览沃分占不同赛道;点云处理靠 PCL/Open3D,标准流水线是「降采样→滤波→地面分割→聚类→特征/框」;配准(ICP/NDT)、点云转占据栅格、激光-相机联合标定是把点云「用起来」的关键;融合分数据级/特征级/决策级,2D YOLO + 3D 点云是落地最短路径;真机方案可看宇树 H1/G1、智元、Figure;最后,时间同步、外参漂移、带宽与算力是四个最该提前规避的坑。

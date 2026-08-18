@@ -491,6 +491,44 @@
     <div class="quiz-explain">💡 解析:选 B。Q4.3 明确指出 MuJoCo 纯 CPU 可跑、Isaac 需 N 卡 8GB 起步;ROS2 官方提供 Windows 二进制包(能学入门概念);立创 EDA 是网页版在线工具,与 Python 无关。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">4. 关于本页的入门路径与里程碑,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 入门只需专攻软件,硬件可以完全不碰</button>
+      <button data-v="B">B. 让「带减速器的关节」转起来(里程碑 B)约需 2~3 个月</button>
+      <button data-v="C">C. 里程碑 A「让电机转起来」必须先买谐波减速器和无框电机</button>
+      <button data-v="D">D. 完整入门路径的顺序是「软件 → 硬件 → 理论 → 项目」</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:选 B。Q1.4 给出三个里程碑:B 约 2~3 个月、A 约 2~4 周、C 约 3~6 个月;里程碑 A 只需 20 元蓝板 + 30 元航模 BLDC + 15 元 AS5600,谐波减速器不是入门必需。Q1.2 的路径顺序是「理论 → 硬件 → 项目 → 软件」,D 说反了;Q2.1 强调软硬交替,只学一头会抓瞎。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于「照着画一块板子能不能直接转起来」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 画完原理图并打样回来,板子就能直接转起来</button>
+      <button data-v="B">B. 画板之后还要经过打样、贴片、烧录、调试四道坎,画出来 ≠ 能转</button>
+      <button data-v="C">C. 调试阶段最耗时间的是给电机焊接三根相线</button>
+      <button data-v="D">D. 第一次上电冒烟说明板子彻底失败,应该放弃换方案</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:选 B。Q5.4 明确指出「画出来 ≠ 能转」,中间隔着打样、贴片、烧录、调试四道坎,每道都要钱和时间;调试最耗时间的是「电流采样不准」与「编码器零位不对」,90% 翻车都在这两处,不是接相线;上电冒烟是新手必修课,应串电流表/限流把损失控制在几块钱,而不是直接放弃。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于软硬结合调试,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 电机高速啸叫只能通过更换 MOS 管、采样电阻等硬件解决</button>
+      <button data-v="B">B. 编码器零位偏移只需在硬件上重新固定安装,与固件无关</button>
+      <button data-v="C">C. 电机啸叫可能源于电流采样时机不对,可在软件里调整采样窗口、加大 RC 滤波解决</button>
+      <button data-v="D">D. 硬件问题和软件问题各管各的,互不影响</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:选 C。Q2.3 的啸叫案例中,纯硬件视角「换一遍零件问题依旧」,软硬结合视角用示波器发现电流采样时机不对(PWM 噪声串入 ADC),软件里调整采样窗口、加大 RC 滤波后啸叫消失——改的是代码,根子在硬件布局;编码器零位偏移则要在硬件固定后在固件里跑零点标定例程写入偏移量,B 只做了一半。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①零基础能学,入口是「理论 → 硬件 → 项目 → 软件」4 步约 3 个月,数学「用到哪补到哪」;②入门档约 300~800 元(蓝板 + 航模 BLDC + AS5600 + SimpleFOC),舒适档约 1500~4500 元,最不该省的是示波器/逻辑分析仪;③仿真上 MuJoCo 纯 CPU 可跑,Isaac Lab 要 NVIDIA 卡 8GB 起步,ROS2 先在 Windows 学概念再切 WSL2/Ubuntu;④焊接、买真机、读研都不是门槛,「画板 ≠ 能转」,调试 90% 翻车在电流采样与编码器零位,软硬结合才能定位问题。</div>
+
   <!-- ================= 参考来源 ================= -->
   <h2><span class="h2-num">8</span> 参考来源</h2>
   <ul>

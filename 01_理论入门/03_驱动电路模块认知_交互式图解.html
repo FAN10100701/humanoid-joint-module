@@ -453,6 +453,44 @@
     <div class="quiz-explain">💡 EtherCAT 周期 125μs~1ms 且带分布式时钟,是量产主流;RS485 是低成本入门方案,CAN 是中档方案,SPI/UART 多用于板间或调试。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">7. 三相桥的上桥 N 沟道 MOSFET 需要「自举电路」,主要原因是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 上桥 MOS 耐压更高,自举电路用于降压</button>
+      <button data-v="B">B. 上桥源极接相输出(SW)节点,电位随开关浮动,栅极需相对源极高出 10~15V</button>
+      <button data-v="C">C. 下桥 MOS 不需要栅极驱动,只有上桥需要自举</button>
+      <button data-v="D">D. 自举电路的作用是减小开关损耗</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 上桥 N-MOS 的源极接相输出 SW 节点,导通时源极电位被抬到接近 VBUS,要让栅极仍比源极高 10~15V 才能完全导通,固定 GVDD 不够,需靠自举电容/电荷泵把驱动电压「浮」上去;下桥源极接地,直接用固定 GVDD 即可。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. 关于抱闸(电磁制动器)的使用,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 抱闸可代替电气制动,用于机器人高速运动时的动态减速</button>
+      <button data-v="B">B. 抱闸是「断电刹车」,只用于静止保持,动态减速靠电机电气制动</button>
+      <button data-v="C">C. 抱闸线圈是容性负载,关断时无需续流二极管</button>
+      <button data-v="D">D. 抱闸应与驱动电源共用同一路电源,以简化电路</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 抱闸是「断电刹车」——正常工作时持续通电吸合打开,断电后弹簧抱闸锁死;它只用于静止保持,不能用于动态刹车(会磨损),动态减速靠电机电气制动;线圈是感性负载,关断必须加续流二极管(SS34/FR107),且抱闸通常 24V 单独供电以免干扰驱动电源。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 关于过流保护,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只靠 MCU 软件 ADC 检测电流即可,响应足够快</button>
+      <button data-v="B">B. 必须有硬件级保护(预驱 OCP 或外置比较器),不能只靠软件</button>
+      <button data-v="C">C. 保护触发后应保持 PWM 继续输出,等待软件慢慢处理</button>
+      <button data-v="D">D. 过流保护只需检测母线电压即可实现</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 过流保护必须有硬件级保护(预驱内置 OCP 或外置比较器),软件 ADC 响应是 ms 级、硬件是 μs 级,只靠软件太慢会炸管;触发后 PWM 必须立即关断(全关或下桥导通制动),不能等软件处理。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①主链路:母线电源 → DC-DC → 主控 MCU → 栅极预驱 → 三相逆变桥 → 电机;②预驱把 MCU 的 3.3V PWM 放大为 10~15V 并插入死区,上桥 N-MOS 靠自举、下桥源极接地;③MOS 耐压 ≥1.5×VBUS(48V 选 ≥80V),三电阻采样是工业关节首选;④抱闸是「断电刹车」只用于静止保持,过流保护必须靠硬件级 OCP。</div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>关节驱动器沿「母线电源 → DC-DC → 主控 MCU → 栅极预驱 → 三相逆变桥 → 电机」这条功率与信号主链工作,并由<b>电流采样</b>、<b>双编码器</b>、<b>保护电路</b>、<b>通信接口</b>提供闭环反馈与可靠性保障。核心要点:预驱把逻辑 PWM 放大为可驱动 MOS 的 10~15V 信号并插入死区;MOS 桥全部用 N 沟道、上桥靠自举;电流采样精度决定 FOC 力矩精度;抱闸是「断电刹车」。

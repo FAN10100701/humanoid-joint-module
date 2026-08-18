@@ -1092,6 +1092,44 @@ def levelOrder(root):
     <div class="quiz-explain">💡 解析:波士顿动力以控制 / 动力学见长,Atlas 采用模型预测控制 + 全身控制(WBC,处理接触约束的二次规划)+ 状态估计这条传统控制路线,ZMP / 倒立摆只是其中一环。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">13. 关于闭环控制带宽,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 带宽越高越好,不存在任何上限</button>
+      <button data-v="B">B. 带宽受机械谐振与噪声限制,逼近谐振会自激,并非越高越好</button>
+      <button data-v="C">C. 位置环的带宽应高于电流环</button>
+      <button data-v="D">D. 带宽与采样频率、传感器延迟无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:带宽不是越高越好(见 2.3 Q15)。它受采样频率、传感器延迟与<b>机械谐振频率</b>(关节柔性 / 减速器刚度)约束,带宽逼近谐振会自激;且电流环带宽 &gt; 速度环 &gt; 位置环,故 A、C、D 均错。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">14. 关于 MPC 与 LQR 的区别,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. LQR 能显式处理输入限幅与状态约束</button>
+      <button data-v="B">B. MPC 是无限时域、无约束的解析解</button>
+      <button data-v="C">C. LQR 是「无限时域 + 线性 + 无约束」的解析解,MPC 是「有限时域 + 在线优化 + 可显式处理约束」</button>
+      <button data-v="D">D. 两者在数学上完全等价,没有任何区别</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 2.3 Q14。LQR 解代数 Riccati 方程得固定反馈增益,离线一次算好;MPC 每步在有限预测时域内解带约束优化,滚动优化,能显式处理输入限幅 / 状态约束 / 避障。LQR 可看作「无约束 + 无限时域 + 线性」的 MPC 特例。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">15. 关于减速比与负载惯量,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 负载惯量折合到电机端为 J_eff = J_load / i²</button>
+      <button data-v="B">B. 理想下 τ_out = τ_in × i × η,ω_out = ω_in / i</button>
+      <button data-v="C">C. 减速比越大越好,反驱透明度与带宽也会随之提高</button>
+      <button data-v="D">D. 减速比过大会使反驱透明度变差、摩擦与背隙放大</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:C 是常见误区,见 2.2 Q9。减速比越大输出扭矩越大、转速越低,负载折合惯量按 i² 缩小;但 i 过大→<b>反驱透明度变差、摩擦与背隙放大、带宽受限</b>,所以不是越大越好。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①先看清自己投的岗位(嵌入式 / 控制 / ROS / 感知 / 具身智能五类),技术岗常见 3~5 轮;②FOC 三环从内到外为电流环→速度环→位置环,带宽逐环递减、外环比内环低约 5~10 倍;③减速器按需选:谐波零背隙、行星反驱好、RV 刚度大;④答题统一套路「先结论→再机制→落点」,项目用 STAR,开放题用「拆解→决策点→验证」。</div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>机器人 / 具身智能面试的本质是「用结构化框架展示你对系统从底层(FOC、减速器)到上层(VLA、规划)的通透理解」。把岗位地图看清楚,六大专题高频题各准备一句「结论 + 机制 + 落点」,流程题与场景题统一用「拆解 → 决策点 → 验证」框架,项目用 STAR 讲清「我做了什么 + 量化结果」,手撕会推核心公式——这套组合比临时背题稳得多。

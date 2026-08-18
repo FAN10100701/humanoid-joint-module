@@ -662,6 +662,41 @@ ros2 topic echo /joint_states          # 状态流是否在动</code></pre>
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 MoveIt2 只规划,不直接驱动硬件;它把轨迹作为 FollowJointTrajectory action 目标发给轨迹控制器,由控制器逐周期插值写命令接口,再经硬件接口下发到电机。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">8. 真机上要在「力矩控制」与「位置轨迹控制」之间来回切换,关于 <code>switch_controller</code>,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 切换是瞬间完成的,旧控制器立刻失效、新控制器立刻接管,不需要任何过渡处理</button>
+      <button data-v="B">B. 必须先 unload 旧控制器、再重新 load 新控制器,否则会报错</button>
+      <button data-v="C">C. 会先让「要停用」的控制器安全停住(把当前命令写回硬件,避免跳变),再激活「要启用」的控制器;activate_asap/deactivate_asap 控制是否等前一组完全就绪再切</button>
+      <button data-v="D">D. 两个控制器申请同一关节的同一命令接口时可以直接同时 active,框架会自动排队</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 2.4 与 7.1 节:切换不是瞬间的,框架先让停用方安全停住再激活启用方,避免命令跳变;activate_asap/deactivate_asap 控制「是否等前一组完全就绪再切」。而同一关节的同一命令接口同时只能被一个 active 控制器占用,直接双开会因接口冲突被拒绝激活——把切换想成「瞬时、可随便双开」是最常见的错误认知。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">9. 关于硬件接口基类 SystemInterface 与 ActuatorInterface,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. SystemInterface 一个插件管多个关节(整机),对应 URDF 的 type="system";ActuatorInterface 一个插件管一个执行器,对应 type="actuator"</button>
+      <button data-v="B">B. ActuatorInterface 用于一个插件管整条手臂,对应 type="system"</button>
+      <button data-v="C">C. SystemInterface 只能用于 IMU、力传感器等只读传感器</button>
+      <button data-v="D">D. 两者完全等价,选择哪一个都不影响 URDF 里的 type 取值</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 4.1 节:SystemInterface 是「一个插件管多个关节、共享一条总线」,对应 type="system";ActuatorInterface 是「一个插件管一个执行器」,对应 type="actuator"(每个模组自带 MCU 时可独立热插拔);只读传感器才对应 SensorInterface/type="sensor"。二者适用场景不同,URDF 的 type 必须与所继承基类对应。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">10. 真机到手前,用官方 mock_components/GenericSystem 做离线联调,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. mock 的 read() 直接把「上次写入的命令」当状态回读(假设电机瞬时到位),适合验证控制器与 MoveIt2 的配置正确性,但无法暴露实时性、总线丢包、限位、摩擦等真机问题</button>
+      <button data-v="B">B. mock 会真实仿真电机动力学,能用来验证闭环稳定性</button>
+      <button data-v="C">C. mock 联调通过就代表真机一定能跑通,可以放心直接上电试机</button>
+      <button data-v="D">D. 从 mock 切到真机必须重写控制器 yaml、MoveIt2 配置与上层代码</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 5.2 节:mock_components 假设「命令即状态」,只用来提前暴露约 90% 的配置错误;它不接真实硬件、没有动力学,覆盖不了实时性/丢包/限位/摩擦。从 mock 切真机只需换 URDF 里 &lt;plugin&gt; 的类名与参数,控制器、MoveIt2、上层代码一行不用改——把「mock 通过」当成「真机能跑」是典型误区。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①三层架构:controller_manager(生命周期+调度)/ controller(控制律)/ hardware_interface(总线读写),URDF 的 ros2_control 块声明插件与每关节的 state/command 接口;②生命周期:load→unconfigured、configure→inactive、activate 才运行,spawner 一键「加载+配置+激活」,同一命令接口同时只许一个 active 控制器占用;③常用控制器:joint_state_broadcaster(只读状态)、joint_trajectory_controller(MoveIt2 执行主力,position/velocity/effort 三模式)、joint_group_effort_controller(开环 effort)、forward_command_controller(interface_name 透传);④自定义硬件:继承 SystemInterface(整机)/ActuatorInterface(单执行器),实现 read/write 并 pluginlib 注册,量纲换算 关节角=电机角÷R、关节力矩=电机力矩×R;⑤联调与安全:mock_components 做离线 test 模式、切真机只换 plugin 类名,真机铁律「速度缩放+空载+手按急停」。</div>
 
   <div class="box box-tip">
     <b>📌 本节小结:</b>ros2_control 用 <b>controller_manager(调度 + 生命周期)/ controller(控制律)/ hardware_interface(总线读写)</b> 三层把「控制」与「硬件」解耦,URDF 的 <code>ros2_control</code> 块声明插件与每个关节的 state/command 接口,实时性靠 RT 线程(固定 update_rate + 优先级 + 锁页)。<b>controller_manager</b> 用 <code>ros2 control</code> 完成加载/激活/切换(spawner 一键到位),<b>joint_trajectory_controller</b> 是 MoveIt2 执行主力,<b>joint_state_broadcaster / joint_group_effort_controller / forward_command_controller</b> 各司其职。自定义硬件只需继承 <code>SystemInterface</code> 实现 read/write 并用 pluginlib 注册;真实模组(Unitree/CyberGear/Hdrive)的适配就是把 CAN/EtherCAT 收发封装进 read/write,再用 mock 组件做离线 test 模式。全链路是 <b>MoveIt2 → FollowJointTrajectory → 轨迹控制器 → 硬件接口 → 电机</b>,模式切换靠「多命令接口 + 切换 active 控制器」,力控/阻抗则落到 effort 接口与电机 MIT 模式。

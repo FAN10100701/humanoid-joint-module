@@ -585,6 +585,41 @@ ros2 run controller_manager spawner joint_trajectory_controller</code></pre>
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 控制器是 lifecycle 节点,需显式 activate;joint_state_broadcaster 是"广播关节状态"而非下发力矩;运动规划是 MoveIt2 的事,hardware_interface 才是硬件/仿真抽象。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 xacro 的说法,下列哪一项是错误的?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. &lt;xacro:property&gt; 定义常量,&lt;xacro:macro&gt; 定义可复用的宏</button>
+      <button data-v="B">B. xacro 文件须先经 xacro 工具或 launch 里的 Command 包装转成 URDF,才能被 robot_state_publisher 使用</button>
+      <button data-v="C">C. 直接把 .xacro 文件路径作为 robot_description 参数值传给 robot_state_publisher,不经 xacro 处理也能正确解析</button>
+      <button data-v="D">D. 宏调用形如 &lt;xacro:arm_link name="link1" length="0.3" color="0.2 0.5 1.0 1.0"/&gt;</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 xacro 只是宏预处理语言,下游只认展开后的 URDF:必须经 xacro 工具或 launch 里 Command 包装的 xacro 命令转换(见 1.4 与常见坑 4),直接把 .xacro 当 URDF 用会解析失败。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 用 MoveGroup 接口完成一次「规划 + 执行」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 用 setJointValueTarget 设关节角目标,plan() 返回成功后还需调用 execute(plan) 才真正执行</button>
+      <button data-v="B">B. plan() 会自动下发并执行轨迹,无需再调用 execute</button>
+      <button data-v="C">C. setPoseTarget 只能设置关节角目标,不能设笛卡尔位姿</button>
+      <button data-v="D">D. 真机上无需设置速度缩放,可直接全速执行规划轨迹</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 6.2:setJointValueTarget 设关节角、setPoseTarget 设笛卡尔位姿;plan() 只规划不执行,成功后才 execute(plan);真机务必用 setMaxVelocityScalingFactor 限速并站急停旁(6.3 安全提醒)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">7. 关于 URDF 中 joint 的 type,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. revolute 是绕 axis 无限旋转,continuous 才是有上下限的旋转</button>
+      <button data-v="B">B. fixed 有 6 个自由度,可用于浮动基座</button>
+      <button data-v="C">C. floating 是 0 自由度,表示焊死</button>
+      <button data-v="D">D. revolute 绕 axis 旋转且有上下限,continuous 无限旋转,fixed 焊死为 0 自由度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 1.2 表格:revolute = 1 自由度绕 axis 旋转(有上下限),continuous = 1 自由度无限旋转,fixed = 0 自由度(焊死),floating = 6 自由度(浮动基座)。这是初学最易混淆的一组。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①link 三种几何各司其职:visual 显示、collision 碰撞(应凸体简化)、inertial 质量/惯量(物理与规划必须);②joint 六类型,revolute 绕 axis 有上下限、continuous 无限旋转、fixed 焊死;③xacro 用 property/macro 参数化复用,须转成 URDF 才能被下游读取;④RViz2 显示靠 robot_state_publisher + joint_state_publisher,Fixed Frame 填 base_link;⑤TF2 分 map/odom/base_link 三层,定位节点发 map→odom 纠正漂移;⑥ros2_control 控制器是 lifecycle 节点需 activate,URDF/控制器/MoveIt2 三处关节名必须一致;⑦MoveIt2 用 MoveGroup:setJointValueTarget→plan→execute,真机先限速再执行。</div>
 
   <div class="box box-tip">
     <b>📌 本节小结:</b>URDF 用 link/joint 描述机器人,visual/collision/inertial 三种几何各司其职,xacro 让模型参数化可复用;RViz2 显示模型靠 robot_state_publisher + joint_state_publisher,关键是 Fixed Frame;TF2 维护坐标变换树,map/odom/base_link 三层设计隔离漂移;launch.py 用 LaunchDescription 批量起节点;ros2_control 用 controller_manager 管控制器、hardware_interface 接硬件;MoveIt2 经 Setup Assistant 生成配置包,再用 MoveGroup 完成规划+执行。整条链路是:<b>URDF → TF2 → ros2_control → MoveIt2 → 仿真/真机</b>。

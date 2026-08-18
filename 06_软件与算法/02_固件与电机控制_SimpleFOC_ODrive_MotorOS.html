@@ -430,6 +430,44 @@ odrv0.save_configuration()</code></pre>
     <div class="quiz-explain">💡 解析:相电流采样必须与 PWM 同步——在中心对齐 PWM 的固定时刻(如定时器更新事件)触发 ADC,避开功率管开关瞬间的电流尖峰,才能采到真实相电流。这也是电机控制 MCU 强调"定时器触发 ADC 同步采样"的原因;取平均并不能消除开关噪声,反而引入误差。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 FOC 闭环与编码器,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 不接编码器也能精确控制力矩方向,开环即可实现完整 FOC 闭环</button>
+      <button data-v="B">B. 不接编码器只能开环「盲转」,无法控制力矩方向,只能做「能不能转」的验证</button>
+      <button data-v="C">C. 增量式编码器上电即知绝对位置,无需找零</button>
+      <button data-v="D">D. 闭环 FOC 中电角度 θ 与机械角无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Park 变换与逆 Park 变换都依赖转子电角度 θ,没有 θ 就无法确定力矩方向,只能开环「盲转」验证电机能否转(第 2.8 节)。增量式编码器便宜但上电不知道绝对位置、需要找零,所以关节类产品几乎都用上电即知位置的绝对值编码器;电角度 θ = 机械角 × 极对数,并非与机械角无关。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于 ESP32 与 STM32G431 在电机控制中的选型,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. ESP32 自带 CAN 控制器、ADC 精度高,是关节量产的主力 MCU</button>
+      <button data-v="B">B. STM32G431 无硬件浮点、无高级定时器,不适合 FOC</button>
+      <button data-v="C">C. ESP32 无 CAN 控制器、ADC 精度一般,适合学习 SimpleFOC 与原型验证;做产品原型应选 STM32G431 这类带高级定时器 + FDCAN 的型号</button>
+      <button data-v="D">D. 选型时只需比较两者主频高低,外设无关紧要</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 1.1 节表格明确指出:ESP32 外设丰富但无 CAN 控制器(需外接)、ADC 精度一般,适合「学习 SimpleFOC、无线调试、原型验证」;而 STM32G431 是 Cortex-M4F @170MHz + FPU + CORDIC,带高级定时器(互补 PWM/死区)、内部比较器、运放、FDCAN,是「关节 FOC 主力」。选型要综合主频、外设、价格与生态,不能只看主频。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于 SVPWM 相比简单六步方波换相,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 六步方波的电流谐波更小、转矩脉动更小</button>
+      <button data-v="B">B. SVPWM 母线电压利用率比六步方波更低</button>
+      <button data-v="C">C. 只需 2 个基本开关状态即可合成任意电压矢量,无需零矢量</button>
+      <button data-v="D">D. SVPWM 线性调制区最大相电压幅值约 0.577·Vdc,比六步方波约 0.5·Vdc 提高约 15%</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 2.7 节说明:SVPWM 用 8 个基本开关状态(6 个非零矢量 + 2 个零矢量)合成电压矢量,零矢量用于填充剩余时间 T0;其线性调制区最大相电压幅值可达 Vdc/√3 ≈ 0.577·Vdc,比六步方波等效的约 0.5·Vdc 提高约 15%,且电流更接近正弦、谐波小、转矩脉动小。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①FOC 流水线:电流采样 → Clark → Park → 双环 PID → 逆 Park → SVPWM,每个 PWM 周期执行一次;②选型:学习用 ESP32 + SimpleFOC,量产原型用 STM32G431(高级定时器 + FDCAN);③闭环离不开编码器(提供电角度 θ = 机械角 × 极对数),调参顺序是「先开环 → 再校准 → 后闭环」;④SVPWM 线性调制区最大相电压幅值约 0.577·Vdc,比六步方波高约 15%;⑤ODrive 是开箱即用高功率整板,用 odrivetool 校准后设 CLOSED_LOOP_CONTROL 进闭环;⑥六大坑:采样时序、死区、母线电压、编码器校准、CAN 帧格式、散热限流。</div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>FOC 的本质是把三相交流电机放到旋转坐标系里当直流电机控制,完整流水线是"电流采样 → Clark → Park → 双环 PID → 逆 Park → SVPWM",每一步都有清晰的数学与代码对应;SimpleFOC 是学习这条流水线最快的入口(先开环、再校准、后闭环),ODrive 是开箱即用的高功率整板方案;国产生态里小米 CyberGear 把关节模组成本打到数百元,而 MIT Mini Cheetah 展示了从单关节力控到整机运动控制的开源路径。最后记住:采样时序、死区、母线电压、编码器校准、CAN 帧格式、散热限流,是固件开发的六大生死坑。

@@ -403,6 +403,44 @@
     <div class="quiz-explain">💡 解析:功率 P = V×I,电压升高则同功率下电流减小,线损 I²R 随电流平方下降,线缆也可更细更轻——这是高压平台的核心动机(A 对,B 反)。48V 系统含充电最高电压通常仍低于 60V,可归入安全低电压范畴(C 错);实际整机靠 DC-DC 逐级降压给逻辑 / 传感供电,并非全部直连 48V(D 错)。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 BMS 与热失控安全防护,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只要装了 BMS,电池就绝对安全,不会再发生热失控</button>
+      <button data-v="B">B. 热失控三大诱因是电滥用、机械滥用、热滥用,防护需电芯级、模组级、系统级三层布防</button>
+      <button data-v="C">C. 热失控只可能由外部高温引起,与过充、针刺挤压无关</button>
+      <button data-v="D">D. 磷酸铁锂比三元锂更容易发生热失控</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:热失控三大诱因是电滥用(过充 / 过放 / 低温快充析锂)、机械滥用(针刺 / 挤压)与热滥用(外部高温),见 5.2 节;防护须按"电芯级→模组级→系统级"三层布防,见 5.3 节。BMS 只是软件防线,拦不住已触发的物理 / 化学连锁反应(A 错);磷酸铁锂热稳定性更好、更不易热失控(D 错)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于主流机型电池方案(第 6 节),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 特斯拉 Optimus(Gen2 起)电池容量约 2.3 kWh,电池置于躯干</button>
+      <button data-v="B">B. 宇树 H1 电池容量约 2.3 kWh,高于 Optimus</button>
+      <button data-v="C">C. 宇树 G1 电池容量大于 H1,靠加大电池维持续航</button>
+      <button data-v="D">D. Figure 02 电池容量约 15 Ah(约 800 Wh 级)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 6 节表格显示,Optimus 电池约 2.3 kWh、置于躯干(A 对);宇树 H1 约 15 Ah(约 800 Wh 级)、48 V 级母线、续航约 2 小时;宇树 G1 约 0.4~0.5 kWh,比 H1 更小,靠减重而非加大电池维持续航;Figure 02 约 2.25 kWh、置于躯干。B、C、D 均与表格不符。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于电池选型与续航估算,以下说法符合本页观点的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 电池容量越大越好,Wh 越大续航一定越长</button>
+      <button data-v="B">B. 选型只需看容量 Wh,C 率与功率密度无关紧要</button>
+      <button data-v="C">C. 估算续航应该用"容量 ÷ 峰值功率"</button>
+      <button data-v="D">D. 电池加大后整机变重,腿足关节为撑住自重耗电更多,可能出现"加电池不加续航"</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:这是第 8 节"误区一"的正确认知:电池越大→越重→腿足关节为撑住自重耗电更多→边际收益递减,选型看 Wh/kg 而非单纯 Wh(D 对,A 错)。B 对应误区二(还要看 C 率与功率密度),C 对应误区三(应用平均功耗而非峰值功率),均为常见错误认知。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①功耗大头是关节电机(约 50~70%),整机平均约几百瓦、峰值上千瓦;②三元能量密度高(约 200~300 Wh/kg)但热稳定性差,磷酸铁锂能量密度低(约 140~200 Wh/kg)但更安全长寿,选型看场景;③续航 ≈ 可用能量(Wh)÷ 平均功耗(W),要扣 DOD 与系统效率;④高压平台靠"升压降流"减线损(48 V 主流、72 V 重载),DC-DC 逐级降压构成电源树;⑤BMS 管 SOC/SOH/均衡/保护,热失控三大诱因需电芯-模组-系统三层防护,补能有快充与换电两条路线。</div>
+
   <!-- ================= 11 参考来源 ================= -->
   <h2><span class="h2-num">11</span> 参考来源</h2>
   <p>以下链接均经 web_search 核实;产品参数以厂商官网最新发布为准。</p>

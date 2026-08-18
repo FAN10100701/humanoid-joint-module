@@ -175,6 +175,40 @@
     <div class="quiz-explain">💡 解析:RVGH 是「旋转矢量齿轮(摆线)一体伺服」,内部是摆线盘+针齿传动(约一半齿同时承载),适合大负载关节;人形机器人主流旋转关节用谐波(轻、薄、零背隙),本页减速器剖面图页有谐波/行星/摆线三类对比。想看真实 RV 结构就切到①号产品点「摆线盘」。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">6. 本页伺服电机的磁铁座(转子)是「外转子」结构。极对数为 7 时,转子转 1 圈,电角度变化多少?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 1 圈</button>
+      <button data-v="B">B. 7 圈</button>
+      <button data-v="C">C. 7 × 360° = 2520°(电角度 = 极对数 × 机械角度,一圈机械角对应 7 对极的完整电周期)</button>
+      <button data-v="D">D. 1/7 圈</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电角度 = 极对数 × 机械角度。7 对极电机转子转 1 圈,磁场经历了 7 个完整电周期(7×360°)。这就是为什么 FOC 里电角度是机械角的 7 倍——程序里若把电角度直接当机械角用,转子就会 7 倍速错转(本页早期版本的真实 bug,已修复)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">7. 欠驱动手指抓握时,各指节的运动顺序通常是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 所有指节同时同速弯曲</button>
+      <button data-v="B">B. 近指节先弯,碰到物体后锁止,再由远指节继续包络——逐级锁死实现自适应抓握</button>
+      <button data-v="C">C. 远指节先弯,近指节后弯</button>
+      <button data-v="D">D. 完全随机</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:欠驱动手靠「腱绳/连杆 + 弹簧」分配运动:抓握初期近指节先弯;近指节碰到物体(阻力)后,力转向下一关节,远指节继续弯曲直至贴合——这就是「自适应抓握」,一个电机也能让手指包住任意形状物体。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">8. 本页 RVGH 伺服里摆线盘的「齿差 1」是什么意思?为什么能实现大减速比?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 摆线盘齿数比针齿圈少 1 齿——输入轴转一圈,摆线盘绕中心反向转过 1 个齿距,减速比 = 针齿数(如 27 齿 → 27:1)</button>
+      <button data-v="B">B. 摆线盘比针齿圈多 1 齿,减速比无限大</button>
+      <button data-v="C">C. 齿差 1 指的是电机只有 1 个齿</button>
+      <button data-v="D">D. 齿差 1 是制造公差,和减速比无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:摆线盘(外齿)与针齿圈(内针齿)齿数相差 1:输入偏心轴每转一圈,摆线盘与针齿圈啮合点推进一个齿位,盘自身反向公转 1/27 圈(27 齿时)→ 减速比 27:1。约一半齿同时承载,所以 RV 抗冲击、寿命长;谐波靠柔轮弹性变形实现类似"差 1"效果,更轻更薄。</div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节小结:</b>①一体伺服 = 电机本体(底座/壁/磁铁座/盖)+ 减速机构(摆线盘/轴承毂/输出法兰)+ 编码器,真实模型看分层;②光电编码器靠「码盘光栅+LED+光电管」输出脉冲计数,线数=分辨率,怕污损;③欠驱动灵巧手用「少电机+连杆/腱绳」驱动多关节,自适应抓握,减重降本;④开源模型使用必须遵守许可(本页 LEAP Hand/RVGH 均为 MIT)。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么工业伺服常用「电机端磁编 + 输出端光电/高精编」双编码器?各自在防什么?<br>2. 欠驱动手指抓握时,关节运动是「按顺序逐个锁死」还是「同时运动」?和弹簧刚度有什么关系?<br>3. 摆线减速的「齿差 1」是什么意思?为什么能实现大减速比?(提示:一圈差一个齿)</div>
 

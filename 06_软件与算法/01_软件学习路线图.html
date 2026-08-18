@@ -203,6 +203,44 @@
     <div class="quiz-explain">💡 两条路线都需要 Python(算法/脚本)、Git(协作/版本)、Linux(开发环境),这是共同地基。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">4. 下面哪种说法符合本文对 ROS2 的定位?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 学会 ROS2 就等于学会了人形机器人</button>
+      <button data-v="B">B. ROS2 只是中间件(第 4 层),不负责关节怎么转、怎么走</button>
+      <button data-v="C">C. ROS2 负责让每个关节电机精准出力、平滑转动</button>
+      <button data-v="D">D. ROS2 属于第 1 层电机控制层</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 本文「误区一」明确指出:ROS2 只是中间件(第 4 层),关节怎么转(第 1 层)、怎么走(第 5 层)都不是 ROS2 解决的。选项 A 是典型错误认知,「学会 ROS2 就是学人形机器人」正是本文要纠正的误区。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 在 5 阶段学习计划中,阶段②「电机控制固件」(第 3-6 周)的通关产出物是什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 在 GitHub 建仓库并提交 3 次代码</button>
+      <button data-v="B">B. 让电机闭环转起来,并能调速调力矩</button>
+      <button data-v="C">C. 在仿真里加载人形机器人模型并让其站立/行走</button>
+      <button data-v="D">D. 训练一个策略,使仿真人形机器人在扰动下站稳</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 阶段②的产出物是「让电机闭环转起来」并能调速调力矩;A 是阶段①(第 1-2 周)的产出物,C 是阶段③,D 是阶段④。产出物完成 = 阶段通关,再进入下一阶段。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 在必备工具链清单中,SimpleFOC 官方推荐的嵌入式开发环境是哪个?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. MuJoCo</button>
+      <button data-v="B">B. Miniconda</button>
+      <button data-v="C">C. PlatformIO</button>
+      <button data-v="D">D. ROS2</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 工具链表中「嵌入式开发」一栏注明「SimpleFOC 官方推荐 PlatformIO」(对应 STM32CubeIDE / PlatformIO 两选一);MuJoCo 是仿真工具,Miniconda 是 Python 环境,ROS2 是机器人中间件。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①软件分 7 层:电机控制(FOC)→板级固件→系统(Linux/RTOS)→中间件(ROS2)→运动控制→AI→应用;②两条路线:纯软件(编程→ROS2→仿真→RL)与软硬结合(嵌入式→电机固件→联调→算法),共同地基是 Python+Git+Linux;③6 个月 5 阶段:环境→固件→ROS2/仿真→运动控制/RL→感知/AI,每阶段必须有可检验的产出物;④必备工具:VSCode、PlatformIO、Git、MuJoCo/Isaac Lab、ROS2(Humble/Jazzy)、Miniconda;⑤四大误区:ROS2≠人形机器人、别只跑仿真不碰真机、别跳过数学、收藏≠学会。</div>
+
   <!-- ================= 8. 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>人形机器人软件分 7 层,从 FOC 固件到 AI 应用;有"纯软件"与"软硬结合"两条路线,终点都是"仿真训练 + 真机部署";按 5 阶段计划(编程环境 → 固件 → ROS2/仿真 → 运动控制/RL → 感知/AI)循序渐进,每阶段必须产出可检验的成果;Python、Git、Linux 是两条路线的共同地基。

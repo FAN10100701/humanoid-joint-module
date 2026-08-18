@@ -731,11 +731,15 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.9</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 3D 拆解页真实 STL 重构 + 风格方案精简 + 评论 CORS 修复</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 全站内容扩充:47 页新增自测题与要点速查</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V1.9.9 · 2026-08-17 · 真实 STL 3D 拆解 + 风格方案精简为默认 + 评论 CORS 修复</summary>
+        <summary>V2.0.0 · 2026-08-17 · 全站内容扩充(47 页新增自测题与要点速查)</summary>
+        <div class="faq-a">📚 <b>全站内容扩充</b>:01 理论(6 页)/ 02 硬件(13 页)/ 06 软件算法(14 页)/ 07 前沿(8 页)/ 08 工具(5 页)/ 减速器剖面图页——每页新增 2~3 道「本节自测」题 + 1 个「📌 本节要点速查」框(约 140+ 道新题);3D 拆解页自测补至 8 题;所有新题基于页面真实内容、覆盖常见错误认知、解析引用小节编号;自检 13/13 全绿(quiz-bank 40 题同步不受影响,题库页未改)。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.9.9 · 2026-08-17 · 真实 STL 3D 拆解 + 风格方案精简 + 评论 CORS 修复</summary>
         <div class="faq-a">🔩 <b>3D 拆解页真实 STL 重构</b>:灵巧手改用 UC Berkeley 开源 <b>LEAP Hand</b> 真实 STL(8 部件,MIT),伺服电机改用开源 <b>RVGH 一体伺服</b> 真实 STL(13 部件,MIT);手写二进制 STL 解析器 + 自实现轨道控制(修复 v1.0 OrbitControls 双实例导致的卡死/白屏);自测扩至 5 题;🎨 <b>风格方案精简</b>:删除新野兽派/玻璃拟态/Y2K 三套(按你要求),仅保留默认深空蓝 + 深浅色切换;💬 <b>评论 CORS 修复</b>:确认根因为 CloudBase 免费版无法添加 Web 安全域名——方案改为「关闭网关跨域校验 + 云函数自行返回 CORS 头」(补丁代码见接入指南),前端恢复完整 URL 模式(短 ID 模式会触发 anonymousAuthProvider 错误)。</div>
       </details>
       <details class="faq">
@@ -846,7 +850,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.9.9(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.0.0(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

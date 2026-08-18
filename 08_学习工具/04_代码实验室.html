@@ -231,6 +231,44 @@
     <div class="quiz-explain">💡 级联控制铁律:内环(角度)带宽必须远高于外环(位置),否则外环一动就把内环"带倒"。这与三环控制(电流→速度→位置)由内到外带宽递减是同一个道理。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">4. 实验一中,为什么把 Ki 设为 0,纯 P 控制也能让关节准确到位、没有稳态误差?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 该模型没有重力/摩擦等恒定负载,不存在需要积分消除的静差</button>
+      <button data-v="B">B. 阻尼 b=0.3 会自动把误差补到零</button>
+      <button data-v="C">C. Ki 只在速度环里才起作用</button>
+      <button data-v="D">D. 纯 P 控制天然无静差,任何系统都如此</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 稳态误差来自持续的负载(重力、摩擦)。本模型无重力,纯 P 已能到位,故 Ki 可为 0;真实关节有摩擦和重力才需要 Ki 消差(见实验一「现象解释」第 3 条)。D 是常见误区:纯 P 在有恒定负载的系统中是有静差的。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 代码走读第 ④ 行 Park 变换,最核心的价值是什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 把电流幅值放大 1.5 倍</button>
+      <button data-v="B">B. 把静止坐标系里的正弦量变成 dq 坐标系里的直流量,便于 PI 实现零稳态误差</button>
+      <button data-v="C">C. 消除三相电流之间的相位差</button>
+      <button data-v="D">D. 直接生成三相 PWM 占空比</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 Park 变换把 αβ 静止坐标旋转到随转子转动的 dq 坐标,使正弦量「看起来静止」成直流量;PI 管直流量可实现零稳态误差,这就是 FOC 的全部动机(见代码走读 ④ 与实验二「现象解释」)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 实验二右侧的三相电流波形,任意时刻 ia+ib+ic 等于多少?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 等于当前电流矢量幅值</button>
+      <button data-v="B">B. 恒等于 0(星形接法无中线)</button>
+      <button data-v="C">C. 等于 q 轴电流 iq</button>
+      <button data-v="D">D. 随时间正弦振荡,一般不为 0</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 星形(Y)接法无中线,三相电流汇于中性点,由基尔霍夫电流定律可知任意时刻三者之和必为 0(见实验二「现象解释」第 2 条)。误以为三相电流之和是某个旋转幅值,是常见误区。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①PID 位置环:先加 Kp 到「刚好振荡」,再加 Kd 压超调,真实关节靠 Ki 消重力/摩擦静差;②FOC 几何本质:三相电流合成旋转矢量 → Clarke(3→2)→ Park(旋转→静止,交流变直流)→ id=0 全部电流用于转矩;③倒立摆:角度 PD 先立住(Kd 提供阻尼),级联控制内环(角度)带宽必须远高于外环(位置);④真机实现路径:SimpleFOC/ODrive 位置环、FOC 电流环、MPC/WBC/RL 平衡步态(见 01-02、06-02、04-01、06-04)。</div>
+
   <!-- ================= 小结 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>三个实验演示了机器人控制的三个层次:①PID 位置环 —— 关节运动的最小闭环;②FOC 矢量控制 —— 电流环的几何本质(三相合成旋转矢量、dq 分解、id=0);③倒立摆 —— 平衡与级联控制思想(内环快、外环慢)。这些在真机上的实现路径分别是 SimpleFOC/ODrive(06-02)、FOC 固件(06-02)与 MPC/WBC/RL(04-01、06-04)。

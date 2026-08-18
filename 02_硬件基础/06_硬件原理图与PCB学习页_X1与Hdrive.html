@@ -339,6 +339,44 @@
     <div class="quiz-explain">💡 解析：U2 为 FD6288T（TSSOP-20）三相半桥栅极预驱，高压侧自举；DRV8323R 是 HdriveV2「方案A」的一体化预驱备选。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">7. Hdrive 开源工程适配的无刷电机是？</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 宇树 Go2 关节电机</button>
+      <button data-v="B">B. 大疆 RoboMaster M3508</button>
+      <button data-v="C">C. 伺泰威 GIM6010-8 / GIM8108-8</button>
+      <button data-v="D">D. 达闼 SCARA 关节电机</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：Hdrive 适配伺泰威 GIM6010-8 / GIM8108-8 无刷电机（见本页第 2 节「项目信息」表）；其余均为干扰项，页面未提及。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. 关于 Hdrive V1.1 的三相电流采样，下列说法正确的是？</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 采用母线单电阻采样，且必须外置运放</button>
+      <button data-v="B">B. 三电阻下桥采样，复用 STM32G431 内置运放，省去外部运放</button>
+      <button data-v="C">C. 使用霍尔电流传感器直接测量相电流</button>
+      <button data-v="D">D. 只采样母线电压、不测相电流</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：STM32G431 内置运放 ×3 配合三电阻下桥采样，ADC 注入同步采样与 PWM 中点对齐，因此无需外置运放——「相电流采样必须外置运放」是常见误解（见本页第 2 节硬件框图）。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 关于 HdriveV2 两条重绘路线，下列说法正确的是？</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 方案A DRV8323R 采用自举高侧驱动，占空比受限</button>
+      <button data-v="B">B. 方案B FD6288 修正版是第一版重绘的推荐方案</button>
+      <button data-v="C">C. 方案A DRV8323R 用电荷泵高侧驱动、100% 占空比可用，是第一版重绘推荐</button>
+      <button data-v="D">D. 方案A 与方案B 外围元件数量完全相同</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：方案A（DRV8323R）内置 Buck+电荷泵、电荷泵高侧驱动可 100% 占空比，外围最简，是第一版重绘推荐；方案B（FD6288 修正版）保持三级链路、自举高侧驱动（占空比受限），适合想与 V1.1 BOM 兼容时选用（见本页第 3 节对比表）。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① X1 开源机械结构全套、电子部分未开源，PowerFlow 关节驱动板 ≈ Hdrive 这类 FOC 伺服板；② Hdrive 五大核心器件 = STM32G431(主控) + FD6288(栅极预驱) + MT6701(磁编码器) + SP3485(RS485) + 6×N-MOS 三相桥；③ 信号流 = 24V → Buck(5V) → LDO(3.3V) → MCU 6 路互补 PWM → 栅驱 → 三相桥 → 电机，三电阻下桥 + 内置运放采样；④ V1.1 已知坑 = R49 阻值矛盾 / AGND-GND 单点接地 / R41-R42 标注 / C50 耐压；⑤ V2 重绘 = 方案A DRV8323R 一体化(推荐) vs 方案B FD6288 修正版。</div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结：</b>智元 X1 提供机械结构全套、电子部分未开源；Hdrive 提供关节驱动板的原理图+PCB+BOM 全开源。两者互补——X1 讲「机器人长什么样、怎么装」，Hdrive 讲「每个关节里的驱动板怎么画」。Hdrive V1.1 以 STM32G431 + FD6288 + MT6701 + SP3485 + MOS 桥构建 24V FOC 伺服链路，但电源链路存在 R49 阻值、AGND/GND 单点连接、R41/R42 标注、C50 耐压等疑点；HdriveV2 重绘方案给出「DRV8323R 一体化」与「FD6288 修正版」两条路线。

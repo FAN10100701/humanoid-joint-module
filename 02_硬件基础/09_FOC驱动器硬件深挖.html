@@ -506,6 +506,44 @@ void protection_loop(void) {
     <div class="quiz-explain">💡 解析:直通的物理本质是上下管同时导通、母线对地短路。死区时间在下管关断与上管导通之间留出空窗,避免重叠导通;死区太小会直通,太大则谐波大、效率低。采样电阻、PWM 频率、母线电容都与直通无直接关系。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">8. 自举(Bootstrap)栅极驱动最主要的局限是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 成本高、占用 PCB 面积大</button>
+      <button data-v="B">B. 高边占空比不能长期保持 100%,需下管周期性导通为自举电容补电</button>
+      <button data-v="C">C. 无法驱动 N 沟道上管</button>
+      <button data-v="D">D. 只能用于 12V 以下的低压系统</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:自举靠下管导通瞬间给自举电容充电,把高边栅压抬到相电压之上约 10~15V,因此高边不能长期 100% 占空比,极低速/满占空比场景受限。它恰恰就是用来驱动 N 沟道上管的;「成本高、占面积」是隔离式驱动的缺点;人形关节 48V 以内用自举完全够用(见 2.4 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 关于栅极电阻 Rg 在 PCB 上的放置位置,正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 紧贴 MOSFET 栅极焊盘放置,利用阻尼抑制栅极 LC 振铃</button>
+      <button data-v="B">B. 紧贴栅极驱动芯片的输出脚放置</button>
+      <button data-v="C">C. 放在母线电容与半桥之间</button>
+      <button data-v="D">D. 位置无关紧要,只要串在信号路径上即可</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Rg 必须紧贴 MOSFET 栅极焊盘(不是贴栅驱),这样电阻的阻尼才作用在最需要的地方,能有效抑制栅极 LC 振铃,走线长度 ≤10mm(见 5.2 节)。很多人误以为 Rg 放栅驱侧也一样,其实起不到抑制振铃的作用。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 栅极驱动芯片的 nFAULT 引脚正确的接法是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 悬空即可,芯片内部已自动处理故障</button>
+      <button data-v="B">B. 接一个 LED 指示灯即可</button>
+      <button data-v="C">C. 必须接 MCU 外部中断,故障拉低时立即关断 PWM</button>
+      <button data-v="D">D. 直接接地,拉低表示正常</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:过流/过温/欠压时栅驱会拉低 nFAULT 通知 MCU,只有把它接到外部中断、让 MCU 立即关断 PWM,硬件保护才算真正生效——这条线不接,保护等于白设(见 6.1 节)。nFAULT 常态为高电平,故障时拉低,不是接地。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①分层:控制板(小信号)+ 功率板(大电流)分离,把 EMI 与散热拉开;②选型:MOSFET 看 Vds≥1.5~2×母线(48V→80~100V)、Id≥2~3×额定、Rds(on) 与 Qg 折中,栅驱以自举为主流(高边不能长期 100% 占空比);③采样:低边采样电阻 + 差分运放,双/三电阻为主,ADC 由定时器在 PWM 中心同步触发,注意偏置与零点校准;④母线:按 I=C·dv/dt 估算电容,电解+陶瓷组合,配 TVS/防反接/软启动预充/制动泄放;⑤Layout:功率环路最小化、Rg 贴 MOS、开尔文连接、AGND/PGND 单点连接;⑥保护:比较器逐波限流 + 栅驱 OCP + nFAULT 中断 + 过温/堵转,软硬两层兜底。</div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>FOC 驱动器硬件的核心是「功率级」:分层把大电流与模拟小信号隔开,MOSFET 选型在 Vds/Id/Rds(on)/Qg/雪崩之间权衡,栅驱用自举或隔离把 PWM 放大并插入死区防直通,电流采样用低边采样电阻 + 差分运放、在 PWM 中心同步触发 ADC,母线用电解+陶瓷按 I=C·dv/dt 估算容量并配 TVS/预充/制动,Layout 死守功率环路最小化、开尔文连接、地平面单点连接三条铁律,保护靠比较器逐波限流 + 栅驱 OCP + 过温/堵转多层兜底。开源项目里 ODrive(DRV8301)、VESC、CyberGear 是最好的对照教材。

@@ -488,6 +488,44 @@
     <div class="quiz-explain">💡 轻载(手指/腕/颈)&lt;20N·m 用小型谐波;中载(肩/肘/腰/髋)20~150N·m 用标准谐波;重载(膝/踝)150N·m 以上用 RV 或大谐波。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">6. 关于关节中的电磁制动器(抱闸),正确的说法是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 通电时抱闸锁死,断电时自动释放</button>
+      <button data-v="B">B. 采用「断电抱闸」,断电时锁死以防止关节坠落</button>
+      <button data-v="C">C. 抱闸用来给电机提供加速扭矩</button>
+      <button data-v="D">D. 抱闸属于减速器的一部分</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 关节抱闸是「失效安全」设计:断电(或掉电)时弹簧抱紧、锁死关节,防止机器人断电坠落,通电时才被电磁力释放。很多人容易搞反——不是「通电才锁死」。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关节端采用「双编码器」(电机端 + 输出端)方案,最主要的作用是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 节省成本,少装一个传感器</button>
+      <button data-v="B">B. 用输出端编码器直接测关节输出,消除减速器传动误差</button>
+      <button data-v="C">C. 提高 EtherCAT 通信速率</button>
+      <button data-v="D">D. 替代电流采样,直接测电机扭矩</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 电机端编码器高速、高分辨率,用于电流/速度环;输出端编码器直接测关节末端的真实位置,可消除谐波减速器柔轮变形、回程间隙等传动误差。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. 下列哪一项不属于 FOC(磁场定向控制)的组成部分?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. Clarke 变换</button>
+      <button data-v="B">B. Park 变换</button>
+      <button data-v="C">C. SVPWM 空间矢量脉宽调制</button>
+      <button data-v="D">D. 六步换相(方波控制)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 FOC 通过 Clarke/Park 变换把三相电流变换到旋转坐标系,再用 SVPWM 输出;而六步换相是 BLDC 的方波控制方式,与 FOC 是两类不同的控制策略,不能混为一谈。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①八大板块主干:机械→电机→驱动→传感→控制→通信→集成→应用;②谐波减速器=刚轮+柔轮+波发生器(零背隙),RV=摆线针轮(高刚性、重载用);③无框力矩电机只有定子+转子,高扭矩密度、低惯量;④三环闭环由内向外:电流环(10k~40kHz)＞速度环(1k~5kHz)＞位置环(约1kHz);⑤重载膝/踝 150N·m 以上用 RV/大谐波;⑥抱闸「断电抱闸」防坠落、双编码器消传动误差、FOC≠六步换相。</div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>人形机器人关节模组 = 机械(减速器/壳体/制动)+ 电机(无框力矩电机)+ 驱动(FOC 三相逆变)+ 传感(双编码器/力矩)+ 控制(三环闭环)+ 通信(EtherCAT)+ 集成可靠性,最终按负载分级落地到手指、腕、肩、肘、膝、踝等关节。本页是全站的知识地图,后续每个专题页都对应图中的某个分支。

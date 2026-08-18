@@ -378,6 +378,44 @@
     <div class="quiz-explain">💡 解析:绝缘等级按最高允许温度划分——B 级 130 °C、F 级 155 °C、H 级 180 °C、C 级 &gt;180 °C。H 级对应 180 °C(注意 155 °C 是 F 级)。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 【开关损耗计算】母线电压 V = 48 V,开关电流 I = 10 A,上升+下降时间 t<sub>r</sub>+t<sub>f</sub> = 30 ns,开关频率 f<sub>sw</sub> = 40 kHz,则单次开关损耗 P<sub>sw</sub> 约为?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 约 0.03 W</button>
+      <button data-v="B">B. 约 0.29 W</button>
+      <button data-v="C">C. 约 2.9 W</button>
+      <button data-v="D">D. 约 29 W</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:开关损耗 P<sub>sw</sub> = 0.5·V·I·(t<sub>r</sub>+t<sub>f</sub>)·f<sub>sw</sub> = 0.5 × 48 × 10 × 30×10⁻⁹ × 40×10³ ≈ 0.29 W。开关损耗正比于电压、电流与开关频率,高频大电流时迅速追上来(对应第 5.1 节 MOS 算例)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 【常见误区】关于 TIM(导热界面材料)的使用,下列说法<b>错误</b>的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. TIM 热阻 = 厚度 ÷ 导热系数,涂得越厚热阻越大</button>
+      <button data-v="B">B. TIM 涂得越厚越保险,厚一点能更好隔热保护器件</button>
+      <button data-v="C">C. 液态金属严禁用于铝质表面,会快速腐蚀</button>
+      <button data-v="D">D. 导热硅脂长期受压可能出现泵出(pump-out)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:TIM 的使命是用「最薄的连续层」填满微观气隙,而不是当「隔热垫」——热阻 = 厚度 ÷ 导热系数,越厚热阻越大,堆厚反而把热堵住了(见第 3.2 节 TIM 使用提醒与误区 5)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 【常见误区】当功率器件结温仍然偏高时,下列哪种散热思路最合理?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 无脑加大散热器体积,越大越好</button>
+      <button data-v="B">B. 先定位热阻链中最大的一项,再对症下药</button>
+      <button data-v="C">C. 只要换更大的散热器,结→壳热阻就会自动变小</button>
+      <button data-v="D">D. 散热器只需加大,重量和体积可以忽略</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:热设计约 80% 的功夫是「找到并击穿最大的热阻」。若瓶颈在 TIM 或封装热阻(结→壳/界面)上,堆再大的铝块都收效甚微,还付出重量与体积代价(见第 3 节开头与误区 1)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 热阻 Rth = ΔT/P,串联相加、并联取倒数,热的「欧姆定律」ΔT = P × Rth;② 损耗三来源:铜损 I²R(∝电流²)、开关损耗 0.5·V·I·(t<sub>r</sub>+t<sub>f</sub>)·f<sub>sw</sub>、铁损(磁滞∝f、涡流∝f²);③ 结温 Tj = Ta + P × (RthJC+RthCS+RthSA),硅 MOS 上限约 150 °C、SiC 可达 175 °C 以上;④ 绝缘等级 F 级 155 °C、H 级 180 °C,允许温升 = 最高温度 − 环境温度 − 热点裕量;⑤ 热时间常数 τ = Rth × Cth 决定「峰值能扛多久」,稳态 + 瞬态都要验证;⑥ 热设计先找最大热阻瓶颈、TIM 越薄越好、整机必须做热预算。</div>
+
   <!-- ================= 11. 参考来源 ================= -->
   <h2><span class="h2-num">11</span> 参考来源</h2>
   <ul>

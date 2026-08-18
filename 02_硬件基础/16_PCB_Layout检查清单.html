@@ -313,6 +313,41 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:ESD 电流是纳秒级瞬态,保护器件若离连接器远,浪涌会先冲进后级器件并沿线辐射;必须「贴脸」放在入口、保护地回流入地最短。软件滤波处理不了 μs 级 ESD 尖峰。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 关于功率走线的载流与温升(第 27 条),下列哪项符合本清单的做法?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 1oz 铜按约 40mil/A 查宽,过孔按 0.5~1A/孔并联,长距离大电流按温升降额</button>
+      <button data-v="B">B. 载流不够只要把铜皮加宽就行,过孔无所谓</button>
+      <button data-v="C">C. 铜箔只会因短路熔断,与走线载流设计无关</button>
+      <button data-v="D">D. 1oz 铜可以长期按 100mil/A 载流使用</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:清单第 27 条明确:1oz 铜按 40mil/A(外置参考)查宽,过孔按 0.5~1A/孔并联。过孔是载流链条上的「细脖子」,只加宽铜皮、不打并联过孔,电流仍会被过孔卡住发热;载流不足会让铜箔温升失控甚至熔断。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">7. 关于「地不是地」的地分区设计(第 19 条),下列做法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 整板铺一整块地铜,大电流和小信号共用同一参考点最省事</button>
+      <button data-v="B">B. 功率地/模拟地/数字地分区,一点(或电阻/磁珠)相连,让大电流回流不进模拟区</button>
+      <button data-v="C">C. 模拟地与功率地必须完全断开、互不连接</button>
+      <button data-v="D">D. 分区会增加回路面积,应一律取消分区</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:总纲第三条「地不是地」——功率/模拟/数字地分区后单点(或电阻/磁珠)汇接,目的是让几十安培的大电流回流不流过毫伏级小信号的参考点。完全断开会令参考电位悬空,取消分区则会让功率电流污染采样参考。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">8. 关于电解电容寿命与布局(第 28 条),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 电解电容寿命只与电压有关,与温度无关</button>
+      <button data-v="B">B. 电解电容耐高温,贴着 MOSFET 放能顺便散热、更长寿</button>
+      <button data-v="C">C. 电解电容寿命随温度每升高约 10°C 约减半,应远离 MOSFET、电感、采样电阻</button>
+      <button data-v="D">D. 晶振/霍尔传感器对温度不敏感,放哪都行</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:清单第 28 条明确「电解电容寿命随温升每 10°C 约减半」,是「热失效比电失效更隐蔽」的典型。电解电容、晶振、霍尔传感器都应远离 MOSFET、电感、采样电阻等发热源;把电解电容贴着 MOSFET 放是常见误区,会显著缩短寿命。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①叠层定回流地基——4 层板用「信号/地/功率/信号」,关键信号紧贴完整地平面、不跨槽;②功率环路最小面积——母线电容紧贴桥臂、相线短而宽、开关节点铜面积克制;③电源去耦就近——0.1µF 距引脚 ≤3mm,大电流 Buck 多颗陶瓷降 ESR;④差分采样「就近、差分、远离」+ 地分区单点汇接;⑤热与载流一起算——1oz 铜约 40mil/A、过孔 0.5~1A/孔,电解电容寿命每升温约 10°C 减半;⑥DFM/ESD/爬电收尾——ESD 贴连接器、>60V 核算爬电、丝印带版本号。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>36 条清单就是六句话的展开——①叠层定回流地基、②功率环路最小面积、③电源去耦就近引脚、④差分采样就近滤波 + 地分区单点、⑤铜箔散热与载流温升一起算、⑥DFM/ESD/爬电收尾。清单打满 100% 再投板,省的是三轮打样的两周时间。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 四层板该怎么排层叠(信号/地/功率/信号)?地平面完整性与功率回流路径如何兼得?<br>2. 为什么编码器磁环要远离电机绕组端?板上的磁编码器又该避开哪些器件?<br>3. 一条 CAN 差分对若在换层时只在信号过孔旁打一个过孔、忘了加回流地过孔,会发生什么?</div>

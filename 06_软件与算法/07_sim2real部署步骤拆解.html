@@ -184,6 +184,41 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 电机不是理想力矩源,有延迟、带宽、饱和、发热降额 —— 这是仿真常忽略、真机必存在的 gap 来源之一。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 在第 10 步「数据闭环」中,真机试跑产生的数据里,哪种最值得回灌到仿真?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只保留任务成功的片段</button>
+      <button data-v="B">B. 摔倒、异常、失败的片段</button>
+      <button data-v="C">C. 只保留仿真生成的画面</button>
+      <button data-v="D">D. 只保留电机温度日志</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 2 节第 10 步:只收集成功数据会掩盖失败模式,摔倒/异常数据更珍贵,它们能暴露 sim2real gap 的真实分布。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 关于「仿真跑分高 = 真机能跑」这个想法,正确的理解是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 正确,仿真满分必然能上真机</button>
+      <button data-v="B">B. 正确,只要渲染足够逼真就行</button>
+      <button data-v="C">C. 错误,gap 没缩小前仿真分数没有迁移意义</button>
+      <button data-v="D">D. 错误,但只要跳过域随机化就能解决</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 4 节常见误区:仿真 100 分、真机可能 0 分。关键是缩小 sim2real gap,而不是盲目追求仿真分数或画面逼真。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">7. 策略推理是 50Hz,而电机 FOC 控制环是 10kHz,正确做法是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 把策略输出的目标直接逐点下发给电机</button>
+      <button data-v="B">B. 让电机控制环自己降低到 50Hz</button>
+      <button data-v="C">C. 对策略输出插值/平滑后再下发</button>
+      <button data-v="D">D. 两者频率不同也没关系,无需处理</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 3 节工程细节①:策略(如 50Hz)与电机环(如 10kHz)频率不同,策略输出的目标要经插值/平滑后再下发,否则真机会「一格一格」抖动。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①sim2real gap 来自物理、执行器、延迟、噪声、算力五处差异;②十步流程:建模→辨识→域随机化→延迟注入→噪声注入→奖励塑形→PPO 训练→导出(ONNX/C++)→真机部署→数据闭环;③推理时取动作均值而非采样,导出后校验输出误差小于 1e-3;④三个工程铁律:频率对齐(插值)、限幅与急停、先支撑后自由。</div>
 
   <div class="box box-tip">
     <b>📌 本节小结:</b>sim2real gap 来自物理、执行器、延迟、噪声、算力五处差异;十步流程(建模→辨识→域随机化→延迟注入→噪声注入→奖励塑形→训练→导出→部署→数据闭环)把 gap 逐步缩小;三个工程铁律是"频率对齐、限幅急停、先支撑后自由"。

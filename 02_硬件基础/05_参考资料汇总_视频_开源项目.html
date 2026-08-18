@@ -899,6 +899,44 @@
     <div class="quiz-explain">💡 解析:SOEM(Simple Open EtherCAT Master)是最适合入门的开源 EtherCAT 主站,支持 Windows/Linux,例程丰富;进阶可用 IgH(Linux 高性能)、TwinCAT(商业最全)。CANopen 是 CAN 总线之上的应用层协议,与 EtherCAT 主站不同。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">6. 关于半桥驱动中的「死区时间」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 死区时间越长越好,能彻底避免炸管且电流更平滑</button>
+      <button data-v="B">B. 其作用是防止同一半桥上下管同时导通造成电源直通短路炸管</button>
+      <button data-v="C">C. 死区时间越短越好,能减少开关损耗且无副作用</button>
+      <button data-v="D">D. 死区时间由 MCU 软件计算得到,与硬件开关速度无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:同一半桥的上下管绝不能同时导通,否则电源经上下管直接短路炸管,死区时间就是开关切换时插入的一段「两管都关断」的间隔。它通常为几百 ns 到几 μs:太短会直通炸管,太长则会导致电流失真,因此不是越短或越长越好。参见第 8 节「死区时间」名词释义。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. FOC 中生成 6 路 PWM 的 SVPWM,相比传统 SPWM 的直流母线电压利用率约提高多少?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 5%</button>
+      <button data-v="B">B. 10%</button>
+      <button data-v="C">C. 15%</button>
+      <button data-v="D">D. 30%</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SVPWM(空间矢量 PWM)通过组合 8 个基本电压矢量(6 个有效矢量 + 2 个零矢量)合成目标电压矢量,比传统 SPWM 的直流母线电压利用率高约 15%,是 FOC 中生成 6 路 PWM 的标准方法。参见第 1 节 SVPWM 资源与第 8 节「SVPWM」名词释义。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. 关于电流环/速度环/位置环三环控制的整定,下列做法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 先调位置环,再调速度环,最后调电流环</button>
+      <button data-v="B">B. 外环带宽应比内环高 5 倍以上,以保证响应快</button>
+      <button data-v="C">C. 从内到外依次整定:电流环 → 速度环 → 位置环</button>
+      <button data-v="D">D. 三个环相互独立,可以同时整定</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:三环从内到外为「电流环(最内、带宽最高)→ 速度环 → 位置环(最外、带宽最低)」,内环响应必须比外环快 5 倍以上,整定顺序必须由内到外:先电流环 → 再速度环 → 最后位置环。常见误区是把带宽关系搞反或同时整定,会导致震荡。参见第 4 节「FOC 学习要点速记」与第 8 节「三环控制」。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 本页按「入门认知 → 抖音短视频 → 驱动电路 → FOC 算法 → 机械结构 → 调试实战 → 通信总线」递进整理,⭐ 标注为强烈推荐资源;② FOC 学习顺序 Clarke → Park → PID 电流环 → 反 Park → SVPWM,三环整定由内到外「电流环 → 速度环 → 位置环」,内环带宽须比外环高 5 倍以上;③ 谐波减速器三大件为波发生器/柔轮/刚轮,减速比 = 柔轮齿数 ÷ 2,典型 50:1~160:1,回差通常小于 1 弧分;④ 常见实操坑:编码器零位未校准 → 电机抖动/反转,死区太短 → 直通炸管,120Ω 终端电阻只加在总线两端。</div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>本页是关节模组学习的「资料地图」:按「入门认知 → 抖音短视频 → 驱动电路 → FOC 算法 → 机械结构 → 调试实战 → 通信总线」的递进顺序整理了视频、文章、开源项目与芯片手册,并附 28 个专业名词释义和 H1/G1/X1 三台整机按部位分类的官方资料索引。学习时以 ⭐ 标注资源为主干,遇到不懂的名词随时回查「专业名词释义」,配合本站「驱动电路交互式详解」「3D 解剖式知识可视化」页面交叉印证,效果最佳。

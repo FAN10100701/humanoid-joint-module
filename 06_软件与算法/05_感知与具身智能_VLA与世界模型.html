@@ -486,6 +486,44 @@
     <div class="quiz-explain">💡 解析:世界模型学习"状态+动作→未来状态",让机器人在想象中试错(用于规划与 RL 样本),从而降低真机数据成本;扭矩仍由伺服层输出,传感器与关节伺服都不可替代,故 A、B、D 均错误。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 VLA 大模型在机器人控制中的定位,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. VLA 可以直接输出 1kHz 的关节扭矩,替代伺服闭环</button>
+      <button data-v="B">B. VLA 只能输出文字,无法生成动作</button>
+      <button data-v="C">C. VLA 在高层低频「选动作」,扭矩与伺服闭环仍由底层 FOC 三环执行</button>
+      <button data-v="D">D. 大模型推理快,可以放心地放进电机电流环</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:这是第 7 节「常见误区」的典型错误认知。VLA 只输出 1~50Hz 的高层动作或离散意图,不是 1kHz 的扭矩指令;大模型推理慢且不可控,绝不能进电流环。正确做法永远是分层——上层选动作、下层 FOC 三环闭环执行,扭矩限幅与急停常驻,故 A、D 错误、C 正确;B 把 VLA 混同于只输出文字的 VLM,同样错误。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于灵巧手数据采集的三种方式,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 遥操作采集的数据与机器人本体不一致,需大量后处理</button>
+      <button data-v="B">B. 动捕/示教采集快,但人手到灵巧手的重定向存在运动学误差,需后处理</button>
+      <button data-v="C">C. 视频学习能直接获得力、触觉与深度信息</button>
+      <button data-v="D">D. 遥操作采集最快、几乎零标注成本</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 5 节表格对比了三种方式——遥操作数据与机器人本体一致、直接可用,但采集慢、易疲劳、设备贵(故 A、D 错误);动捕/示教采集快,但重定向存在运动学误差、需后处理(B 正确);视频学习数据量巨大、几乎零标注成本,但缺力/触觉/深度信息,需要世界模型补足(C 错误)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于「感知 → 决策 → 控制」数据流的频率分层,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 越靠近电机,控制频率越低</button>
+      <button data-v="B">B. 语义决策层(VLA)应运行在 1kHz 以上</button>
+      <button data-v="C">C. 越靠近电机,控制频率越高:FOC 三环以 1kHz 量级闭环,是安全的最后一道闸</button>
+      <button data-v="D">D. 大模型推理虽慢,但仍应直接参与扭矩输出</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 2 节的「频率金字塔」指出:语义层 1~10Hz(VLA 选动作)→ 动作层 50~1000Hz(RL/MPC 出关节命令)→ 伺服层 ≥1kHz(FOC 三环闭环扭矩)。越靠近电机频率越高,故 A 错、C 对;VLA 慢而「聪明」,只选动作、不出扭矩,故 B、D 均错误。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 感知栈五类传感器(RGB-D/双目相机、LiDAR、IMU、关节编码器、触觉/力觉)各司其职,靠多传感器融合而非单点最优;② 数据流频率分层:语义层 1~10Hz「选动作」、动作层 50~1000Hz「做执行」、伺服层 ≥1kHz(FOC 三环)出扭矩,大模型绝不进扭矩回路;③ VLA 把「动作」当 token/连续量生成,脉络 RT-1/RT-2 → OpenVLA → π0 → 2025 人形全身化(Helix、GR00T N1、GO-1、UnifoLM);④ 世界模型学「状态+动作 → 未来状态」,支撑想象规划与基于模型的强化学习,但长时程预测会累积误差,只当数据增强 + 规划辅助;⑤ 灵巧手数据三路线(遥操作 / 动捕示教 / 视频学习),难点在高自由度、触觉缺失、接触动力学与运动重定向。</div>
+
   <!-- ================= 10 参考来源 ================= -->
   <h2><span class="h2-num">10</span> 参考来源</h2>
   <p class="my-sensor-note">以下链接均经公开渠道核实;VLA / 世界模型领域进展极快,资料整理更新至 <span class="my-year">2025</span> 年,请以官方发布为准。</p>

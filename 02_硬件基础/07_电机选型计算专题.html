@@ -397,6 +397,44 @@
     <div class="quiz-explain">💡 解析:τ_out = τ_motor × i × η = 7 × 9 × 0.85 = 53.55 ≈ 53.6 N·m。注意要乘效率 η,不能只看理想值 63 N·m。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 【KV 与扭矩常数】某无框电机标称 KV=100 rpm/V,则其扭矩常数 Kt(约等于反电动势常数 Ke)约为多少?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 约 9.55 N·m/A</button>
+      <button data-v="B">B. 约 0.096 N·m/A</button>
+      <button data-v="C">C. 约 0.955 N·m/A</button>
+      <button data-v="D">D. 约 955 N·m/A</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SI 单位制下 Kt = Ke = 9.55 / KV,代入得 9.55/100 = 0.0955 ≈ 0.096 N·m/A(见第 4 节,与页面 RI50 KV100 → Kt≈0.096 N·m/A 一致)。KV 越小、Kt 越大,越偏「力矩型」。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 【常见误区】关于峰值扭矩与持续扭矩,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 峰值扭矩可长期输出,可直接当作长期工作点来选型</button>
+      <button data-v="B">B. 峰值扭矩只覆盖加减速等瞬时需求,长期发热需用 RMS 有效扭矩对比持续扭矩</button>
+      <button data-v="C">C. 只要峰值扭矩足够大,电机长期运行就不会过热</button>
+      <button data-v="D">D. 持续扭矩与峰值扭矩是同一概念,只是叫法不同</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:峰值扭矩是「短跑成绩」,持续扭矩才是「长跑能力」(见第 2 节②与第 7 节误区 1)。长期工作在峰值附近,绕组会因铜损 I²R 持续发热而烧毁,必须用 RMS 有效扭矩 ≤ 持续扭矩做热校验。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 【极对数】FOC 控制中,若电机极对数 p=7,转子机械角转过 10°,则电角度转过多少?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 10°</button>
+      <button data-v="B">B. 约 1.43°</button>
+      <button data-v="C">C. 70°</button>
+      <button data-v="D">D. 17°</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电角度 = 极对数 × 机械角度 = 7 × 10° = 70°(见第 4 节「极对数 p」)。编码器读到的机械角度必须乘极对数才能得到正确转子电角度;极对数填错,电机可能不转、乱抖甚至反转(误区 5)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 选型先定「电机家族」——人形旋转关节主力用无框力矩电机(扭矩密度最高、可中空走线、集成度最好);② 负载扭矩 = 静载 τg + 加速 τa + 摩擦 τf,再乘安全系数 SF(约 1.2~1.5)得设计值;③ 峰值扭矩覆盖瞬时、RMS 有效扭矩 ≤ 持续扭矩做热校验,别只盯峰值;④ 减速器「一进三得」:扭矩 ×i、转速 ÷i、负载惯量反射 ÷i²;⑤ Kt = Ke = 9.55/KV,低 KV = 高 Kt = 力矩型;电角度 = 极对数 × 机械角度。</div>
+
   <!-- ================= 10. 参考来源 ================= -->
   <h2><span class="h2-num">10</span> 参考来源</h2>
   <ul>

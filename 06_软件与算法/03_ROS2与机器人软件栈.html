@@ -576,6 +576,44 @@ arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
     <div class="quiz-explain">💡 解析:TF 树根取决于任务;静态变换常固定传感器与本体;URDF 的 joint 有五种类型;模型乱飞绝大多数是 TF 断链或 Fixed Frame 设错。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 MoveIt2 与人形机器人,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. MoveIt2 主要面向固定基座的机械臂运动规划</button>
+      <button data-v="B">B. 人形机器人是浮动基座 + 全身协调 + 平衡约束的系统,直接套 MoveIt2 难以走路</button>
+      <button data-v="C">C. 人形机器人的全身平衡控制通常由 WBC / MPC / RL 策略实现</button>
+      <button data-v="D">D. MoveIt2 专为人形机器人的步态与平衡控制而设计</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 6.2 节。MoveIt2 的设计前提是「固定基座机械臂」;人形机器人是浮动基座、重心/ZMP 需在支撑多边形内、全身耦合、动态行走的系统,「先规划后执行」不适用,需改用 WBC/MPC/RL。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 某团队工控机为 Ubuntu 22.04、需兼容宇树等厂商 SDK,新手应首选哪个 ROS2 发行版?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. Humble Hawksbill(LTS)</button>
+      <button data-v="B">B. Jazzy Jalisco(LTS)</button>
+      <button data-v="C">C. Iron Irwini</button>
+      <button data-v="D">D. Kilted</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 1.3 节。Humble 绑定 Ubuntu 22.04、生态最成熟、宇树等厂商包普遍支持,是新手首选;Jazzy 绑定 24.04,Iron 已 EOL,Kilted 为非 LTS 尝鲜版。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于 QoS 与通信故障,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 传感器数据常用 best_effort + 深队列,允许丢帧</button>
+      <button data-v="B">B. 控制指令常用 reliable,保证不丢</button>
+      <button data-v="C">C. 两端 QoS 不兼容时会弹出明确报错提示</button>
+      <button data-v="D">D. 仿真时需设置 use_sim_time:=true 并读取 /clock</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见坑 5。QoS 不匹配会「静默断连」——无报错、只是没数据,需用 ros2 topic info -v 核对;其余三项均为正确用法。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①ROS2 用 DDS 去中心化取代 ROS1 的 roscore,引入 QoS 与生命周期;②六大概念:节点 / 话题(异步一对多)/ 服务(同步请求响应)/ 动作(长任务可取消带反馈)/ 参数(运行时可调)/ 命名空间(多机隔离);③工程范式:colcon build + package.xml + launch,忘 source install/setup.bash 会报 Package not found;④URDF/xacro 描述结构、TF 描述坐标系、RViz2 可视化,模型乱飞多为 TF 断链;⑤MoveIt2 适合固定基座机械臂,人形走路需 WBC/MPC/RL 全身控制;⑥常见坑:发行版对齐(Humble↔22.04、Jazzy↔24.04)、RMW 实现统一、QoS 匹配、ROS_DOMAIN_ID 隔离。</div>
+
   <!-- ================= 11. 参考来源 ================= -->
   <h2><span class="h2-num">11</span> 参考来源</h2>
   <div class="box box-tip"><b>🧭 配套实战:</b>学完本页概念后,推荐继续 <a href="09_ROS2入门实战_第一个节点.html">06-09 · ROS2 入门实战:第一个节点</a>(西交笃行队教程精华:小鱼安装/Zsh 终端/完整代码跑通)。</div>

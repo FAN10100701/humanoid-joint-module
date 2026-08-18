@@ -413,6 +413,44 @@ pin.computeJointJacobians(model, data, q)</code></pre>
     <div class="quiz-explain">💡 解析:det(J) = L1·L2·sinθ2,当 θ2 = 0 或 π(完全伸直/折回)时行列式为 0,J 不可逆,即奇异位形——此时末端沿臂方向无法用有限关节速度驱动。θ2 = 90° 时 sinθ2 = 1,行列式最大、灵活性最好。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于逆运动学(IK),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 给定末端位姿,IK 总能算出唯一的一组关节角</button>
+      <button data-v="B">B. 解析法(闭式解)几乎对任意结构的机械臂都适用</button>
+      <button data-v="C">C. 数值法一般只收敛到离初值最近的解,且初值不好时可能不收敛</button>
+      <button data-v="D">D. 目标点超出臂展时,IK 仍有解,只是精度较差</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:IK 是 FK 的反问题,可能存在多解、无解和奇异点(见 5 节),A 错;解析法只对结构简单、有闭式解的臂有效,通用的是数值法(见 5.1),B 错;目标点超出臂展(距离大于 L1+L2)时 c2 绝对值大于 1、acos 无定义,即无解(见 5.2),D 错。数值法从初值出发逐步逼近,一般只收敛到离初值最近的解、初值差还可能不收敛,C 对。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 末端要顶住外力 F 时,各关节需要输出的力矩 τ 用雅可比矩阵 J 如何计算?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. τ = J·F</button>
+      <button data-v="B">B. τ = Jᵀ·F</button>
+      <button data-v="C">C. τ = J⁻¹·F</button>
+      <button data-v="D">D. τ = F/J</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:雅可比矩阵有两个用途——速度映射 v = J·q̇(关节速度→末端速度)与力映射 τ = Jᵀ·F(末端力→关节力矩),是一对「对偶」关系(见 6.1、6.3)。选关节电机扭矩时,就是拿最恶劣位形下的 τ 峰值来选型。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于标准 DH 与改进 DH(Craig),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 两套参数的 θ、d、a、α 数值完全相同,只是公式写法不同</button>
+      <button data-v="B">B. 标准 DH 把坐标系放在连杆近端,改进 DH 放在远端</button>
+      <button data-v="C">C. 标准 DH 把坐标系放在连杆远端(靠近关节 i+1),改进 DH 放在近端,两套参数数值与相乘顺序都不同</button>
+      <button data-v="D">D. 改进 DH 不再需要 θ 这个参数</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:标准 DH 把连杆 i 的坐标系放在连杆 i 的远端(靠近关节 i+1),改进 DH 放在近端(靠近关节 i),且变换相乘顺序也不同(见 3.2 的⚠️提示)。同样的机械臂两套参数数值不同,抄表前必须先确认用的是哪套约定,否则 FK 会得到镜像/错位的姿态。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①位姿 = 位置 + 姿态,姿态首选旋转矩阵/四元数(避万向锁),给人看才转欧拉角;②齐次变换把旋转+平移装进 4×4,连乘「最右矩阵最先作用」,顺序不可交换;③DH 参数 θ/d/a/α 标准化每根连杆,连乘得 FK(关节角→末端,解唯一);④IK 由末端反推关节角,解析法快但受限、数值法通用但依赖初值,且有多解/无解/奇异;⑤雅可比 J:速度 v=Jq̇、力 τ=JᵀF,det(J)=0 即奇异位形,必须避开。</div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 本节小结:</b>①位姿 = 位置 + 姿态,姿态可用旋转矩阵/欧拉角/四元数表示,计算内部首选矩阵与四元数(避免万向锁);②齐次变换把旋转和平移装进 4×4,连乘时"最右矩阵最先作用",顺序不可交换;③DH 参数用 θ、d、a、α 四个数标准化每根连杆,连乘得正运动学 FK(关节角→末端,解唯一);④逆运动学 IK 从末端反推关节角,解析法快但受限,数值法通用但依赖初值,且有多解/无解/奇异问题;⑤雅可比 J 把关节速度映射到末端速度(v=Jq̇)、把末端力映射到关节力矩(τ=JᵀF),行列式为 0 即奇异位形,必须避开。

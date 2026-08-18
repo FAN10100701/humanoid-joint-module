@@ -336,6 +336,44 @@
     <div class="quiz-explain">💡 解析:宽松协议(MIT/Apache-2.0)可商用但须保留声明;GPL 是强 copyleft,修改分发需开源衍生;CC-BY-NC 的 NC 即"非商业"。因此"开源 ≠ 免费商用",需逐仓库核对协议。A/B/C 均误解了相应协议。故选 D。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">5. 关于灵犀 X1(智元)与宇树 G1/H1 的"开源程度"对比,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 灵犀 X1 官方称"软硬件全套图纸和代码"公开(含整机结构、关节模组、驱动器、固件与软件),而宇树 G1/H1 只开源软件栈与仿真资产、机械本体图纸未开放</button>
+      <button data-v="B">B. 灵犀 X1 只开源了 AgiBot World 数据集,整机本体并不开放</button>
+      <button data-v="C">C. 宇树 G1/H1 的关节模组 CAD 与固件源码也已完全公开,可在家复刻整机</button>
+      <button data-v="D">D. 两者都只提供 SDK 二次开发接口,机械本体与软件栈一律封闭</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:灵犀 X1 是智元"软硬件全套开源"的人形整机,开源的是整机本身(结构/硬件/固件/软件,见第 3.2 节);而宇树 G1/H1 开源的是"控制与算法生态",整机结构图纸、关节模组 CAD、固件源码未开放(见第 2.1 节)。B 把灵犀 X1 与 AgiBot World 混为一谈;C 正是"误区二";D 与两者实际开源情况都不符。故选 A。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于第 5 节"小而精"开源项目的选型,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. MIT Cheetah Software 是一个 GPU 并行强化学习训练框架</button>
+      <button data-v="B">B. 预算最紧、想练"遥操作 + 模仿学习"可选 SO-ARM100;想学经典运控可选 MIT Cheetah + OpenLoong-Dyn-Control</button>
+      <button data-v="C">C. HumanML3D 是一种舵机通信控制协议,用于驱动机械臂关节</button>
+      <button data-v="D">D. SO-ARM100 是宇树科技推出的全尺寸人形整机公版机</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 5 节"选型速记"明确:预算最紧练"遥操作+模仿学习"→ SO-ARM100(低成本 6 自由度舵机臂);想学经典运控→ MIT Cheetah(MPC)+ OpenLoong-Dyn-Control。A 错——MIT Cheetah 是 QP 型 MPC 四足控制器,不是 RL 训练框架;C 错——HumanML3D 是"文本-人体运动"数据集;D 错——SO-ARM100 来自 The Robot Studio,非宇树公版机。故选 B。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于开源合规的"常见误区",下列哪种认知是【正确】的(不会踩坑)?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. fork 仓库后删除 LICENSE 再分发没关系,反正代码已经开源了</button>
+      <button data-v="B">B. CC-BY-NC 中的 NC 表示"可任意用于商业产品训练"</button>
+      <button data-v="C">C. 只要仓库顶层 LICENSE 是 MIT,仓库里的数据就一定可以随便商用</button>
+      <button data-v="D">D. 用数据集训练模型前,要看"数据本身"的协议,而不能默认它等于仓库顶层的代码 LICENSE</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:误区三与误区四强调——即便最宽松的 MIT/Apache-2.0 也要求"保留版权与许可声明",删 LICENSE 再分发即侵权(排除 A);NC 是"非商业"硬边界(排除 B);"数据集的代码许可 ≠ 数据许可",两者常分开授权(如 AgiBot World 数据为 CC-BY-NC、HumanML3D 数据基于 AMASS),故 D 正确。故选 D。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 开源整机三大价值:降低门槛、统一基准、社区共建;② 宇树开"控制与算法"(unitree_sdk2→ROS2→rl_gym→rl_lab 四件套),本体图纸与固件未开源;③ 智元开"数据 + 整机":AgiBot World(百万级真机轨迹,CC-BY-NC-SA 非商用)+ 灵犀 X1(软硬件全套开源);④ OpenLoong 是"人形机器人的 ROS 时刻",青龙公版机 + OpenLoong-Dyn-Control 全身动力学控制;⑤ 学习路线:选型 → 仿真 → 改硬件 → 自研关节;⑥ 许可证边界:MIT/Apache 可商用、GPL 传染性、CC-NC 非商用——开源 ≠ 免费商用。</div>
+
   <!-- ================= 10 参考来源 ================= -->
   <h2><span class="h2-num">10</span> 参考来源</h2>
   <p>以下链接均经 web_search 核实为官方 / 稳定地址;仓库许可证、数据集规模等以各仓库页面的 LICENSE 与 README 为准,文中已对不确定处标注"约"。</p>

@@ -410,6 +410,44 @@
     <div class="quiz-explain">💡 解析:AMASS(MPI,ICCV 2019)合并 15+ 动捕库并统一为 SMPL/SMPL-X;HumanML3D(北大/港中文,CVPR 2022)给 14,616 段动作配 44,970 条文本;CMU MoCap 是老牌光学动捕库。三者都是<b>人体运动</b>数据,不是机器人操作数据。故选 A。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">8. 关于五种数据采集方式,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 遥操作采到的数据质量最高、物理最真实,但贵、慢、难规模化</button>
+      <button data-v="B">B. 仿真生成的数据没有 sim2real gap,可完全替代真机数据</button>
+      <button data-v="C">C. 互联网视频自带「观测-动作」标注,可直接用于行为克隆</button>
+      <button data-v="D">D. 动捕映射不需要做「人→机」映射,拿来即可用于机器人</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 5 节表格——遥操作质量最高、物理真实,但贵、慢、难规模化;仿真便宜可规模化但存在 sim2real gap、缺真实噪声;互联网视频无动作标注,需潜动作对齐(不能直接 BC);动捕映射需做「人→机」retargeting。故选 A。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 关于数据质量与处理中的「跨具身归一化」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 直接把不同机器人的原始关节角混在一起训练,就能自然泛化</button>
+      <button data-v="B">B. 应把不同本体动作统一到可比较空间,如末端位姿用相对增量(delta)、夹爪统一到 [0,1]</button>
+      <button data-v="C">C. 归一化只处理图像分辨率,与动作空间无关</button>
+      <button data-v="D">D. 归一化会丢弃时间戳,导致多模态数据「张冠李戴」</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 6 节——OXE 能训出 RT-X 的关键,是把 22 种形态归一化到一套动作字段:末端位姿用相对增量(delta)、关节角统一量纲、夹爪统一到 [0,1]。A 直接混训几乎必崩;C 错,归一化的核心正是动作空间;D 描述的是「时间对齐」缺失的后果,不是归一化。故选 B。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 关于评测中的「任务成功率」,下列哪种理解是正确的?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只要两家都报 80% 成功率,就说明两个策略完全等价、可直接比较</button>
+      <button data-v="B">B. 成功率口径差异很大:是否允许重试、试几次、相机视角不同,都会改变结论,比较前须先对齐口径</button>
+      <button data-v="C">C. 成功率只适用于强化学习,不适用于操作任务</button>
+      <button data-v="D">D. 「平均完成度」和「任务成功率」是同一个指标的不同叫法</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 4.2/4.3 节——真实世界评测难在「统计口径」不可比(是否允许重试、试几次、相机视角、硬件都影响结果),所以 80% 不能直接横比,须先对齐口径;成功率恰恰是操作任务最常用指标;平均完成度是按子步骤打分,与成功率是两个不同指标。故选 B。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①数据饥渴下,VLA 两条路线——行为克隆(BC,吃海量真机示范)与潜动作预训练(π0/GO-1,可借互联网视频预训练再真机对齐);②操作数据集按需选:跨本体通用→OXE(100 万+、22 形态),真实家庭→DROID(约 7.6 万轨迹),长程家务+灵巧但非商用→AgiBot World(CC-BY-NC-SA),低成本桌面→BridgeData V2,纯算法对比→RoboMimic/RLBench;③运动数据 AMASS/HumanML3D/CMU MoCap 都是人体运动源,用前注意 SMPL→URDF 的「运动重定向」;④评测用 SIMPLER 等仿真统一评测逼近真机,指标看成功率/完成度/首次动作准确率/操作时长,比较前先对齐「重试次数、相机、硬件」等口径;⑤数据要过清洗/标注/时间对齐/跨具身归一化四关(末端位姿用 delta、夹爪统一到 [0,1]);⑥商用前务必核对<b>数据</b>许可证——NC = 非商业,不可直接商用。</div>
+
   <!-- ================= 10 参考来源 ================= -->
   <h2><span class="h2-num">10</span> 参考来源</h2>
   <p>以下链接均经 web_search 核实为官方/稳定地址;各数据集规模、许可证以官方 README 与论文为准,文中不确定处已标注「约」。<b>资料整理更新至 2026-08</b>。</p>
