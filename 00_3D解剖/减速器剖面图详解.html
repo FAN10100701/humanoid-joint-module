@@ -290,7 +290,7 @@ body[data-theme="dark"] .svgbox [stroke="#7c5a12"]{stroke:#d4a017}
         <button data-v="D">D. 电机、编码器、输出法兰</button>
       </div>
       <div class="quiz-feedback"></div>
-      <div class="quiz-explain">💡 解析:谐波减速器的三大件是<b>波发生器</b>(椭圆凸轮+柔性轴承,输入端)、<b>柔轮</b>(薄壁弹性外齿,输出端)、<b>刚轮</b>(刚性内齿圈,固定端,齿数比柔轮多 2)。A 是行星减速器的三大件,C 是摆线 RV 的组成。<a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html">对照三类减速器 →</a></div>
+      <div class="quiz-explain">💡 解析:谐波减速器的三大件是<b>波发生器</b>(椭圆凸轮+柔性轴承,输入端)、<b>柔轮</b>(薄壁弹性外齿,输出端)、<b>刚轮</b>(刚性内齿圈,固定端,齿数比柔轮多 2)。A 是行星减速器的三大件,C 是摆线 RV 的组成。<a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html" target="_blank" rel="noopener">对照三类减速器 →</a></div>
     </div>
 
     <div class="quiz">
@@ -314,7 +314,7 @@ body[data-theme="dark"] .svgbox [stroke="#7c5a12"]{stroke:#d4a017}
         <button data-v="D">D. i = 1:4</button>
       </div>
       <div class="quiz-feedback"></div>
-      <div class="quiz-explain">💡 解析:代入公式 i = 1 + Z环/Z阳 = 1 + 60/20 = 1 + 3 = <b>4:1</b>(本页行星小节原文算例)。行星减速器单级减速比小(3~10),要得到大减速比需多级串联,且多级串联会累积背隙。<a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html">齿轮传动比详解 →</a></div>
+      <div class="quiz-explain">💡 解析:代入公式 i = 1 + Z环/Z阳 = 1 + 60/20 = 1 + 3 = <b>4:1</b>(本页行星小节原文算例)。行星减速器单级减速比小(3~10),要得到大减速比需多级串联,且多级串联会累积背隙。<a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html" target="_blank" rel="noopener">齿轮传动比详解 →</a></div>
     </div>
 
     <div class="quiz">
@@ -326,7 +326,7 @@ body[data-theme="dark"] .svgbox [stroke="#7c5a12"]{stroke:#d4a017}
         <button data-v="D">D. RV 与行星完全一样,只是多了一根偏心轴</button>
       </div>
       <div class="quiz-feedback"></div>
-      <div class="quiz-explain">💡 解析:RV(摆线针轮)由<b>偏心轴</b>驱动<b>摆线盘</b>与<b>针齿圈</b>滚动啮合(齿差 1 传动,减速比=针齿数),约一半针齿同时承载,所以抗冲击与承载能力远超谐波、寿命长;代价是体积重量更大、有偏心振动(需双盘对消)。柔轮弹性变形是谐波的特点(B 错),行星才是单级减速比小(C 错)。<a href="../08_学习工具/03_自测题库.html">去做更多自测题 →</a></div>
+      <div class="quiz-explain">💡 解析:RV(摆线针轮)由<b>偏心轴</b>驱动<b>摆线盘</b>与<b>针齿圈</b>滚动啮合(齿差 1 传动,减速比=针齿数),约一半针齿同时承载,所以抗冲击与承载能力远超谐波、寿命长;代价是体积重量更大、有偏心振动(需双盘对消)。柔轮弹性变形是谐波的特点(B 错),行星才是单级减速比小(C 错)。<a href="../08_学习工具/03_自测题库.html" target="_blank" rel="noopener">去做更多自测题 →</a></div>
     </div>
   </div>
 
@@ -336,7 +336,9 @@ body[data-theme="dark"] .svgbox [stroke="#7c5a12"]{stroke:#d4a017}
 window.PAGE = { pageId:"00-02", root:"..",
   breadcrumb:[ {t:"3D 解剖可视化", u:"../index.html#sec0"}, {t:"三种减速器 · 剖面图解"} ],
   prev:{t:"返回首页", u:"../index.html"},
-  next:{t:"减速器精细模型下载教程", u:"减速器精细模型下载整合教程.html"} };
+  /* 原 next 指向已删除的《减速器精细模型下载整合教程.html》;按站点惯例(板块末页跨板块衔接),
+     改指下一板块第一篇;同目录《电机编码器与灵巧手3D拆解.html》为 00-04,与《人形机器人解剖式知识可视化》同属 00 板块 */
+  next:{t:"电机 / 编码器 / 灵巧手 3D 拆解", u:"../00_3D解剖/电机编码器与灵巧手3D拆解.html"} };
 </script>
 <script src="../_assets/site.js"></script>
 <script>

@@ -27,9 +27,12 @@
   .my-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:12px;color:#94a3b8}
   .my-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 </style>
-<!-- 隐藏页(2026-08-17):质量待重做,已从首页/导航/学习地图/搜索/打卡移除入口,不参与站点统计 -->
+<!-- 2026-08-17 恢复上线:磁场物理错误已修复(定子磁场与转子机械同步旋转+负载角),新增失步演示 -->
 <script>
-  window.PAGE = null;
+  window.PAGE = { pageId:"00-04", root:"..",
+    breadcrumb:[ {t:"3D 解剖可视化", u:"../index.html#sec0"}, {t:"电机 / 编码器 / 灵巧手 3D 拆解"} ],
+    prev:{t:"三种减速器 · 剖面结构与原理图解", u:"../00_3D解剖/减速器剖面图详解.html"},
+    next:{t:"整体知识框架 · 思维导图", u:"../01_理论入门/01_整体知识框架_思维导图.html"} };
 </script>
 </head>
 <body>
@@ -248,9 +251,17 @@ function updateMotor(t){
   var elec = t * 2.2;                       /* 电角度速度(示意) */
   var polePairs = 7;
   var mech = elec / polePairs;              /* 机械角=电角/极对数 */
+  /* 【可调】失步阈值:负载角(机械角示意)超过此值,转子跟不上磁场→骤停抖动,兑现文案里的「失步」演示 */
+  var X3_STALL_ANGLE = 0.95;
+  if(x3.loadAngle > X3_STALL_ANGLE){
+    if(x3.mechHold === undefined) x3.mechHold = mech;   /* 冻结失步瞬间的转子机械角 */
+    mech = x3.mechHold + Math.sin(t * 20) * 0.05;       /* 失步:转子停转并高频抖动 */
+  } else { x3.mechHold = undefined; }
   m.rotor.rotation.z = mech;
   m.rotorArr.rotation.z = mech;
-  m.fieldArr.rotation.z = elec - x3.loadAngle/polePairs + x3.loadAngle;  /* 场领先负载角 */
+  /* 定子磁场与转子机械同步旋转,领先一个负载角(按机械角示意放大,便于观察);
+     原实现写成电角度(转速=转子7倍)是物理错误,FOC 里磁场与转子转速必须同步 */
+  m.fieldArr.rotation.z = elec / polePairs + x3.loadAngle;
   /* 爆炸:磁钢外扩、绕组外扩、端盖轴向分离 */
   var e = x3.explode;
   m.magnets.forEach(function(mg){
@@ -416,7 +427,7 @@ function x3BuildCtl(){
 function x3BuildInfo(){
   var el = document.getElementById('x3info'), lg = document.getElementById('x3legend');
   if(x3.tab===0){
-    el.innerHTML = '<b>外转子无刷电机</b>(程序化示意:12 槽定子 / 14 极转子 = <b>7 对极</b>)。绿色箭头=定子合成磁场,橙色=转子 d 轴——<b>磁场始终领先转子一个"负载角"同步旋转</b>,这就是 FOC;负载角拉太大会"失步"(电机骤停抖动)。爆炸后可看到:定子铁芯(硅钢片轭+齿)、铜绕组、转子磁钢(N 红/S 蓝交替)、轴与端盖。';
+    el.innerHTML = '<b>外转子无刷电机</b>(程序化示意:12 槽定子 / 14 极转子 = <b>7 对极</b>)。绿色箭头=定子合成磁场,橙色=转子 d 轴——<b>磁场始终领先转子一个「负载角」同步旋转</b>,这就是 FOC;负载角滑杆拉过 <b>0.95</b> 会「失步」:转子骤停抖动、磁场继续旋转(滑到 0.95 以下恢复同步)。爆炸后可看到:定子铁芯(硅钢片轭+齿)、铜绕组、转子磁钢(N 红/S 蓝交替)、轴与端盖。';
     lg.innerHTML = '<span><i style="background:#94a3b8"></i>定子铁芯</span><span><i style="background:#d97706"></i>铜绕组</span><span><i style="background:#ef4444"></i>N 极磁钢</span><span><i style="background:#3b82f6"></i>S 极磁钢</span><span><i style="background:#22c55e"></i>定子磁场</span><span><i style="background:#f97316"></i>转子 d 轴</span>';
   } else if(x3.tab===1){
     var extra = x3.encType ? '光电式:码盘随轴转动,<b>LED(红)发射 → 20 条缝隙 → 光电管(灰)接收</b>,每转过一条缝计一个脉冲;增量式只给"变化",上电需回零——绝对式码盘则每位置唯一编码。' : '磁式:<b>径向充磁磁铁(红/蓝两半)+ 磁传感芯片</b>,芯片感测磁场方向即得绝对角度,完全非接触。当前读数 ≈ <b>' + Math.round(x3.encDeg||0) + '°</b>(随旋转实时变化)。';

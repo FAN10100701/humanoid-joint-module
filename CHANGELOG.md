@@ -2,6 +2,14 @@
 
 > 人形机器人学习站 · 版本历史。每次更新在**顶部**新增一条,并同步登记到首页底部"版本与更新历史"。
 
+## V1.9.4 · 2026-08-17 · D 系列 3D 页修复恢复上线 + Twikoo 后端部署完成
+
+- **D 系列 3D 页恢复上线**(pageId 00-04,`00_3D解剖/电机编码器与灵巧手3D拆解.html`):修复旋转磁场物理错误——定子磁场与转子<b>机械角同步</b>旋转并领先负载角(原实现按电角度,转速为转子 7 倍);新增<b>失步演示</b>(负载角滑杆拉过阈值 0.95 → 转子骤停高频抖动、磁场继续旋转,回拉恢复同步)
+- **入口全量恢复**:首页 00 板块卡片、学习地图节点(00-04)、仿真中心卡片、剖面图页翻页链 next、page-meta 学习目标、SITE_SECTIONS 打卡登记
+- **残留清理**:删除「精细模型下载教程」残留卡片 2 处(08 仿真中心、06_03 ROS2 页),改指剖面图页正常标题
+- **Twikoo 后端就绪**:CloudBase 云函数部署成功,`giscus-config.js` provider 切回 twikoo(envId 不变);Valine 分支保留可随时切换
+- 版本单源同步至 V1.9.4(site.js / index.html / sw.js / CHANGELOG 四处一致)
+
 ## V1.9.3 · 2026-08-17 · 评论系统双方案 + 测试清单修正
 
 - **评论区双方案**:`mountComments` 新增 Valine 分支(jsDelivr→npmmirror 多 CDN 回退,LeanCloud 国内版纯配置零部署);`giscus-config.js` 支持 `provider: "valine"`(appId/appKey/serverURLs)

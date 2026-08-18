@@ -138,7 +138,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
 <script>
   /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
   window.SITE_SECTIONS = [
-    { key:"00", name:"3D 解剖可视化", ids:["00-02"] },
+    { key:"00", name:"3D 解剖可视化", ids:["00-02","00-04"] },
     { key:"01", name:"理论入门", ids:["01-01","01-02","01-03","01-04","01-05","01-06"] },
     { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03","02-04","02-05","02-06","02-07","02-08","02-09","02-10","02-11","02-12","02-13"] },
     { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05","03-06"] },
@@ -324,6 +324,12 @@ html:not([data-skin]) .card:hover::before{opacity:1}
         <div class="ic">📐</div>
         <div class="t">三种减速器 · 剖面结构与原理图解</div>
         <div class="d">谐波 / 行星 / 摆线RV 剖面示意图:核心零件、传动关系与减速比公式一图看懂。</div>
+      </a>
+      <a class="card" href="00_3D解剖/电机编码器与灵巧手3D拆解.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🔩</div>
+        <div class="t">电机 / 编码器 / 灵巧手 3D 拆解</div>
+        <div class="d">外转子无刷电机内部与旋转磁场、磁/光电编码器、灵巧手关节——拖动旋转、滑杆爆炸、点击看原理。</div>
       </a>
     </div>
   </div>
@@ -795,10 +801,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.3</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 评论系统双方案(Valine 零部署 + Twikoo 自托管)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.4</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · D 系列 3D 页修复后恢复上线 + Twikoo 后端部署完成</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.9.4 · 2026-08-17 · D 系列 3D 页修复恢复上线 + 评论切换 Twikoo</summary>
+        <div class="faq-a">🔩 <b>电机/编码器/灵巧手 3D 拆解恢复上线</b>(00-04):修复旋转磁场物理错误(定子磁场与转子机械同步旋转,不再 7 倍速),新增<b>失步演示</b>(负载角滑杆拉过阈值,转子骤停抖动、磁场继续旋转);恢复首页 / 学习地图 / 仿真中心 / 翻页链入口与打卡登记;🧹 清理两处「精细模型下载教程」残留卡片(仿真中心、ROS2 页);💬 <b>Twikoo 云函数已在 CloudBase 部署成功</b>,评论区切回 Twikoo 后端。</div>
+      </details>
+      <details class="faq">
         <summary>V1.9.3 · 2026-08-17 · 评论系统双方案(Valine 零部署 + Twikoo 自托管)</summary>
         <div class="faq-a">💬 <b>评论区双方案</b>:接入指南改为双通道——<b>Valine</b>(LeanCloud 国内版,纯配置零部署,推荐最快跑通)与 <b>Twikoo</b>(需自托管后端:Zeabur/Vercel 一键部署,或 CloudBase 手动部署云函数),切换只需改一个配置文件;📋 逐页测试清单移除已删除的精细模型页引用。</div>
       </details>
@@ -886,7 +896,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.9.3(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.9.4(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
