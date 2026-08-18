@@ -391,12 +391,13 @@ function loadSTL(url, color, opts){
       var g = new T.BufferGeometry();
       g.setAttribute('position', new T.Float32BufferAttribute(geo.positions, 3));
       g.computeVertexNormals();
-      /* 自动缩放:目标最大边 ≈ target 世界单位 */
+      /* 自动缩放:目标最大边 ≈ target 世界单位(2026-08-17:统一部件尺度,
+         避免各部件独立缩放到 3.2 后互相穿模成黑团;部件尺度=0.5,产品整体≈3) */
       g.computeBoundingBox();
       var bb = g.boundingBox;
       var size = new T.Vector3(); bb.getSize(size);
       var maxDim = Math.max(size.x, size.y, size.z);
-      var scale = (opts.target || 3.2) / (maxDim || 1);
+      var scale = (opts.target || 0.5) / (maxDim || 1);
       var center = new T.Vector3(); bb.getCenter(center);
       g.translate(-center.x, -center.y, -center.z);
       g.scale(scale, scale, scale);
@@ -462,12 +463,13 @@ function boot(THREE){
 
   /* 自实现轨道控制(零依赖,阻尼+俯仰限制) */
   function camPos(){
+    var ty = LAB.targetY || 0.3;
     cam.position.set(
       Math.sin(LAB.yaw)*Math.cos(LAB.pitch)*LAB.dist,
-      Math.sin(LAB.pitch)*LAB.dist,
+      ty + Math.sin(LAB.pitch)*LAB.dist,
       Math.cos(LAB.yaw)*Math.cos(LAB.pitch)*LAB.dist
     );
-    cam.lookAt(0, 0.3, 0);
+    cam.lookAt(0, ty, 0);
   }
   camPos();
   var vx = 0, vy = 0;
@@ -575,33 +577,35 @@ function updateParts(){
   });
 }
 
-/* ---------- 产品 0:RVGH 一体伺服(真实 STL) ---------- */
+/* ---------- 产品 0:RVGH 一体伺服(真实 STL) ----------
+   部件尺度统一 0.5(loadSTL 默认 target);沿 Y 轴按真实装配序叠放,
+   电机本体在下、减速级在上,整体高约 3 单位 */
 var RVGH_FILES = [
-  { f:'motor_base-Body.stl',        n:'底座(motor base)',      c:0x9aa5b2, d:3, dist:1.6, mt:0.75, rgh:0.35,
+  { f:'motor_base-Body.stl',        n:'底座(motor base)',      c:0x9aa5b2, d:3, y:0.00, dist:0.5, mt:0.75, rgh:0.35,
     desc:'电机/减速一体外壳底座,安装法兰与轴承座。', spec:[['类型','RVGH 一体伺服'],['许可','MIT 开源']] },
-  { f:'motor_wall_P28-Body.stl',    n:'电机壁(定子外壳)',      c:0xb9c2cc, d:2, dist:1.1, mt:0.7, rgh:0.4,
+  { f:'motor_wall_P28-Body.stl',    n:'电机壁(定子外壳)',      c:0xb9c2cc, d:2, y:0.45, dist:0.5, mt:0.7, rgh:0.4,
     desc:'外圈定子壁,内壁贴定子绕组。', spec:[['结构','外转子杯形壁'],['材料','铝合金']] },
-  { f:'magnet_mounter-Body.stl',    n:'磁铁座(转子)',          c:0x3b3f4a, d:2, dist:1.3, mt:0.6, rgh:0.5,
+  { f:'magnet_mounter-Body.stl',    n:'磁铁座(转子)',          c:0x3b3f4a, d:2, y:0.85, dist:0.5, mt:0.6, rgh:0.5,
     desc:'转子磁钢安装座,磁钢贴于外圈。', spec:[['结构','外转子'],['磁钢','14 极(示意)']] },
-  { f:'motor_cover-Body.stl',       n:'电机盖',                c:0xb9c2cc, d:2, dist:1.0, mt:0.7, rgh:0.4,
+  { f:'motor_cover-Body.stl',       n:'电机盖',                c:0xb9c2cc, d:2, y:1.20, dist:0.5, mt:0.7, rgh:0.4,
     desc:'电机后端盖,集成编码器安装面。', spec:[['材料','铝合金'],['集成','编码器面']] },
-  { f:'motor_top-Body.stl',         n:'电机顶(前端盖)',        c:0xb9c2cc, d:2, dist:1.0, mt:0.7, rgh:0.4,
+  { f:'motor_top-Body.stl',         n:'电机顶(前端盖)',        c:0xb9c2cc, d:2, y:1.55, dist:0.5, mt:0.7, rgh:0.4,
     desc:'电机前端盖,支承输入轴。', spec:[['材料','铝合金'],['轴承','深沟球']] },
-  { f:'bearing_hub_A-Body.stl',     n:'轴承毂 A',              c:0xd8dde4, d:3, dist:1.5, mt:0.85, rgh:0.3,
-    desc:'减速级输入侧轴承座。', spec:[['材料','不锈钢'],['作用','支承减速输入']] },
-  { f:'bearing_hub_B-Body.stl',     n:'轴承毂 B',              c:0xd8dde4, d:3, dist:1.5, mt:0.85, rgh:0.3,
-    desc:'减速级输出侧轴承座。', spec:[['材料','不锈钢'],['作用','支承输出法兰']] },
-  { f:'cyclo_disk_T27-Body.stl',    n:'摆线盘 T27',            c:0xc47b2d, d:2, dist:1.4, mt:0.8, rgh:0.35,
-    desc:'摆线减速盘:绕偏心轴公摆,与针齿差 1 齿啮合——输入一圈,盘反向转 1/27 圈。', spec:[['齿数','27'],['类型','摆线(RV)']] },
-  { f:'cyclo_disk_T27u-Body.stl',   n:'摆线盘 T27u(双盘)',     c:0xd97706, d:2, dist:1.4, mt:0.8, rgh:0.35,
-    desc:'第二块摆线盘,与 T27 成 180° 相位,抵消偏心振动。', spec:[['相位','180° 对消'],['作用','动平衡']] },
-  { f:'plagear_29_cam-Body.stl',    n:'行星凸轮(偏心轴)',      c:0x94a3b8, d:3, dist:1.7, mt:0.8, rgh:0.3,
+  { f:'plagear_29_cam-Body.stl',    n:'行星凸轮(偏心轴)',      c:0x94a3b8, d:3, y:1.90, dist:0.55, mt:0.8, rgh:0.3,
     desc:'输入偏心轴:电机高速输入,驱动摆线盘公摆。', spec:[['偏心','凸轮结构'],['输入','电机轴']] },
-  { f:'supporter-Body.stl',         n:'支撑架',                c:0x8a95a3, d:2, dist:1.2, mt:0.7, rgh:0.4,
+  { f:'cyclo_disk_T27-Body.stl',    n:'摆线盘 T27',            c:0xc47b2d, d:2, y:2.25, dist:0.55, mt:0.8, rgh:0.35,
+    desc:'摆线减速盘:绕偏心轴公摆,与针齿差 1 齿啮合——输入一圈,盘反向转 1/27 圈。', spec:[['齿数','27'],['类型','摆线(RV)']] },
+  { f:'cyclo_disk_T27u-Body.stl',   n:'摆线盘 T27u(双盘)',     c:0xd97706, d:2, y:2.60, dist:0.55, mt:0.8, rgh:0.35,
+    desc:'第二块摆线盘,与 T27 成 180° 相位,抵消偏心振动。', spec:[['相位','180° 对消'],['作用','动平衡']] },
+  { f:'bearing_hub_A-Body.stl',     n:'轴承毂 A',              c:0xd8dde4, d:3, y:2.95, dist:0.5, mt:0.85, rgh:0.3,
+    desc:'减速级输入侧轴承座。', spec:[['材料','不锈钢'],['作用','支承减速输入']] },
+  { f:'bearing_hub_B-Body.stl',     n:'轴承毂 B',              c:0xd8dde4, d:3, y:3.30, dist:0.5, mt:0.85, rgh:0.3,
+    desc:'减速级输出侧轴承座。', spec:[['材料','不锈钢'],['作用','支承输出法兰']] },
+  { f:'supporter-Body.stl',         n:'支撑架',                c:0x8a95a3, d:2, y:3.65, dist:0.5, mt:0.7, rgh:0.4,
     desc:'内部支撑结构。', spec:[['材料','铝合金']] },
-  { f:'top_cover-Body.stl',         n:'顶盖(输出端)',          c:0xb9c2cc, d:2, dist:1.0, mt:0.7, rgh:0.4,
+  { f:'top_cover-Body.stl',         n:'顶盖(输出端)',          c:0xb9c2cc, d:2, y:4.00, dist:0.5, mt:0.7, rgh:0.4,
     desc:'输出端盖。', spec:[['材料','铝合金']] },
-  { f:'top_horn-Body.stl',          n:'输出法兰(horn)',        c:0xd8dde4, d:2, dist:1.8, mt:0.85, rgh:0.3,
+  { f:'top_horn-Body.stl',          n:'输出法兰(horn)',        c:0xd8dde4, d:2, y:4.35, dist:0.55, mt:0.85, rgh:0.3,
     desc:'减速输出法兰,连接负载(关节臂)。', spec:[['减速比','27:1(示意)'],['输出','法兰']] }
 ];
 function buildMotor(group){
@@ -609,9 +613,9 @@ function buildMotor(group){
      变量引用只会存到 undefined 快照,故启动后按索引解析) */
   var DIRS = [null, AX, AY, AZ];
   var jobs = RVGH_FILES.map(function(it){
-    return loadSTL('./models/rvgh_servo/' + it.f, it.c, { metalness:it.mt, roughness:it.rgh }).then(function(mesh){
-      mesh.position.y = 0.3;
-      partRec(0, it.n, mesh, new LAB.T.Vector3(0, 0.3, 0), DIRS[it.d] || AZ, it.dist, it.c, it.desc, it.spec);
+    return loadSTL('./models/rvgh_servo/' + it.f, it.c, { metalness:it.mt, roughness:it.rgh, target:0.5 }).then(function(mesh){
+      mesh.position.set(0, it.y, 0);
+      partRec(0, it.n, mesh, new LAB.T.Vector3(0, it.y, 0), DIRS[it.d] || AZ, it.dist, it.c, it.desc, it.spec);
       group.add(mesh);
     });
   });
@@ -702,71 +706,70 @@ function buildHand(group){
   function loadOne(key){
     if(cache[key]) return cache[key];
     var c = 0xcfd6e0;
-    cache[key] = loadSTL('./models/leap_hand/' + LEAP_FILES[key], c, { metalness:0.35, roughness:0.5 });
+    cache[key] = loadSTL('./models/leap_hand/' + LEAP_FILES[key], c, { metalness:0.35, roughness:0.5, target:0.5 });
     return cache[key];
   }
   var jobs = [];
-  /* 手掌 */
+  /* 手掌(部件尺度 0.5:手掌最大边→0.5,真实占比约手掌 1.1×0.9,掌心朝下 Z 正方向伸出四指) */
   jobs.push(loadOne('palm').then(function(mesh){
     mesh.rotation.y = Math.PI;   /* 翻转朝上 */
-    partRec(2, '手掌(palm lower)', mesh, new LAB.T.Vector3(0, 1.6, 0), AZ, 1.4, 0xcfd6e0,
+    partRec(2, '手掌(palm lower)', mesh, new LAB.T.Vector3(0, 0.35, 0), AZ, 0.5, 0xcfd6e0,
       'LEAP Hand 手掌下壳,内含 6 个微型电机与腱绳通道。', [['来源','UC Berkeley LEAP Hand'],['许可','MIT']]);
     group.add(mesh);
   }));
-  /* 四指:掌指关节 + 近端 + 远端 + 指尖 */
-  var FINGER_X = [-0.72, -0.24, 0.24, 0.72];
-  var FINGER_Z = [1.05, 1.1, 1.1, 1.05];
-  var FINGER_Y = [0.3, 0.34, 0.34, 0.3];
+  /* 四指:掌指关节 + 近端 + 远端 + 指尖,沿 Z 展开(每段 0.42),X 并排 */
+  var FINGER_X = [-0.42, -0.14, 0.14, 0.42];
+  var FINGER_Z0 = 0.28;   /* 掌指关节在手掌前缘 */
   FINGER_X.forEach(function(fx, fi){
     jobs.push(loadOne('mcp').then(function(mesh){
       var m = mesh.clone(); m.material = m.material.clone();
-      m.position.set(fx, 1.45 + FINGER_Y[fi]*0.35, FINGER_Z[fi]);
+      m.position.set(fx, 0.30, FINGER_Z0);
       m.rotation.y = Math.PI;
-      partRec(2, '手指' + (fi+1) + '·掌指关节(mcp)', m, m.position.clone(), AZ, 1.2, 0xcfd6e0,
+      partRec(2, '手指' + (fi+1) + '·掌指关节(mcp)', m, m.position.clone(), AZ, 0.42, 0xcfd6e0,
         '掌指关节:手指根部的弯曲轴。', [['关节','MCP'],['结构','铰链']]);
       group.add(m);
     }));
     jobs.push(loadOne('pip').then(function(mesh){
       var m = mesh.clone(); m.material = m.material.clone();
-      m.position.set(fx, 1.1 + FINGER_Y[fi]*0.2, FINGER_Z[fi] + 0.55);
+      m.position.set(fx, 0.26, FINGER_Z0 + 0.42);
       m.rotation.y = Math.PI;
-      partRec(2, '手指' + (fi+1) + '·近端指节(pip)', m, m.position.clone(), AZ, 1.1, 0xcfd6e0,
+      partRec(2, '手指' + (fi+1) + '·近端指节(pip)', m, m.position.clone(), AZ, 0.42, 0xcfd6e0,
         '近端指节:经连杆由掌内电机驱动。', [['关节','PIP'],['驱动','腱绳/连杆']]);
       group.add(m);
     }));
     jobs.push(loadOne('dip').then(function(mesh){
       var m = mesh.clone(); m.material = m.material.clone();
-      m.position.set(fx, 0.85 + FINGER_Y[fi]*0.1, FINGER_Z[fi] + 1.0);
+      m.position.set(fx, 0.22, FINGER_Z0 + 0.84);
       m.rotation.y = Math.PI;
-      partRec(2, '手指' + (fi+1) + '·远端指节(dip)', m, m.position.clone(), AZ, 1.1, 0xcfd6e0,
+      partRec(2, '手指' + (fi+1) + '·远端指节(dip)', m, m.position.clone(), AZ, 0.42, 0xcfd6e0,
         '远端指节:欠驱动链的末端。', [['关节','DIP'],['联动','随 PIP 弯曲']]);
       group.add(m);
     }));
     jobs.push(loadOne('tip').then(function(mesh){
       var m = mesh.clone(); m.material = m.material.clone();
-      m.position.set(fx, 0.6 + FINGER_Y[fi]*0.05, FINGER_Z[fi] + 1.42);
+      m.position.set(fx, 0.18, FINGER_Z0 + 1.26);
       m.rotation.y = Math.PI;
-      partRec(2, '手指' + (fi+1) + '·指尖(fingertip)', m, m.position.clone(), AZ, 1.1, 0xcfd6e0,
+      partRec(2, '手指' + (fi+1) + '·指尖(fingertip)', m, m.position.clone(), AZ, 0.42, 0xcfd6e0,
         '指尖:可加装触觉传感器。', [['作用','接触表面'],['可扩展','触觉传感']]);
       group.add(m);
     }));
   });
-  /* 拇指三件 */
+  /* 拇指三件:位于手掌一侧(X 负侧),带外展角 */
   jobs.push(loadOne('t_pip').then(function(mesh){
-    mesh.position.set(-1.15, 1.3, 0.4); mesh.rotation.y = Math.PI - 0.5;
-    partRec(2, '拇指·近端(thumb pip)', mesh, mesh.position.clone(), AZ, 1.2, 0xcfd6e0,
+    mesh.position.set(-0.52, 0.28, 0.1); mesh.rotation.y = Math.PI - 0.5;
+    partRec(2, '拇指·近端(thumb pip)', mesh, mesh.position.clone(), AZ, 0.42, 0xcfd6e0,
       '拇指近端,带外展角。', [['关节','TPIP'],['外展','对掌基础']]);
     group.add(mesh);
   }));
   jobs.push(loadOne('t_dip').then(function(mesh){
-    mesh.position.set(-1.35, 0.95, 0.75); mesh.rotation.y = Math.PI - 0.5;
-    partRec(2, '拇指·远端(thumb dip)', mesh, mesh.position.clone(), AZ, 1.2, 0xcfd6e0,
+    mesh.position.set(-0.60, 0.24, 0.44); mesh.rotation.y = Math.PI - 0.5;
+    partRec(2, '拇指·远端(thumb dip)', mesh, mesh.position.clone(), AZ, 0.42, 0xcfd6e0,
       '拇指远端。', [['关节','TDIP']]);
     group.add(mesh);
   }));
   jobs.push(loadOne('t_tip').then(function(mesh){
-    mesh.position.set(-1.5, 0.7, 1.05); mesh.rotation.y = Math.PI - 0.5;
-    partRec(2, '拇指·指尖(thumb fingertip)', mesh, mesh.position.clone(), AZ, 1.2, 0xcfd6e0,
+    mesh.position.set(-0.66, 0.20, 0.74); mesh.rotation.y = Math.PI - 0.5;
+    partRec(2, '拇指·指尖(thumb fingertip)', mesh, mesh.position.clone(), AZ, 0.42, 0xcfd6e0,
       '拇指指尖,对掌抓握的接触点。', [['作用','对掌抓握']]);
     group.add(mesh);
   }));
@@ -798,8 +801,10 @@ function switchProd(i){
   LAB.groups.forEach(function(g, k){ g.visible = (k===i); });
   LAB.focusPart = null; LAB.picked = null;
   LAB.explodeTarget = 0; LAB.explode = 0;
-  var dists = [7.0, 6.0, 8.5];
+  var dists = [8.0, 6.0, 6.5];
+  var targetY = [2.2, 0.0, 0.3];
   LAB.dist = dists[i];
+  LAB.targetY = targetY[i];
   LAB.yaw = 0.9; LAB.pitch = 0.3;
   var tabs = document.querySelectorAll('#prodTabs button');
   for(var k=0;k<tabs.length;k++){ tabs[k].classList.toggle('on', k===i); }
