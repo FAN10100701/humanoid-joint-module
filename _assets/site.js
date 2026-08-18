@@ -290,16 +290,28 @@
   }
   function mountComments(){
     var cfg = window.COMMENTS_CONFIG;
-    if(!cfg || !cfg.envId) return;   /* 未配置:不显示评论区 */
+    if(!cfg) return;
     var c = document.querySelector(".container");
     if(!c) return;
     var box = document.createElement("div");
     box.className = "giscus-wrap";
+    /* 2026-08-17:云端评论停用(免费后端均受限)→ 显示「联系站长」卡片替代 */
+    if(cfg.provider === "disabled"){
+      var email = cfg.email || "";
+      var mailto = email ? '<a href="mailto:' + email + '" style="color:#60a5fa;font-weight:700;text-decoration:underline">' + email + '</a>' : '站长邮箱(待配置)';
+      box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2>'
+        + '<div class="box box-tip" style="margin-top:10px"><b>📮 联系站长:</b>'
+        + '本站暂未接入在线评论区(免费云服务方案均已停服/受限)。如有建议、纠错或想交流的内容,'
+        + '欢迎邮件联系站长: ' + mailto + '。邮件请注明页面链接与问题描述,一般 1~2 天内回复。</div>';
+      c.appendChild(box);
+      return;
+    }
     /* 诊断容器放在 #tcomment 之外(Twikoo 渲染会清空 #tcomment,探针放里面会被抹掉) */
     box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2>'
       + '<div id="tcomment-diag" style="font-size:12px;color:#f59e0b;font-family:Consolas,monospace;line-height:1.9;margin:6px 0;white-space:pre-wrap;display:none"></div>'
       + '<div id="tcomment"></div>';
     c.appendChild(box);
+    if(!cfg.envId){ return; }
     if(cfg.provider === "valine"){
       /* Valine:LeanCloud 存储(国内版免费,纯配置零部署);需 appId/appKey */
       var VCDNS = [
@@ -681,7 +693,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.0.1(2026-08-17)";
+  S.VERSION = "V2.0.2(2026-08-17)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){

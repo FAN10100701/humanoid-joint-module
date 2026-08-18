@@ -731,10 +731,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.1</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 3D 页加载进度条+诊断探针 + 目录放宽</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 评论区停用,替换为「联系站长」卡片</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V2.0.2 · 2026-08-17 · 云端评论停用,替换为「联系站长」卡片</summary>
+        <div class="faq-a">📮 <b>评论区调整</b>:免费云端评论方案经全量排查均不可行(CloudBase 体验版无文档数据库集合配额、Zeabur 需付费、LeanCloud 停止注册)→ 评论区停用,所有页面自动显示「📮 联系站长」卡片(站长邮箱 2061624805@qq.com,mailto 直达);不再加载任何评论脚本(零网络依赖、零报错);云函数 CORS 补丁等成果已存档,未来开通付费后端可一键恢复。</div>
+      </details>
+      <details class="faq">
         <summary>V2.0.1 · 2026-08-17 · 3D 拆解页加载进度条+诊断探针 + 左侧目录放宽</summary>
         <div class="faq-a">🔧 <b>3D 拆解页吸取 3D 解剖页教训</b>:新增<b>加载进度条</b>(引擎加载 → 21 个 STL 逐个计数 → 全部就绪)+<b>诊断探针</b>(🔧 诊断按钮,失败自动弹出面板,含 DIAG_VER/加载日志/一键复制);目录/参数/控制台在加载完成前显示「⏳ 等待」占位,不再空白;📑 <b>左侧目录放宽</b>:h2≥2 改为 h2≥1——3D 拆解页/实验台/项目清单/学习数据分析等单章节页面也显示目录。</div>
       </details>
@@ -854,7 +858,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.0.1(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.0.2(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
