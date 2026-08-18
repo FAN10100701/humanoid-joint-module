@@ -123,6 +123,17 @@ body[data-theme="light"] .ring-track{stroke:rgba(15,23,42,.1)}
 .quicknav a:active{transform:scale(.96);transition-duration:.1s}
 .quicknav a b{font-weight:700;margin-right:2px}
 body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07)}
+/* ===== 默认皮肤高级感特效(2026-08-17):hero 动态光晕 + 卡片顶光条(仅默认皮肤,不干扰 5 套方案) ===== */
+html:not([data-skin]) .hero{position:relative;overflow:hidden}
+html:not([data-skin]) .hero::before,html:not([data-skin]) .hero::after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;filter:blur(90px);-webkit-filter:blur(90px);pointer-events:none;z-index:0;opacity:.5;animation:heroGlow 16s ease-in-out infinite alternate}
+html:not([data-skin]) .hero::before{background:radial-gradient(circle,rgba(59,130,246,.55),transparent 65%);top:-130px;left:-90px}
+html:not([data-skin]) .hero::after{background:radial-gradient(circle,rgba(34,197,94,.35),transparent 65%);bottom:-150px;right:-70px;animation-delay:-8s}
+html:not([data-skin]) body[data-theme="light"] .hero::before{opacity:.4}
+html:not([data-skin]) body[data-theme="light"] .hero::after{opacity:.3}
+@keyframes heroGlow{from{transform:translate(0,0) scale(1)}to{transform:translate(44px,26px) scale(1.18)}}
+html:not([data-skin]) .hero>*{position:relative;z-index:1}
+html:not([data-skin]) .card::before{content:"";position:absolute;left:12px;right:12px;top:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.8),rgba(34,197,94,.6),transparent);opacity:.5;transition:opacity .25s}
+html:not([data-skin]) .card:hover::before{opacity:1}
 </style>
 <script>
   /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
@@ -1028,7 +1039,8 @@ body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07
 /* ============ 风格方案皮肤切换 + 轻量 3D 机器人(2D canvas 投影,零依赖) ============ */
 var SKIN_KEY = "humanoid-skin-v1";
 function applySkin(v){
-  document.documentElement.setAttribute("data-skin", v);
+  if(v){ document.documentElement.setAttribute("data-skin", v); }
+  else{ document.documentElement.removeAttribute("data-skin"); }   /* 空值移除属性,默认特效(hero光晕/卡片光条)才生效 */
   try{ localStorage.setItem(SKIN_KEY, v); }catch(e){}
   if(v === "bot"){ initBotHero(); } else { stopBotHero(); }
 }
