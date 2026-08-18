@@ -316,15 +316,17 @@
       el.appendChild(w);
       var m = document.createElement("script");
       m.type = "module";
+      /* 用 /+esm 端点:giscus.mjs 依赖裸说明符 "lit",/+esm 会把裸导入重写为可浏览器加载的 URL
+         (直接用 dist/giscus.mjs 会因无法解析 "lit" 而静默失败,评论区只剩标题) */
       m.src = src;
       m.onerror = function(){
         if(m.getAttribute("data-fb")) return;
         m.setAttribute("data-fb", "1");
-        mount("https://fastly.jsdelivr.net/npm/giscus@1.6.0/dist/giscus.mjs");
+        mount("https://fastly.jsdelivr.net/npm/giscus@1.6.0/+esm");
       };
       document.body.appendChild(m);
     }
-    mount("https://cdn.jsdelivr.net/npm/giscus@1.6.0/dist/giscus.mjs");
+    mount("https://cdn.jsdelivr.net/npm/giscus@1.6.0/+esm");
   }
 
   /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ---------- */
