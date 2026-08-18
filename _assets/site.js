@@ -352,10 +352,14 @@
       html += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
     });
     html += '</div>'
+      + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史">🏷 v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
       + '<button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>'
       + '<button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>'
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       + '</div>';
+    var st = document.createElement('style');
+    st.textContent = '.nav-ver{margin-left:10px;font-size:11px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:3px 9px;white-space:nowrap;transition:.15s}.nav-ver:hover{color:#60a5fa;border-color:#3b82f6}body[data-theme=light] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}body[data-theme=light] .nav-ver:hover{color:#2563eb;border-color:#2563eb}';
+    document.head.appendChild(st);
     nav.innerHTML = html;
     document.body.insertBefore(nav, document.body.firstChild);
 
@@ -595,7 +599,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V1.9.1(2026-08-17)";
+  S.VERSION = "V1.9.2(2026-08-17)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){

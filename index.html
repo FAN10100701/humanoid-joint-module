@@ -39,6 +39,7 @@
   body[data-theme="light"] .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(255,255,255,.92));border-color:rgba(37,99,235,.32)}
   body[data-theme="light"] .rm-links a{color:#1d4ed8;background:rgba(37,99,235,.09);border-color:rgba(37,99,235,.28)}
   body[data-theme="light"] .rm-step p{color:#4b5c74}
+@media (prefers-reduced-motion: reduce){.card,.quicknav a{transition:none!important;transform:none!important}}
 /* 性能:首屏外的板块惰性渲染(大 DOM 首帧提速;滚动到附近才布局绘制) */
 @media (min-width: 861px){
   .sec{content-visibility:auto;contain-intrinsic-size:auto 640px}
@@ -57,7 +58,7 @@
 [data-skin="aurora"] .hero h1{font-size:34px;background:linear-gradient(92deg,#7dd3fc,#86efac 55%,#fde047);-webkit-background-clip:text;background-clip:text;color:transparent}
 [data-skin="aurora"] .grid{grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:18px}
 [data-skin="aurora"] .card{border-left:4px solid #22c55e;border-radius:10px;padding:20px 22px}
-[data-skin="aurora"] .card:hover{border-left-color:#fde047;transform:translateY(-3px)}
+[data-skin="aurora"] .card:hover{border-left-color:#fde047;transform:translateY(-4px) scale(1.015)}
 [data-skin="aurora"] .card .ic{font-size:26px}
 [data-skin="aurora"] .sec-title{justify-content:center;font-size:18px}
 [data-skin="aurora"] .quicknav a{border-color:rgba(134,239,172,.4);color:#86efac}
@@ -98,7 +99,7 @@
 [data-skin="bot"] .hero>*{flex:1 1 360px}
 [data-skin="bot"] .hero h1{font-size:30px}
 [data-skin="bot"] .grid{grid-template-columns:repeat(auto-fill,minmax(235px,1fr))}
-[data-skin="bot"] .card:hover{transform:translateY(-4px)}
+[data-skin="bot"] .card:hover{transform:translateY(-4px) scale(1.02)}
 [data-skin="bot"] .sec-title .num{color:#22d3ee}
 #botHero canvas{width:100%;height:100%;cursor:grab;touch-action:none}
 .skinbar{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#9aa4b2}
@@ -114,9 +115,12 @@ body[data-theme="light"] .pbar-row .pv{color:#334155}
 body[data-theme="light"] .ring-track{stroke:rgba(15,23,42,.1)}
 
 /* 快速导航条 */
+.sec{scroll-margin-top:84px}
 .quicknav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px auto 4px;max-width:900px}
 .quicknav a{font-size:12.5px;color:#9ecbff;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:999px;padding:5px 13px;text-decoration:none;transition:.15s;white-space:nowrap}
-.quicknav a:hover{background:rgba(59,130,246,.25);color:#fff}
+.quicknav a{transition:transform .28s cubic-bezier(.22,1.2,.36,1),background .18s,border-color .18s;}
+.quicknav a:hover{background:rgba(59,130,246,.25);color:#fff;transform:translateY(-1px) scale(1.045)}
+.quicknav a:active{transform:scale(.96);transition-duration:.1s}
 .quicknav a b{font-weight:700;margin-right:2px}
 body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07)}
 </style>
@@ -203,6 +207,7 @@ body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07
         <button data-t="dark" onclick="Site.setTheme('dark')">🌙 深色风格</button>
         <button data-t="light" onclick="Site.setTheme('light')">☀️ 极简浅色</button>
       </div>
+      <a id="verBadge" href="#version" title="查看版本与更新历史" style="display:none;margin-left:14px;font-size:11.5px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:4px 11px;white-space:nowrap;transition:transform .28s cubic-bezier(.22,1.2,.36,1),border-color .18s,color .18s" onmouseover="this.style.borderColor='#3b82f6';this.style.color='#60a5fa';this.style.transform='scale(1.06)'" onmouseout="this.style.borderColor='rgba(154,164,178,.35)';this.style.color='#9aa4b2';this.style.transform=''">🏷 v—</a>
       <div class="skinbar" style="margin-left:14px">🎨 风格方案
         <select id="skinSel" onchange="applySkin(this.value)" title="选择首页美化方案(保存在本机)">
           <option value="">默认</option>
@@ -833,10 +838,18 @@ body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.1</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 皮肤2.0布局级差异 + 机器人实心面重绘 + 空白卡修复</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 全站版本角标 + 修复 V1.9.1 历史卡片缺失</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.9.2 · 2026-08-17 · 全站版本角标 + 修复 V1.9.1 历史卡片缺失</summary>
+        <div class="faq-a">🏷 <b>版本角标系统</b>:首页 hero 区新增不显眼的版本徽章(点击直达底部版本历史),全站每页顶部导航同步加入 v 角标,3D 主页顶栏同样可跳转——从此不用滑到底部找版本号;🛠 <b>修复</b>:V1.9.1 升版时漏加的版本历史展开卡片(本次补上);锚点跳转增加 scroll-margin 修正顶栏遮挡;新 3D 页加载器补 CDN 逐级回退(本地→jsdelivr→npmmirror→fastly);3D sw v18。</div>
+      </details>
+      <details class="faq">
+        <summary>V1.9.1 · 2026-08-17 · 皮肤 2.0(布局级差异) + 机器人重绘 + 空白卡修复上线</summary>
+        <div class="faq-a">🎨 <b>风格方案 2.0</b>:五套方案从"只换背景"升级为<b>布局级差异</b>——玻璃拟态(更密网格+毛玻璃+居中节标题)、极光渐变(大两列卡+渐变大标题+左光条)、科技网格(小卡密排+顶部数据条+等宽字体)、极简纸感(<b>单列横排清单卡</b>+衬线标题)、3D 机器人(左右分栏 hero);🤖 <b>机器人 2.0</b>:从线框重绘为实心面渲染(25 部件、朗伯光照、深度排序、地面光影、手臂微摆),仍零依赖;🐛 <b>空白卡修复</b>:三处卡片嵌套(第二/四/八部分)拆平,补 03-06/07-08 两张漏卡;根 sw 缓存升 v1.9.1 清除本地坏缓存。</div>
+      </details>
+      <details class="faq">
         <summary>V1.9.0 · 2026-08-17 · 首页美化方案 + D1/D2/D4 3D 新页 + ZMP 交互 + 体验修复</summary>
         <div class="faq-a">🎨 <b>首页 6 套美化方案下拉切换</b>(玻璃拟态/极光渐变/科技网格/极简纸感/<b>3D 机器人头图</b>——2D canvas 手写投影线框,零依赖不卡顿,可拖动旋转,保存在本机);🔩 <b>电机/编码器/灵巧手 3D 拆解</b>新页(程序化建模零下载:12槽14极电机+旋转磁场与负载角、磁/光电编码器可切换、灵巧手四姿势关节联动);📊 <b>CoM/ZMP 交互实验</b>加入步态页(LIPM 判稳,亲眼看 ZMP 先于 CoM 失稳);🛠 <b>体验修复</b>:浅色模式进度条/进度环对比度、3D 页手机版底部标签栏新增"🏠 首页"(顶栏按钮原本被移动端隐藏);全站 65 个学习页面,根 sw v1.9.0、3D sw v15。</div>
       </details>
@@ -912,7 +925,7 @@ body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.9.1(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.9.2(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1001,6 +1014,15 @@ body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07
     var abs = document.getElementById("autoSaveBox");
     if(abs){ abs.checked = Site.autoSaveEnabled(); }
   });
+</script>
+<script>
+/* 版本角标:文本取自本页页脚(与 S.VERSION 同步更新的单源),点击直达 #version */
+(function(){
+  var b = document.getElementById("verBadge");
+  if(!b) return;
+  var m = (document.body.textContent || "").match(/V\d+\.\d+\.\d+/);
+  if(m){ b.textContent = "🏷 " + m[0]; b.style.display = ""; }
+})();
 </script>
 <script>
 /* ============ 风格方案皮肤切换 + 轻量 3D 机器人(2D canvas 投影,零依赖) ============ */
