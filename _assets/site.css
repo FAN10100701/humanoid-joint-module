@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    人形机器人学习站 · 全站共享主题样式
    用法: 每个页面 <head> 引入 <link rel="stylesheet" href="../_assets/site.css">
    (首页在根目录用 href="_assets/site.css")
@@ -91,8 +91,9 @@ pre code{color:#a8c7e8;background:none;padding:0}
 
 /* ---------- 卡片 ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:14px 0}
-.card{display:block;text-decoration:none;color:inherit;background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 18px 16px;transition:.18s;position:relative;overflow:hidden}
-.card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.35);text-decoration:none}
+.card{display:block;text-decoration:none;color:inherit;background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 18px 16px;transition:transform .32s cubic-bezier(.22,1.2,.36,1),border-color .22s,background .22s,box-shadow .32s;position:relative;overflow:hidden}
+.card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateY(-3px) scale(1.018);box-shadow:0 14px 34px rgba(0,0,0,.4);text-decoration:none}
+.card:active{transform:translateY(-1px) scale(.992);transition-duration:.12s}
 .card .ic{font-size:22px;margin-bottom:10px}
 .card .t{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px}
 .card .d{font-size:12.5px;color:#9aa4b2;line-height:1.65}
@@ -531,3 +532,10 @@ body:not([data-theme]),body[data-theme="light"] .heat-day{background:rgba(60,80,
 @media (max-width:600px){
   .heat-grid{grid-template-columns:repeat(10,1fr)}
 }
+
+/* ===== 悬停微放大 + 丝滑弹性(2026-08-17 补强,卡片弹性动画已有) ===== */
+.quiz-options button,.term-card,.pn-item,.rm-step,.step-item,.toc-sidebar a,.nav-links a,.search-hit,.lab,details.faq,.srs-opt,.srs-card,.gloss-cats button{
+  transition:transform .22s cubic-bezier(.2,.8,.3,1.18),background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.quiz-options button:hover,.term-card:hover,.pn-item:hover,.rm-step:hover,.step-item:hover,.toc-sidebar a:hover,.nav-links a:hover,.search-hit:hover,details.faq:hover,.srs-opt:hover,.srs-card:hover,.gloss-cats button:hover{transform:scale(1.025)}
+.nav-links a:hover,.toc-sidebar a:hover{transform:scale(1.045)}

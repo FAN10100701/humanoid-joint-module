@@ -305,7 +305,8 @@ body[data-theme="dark"] .simbox canvas{background:#0a0e17;border-color:var(--rul
 
 /* ===== 底部功能栏（桌面端） ===== */
 .bottom-bar{position:fixed;left:0;right:0;bottom:0;z-index:100;display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-top:1px solid var(--rule);border-radius:14px 14px 0 0;box-shadow:0 -2px 20px rgba(0,0,0,.06);flex-wrap:wrap;min-height:44px}
-.bb-btn{border:1px solid var(--rule);background:rgba(255,255,255,.7);color:var(--muted);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;transition:.14s;font-family:inherit;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.bb-btn{border:1px solid var(--rule);background:rgba(255,255,255,.7);color:var(--muted);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;transition:transform .18s cubic-bezier(.2,.8,.3,1.2),color .14s,background .14s,border-color .14s;font-family:inherit;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.bb-btn:hover{transform:translateY(-1px)}
 .bb-btn:hover{color:var(--ink);background:#fff;box-shadow:var(--sh1)}
 .bb-btn.on{color:#fff;background:var(--accent);border-color:var(--accent)}
 .bb-sep{width:1px;height:20px;background:var(--rule);margin:0 6px;flex-shrink:0}
