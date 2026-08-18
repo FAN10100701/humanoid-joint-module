@@ -1,116 +1,104 @@
 <!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 02-03 硬件原理图/PCB 学习页(智元X1 + Hdrive)
+  内容: 智元灵犀 X1 开源硬件全景 / Hdrive 开源关节驱动板框图与 BOM /
+        HdriveV2 重绘方案 / 推荐学习路径 / 开源仓库与外部参考
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  本页与 02-01(FOC 驱动板硬件避坑)互补:一条看整机结构,一条看驱动板电子
+  ============================================================ -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>硬件原理图/PCB 学习页 · 智元X1 + Hdrive</title>
+<title>人形机器人学习站 · 硬件原理图/PCB 学习页（智元X1 + Hdrive）</title>
+<link rel="stylesheet" href="../_assets/site.css">
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:"Microsoft YaHei","PingFang SC",sans-serif; }
-  body { background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%); min-height:100vh; padding:24px; color:#e2e8f0; }
-  .container { max-width:1200px; margin:0 auto; }
-
-  .header { text-align:center; padding:30px 0; }
-  .header h1 { font-size:34px; color:#f8fafc; margin-bottom:10px; }
-  .header p { color:#94a3b8; font-size:15px; line-height:1.6; }
-
-  .back-link { display:inline-block; color:#60a5fa; text-decoration:none; font-size:14px; margin-bottom:20px; }
-  .back-link:hover { text-decoration:underline; }
-
-  .tip-box { background:linear-gradient(135deg,#422006,#713f12); border:1px solid #f59e0b; border-radius:12px; padding:18px 22px; margin-bottom:24px; font-size:14px; color:#fef3c7; line-height:1.8; }
-  .tip-box b { color:#fcd34d; }
-  .danger-box { background:linear-gradient(135deg,#450a0a,#7f1d1d); border:1px solid #ef4444; border-radius:12px; padding:18px 22px; margin-bottom:24px; font-size:14px; color:#fecaca; line-height:1.8; }
-  .danger-box b { color:#fca5a5; }
-  .success-box { background:linear-gradient(135deg,#052e16,#14532d); border:1px solid #22c55e; border-radius:12px; padding:18px 22px; margin-bottom:24px; font-size:14px; color:#bbf7d0; line-height:1.8; }
-  .success-box b { color:#86efac; }
-
-  .section { background:#1e293b; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.3); margin-bottom:24px; overflow:hidden; border:1px solid #334155; }
-  .section-header { padding:20px 24px; cursor:pointer; display:flex; align-items:center; gap:14px; transition:background 0.2s; user-select:none; }
-  .section-header:hover { background:#334155; }
-  .section-num { width:40px; height:40px; background:linear-gradient(135deg,#3b82f6,#8b5cf6); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:bold; color:white; flex-shrink:0; }
-  .section-title { font-size:19px; font-weight:700; color:#f1f5f9; flex:1; }
-  .section-toggle { font-size:24px; color:#64748b; transition:transform 0.3s; }
-  .section.collapsed .section-toggle { transform:rotate(-90deg); }
-  .section.collapsed .section-body { display:none; }
-  .section-body { padding:0 24px 24px; }
-
-  h3 { color:#60a5fa; font-size:17px; margin:20px 0 12px; padding-bottom:8px; border-bottom:1px solid #334155; }
-  h4 { color:#a78bfa; font-size:15px; margin:16px 0 8px; }
-
-  p, li { font-size:14px; line-height:1.8; color:#cbd5e1; }
-  ul, ol { padding-left:24px; margin:8px 0; }
-  li { margin-bottom:6px; }
-
-  .chip-table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
-  .chip-table th { background:#334155; color:#f1f5f9; padding:10px 12px; text-align:left; font-weight:600; }
-  .chip-table td { padding:10px 12px; border-bottom:1px solid #1e293b; color:#cbd5e1; }
-  .chip-table tr:hover td { background:#1e293b; }
-  .chip-table .ok { background:#14532d; color:#86efac; }
-  .chip-table .no { background:#450a0a; color:#fca5a5; }
-
-  .layout-diagram { background:#0f172a; border:1px solid #334155; border-radius:12px; padding:24px; margin:16px 0; font-family:monospace,"Microsoft YaHei"; font-size:12.5px; line-height:1.7; color:#94a3b8; overflow-x:auto; white-space:pre; }
-
-  .key-point { background:linear-gradient(135deg,#1e3a8a,#1e40af); border-left:4px solid #60a5fa; padding:14px 18px; border-radius:0 10px 10px 0; margin:12px 0; font-size:14px; line-height:1.7; }
-  .key-point b { color:#93c5fd; }
-
-  .step-flow { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; align-items:center; }
-  .step-item { background:linear-gradient(135deg,#1e3a8a,#3730a3); padding:12px 18px; border-radius:10px; font-size:13px; font-weight:600; color:#bfdbfe; }
-  .step-arrow { color:#64748b; font-size:20px; }
-
-  .ref-card { display:block; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:16px; margin:10px 0; text-decoration:none; color:inherit; transition:all 0.2s; }
-  .ref-card:hover { border-color:#3b82f6; background:#1e293b; }
-  .ref-card .ref-title { font-weight:700; color:#60a5fa; margin-bottom:6px; font-size:15px; }
-  .ref-card .ref-desc { font-size:13px; color:#94a3b8; line-height:1.6; }
-  .ref-card .ref-tag { display:inline-block; background:#334155; padding:2px 8px; border-radius:4px; font-size:11px; color:#94a3b8; margin-top:8px; margin-right:6px; }
-
-  .footer { text-align:center; margin-top:30px; padding:20px; color:#64748b; font-size:12px; }
+  /* 页面级补充样式(命名统一加 my- 前缀,避免与全局冲突;同时提供浅色适配) */
+  .my-diagram{background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px 18px;margin:14px 0;overflow-x:auto;font-family:Consolas,"Courier New",monospace;font-size:12.5px;line-height:1.55;color:#a3b3c4;white-space:pre}
+  .my-hl{color:#fbbf24;font-weight:700}
+  .my-ref-tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:2px 8px;border-radius:5px;font-size:11px;color:#9aa4b2;margin:6px 6px 0 0}
+  .my-ok{background:rgba(34,197,94,.15);color:#86efac;font-weight:600}
+  .my-step-sep{display:flex;align-items:center;color:#64748b;font-size:15px;font-weight:700;padding:0 2px}
+  .my-muted{color:#6b7280;font-size:12.5px;margin:10px 0;line-height:1.8}
+  /* 浅色适配(默认日间模式) */
+  body[data-theme="light"] .my-diagram,body:not([data-theme]) .my-diagram{background:#f4f7fc;border-color:rgba(60,80,120,.14);color:#1e293b}
+  body[data-theme="light"] .my-hl,body:not([data-theme]) .my-hl{color:#b45309}
+  body[data-theme="light"] .my-ref-tag,body:not([data-theme]) .my-ref-tag{background:rgba(37,99,235,.08);border-color:rgba(60,80,120,.18);color:#64748b}
+  body[data-theme="light"] .my-ok,body:not([data-theme]) .my-ok{background:rgba(34,197,94,.12);color:#15803d}
+  body[data-theme="light"] .my-step-sep,body:not([data-theme]) .my-step-sep{color:#94a3b8}
+  body[data-theme="light"] .my-muted,body:not([data-theme]) .my-muted{color:#94a3b8}
 </style>
-<link rel="stylesheet" href="../_assets/chrome.css">
+<script>
+  window.PAGE = {
+    pageId: "02-03",
+    root: "..",
+    breadcrumb: [
+      { t: "硬件基础", u: "../index.html#sec2" },
+      { t: "硬件原理图/PCB 学习页" }
+    ],
+    prev: { t: "参考资料汇总", u: "05_参考资料汇总_视频_开源项目.html" },
+    next: { t: "电机选型计算专题", u: "07_电机选型计算专题.html" }
+  };
+</script>
 </head>
 <body>
+
 <div class="container">
-  <a href="../index.html" class="back-link">← 返回总入口</a>
 
-  <div class="header">
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
     <h1>🔬 硬件原理图 / PCB 学习页</h1>
-    <p>智元灵犀 X1 开源硬件全景 + Hdrive 开源关节驱动板框图 | 整合学习入口</p>
-  </div>
-
-  <div class="tip-box">
-    <b>💡 本页定位：</b>把两条开源硬件路线整合到一起学习——<b>智元 X1</b> 提供整机级的结构图纸/BOM/装机SOP（机械全套），<b>Hdrive</b> 提供关节驱动板的完整原理图与 PCB（电子全套）。两者互补：X1 告诉你"机器人长什么样、怎么装"，Hdrive 告诉你"每个关节里的驱动板怎么画"。
-  </div>
-
-  <!-- ============ 第一部分：X1 开源硬件 ============ -->
-  <div class="section">
-    <div class="section-header" onclick="toggleSection(this)">
-      <div class="section-num">1</div>
-      <div class="section-title">智元灵犀 X1 · 开源硬件全景</div>
-      <div class="section-toggle">▼</div>
+    <div class="sub">智元灵犀 X1 开源硬件全景 + Hdrive 开源关节驱动板框图与 BOM · 整合学习入口。
+      一条路线看整机结构（X1 机械全套），一条路线看关节驱动板电子（Hdrive 原理图+PCB+BOM），读完能说清两者互补关系与 Hdrive 五大核心器件。</div>
+    <div class="tags">
+      <span class="tag">原理图</span>
+      <span class="tag">PCB</span>
+      <span class="tag">智元X1</span>
+      <span class="tag">Hdrive</span>
+      <span class="tag">开源硬件</span>
+      <span class="tag">BOM</span>
     </div>
-    <div class="section-body">
-      <p>智元机器人（稚晖君团队）于 2024-10-24 开源灵犀 X1 全套资料，硬件仓库为 GitHub 上的 <b style="color:#fbbf24">AgibotTech/agibot_x1_hardware</b>，含三个版本快照（20241024 / 20250108 / 20250307 最终版）。以下清单以 20250307 最终版为准：</p>
+  </div>
 
-      <table class="chip-table">
-        <tr><th>开源文件</th><th>内容</th><th>体积</th><th>用途</th></tr>
-        <tr><td><b>智元灵犀X1图纸.zip</b></td><td>整机 2D 工程图纸</td><td>约 7.4 MB</td><td>装配关系/关键尺寸速查</td></tr>
-        <tr><td><b>三维零件图纸STEP.zip</b></td><td>全机零件 STEP 模型</td><td>约 72 MB</td><td>任意 CAD 软件打开看结构</td></tr>
-        <tr><td><b>图纸源文件SW2022 分卷×7</b></td><td>SolidWorks 2022 源工程</td><td>每卷约 100 MB</td><td>改设计/导出加工文件</td></tr>
-        <tr><td><b>装机SOP.zip</b></td><td>标准作业程序（装配教程）</td><td>约 60 MB</td><td>手把手装机步骤文档</td></tr>
-        <tr><td><b>智元X1工具包清单.xlsx</b></td><td>工具清单</td><td>约 28 KB</td><td>装配所需工具准备</td></tr>
-      </table>
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说清智元 X1 开源了什么、没开源什么，以及它与 Hdrive 两条学习路线的互补关系<br>
+    2. 能说出 Hdrive V1.1 五大核心器件（STM32G431 / FD6288 / MT6701 / SP3485 / MOS 桥）各自的作用与信号流向<br>
+    3. 能画出「电源 → MCU → 栅极预驱 → 三相逆变桥 → 电机」的信号流，并指出 V1.1 电源链路至少两处缺陷与修正方法<br>
+    4. 能对照 X1 STEP 图纸定位 PowerFlow 关节，并说清 HdriveV2 两条重绘路线（DRV8323R 一体化 vs FD6288 修正版）的区别<br>
+    <b>建议用时:</b>约 30 分钟
+  </div>
 
-      <h3>下载渠道（三选一）</h3>
-      <ul>
-        <li>GitHub：github.com/AgibotTech/agibot_x1_hardware（推荐，版本最全）</li>
-        <li>智元官方文档站：agibot.com.cn/DOCS/OS（含百度网盘与谷歌云盘链接，网盘提取码 1234）</li>
-      </ul>
+  <div class="box box-tip">
+    <b>💡 本页定位：</b>把两条开源硬件路线整合到一起学习——<b>智元 X1</b> 提供整机级的结构图纸/BOM/装机SOP（机械全套），<b>Hdrive</b> 提供关节驱动板的完整原理图与 PCB（电子全套）。两者互补：X1 告诉你「机器人长什么样、怎么装」，Hdrive 告诉你「每个关节里的驱动板怎么画」。
+  </div>
 
-      <div class="danger-box">
-        <b>⚠ 事实澄清（避免被误导）：</b>X1 开源的是<b>机械结构全套</b>（图纸/STEP/SOP/BOM），<b>电子部分并未开源</b>——PowerFlow 关节内部驱动板、域控制器、电池管理板的原理图和 PCB 都没有放出。想学"关节驱动板电子怎么设计"，请看本页第 3~4 节的 Hdrive 开源工程；X1 的结构图纸配合 3D 解剖页（PowerFlow 关节拆解场景）理解机械布局。
-      </div>
+  <!-- ================= 1 X1 开源硬件 ================= -->
+  <h2><span class="h2-num">1</span> 智元灵犀 X1 · 开源硬件全景</h2>
+  <p>智元机器人（稚晖君团队）于 2024-10-24 开源灵犀 X1 全套资料，硬件仓库为 GitHub 上的 <b class="my-hl">AgibotTech/agibot_x1_hardware</b>，含三个版本快照（20241024 / 20250108 / 20250307 最终版）。以下清单以 20250307 最终版为准：</p>
 
-      <h3>X1 整机电子架构框图（按公开资料整理）</h3>
-      <div class="layout-diagram">
-┌──────────┐   ┌─────────────────┐   ┌──────────────────────────┐
+  <div class="table-wrap"><table>
+    <tr><th>开源文件</th><th>内容</th><th>体积</th><th>用途</th></tr>
+    <tr><td><strong>智元灵犀X1图纸.zip</strong></td><td>整机 2D 工程图纸</td><td>约 7.4 MB</td><td>装配关系/关键尺寸速查</td></tr>
+    <tr><td><strong>三维零件图纸STEP.zip</strong></td><td>全机零件 STEP 模型</td><td>约 72 MB</td><td>任意 CAD 软件打开看结构</td></tr>
+    <tr><td><strong>图纸源文件SW2022 分卷×7</strong></td><td>SolidWorks 2022 源工程</td><td>每卷约 100 MB</td><td>改设计/导出加工文件</td></tr>
+    <tr><td><strong>装机SOP.zip</strong></td><td>标准作业程序（装配教程）</td><td>约 60 MB</td><td>手把手装机步骤文档</td></tr>
+    <tr><td><strong>智元X1工具包清单.xlsx</strong></td><td>工具清单</td><td>约 28 KB</td><td>装配所需工具准备</td></tr>
+  </table></div>
+
+  <h3>下载渠道（三选一）</h3>
+  <ul>
+    <li>GitHub：github.com/AgibotTech/agibot_x1_hardware（推荐，版本最全）</li>
+    <li>智元官方文档站：agibot.com.cn/DOCS/OS（含百度网盘与谷歌云盘链接，网盘提取码 1234）</li>
+  </ul>
+
+  <div class="box box-danger">
+    <b>⚠ 事实澄清（避免被误导）：</b>X1 开源的是<b>机械结构全套</b>（图纸/STEP/SOP/BOM），<b>电子部分并未开源</b>——PowerFlow 关节内部驱动板、域控制器、电池管理板的原理图和 PCB 都没有放出。想学「关节驱动板电子怎么设计」，请看本页第 2~3 节的 Hdrive 开源工程；X1 的结构图纸配合 3D 解剖页（PowerFlow 关节拆解场景）理解机械布局。
+  </div>
+
+  <h3>X1 整机电子架构框图（按公开资料整理）</h3>
+  <div class="my-diagram">┌──────────┐   ┌─────────────────┐   ┌──────────────────────────┐
 │  电池包   │──▶│  电源分配板      │──▶│  各关节 PowerFlow 供电    │
 │ (DC 母线) │   │  (保护+分配)     │   │  (左右臂/腰/腿部 28关节)  │
 └──────────┘   └────────┬────────┘   └──────────────────────────┘
@@ -128,46 +116,37 @@
 │ [未开源]      │  │ [未开源]      │  └──────────────────────┘
 └──────────────┘  └──────────────┘
 
-※ 域控制器与关节驱动板均未开源；关节驱动板角色 ≈ Hdrive 这类 FOC 伺服板
-      </div>
-      <div class="key-point">
-        <b>学习要点：</b>每颗 PowerFlow 关节里都有一块"FOC 伺服驱动板"（无框电机驱动+双编码器接口+总线通信），它就是 Hdrive 开源工程要解决的同一类对象——这是两条学习路线的连接点。
-      </div>
-    </div>
+※ 域控制器与关节驱动板均未开源；关节驱动板角色 ≈ Hdrive 这类 FOC 伺服板</div>
+
+  <div class="key-point">
+    <b>学习要点：</b>每颗 PowerFlow 关节里都有一块「FOC 伺服驱动板」（无框电机驱动+双编码器接口+总线通信），它就是 Hdrive 开源工程要解决的同一类对象——这是两条学习路线的连接点。
   </div>
 
-  <!-- ============ 第二部分：Hdrive 开源工程 ============ -->
-  <div class="section">
-    <div class="section-header" onclick="toggleSection(this)">
-      <div class="section-num">2</div>
-      <div class="section-title">Hdrive 开源关节驱动板 · 立创开源工程</div>
-      <div class="section-toggle">▼</div>
-    </div>
-    <div class="section-body">
-      <p>Hdrive 是"人形机器人技术社区"（立创开源平台作者 ZYS_ZYS）开源的关节电机驱动电路，从 HdriveV1.0 升级到 <b style="color:#fbbf24">HdriveV1.1</b>，原理图+PCB+BOM 全部开源（TAPR 开源硬件协议），配套教程发布在人形机器人在线学习技术社区。</p>
+  <!-- ================= 2 Hdrive 开源工程 ================= -->
+  <h2><span class="h2-num">2</span> Hdrive 开源关节驱动板 · 立创开源工程</h2>
+  <p>Hdrive 是「人形机器人技术社区」（立创开源平台作者 ZYS_ZYS）开源的关节电机驱动电路，从 HdriveV1.0 升级到 <b class="my-hl">HdriveV1.1</b>，原理图+PCB+BOM 全部开源（TAPR 开源硬件协议），配套教程发布在人形机器人在线学习技术社区。</p>
 
-      <table class="chip-table">
-        <tr><th>项目信息</th><th>内容</th></tr>
-        <tr><td><b>开源工程</b></td><td>立创开源硬件平台：oshwhub.com/zys_zys/guan-jie-dian-ji</td></tr>
-        <tr><td><b>适配电机</b></td><td>伺泰威 GIM6010-8 / GIM8108-8 无刷电机</td></tr>
-        <tr><td><b>开源协议</b></td><td>TAPR Open Hardware License</td></tr>
-        <tr><td><b>配套教程</b></td><td>humanoid-robot.fun（人形机器人在线学习技术社区）</td></tr>
-        <tr><td><b>复刻成本</b></td><td>约 ¥90/块（核心 BOM 立创商城直购）</td></tr>
-      </table>
+  <div class="table-wrap"><table>
+    <tr><th>项目信息</th><th>内容</th></tr>
+    <tr><td><strong>开源工程</strong></td><td>立创开源硬件平台：oshwhub.com/zys_zys/guan-jie-dian-ji</td></tr>
+    <tr><td><strong>适配电机</strong></td><td>伺泰威 GIM6010-8 / GIM8108-8 无刷电机</td></tr>
+    <tr><td><strong>开源协议</strong></td><td>TAPR Open Hardware License</td></tr>
+    <tr><td><strong>配套教程</strong></td><td>humanoid-robot.fun（人形机器人在线学习技术社区）</td></tr>
+    <tr><td><strong>复刻成本</strong></td><td>约 ¥90/块（核心 BOM 立创商城直购）</td></tr>
+  </table></div>
 
-      <h3>核心 BOM（已核实，立创商城编号）</h3>
-      <table class="chip-table">
-        <tr><th>位号</th><th>器件</th><th>封装</th><th>角色</th><th>立创编号</th></tr>
-        <tr><td>U1</td><td><b>STM32G431CBU6</b></td><td>VQFN-48</td><td>主控 MCU（170MHz+FPU+内置运放）</td><td>C529356</td></tr>
-        <tr><td>U2</td><td><b>FD6288T</b></td><td>TSSOP-20</td><td>三相半桥栅极预驱（高压侧自举）</td><td>C97683</td></tr>
-        <tr><td>U6</td><td><b>MT6701CT</b></td><td>SOP-8</td><td>磁编码器（输出端绝对角度）</td><td>C3003196</td></tr>
-        <tr><td>U7</td><td><b>SP3485EEN</b></td><td>SOP-8</td><td>RS485 总线收发器</td><td>C668205</td></tr>
-        <tr><td>H1</td><td>PZ254V-11-04P</td><td>2.54 端子</td><td>电机三相引出</td><td>C2691448</td></tr>
-      </table>
+  <h3>核心 BOM（已核实，立创商城编号）</h3>
+  <div class="table-wrap"><table>
+    <tr><th>位号</th><th>器件</th><th>封装</th><th>角色</th><th>立创编号</th></tr>
+    <tr><td>U1</td><td><strong>STM32G431CBU6</strong></td><td>VQFN-48</td><td>主控 MCU（170MHz+FPU+内置运放）</td><td>C529356</td></tr>
+    <tr><td>U2</td><td><strong>FD6288T</strong></td><td>TSSOP-20</td><td>三相半桥栅极预驱（高压侧自举）</td><td>C97683</td></tr>
+    <tr><td>U6</td><td><strong>MT6701CT</strong></td><td>SOP-8</td><td>磁编码器（输出端绝对角度）</td><td>C3003196</td></tr>
+    <tr><td>U7</td><td><strong>SP3485EEN</strong></td><td>SOP-8</td><td>RS485 总线收发器</td><td>C668205</td></tr>
+    <tr><td>H1</td><td>PZ254V-11-04P</td><td>2.54 端子</td><td>电机三相引出</td><td>C2691448</td></tr>
+  </table></div>
 
-      <h3>Hdrive V1.1 硬件框图</h3>
-      <div class="layout-diagram">
-┌───────────────────── 电源链路 ─────────────────────┐
+  <h3>Hdrive V1.1 硬件框图</h3>
+  <div class="my-diagram">┌───────────────────── 电源链路 ─────────────────────┐
 │  24V输入 → 防反接/TVS → Buck(24V→5V) → LDO(3.3V)   │
 │                │ 5V: 栅驱/编码器    │ 3.3V: MCU     │
 └────────────────┼───────────────────┼───────────────┘
@@ -191,139 +170,200 @@
 │  下桥三电阻采样 → 回 MCU ADC  │      │  三相绕组 │
 └──────────────────────────────┘      └───────────┘
 
-※ 无 CAN：V1.1 只有 RS485 总线（社区已提议升级版预留 CAN）
-      </div>
+※ 无 CAN：V1.1 只有 RS485 总线（社区已提议升级版预留 CAN）</div>
 
-      <div class="danger-box">
-        <b>⚠ 社区已发现的 V1.1 疑点（复刻前必看）：</b>
-        <ul>
-          <li><b>R49 阻值矛盾：</b>原理图标 100Ω、PCB 贴 0Ω，导致 TLV431 基准电路异常发烫烧毁（详见本项目《电源管理功率链路分析》）</li>
-          <li><b>接地隐患：</b>AGND 与 GND 仅通过一颗 0603 0Ω 电阻连接，大电流下地电位漂移影响电流采样精度</li>
-          <li><b>R41/R42 标注错误：</b>作者在评论区确认应为 19k/1k（原理图阻值有误）</li>
-          <li><b>C50 耐压存疑：</b>社区指出 6.3V 耐压余量不足</li>
-        </ul>
-      </div>
-    </div>
+  <div class="box box-danger">
+    <b>⚠ 社区已发现的 V1.1 疑点（复刻前必看）：</b>
+    <ul>
+      <li><b>R49 阻值矛盾：</b>原理图标 100Ω、PCB 贴 0Ω，导致 TLV431 基准电路异常发烫烧毁（详见本项目《电源管理功率链路分析》）</li>
+      <li><b>接地隐患：</b>AGND 与 GND 仅通过一颗 0603 0Ω 电阻连接，大电流下地电位漂移影响电流采样精度</li>
+      <li><b>R41/R42 标注错误：</b>作者在评论区确认应为 19k/1k（原理图阻值有误）</li>
+      <li><b>C50 耐压存疑：</b>社区指出 6.3V 耐压余量不足</li>
+    </ul>
   </div>
 
-  <!-- ============ 第三部分：HdriveV2 重绘方案 ============ -->
-  <div class="section">
-    <div class="section-header" onclick="toggleSection(this)">
-      <div class="section-num">3</div>
-      <div class="section-title">HdriveV2 重绘方案（本项目工程）</div>
-      <div class="section-toggle">▼</div>
-    </div>
-    <div class="section-body">
-      <p>针对上述 V1.1 的三处电源链路缺陷，本项目 05 目录已完成两份交叉认证报告，给出两条重绘路线：</p>
+  <!-- ================= 3 HdriveV2 重绘方案 ================= -->
+  <h2><span class="h2-num">3</span> HdriveV2 重绘方案（本项目工程）</h2>
+  <p>针对上述 V1.1 的三处电源链路缺陷，本项目 05 目录已完成两份交叉认证报告，给出两条重绘路线：</p>
 
-      <div class="step-flow">
-        <div class="step-item">方案A：DRV8323R 一体化预驱</div>
-        <div class="step-arrow">vs</div>
-        <div class="step-item">方案B：FD6288 + 修R49 + 单点接地</div>
-      </div>
-
-      <table class="chip-table">
-        <tr><th>对比项</th><th>方案A：DRV8323R</th><th>方案B：FD6288 修正版</th></tr>
-        <tr><td>电源链路</td><td>内置 Buck(600mA)+电荷泵，24V→5V→3.3V 两级</td><td>保持三级链路，仅修 R49=1kΩ</td></tr>
-        <tr><td>驱动方式</td><td>电荷泵高侧驱动（100%占空比可用）</td><td>自举高侧驱动（占空比受限）</td></tr>
-        <tr><td>集成度</td><td>预驱+电源一体，外围最简</td><td>外围元件多但单件成本低</td></tr>
-        <tr><td>推荐场景</td><td class="ok">第一版重绘推荐（少踩坑）</td><td>想保持与 V1.1 BOM 兼容时</td></tr>
-      </table>
-
-      <h3>深入阅读（项目内文档）</h3>
-      <a class="ref-card" href="../05_HdriveV2工程/00_设计规范与决策/电源管理功率链路分析/电源管理功率链路分析.html">
-        <div class="ref-title">⚡ 电源管理功率链路分析 · HdriveV2 重绘版第一页</div>
-        <div class="ref-desc">V1.1 电源部分三处致命 Bug 的逐条分析（R49 阻值 / AGND-GND / 三级级联冗余），含 mermaid 链路图与两方案对比。</div>
-        <span class="ref-tag">项目内文档</span><span class="ref-tag">电源设计</span>
-      </a>
-      <a class="ref-card" href="../05_HdriveV2工程/00_设计规范与决策/Hdrive新版方案_交叉认证与芯片选型报告.html">
-        <div class="ref-title">📋 Hdrive 新版方案 · 交叉认证与芯片选型报告</div>
-        <div class="ref-desc">旧融合方案三处硬错误（PWM 引脚映射 / DRV8323 电荷泵误当自举 / 器件名写错）的更正，含已核实 V1.1 官方 BOM 与可沿用设计清单。</div>
-        <span class="ref-tag">项目内文档</span><span class="ref-tag">芯片选型</span>
-      </a>
-      <a class="ref-card" href="../02_硬件基础/04_硬件设计通用要点_避坑指南.html">
-        <div class="ref-title">🛡️ FOC 关节驱动板 · 硬件设计实战指南</div>
-        <div class="ref-desc">驱动板 8 大模块划分、逐模块设计要点、PCB Layout 核心原则与踩坑经验汇总。</div>
-        <span class="ref-tag">项目内文档</span><span class="ref-tag">PCB Layout</span>
-      </a>
-    </div>
+  <div class="step-flow">
+    <div class="step-item"><b>方案A</b>：DRV8323R 一体化预驱</div>
+    <div class="my-step-sep">vs</div>
+    <div class="step-item"><b>方案B</b>：FD6288 + 修R49 + 单点接地</div>
   </div>
 
-  <!-- ============ 第四部分：学习路径 ============ -->
-  <div class="section">
-    <div class="section-header" onclick="toggleSection(this)">
-      <div class="section-num">4</div>
-      <div class="section-title">推荐学习路径</div>
-      <div class="section-toggle">▼</div>
-    </div>
-    <div class="section-body">
-      <div class="step-flow">
-        <div class="step-item">① 看 3D 解剖页认识关节结构</div>
-        <div class="step-arrow">→</div>
-        <div class="step-item">② 下载 X1 图纸对照实物</div>
-        <div class="step-arrow">→</div>
-        <div class="step-item">③ 精读 Hdrive 原理图分模块</div>
-        <div class="step-arrow">→</div>
-        <div class="step-item">④ 读 V2 重绘两份报告</div>
-        <div class="step-arrow">→</div>
-        <div class="step-item">⑤ 立创EDA 复刻/改版</div>
-      </div>
-      <div class="success-box">
-        <b>✓ 验收标准：</b>能独立说出 Hdrive 五大核心器件（G431/FD6288/MT6701/SP3485/MOS桥）各自的作用与信号流向；能指出 V1.1 电源链路的至少两处缺陷及修正方法；能对照 X1 STEP 图纸找到 PowerFlow 关节的安装位置。
-      </div>
-    </div>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>方案A：DRV8323R</th><th>方案B：FD6288 修正版</th></tr>
+    <tr><td>电源链路</td><td>内置 Buck(600mA)+电荷泵，24V→5V→3.3V 两级</td><td>保持三级链路，仅修 R49=1kΩ</td></tr>
+    <tr><td>驱动方式</td><td>电荷泵高侧驱动（100%占空比可用）</td><td>自举高侧驱动（占空比受限）</td></tr>
+    <tr><td>集成度</td><td>预驱+电源一体，外围最简</td><td>外围元件多但单件成本低</td></tr>
+    <tr><td>推荐场景</td><td class="my-ok">第一版重绘推荐（少踩坑）</td><td>想保持与 V1.1 BOM 兼容时</td></tr>
+  </table></div>
+
+  <h3>深入阅读（项目内文档）</h3>
+  <div class="grid">
+    <a class="card" href="../05_HdriveV2工程/00_设计规范与决策/电源管理功率链路分析/电源管理功率链路分析.html">
+      <span class="go">进入 →</span>
+      <div class="ic">⚡</div>
+      <div class="t">电源管理功率链路分析 · HdriveV2 重绘版第一页</div>
+      <div class="d">V1.1 电源部分三处致命 Bug 的逐条分析（R49 阻值 / AGND-GND / 三级级联冗余），含 mermaid 链路图与两方案对比。<span class="my-ref-tag">项目内文档</span><span class="my-ref-tag">电源设计</span></div>
+    </a>
+    <a class="card" href="../05_HdriveV2工程/00_设计规范与决策/Hdrive新版方案_交叉认证与芯片选型报告.html">
+      <span class="go">进入 →</span>
+      <div class="ic">📋</div>
+      <div class="t">Hdrive 新版方案 · 交叉认证与芯片选型报告</div>
+      <div class="d">旧融合方案三处硬错误（PWM 引脚映射 / DRV8323 电荷泵误当自举 / 器件名写错）的更正，含已核实 V1.1 官方 BOM 与可沿用设计清单。<span class="my-ref-tag">项目内文档</span><span class="my-ref-tag">芯片选型</span></div>
+    </a>
+    <a class="card" href="../02_硬件基础/04_硬件设计通用要点_避坑指南.html">
+      <span class="go">进入 →</span>
+      <div class="ic">🛡️</div>
+      <div class="t">FOC 关节驱动板 · 硬件设计实战指南</div>
+      <div class="d">驱动板 8 大模块划分、逐模块设计要点、PCB Layout 核心原则与踩坑经验汇总。<span class="my-ref-tag">项目内文档</span><span class="my-ref-tag">PCB Layout</span></div>
+    </a>
   </div>
 
-  <!-- ============ 参考链接 ============ -->
-  <div class="section">
-    <div class="section-header" onclick="toggleSection(this)">
-      <div class="section-num">5</div>
-      <div class="section-title">开源仓库与外部参考</div>
-      <div class="section-toggle">▼</div>
-    </div>
-    <div class="section-body">
-      <a class="ref-card" href="https://github.com/AgibotTech/agibot_x1_hardware" target="_blank" rel="noopener">
-        <div class="ref-title">🐱 AgibotTech/agibot_x1_hardware</div>
-        <div class="ref-desc">智元灵犀 X1 官方开源硬件仓库：整机图纸 / STEP / SW源文件 / 装机SOP / 工具清单（20250307 最终版）。</div>
-        <span class="ref-tag">GitHub</span><span class="ref-tag">X1 结构开源</span>
-      </a>
-      <a class="ref-card" href="https://www.agibot.com.cn/DOCS/OS" target="_blank" rel="noopener">
-        <div class="ref-title">📘 智元开源文档站（DOCS/OS）</div>
-        <div class="ref-desc">官方开源资料汇总入口：结构/推理代码/开发指南，含百度网盘与谷歌云盘下载链接。</div>
-        <span class="ref-tag">官方文档</span><span class="ref-tag">下载入口</span>
-      </a>
-      <a class="ref-card" href="https://oshwhub.com/zys_zys/guan-jie-dian-ji" target="_blank" rel="noopener">
-        <div class="ref-title">🔌 立创开源 · Hdrive 关节电机驱动电路</div>
-        <div class="ref-desc">HdriveV1.0/V1.1 完整原理图+PCB+BOM 开源工程（TAPR 协议），适配 GIM6010-8/GIM8108-8 电机。</div>
-        <span class="ref-tag">立创开源</span><span class="ref-tag">PCB 全开源</span>
-      </a>
-      <a class="ref-card" href="http://www.humanoid-robot.fun/" target="_blank" rel="noopener">
-        <div class="ref-title">🎓 人形机器人在线学习技术社区</div>
-        <div class="ref-desc">Hdrive 作者配套教程网站：机械/电子/电机控制/强化学习免费教程持续更新。</div>
-        <span class="ref-tag">教程社区</span><span class="ref-tag">配套教程</span>
-      </a>
-    </div>
+  <!-- ================= 4 推荐学习路径 ================= -->
+  <h2><span class="h2-num">4</span> 推荐学习路径</h2>
+  <div class="step-flow">
+    <div class="step-item">① 看 3D 解剖页认识关节结构</div>
+    <div class="step-item">② 下载 X1 图纸对照实物</div>
+    <div class="step-item">③ 精读 Hdrive 原理图分模块</div>
+    <div class="step-item">④ 读 V2 重绘两份报告</div>
+    <div class="step-item">⑤ 立创EDA 复刻/改版</div>
+  </div>
+  <div class="box box-ok">
+    <b>✓ 验收标准：</b>能独立说出 Hdrive 五大核心器件（G431/FD6288/MT6701/SP3485/MOS桥）各自的作用与信号流向；能指出 V1.1 电源链路的至少两处缺陷及修正方法；能对照 X1 STEP 图纸找到 PowerFlow 关节的安装位置。
   </div>
 
-  <div class="footer">
-    硬件原理图/PCB 学习页 · 智元X1 + Hdrive 整合 | 2026-08-14 更新<br>
-    建议配合「3D 解剖式知识可视化」与「HdriveV2 新版工程」目录一起学习
+  <!-- ================= 5 开源仓库与外部参考 ================= -->
+  <h2><span class="h2-num">5</span> 开源仓库与外部参考</h2>
+  <div class="grid">
+    <a class="card" href="https://github.com/AgibotTech/agibot_x1_hardware" target="_blank" rel="noopener">
+      <span class="go">进入 →</span>
+      <div class="ic">🐱</div>
+      <div class="t">AgibotTech/agibot_x1_hardware</div>
+      <div class="d">智元灵犀 X1 官方开源硬件仓库：整机图纸 / STEP / SW源文件 / 装机SOP / 工具清单（20250307 最终版）。<span class="my-ref-tag">GitHub</span><span class="my-ref-tag">X1 结构开源</span></div>
+    </a>
+    <a class="card" href="https://www.agibot.com.cn/DOCS/OS" target="_blank" rel="noopener">
+      <span class="go">进入 →</span>
+      <div class="ic">📘</div>
+      <div class="t">智元开源文档站（DOCS/OS）</div>
+      <div class="d">官方开源资料汇总入口：结构/推理代码/开发指南，含百度网盘与谷歌云盘下载链接。<span class="my-ref-tag">官方文档</span><span class="my-ref-tag">下载入口</span></div>
+    </a>
+    <a class="card" href="https://oshwhub.com/zys_zys/guan-jie-dian-ji" target="_blank" rel="noopener">
+      <span class="go">进入 →</span>
+      <div class="ic">🔌</div>
+      <div class="t">立创开源 · Hdrive 关节电机驱动电路</div>
+      <div class="d">HdriveV1.0/V1.1 完整原理图+PCB+BOM 开源工程（TAPR 协议），适配 GIM6010-8/GIM8108-8 电机。<span class="my-ref-tag">立创开源</span><span class="my-ref-tag">PCB 全开源</span></div>
+    </a>
+    <a class="card" href="http://www.humanoid-robot.fun/" target="_blank" rel="noopener">
+      <span class="go">进入 →</span>
+      <div class="ic">🎓</div>
+      <div class="t">人形机器人在线学习技术社区</div>
+      <div class="d">Hdrive 作者配套教程网站：机械/电子/电机控制/强化学习免费教程持续更新。<span class="my-ref-tag">教程社区</span><span class="my-ref-tag">配套教程</span></div>
+    </a>
   </div>
-</div>
 
-<script>
-/* 分区折叠/展开：点击分区头部切换 collapsed 类 */
-function toggleSection(header) {
-  const section = header.parentElement;
-  section.classList.toggle('collapsed');
-}
-</script>
-<script>
-window.PAGE = { pageId:"02-03", root:"..",
-  breadcrumb:[ {t:"硬件基础", u:"../index.html#sec2"}, {t:"原理图/PCB 学习页"} ],
-  prev:{t:"参考资料汇总", u:"05_参考资料汇总_视频_开源项目.html"},
-  next:{t:"电机选型计算专题", u:"07_电机选型计算专题.html"} };
-</script>
+  <!-- ================= 6 本节自测 ================= -->
+  <h2><span class="h2-num">6</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 智元灵犀 X1 开源资料中最核心的内容是？</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. PowerFlow 关节驱动板原理图</button>
+      <button data-v="B">B. 域控制器 PCB 源文件</button>
+      <button data-v="C">C. 机械结构全套（图纸/STEP/SW源文件/装机SOP/BOM）</button>
+      <button data-v="D">D. 电池管理板原理图</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：X1 开源的是机械结构全套；PowerFlow 关节驱动板、域控制器、电池管理板的电子原理图与 PCB 均未开源。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. Hdrive V1.1 的主控 MCU 是？</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. STM32F405RGT6</button>
+      <button data-v="B">B. STM32G431CBU6</button>
+      <button data-v="C">C. STM32G474RET6</button>
+      <button data-v="D">D. ESP32-S3</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：U1 为 STM32G431CBU6（VQFN-48，170MHz+FPU+内置运放），负责 6 路互补 PWM 与三电阻下桥电流采样。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. Hdrive V1.1 与上位机通信使用的总线是？</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. CAN</button>
+      <button data-v="B">B. EtherCAT</button>
+      <button data-v="C">C. RS485（SP3485 收发器）</button>
+      <button data-v="D">D. USB 2.0</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：U7 为 SP3485EEN RS485 收发器；V1.1 没有 CAN，社区已提议升级版预留 CAN。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 社区发现的 Hdrive V1.1「R49 阻值矛盾」具体是？</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 原理图标 0Ω、PCB 贴 100Ω</button>
+      <button data-v="B">B. 原理图标 100Ω、PCB 贴 0Ω，导致 TLV431 基准电路发烫烧毁</button>
+      <button data-v="C">C. R49 位号漏贴</button>
+      <button data-v="D">D. R49 阻值偏大导致采样不准</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：原理图标 100Ω、PCB 实际贴 0Ω，TLV431 基准电路异常发烫烧毁，是 V1.1 电源链路的关键疑点之一，重绘时应修正为 1kΩ。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. Hdrive V1.1 提供输出端绝对角度的磁编码器是？</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. AS5047P</button>
+      <button data-v="B">B. MT6816</button>
+      <button data-v="C">C. MT6701CT</button>
+      <button data-v="D">D. AS5600</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：U6 为 MT6701CT（SOP-8），通过 SPI/SSI 向 MCU 提供输出端绝对角度；AS5047P、MT6816、AS5600 是「硬件避坑指南」里对比的其他编码器，并非 Hdrive 所选用。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. Hdrive 三相逆变桥的栅极预驱芯片是？</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. DRV8323R</button>
+      <button data-v="B">B. FD6288T</button>
+      <button data-v="C">C. MP6539</button>
+      <button data-v="D">D. EG2133</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析：U2 为 FD6288T（TSSOP-20）三相半桥栅极预驱，高压侧自举；DRV8323R 是 HdriveV2「方案A」的一体化预驱备选。</div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结：</b>智元 X1 提供机械结构全套、电子部分未开源；Hdrive 提供关节驱动板的原理图+PCB+BOM 全开源。两者互补——X1 讲「机器人长什么样、怎么装」，Hdrive 讲「每个关节里的驱动板怎么画」。Hdrive V1.1 以 STM32G431 + FD6288 + MT6701 + SP3485 + MOS 桥构建 24V FOC 伺服链路，但电源链路存在 R49 阻值、AGND/GND 单点连接、R41/R42 标注、C50 耐压等疑点；HdriveV2 重绘方案给出「DRV8323R 一体化」与「FD6288 修正版」两条路线。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题：</b>
+    1. 为什么 X1 的结构图纸对学习「关节驱动板电子设计」仍有价值？<br>
+    2. 如果让你复刻 Hdrive V1.1，你会优先修正哪一处电源缺陷？为什么？<br>
+    3. 为什么说每颗 PowerFlow 关节里的「FOC 伺服板」与 Hdrive 解决的是同一类对象？
+  </div>
+
+  <!-- ================= 7 参考资料 ================= -->
+  <h2><span class="h2-num">7</span> 参考资料</h2>
+  <p class="my-muted">资料整理更新至 2026-08 · 开源仓库版本与 BOM 编号经整理核对，具体以各开源工程仓库与立创商城实时信息为准。</p>
+  <ul>
+    <li><a href="https://github.com/AgibotTech/agibot_x1_hardware" target="_blank" rel="noopener">智元灵犀 X1 开源硬件仓库（GitHub：AgibotTech/agibot_x1_hardware）</a></li>
+    <li><a href="https://www.agibot.com.cn/DOCS/OS" target="_blank" rel="noopener">智元开源文档站 DOCS/OS（含百度网盘 / 谷歌云盘下载）</a></li>
+    <li><a href="https://oshwhub.com/zys_zys/guan-jie-dian-ji" target="_blank" rel="noopener">立创开源 · Hdrive 关节电机驱动电路（原理图+PCB+BOM）</a></li>
+    <li><a href="http://www.humanoid-robot.fun/" target="_blank" rel="noopener">人形机器人在线学习技术社区（Hdrive 配套教程）</a></li>
+  </ul>
+  <p class="my-muted">建议配合「3D 解剖式知识可视化」与「HdriveV2 新版工程」目录一起学习。</p>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
 <script src="../_assets/site.js"></script>
 </body>
 </html>
