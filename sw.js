@@ -4,16 +4,17 @@
    - 静态资源(_assets): 缓存优先
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
-   - 版本: V1.9.4 · 2026-08-17(升级站点时改 CACHE 名以强制更新)
+   - 版本: V1.9.5 · 2026-08-17(升级站点时改 CACHE 名以强制更新)
    ============================================================ */
-var CACHE = "hrl-site-v1.9.4";
+var CACHE = "hrl-site-v1.9.5";
 var PRECACHE = [
   "./index.html",
   "./404.html",
   "./_assets/site.css",
   "./_assets/site.js",
   "./_assets/search-index.js",
-  "./_assets/page-meta.js"
+  "./_assets/page-meta.js",
+  "./_assets/giscus-config.js"
 ];
 
 self.addEventListener("install", function(e){

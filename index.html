@@ -801,10 +801,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.4</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · D 系列 3D 页修复后恢复上线 + Twikoo 后端部署完成</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.5</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · Twikoo 评论区正式启用(网关已部署验证)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.9.5 · 2026-08-17 · Twikoo 评论区正式启用(网关已部署验证)</summary>
+        <div class="faq-a">💬 <b>Twikoo 评论区启用</b>:CloudBase 云函数(Nodejs18.15)+ 网关路由 /twikoo 部署完成,网关访问地址验证 <b>HTTP 200</b>(返回「Twikoo 云函数运行正常」);`giscus-config.js` 的 envId 填入完整访问地址,全站 65 页评论区正式可用——每页独立评论分区,首条评论需在评论区「管理」入口设置管理员密码;根 sw 预缓存加入 giscus-config.js。</div>
+      </details>
+      <details class="faq">
         <summary>V1.9.4 · 2026-08-17 · D 系列 3D 页修复恢复上线 + 评论切换 Twikoo</summary>
         <div class="faq-a">🔩 <b>电机/编码器/灵巧手 3D 拆解恢复上线</b>(00-04):修复旋转磁场物理错误(定子磁场与转子机械同步旋转,不再 7 倍速),新增<b>失步演示</b>(负载角滑杆拉过阈值,转子骤停抖动、磁场继续旋转);恢复首页 / 学习地图 / 仿真中心 / 翻页链入口与打卡登记;🧹 清理两处「精细模型下载教程」残留卡片(仿真中心、ROS2 页);💬 <b>Twikoo 云函数已在 CloudBase 部署成功</b>,评论区切回 Twikoo 后端。</div>
       </details>
@@ -896,7 +900,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.9.4(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.9.5(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
