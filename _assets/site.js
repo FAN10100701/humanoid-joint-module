@@ -274,9 +274,20 @@
 
   /* ---------- Giscus 评论区(配置驱动,见 _assets/giscus-config.js) ---------- */
   function initGiscus(){
-    if(!window.GISCUS_CONFIG || !window.GISCUS_CONFIG.repoId) return;   /* 未配置:不加载 */
     var P = page();
-    if(!P.pageId) return;
+    if(!P || !P.pageId) return;
+    if(!window.GISCUS_CONFIG){
+      /* 【修复】配置文件从未被页面直接引入——这里动态加载,加载成功后再挂载评论区 */
+      var s = document.createElement("script");
+      s.src = (P.root || "") + "/_assets/giscus-config.js";
+      s.onload = function(){ mountGiscus(); };
+      document.head.appendChild(s);
+      return;
+    }
+    mountGiscus();
+  }
+  function mountGiscus(){
+    if(!window.GISCUS_CONFIG || !window.GISCUS_CONFIG.repoId) return;   /* 未配置:不加载 */
     var c = document.querySelector(".container");
     if(!c) return;
     var box = document.createElement("div");
