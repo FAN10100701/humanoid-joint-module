@@ -10,6 +10,6 @@
    ============================================================ */
 window.COMMENTS_CONFIG = {
   provider: "twikoo",
-  envId: null,          /* ← 填入你的 CloudBase 环境 ID,如 "xxx-1a2b3c" */
+  envId: "twikoo-env-d1gjabi5l2e5613b2",
   region: ""            /* 中国大陆环境留空;海外环境填 "ap-shanghai" 等 */
 };
