@@ -410,6 +410,9 @@ function loadSTL(url, color, opts){
 /* ---------- boot ---------- */
 function boot(THREE){
   LAB.T = THREE;
+  /* 挂载全局 THREE(ES module 动态 import 不会自动挂全局;部分回调/工具函数直接引用
+     THREE 符号时依赖此兜底,与 3D 解剖页做法一致) */
+  try{ window.THREE = THREE; }catch(e){}
   AX = new THREE.Vector3(1,0,0);
   AY = new THREE.Vector3(0,1,0);
   AZ = new THREE.Vector3(0,0,1);
@@ -604,7 +607,7 @@ function buildMotor(group){
   var jobs = RVGH_FILES.map(function(it){
     return loadSTL('./models/rvgh_servo/' + it.f, it.c, { metalness:it.mt, roughness:it.rgh }).then(function(mesh){
       mesh.position.y = 0.3;
-      partRec(0, it.n, mesh, new THREE.Vector3(0, 0.3, 0), it.d, it.dist, it.c, it.desc, it.spec);
+      partRec(0, it.n, mesh, new LAB.T.Vector3(0, 0.3, 0), it.d, it.dist, it.c, it.desc, it.spec);
       group.add(mesh);
     });
   });
@@ -702,7 +705,7 @@ function buildHand(group){
   /* 手掌 */
   jobs.push(loadOne('palm').then(function(mesh){
     mesh.rotation.y = Math.PI;   /* 翻转朝上 */
-    partRec(2, '手掌(palm lower)', mesh, new THREE.Vector3(0, 1.6, 0), AZ, 1.4, 0xcfd6e0,
+    partRec(2, '手掌(palm lower)', mesh, new LAB.T.Vector3(0, 1.6, 0), AZ, 1.4, 0xcfd6e0,
       'LEAP Hand 手掌下壳,内含 6 个微型电机与腱绳通道。', [['来源','UC Berkeley LEAP Hand'],['许可','MIT']]);
     group.add(mesh);
   }));
