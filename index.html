@@ -78,7 +78,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
 <script>
   /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
   window.SITE_SECTIONS = [
-    { key:"00", name:"3D 解剖可视化", ids:["00-02","00-04"] },
+    { key:"00", name:"3D 解剖可视化", ids:["00-02","00-04","00-05"] },
     { key:"01", name:"理论入门", ids:["01-01","01-02","01-03","01-04","01-05","01-06"] },
     { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03","02-04","02-05","02-06","02-07","02-08","02-09","02-10","02-11","02-12","02-13"] },
     { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05","03-06"] },
@@ -259,6 +259,12 @@ html:not([data-skin]) .card:hover::before{opacity:1}
         <div class="ic">🔩</div>
         <div class="t">电机 / 编码器 / 灵巧手 3D 拆解</div>
         <div class="d">外转子无刷电机内部与旋转磁场、磁/光电编码器、灵巧手关节——拖动旋转、滑杆爆炸、点击看原理。</div>
+      </a>
+      <a class="card" href="00_3D解剖/关节执行器内部原理3D实验室.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🔬</div>
+        <div class="t">关节执行器内部原理 3D 实验室</div>
+        <div class="d">旋转磁场与负载角/失步、光电码盘明暗脉冲计数、欠驱动手指顺序弯曲——程序化原理动画,可调速可暂停。</div>
       </a>
     </div>
   </div>
@@ -732,10 +738,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.5</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 3D 模型尺度统一 + 装配摆放修复</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.6</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 新增「关节执行器内部原理 3D 实验室」页</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V2.0.6 · 2026-08-17 · 新增「关节执行器内部原理 3D 实验室」</summary>
+        <div class="faq-a">🔬 <b>新页面(00-05)</b>:关节执行器内部原理 3D 实验室——纯程序化精细建模(零 STL 依赖),专讲三个机构的<b>内部工作原理动画</b>:①无刷电机旋转磁场 + 负载角滑杆(>0.95 亲眼看失步)②光电码盘明暗脉冲计数链路(可反转判向)③欠驱动手指顺序弯曲自适应抓握(近→中→末);每场景可调速/暂停,右侧同步原理讲解;原「3D 拆解页」保留(真实 STL 展示外形),本页补足原理维度;全站 66 页,自检 13/13 全绿。</div>
+      </details>
+      <details class="faq">
         <summary>V2.0.5 · 2026-08-17 · 3D 模型尺度统一 + 装配摆放修复</summary>
         <div class="faq-a">🩹 <b>3D 拆解页「纯黑」修复</b>:每个 STL 原按 target=3.2 独立缩放居中,LEAP 手各部件(掌/指节)各自 3.2 单位后全挤在 ±1.5 小坐标区,穿模成黑团、相机在模型内部;现统一部件尺度为 <b>0.5 单位</b>,并按真实装配关系摆放——RVGH 伺服 13 件沿 Y 轴叠放(底座→电机壁→磁铁座→盖→凸轮→摆线盘→轴承毂→顶盖→法兰,整体高约 4.4 单位),LEAP 手 8 件按四指并排+拇指对掌布局(手掌 1.1×0.9,手指 4 段×0.42 展开);相机注视点随产品切换(电机 y=2.2/编码器 y=0/手 y=0.3);3D sw v25。</div>
       </details>
@@ -871,7 +881,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.0.5(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.0.6(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

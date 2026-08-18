@@ -1,9 +1,10 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://cyco.top/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/00_3D解剖/人形机器人解剖式知识可视化.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/00_3D解剖/减速器剖面图详解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/00_3D解剖/电机编码器与灵巧手3D拆解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/00_3D解剖/关节执行器内部原理3D实验室.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/01_整体知识框架_思维导图.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/03_驱动电路模块认知_交互式图解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
