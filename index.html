@@ -44,137 +44,7 @@
 @media (min-width: 861px){
   .sec{content-visibility:auto;contain-intrinsic-size:auto 640px}
 }
-/* ================= 风格方案皮肤 3.0:默认 + 新野兽派 + 玻璃拟态 + Y2K ================= */
-/* ---------- ① 新野兽派 Neo-Brutalism:米白底 + 纯黑粗边框 + 零圆角 + 硬投影 ---------- */
-[data-skin="neo"] body{background:#f2ede4;color:#111}
-[data-skin="neo"] body[data-theme="light"],[data-skin="neo"] body[data-theme="dark"]{background:#f2ede4;color:#111}
-[data-skin="neo"] .hero h1{color:#111;font-family:'Courier New',monospace;font-weight:900;letter-spacing:-1px;transform:translateX(-2px)}
-[data-skin="neo"] .hero .sub{color:#333}
-[data-skin="neo"] .stat .v{color:#111;font-family:'Courier New',monospace}
-[data-skin="neo"] .stat .k{color:#555}
-[data-skin="neo"] .card{background:#fff;border:3px solid #000;border-radius:0;box-shadow:6px 6px 0 #000;transform:rotate(-.8deg);transition:none;color:#111;overflow:visible}
-[data-skin="neo"] .card:hover{transform:rotate(0) translate(-2px,-2px);box-shadow:9px 9px 0 #000;background:#fff;border-color:#000;color:#111}
-[data-skin="neo"] .card:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000;transition:none}
-[data-skin="neo"] .card .ic{filter:grayscale(1)}
-[data-skin="neo"] .card .t{color:#111;font-family:'Courier New',monospace;font-weight:900;transform:translateX(-8px);font-size:16.5px;margin-left:8px}
-[data-skin="neo"] .card .d{color:#333;font-family:'Courier New',monospace;line-height:1.45;font-size:12.5px}
-[data-skin="neo"] .card .go{color:#111;opacity:1;position:static;float:right;font-family:'Courier New',monospace;text-decoration:underline;font-weight:700}
-[data-skin="neo"] .card.featured{background:#fff;border-width:4px}
-[data-skin="neo"] .card.featured .t{font-size:19px}
-[data-skin="neo"] .card.featured .d{color:#222}
-[data-skin="neo"] .sec-title{color:#111}
-[data-skin="neo"] .sec-title .num{background:#ffd500;color:#000;border:2px solid #000;border-radius:0;font-family:'Courier New',monospace}
-[data-skin="neo"] .sec-title .en{color:#555;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.12em}
-[data-skin="neo"] .sec-title .bar{background:#000;height:2px;flex:1}
-[data-skin="neo"] .quicknav a{background:#fff;border:2px solid #000;border-radius:0;color:#111;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.04em;transition:none}
-[data-skin="neo"] .quicknav a:hover{background:#000;color:#fff;transform:none}
-[data-skin="neo"] .hero-search input{background:#fff;border:2px solid #000;border-radius:0;color:#111;font-family:'Courier New',monospace;box-shadow:none}
-[data-skin="neo"] .hero-search input:focus{border-width:4px;box-shadow:none;color:#111}
-[data-skin="neo"] .hero-search button{background:#ffd500;border:4px solid #000;border-radius:0;color:#000;font-weight:900;box-shadow:4px 4px 0 #000;font-family:'Courier New',monospace;text-transform:uppercase;transition:none}
-[data-skin="neo"] .hero-search button:hover{filter:none;transform:translate(2px,2px);box-shadow:none;background:#ffd500;color:#000}
-[data-skin="neo"] .progress-panel{background:#fff;border:3px solid #000;border-radius:0;box-shadow:6px 6px 0 #000}
-[data-skin="neo"] .progress-panel h3{color:#111}
-[data-skin="neo"] .progress-panel .pl{color:#333}
-[data-skin="neo"] .theme-seg{background:#fff;border:2px solid #000;border-radius:0}
-[data-skin="neo"] .theme-seg button{color:#333;border-radius:0}
-[data-skin="neo"] .theme-seg button.on{background:#111;color:#ffd500;border-radius:0;box-shadow:none}
-[data-skin="neo"] .skinbar{color:#333}
-[data-skin="neo"] .skinbar select{background:#fff;border:2px solid #000;border-radius:0;color:#111}
-[data-skin="neo"] .tags .tag{background:#fff;border:2px solid #000;border-radius:0;color:#111;font-family:'Courier New',monospace;font-size:11.5px}
-[data-skin="neo"] .learn-path{background:#fff;border:3px solid #000;border-radius:0;box-shadow:6px 6px 0 #000}
-[data-skin="neo"] .learn-path h3,[data-skin="neo"] .rm-step h4,[data-skin="neo"] .rm-step p{color:#111}
-[data-skin="neo"] .rm-step p[style]{color:#555!important}
-[data-skin="neo"] .rm-links a{background:#fff;border:2px solid #000;border-radius:0;color:#111;font-family:'Courier New',monospace}
-[data-skin="neo"] .upd-item{border-bottom:2px dashed #000;color:#111}
-[data-skin="neo"] .upd-date{color:#555}
-[data-skin="neo"] .upd-item a{color:#111;text-decoration:underline}
-[data-skin="neo"] .foot{color:#333}
-[data-skin="neo"] .foot a{color:#111}
-[data-skin="neo"] details.faq{background:#fff;border:2px solid #000;border-radius:0;box-shadow:4px 4px 0 #000}
-[data-skin="neo"] details.faq summary{color:#111;font-family:'Courier New',monospace}
-[data-skin="neo"] .pbar{background:#d8d2c6}
-[data-skin="neo"] .pbar .pl{color:#333}
-[data-skin="neo"] .pbar .pv{color:#111}
-[data-skin="neo"] .learn-path{box-shadow:6px 6px 0 #000}
-/* ---------- ② 玻璃拟态 Glassmorphism:毛玻璃 + 内高光 + 弥散柔阴影 ---------- */
-[data-skin="glass"] .grid{grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:12px}
-[data-skin="glass"] .card{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);border-radius:20px;backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);box-shadow:0 20px 40px rgba(0,0,0,.08);transition:all .3s ease}
-[data-skin="glass"] .card::before{content:"";position:absolute;left:14px;right:14px;top:0;height:1px;background:rgba(255,255,255,.6);border-radius:2px}
-[data-skin="glass"] .card:hover{background:rgba(255,255,255,.22);transform:translateY(-3px);box-shadow:0 24px 50px rgba(0,0,0,.12)}
-[data-skin="glass"] .card .t{font-weight:500;color:#fff}
-[data-skin="glass"] .card .d{color:rgba(255,255,255,.75)}
-[data-skin="glass"] .stat,[data-skin="glass"] .progress-panel,[data-skin="glass"] .hero-search{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-[data-skin="glass"] .sec-title{justify-content:center}
-[data-skin="glass"] .sec-title .num{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(8px)}
-[data-skin="glass"] .quicknav a{border-radius:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22)}
-[data-skin="glass"] .hero-search input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:16px;backdrop-filter:blur(16px);color:#fff;transition:.25s ease}
-[data-skin="glass"] .hero-search input:focus{border-color:rgba(255,255,255,.8);background:rgba(255,255,255,.18);box-shadow:0 0 22px rgba(255,255,255,.14)}
-[data-skin="glass"] .hero-search button{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);border-radius:28px;backdrop-filter:blur(16px);color:#fff;transition:all .25s ease-out}
-[data-skin="glass"] .hero-search button:hover{background:rgba(255,255,255,.3);transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.15);filter:none}
-[data-skin="glass"] .hero-search button:active{transform:translateY(0)}
-[data-skin="glass"] body[data-theme="light"] .card{background:rgba(255,255,255,.55);border-color:rgba(255,255,255,.9)}
-[data-skin="glass"] body[data-theme="light"] .card .t{color:#1e293b}
-[data-skin="glass"] body[data-theme="light"] .card .d{color:#475569}
-[data-skin="glass"] body[data-theme="light"] .hero-search input{color:#1e293b}
-[data-skin="glass"] body[data-theme="light"] .hero-search button{color:#1e293b}
-[data-skin="glass"] body[data-theme="light"] .sec-title{color:#1e293b}
-/* ---------- ③ Y2K 赛博复古未来:深灰噪点 + 霓虹描边 + 像素字 + 全息渐变 ---------- */
-[data-skin="y2k"] body{background:radial-gradient(1200px 600px at 70% -10%,rgba(255,0,140,.16),transparent 60%),radial-gradient(900px 500px at 10% 110%,rgba(0,180,255,.14),transparent 60%),linear-gradient(180deg,#0a0a12,#12121e 55%,#0a0a12);color:#cfd6e4}
-[data-skin="y2k"] body[data-theme="light"],[data-skin="y2k"] body[data-theme="dark"]{background:radial-gradient(1200px 600px at 70% -10%,rgba(255,0,140,.16),transparent 60%),radial-gradient(900px 500px at 10% 110%,rgba(0,180,255,.14),transparent 60%),linear-gradient(180deg,#0a0a12,#12121e 55%,#0a0a12);color:#cfd6e4}
-[data-skin="y2k"] body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.14) 3px 4px);mix-blend-mode:overlay}
-[data-skin="y2k"] .hero h1{color:#fff;text-shadow:0 0 14px rgba(0,229,255,.8),0 0 40px rgba(255,0,140,.5);letter-spacing:2px}
-[data-skin="y2k"] .hero .sub{color:#7ee787;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(126,231,135,.5)}
-[data-skin="y2k"] .stat .v{color:#ff71ce;text-shadow:0 0 12px rgba(255,113,206,.8);font-family:'Courier New',monospace}
-[data-skin="y2k"] .stat .k{color:#9aa4b2}
-[data-skin="y2k"] .card{background:linear-gradient(rgba(18,18,30,.92),rgba(18,18,30,.92)) padding-box,linear-gradient(135deg,#00e5ff,#ff71ce 50%,#01cdfe) border-box;border:2px solid transparent;border-radius:24px;box-shadow:0 0 22px rgba(0,229,255,.22),0 0 60px rgba(255,113,206,.14);position:relative;overflow:hidden}
-[data-skin="y2k"] .card::before{content:"";position:absolute;left:0;right:0;top:0;height:34%;background:linear-gradient(180deg,rgba(255,255,255,.09),transparent);pointer-events:none;border-radius:24px 24px 0 0}
-[data-skin="y2k"] .card::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.025) 3px 4px)}
-[data-skin="y2k"] .card:hover{box-shadow:0 0 34px rgba(255,113,206,.5),0 0 90px rgba(0,229,255,.3);transform:translateY(-3px) scale(1.01)}
-[data-skin="y2k"] .card .t{color:#fff;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(0,229,255,.6);font-size:16px}
-[data-skin="y2k"] .card .d{color:#7ee787;font-family:'Courier New',monospace;text-shadow:0 0 6px rgba(126,231,135,.35)}
-[data-skin="y2k"] .card .go{color:#ff71ce;opacity:1;text-shadow:0 0 8px rgba(255,113,206,.8)}
-[data-skin="y2k"] .card.featured{background:linear-gradient(160deg,rgba(30,30,50,.95),rgba(18,18,30,.92))}
-[data-skin="y2k"] .sec-title{color:#fff;text-shadow:0 0 8px rgba(255,113,206,.5)}
-[data-skin="y2k"] .sec-title .num{background:linear-gradient(135deg,#ff71ce,#01cdfe);border:1px solid rgba(255,255,255,.4);box-shadow:0 0 14px rgba(255,113,206,.7);color:#0a0a12;font-weight:900}
-[data-skin="y2k"] .sec-title .en{color:#7ee787;font-family:'Courier New',monospace;letter-spacing:.15em}
-[data-skin="y2k"] .sec-title .bar{background:linear-gradient(90deg,rgba(0,229,255,.7),rgba(255,113,206,.7),transparent);height:1px}
-[data-skin="y2k"] .quicknav a{background:rgba(0,0,0,.45);border:1px solid rgba(0,229,255,.4);border-radius:8px;color:#9adfff;font-family:'Courier New',monospace;text-shadow:0 0 6px rgba(0,229,255,.5);transition:.15s}
-[data-skin="y2k"] .quicknav a:hover{background:rgba(0,229,255,.14);color:#fff;box-shadow:0 0 16px rgba(0,229,255,.6);transform:scale(1.05)}
-[data-skin="y2k"] .hero-search input{background:#05050c;border:2px solid #39ff14;border-radius:18px;color:#39ff14;font-family:'Courier New',monospace;box-shadow:0 0 14px rgba(57,255,20,.3);caret-color:#39ff14;transition:.2s}
-[data-skin="y2k"] .hero-search input:focus{border-color:#39ff14;box-shadow:0 0 24px rgba(57,255,20,.65);background:#05050c;color:#39ff14}
-[data-skin="y2k"] .hero-search button{background:linear-gradient(90deg,#ff71ce,#01cdfe,#b967ff);border:2px solid #fff;border-radius:999px;color:#fff;font-weight:800;text-shadow:0 0 6px rgba(0,0,0,.6),-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;box-shadow:0 0 18px rgba(255,113,206,.7);transition:all .25s cubic-bezier(.34,1.56,.64,1)}
-[data-skin="y2k"] .hero-search button:hover{transform:scale(1.06) rotate(1deg);box-shadow:0 0 34px rgba(255,113,206,1),0 0 60px rgba(1,205,254,.6);filter:brightness(1.12)}
-[data-skin="y2k"] .progress-panel{background:rgba(18,18,30,.92);border:1px solid rgba(0,229,255,.4);border-radius:20px;box-shadow:0 0 26px rgba(0,229,255,.16)}
-[data-skin="y2k"] .progress-panel h3{color:#fff;text-shadow:0 0 8px rgba(0,229,255,.5)}
-[data-skin="y2k"] .theme-seg{background:rgba(0,0,0,.5);border:1px solid rgba(255,113,206,.5);border-radius:999px;box-shadow:0 0 14px rgba(255,113,206,.25)}
-[data-skin="y2k"] .theme-seg button.on{background:linear-gradient(90deg,#ff71ce,#01cdfe);box-shadow:0 0 16px rgba(255,113,206,.8)}
-[data-skin="y2k"] .skinbar{color:#9adfff}
-[data-skin="y2k"] .skinbar select{background:#05050c;border:1px solid #39ff14;border-radius:8px;color:#39ff14;font-family:'Courier New',monospace;box-shadow:0 0 10px rgba(57,255,20,.3)}
-[data-skin="y2k"] .tags .tag{background:rgba(0,0,0,.5);border:1px solid rgba(255,113,206,.5);border-radius:999px;color:#ffb3e6;text-shadow:0 0 6px rgba(255,113,206,.6)}
-[data-skin="y2k"] .learn-path{background:rgba(18,18,30,.85);border:1px solid rgba(0,229,255,.35);border-radius:20px;box-shadow:0 0 26px rgba(0,229,255,.12)}
-[data-skin="y2k"] .learn-path h3,[data-skin="y2k"] .rm-step h4,[data-skin="y2k"] .rm-step p{color:#e6edf3}
-[data-skin="y2k"] .rm-step p[style]{color:#7ee787!important}
-[data-skin="y2k"] .rm-links a{background:rgba(0,0,0,.5);border:1px solid rgba(1,205,254,.5);border-radius:8px;color:#9adfff}
-[data-skin="y2k"] .upd-item{border-bottom:1px dashed rgba(0,229,255,.35);color:#cfd6e4}
-[data-skin="y2k"] .upd-date{color:#7ee787}
-[data-skin="y2k"] .upd-item a{color:#9adfff;text-shadow:0 0 6px rgba(0,229,255,.4)}
-[data-skin="y2k"] .foot{color:#9aa4b2}
-[data-skin="y2k"] .foot a{color:#ff71ce}
-[data-skin="y2k"] details.faq{background:rgba(18,18,30,.92);border:1px solid rgba(255,113,206,.4);border-radius:16px;box-shadow:0 0 18px rgba(255,113,206,.14)}
-[data-skin="y2k"] details.faq summary{color:#fff;text-shadow:0 0 8px rgba(255,113,206,.4)}
-[data-skin="y2k"] .pbar{background:rgba(0,229,255,.15)}
-[data-skin="y2k"] .pbar .pl{color:#9adfff}
-[data-skin="y2k"] .pbar .pv{color:#39ff14;font-family:'Courier New',monospace}
-[data-skin="y2k"] .ring-track{stroke:rgba(0,229,255,.2)}
-[data-skin="y2k"] #botHero{display:none!important}
-[data-skin="y2k"] .stats{margin-bottom:4px}
-[data-skin="neo"] .stats{margin-bottom:4px}
-/* 旧 bot 方案已下线:画布容器永久隐藏(保留元素避免 JS 报错) */
-#botHero{display:none!important}
-.skinbar{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#9aa4b2}
-.skinbar select{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.35);color:inherit;border-radius:8px;padding:5px 10px;font-family:inherit;font-size:12.5px;cursor:pointer}
-body[data-theme="light"] .skinbar{color:#5a6a85}
-body[data-theme="light"] .skinbar select{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.3);color:#1d4ed8}
+/* ================= 默认风格:深空蓝(唯一方案,浅色/深色主题切换保留) ================= */
 
 /* 浅色模式对比度修复:进度条轨道/文字/进度环轨道 */
 body[data-theme="light"] .pbar{background:rgba(15,23,42,.1)}
@@ -288,16 +158,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
         <button data-t="light" onclick="Site.setTheme('light')">☀️ 极简浅色</button>
       </div>
       <a id="verBadge" href="#version" title="查看版本与更新历史" style="display:none;margin-left:14px;font-size:11.5px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:4px 11px;white-space:nowrap;transition:transform .28s cubic-bezier(.22,1.2,.36,1),border-color .18s,color .18s" onmouseover="this.style.borderColor='#3b82f6';this.style.color='#60a5fa';this.style.transform='scale(1.06)'" onmouseout="this.style.borderColor='rgba(154,164,178,.35)';this.style.color='#9aa4b2';this.style.transform=''">🏷 v—</a>
-      <div class="skinbar" style="margin-left:14px">🎨 风格方案
-        <select id="skinSel" onchange="applySkin(this.value)" title="选择首页美化方案(保存在本机)">
-          <option value="">默认 · 深空蓝</option>
-          <option value="neo">新野兽派 · 米白粗框</option>
-          <option value="glass">玻璃拟态 · 毛玻璃</option>
-          <option value="y2k">Y2K · 赛博复古</option>
-        </select>
-      </div>
     </div>
-    <div id="botHero" aria-hidden="true"></div>
     <div class="tags">
       <span class="tag">宇树 H1 / G1 / 智元 X1 官方模型</span>
       <span class="tag">FOC 三环控制</span>
@@ -870,10 +731,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.8</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · Twikoo 前端对齐 1.7.19(云接入模式修正)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.9</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 3D 拆解页真实 STL 重构 + 风格方案精简 + 评论 CORS 修复</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.9.9 · 2026-08-17 · 真实 STL 3D 拆解 + 风格方案精简为默认 + 评论 CORS 修复</summary>
+        <div class="faq-a">🔩 <b>3D 拆解页真实 STL 重构</b>:灵巧手改用 UC Berkeley 开源 <b>LEAP Hand</b> 真实 STL(8 部件,MIT),伺服电机改用开源 <b>RVGH 一体伺服</b> 真实 STL(13 部件,MIT);手写二进制 STL 解析器 + 自实现轨道控制(修复 v1.0 OrbitControls 双实例导致的卡死/白屏);自测扩至 5 题;🎨 <b>风格方案精简</b>:删除新野兽派/玻璃拟态/Y2K 三套(按你要求),仅保留默认深空蓝 + 深浅色切换;💬 <b>评论 CORS 修复</b>:确认根因为 CloudBase 免费版无法添加 Web 安全域名——方案改为「关闭网关跨域校验 + 云函数自行返回 CORS 头」(补丁代码见接入指南),前端恢复完整 URL 模式(短 ID 模式会触发 anonymousAuthProvider 错误)。</div>
+      </details>
+      <details class="faq">
         <summary>V1.9.8 · 2026-08-17 · Twikoo 前端对齐 1.7.19 + 云接入模式修正</summary>
         <div class="faq-a">💬 <b>评论配置修正</b>:Twikoo 前端版本从 1.6.39 对齐云函数的 <b>1.7.19</b>(官方要求前后端版本一致);配置改回 CloudBase 云接入官方示例——<b>envId 短 ID + region + path '/twikoo'</b>;CDN 顺序按官方推荐改为 npmmirror → zstatic(国内) → jsdelivr,每源 8s 超时强制跳源(修复 jsDelivr 网络黑洞挂起导致评论区整块不渲染、管理入口消失的问题);诊断探针保留,评论区顶部可见 🔍 日志。</div>
       </details>
@@ -981,7 +846,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.9.8(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.9.9(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1112,147 +977,5 @@ html:not([data-skin]) .card:hover::before{opacity:1}
 })();
 </script>
 <script>
-/* ============ 风格方案皮肤切换 + 轻量 3D 机器人(2D canvas 投影,零依赖) ============ */
-var SKIN_KEY = "humanoid-skin-v1";
-var SKIN_ALLOWED = ["neo", "glass", "y2k"];   /* 皮肤 3.0:仅保留三套新方案,旧值(aurora/grid/paper/bot)自动回落默认 */
-function applySkin(v){
-  if(SKIN_ALLOWED.indexOf(v) < 0){ v = ""; }
-  if(v){ document.documentElement.setAttribute("data-skin", v); }
-  else{ document.documentElement.removeAttribute("data-skin"); }   /* 空值移除属性,默认特效(hero光晕/卡片光条)才生效 */
-  try{ localStorage.setItem(SKIN_KEY, v); }catch(e){}
-  if(v === "bot"){ initBotHero(); } else { stopBotHero(); }
-}
-(function(){
-  var sel = document.getElementById("skinSel");
-  var saved = "";
-  try{ saved = localStorage.getItem(SKIN_KEY) || ""; }catch(e){}
-  if(sel){ sel.value = saved; }
-  applySkin(saved);
-})();
-
-/* ---------- 机器人 2.0:实心面 + 朗伯光照 + 画家深度排序(仍是零依赖 2D canvas) ---------- */
-var botRaf = 0;
-function botStop(){ if(botRaf){ cancelAnimationFrame(botRaf); botRaf = 0; } }
-function stopBotHero(){ botStop(); var box=document.getElementById("botHero"); if(box){ box.innerHTML=""; delete box.dataset.on; } }
-function initBotHero(){
-  var box = document.getElementById("botHero");
-  if(!box) return;
-  if(box.dataset.on){ botResume(); return; }
-  box.dataset.on = "1";
-  var cv = document.createElement("canvas");
-  cv.width = 600; cv.height = 680;
-  box.appendChild(cv);
-  /* 颜色 */
-  var ARMOR=[86,140,220], ARMOR2=[52,96,170], JOINT=[240,180,80], GLOW=[80,230,230], DARK=[26,34,52];
-  /* 部件(中心/半尺寸/颜色/发光) */
-  var P=[
-    {c:[0,2.62,0],h:[.58,.42,.5],col:ARMOR},            /* 头 */
-    {c:[0,2.60,.42],h:[.4,.14,.12],col:DARK,g:1},       /* 目镜(发光) */
-    {c:[0,2.12,0],h:[.2,.12,.2],col:ARMOR2},            /* 颈 */
-    {c:[0,1.52,0],h:[.55,.62,.34],col:ARMOR},           /* 胸 */
-    {c:[0,1.5,.3],h:[.14,.14,.08],col:GLOW,g:1},        /* 胸口核心(发光) */
-    {c:[0,.92,0],h:[.42,.18,.3],col:ARMOR2},            /* 盆 */
-    {c:[-.86,1.98,0],h:[.24,.2,.26],col:ARMOR2},        /* 肩左 */
-    {c:[ .86,1.98,0],h:[.24,.2,.26],col:ARMOR2},
-    {c:[-.86,1.42,0],h:[.13,.32,.13],col:ARMOR},        /* 上臂 */
-    {c:[ .86,1.42,0],h:[.13,.32,.13],col:ARMOR},
-    {c:[-.86,1.0,0],h:[.11,.12,.11],col:JOINT},         /* 肘 */
-    {c:[ .86,1.0,0],h:[.11,.12,.11],col:JOINT},
-    {c:[-.86,.62,0],h:[.11,.3,.11],col:ARMOR2},         /* 前臂 */
-    {c:[ .86,.62,0],h:[.11,.3,.11],col:ARMOR2},
-    {c:[-.86,.28,0],h:[.12,.08,.14],col:JOINT},         /* 手 */
-    {c:[ .86,.28,0],h:[.12,.08,.14],col:JOINT},
-    {c:[-.27,.58,0],h:[.19,.2,.19],col:JOINT},          /* 髋 */
-    {c:[ .27,.58,0],h:[.19,.2,.19],col:JOINT},
-    {c:[-.27,.18,0],h:[.16,.32,.16],col:ARMOR},         /* 大腿 */
-    {c:[ .27,.18,0],h:[.16,.32,.16],col:ARMOR},
-    {c:[-.27,-.2,0],h:[.13,.1,.13],col:JOINT},          /* 膝 */
-    {c:[ .27,-.2,0],h:[.13,.1,.13],col:JOINT},
-    {c:[-.27,-.56,0],h:[.14,.26,.14],col:ARMOR2},       /* 小腿 */
-    {c:[ .27,-.56,0],h:[.14,.26,.14],col:ARMOR2},
-    {c:[-.27,-.9,.08],h:[.16,.08,.3],col:DARK}          /* 左脚 */
-  ];
-  var rightFoot = {c:[.27,-.9,.08],h:[.16,.08,.3],col:DARK};
-  P.push(rightFoot);
-  var yaw = 0.7, pitch = -0.14, drag = null;
-  cv.addEventListener("pointerdown", function(e){ drag = {x:e.clientX, y:e.clientY}; try{ cv.setPointerCapture(e.pointerId); }catch(err){} });
-  cv.addEventListener("pointermove", function(e){
-    if(!drag) return;
-    yaw += (e.clientX - drag.x) * 0.011;
-    pitch = Math.max(-1.2, Math.min(1.2, pitch + (e.clientY - drag.y) * 0.007));
-    drag = {x:e.clientX, y:e.clientY};
-  });
-  cv.addEventListener("pointerup", function(){ drag = null; });
-  cv.addEventListener("pointercancel", function(){ drag = null; });
-  function rot(p, bob){
-    var y0 = p[1] + bob;
-    var cy=Math.cos(yaw), sy=Math.sin(yaw), cp=Math.cos(pitch), sp=Math.sin(pitch);
-    var x = p[0]*cy + p[2]*sy, z = -p[0]*sy + p[2]*cy;
-    var y = y0*cp - z*sp, z2 = y0*sp + z*cp;
-    var f = 250/(6.0 + z2);
-    return [300 + x*f, 360 - y*f, z2];
-  }
-  var FACES = [[0,1,3,2],[4,5,7,6],[0,4,6,2],[1,5,7,3],[0,1,5,4],[2,6,7,3]];
-  var L = [0.55, 0.75, 0.35];
-  function shade(col, n, glow){
-    if(glow) return "rgb(" + col.join(",") + ")";
-    var k = 0.42 + 0.58*Math.max(0, n[0]*L[0] + n[1]*L[1] + n[2]*L[2]);
-    return "rgb(" + col.map(function(c){ return Math.round(Math.min(255, c*k)); }).join(",") + ")";
-  }
-  function frame(now){
-    var t = now/1000;
-    if(!drag) yaw += 0.0045;
-    var ctx = cv.getContext("2d");
-    ctx.clearRect(0,0,cv.width,cv.height);
-    /* 地面光影 */
-    var grd = ctx.createRadialGradient(300,600,10,300,600,150);
-    grd.addColorStop(0,"rgba(59,130,246,.30)");
-    grd.addColorStop(1,"rgba(59,130,246,0)");
-    ctx.fillStyle = grd;
-    ctx.beginPath(); ctx.ellipse(300,600,150,34,0,0,Math.PI*2); ctx.fill();
-    /* 收集所有面 */
-    var faces = [];
-    P.forEach(function(pt, pi){
-      var swing = (pi>=8 && pi<=15) ? Math.sin(t*1.4)*0.06 : 0;      /* 手臂微摆 */
-      var bob = Math.sin(t*1.6 + pi*0.3)*0.03 + Math.sin(t*0.9)*0.05;
-      var px = pt.c[0], py = pt.c[1] + bob + swing*2.2, pz = pt.c[2];
-      var V = [];
-      for(var i=0;i<8;i++){
-        V.push(rot([px+(i&1?1:-1)*pt.h[0], py+(i&2?1:-1)*pt.h[1], pz+(i&4?1:-1)*pt.h[2]], 0));
-      }
-      for(var f=0; f<6; f++){
-        var idx = FACES[f];
-        var avgZ = (V[idx[0]][2]+V[idx[1]][2]+V[idx[2]][2]+V[idx[3]][2])/4;
-        faces.push({v:[V[idx[0]],V[idx[1]],V[idx[2]],V[idx[3]]], z:avgZ, pt:pt, f:f});
-      }
-    });
-    faces.sort(function(a,b){ return b.z - a.z; });
-    faces.forEach(function(fc){
-      var v = fc.v;
-      /* 深度调光:远处略暗(遮挡由画家排序保证) */
-      var nz = 1 - Math.min(1, fc.z*0.25 + 0.5);
-      ctx.fillStyle = shade(fc.pt.col, [0.3, 0.55 + nz*0.4, 0.35], fc.pt.g);
-      if(fc.pt.g){ ctx.shadowColor = "rgba(" + fc.pt.col.join(",") + ",.9)"; ctx.shadowBlur = 14; }
-      ctx.beginPath();
-      ctx.moveTo(v[0][0],v[0][1]);
-      for(var k2=1;k2<4;k2++) ctx.lineTo(v[k2][0],v[k2][1]);
-      ctx.closePath();
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = "rgba(10,16,28,.55)";
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-    });
-    ctx.fillStyle = "rgba(148,163,184,.85)"; ctx.font = "13px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("🖱 拖动旋转 · 实心面+光照渲染(2D canvas,零依赖)", 300, 660);
-    botRaf = requestAnimationFrame(frame);
-  }
-  function botResume(){ botStop(); botRaf = requestAnimationFrame(frame); }
-  botResume();
-  document.addEventListener("visibilitychange", function(){
-    if(document.hidden){ botStop(); } else if(document.documentElement.getAttribute("data-skin")==="bot"){ botResume(); }
-  });
-}
-</script>
 </body>
 </html>

@@ -9,7 +9,7 @@
    4) HTML 导航请求：network-first（保证教学内容更新及时），断网回退缓存
    5) 改 SW_VERSION 只刷新代码/库；模型文件有更新时才手动改 MODELS_CACHE 名
    ============================================================ */
-var SW_VERSION='robot-3d-v20';           /* 【可调】代码缓存版本号：bump 只清代码/库缓存，模型缓存保留 */
+var SW_VERSION='robot-3d-v21';           /* 【可调】代码缓存版本号：bump 只清代码/库缓存，模型缓存保留 */
 var CORE_CACHE=SW_VERSION+'-core';       /* 核心资源缓存名（install 预缓存） */
 var RUNTIME_CACHE=SW_VERSION+'-runtime'; /* 代码/库运行时缓存名（随版本刷新） */
 var MODELS_CACHE='robot-3d-models-v1';   /* 模型缓存名（独立于版本：模型文件未变更时请勿 bump，避免全站模型重下） */
