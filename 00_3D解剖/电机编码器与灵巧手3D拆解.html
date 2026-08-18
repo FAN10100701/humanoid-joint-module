@@ -32,7 +32,23 @@
   .my-view canvas:active{cursor:grabbing}
   .my-hint{position:absolute;left:12px;bottom:10px;font-size:11.5px;color:#7c8a9d;pointer-events:none;letter-spacing:.03em}
   body[data-theme="light"] .my-hint{color:#5a6a85}
-  .my-loading{position:absolute;left:0;right:0;top:40%;text-align:center;color:#9ecbff;font-size:13px;letter-spacing:.05em;pointer-events:none}
+  .my-loading{position:absolute;left:0;right:0;top:40%;text-align:center;color:#9ecbff;font-size:13px;letter-spacing:.05em;pointer-events:none;z-index:3}
+  /* ===== 3D 加载进度条 + 诊断探针(2026-08-17,吸取 3D 解剖页教训) ===== */
+  .my-progress{position:absolute;left:24px;right:24px;top:46%;pointer-events:none;z-index:3}
+  .my-progress .bar{height:6px;border-radius:3px;background:rgba(59,130,246,.18);overflow:hidden}
+  .my-progress .fill{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,#3b82f6,#22c55e);transition:width .3s ease}
+  .my-progress .txt{font-size:12px;color:#9ecbff;margin-top:8px;text-align:center;letter-spacing:.04em}
+  .my-progress .txt b{color:#fff}
+  .my-progress.done{opacity:0;transition:opacity .6s}
+  .my-diag-btn{position:absolute;right:10px;bottom:34px;font-size:11.5px;color:#f59e0b;background:rgba(13,17,23,.75);border:1px solid rgba(245,158,11,.4);border-radius:8px;padding:4px 10px;cursor:pointer;z-index:5;display:none}
+  .my-diag-btn:hover{background:rgba(245,158,11,.18)}
+  .my-diag-panel{position:absolute;left:10px;right:10px;top:10px;bottom:10px;background:rgba(10,14,20,.94);border:1px solid rgba(245,158,11,.45);border-radius:12px;padding:12px 14px;z-index:6;overflow:auto;display:none;font-size:12px;color:#e2e8f0;line-height:1.9;font-family:Consolas,monospace}
+  .my-diag-panel b{color:#fbbf24}
+  .my-diag-panel .ok{color:#34d399}
+  .my-diag-panel .bad{color:#f87171}
+  .my-diag-head{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+  .my-diag-head button{border:1px solid #3a4658;background:rgba(20,26,36,.9);color:#c3ccd9;border-radius:7px;padding:4px 12px;cursor:pointer;font-size:12px;font-family:inherit}
+  .my-diag-head button:hover{border-color:#f59e0b;color:#fff}
   .my-clip{position:absolute;right:10px;top:10px;font-size:11.5px;color:#9ecbff;background:rgba(13,17,23,.7);border:1px solid rgba(59,130,246,.4);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:6px;z-index:5}
   .my-clip input{width:90px;accent-color:#3b82f6}
   .my-right{width:230px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:12px;max-height:580px;overflow:auto}
@@ -96,6 +112,7 @@
     <b>建议用时:</b>约 30 分钟 · 🖱 左键拖动旋转 / 右键平移 / 滚轮缩放 / 点击零件看参数
   </div>
 
+  <h2 id="sec-lab"><span class="h2-num">1</span> 🦾 3D 交互拆解台</h2>
   <div class="my-lab">
     <div class="my-lab-head">
       <div class="my-prod-tabs" id="prodTabs">
@@ -105,15 +122,18 @@
       </div>
     </div>
     <div class="my-stage">
-      <div class="my-left" id="partTree"></div>
+      <div class="my-left" id="partTree"><h4>部件层级目录</h4><div class="my-pdesc" style="color:#8b98ab">⏳ 等待模型加载…</div></div>
       <div class="my-view" id="view3d">
         <div class="my-loading" id="loadTip">⏳ 3D 引擎加载中…</div>
+        <div class="my-progress" id="loadProg"><div class="bar"><div class="fill" id="loadFill"></div></div><div class="txt" id="loadTxt">准备中…</div></div>
+        <button class="my-diag-btn" id="diagBtn" onclick="toggleDiag()">🔧 诊断</button>
+        <div class="my-diag-panel" id="diagPanel"><div class="my-diag-head"><b>🔍 3D 诊断</b><button onclick="copyDiag()">复制</button><button onclick="toggleDiag()">关闭</button></div><div id="diagBody">加载中…</div></div>
         <div class="my-clip" style="display:none" id="clipWrap">✂ 剖切 <input type="range" id="clipX" min="-6" max="6" step="0.02" value="99"></div>
         <div class="my-hint">左键旋转 · 右键平移 · 滚轮缩放 · 单击零件查看参数 · 自动旋转时点击暂停</div>
       </div>
-      <div class="my-right" id="paramPanel"></div>
+      <div class="my-right" id="paramPanel"><h4>参数信息面板</h4><div class="my-pdesc" style="color:#8b98ab">⏳ 等待模型加载…</div></div>
     </div>
-    <div class="my-bar" id="ctlBar"></div>
+    <div class="my-bar" id="ctlBar"><span style="font-size:12.5px;color:#8b98ab">⏳ 控制台待模型加载后启用…</span></div>
     <div class="my-info" id="infoLine"></div>
     <div class="my-legend" id="legend"></div>
   </div>
@@ -227,6 +247,59 @@ var LAB = { T:null, renderer:null, scene:null, cam:null, prod:0, parts:[], raf:0
              explode:0, explodeTarget:0, spin:true, picked:null, focusPart:null, clipOn:false, animT:0,
              yaw:0.9, pitch:0.3, dist:7.5, drag:null };
 
+/* ============ 诊断探针(2026-08-17 吸取 3D 解剖页教训:加载日志 + 进度条 + 失败自动弹面板) ============ */
+var DIAG_VER = 'v2.1';   /* 诊断代码版本:改本页 JS 时同步 +1,用于确认线上是否为最新 */
+window.__3D_LOAD_LOG__ = [];
+var __loaded = 0, __total = 0;   /* 模型加载进度计数 */
+function dlog(msg, ok){
+  var line = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  window.__3D_LOAD_LOG__.push(line);
+  if(window.console) console.log('[3D探针]', line);
+  var el = document.getElementById('diagBody');
+  if(el){
+    var cls = ok === true ? 'ok' : (ok === false ? 'bad' : '');
+    el.innerHTML += '<div class="' + cls + '">' + line.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</div>';
+    el.scrollTop = el.scrollHeight;
+  }
+}
+function setProg(txt, pct){
+  var fill = document.getElementById('loadFill'), tx = document.getElementById('loadTxt');
+  if(fill && pct != null){ fill.style.width = Math.min(100, Math.max(0, pct)) + '%'; }
+  if(tx && txt) tx.innerHTML = txt;
+}
+function progTick(step){
+  __loaded++;
+  var pct = Math.round(__loaded / Math.max(1, __total) * 100);
+  setProg('正在加载模型 ' + __loaded + '/' + __total + ' …', pct);
+}
+function progDone(){
+  setProg('✅ 全部就绪,开始学习吧', 100);
+  var p = document.getElementById('loadProg');
+  if(p) p.classList.add('done');
+  var t = document.getElementById('loadTip');
+  if(t) t.style.display = 'none';
+}
+function showDiagFail(msg){
+  dlog(msg, false);
+  var panel = document.getElementById('diagPanel');
+  var btn = document.getElementById('diagBtn');
+  if(panel){ panel.style.display = 'block'; }
+  if(btn){ btn.style.display = 'inline-block'; }
+}
+function toggleDiag(){
+  var panel = document.getElementById('diagPanel');
+  var btn = document.getElementById('diagBtn');
+  if(!panel) return;
+  var show = panel.style.display !== 'block';
+  panel.style.display = show ? 'block' : 'none';
+  if(btn) btn.style.display = show ? 'none' : 'inline-block';
+}
+function copyDiag(){
+  var txt = '诊断代码 ' + DIAG_VER + ' | ' + window.__3D_LOAD_LOG__.join('\n');
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){ dlog('✅ 诊断已复制', true); }, function(){ prompt('请手动复制:', txt); }); }
+  else { prompt('请手动复制:', txt); }
+}
+
 /* ---------- three.js 加载(本地优先 → npmmirror → jsdelivr → fastly) ---------- */
 (function loadThree(){
   var SOURCES = [
@@ -235,20 +308,31 @@ var LAB = { T:null, renderer:null, scene:null, cam:null, prod:0, parts:[], raf:0
     'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
     'https://fastly.jsdelivr.net/npm/three@0.160.0/build/three.module.js'
   ];
+  dlog('开始加载 three.js(共 ' + SOURCES.length + ' 个源)');
+  setProg('加载 3D 引擎(本地优先)…', 4);
   var i = 0;
   function tryNext(){
     if(i >= SOURCES.length){
+      dlog('❌ three.js 全部 4 个源加载失败', false);
+      showDiagFail('3D 库加载失败:本地与 3 个 CDN 均不可达,请检查网络后刷新。');
       var tip = document.getElementById('loadTip');
-      if(tip) tip.innerHTML = '<b style="color:#f87171">3D 库加载失败:</b>本地与 3 个 CDN 均不可达,请检查网络后刷新。';
+      if(tip) tip.innerHTML = '<b style="color:#f87171">3D 库加载失败:</b>本地与 3 个 CDN 均不可达,请检查网络后刷新。点「🔧 诊断」复制日志。';
       return;
     }
+    var src = SOURCES[i];
+    dlog('尝试源 #' + i + ': ' + src);
+    setProg('加载 3D 引擎…(源 ' + (i+1) + '/' + SOURCES.length + ')', 4 + i*2);
     Promise.race([
-      import(/* @vite-ignore */ SOURCES[i]).then(function(m){
+      import(/* @vite-ignore */ src).then(function(m){
         if(!m || !m.WebGLRenderer){ throw new Error('bad module'); }
+        dlog('✅ three.js 加载成功: ' + src, true);
         boot(m);
       }),
       new Promise(function(res, rej){ setTimeout(function(){ rej(new Error('超时(15s)')); }, 15000); })
-    ]).catch(function(){ i++; tryNext(); });
+    ]).catch(function(e){
+      dlog('源 #' + i + ' 失败: ' + (e && e.message || e), false);
+      i++; tryNext();
+    });
   }
   tryNext();
 })();
@@ -286,7 +370,7 @@ function parseSTL(buffer){
   return { positions: positions.subarray(0, p) };
 }
 
-/* ---------- 加载 STL → Mesh(自动缩放居中) ---------- */
+/* ---------- 加载 STL → Mesh(自动缩放居中,带进度) ---------- */
 function loadSTL(url, color, opts){
   opts = opts || {};
   return new Promise(function(res, rej){
@@ -311,6 +395,7 @@ function loadSTL(url, color, opts){
       g.scale(scale, scale, scale);
       var mat = new T.MeshStandardMaterial({ color: color, metalness: opts.metalness!=null?opts.metalness:0.55, roughness: opts.roughness!=null?opts.roughness:0.45 });
       var mesh = new T.Mesh(g, mat);
+      progTick();
       res(mesh);
     }).catch(function(e){ rej(e); });
   });
@@ -435,6 +520,8 @@ function boot(THREE){
     switchProd(0);
   }).catch(function(e){
     console.error('[3D] 构建失败:', e);
+    dlog('❌ 模型构建失败: ' + (e && e.message || e), false);
+    showDiagFail('模型加载失败: ' + (e && e.message || e) + ' — 请刷新重试,或点「🔧 诊断」复制日志反馈。');
     var t = document.getElementById('loadTip');
     if(t){ t.style.display=''; t.innerHTML = '<b style="color:#f87171">模型加载失败:</b> ' + (e && e.message || e) + ' — 请刷新重试。'; }
   });
@@ -673,11 +760,18 @@ function buildHand(group){
 /* ---------- 构建全部 ---------- */
 function buildAll(){
   LAB.parts = [];
+  /* 进度统计:RVGH 13 + LEAP 8(编码器程序化不算网络加载) */
+  __total = 21;
+  dlog('开始加载模型(共 ' + __total + ' 个 STL 文件)');
+  setProg('加载模型 0/' + __total + ' …', 0);
   return Promise.all([
     buildMotor(LAB.groups[0]),
     buildEncoder(LAB.groups[1]),
     buildHand(LAB.groups[2])
-  ]);
+  ]).then(function(){
+    dlog('✅ 全部 ' + __total + ' 个模型加载完成', true);
+    progDone();
+  });
 }
 
 /* ---------- 切换产品 ---------- */

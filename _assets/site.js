@@ -154,7 +154,9 @@
     /* 仅对使用 site.css 的新页面生效(旧页面布局各异,不注入) */
     if(!document.querySelector('link[href*="site.css"]')) return;
     var hs = document.querySelectorAll('.container h2');
-    if(hs.length < 2) return;
+    /* 2026-08-17:由 ≥2 放宽为 ≥1——3D 拆解页/实验台/项目清单等页面只有一个 h2 时
+       也应显示左侧目录(否则「控件完全空白」),内容页有目录总比没有强 */
+    if(hs.length < 1) return;
     var items = [];
     for(var i = 0; i < hs.length; i++){
       var h = hs[i];
@@ -676,7 +678,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.0.0(2026-08-17)";
+  S.VERSION = "V2.0.1(2026-08-17)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
