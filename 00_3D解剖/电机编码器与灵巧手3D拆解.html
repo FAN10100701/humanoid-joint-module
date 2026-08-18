@@ -17,9 +17,9 @@
   body[data-theme="light"] .my-prod-tabs button{background:rgba(255,255,255,.75);color:#334155}
   body[data-theme="light"] .my-prod-tabs button.on{background:#2563eb;color:#fff}
   .my-stage{display:flex;gap:10px;min-height:540px;align-items:stretch}
-  .my-left{width:210px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px;max-height:560px;overflow:auto;position:relative;transition:width .25s ease}
-  body[data-theme="light"] .my-left{background:rgba(255,255,255,.8)}
-  .my-left h4{font-size:12px;color:#8b98ab;margin:4px 2px 8px;letter-spacing:.08em;text-transform:uppercase}
+  .my-left{width:210px;flex-shrink:0;background:rgba(255,255,255,.55);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(60,80,120,.14);border-radius:12px;padding:10px;max-height:560px;overflow:auto;position:relative;transition:width .25s ease;box-shadow:0 8px 26px rgba(50,80,140,.08)}
+  body[data-theme="light"] .my-left{background:rgba(255,255,255,.7)}
+  .my-left h4{font-size:12px;color:#64748b;margin:4px 2px 8px;letter-spacing:.08em;text-transform:uppercase}
   body[data-theme="light"] .my-left h4{color:#64748b}
   /* 左/右栏收起(2026-08-17):折叠时宽度归零,中间 3D 视口自动扩大 */
   .my-left.collapsed{width:0;padding:0;border:0;overflow:hidden}
@@ -34,10 +34,26 @@
   .my-part .dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
   body[data-theme="light"] .my-part{color:#475569}
   body[data-theme="light"] .my-part.on{color:#1d4ed8}
-  /* 视口与左右栏等高协调(2026-08-17):左右栏 max-height 560px,视口同限高,
-     避免「3D 框比两边介绍框长很多」的不协调 */
-  .my-view{flex:1;position:relative;background:radial-gradient(ellipse at 50% 38%,#232c3b 0%,#141a25 58%,#0d1119 100%);border:1px solid #2a3547;border-radius:12px;overflow:hidden;min-width:0;min-height:540px;max-height:560px}
-  body[data-theme="light"] .my-view{background:radial-gradient(ellipse at 50% 38%,#e8edf5 0%,#c8d2e0 58%,#aebacb 100%)}
+  /* 中央 3D 舞台:浅色渐变 + 网格 + 透视(参照 3D 解剖页环境) */
+  .my-view{flex:1;position:relative;background:
+    radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.9) 0%,rgba(240,244,250,.5) 60%,transparent 100%),
+    linear-gradient(180deg,#f8fafc 0%,#e8edf5 100%);
+    border:1px solid rgba(60,80,120,.16);border-radius:12px;overflow:hidden;min-width:0;min-height:540px;max-height:560px;perspective:1800px}
+  .my-view::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.3;background-image:
+    linear-gradient(rgba(0,50,120,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,50,120,.05) 1px,transparent 1px);background-size:40px 40px;z-index:0}
+  body[data-theme="light"] .my-view{background:
+    radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.95) 0%,rgba(240,244,250,.6) 60%,transparent 100%),
+    linear-gradient(180deg,#f8fafc 0%,#e8edf5 100%)}
+  body:not([data-theme]) .my-view{background:
+    radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.95) 0%,rgba(240,244,250,.6) 60%,transparent 100%),
+    linear-gradient(180deg,#f8fafc 0%,#e8edf5 100%)}
+  body[data-theme="dark"] .my-view{background:
+    radial-gradient(ellipse at 50% 40%,rgba(30,40,58,.85) 0%,rgba(10,14,23,.9) 60%,transparent 100%),
+    linear-gradient(180deg,#0c111c 0%,#070b13 100%)}
+  body[data-theme="dark"] .my-view::before{background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px)}
   .my-view canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none;position:absolute;left:0;top:0;z-index:1}
   .my-view canvas:active{cursor:grabbing}
   .my-hint{position:absolute;left:12px;bottom:10px;font-size:11.5px;color:#7c8a9d;pointer-events:none;letter-spacing:.03em}
@@ -128,7 +144,7 @@
       <div class="my-prod-tabs" id="prodTabs">
         <button class="on" data-p="0" onclick="switchProd(0)">⚙️ ① 一体伺服电机(RVGH)</button>
         <button data-p="1" onclick="switchProd(1)">💿 ② 光电编码器</button>
-        <button data-p="2" onclick="switchProd(2)">🤲 ③ 欠驱动灵巧手(LEAP)</button>
+        <button data-p="2" onclick="switchProd(2)">🤲 ③ 灵巧手(宇树 G1)</button>
       </div>
     </div>
     <div class="my-stage">
@@ -409,7 +425,8 @@ function loadSTL(url, color, opts){
       /* keepPos:保留 STL 原始装配坐标(只缩放不平移),用于真实装配模型(如 LEAP 手) */
       if(!opts.keepPos){ g.translate(-center.x, -center.y, -center.z); }
       g.scale(scale, scale, scale);
-      var mat = new T.MeshStandardMaterial({ color: color, metalness: opts.metalness!=null?opts.metalness:0.25, roughness: opts.roughness!=null?opts.roughness:0.55 });
+      var mat = new T.MeshStandardMaterial({ color: color, metalness: opts.metalness!=null?opts.metalness:0.25, roughness: opts.roughness!=null?opts.roughness:0.55,
+        transparent: !!opts.transparent, opacity: opts.opacity!=null?opts.opacity:1 });
       var mesh = new T.Mesh(g, mat);
       progTick();
       res(mesh);
@@ -795,48 +812,24 @@ var LEAP_FILES = {
   t_tip: 'thumb_fingertip.stl'
 };
 function buildHand(group){
-  /* LEAP Hand:STL 为真实装配坐标,单位 cm(手掌约 10cm 宽,手指沿 z 展开约 17cm)。
-     统一 scale=0.3(整手 17cm → 5.1 世界单位),保留原始装配坐标(keepPos),
-     整体旋转使手掌平放(掌心朝上),不再手动摆放——部件相对位置天然正确 */
-  var HSCALE = 8;
-  var cache = {};
-  function loadOne(key){
-    if(cache[key]) return cache[key];
-    var c = 0xcfd6e0;
-    cache[key] = loadSTL('./models/leap_hand/' + LEAP_FILES[key], c, { metalness:0.2, roughness:0.55, keepPos:true, scale:HSCALE });
-    return cache[key];
-  }
-  var jobs = [];
-  /* 手掌:装配坐标原点附近 */
-  jobs.push(loadOne('palm').then(function(mesh){
-    partRec(2, '手掌(palm lower)', mesh, mesh.position.clone(), AZ, 1.0, 0xcfd6e0,
-      'LEAP Hand 手掌下壳,内含 6 个微型电机与腱绳通道。', [['来源','UC Berkeley LEAP Hand'],['许可','MIT']]);
+  /* ③ 灵巧手:宇树 G1 真实橡胶手(整件 STL,13cm 手掌)。
+     整件模型无法分层拆解,故用「点选高亮 + 参数说明」模式:
+     整手一个部件,点击查看整体参数;欠驱动结构讲解见页面文字 */
+  return loadSTL('./models/g1/left_rubber_hand.STL', 0xcfd6e0, { metalness:0.15, roughness:0.6, target:3.0 }).then(function(mesh){
+    /* 手掌朝上、手指朝前摆放 */
+    mesh.rotation.x = Math.PI/2;
+    mesh.rotation.z = 0.15;
+    partRec(2, '宇树 G1 灵巧手(整件)', mesh, mesh.position.clone(), AZ, 1.2, 0xcfd6e0,
+      '宇树 G1 官方橡胶手(真实 STL)。G1 采用 6 自由度灵巧手:5 指、每指 1 自由度(弯曲)+ 拇指外展,欠驱动结构——电机经腱绳驱动多关节自适应包络。整件模型展示真实外形;分层结构见本站「3D 解剖知识系统」灵巧手场景。',
+      [['来源','宇树 G1 官方模型'],['自由度','约 6'],['驱动','电机+腱绳(欠驱动)'],['材质','橡胶外壳+内部机构']]);
     group.add(mesh);
-  }));
-  /* 四指 + 拇指:全部保留原始装配坐标(同 scale 保持相对位置),只做整体旋转 */
-  var KEYS = ['mcp','pip','dip','tip'];
-  for(var fi=0; fi<4; fi++){
-    KEYS.forEach(function(key){
-      jobs.push(loadOne(key).then(function(mesh){
-        var m = mesh.clone(); m.material = m.material.clone();
-        partRec(2, '手指部件·' + key + '(指' + (fi+1) + ')', m, m.position.clone(), AZ, 1.0, 0xcfd6e0,
-          'LEAP Hand 手指部件(' + key + '),腱绳驱动。', [['来源','LEAP Hand'],['许可','MIT']]);
-        group.add(m);
-      }));
+    /* 结构参考小模型:LEAP Hand 分解示意(半透明,并排对比) */
+    return loadSTL('./models/leap_hand/palm_lower.stl', 0x8fa8c8, { metalness:0.1, roughness:0.6, keepPos:true, scale:6, transparent:true, opacity:0.35 }).then(function(palm){
+      palm.position.set(2.6, 0.1, 0);
+      partRec(2, 'LEAP Hand 手掌(结构参考)', palm, palm.position.clone(), AZ, 0.8, 0x8fa8c8,
+        'UC Berkeley 开源 LEAP Hand 手掌(半透明示意,作结构参考)。', [['来源','LEAP Hand (MIT)'],['说明','仅结构示意']]);
+      group.add(palm);
     });
-  }
-  ['t_pip','t_dip','t_tip'].forEach(function(key){
-    jobs.push(loadOne(key).then(function(mesh){
-      var m = mesh.clone(); m.material = m.material.clone();
-      partRec(2, '拇指·' + key, m, m.position.clone(), AZ, 1.0, 0xcfd6e0,
-        'LEAP Hand 拇指部件(' + key + ')。', [['来源','LEAP Hand'],['许可','MIT']]);
-      group.add(m);
-    }));
-  });
-  /* 整体旋转:手掌平放、手指朝前(装配 z 轴 → 世界 y 轴,再绕 y 转 45° 便于观赏) */
-  return Promise.all(jobs).then(function(){
-    group.rotation.x = -Math.PI/2;
-    group.rotation.y = 0.5;
   });
 }
 
