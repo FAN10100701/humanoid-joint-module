@@ -870,10 +870,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.7</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 版本历史栏可收起 + Twikoo 评论密码找回指引</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.8</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · Twikoo 前端对齐 1.7.19(云接入模式修正)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.9.8 · 2026-08-17 · Twikoo 前端对齐 1.7.19 + 云接入模式修正</summary>
+        <div class="faq-a">💬 <b>评论配置修正</b>:Twikoo 前端版本从 1.6.39 对齐云函数的 <b>1.7.19</b>(官方要求前后端版本一致);配置改回 CloudBase 云接入官方示例——<b>envId 短 ID + region + path '/twikoo'</b>;CDN 顺序按官方推荐改为 npmmirror → zstatic(国内) → jsdelivr,每源 8s 超时强制跳源(修复 jsDelivr 网络黑洞挂起导致评论区整块不渲染、管理入口消失的问题);诊断探针保留,评论区顶部可见 🔍 日志。</div>
+      </details>
+      <details class="faq">
         <summary>V1.9.7 · 2026-08-17 · 版本历史栏收起/展开 + 评论体验</summary>
         <div class="faq-a">📜 <b>版本历史栏可收起</b>:标题栏新增「▼ 展开历史 / ▲ 收起历史」按钮,默认收起只显示当前版本行,点击展开全部历史;选择记忆在本机,点版本角标/「版本历史」跳转时自动展开——底部区块不再越滚越长。</div>
       </details>
@@ -977,7 +981,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.9.7(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.9.8(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

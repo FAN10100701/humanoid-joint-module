@@ -317,15 +317,15 @@
       loadValine(0);
       return;
     }
-    /* Twikoo:需自托管后端(CloudBase 云函数/Vercel/Zeabur),多 CDN 回退 */
-    /* 调试探针(2026-08-17):诊断「评论失败:0」——记录每步状态,输出到控制台与评论区顶部 */
+    /* Twikoo:CloudBase 云接入(官方推荐配置:短 envId + region + path)。
+       加载:npmmirror 优先(国内快)→ jsdelivr → unpkg,每源 8s 超时强制跳下一源(防网络黑洞挂起)。
+       调试探针(2026-08-17):诊断「评论失败:0」——记录每步状态,输出到控制台与评论区顶部 */
     window.__COMMENT_DIAG__ = [];
     function diag(step, ok, detail){
       var line = "[" + new Date().toLocaleTimeString() + "] " + step + (ok ? " ✓" : " ✗") + (detail ? " | " + detail : "");
       window.__COMMENT_DIAG__.push(line);
       console.log("[评论探针]", line);
       var el = document.getElementById("tcomment");
-      if(el && el.dataset.diag === undefined){ el.dataset.diag = "1"; }
       var tip = document.createElement("div");
       tip.style.cssText = "font-size:12px;color:#f59e0b;margin:4px 0;font-family:monospace;white-space:pre-wrap";
       tip.textContent = "🔍 " + line;
@@ -333,32 +333,51 @@
       return line;
     }
     diag("配置读取", !!cfg, "provider=" + cfg.provider + " envId=" + (cfg.envId||"").slice(0,40) + "…");
+    /* 版本必须与云函数一致(官方要求):CloudBase 部署摘要为 1.7.19;CDN 顺序按官方推荐(国内优先) */
     var CDNS = [
-      "https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.all.min.js",
-      "https://registry.npmmirror.com/twikoo/1.6.39/files/dist/twikoo.all.min.js",
-      "https://unpkg.com/twikoo@1.6.39/dist/twikoo.all.min.js"
+      "https://registry.npmmirror.com/twikoo/1.7.19/files/dist/twikoo.all.min.js",
+      "https://s4.zstatic.net/npm/twikoo@1.7.19/dist/twikoo.all.min.js",
+      "https://cdn.jsdelivr.net/npm/twikoo@1.7.19/dist/twikoo.all.min.js"
     ];
+    var CDN_TIMEOUT = 8000;   /* 单源超时(ms):网络黑洞(挂起不报错)时强制跳下一源 */
+    var loaded = false;
+    function initTwikoo(){
+      if(loaded || !window.twikoo) return;
+      loaded = true;
+      diag("twikoo 脚本加载", true, "window.twikoo 就绪");
+      try{
+        var p = twikoo.init({
+          envId: cfg.envId,
+          el: "#tcomment",
+          region: cfg.region || "",
+          path: cfg.path || location.pathname   /* CloudBase 云接入需 /twikoo;自托管 URL 模式可省 */
+        });
+        diag("twikoo.init 调用", true, "envId=" + cfg.envId + " region=" + (cfg.region||"") + " path=" + (cfg.path||location.pathname));
+        if(p && p.catch){
+          p.catch(function(err){
+            diag("twikoo.init Promise 失败", false, (err && (err.message || err.code || String(err))) || "未知错误");
+          });
+        }
+      }
+      catch(e){ diag("twikoo.init 抛异常", false, (e && e.message) || String(e)); }
+    }
     function loadTwikoo(i){
-      if(i >= CDNS.length){ diag("CDN 全部失败", false, "jsdelivr/npmmirror/unpkg 均不可达"); return; }
+      if(i >= CDNS.length){ diag("CDN 全部失败", false, "npmmirror/jsdelivr/unpkg 均不可达或超时"); return; }
       diag("尝试 CDN #" + i, null, CDNS[i]);
       var s = document.createElement("script");
+      var timer = setTimeout(function(){
+        diag("CDN #" + i + " 超时", false, "8s 无响应,强制跳下一源(疑似网络黑洞)");
+        try{ s.onload = s.onerror = null; s.parentNode && s.parentNode.removeChild(s); }catch(e){}
+        loadTwikoo(i + 1);
+      }, CDN_TIMEOUT);
       s.src = CDNS[i];
       s.onload = function(){
-        if(window.twikoo){
-          diag("twikoo 脚本加载", true, "源 " + CDNS[i]);
-          try{
-            var p = twikoo.init({ envId: cfg.envId, el: "#tcomment", region: cfg.region || "" });
-            diag("twikoo.init 调用", true, "envId=" + cfg.envId);
-            if(p && p.catch){
-              p.catch(function(err){
-                diag("twikoo.init Promise 失败", false, (err && (err.message || err.code || String(err))) || "未知错误");
-              });
-            }
-          }
-          catch(e){ diag("twikoo.init 抛异常", false, (e && e.message) || String(e)); }
-        } else { diag("twikoo 全局缺失", false, "脚本加载成功但 window.twikoo 未定义"); }
+        clearTimeout(timer);
+        if(window.twikoo){ initTwikoo(); }
+        else { diag("twikoo 全局缺失", false, "脚本加载成功但 window.twikoo 未定义"); }
       };
       s.onerror = function(){
+        clearTimeout(timer);
         diag("CDN #" + i + " 加载失败", false, "网络错误");
         loadTwikoo(i + 1);
       };
@@ -657,7 +676,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V1.9.7(2026-08-17)";
+  S.VERSION = "V1.9.8(2026-08-17)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){

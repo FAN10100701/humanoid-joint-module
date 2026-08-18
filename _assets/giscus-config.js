@@ -1,15 +1,22 @@
 /* 全站评论区配置(统一入口,site.js initComments 动态加载)
- * provider 二选一:
- *   "twikoo" —— 自托管后端(CloudBase 云函数 / Vercel / Zeabur),envId 填完整访问地址
- *   "valine" —— LeanCloud 存储(国内版免费,纯配置零部署),需要 appId/appKey/serverURLs
- * 切换后无需改动任何页面,刷新即生效。
- * 2026-08-17:CloudBase 云函数 + 网关 /twikoo 部署完成,envId 填完整访问地址(网关已验证 HTTP 200)。
+ * 当前方案:Twikoo + CloudBase 云接入网关(腾讯云开发模式)
+ *   envId  = CloudBase 环境 ID(短 ID 模式,云接入网关 /twikoo 已配置)
+ *   region = ap-shanghai(上海环境)
+ *   path   = /twikoo(云接入网关路由,与 CloudBase 部署摘要示例一致)
+ *   前端版本 1.7.19 与云函数版本保持一致(官方要求)。
+ * 前置条件(重要,否则「评论失败: 0」或评论区空白):
+ *   ① 环境-登录授权:启用「匿名登录」
+ *   ② 环境-安全配置:把 https://cyco.top 加入「Web 安全域名」
+ *   ③ 管理面板:评论窗口「⚙️ 小齿轮」→ 粘贴「自定义登录私钥」并设置管理员密码
+ * 备用方案:Valine(LeanCloud 纯配置零部署)——provider 改 "valine" 并填 appId/appKey。
  */
 window.COMMENTS_CONFIG = {
   provider: "twikoo",
-  appId: null,      /* Valine:LeanCloud 应用的 AppID */
-  appKey: null,     /* Valine:LeanCloud 应用的 AppKey */
-  serverURLs: null, /* Valine:LeanCloud 国际版需填 https://xxx.api.lncldglobal.com */
-  envId: "https://twikoo-env-d1gjabi5l2e5613b2-1384309057.ap-shanghai.app.tcloudbase.com/twikoo",
-  region: ""        /* Twikoo 自托管 URL 模式无需 region;仅腾讯云托管简写 envId 时按需填 ap-shanghai 等 */
+  envId: "twikoo-env-d1gjabi5l2e5613b2",
+  region: "ap-shanghai",
+  path: "/twikoo",
+  /* --- Valine 备用字段(provider 切 "valine" 时填写) --- */
+  appId: null,
+  appKey: null,
+  serverURLs: null
 };
