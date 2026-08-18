@@ -467,15 +467,21 @@ function boot(THREE){
   ground.receiveShadow = true;
   scene.add(ground);
 
-  /* 自实现轨道控制(零依赖,阻尼+俯仰限制) */
+  /* 自实现轨道控制(零依赖,阻尼+俯仰限制)
+     2026-08-19 修复:旧版 camPos() 只在 boot 调一次,之后拖拽/滚轮/切产品虽然改了
+     LAB.yaw/pitch/dist,相机却永远不动(所有视角交互全部失效)。
+     现改为:LAB.view 为当前镜头状态,每帧 camPos() 同步;LAB.camGoal 存在时
+     平滑趋近(切产品/选中部件的镜头飞行),用户拖拽/滚轮时清空 camGoal 直接接管 */
+  LAB.view = { yaw: LAB.yaw, pitch: LAB.pitch, dist: LAB.dist, tx: 0, ty: (LAB.targetY || 0.3), tz: 0 };
+  LAB.camGoal = null;
   function camPos(){
-    var ty = LAB.targetY || 0.3;
+    var v = LAB.view;
     cam.position.set(
-      Math.sin(LAB.yaw)*Math.cos(LAB.pitch)*LAB.dist,
-      ty + Math.sin(LAB.pitch)*LAB.dist,
-      Math.cos(LAB.yaw)*Math.cos(LAB.pitch)*LAB.dist
+      v.tx + Math.sin(v.yaw)*Math.cos(v.pitch)*v.dist,
+      v.ty + Math.sin(v.pitch)*v.dist,
+      v.tz + Math.cos(v.yaw)*Math.cos(v.pitch)*v.dist
     );
-    cam.lookAt(0, ty, 0);
+    cam.lookAt(v.tx, v.ty, v.tz);
   }
   camPos();
   var vx = 0, vy = 0;
@@ -488,14 +494,16 @@ function boot(THREE){
     if(!LAB.drag) return;
     vx = (e.clientX - LAB.drag.x) * 0.008;
     vy = (e.clientY - LAB.drag.y) * 0.006;
-    LAB.yaw -= vx;
-    LAB.pitch = Math.max(-1.15, Math.min(1.3, LAB.pitch + vy));
+    LAB.camGoal = null;                     /* 手动接管视角,取消镜头动画 */
+    LAB.view.yaw -= vx;
+    LAB.view.pitch = Math.max(-1.15, Math.min(1.3, LAB.view.pitch + vy));
     LAB.drag = {x:e.clientX, y:e.clientY};
   });
   cv.addEventListener('pointerup', function(){ LAB.drag = null; });
   cv.addEventListener('wheel', function(e){
     e.preventDefault();
-    LAB.dist = Math.max(2.0, Math.min(16, LAB.dist + (e.deltaY>0?0.5:-0.5)));
+    LAB.camGoal = null;
+    LAB.view.dist = Math.max(1.6, Math.min(16, LAB.view.dist + (e.deltaY>0?0.5:-0.5)));
   }, { passive:false });
 
   /* 拾取 */
@@ -520,8 +528,11 @@ function boot(THREE){
     }
   });
 
-  /* 剖切 */
-  var clipPlane = new THREE.Plane(new THREE.Vector3(1,0,0), -99);
+  /* 剖切(2026-08-19 修复「进度条跑完但全黑」的根因):
+     three.js 裁掉「到平面带符号距离 < 0」的几何;normal=(1,0,0) 时距离 = x + constant。
+     旧哨兵 -99 => 平面在 x=99,所有 x<99 的部件连同地面全被裁掉,画布只剩背景色(纯黑)。
+     「不剖切」哨兵必须是 +99:平面在 x=-99,保留 x>-99 的一切 */
+  var clipPlane = new THREE.Plane(new THREE.Vector3(1,0,0), 99);
   renderer.clippingPlanes = [clipPlane];
   LAB.clipPlane = clipPlane;
 
@@ -809,6 +820,37 @@ function buildAll(){
   });
 }
 
+/* ---------- 自动相机适配:按产品实际包围盒中心/半径对准(2026-08-17) ---------- */
+function computeFocus(pi){
+  var pts = LAB.parts.filter(function(p){ return p.prod === pi; });
+  var minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9,minZ=1e9,maxZ=-1e9;
+  pts.forEach(function(p){
+    var m = p.mesh;
+    var r = 0.5;   /* 兜底半径 */
+    var box = null;
+    m.traverse(function(o){
+      if(o.isMesh && o.geometry && !box){
+        box = o.geometry.boundingBox;
+        if(box){
+          var s = new THREE.Vector3(); box.getSize(s);
+          r = Math.max(r, s.length()/2);
+        }
+      }
+    });
+    var pos = m.position;
+    minX = Math.min(minX, pos.x - r); maxX = Math.max(maxX, pos.x + r);
+    minY = Math.min(minY, pos.y - r); maxY = Math.max(maxY, pos.y + r);
+    minZ = Math.min(minZ, pos.z - r); maxZ = Math.max(maxZ, pos.z + r);
+  });
+  var ok = maxX > minX && maxY > minY && maxZ > minZ;
+  return {
+    x: ok ? (minX+maxX)/2 : 0,
+    y: ok ? (minY+maxY)/2 : 0,
+    z: ok ? (minZ+maxZ)/2 : 0,
+    r: ok ? Math.max(maxX-minX, maxY-minY, maxZ-minZ)/2 : 2
+  };
+}
+
 /* ---------- 切换产品 ---------- */
 function switchProd(i){
   if(!LAB.groups) return;
@@ -817,10 +859,11 @@ function switchProd(i){
   LAB.groups.forEach(function(g, k){ g.visible = (k===i); });
   LAB.focusPart = null; LAB.picked = null;
   LAB.explodeTarget = 0; LAB.explode = 0;
-  var dists = [9.0, 6.0, 8.0];
-  var targetY = [1.7, 0.0, 0.5];
-  LAB.dist = dists[i];
-  LAB.targetY = targetY[i];
+  /* 自动对准:dist = 半径×2.6(模型占画面 ~40%),注视产品包围盒中心 */
+  var f = computeFocus(i);
+  LAB.dist = Math.max(2.5, Math.min(16, f.r * 2.6 + 0.5));
+  LAB.tx = f.x; LAB.ty = f.y; LAB.tz = f.z;
+  dlog('🎯 相机对准: 产品' + i + ' 中心(' + f.x.toFixed(2) + ',' + f.y.toFixed(2) + ',' + f.z.toFixed(2) + ') 半径=' + f.r.toFixed(2) + ' dist=' + LAB.dist.toFixed(1), f.r > 0.3 && f.r < 10);
   LAB.yaw = 0.9; LAB.pitch = 0.3;
   var tabs = document.querySelectorAll('#prodTabs button');
   for(var k=0;k<tabs.length;k++){ tabs[k].classList.toggle('on', k===i); }
@@ -917,7 +960,7 @@ function syncSpinBtn(){
 function toggleClip(btn){
   LAB.clipOn = !LAB.clipOn;
   document.getElementById('clipWrap').style.display = LAB.clipOn ? '' : 'none';
-  if(!LAB.clipOn){ LAB.clipPlane.constant = -99; }
+  if(!LAB.clipOn){ LAB.clipPlane.constant = 99; }   /* +99=不裁剪(旧值 -99 会裁掉全部几何->黑屏) */
   if(btn){ btn.classList.toggle('on', LAB.clipOn); }
 }
 function buildInfo(){
