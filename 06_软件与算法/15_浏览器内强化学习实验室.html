@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="../_assets/site.css">
 <style>
   .my-rl{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px;margin:16px 0;background:rgba(15,23,42,.45)}
-  body:not([data-theme]) .my-rl,html[data-theme="light"] .my-rl{background:rgba(255,255,255,.65)}
+  body:not([data-theme]) .my-rl,body[data-theme="light"] .my-rl{background:rgba(255,255,255,.65)}
   /* canvas 尺寸交给 CSS(宽度自适应),位图由 JS 按 devicePixelRatio 重建,高分屏清晰且不拉伸变形 */
   .my-rl canvas{background:#0b1626;border-radius:10px;display:block}
   .my-rl #rlPole{width:100%;height:250px}
@@ -19,7 +19,7 @@
   .my-rl .my-bar button:disabled{opacity:.45;cursor:not-allowed}
   .my-stat{font-size:13.5px;line-height:2}
   .my-stat b{font-family:Consolas,monospace;color:#34d399}
-  body:not([data-theme]) .my-stat b,html[data-theme="light"] .my-stat b{color:#047857}
+  body:not([data-theme]) .my-stat b,body[data-theme="light"] .my-stat b{color:#047857}
 </style>
 <script>
   window.PAGE = {

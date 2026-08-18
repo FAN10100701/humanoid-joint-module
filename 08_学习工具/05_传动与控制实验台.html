@@ -50,25 +50,25 @@
   @media (max-width:820px){.lab-grid{grid-template-columns:1fr}}
 
   /* 浅色主题适配(双选择器:body 无 data-theme 属性(首帧)与显式浅色时都生效,防止首帧深色闪烁) */
-  body:not([data-theme]) .lab-tab,html[data-theme="light"] .lab-tab{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.16);color:#64748b}
-  body:not([data-theme]) .lab-tab.on,html[data-theme="light"] .lab-tab.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
-  body:not([data-theme]) .lab-panel,html[data-theme="light"] .lab-panel{background:rgba(255,255,255,.6);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
-  body:not([data-theme]) .lab-h,html[data-theme="light"] .lab-h{color:#0f172a}
-  body:not([data-theme]) .lab-intro,html[data-theme="light"] .lab-intro{color:#4b5c74}
-  body:not([data-theme]) .lab-controls,html[data-theme="light"] .lab-controls{background:rgba(255,255,255,.5);border-color:rgba(60,80,120,.12)}
-  body:not([data-theme]) .lab-controls label,html[data-theme="light"] .lab-controls label{color:#5a6a85}
-  body:not([data-theme]) .lab-controls .lab-val,html[data-theme="light"] .lab-controls .lab-val{color:#2563eb}
-  body:not([data-theme]) .lab-btns button,html[data-theme="light"] .lab-btns button{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
-  body:not([data-theme]) .lab-btns button.lab-run,html[data-theme="light"] .lab-btns button.lab-run{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#b45309}
-  body:not([data-theme]) .lab-card,html[data-theme="light"] .lab-card{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.12)}
-  body:not([data-theme]) .lab-card .lab-k,html[data-theme="light"] .lab-card .lab-k{color:#94a3b8}
-  body:not([data-theme]) .lab-card .lab-v,html[data-theme="light"] .lab-card .lab-v{color:#0f172a}
-  body:not([data-theme]) .lab-bar,html[data-theme="light"] .lab-bar{background:rgba(60,80,120,.14)}
-  body:not([data-theme]) .lab-bar-row .lab-k,body:not([data-theme]) .lab-bar-row .lab-bar-k,html[data-theme="light"] .lab-bar-row .lab-k,html[data-theme="light"] .lab-bar-row .lab-bar-k{color:#5a6a85}
-  body:not([data-theme]) .lab-bar-row .lab-bar-val,html[data-theme="light"] .lab-bar-row .lab-bar-val{color:#334155}
-  body:not([data-theme]) .lab-legend,html[data-theme="light"] .lab-legend{color:#5a6a85}
-  body:not([data-theme]) .lab-metrics,html[data-theme="light"] .lab-metrics{color:#94a3b8}
-  body:not([data-theme]) .lab-note,html[data-theme="light"] .lab-note{color:#4b5c74}
+  body:not([data-theme]) .lab-tab,body[data-theme="light"] .lab-tab{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.16);color:#64748b}
+  body:not([data-theme]) .lab-tab.on,body[data-theme="light"] .lab-tab.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
+  body:not([data-theme]) .lab-panel,body[data-theme="light"] .lab-panel{background:rgba(255,255,255,.6);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+  body:not([data-theme]) .lab-h,body[data-theme="light"] .lab-h{color:#0f172a}
+  body:not([data-theme]) .lab-intro,body[data-theme="light"] .lab-intro{color:#4b5c74}
+  body:not([data-theme]) .lab-controls,body[data-theme="light"] .lab-controls{background:rgba(255,255,255,.5);border-color:rgba(60,80,120,.12)}
+  body:not([data-theme]) .lab-controls label,body[data-theme="light"] .lab-controls label{color:#5a6a85}
+  body:not([data-theme]) .lab-controls .lab-val,body[data-theme="light"] .lab-controls .lab-val{color:#2563eb}
+  body:not([data-theme]) .lab-btns button,body[data-theme="light"] .lab-btns button{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
+  body:not([data-theme]) .lab-btns button.lab-run,body[data-theme="light"] .lab-btns button.lab-run{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#b45309}
+  body:not([data-theme]) .lab-card,body[data-theme="light"] .lab-card{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.12)}
+  body:not([data-theme]) .lab-card .lab-k,body[data-theme="light"] .lab-card .lab-k{color:#94a3b8}
+  body:not([data-theme]) .lab-card .lab-v,body[data-theme="light"] .lab-card .lab-v{color:#0f172a}
+  body:not([data-theme]) .lab-bar,body[data-theme="light"] .lab-bar{background:rgba(60,80,120,.14)}
+  body:not([data-theme]) .lab-bar-row .lab-k,body:not([data-theme]) .lab-bar-row .lab-bar-k,body[data-theme="light"] .lab-bar-row .lab-k,body[data-theme="light"] .lab-bar-row .lab-bar-k{color:#5a6a85}
+  body:not([data-theme]) .lab-bar-row .lab-bar-val,body[data-theme="light"] .lab-bar-row .lab-bar-val{color:#334155}
+  body:not([data-theme]) .lab-legend,body[data-theme="light"] .lab-legend{color:#5a6a85}
+  body:not([data-theme]) .lab-metrics,body[data-theme="light"] .lab-metrics{color:#94a3b8}
+  body:not([data-theme]) .lab-note,body[data-theme="light"] .lab-note{color:#4b5c74}
 </style>
 <script>
   window.PAGE = {

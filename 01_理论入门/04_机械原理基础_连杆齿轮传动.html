@@ -23,12 +23,12 @@
   .my-calc-line b{color:#9ecbff;font-family:Consolas,monospace}
   .my-ascii{font-size:12.5px;line-height:1.55}
   /* 浅色主题适配(双选择器:body 无 data-theme 属性(首帧)与显式浅色时都生效,防止首帧闪深色) */
-  body:not([data-theme]) .my-calc,html[data-theme="light"] .my-calc{background:rgba(255,255,255,.6);border-color:rgba(37,99,235,.28)}
-  body:not([data-theme]) .my-calc-t,html[data-theme="light"] .my-calc-t{color:#0f172a}
-  body:not([data-theme]) .my-calc-row label,html[data-theme="light"] .my-calc-row label{color:#5a6a85}
-  body:not([data-theme]) .my-calc-row input,html[data-theme="light"] .my-calc-row input{background:#fff;border-color:rgba(60,80,120,.2);color:#1a2332}
-  body:not([data-theme]) .my-calc-out,html[data-theme="light"] .my-calc-out{color:#3a4759}
-  body:not([data-theme]) .my-calc-line b,html[data-theme="light"] .my-calc-line b{color:#1d4ed8}
+  body:not([data-theme]) .my-calc,body[data-theme="light"] .my-calc{background:rgba(255,255,255,.6);border-color:rgba(37,99,235,.28)}
+  body:not([data-theme]) .my-calc-t,body[data-theme="light"] .my-calc-t{color:#0f172a}
+  body:not([data-theme]) .my-calc-row label,body[data-theme="light"] .my-calc-row label{color:#5a6a85}
+  body:not([data-theme]) .my-calc-row input,body[data-theme="light"] .my-calc-row input{background:#fff;border-color:rgba(60,80,120,.2);color:#1a2332}
+  body:not([data-theme]) .my-calc-out,body[data-theme="light"] .my-calc-out{color:#3a4759}
+  body:not([data-theme]) .my-calc-line b,body[data-theme="light"] .my-calc-line b{color:#1d4ed8}
 </style>
 <script>
   /* 页面配置:导航/面包屑/前后翻页/打卡 全部由 site.js 读取 */

@@ -14,27 +14,27 @@
   .my-prod-tabs button{border:1px solid #3a4658;background:rgba(20,26,36,.9);color:#aeb9c9;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13.5px;font-family:inherit;transition:all .18s}
   .my-prod-tabs button:hover{border-color:#3b82f6;color:#fff}
   .my-prod-tabs button.on{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-color:#3b82f6;font-weight:700}
-  html[data-theme="light"] .my-prod-tabs button{background:rgba(255,255,255,.75);color:#334155}
-  html[data-theme="light"] .my-prod-tabs button.on{background:#2563eb;color:#fff}
+  body[data-theme="light"] .my-prod-tabs button{background:rgba(255,255,255,.75);color:#334155}
+  body[data-theme="light"] .my-prod-tabs button.on{background:#2563eb;color:#fff}
   .my-stage{display:flex;gap:10px;min-height:540px;align-items:stretch}
   .my-left{width:190px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px;max-height:560px;overflow:auto}
-  html[data-theme="light"] .my-left{background:rgba(255,255,255,.8)}
+  body[data-theme="light"] .my-left{background:rgba(255,255,255,.8)}
   .my-left h4{font-size:12px;color:#8b98ab;margin:4px 2px 8px;letter-spacing:.08em;text-transform:uppercase}
-  html[data-theme="light"] .my-left h4{color:#64748b}
+  body[data-theme="light"] .my-left h4{color:#64748b}
   .my-part{display:flex;align-items:center;gap:7px;padding:6px 8px;margin-bottom:3px;border-radius:7px;cursor:pointer;font-size:12.5px;color:#c3ccd9;border:1px solid transparent;transition:all .15s;user-select:none}
   .my-part:hover{background:rgba(59,130,246,.13);color:#fff}
   .my-part.on{background:rgba(59,130,246,.22);border-color:#3b82f6;color:#fff}
   .my-part .dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-  html[data-theme="light"] .my-part{color:#475569}
-  html[data-theme="light"] .my-part.on{color:#1d4ed8}
+  body[data-theme="light"] .my-part{color:#475569}
+  body[data-theme="light"] .my-part.on{color:#1d4ed8}
   /* 视口与左右栏等高协调(2026-08-17):左右栏 max-height 560px,视口同限高,
      避免「3D 框比两边介绍框长很多」的不协调 */
   .my-view{flex:1;position:relative;background:radial-gradient(ellipse at 50% 38%,#232c3b 0%,#141a25 58%,#0d1119 100%);border:1px solid #2a3547;border-radius:12px;overflow:hidden;min-width:0;min-height:540px;max-height:560px}
-  html[data-theme="light"] .my-view{background:radial-gradient(ellipse at 50% 38%,#e8edf5 0%,#c8d2e0 58%,#aebacb 100%)}
+  body[data-theme="light"] .my-view{background:radial-gradient(ellipse at 50% 38%,#e8edf5 0%,#c8d2e0 58%,#aebacb 100%)}
   .my-view canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
   .my-view canvas:active{cursor:grabbing}
   .my-hint{position:absolute;left:12px;bottom:10px;font-size:11.5px;color:#7c8a9d;pointer-events:none;letter-spacing:.03em}
-  html[data-theme="light"] .my-hint{color:#5a6a85}
+  body[data-theme="light"] .my-hint{color:#5a6a85}
   .my-loading{position:absolute;left:0;right:0;top:40%;text-align:center;color:#9ecbff;font-size:13px;letter-spacing:.05em;pointer-events:none;z-index:3}
   /* ===== 3D 加载进度条 + 诊断探针(2026-08-17,吸取 3D 解剖页教训) ===== */
   .my-progress{position:absolute;left:24px;right:24px;top:46%;pointer-events:none;z-index:3}
@@ -55,31 +55,31 @@
   .my-clip{position:absolute;right:10px;top:10px;font-size:11.5px;color:#9ecbff;background:rgba(13,17,23,.7);border:1px solid rgba(59,130,246,.4);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:6px;z-index:5}
   .my-clip input{width:90px;accent-color:#3b82f6}
   .my-right{width:230px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:12px;max-height:560px;overflow:auto}
-  html[data-theme="light"] .my-right{background:rgba(255,255,255,.8)}
+  body[data-theme="light"] .my-right{background:rgba(255,255,255,.8)}
   .my-right h4{font-size:12px;color:#8b98ab;margin:0 0 8px;letter-spacing:.08em;text-transform:uppercase}
-  html[data-theme="light"] .my-right h4{color:#64748b}
+  body[data-theme="light"] .my-right h4{color:#64748b}
   .my-pname{font-size:15px;font-weight:800;color:#fff;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08)}
-  html[data-theme="light"] .my-pname{color:#1e293b;border-color:rgba(15,23,42,.1)}
+  body[data-theme="light"] .my-pname{color:#1e293b;border-color:rgba(15,23,42,.1)}
   .my-prow{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.06);line-height:1.6}
   .my-prow b{color:#9aa9bc;font-weight:500;flex-shrink:0}
-  html[data-theme="light"] .my-prow b{color:#64748b}
+  body[data-theme="light"] .my-prow b{color:#64748b}
   .my-prow span{color:#d7dee9;text-align:right}
-  html[data-theme="light"] .my-prow span{color:#334155}
+  body[data-theme="light"] .my-prow span{color:#334155}
   .my-pdesc{font-size:12.5px;color:#aeb9c9;line-height:1.85;margin-top:10px}
-  html[data-theme="light"] .my-pdesc{color:#475569}
+  body[data-theme="light"] .my-pdesc{color:#475569}
   .my-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px 12px}
-  html[data-theme="light"] .my-bar{background:rgba(255,255,255,.8)}
+  body[data-theme="light"] .my-bar{background:rgba(255,255,255,.8)}
   .my-bar button{border:1px solid #3a4658;background:rgba(20,26,36,.9);color:#c3ccd9;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12.5px;font-family:inherit;transition:all .15s}
   .my-bar button:hover{border-color:#3b82f6;color:#fff}
   .my-bar button.on{background:#16a34a;color:#fff;border-color:#16a34a}
-  html[data-theme="light"] .my-bar button{background:#fff;color:#334155}
+  body[data-theme="light"] .my-bar button{background:#fff;color:#334155}
   .my-bar label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#9aa9bc}
-  html[data-theme="light"] .my-bar label{color:#64748b}
+  body[data-theme="light"] .my-bar label{color:#64748b}
   .my-bar input[type=range]{width:110px;accent-color:#3b82f6}
   .my-info{margin-top:10px;font-size:13.5px;line-height:2;border-left:3px solid #2563eb;background:rgba(37,99,235,.06);padding:8px 12px;border-radius:0 8px 8px 0}
-  html[data-theme="light"] .my-info{color:#334155}
+  body[data-theme="light"] .my-info{color:#334155}
   .my-info b{color:#60a5fa}
-  html[data-theme="light"] .my-info b{color:#1d4ed8}
+  body[data-theme="light"] .my-info b{color:#1d4ed8}
   .my-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:12px;color:#94a3b8}
   .my-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
   @media (max-width:900px){

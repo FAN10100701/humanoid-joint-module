@@ -17,11 +17,11 @@
   .my-lv-1{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.4)}
   .my-lv-2{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.4)}
   .my-lv-3{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.4)}
-  /* 浅色主题适配(与全站 body:not([data-theme]),html[data-theme="light"] 玻璃风格一致) */
-  body:not([data-theme]),html[data-theme="light"] .my-formula{background:#ffffff;border-color:rgba(60,80,120,.14);border-left-color:#2563eb;color:#1e3a8a}
-  body:not([data-theme]),html[data-theme="light"] .my-lv-1{background:rgba(34,197,94,.14);color:#15803d;border-color:rgba(34,197,94,.45)}
-  body:not([data-theme]),html[data-theme="light"] .my-lv-2{background:rgba(245,158,11,.16);color:#b45309;border-color:rgba(245,158,11,.5)}
-  body:not([data-theme]),html[data-theme="light"] .my-lv-3{background:rgba(239,68,68,.12);color:#b91c1c;border-color:rgba(239,68,68,.45)}
+  /* 浅色主题适配(与全站 body:not([data-theme]),body[data-theme="light"] 玻璃风格一致) */
+  body:not([data-theme]),body[data-theme="light"] .my-formula{background:#ffffff;border-color:rgba(60,80,120,.14);border-left-color:#2563eb;color:#1e3a8a}
+  body:not([data-theme]),body[data-theme="light"] .my-lv-1{background:rgba(34,197,94,.14);color:#15803d;border-color:rgba(34,197,94,.45)}
+  body:not([data-theme]),body[data-theme="light"] .my-lv-2{background:rgba(245,158,11,.16);color:#b45309;border-color:rgba(245,158,11,.5)}
+  body:not([data-theme]),body[data-theme="light"] .my-lv-3{background:rgba(239,68,68,.12);color:#b91c1c;border-color:rgba(239,68,68,.45)}
 </style>
 <script>
   window.PAGE = {
@@ -144,7 +144,7 @@
     .zmp-lab input[type=range]{vertical-align:middle;accent-color:#2563eb;width:150px}
     .zmp-read{font-size:13.5px;line-height:2;margin-top:8px}
     .zmp-read b{font-family:Consolas,monospace;color:#34d399}
-    body:not([data-theme]),html[data-theme="light"] .zmp-read b{color:#047857}
+    body:not([data-theme]),body[data-theme="light"] .zmp-read b{color:#047857}
   </style>
 
   <h2><span class="h2-num">4</span> 全身控制(WBC):一个 QP 算出所有关节力矩</h2>

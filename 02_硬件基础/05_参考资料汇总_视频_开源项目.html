@@ -62,13 +62,13 @@
   .my-term-explain{font-size:13px;color:#9aa4b2;line-height:1.7}
 
   /* 浅色主题适配(与 site.css 的苹果透亮玻璃风格一致) */
-  body:not([data-theme]) .my-res-card,html[data-theme="light"] .my-res-card,
-  body:not([data-theme]) .my-term-card,html[data-theme="light"] .my-term-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
-  body:not([data-theme]) a.my-res-card:hover,html[data-theme="light"] a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
-  body:not([data-theme]) .my-res-title,html[data-theme="light"] .my-res-title{color:#0f172a}
-  body:not([data-theme]) .my-res-desc,html[data-theme="light"] .my-res-desc{color:#5a6a85}
-  body:not([data-theme]) .my-term-name,html[data-theme="light"] .my-term-name{color:#0f172a}
-  body:not([data-theme]) .my-term-explain,html[data-theme="light"] .my-term-explain{color:#5a6a85}
+  body:not([data-theme]) .my-res-card,body[data-theme="light"] .my-res-card,
+  body:not([data-theme]) .my-term-card,body[data-theme="light"] .my-term-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  body:not([data-theme]) a.my-res-card:hover,body[data-theme="light"] a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  body:not([data-theme]) .my-res-title,body[data-theme="light"] .my-res-title{color:#0f172a}
+  body:not([data-theme]) .my-res-desc,body[data-theme="light"] .my-res-desc{color:#5a6a85}
+  body:not([data-theme]) .my-term-name,body[data-theme="light"] .my-term-name{color:#0f172a}
+  body:not([data-theme]) .my-term-explain,body[data-theme="light"] .my-term-explain{color:#5a6a85}
 </style>
 <script>
   window.PAGE = {
