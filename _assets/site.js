@@ -272,61 +272,39 @@
     document.addEventListener("keydown", hide);
   }
 
-  /* ---------- Giscus 评论区(配置驱动,见 _assets/giscus-config.js) ---------- */
-  function initGiscus(){
+  /* ---------- 评论区(Twikoo,配置见 _assets/giscus-config.js;替代被墙的 giscus.app) ---------- */
+  function initComments(){
     var P = page();
     if(!P || !P.pageId) return;
-    if(!window.GISCUS_CONFIG){
-      /* 【修复】配置文件从未被页面直接引入——这里动态加载,加载成功后再挂载评论区 */
+    if(!window.COMMENTS_CONFIG){
+      /* 动态加载配置文件(内容页未直接引入),加载成功后再挂载 */
       var s = document.createElement("script");
       s.src = (P.root || "") + "/_assets/giscus-config.js";
-      s.onload = function(){ mountGiscus(); };
+      s.onload = function(){ mountComments(); };
       document.head.appendChild(s);
       return;
     }
-    mountGiscus();
+    mountComments();
   }
-  function mountGiscus(){
-    if(!window.GISCUS_CONFIG || !window.GISCUS_CONFIG.repoId) return;   /* 未配置:不加载 */
+  function mountComments(){
+    var cfg = window.COMMENTS_CONFIG;
+    if(!cfg || !cfg.envId) return;   /* 未配置 envId:不显示评论区 */
     var c = document.querySelector(".container");
     if(!c) return;
     var box = document.createElement("div");
     box.className = "giscus-wrap";
-    box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="giscusEl"></div>';
+    box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="tcomment"></div>';
     c.appendChild(box);
-    var theme = document.body.getAttribute("data-theme") === "light" ? "light" : "dark";
-    /* 用 giscus 官方 Web Component(giscus.mjs)直接加载:
-       主源 jsdelivr(国内可达性远好于 giscus.app),失败回退 fastly 节点 */
-    function mount(src){
-      var el = document.getElementById("giscusEl");
-      if(!el) return;
-      el.innerHTML = "";
-      var w = document.createElement("giscus-widget");
-      w.setAttribute("repo", window.GISCUS_CONFIG.repo);
-      w.setAttribute("repoid", window.GISCUS_CONFIG.repoId);
-      w.setAttribute("category", window.GISCUS_CONFIG.category);
-      w.setAttribute("categoryid", window.GISCUS_CONFIG.categoryId);
-      w.setAttribute("mapping", "pathname");
-      w.setAttribute("strict", "0");
-      w.setAttribute("reactionsenabled", "1");
-      w.setAttribute("emitmetadata", "0");
-      w.setAttribute("inputposition", "bottom");
-      w.setAttribute("theme", theme);
-      w.setAttribute("lang", "zh-CN");
-      el.appendChild(w);
-      var m = document.createElement("script");
-      m.type = "module";
-      /* 用 /+esm 端点:giscus.mjs 依赖裸说明符 "lit",/+esm 会把裸导入重写为可浏览器加载的 URL
-         (直接用 dist/giscus.mjs 会因无法解析 "lit" 而静默失败,评论区只剩标题) */
-      m.src = src;
-      m.onerror = function(){
-        if(m.getAttribute("data-fb")) return;
-        m.setAttribute("data-fb", "1");
-        mount("https://fastly.jsdelivr.net/npm/giscus@1.6.0/+esm");
-      };
-      document.body.appendChild(m);
-    }
-    mount("https://cdn.jsdelivr.net/npm/giscus@1.6.0/+esm");
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.all.min.js";
+    s.onload = function(){
+      if(window.twikoo){
+        try{
+          twikoo.init({ envId: cfg.envId, el: "#tcomment", region: cfg.region || "" });
+        }catch(e){ console.warn("[评论] Twikoo 初始化失败:", e); }
+      }
+    };
+    document.head.appendChild(s);
   }
 
   /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ---------- */
@@ -728,8 +706,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initGiscus(); initKaTeX(); injectJsonLd(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initGiscus(); initKaTeX(); injectJsonLd();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd();
   }
 })();
