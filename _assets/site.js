@@ -295,16 +295,26 @@
     box.className = "giscus-wrap";
     box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="tcomment"></div>';
     c.appendChild(box);
-    var s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.all.min.js";
-    s.onload = function(){
-      if(window.twikoo){
-        try{
-          twikoo.init({ envId: cfg.envId, el: "#tcomment", region: cfg.region || "" });
-        }catch(e){ console.warn("[评论] Twikoo 初始化失败:", e); }
-      }
-    };
-    document.head.appendChild(s);
+    /* Twikoo 前端多 CDN 回退:jsdelivr(主) → npmmirror(国内) → unpkg */
+    var CDNS = [
+      "https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.all.min.js",
+      "https://registry.npmmirror.com/twikoo/1.6.39/files/dist/twikoo.all.min.js",
+      "https://unpkg.com/twikoo@1.6.39/dist/twikoo.all.min.js"
+    ];
+    function loadTwikoo(i){
+      if(i >= CDNS.length) return;
+      var s = document.createElement("script");
+      s.src = CDNS[i];
+      s.onload = function(){
+        if(window.twikoo){
+          try{ twikoo.init({ envId: cfg.envId, el: "#tcomment", region: cfg.region || "" }); }
+          catch(e){ console.warn("[评论] Twikoo 初始化失败:", e); }
+        }
+      };
+      s.onerror = function(){ loadTwikoo(i + 1); };
+      document.head.appendChild(s);
+    }
+    loadTwikoo(0);
   }
 
   /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ---------- */

@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://cyco.top/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/00_3D解剖/人形机器人解剖式知识可视化.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/00_3D解剖/减速器剖面图详解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://cyco.top/00_3D解剖/减速器精细模型下载整合教程.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/00_3D解剖/电机编码器与灵巧手3D拆解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/01_整体知识框架_思维导图.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/01_理论入门/03_驱动电路模块认知_交互式图解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
@@ -65,5 +65,4 @@
   <url><loc>https://cyco.top/02_硬件基础/16_PCB_Layout检查清单.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/04_升级进阶/03_整机电气架构与安全设计.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/10_学习数据分析.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://cyco.top/00_3D解剖/电机编码器与灵巧手3D拆解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>

@@ -16,6 +16,11 @@
   .my-lv-1{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.4)}
   .my-lv-2{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.4)}
   .my-lv-3{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.4)}
+  /* 浅色主题适配(与全站 body:not([data-theme]),body[data-theme="light"] 玻璃风格一致) */
+  body:not([data-theme]),body[data-theme="light"] .my-formula{background:#ffffff;border-color:rgba(60,80,120,.14);border-left-color:#2563eb;color:#1e3a8a}
+  body:not([data-theme]),body[data-theme="light"] .my-lv-1{background:rgba(34,197,94,.14);color:#15803d;border-color:rgba(34,197,94,.45)}
+  body:not([data-theme]),body[data-theme="light"] .my-lv-2{background:rgba(245,158,11,.16);color:#b45309;border-color:rgba(245,158,11,.5)}
+  body:not([data-theme]),body[data-theme="light"] .my-lv-3{background:rgba(239,68,68,.12);color:#b91c1c;border-color:rgba(239,68,68,.45)}
 </style>
 <script>
   window.PAGE = {
@@ -138,7 +143,7 @@
     .zmp-lab input[type=range]{vertical-align:middle;accent-color:#2563eb;width:150px}
     .zmp-read{font-size:13.5px;line-height:2;margin-top:8px}
     .zmp-read b{font-family:Consolas,monospace;color:#34d399}
-    body[data-theme="light"] .zmp-read b{color:#047857}
+    body:not([data-theme]),body[data-theme="light"] .zmp-read b{color:#047857}
   </style>
 
   <h2><span class="h2-num">4</span> 全身控制(WBC):一个 QP 算出所有关节力矩</h2>
@@ -433,51 +438,67 @@ function zpDraw(){
   var zAmp = A * (1 + zc*w*w/g);          /* ZMP 摆幅(LIPM 解析) */
   var stable = zAmp <= footHalf;
   function paint(){
+    var light = document.body.getAttribute('data-theme') !== 'dark';
+    var P = light ? {
+      bg:'#ffffff', grid:'#e3eaf4', ground:'#94a3b8', foot:'#cbd5e1',
+      okBg:'rgba(34,197,94,.15)', badBg:'rgba(239,68,68,.14)',
+      okTx:'#15803d', badTx:'#b91c1c',
+      rod:'#94a3b8', com:'#2563eb', comTx:'#1d4ed8',
+      zmp:'#16a34a', trailC:'rgba(37,99,235,.5)', trailZ:'rgba(22,163,74,.55)',
+      note:'#64748b'
+    } : {
+      bg:'#0b1626', grid:'#1e3a5f', ground:'#475569', foot:'#334155',
+      okBg:'rgba(34,197,94,.12)', badBg:'rgba(239,68,68,.15)',
+      okTx:'#34d399', badTx:'#f87171',
+      rod:'#64748b', com:'#60a5fa', comTx:'#93c5fd',
+      zmp:'#22c55e', trailC:'rgba(96,165,250,.5)', trailZ:'rgba(34,197,94,.6)',
+      note:'rgba(148,163,184,.85)'
+    };
     ctx.clearRect(0,0,W,H);
-    ctx.fillStyle = '#0b1626'; ctx.fillRect(0,0,W,H);
-    ctx.strokeStyle = '#1e3a5f';
+    ctx.fillStyle = P.bg; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = P.grid;
     for(var gx=0; gx<W; gx+=30){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
     /* 地面与双脚(位置固定 ±0.12m) */
-    ctx.strokeStyle = '#475569'; ctx.lineWidth = 3;
+    ctx.strokeStyle = P.ground; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(40, ground); ctx.lineTo(W-40, ground); ctx.stroke();
     [-0.12, 0.12].forEach(function(fx){
-      ctx.fillStyle = '#334155';
+      ctx.fillStyle = P.foot;
       ctx.fillRect(cx + (fx-footHalf)*scale - 0, ground, footHalf*2*scale, 12);
     });
     /* 支撑域(两只脚外缘之间) */
     var domL = cx + (-0.12-footHalf)*scale, domR = cx + (0.12+footHalf)*scale;
-    ctx.fillStyle = stable ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.15)';
+    ctx.fillStyle = stable ? P.okBg : P.badBg;
     ctx.fillRect(domL, ground-70, domR-domL, 82);
-    ctx.fillStyle = stable ? '#34d399' : '#f87171'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle = stable ? P.okTx : P.badTx; ctx.font='12px sans-serif'; ctx.textAlign='center';
     ctx.fillText(stable ? '✔ ZMP 在支撑域内(稳定)' : '✘ ZMP 超出支撑域(倾覆!)', cx, ground-76);
     /* 躯干(摆动的倒立摆) */
     var comX = A * Math.sin(zpT * w * Math.PI);   /* 便于动画节奏,用 zpT 累计相位 */
     var comPx = cx + comX * scale, comPy = ground - zc * (scale*0.35);
-    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 4;
+    ctx.strokeStyle = P.rod; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(cx + comX*0.2*scale*0.2, ground); ctx.lineTo(comPx, comPy); ctx.stroke();
-    ctx.fillStyle = '#60a5fa';
+    ctx.fillStyle = P.com;
     ctx.beginPath(); ctx.arc(comPx, comPy, 14, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#93c5fd'; ctx.font='12px sans-serif';
+    ctx.fillStyle = P.comTx; ctx.font='12px sans-serif';
     ctx.fillText('CoM', comPx, comPy - 20);
     /* ZMP 标记 */
     var zmpX = A*Math.sin(zpT * w * Math.PI) * (1 + zc*w*w/g);
     var zmpPx = cx + zmpX * scale;
-    ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = P.zmp; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.moveTo(zmpPx-9, ground-4); ctx.lineTo(zmpPx+9, ground-4);
     ctx.moveTo(zmpPx, ground-13); ctx.lineTo(zmpPx, ground+5); ctx.stroke();
     /* 轨迹带(上一周期包络) */
-    ctx.strokeStyle = 'rgba(96,165,250,.5)'; ctx.setLineDash([5,5]);
+    ctx.strokeStyle = P.trailC; ctx.setLineDash([5,5]);
     ctx.beginPath(); ctx.moveTo(cx - A*scale, ground-100); ctx.lineTo(cx + A*scale, ground-100); ctx.stroke();
-    ctx.strokeStyle = 'rgba(34,197,94,.6)';
+    ctx.strokeStyle = P.trailZ;
     ctx.beginPath(); ctx.moveTo(cx - zAmp*scale, ground-116); ctx.lineTo(cx + zAmp*scale, ground-116); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(148,163,184,.85)'; ctx.font='11.5px sans-serif'; ctx.textAlign='left';
+    ctx.fillStyle = P.note; ctx.font='11.5px sans-serif'; ctx.textAlign='left';
     ctx.fillText('上虚线=CoM 摆幅包络 · 下虚线=ZMP 摆幅包络(ZMP 更宽!)', 44, ground-130);
     document.getElementById('zpRead').innerHTML =
       'CoM 摆幅 = <b>' + A.toFixed(3) + ' m</b> · ZMP 摆幅 = A·(1 + z_c·ω²/g) = <b>' + zAmp.toFixed(3) + ' m</b>' +
       ' · 支撑半宽 = <b>0.060 m</b> ' +
-      (stable ? '<span style="color:#34d399">✔ 稳定:ZMP 未出脚掌,踝关节转矩扛得住</span>'
-              : '<span style="color:#f87171">✘ 倾覆:需要加快迈步转移支撑(这正是"步频快了才稳"的数学)</span>') +
+      (stable ? '<span style="color:' + P.okTx + '">✔ 稳定:ZMP 未出脚掌,踝关节转矩扛得住</span>'
+              : '<span style="color:' + P.badTx + '">✘ 倾覆:需要加快迈步转移支撑(这正是"步频快了才稳"的数学)</span>') +
       ' · 提示:频率拉高或摆幅拉大,看 ZMP 如何先于 CoM 失稳。';
   }
   if(!zpRaf){

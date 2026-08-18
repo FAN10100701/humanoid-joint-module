@@ -16,7 +16,8 @@ function Check($name, $ok, $detail){
 }
 
 $pages = Get-ChildItem -Path $root -Recurse -File -Include *.html | Where-Object {
-  $_.FullName -notmatch 'edge_prof|node_modules|\.git' -and $_.FullName -notmatch '\\_'
+  $_.FullName -notmatch 'edge_prof|node_modules|\.git' -and $_.FullName -notmatch '\\_' -and
+  -not ($_.Name -eq 'index.html' -and $_.Directory.Parent.FullName -eq $root)   # 板块根目录的重定向 index.html 排除
 }
 # pages that intentionally have no search-index entry (404 page + 05 redirect stubs + baidu verify file)
 # NOTE: keep this file ASCII-safe (PS 5.1 reads BOM-less UTF-8 as ANSI/GBK, Chinese chars get mangled)

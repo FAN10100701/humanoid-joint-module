@@ -13,6 +13,8 @@
   .my-lc .my-it input{margin-top:5px;accent-color:#2563eb;width:15px;height:15px;flex:none}
   .my-lc .my-it .my-why{display:block;font-size:12px;color:#94a3b8}
   .my-lc .my-it.done label{text-decoration:line-through;color:#64748b}
+  .my-new{display:inline-block;font-size:10.5px;color:#fbbf24;border:1px solid #fbbf24;border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:2px;font-weight:normal;line-height:1.5}
+  body[data-theme="light"] .my-new{color:#b45309;border-color:#b45309}
   .my-score{position:sticky;top:8px;z-index:5;background:rgba(15,23,42,.92);backdrop-filter:blur(8px);border:1px solid rgba(59,130,246,.4);border-radius:12px;padding:10px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:14px}
   body[data-theme="light"] .my-score{background:rgba(255,255,255,.94)}
   .my-score b{font-family:Consolas,monospace;color:#34d399;font-size:16px}
@@ -34,8 +36,8 @@
 
   <div class="page-head">
     <h1>🧾 PCB Layout 检查清单(交互式)</h1>
-    <div class="sub">打勾即存(本地)、实时评分、一键导出评审报告——功率板 Layout 的 24 条硬规则,每条附"为什么"。发给板厂/自查两用。</div>
-    <div class="tags"><span class="tag">Layout</span><span class="tag">功率环路</span><span class="tag">DFM</span><span class="tag">检查清单</span></div>
+    <div class="sub">打勾即存(本地)、实时评分、一键导出评审报告——功率板 Layout 的 36 条硬规则,按「叠层与阻抗 / 布局与环路 / 电源与去耦 / 信号与地 / 热与工艺 / 制造检查」六大类组织,每条附"为什么"。发给板厂/自查两用。</div>
+    <div class="tags"><span class="tag">Layout</span><span class="tag">功率环路</span><span class="tag">叠层与阻抗</span><span class="tag">DFM</span><span class="tag">检查清单</span></div>
   </div>
 
   <div class="key-point">
@@ -48,16 +50,214 @@
 
   <div class="my-score">
     <span>完成度 <b id="lcPct">0%</b></span>
-    <span>(<span id="lcNum">0/24</span>)</span>
+    <span>(<span id="lcNum">0/36</span>)</span>
     <button onclick="lcExport()">📋 导出评审报告</button>
     <button onclick="lcReset()">🔄 清空重查</button>
     <span style="font-size:12px;color:#94a3b8" id="lcSaveState"></span>
   </div>
-  <div id="lcList"></div>
 
-  <div class="box box-tip"><b>💡 三条总纲(清单的哲学):</b>①<strong>功率环路最小面积</strong>——所有 EMI 问题的根源是 di/dt 环路面积,缩短"电容→上管→电机→下管→电容"这个环;②<strong>模拟小信号"躲着"功率走</strong>——采样走差分、就近滤波、远离开关节点;③<strong>地不是地</strong>——功率地/模拟地/数字地分区单点汇接,让大电流不流过小信号的参考点。</div>
+  <div class="box box-tip"><b>💡 三条总纲(清单的哲学):</b>①<strong>功率环路最小面积</strong>——所有 EMI 问题的根源是 di/dt 环路面积,缩短"电容→上管→电机→下管→电容"这个环;②<strong>模拟小信号"躲着"功率走</strong>——采样走差分、就近滤波、远离开关节点;③<strong>地不是地</strong>——功率地/模拟地/数字地分区单点汇接,让大电流不流过小信号的参考点。下面 36 条就是这三句话 + 叠层/热/DFM 的工程展开。</div>
 
-  <h2><span class="h2-num">2</span> 本节自测</h2>
+  <!-- ================= 1 叠层与阻抗 ================= -->
+  <h2><span class="h2-num">1</span> 叠层与阻抗</h2>
+  <p>叠层决定整块板的「回流路径地基」:层数怎么排、参考平面在哪、差分阻抗是多少,这三件事先定下来,后面的布局才有约束可依。</p>
+  <div class="my-lc">
+    <h3>叠层与阻抗</h3>
+    <div class="my-it" data-group="叠层与阻抗" data-title="1. 层数选择与叠层对称">
+      <input type="checkbox" id="lcCk0" onchange="lcSave()">
+      <label for="lcCk0"><b>1. 层数选择与叠层对称</b><span class="my-new">补充</span><span class="my-why">💡 2 层板功率/信号同面难兼顾,4 层板用「信号/地/功率/信号」叠层;叠层关于板心对称可防翘曲、应力均匀。</span></label>
+    </div>
+    <div class="my-it" data-group="叠层与阻抗" data-title="2. 差分对阻抗控制">
+      <input type="checkbox" id="lcCk1" onchange="lcSave()">
+      <label for="lcCk1"><b>2. 差分对阻抗控制</b><span class="my-new">补充</span><span class="my-why">💡 CAN 120Ω、编码器 SPI、采样差分对按阻抗计算器(02-11)定线宽/间距;阻抗失配会反射,并把共模噪声转成差模干扰。</span></label>
+    </div>
+    <div class="my-it" data-group="叠层与阻抗" data-title="3. 地平面完整">
+      <input type="checkbox" id="lcCk2" onchange="lcSave()">
+      <label for="lcCk2"><b>3. 地平面完整</b><span class="my-why">💡 信号线下方地平面不割裂;必须开槽处信号禁止跨槽(跨槽=环路面积暴涨)。</span></label>
+    </div>
+    <div class="my-it" data-group="叠层与阻抗" data-title="4. 回流路径与换层过孔">
+      <input type="checkbox" id="lcCk3" onchange="lcSave()">
+      <label for="lcCk3"><b>4. 回流路径与换层过孔</b><span class="my-new">补充</span><span class="my-why">💡 关键信号换层时在过孔旁加回流地过孔,否则回流绕远、环路面积暴涨,EMI 与串扰一起恶化。</span></label>
+    </div>
+  </div>
+
+  <!-- ================= 2 布局与环路 ================= -->
+  <h2><span class="h2-num">2</span> 布局与环路</h2>
+  <p>功率换流环路与栅极驱动环路是 EMI、地弹乃至炸管的头号来源,这一节是所有规则里优先级最高的——先把「大电流、高 di/dt」的回路按住,再谈别的。</p>
+  <div class="my-lc">
+    <h3>功率环路</h3>
+    <div class="my-it" data-group="功率环路" data-title="5. 功率环路面积最小化">
+      <input type="checkbox" id="lcCk4" onchange="lcSave()">
+      <label for="lcCk4"><b>5. 功率环路面积最小化</b><span class="my-why">💡 母线电容→桥臂→电机端子的换流环路最短、最宽;实测环路面积 &lt; 5 cm² 量级。EMI 与地弹的根源。</span></label>
+    </div>
+    <div class="my-it" data-group="功率环路" data-title="6. 母线电容紧贴桥臂">
+      <input type="checkbox" id="lcCk5" onchange="lcSave()">
+      <label for="lcCk5"><b>6. 母线电容紧贴桥臂</b><span class="my-why">💡 电解/大电容 + 0.1µF MLCC 就近并联,高频去耦直接跨在半桥两端。</span></label>
+    </div>
+    <div class="my-it" data-group="功率环路" data-title="7. 相线(输出)短而宽">
+      <input type="checkbox" id="lcCk6" onchange="lcSave()">
+      <label for="lcCk6"><b>7. 相线(输出)短而宽</b><span class="my-why">💡 按载流查宽(1oz 铜约 40mil/A@10℃温升外置参考),过孔多打并联。</span></label>
+    </div>
+    <div class="my-it" data-group="功率环路" data-title="8. 开关节点铜面积克制">
+      <input type="checkbox" id="lcCk7" onchange="lcSave()">
+      <label for="lcCk7"><b>8. 开关节点铜面积克制</b><span class="my-why">💡 相位焊盘只留散热所需,不做成大天线;下方底层禁止走敏感线。</span></label>
+    </div>
+  </div>
+  <div class="my-lc">
+    <h3>栅驱</h3>
+    <div class="my-it" data-group="栅驱" data-title="9. 栅极回路最短">
+      <input type="checkbox" id="lcCk8" onchange="lcSave()">
+      <label for="lcCk8"><b>9. 栅极回路最短</b><span class="my-why">💡 栅驱 IC → 栅极电阻 → MOSFET 栅极,环路 &lt; 1~2cm;源极直接从功率管 kelvin 脚回去。</span></label>
+    </div>
+    <div class="my-it" data-group="栅驱" data-title="10. 自举电容靠近 VB/VS">
+      <input type="checkbox" id="lcCk9" onchange="lcSave()">
+      <label for="lcCk9"><b>10. 自举电容靠近 VB/VS</b><span class="my-why">💡 自举二极管回路短;VS 凯尔文接相位焊盘。</span></label>
+    </div>
+    <div class="my-it" data-group="栅驱" data-title="11. 死区与下拉电阻落实">
+      <input type="checkbox" id="lcCk10" onchange="lcSave()">
+      <label for="lcCk10"><b>11. 死区与下拉电阻落实</b><span class="my-why">💡 每个栅极有下拉(10kΩ量级)防悬空半导通;栅阻与下拉焊盘便于改值。</span></label>
+    </div>
+  </div>
+
+  <!-- ================= 3 电源与去耦 ================= -->
+  <h2><span class="h2-num">3</span> 电源与去耦</h2>
+  <p>母线、DCDC 与各级电源的去耦决定电压「稳不稳」:纹波、噪声和上电浪涌都从这里进入整板,去耦电容的位置比容量更关键。</p>
+  <div class="my-lc">
+    <h3>电源与去耦</h3>
+    <div class="my-it" data-group="电源与去耦" data-title="12. DCDC 功率环路同功率级规则">
+      <input type="checkbox" id="lcCk11" onchange="lcSave()">
+      <label for="lcCk11"><b>12. DCDC 功率环路同功率级规则</b><span class="my-why">💡 BUCK 的输入环路与续流环路同样最小化;电感下方不走线。</span></label>
+    </div>
+    <div class="my-it" data-group="电源与去耦" data-title="13. 上电时序与软启动">
+      <input type="checkbox" id="lcCk12" onchange="lcSave()">
+      <label for="lcCk12"><b>13. 上电时序与软启动</b><span class="my-why">💡 大电容充电有限流(NTC/PMOS);多路电源按序(MCU 先于功率使能)。</span></label>
+    </div>
+    <div class="my-it" data-group="电源与去耦" data-title="14. 去耦电容就近 IC 引脚">
+      <input type="checkbox" id="lcCk13" onchange="lcSave()">
+      <label for="lcCk13"><b>14. 去耦电容就近 IC 引脚</b><span class="my-new">补充</span><span class="my-why">💡 每个电源引脚旁 0.1µF、距引脚 ≤3mm,先过电容再进芯片;大电流 Buck 输出并多颗陶瓷降 ESR,抑制纹波与瞬态跌落。</span></label>
+    </div>
+    <div class="my-it" data-group="电源与去耦" data-title="15. 模拟/数字电源隔离">
+      <input type="checkbox" id="lcCk14" onchange="lcSave()">
+      <label for="lcCk14"><b>15. 模拟/数字电源隔离</b><span class="my-new">补充</span><span class="my-why">💡 VDDA 与 VDD 用磁珠/0Ω+电容隔离,ADC 参考远离开关噪声,否则采样被数字开关毛刺污染。</span></label>
+    </div>
+  </div>
+
+  <!-- ================= 4 信号与地 ================= -->
+  <h2><span class="h2-num">4</span> 信号与地</h2>
+  <p>毫伏级的采样、通信与时钟信号是整板最脆弱的「神经」;地分区则是让几十安培的大电流回流不流进这些小信号的参考点。</p>
+  <div class="my-lc">
+    <h3>采样</h3>
+    <div class="my-it" data-group="采样" data-title="16. 电流采样差分紧耦合">
+      <input type="checkbox" id="lcCk15" onchange="lcSave()">
+      <label for="lcCk15"><b>16. 电流采样差分紧耦合</b><span class="my-why">💡 从采样电阻焊盘对称引出差分对,等长紧邻,远离开关节点与栅驱。</span></label>
+    </div>
+    <div class="my-it" data-group="采样" data-title="17. 采样就近 RC 滤波">
+      <input type="checkbox" id="lcCk16" onchange="lcSave()">
+      <label for="lcCk16"><b>17. 采样就近 RC 滤波</b><span class="my-why">💡 截止频率对准 PWM 频率(如 20kHz PWM 取 100~500kHz 滤波),别把有效带宽滤掉。</span></label>
+    </div>
+    <div class="my-it" data-group="采样" data-title="18. 运放参考与 ADC 共地">
+      <input type="checkbox" id="lcCk17" onchange="lcSave()">
+      <label for="lcCk17"><b>18. 运放参考与 ADC 共地</b><span class="my-why">💡 运放偏置中点、ADC 参考与采样地在模拟区单点相连;禁止穿越功率地。</span></label>
+    </div>
+  </div>
+  <div class="my-lc">
+    <h3>地</h3>
+    <div class="my-it" data-group="地" data-title="19. 三地分区单点汇接">
+      <input type="checkbox" id="lcCk18" onchange="lcSave()">
+      <label for="lcCk18"><b>19. 三地分区单点汇接</b><span class="my-why">💡 功率地/模拟地/数字地分区,一点(或电阻/磁珠)相连;大电流回流不进模拟区。</span></label>
+    </div>
+  </div>
+  <div class="my-lc">
+    <h3>信号完整性</h3>
+    <div class="my-it" data-group="信号完整性" data-title="20. CAN 差分等长">
+      <input type="checkbox" id="lcCk19" onchange="lcSave()">
+      <label for="lcCk19"><b>20. CAN 差分等长</b><span class="my-why">💡 CANH/CANL 等长差分(±1%)+ 双端 120Ω 位置确认;远离电机线。</span></label>
+    </div>
+    <div class="my-it" data-group="信号完整性" data-title="21. 编码器线屏蔽与串接">
+      <input type="checkbox" id="lcCk20" onchange="lcSave()">
+      <label for="lcCk20"><b>21. 编码器线屏蔽与串接</b><span class="my-why">💡 长线编码器用屏蔽线/双绞,板上入口加 ESD/滤波;磁编码器远离功率电感。</span></label>
+    </div>
+    <div class="my-it" data-group="信号完整性" data-title="22. 晶振/时钟区域隔离">
+      <input type="checkbox" id="lcCk21" onchange="lcSave()">
+      <label for="lcCk21"><b>22. 晶振/时钟区域隔离</b><span class="my-why">💡 晶振下方铺地,远离高频开关节点;IMU 靠近结构安装点。</span></label>
+    </div>
+    <div class="my-it" data-group="信号完整性" data-title="23. 高速信号 3W 间距与短桩">
+      <input type="checkbox" id="lcCk22" onchange="lcSave()">
+      <label for="lcCk22"><b>23. 高速信号 3W 间距与短桩</b><span class="my-new">补充</span><span class="my-why">💡 相邻信号线间距 ≥3 倍线宽,高速/时钟避免长残桩(stub)与长平行走线,减小串扰与反射。</span></label>
+    </div>
+    <div class="my-it" data-group="信号完整性" data-title="24. 模拟小信号远离功率区">
+      <input type="checkbox" id="lcCk23" onchange="lcSave()">
+      <label for="lcCk23"><b>24. 模拟小信号远离功率区</b><span class="my-new">补充</span><span class="my-why">💡 采样/编码器/霍尔等模拟线距开关节点 ≥3mm,必须交叉时 90° 垂直;平行走线=主动引入容性耦合。</span></label>
+    </div>
+  </div>
+
+  <!-- ================= 5 热与工艺 ================= -->
+  <h2><span class="h2-num">5</span> 热与工艺</h2>
+  <p>铜箔是免费的散热器,但载流、温升和器件寿命要一起核算——热失效往往比电失效更隐蔽、更难复现。</p>
+  <div class="my-lc">
+    <h3>热与工艺</h3>
+    <div class="my-it" data-group="热与工艺" data-title="25. 发热器件铺铜+过孔阵列">
+      <input type="checkbox" id="lcCk24" onchange="lcSave()">
+      <label for="lcCk24"><b>25. 发热器件铺铜+过孔阵列</b><span class="my-why">💡 MOSFET/DCDC 热焊盘下拉过孔阵列到底层大铜;铜厚与板层数按损耗核算(02-11 计算器)。</span></label>
+    </div>
+    <div class="my-it" data-group="热与工艺" data-title="26. 温度传感点布置">
+      <input type="checkbox" id="lcCk25" onchange="lcSave()">
+      <label for="lcCk25"><b>26. 温度传感点布置</b><span class="my-why">💡 NTC/板温传感贴近发热源但不被其热区误导;电机温度传感走线防护。</span></label>
+    </div>
+    <div class="my-it" data-group="热与工艺" data-title="27. 功率走线载流与温升核算">
+      <input type="checkbox" id="lcCk26" onchange="lcSave()">
+      <label for="lcCk26"><b>27. 功率走线载流与温升核算</b><span class="my-new">补充</span><span class="my-why">💡 1oz 铜按 40mil/A(外置参考)查宽,过孔按 0.5~1A/孔并联;长距离大电流走线按温升降额,避免铜箔熔断。</span></label>
+    </div>
+    <div class="my-it" data-group="热与工艺" data-title="28. 热敏器件远离热源">
+      <input type="checkbox" id="lcCk27" onchange="lcSave()">
+      <label for="lcCk27"><b>28. 热敏器件远离热源</b><span class="my-new">补充</span><span class="my-why">💡 电解电容/晶振/霍尔传感器远离 MOSFET、电感、采样电阻;电解电容寿命随温升每 10°C 约减半。</span></label>
+    </div>
+  </div>
+
+  <!-- ================= 6 制造检查 ================= -->
+  <h2><span class="h2-num">6</span> 制造检查</h2>
+  <p>DFM 决定能不能一次做对、好不好修;ESD 与爬电间距则是量产可靠性与安规的底线,投板前最后过一遍。</p>
+  <div class="my-lc">
+    <h3>DFM 与可制造性</h3>
+    <div class="my-it" data-group="DFM 与可制造性" data-title="29. 丝印与极性齐全">
+      <input type="checkbox" id="lcCk28" onchange="lcSave()">
+      <label for="lcCk28"><b>29. 丝印与极性齐全</b><span class="my-why">💡 二极管/电解/IC1 脚/接插件方向全部可读;测试点标注网络名。</span></label>
+    </div>
+    <div class="my-it" data-group="DFM 与可制造性" data-title="30. 测试点布置">
+      <input type="checkbox" id="lcCk29" onchange="lcSave()">
+      <label for="lcCk29"><b>30. 测试点布置</b><span class="my-why">💡 关键网络(母线电压/三相/电流采样/地)留 ≥1mm 测试点,示波器地环路好下针。</span></label>
+    </div>
+    <div class="my-it" data-group="DFM 与可制造性" data-title="31. 安装孔与禁布区">
+      <input type="checkbox" id="lcCk30" onchange="lcSave()">
+      <label for="lcCk30"><b>31. 安装孔与禁布区</b><span class="my-why">💡 螺丝孔禁布区 ≥ 孔径 2 倍;外壳/结构件投影区不走线;接插件不悬臂受力。</span></label>
+    </div>
+    <div class="my-it" data-group="DFM 与可制造性" data-title="32. 可维修性">
+      <input type="checkbox" id="lcCk31" onchange="lcSave()">
+      <label for="lcCk31"><b>32. 可维修性</b><span class="my-why">💡 易损件(栅驱/驱动芯片)周边 3mm 无高件;0402 以下器件慎用(手焊难)。</span></label>
+    </div>
+    <div class="my-it" data-group="DFM 与可制造性" data-title="33. 版本与日期丝印">
+      <input type="checkbox" id="lcCk32" onchange="lcSave()">
+      <label for="lcCk32"><b>33. 版本与日期丝印</b><span class="my-why">💡 板上印版本号+日期,与 BOM/原理图版本对应——返修事故的头号来源是版本错配。</span></label>
+    </div>
+  </div>
+  <div class="my-lc">
+    <h3>ESD 与连接器</h3>
+    <div class="my-it" data-group="ESD 与连接器" data-title="34. ESD 防护就近连接器">
+      <input type="checkbox" id="lcCk33" onchange="lcSave()">
+      <label for="lcCk33"><b>34. ESD 防护就近连接器</b><span class="my-new">补充</span><span class="my-why">💡 对外连接器(CAN/编码器/按键)入口加 TVS/ESD 二极管,紧贴连接器、地回路短,先过保护再过信号。</span></label>
+    </div>
+    <div class="my-it" data-group="ESD 与连接器" data-title="35. 连接器防呆与机械强度">
+      <input type="checkbox" id="lcCk34" onchange="lcSave()">
+      <label for="lcCk34"><b>35. 连接器防呆与机械强度</b><span class="my-new">补充</span><span class="my-why">💡 连接器类型/方向防呆+丝印,焊盘加固、加定位孔;大电流端子多 pin 并联均流,不悬臂受力。</span></label>
+    </div>
+    <div class="my-it" data-group="ESD 与连接器" data-title="36. 爬电间距与安规">
+      <input type="checkbox" id="lcCk35" onchange="lcSave()">
+      <label for="lcCk35"><b>36. 爬电间距与安规</b><span class="my-new">补充</span><span class="my-why">💡 高压(>60V)按污染等级核算爬电距离,强弱电分区留足间距;低压板也避免丝印/器件压焊盘造成隐性短路。</span></label>
+    </div>
+  </div>
+
+  <!-- ================= 7 本节自测 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
   <div class="quiz">
     <div class="quiz-q">1. 功率环路(母线电容→MOSFET→电机线→电容)面积过大,最直接的后果是?</div>
     <div class="quiz-options" data-answer="B">
@@ -91,79 +291,83 @@
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:自举回路在每次 PWM 下方波瞬间充放电,回路电感大→高侧供电跌落→上管开通不足→发热甚至关不断。VS 必须凯尔文连接到相位焊盘,否则电机大电流的压降会污染参考。</div>
   </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 四层功率驱动板最合理的层叠顺序是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 信号 / 功率 / 信号 / 地</button>
+      <button data-v="B">B. 信号 / 地 / 功率 / 信号,关键信号紧邻完整地平面</button>
+      <button data-v="C">C. 功率 / 信号 / 信号 / 地</button>
+      <button data-v="D">D. 地 / 信号 / 功率 / 信号</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:关键信号要「贴着」完整参考平面走,回流路径最短;功率层夹在中间、与地平面相邻,还能利用平面间电容去耦。信号/地/功率/信号 让顶层与底层信号都各有一个紧邻参考平面。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 对外连接器(如 CAN/编码器)的 ESD 防护,正确做法是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 保护器件放板中央,离连接器越远越好</button>
+      <button data-v="B">B. TVS/ESD 二极管紧贴连接器放置、地回路最短,先过保护再进芯片</button>
+      <button data-v="C">C. 只在软件里加滤波即可</button>
+      <button data-v="D">D. 连接器不接任何保护,信号最干净</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:ESD 电流是纳秒级瞬态,保护器件若离连接器远,浪涌会先冲进后级器件并沿线辐射;必须「贴脸」放在入口、保护地回流入地最短。软件滤波处理不了 μs 级 ESD 尖峰。</div>
+  </div>
 
-  <div class="box box-tip"><b>📌 本节小结:</b>功率环路最小面积、差分采样就近滤波、地分区单点、自举/栅驱回路最短、热与工艺(DFM)收尾——24 条清单就是这五句话的展开。清单打满 100% 再投板,省的是三轮打样的两周时间。</div>
-  <div class="box box-warn"><b>🤔 思考题:</b>1. 四层板该怎么排层叠(信号/地/功率/信号)?地平面完整性与功率回流路径如何兼得?<br>2. 为什么编码器磁环要远离电机绕组端?板上的磁编码器又该避开哪些器件?</div>
+  <div class="box box-tip"><b>📌 本节小结:</b>36 条清单就是六句话的展开——①叠层定回流地基、②功率环路最小面积、③电源去耦就近引脚、④差分采样就近滤波 + 地分区单点、⑤铜箔散热与载流温升一起算、⑥DFM/ESD/爬电收尾。清单打满 100% 再投板,省的是三轮打样的两周时间。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 四层板该怎么排层叠(信号/地/功率/信号)?地平面完整性与功率回流路径如何兼得?<br>2. 为什么编码器磁环要远离电机绕组端?板上的磁编码器又该避开哪些器件?<br>3. 一条 CAN 差分对若在换层时只在信号过孔旁打一个过孔、忘了加回流地过孔,会发生什么?</div>
+
+  <!-- ================= 8 参考资料 ================= -->
+  <h2><span class="h2-num">8</span> 参考资料</h2>
+  <p style="color:#6b7280;font-size:12.5px;">资料整理更新至 2026-08 · 载流/间距/爬电等经验值参考 IPC-2221 与主流芯片厂商布局指南。</p>
+  <ul>
+    <li><a href="https://www.ti.com/product/DRV8323" target="_blank" rel="noopener">TI DRV8323:三相智能栅驱(布局与去耦参考,官方)</a></li>
+    <li><a href="https://www.ti.com.cn/document-viewer/cn/DRV8301/datasheet" target="_blank" rel="noopener">DRV8301 数据手册(TI 官方,栅驱/采样/母线布局建议)</a></li>
+    <li><a href="https://github.com/odriverobotics/ODrive" target="_blank" rel="noopener">ODrive 开源仓库:功率级 PCB 布局范例(GitHub)</a></li>
+    <li><a href="https://github.com/vedderb/bldc" target="_blank" rel="noopener">VESC 开源仓库(github.com/vedderb/bldc)</a></li>
+    <li><a href="https://saturnpcb.com/saturn-pcb-toolkit/" target="_blank" rel="noopener">Saturn PCB Toolkit:差分阻抗/载流/间距免费计算器</a></li>
+    <li><a href="https://www.ipc.org/ipc-2221" target="_blank" rel="noopener">IPC-2221:印制板设计通用标准(载流与间距基准)</a></li>
+  </ul>
 
 </div><!-- /container -->
 <script>
-/* ============ 24 条 Layout 检查清单(勾选本地保存) ============ */
-var LC = [
- ["功率环路","1. 功率环路面积最小化","母线电容→桥臂→电机端子的换流环路最短、最宽;实测环路面积 &lt; 5 cm² 量级。EMI 与地弹的根源。"],
- ["功率环路","2. 母线电容紧贴桥臂","电解/大电容 + 0.1µF MLCC 就近并联,高频去耦直接跨在半桥两端。"],
- ["功率环路","3. 相线(输出)短而宽","按载流查宽(1oz 铜约 40mil/A@10℃温升外置参考),过孔多打并联。"],
- ["功率环路","4. 开关节点铜面积克制","相位焊盘只留散热所需,不做成大天线;下方底层禁止走敏感线。"],
- ["栅驱","5. 栅极回路最短","栅驱 IC → 栅极电阻 → MOSFET 栅极,环路 &lt; 1~2cm;源极直接从功率管 kelvin 脚回去。"],
- ["栅驱","6. 自举电容靠近 VB/VS","自举二极管回路短;VS 凯尔文接相位焊盘。"],
- ["栅驱","7. 死区与下拉电阻落实","每个栅极有下拉(10kΩ量级)防悬空半导通;栅阻与下拉焊盘便于改值。"],
- ["采样","8. 电流采样差分紧耦合","从采样电阻焊盘对称引出差分对,等长紧邻,远离开关节点与栅驱。"],
- ["采样","9. 采样就近 RC 滤波","截止频率对准 PWM 频率(如 20kHz PWM 取 100~500kHz 滤波),别把有效带宽滤掉。"],
- ["采样","10. 运放参考与 ADC 共地","运放偏置中点、ADC 参考与采样地在模拟区单点相连;禁止穿越功率地。"],
- ["地","11. 三地分区单点汇接","功率地/模拟地/数字地分区,一点(或电阻/磁珠)相连;大电流回流不进模拟区。"],
- ["地","12. 地平面完整","信号线下方地平面不割裂;必须开槽处信号禁止跨槽(跨槽=环路面积暴涨)。"],
- ["电源","13. DCDC 功率环路同功率级规则","BUCK 的输入环路与续流环路同样最小化;电感下方不走线。"],
- ["电源","14. 上电时序与软启动","大电容充电有限流(NTC/PMOS);多路电源按序(MCU 先于功率使能)。"],
- ["信号","15. CAN 差分等长","CANH/CANL 等长差分(±1%)+ 双端 120Ω 位置确认;远离电机线。"],
- ["信号","16. 编码器线屏蔽与串接","长线编码器用屏蔽线/双绞,板上入口加 ESD/滤波;磁编码器远离功率电感。"],
- ["信号","17. 晶振/时钟区域隔离","晶振下方铺地,远离高频开关节点;IMU 靠近结构安装点。"],
- ["热","18. 发热器件铺铜+过孔阵列","MOSFET/DCDC 热焊盘下拉过孔阵列到底层大铜;铜厚与板层数按损耗核算(02-11 计算器)。"],
- ["热","19. 温度传感点布置","NTC/板温传感贴近发热源但不被其热区误导;电机温度传感走线防护。"],
- ["DFM","20. 丝印与极性齐全","二极管/电解/IC1 脚/接插件方向全部可读;测试点标注网络名。"],
- ["DFM","21. 测试点布置","关键网络(母线电压/三相/电流采样/地)留 ≥1mm 测试点,示波器地环路好下针。"],
- ["DFM","22. 安装孔与禁布区","螺丝孔禁布区 ≥ 孔径 2 倍;外壳/结构件投影区不走线;接插件不悬臂受力。"],
- ["DFM","23. 可维修性","易损件(栅驱/驱动芯片)周边 3mm 无高件;0402 以下器件慎用(手焊难)。"],
- ["DFM","24. 版本与日期丝印","板上印版本号+日期,与 BOM/原理图版本对应——返修事故的头号来源是版本错配。"]
-];
+/* ============ 36 条 Layout 检查清单(勾选本地保存) ============ */
 (function(){
-  var KEY='humanoid-lc-v1';
+  var KEY='humanoid-lc-v2';
   var saved={};
   try{ saved=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
-  var list=document.getElementById('lcList');
-  /* 按组渲染 */
-  var groups={};
-  LC.forEach(function(it,i){ (groups[it[0]]=groups[it[0]]||[]).push([i,it]); });
-  html='';
-  Object.keys(groups).forEach(function(g){
-    html+='<div class="my-lc"><h3>'+g+'</h3>';
-    groups[g].forEach(function(pair){
-      var i=pair[0], it=pair[1];
-      html+='<div class="my-it" id="lcIt'+i+'">'
-        +'<input type="checkbox" id="lcCk'+i+'"'+(saved[i]?' checked':'')+' onchange="lcSave()">'
-        +'<label for="lcCk'+i+'"><b>'+it[1]+'</b><span class="my-why">💡 '+it[2]+'</span></label></div>';
-    });
-    html+='</div>';
+  var items=Array.prototype.slice.call(document.querySelectorAll('.my-it'));
+  items.forEach(function(el,i){
+    var ck=el.querySelector('input');
+    if(ck && saved[i]) ck.checked=true;
   });
-  list.innerHTML=html;
   window.lcSave=function(){
     var st={};
-    LC.forEach(function(_,i){ if(document.getElementById('lcCk'+i).checked) st[i]=1; });
+    items.forEach(function(el,i){
+      var ck=el.querySelector('input');
+      if(ck && ck.checked) st[i]=1;
+    });
     try{ localStorage.setItem(KEY,JSON.stringify(st)); }catch(e){}
     lcScore('已保存');
   };
   window.lcReset=function(){
-    LC.forEach(function(_,i){ document.getElementById('lcCk'+i).checked=false; });
+    items.forEach(function(el){
+      var ck=el.querySelector('input');
+      if(ck) ck.checked=false;
+    });
     try{ localStorage.removeItem(KEY); }catch(e){}
     lcScore('已清空');
   };
   window.lcExport=function(){
     var lines=['# PCB Layout 评审报告','生成时间: '+new Date().toLocaleString(),''];
     var done=0;
-    LC.forEach(function(it,i){
-      var ok=document.getElementById('lcCk'+i).checked;
+    items.forEach(function(el){
+      var ck=el.querySelector('input');
+      var ok=ck && ck.checked;
       if(ok)done++;
-      lines.push((ok?'[x] ':'[ ] ')+it[0]+' | '+it[1]);
+      lines.push((ok?'[x] ':'[ ] ')+el.getAttribute('data-group')+' | '+el.getAttribute('data-title'));
     });
-    lines.push('','完成度: '+Math.round(done/LC.length*100)+'% ('+done+'/'+LC.length+')');
+    lines.push('','完成度: '+Math.round(done/items.length*100)+'% ('+done+'/'+items.length+')');
     var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
@@ -173,9 +377,12 @@ var LC = [
   };
   function lcScore(msg){
     var done=0;
-    LC.forEach(function(_,i){ if(document.getElementById('lcCk'+i).checked){done++;document.getElementById('lcIt'+i).classList.add('done');} else document.getElementById('lcIt'+i).classList.remove('done'); });
-    document.getElementById('lcNum').textContent=done+'/'+LC.length;
-    document.getElementById('lcPct').textContent=Math.round(done/LC.length*100)+'%';
+    items.forEach(function(el){
+      var ck=el.querySelector('input');
+      if(ck && ck.checked){done++;el.classList.add('done');} else el.classList.remove('done');
+    });
+    document.getElementById('lcNum').textContent=done+'/'+items.length;
+    document.getElementById('lcPct').textContent=Math.round(done/items.length*100)+'%';
     if(msg)document.getElementById('lcSaveState').textContent=msg;
   }
   lcScore();
