@@ -295,7 +295,10 @@
     if(!c) return;
     var box = document.createElement("div");
     box.className = "giscus-wrap";
-    box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2><div id="tcomment"></div>';
+    /* 诊断容器放在 #tcomment 之外(Twikoo 渲染会清空 #tcomment,探针放里面会被抹掉) */
+    box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2>'
+      + '<div id="tcomment-diag" style="font-size:12px;color:#f59e0b;font-family:Consolas,monospace;line-height:1.9;margin:6px 0;white-space:pre-wrap;display:none"></div>'
+      + '<div id="tcomment"></div>';
     c.appendChild(box);
     if(cfg.provider === "valine"){
       /* Valine:LeanCloud 存储(国内版免费,纯配置零部署);需 appId/appKey */
@@ -327,11 +330,11 @@
       var line = "[" + new Date().toLocaleTimeString() + "] " + step + (ok ? " ✓" : " ✗") + (detail ? " | " + detail : "");
       window.__COMMENT_DIAG__.push(line);
       console.log("[评论探针]", line);
-      var el = document.getElementById("tcomment");
-      var tip = document.createElement("div");
-      tip.style.cssText = "font-size:12px;color:#f59e0b;margin:4px 0;font-family:monospace;white-space:pre-wrap";
-      tip.textContent = "🔍 " + line;
-      if(el) el.appendChild(tip);
+      var el = document.getElementById("tcomment-diag");
+      if(el){
+        el.style.display = "block";
+        el.textContent += (el.textContent ? "\n" : "") + "🔍 " + line;
+      }
       return line;
     }
     diag("配置读取", !!cfg, "provider=" + cfg.provider + " envId=" + (cfg.envId||"").slice(0,40) + "…");
