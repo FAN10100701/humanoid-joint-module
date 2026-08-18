@@ -318,24 +318,59 @@
       return;
     }
     /* Twikoo:需自托管后端(CloudBase 云函数/Vercel/Zeabur),多 CDN 回退 */
+    /* 调试探针(2026-08-17):诊断「评论失败:0」——记录每步状态,输出到控制台与评论区顶部 */
+    window.__COMMENT_DIAG__ = [];
+    function diag(step, ok, detail){
+      var line = "[" + new Date().toLocaleTimeString() + "] " + step + (ok ? " ✓" : " ✗") + (detail ? " | " + detail : "");
+      window.__COMMENT_DIAG__.push(line);
+      console.log("[评论探针]", line);
+      var el = document.getElementById("tcomment");
+      if(el && el.dataset.diag === undefined){ el.dataset.diag = "1"; }
+      var tip = document.createElement("div");
+      tip.style.cssText = "font-size:12px;color:#f59e0b;margin:4px 0;font-family:monospace;white-space:pre-wrap";
+      tip.textContent = "🔍 " + line;
+      if(el) el.appendChild(tip);
+      return line;
+    }
+    diag("配置读取", !!cfg, "provider=" + cfg.provider + " envId=" + (cfg.envId||"").slice(0,40) + "…");
     var CDNS = [
       "https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.all.min.js",
       "https://registry.npmmirror.com/twikoo/1.6.39/files/dist/twikoo.all.min.js",
       "https://unpkg.com/twikoo@1.6.39/dist/twikoo.all.min.js"
     ];
     function loadTwikoo(i){
-      if(i >= CDNS.length) return;
+      if(i >= CDNS.length){ diag("CDN 全部失败", false, "jsdelivr/npmmirror/unpkg 均不可达"); return; }
+      diag("尝试 CDN #" + i, null, CDNS[i]);
       var s = document.createElement("script");
       s.src = CDNS[i];
       s.onload = function(){
         if(window.twikoo){
-          try{ twikoo.init({ envId: cfg.envId, el: "#tcomment", region: cfg.region || "" }); }
-          catch(e){ console.warn("[评论] Twikoo 初始化失败:", e); }
-        }
+          diag("twikoo 脚本加载", true, "源 " + CDNS[i]);
+          try{
+            var p = twikoo.init({ envId: cfg.envId, el: "#tcomment", region: cfg.region || "" });
+            diag("twikoo.init 调用", true, "envId=" + cfg.envId);
+            if(p && p.catch){
+              p.catch(function(err){
+                diag("twikoo.init Promise 失败", false, (err && (err.message || err.code || String(err))) || "未知错误");
+              });
+            }
+          }
+          catch(e){ diag("twikoo.init 抛异常", false, (e && e.message) || String(e)); }
+        } else { diag("twikoo 全局缺失", false, "脚本加载成功但 window.twikoo 未定义"); }
       };
-      s.onerror = function(){ loadTwikoo(i + 1); };
+      s.onerror = function(){
+        diag("CDN #" + i + " 加载失败", false, "网络错误");
+        loadTwikoo(i + 1);
+      };
       document.head.appendChild(s);
     }
+    /* 捕获浏览器层拦截(CORS 被拒时 fetch 抛 TypeError) */
+    window.addEventListener("unhandledrejection", function(ev){
+      var e = ev && ev.reason;
+      if(e && /twikoo/i.test(String(e && e.message || e))){
+        diag("未捕获 Promise 拒绝", false, (e && e.message) || String(e));
+      }
+    });
     loadTwikoo(0);
   }
 
@@ -622,7 +657,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V1.9.5(2026-08-17)";
+  S.VERSION = "V1.9.6(2026-08-17)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){

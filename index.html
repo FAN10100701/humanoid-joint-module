@@ -44,64 +44,133 @@
 @media (min-width: 861px){
   .sec{content-visibility:auto;contain-intrinsic-size:auto 640px}
 }
-/* ================= 风格方案皮肤 2.0(布局级差异,可对比选择) ================= */
-/* ② 玻璃拟态:更密网格 + 毛玻璃卡 + 居中节标题 */
+/* ================= 风格方案皮肤 3.0:默认 + 新野兽派 + 玻璃拟态 + Y2K ================= */
+/* ---------- ① 新野兽派 Neo-Brutalism:米白底 + 纯黑粗边框 + 零圆角 + 硬投影 ---------- */
+[data-skin="neo"] body{background:#f2ede4;color:#111}
+[data-skin="neo"] body[data-theme="light"],[data-skin="neo"] body[data-theme="dark"]{background:#f2ede4;color:#111}
+[data-skin="neo"] .hero h1{color:#111;font-family:'Courier New',monospace;font-weight:900;letter-spacing:-1px;transform:translateX(-2px)}
+[data-skin="neo"] .hero .sub{color:#333}
+[data-skin="neo"] .stat .v{color:#111;font-family:'Courier New',monospace}
+[data-skin="neo"] .stat .k{color:#555}
+[data-skin="neo"] .card{background:#fff;border:3px solid #000;border-radius:0;box-shadow:6px 6px 0 #000;transform:rotate(-.8deg);transition:none;color:#111;overflow:visible}
+[data-skin="neo"] .card:hover{transform:rotate(0) translate(-2px,-2px);box-shadow:9px 9px 0 #000;background:#fff;border-color:#000;color:#111}
+[data-skin="neo"] .card:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000;transition:none}
+[data-skin="neo"] .card .ic{filter:grayscale(1)}
+[data-skin="neo"] .card .t{color:#111;font-family:'Courier New',monospace;font-weight:900;transform:translateX(-8px);font-size:16.5px;margin-left:8px}
+[data-skin="neo"] .card .d{color:#333;font-family:'Courier New',monospace;line-height:1.45;font-size:12.5px}
+[data-skin="neo"] .card .go{color:#111;opacity:1;position:static;float:right;font-family:'Courier New',monospace;text-decoration:underline;font-weight:700}
+[data-skin="neo"] .card.featured{background:#fff;border-width:4px}
+[data-skin="neo"] .card.featured .t{font-size:19px}
+[data-skin="neo"] .card.featured .d{color:#222}
+[data-skin="neo"] .sec-title{color:#111}
+[data-skin="neo"] .sec-title .num{background:#ffd500;color:#000;border:2px solid #000;border-radius:0;font-family:'Courier New',monospace}
+[data-skin="neo"] .sec-title .en{color:#555;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.12em}
+[data-skin="neo"] .sec-title .bar{background:#000;height:2px;flex:1}
+[data-skin="neo"] .quicknav a{background:#fff;border:2px solid #000;border-radius:0;color:#111;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.04em;transition:none}
+[data-skin="neo"] .quicknav a:hover{background:#000;color:#fff;transform:none}
+[data-skin="neo"] .hero-search input{background:#fff;border:2px solid #000;border-radius:0;color:#111;font-family:'Courier New',monospace;box-shadow:none}
+[data-skin="neo"] .hero-search input:focus{border-width:4px;box-shadow:none;color:#111}
+[data-skin="neo"] .hero-search button{background:#ffd500;border:4px solid #000;border-radius:0;color:#000;font-weight:900;box-shadow:4px 4px 0 #000;font-family:'Courier New',monospace;text-transform:uppercase;transition:none}
+[data-skin="neo"] .hero-search button:hover{filter:none;transform:translate(2px,2px);box-shadow:none;background:#ffd500;color:#000}
+[data-skin="neo"] .progress-panel{background:#fff;border:3px solid #000;border-radius:0;box-shadow:6px 6px 0 #000}
+[data-skin="neo"] .progress-panel h3{color:#111}
+[data-skin="neo"] .progress-panel .pl{color:#333}
+[data-skin="neo"] .theme-seg{background:#fff;border:2px solid #000;border-radius:0}
+[data-skin="neo"] .theme-seg button{color:#333;border-radius:0}
+[data-skin="neo"] .theme-seg button.on{background:#111;color:#ffd500;border-radius:0;box-shadow:none}
+[data-skin="neo"] .skinbar{color:#333}
+[data-skin="neo"] .skinbar select{background:#fff;border:2px solid #000;border-radius:0;color:#111}
+[data-skin="neo"] .tags .tag{background:#fff;border:2px solid #000;border-radius:0;color:#111;font-family:'Courier New',monospace;font-size:11.5px}
+[data-skin="neo"] .learn-path{background:#fff;border:3px solid #000;border-radius:0;box-shadow:6px 6px 0 #000}
+[data-skin="neo"] .learn-path h3,[data-skin="neo"] .rm-step h4,[data-skin="neo"] .rm-step p{color:#111}
+[data-skin="neo"] .rm-step p[style]{color:#555!important}
+[data-skin="neo"] .rm-links a{background:#fff;border:2px solid #000;border-radius:0;color:#111;font-family:'Courier New',monospace}
+[data-skin="neo"] .upd-item{border-bottom:2px dashed #000;color:#111}
+[data-skin="neo"] .upd-date{color:#555}
+[data-skin="neo"] .upd-item a{color:#111;text-decoration:underline}
+[data-skin="neo"] .foot{color:#333}
+[data-skin="neo"] .foot a{color:#111}
+[data-skin="neo"] details.faq{background:#fff;border:2px solid #000;border-radius:0;box-shadow:4px 4px 0 #000}
+[data-skin="neo"] details.faq summary{color:#111;font-family:'Courier New',monospace}
+[data-skin="neo"] .pbar{background:#d8d2c6}
+[data-skin="neo"] .pbar .pl{color:#333}
+[data-skin="neo"] .pbar .pv{color:#111}
+[data-skin="neo"] .learn-path{box-shadow:6px 6px 0 #000}
+/* ---------- ② 玻璃拟态 Glassmorphism:毛玻璃 + 内高光 + 弥散柔阴影 ---------- */
 [data-skin="glass"] .grid{grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:12px}
-[data-skin="glass"] .card{background:rgba(125,150,200,.10);border-color:rgba(140,170,220,.3);border-radius:16px;backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%)}
-[data-skin="glass"] .card:hover{background:rgba(125,150,200,.17);box-shadow:0 14px 38px rgba(31,48,90,.35)}
+[data-skin="glass"] .card{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);border-radius:20px;backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);box-shadow:0 20px 40px rgba(0,0,0,.08);transition:all .3s ease}
+[data-skin="glass"] .card::before{content:"";position:absolute;left:14px;right:14px;top:0;height:1px;background:rgba(255,255,255,.6);border-radius:2px}
+[data-skin="glass"] .card:hover{background:rgba(255,255,255,.22);transform:translateY(-3px);box-shadow:0 24px 50px rgba(0,0,0,.12)}
+[data-skin="glass"] .card .t{font-weight:500;color:#fff}
+[data-skin="glass"] .card .d{color:rgba(255,255,255,.75)}
 [data-skin="glass"] .stat,[data-skin="glass"] .progress-panel,[data-skin="glass"] .hero-search{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 [data-skin="glass"] .sec-title{justify-content:center}
-[data-skin="glass"] .quicknav a{border-radius:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+[data-skin="glass"] .sec-title .num{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(8px)}
+[data-skin="glass"] .quicknav a{border-radius:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22)}
+[data-skin="glass"] .hero-search input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:16px;backdrop-filter:blur(16px);color:#fff;transition:.25s ease}
+[data-skin="glass"] .hero-search input:focus{border-color:rgba(255,255,255,.8);background:rgba(255,255,255,.18);box-shadow:0 0 22px rgba(255,255,255,.14)}
+[data-skin="glass"] .hero-search button{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);border-radius:28px;backdrop-filter:blur(16px);color:#fff;transition:all .25s ease-out}
+[data-skin="glass"] .hero-search button:hover{background:rgba(255,255,255,.3);transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.15);filter:none}
+[data-skin="glass"] .hero-search button:active{transform:translateY(0)}
 [data-skin="glass"] body[data-theme="light"] .card{background:rgba(255,255,255,.55);border-color:rgba(255,255,255,.9)}
-/* ③ 极光渐变:大两列卡 + 居中大渐变标题 + 左光条 */
-[data-skin="aurora"] .hero{padding:44px 10px 18px}
-[data-skin="aurora"] .hero h1{font-size:34px;background:linear-gradient(92deg,#7dd3fc,#86efac 55%,#fde047);-webkit-background-clip:text;background-clip:text;color:transparent}
-[data-skin="aurora"] .grid{grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:18px}
-[data-skin="aurora"] .card{border-left:4px solid #22c55e;border-radius:10px;padding:20px 22px}
-[data-skin="aurora"] .card:hover{border-left-color:#fde047;transform:translateY(-4px) scale(1.015)}
-[data-skin="aurora"] .card .ic{font-size:26px}
-[data-skin="aurora"] .sec-title{justify-content:center;font-size:18px}
-[data-skin="aurora"] .quicknav a{border-color:rgba(134,239,172,.4);color:#86efac}
-[data-skin="aurora"] body{background:linear-gradient(118deg,#0b1224,#10233d 38%,#0e3b32 72%,#132a44);background-attachment:fixed}
-[data-skin="aurora"] body[data-theme="light"]{background:linear-gradient(118deg,#f0f9ff,#f0fdf4 55%,#fefce8);background-attachment:fixed}
-[data-skin="aurora"] body[data-theme="light"] .hero h1{background:none;color:#166534}
-[data-skin="aurora"] body[data-theme="light"] .card{border-left-color:#16a34a}
-/* ④ 科技网格:小卡密排 + 顶部数据条 + 等宽字体 + 方角 */
-[data-skin="grid"] .grid{grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:10px}
-[data-skin="grid"] .card{border-radius:4px;border-color:rgba(56,189,248,.3);padding:14px 14px 12px}
-[data-skin="grid"] .card::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#0ea5e9)}
-[data-skin="grid"] .card .t{font-family:Consolas,'Courier New',monospace;font-size:14px;letter-spacing:.2px}
-[data-skin="grid"] .sec-title .num{font-family:Consolas,monospace;color:#38bdf8;border:1px solid rgba(56,189,248,.5);border-radius:4px;padding:1px 7px;background:rgba(56,189,248,.08)}
-[data-skin="grid"] .sec-title .en{font-family:Consolas,monospace;letter-spacing:.1em;text-transform:uppercase}
-[data-skin="grid"] .hero h1{font-family:Consolas,'Courier New',monospace;letter-spacing:1px}
-[data-skin="grid"] .quicknav a{border-radius:4px;font-family:Consolas,monospace}
-[data-skin="grid"] .quicknav a::before{content:"[ ";opacity:.5}
-[data-skin="grid"] .quicknav a::after{content:" ]";opacity:.5}
-/* ⑤ 极简纸感:单列横排清单卡(排列彻底改变) + 衬线标题 */
-[data-skin="paper"] .grid{grid-template-columns:1fr;max-width:820px;margin:14px auto}
-[data-skin="paper"] .card{display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:6px;box-shadow:none;background:transparent;border-color:rgba(120,100,70,.35)}
-[data-skin="paper"] .card .ic{font-size:26px;margin:0;flex:none;width:44px;text-align:center}
-[data-skin="paper"] .card .t{margin:0 0 3px}
-[data-skin="paper"] .card .d{margin:0}
-[data-skin="paper"] .card:hover{background:rgba(180,83,9,.06);border-color:#b45309;transform:none;box-shadow:none}
-[data-skin="paper"] .card.featured{grid-column:auto}
-[data-skin="paper"] .sec-title{font-family:Georgia,'Noto Serif SC',serif;border-left:4px solid #b45309;padding-left:12px}
-[data-skin="paper"] .sec-title .bar{display:none}
-[data-skin="paper"] .hero h1{font-family:Georgia,'Noto Serif SC',serif;letter-spacing:1px}
-[data-skin="paper"] .stat .v{color:#b45309}
-[data-skin="paper"] body[data-theme="light"]{background:#faf6ef}
-[data-skin="paper"] body[data-theme="dark"]{background:#171412}
-[data-skin="paper"] .quicknav a{border-color:rgba(180,83,9,.4);color:#d97706}
-/* ⑥ 3D 机器人:左右分栏 hero(文字左/机器人右) + 悬停浮起 */
-#botHero{display:none;position:relative;width:300px;height:340px;flex:none;margin:0 auto}
-[data-skin="bot"] #botHero{display:block}
-[data-skin="bot"] .hero{display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center;text-align:left}
-[data-skin="bot"] .hero>*{flex:1 1 360px}
-[data-skin="bot"] .hero h1{font-size:30px}
-[data-skin="bot"] .grid{grid-template-columns:repeat(auto-fill,minmax(235px,1fr))}
-[data-skin="bot"] .card:hover{transform:translateY(-4px) scale(1.02)}
-[data-skin="bot"] .sec-title .num{color:#22d3ee}
-#botHero canvas{width:100%;height:100%;cursor:grab;touch-action:none}
+[data-skin="glass"] body[data-theme="light"] .card .t{color:#1e293b}
+[data-skin="glass"] body[data-theme="light"] .card .d{color:#475569}
+[data-skin="glass"] body[data-theme="light"] .hero-search input{color:#1e293b}
+[data-skin="glass"] body[data-theme="light"] .hero-search button{color:#1e293b}
+[data-skin="glass"] body[data-theme="light"] .sec-title{color:#1e293b}
+/* ---------- ③ Y2K 赛博复古未来:深灰噪点 + 霓虹描边 + 像素字 + 全息渐变 ---------- */
+[data-skin="y2k"] body{background:radial-gradient(1200px 600px at 70% -10%,rgba(255,0,140,.16),transparent 60%),radial-gradient(900px 500px at 10% 110%,rgba(0,180,255,.14),transparent 60%),linear-gradient(180deg,#0a0a12,#12121e 55%,#0a0a12);color:#cfd6e4}
+[data-skin="y2k"] body[data-theme="light"],[data-skin="y2k"] body[data-theme="dark"]{background:radial-gradient(1200px 600px at 70% -10%,rgba(255,0,140,.16),transparent 60%),radial-gradient(900px 500px at 10% 110%,rgba(0,180,255,.14),transparent 60%),linear-gradient(180deg,#0a0a12,#12121e 55%,#0a0a12);color:#cfd6e4}
+[data-skin="y2k"] body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.14) 3px 4px);mix-blend-mode:overlay}
+[data-skin="y2k"] .hero h1{color:#fff;text-shadow:0 0 14px rgba(0,229,255,.8),0 0 40px rgba(255,0,140,.5);letter-spacing:2px}
+[data-skin="y2k"] .hero .sub{color:#7ee787;font-family:'Courier New',monospace;text-shadow:0 0 8px rgba(126,231,135,.5)}
+[data-skin="y2k"] .stat .v{color:#ff71ce;text-shadow:0 0 12px rgba(255,113,206,.8);font-family:'Courier New',monospace}
+[data-skin="y2k"] .stat .k{color:#9aa4b2}
+[data-skin="y2k"] .card{background:linear-gradient(rgba(18,18,30,.92),rgba(18,18,30,.92)) padding-box,linear-gradient(135deg,#00e5ff,#ff71ce 50%,#01cdfe) border-box;border:2px solid transparent;border-radius:24px;box-shadow:0 0 22px rgba(0,229,255,.22),0 0 60px rgba(255,113,206,.14);position:relative;overflow:hidden}
+[data-skin="y2k"] .card::before{content:"";position:absolute;left:0;right:0;top:0;height:34%;background:linear-gradient(180deg,rgba(255,255,255,.09),transparent);pointer-events:none;border-radius:24px 24px 0 0}
+[data-skin="y2k"] .card::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.025) 3px 4px)}
+[data-skin="y2k"] .card:hover{box-shadow:0 0 34px rgba(255,113,206,.5),0 0 90px rgba(0,229,255,.3);transform:translateY(-3px) scale(1.01)}
+[data-skin="y2k"] .card .t{color:#fff;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(0,229,255,.6);font-size:16px}
+[data-skin="y2k"] .card .d{color:#7ee787;font-family:'Courier New',monospace;text-shadow:0 0 6px rgba(126,231,135,.35)}
+[data-skin="y2k"] .card .go{color:#ff71ce;opacity:1;text-shadow:0 0 8px rgba(255,113,206,.8)}
+[data-skin="y2k"] .card.featured{background:linear-gradient(160deg,rgba(30,30,50,.95),rgba(18,18,30,.92))}
+[data-skin="y2k"] .sec-title{color:#fff;text-shadow:0 0 8px rgba(255,113,206,.5)}
+[data-skin="y2k"] .sec-title .num{background:linear-gradient(135deg,#ff71ce,#01cdfe);border:1px solid rgba(255,255,255,.4);box-shadow:0 0 14px rgba(255,113,206,.7);color:#0a0a12;font-weight:900}
+[data-skin="y2k"] .sec-title .en{color:#7ee787;font-family:'Courier New',monospace;letter-spacing:.15em}
+[data-skin="y2k"] .sec-title .bar{background:linear-gradient(90deg,rgba(0,229,255,.7),rgba(255,113,206,.7),transparent);height:1px}
+[data-skin="y2k"] .quicknav a{background:rgba(0,0,0,.45);border:1px solid rgba(0,229,255,.4);border-radius:8px;color:#9adfff;font-family:'Courier New',monospace;text-shadow:0 0 6px rgba(0,229,255,.5);transition:.15s}
+[data-skin="y2k"] .quicknav a:hover{background:rgba(0,229,255,.14);color:#fff;box-shadow:0 0 16px rgba(0,229,255,.6);transform:scale(1.05)}
+[data-skin="y2k"] .hero-search input{background:#05050c;border:2px solid #39ff14;border-radius:18px;color:#39ff14;font-family:'Courier New',monospace;box-shadow:0 0 14px rgba(57,255,20,.3);caret-color:#39ff14;transition:.2s}
+[data-skin="y2k"] .hero-search input:focus{border-color:#39ff14;box-shadow:0 0 24px rgba(57,255,20,.65);background:#05050c;color:#39ff14}
+[data-skin="y2k"] .hero-search button{background:linear-gradient(90deg,#ff71ce,#01cdfe,#b967ff);border:2px solid #fff;border-radius:999px;color:#fff;font-weight:800;text-shadow:0 0 6px rgba(0,0,0,.6),-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;box-shadow:0 0 18px rgba(255,113,206,.7);transition:all .25s cubic-bezier(.34,1.56,.64,1)}
+[data-skin="y2k"] .hero-search button:hover{transform:scale(1.06) rotate(1deg);box-shadow:0 0 34px rgba(255,113,206,1),0 0 60px rgba(1,205,254,.6);filter:brightness(1.12)}
+[data-skin="y2k"] .progress-panel{background:rgba(18,18,30,.92);border:1px solid rgba(0,229,255,.4);border-radius:20px;box-shadow:0 0 26px rgba(0,229,255,.16)}
+[data-skin="y2k"] .progress-panel h3{color:#fff;text-shadow:0 0 8px rgba(0,229,255,.5)}
+[data-skin="y2k"] .theme-seg{background:rgba(0,0,0,.5);border:1px solid rgba(255,113,206,.5);border-radius:999px;box-shadow:0 0 14px rgba(255,113,206,.25)}
+[data-skin="y2k"] .theme-seg button.on{background:linear-gradient(90deg,#ff71ce,#01cdfe);box-shadow:0 0 16px rgba(255,113,206,.8)}
+[data-skin="y2k"] .skinbar{color:#9adfff}
+[data-skin="y2k"] .skinbar select{background:#05050c;border:1px solid #39ff14;border-radius:8px;color:#39ff14;font-family:'Courier New',monospace;box-shadow:0 0 10px rgba(57,255,20,.3)}
+[data-skin="y2k"] .tags .tag{background:rgba(0,0,0,.5);border:1px solid rgba(255,113,206,.5);border-radius:999px;color:#ffb3e6;text-shadow:0 0 6px rgba(255,113,206,.6)}
+[data-skin="y2k"] .learn-path{background:rgba(18,18,30,.85);border:1px solid rgba(0,229,255,.35);border-radius:20px;box-shadow:0 0 26px rgba(0,229,255,.12)}
+[data-skin="y2k"] .learn-path h3,[data-skin="y2k"] .rm-step h4,[data-skin="y2k"] .rm-step p{color:#e6edf3}
+[data-skin="y2k"] .rm-step p[style]{color:#7ee787!important}
+[data-skin="y2k"] .rm-links a{background:rgba(0,0,0,.5);border:1px solid rgba(1,205,254,.5);border-radius:8px;color:#9adfff}
+[data-skin="y2k"] .upd-item{border-bottom:1px dashed rgba(0,229,255,.35);color:#cfd6e4}
+[data-skin="y2k"] .upd-date{color:#7ee787}
+[data-skin="y2k"] .upd-item a{color:#9adfff;text-shadow:0 0 6px rgba(0,229,255,.4)}
+[data-skin="y2k"] .foot{color:#9aa4b2}
+[data-skin="y2k"] .foot a{color:#ff71ce}
+[data-skin="y2k"] details.faq{background:rgba(18,18,30,.92);border:1px solid rgba(255,113,206,.4);border-radius:16px;box-shadow:0 0 18px rgba(255,113,206,.14)}
+[data-skin="y2k"] details.faq summary{color:#fff;text-shadow:0 0 8px rgba(255,113,206,.4)}
+[data-skin="y2k"] .pbar{background:rgba(0,229,255,.15)}
+[data-skin="y2k"] .pbar .pl{color:#9adfff}
+[data-skin="y2k"] .pbar .pv{color:#39ff14;font-family:'Courier New',monospace}
+[data-skin="y2k"] .ring-track{stroke:rgba(0,229,255,.2)}
+[data-skin="y2k"] #botHero{display:none!important}
+[data-skin="y2k"] .stats{margin-bottom:4px}
+[data-skin="neo"] .stats{margin-bottom:4px}
+/* 旧 bot 方案已下线:画布容器永久隐藏(保留元素避免 JS 报错) */
+#botHero{display:none!important}
 .skinbar{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#9aa4b2}
 .skinbar select{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.35);color:inherit;border-radius:8px;padding:5px 10px;font-family:inherit;font-size:12.5px;cursor:pointer}
 body[data-theme="light"] .skinbar{color:#5a6a85}
@@ -221,12 +290,10 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <a id="verBadge" href="#version" title="查看版本与更新历史" style="display:none;margin-left:14px;font-size:11.5px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:4px 11px;white-space:nowrap;transition:transform .28s cubic-bezier(.22,1.2,.36,1),border-color .18s,color .18s" onmouseover="this.style.borderColor='#3b82f6';this.style.color='#60a5fa';this.style.transform='scale(1.06)'" onmouseout="this.style.borderColor='rgba(154,164,178,.35)';this.style.color='#9aa4b2';this.style.transform=''">🏷 v—</a>
       <div class="skinbar" style="margin-left:14px">🎨 风格方案
         <select id="skinSel" onchange="applySkin(this.value)" title="选择首页美化方案(保存在本机)">
-          <option value="">默认</option>
-          <option value="glass">玻璃拟态</option>
-          <option value="aurora">极光渐变</option>
-          <option value="grid">科技网格</option>
-          <option value="paper">极简纸感</option>
-          <option value="bot">3D 机器人(重绘版)</option>
+          <option value="">默认 · 深空蓝</option>
+          <option value="neo">新野兽派 · 米白粗框</option>
+          <option value="glass">玻璃拟态 · 毛玻璃</option>
+          <option value="y2k">Y2K · 赛博复古</option>
         </select>
       </div>
     </div>
@@ -801,10 +868,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   <div class="sec" id="version">
     <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span></div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.5</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · Twikoo 评论区正式启用(网关已部署验证)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V1.9.6</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 工业级 3D 拆解台重构 + 风格方案 3.0 + 评论探针</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V1.9.6 · 2026-08-17 · 工业级 3D 拆解台 + 风格方案 3.0 + 评论调试探针</summary>
+        <div class="faq-a">🔩 <b>3D 拆解页工业级重构</b>(电机/编码器/灵巧手):三点工业布光 + PCF 软阴影 + 深炭灰工业风;三产品分层装配(无框伺服电机:端盖/油封/定子绕组/转子永磁体/轴承/端子;光电编码器:外壳/玻璃码盘/LED/光电管/PCB/接口;欠驱动灵巧手:手掌/舵机模组/连杆/关节轴承/触觉传感器/硅胶指垫);左部件目录 + 右参数面板 + 底部控制台,一键拆解/复位、点击零件金色高亮看参数、剖切模式、自动旋转;🎨 <b>风格方案 3.0</b>:旧五套(极光/网格/纸感/3D机器人)下线,换为三套新方案——新野兽派(米白粗框硬投影)、玻璃拟态(毛玻璃内高光)、Y2K 赛博复古(霓虹扫描线全息渐变);🔍 <b>评论探针</b>:评论区诊断日志(定位「评论失败:0」根因=CORS 白名单,需在 CloudBase 安全域名加 cyco.top)。</div>
+      </details>
+      <details class="faq">
         <summary>V1.9.5 · 2026-08-17 · Twikoo 评论区正式启用(网关已部署验证)</summary>
         <div class="faq-a">💬 <b>Twikoo 评论区启用</b>:CloudBase 云函数(Nodejs18.15)+ 网关路由 /twikoo 部署完成,网关访问地址验证 <b>HTTP 200</b>(返回「Twikoo 云函数运行正常」);`giscus-config.js` 的 envId 填入完整访问地址,全站 65 页评论区正式可用——每页独立评论分区,首条评论需在评论区「管理」入口设置管理员密码;根 sw 预缓存加入 giscus-config.js。</div>
       </details>
@@ -900,7 +971,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V1.9.5(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V1.9.6(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1002,7 +1073,9 @@ html:not([data-skin]) .card:hover::before{opacity:1}
 <script>
 /* ============ 风格方案皮肤切换 + 轻量 3D 机器人(2D canvas 投影,零依赖) ============ */
 var SKIN_KEY = "humanoid-skin-v1";
+var SKIN_ALLOWED = ["neo", "glass", "y2k"];   /* 皮肤 3.0:仅保留三套新方案,旧值(aurora/grid/paper/bot)自动回落默认 */
 function applySkin(v){
+  if(SKIN_ALLOWED.indexOf(v) < 0){ v = ""; }
   if(v){ document.documentElement.setAttribute("data-skin", v); }
   else{ document.documentElement.removeAttribute("data-skin"); }   /* 空值移除属性,默认特效(hero光晕/卡片光条)才生效 */
   try{ localStorage.setItem(SKIN_KEY, v); }catch(e){}
