@@ -17,7 +17,7 @@
   body[data-theme="light"] .my-prod-tabs button{background:rgba(255,255,255,.75);color:#334155}
   body[data-theme="light"] .my-prod-tabs button.on{background:#2563eb;color:#fff}
   .my-stage{display:flex;gap:10px;min-height:540px;align-items:stretch}
-  .my-left{width:190px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px;max-height:560px;overflow:auto;position:relative;transition:width .25s ease}
+  .my-left{width:210px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:10px;max-height:560px;overflow:auto;position:relative;transition:width .25s ease}
   body[data-theme="light"] .my-left{background:rgba(255,255,255,.8)}
   .my-left h4{font-size:12px;color:#8b98ab;margin:4px 2px 8px;letter-spacing:.08em;text-transform:uppercase}
   body[data-theme="light"] .my-left h4{color:#64748b}
@@ -61,7 +61,7 @@
   .my-diag-head button:hover{border-color:#f59e0b;color:#fff}
   .my-clip{position:absolute;right:10px;top:10px;font-size:11.5px;color:#9ecbff;background:rgba(13,17,23,.7);border:1px solid rgba(59,130,246,.4);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:6px;z-index:5}
   .my-clip input{width:90px;accent-color:#3b82f6}
-  .my-right{width:230px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:12px;max-height:560px;overflow:auto}
+  .my-right{width:250px;flex-shrink:0;background:rgba(16,21,30,.88);border:1px solid #2a3547;border-radius:12px;padding:12px;max-height:560px;overflow:auto}
   body[data-theme="light"] .my-right{background:rgba(255,255,255,.8)}
   .my-right h4{font-size:12px;color:#8b98ab;margin:0 0 8px;letter-spacing:.08em;text-transform:uppercase}
   body[data-theme="light"] .my-right h4{color:#64748b}
@@ -673,29 +673,29 @@ var RVGH_SCALE = 0.075;
 var RVGH_FILES = [
   { f:'motor_base-Body.stl',        n:'底座(motor base)',      c:0x9aa5b2, z:5,   thick:10, d:2, dist:1.6, mt:0.75, rgh:0.35,
     desc:'电机/减速一体外壳底座,安装法兰与轴承座。', spec:[['类型','RVGH 一体伺服'],['许可','MIT 开源']] },
-  { f:'motor_wall_P28-Body.stl',    n:'电机壁(定子外壳)',      c:0xb9c2cc, z:20,  thick:10, d:2, dist:1.5, mt:0.7, rgh:0.4,
+  { f:'motor_wall_P28-Body.stl',    n:'电机壁(定子外壳)',      c:0xb9c2cc, z:15,  thick:10, d:2, dist:1.5, mt:0.7, rgh:0.4,
     desc:'外圈定子壁,内壁贴定子绕组。', spec:[['结构','外转子杯形壁'],['材料','铝合金']] },
-  { f:'magnet_mounter-Body.stl',    n:'磁铁座(转子)',          c:0x3b3f4a, z:35,  thick:10, d:2, dist:1.5, mt:0.6, rgh:0.5,
+  { f:'magnet_mounter-Body.stl',    n:'磁铁座(转子)',          c:0x3b3f4a, z:25,  thick:10, d:2, dist:1.5, mt:0.6, rgh:0.5,
     desc:'转子磁钢安装座,磁钢贴于外圈。', spec:[['结构','外转子'],['磁钢','14 极(示意)']] },
-  { f:'motor_cover-Body.stl',       n:'电机盖',                c:0xb9c2cc, z:50,  thick:10, d:2, dist:1.4, mt:0.7, rgh:0.4,
+  { f:'motor_cover-Body.stl',       n:'电机盖',                c:0xb9c2cc, z:35,  thick:10, d:2, dist:1.4, mt:0.7, rgh:0.4,
     desc:'电机后端盖,集成编码器安装面。', spec:[['材料','铝合金'],['集成','编码器面']] },
-  { f:'motor_top-Body.stl',         n:'电机顶(前端盖)',        c:0xb9c2cc, z:65,  thick:10, d:2, dist:1.4, mt:0.7, rgh:0.4,
+  { f:'motor_top-Body.stl',         n:'电机顶(前端盖)',        c:0xb9c2cc, z:45,  thick:10, d:2, dist:1.4, mt:0.7, rgh:0.4,
     desc:'电机前端盖,支承输入轴。', spec:[['材料','铝合金'],['轴承','深沟球']] },
-  { f:'plagear_29_cam-Body.stl',    n:'行星凸轮(偏心轴)',      c:0x94a3b8, z:80,  thick:8,  d:3, dist:1.5, mt:0.8, rgh:0.3,
+  { f:'plagear_29_cam-Body.stl',    n:'行星凸轮(偏心轴)',      c:0x94a3b8, z:53,  thick:8,  d:3, dist:1.5, mt:0.8, rgh:0.3,
     desc:'输入偏心轴:电机高速输入,驱动摆线盘公摆。', spec:[['偏心','凸轮结构'],['输入','电机轴']] },
-  { f:'cyclo_disk_T27-Body.stl',    n:'摆线盘 T27',            c:0xc47b2d, z:93,  thick:3,  d:2, dist:1.5, mt:0.8, rgh:0.35,
+  { f:'cyclo_disk_T27-Body.stl',    n:'摆线盘 T27',            c:0xc47b2d, z:59,  thick:3,  d:2, dist:1.5, mt:0.8, rgh:0.35,
     desc:'摆线减速盘:绕偏心轴公摆,与针齿差 1 齿啮合——输入一圈,盘反向转 1/27 圈。', spec:[['齿数','27'],['类型','摆线(RV)']] },
-  { f:'cyclo_disk_T27u-Body.stl',   n:'摆线盘 T27u(双盘)',     c:0xd97706, z:99,  thick:3,  d:2, dist:1.5, mt:0.8, rgh:0.35,
+  { f:'cyclo_disk_T27u-Body.stl',   n:'摆线盘 T27u(双盘)',     c:0xd97706, z:65,  thick:3,  d:2, dist:1.5, mt:0.8, rgh:0.35,
     desc:'第二块摆线盘,与 T27 成 180° 相位,抵消偏心振动。', spec:[['相位','180° 对消'],['作用','动平衡']] },
-  { f:'bearing_hub_A-Body.stl',     n:'轴承毂 A',              c:0xd8dde4, z:107, thick:6,  d:3, dist:1.4, mt:0.85, rgh:0.3,
+  { f:'bearing_hub_A-Body.stl',     n:'轴承毂 A',              c:0xd8dde4, z:71,  thick:6,  d:3, dist:1.4, mt:0.85, rgh:0.3,
     desc:'减速级输入侧轴承座。', spec:[['材料','不锈钢'],['作用','支承减速输入']] },
-  { f:'bearing_hub_B-Body.stl',     n:'轴承毂 B',              c:0xd8dde4, z:117, thick:6,  d:3, dist:1.4, mt:0.85, rgh:0.3,
+  { f:'bearing_hub_B-Body.stl',     n:'轴承毂 B',              c:0xd8dde4, z:77,  thick:6,  d:3, dist:1.4, mt:0.85, rgh:0.3,
     desc:'减速级输出侧轴承座。', spec:[['材料','不锈钢'],['作用','支承输出法兰']] },
-  { f:'supporter-Body.stl',         n:'支撑架',                c:0x8a95a3, z:127, thick:6,  d:2, dist:1.3, mt:0.7, rgh:0.4,
+  { f:'supporter-Body.stl',         n:'支撑架',                c:0x8a95a3, z:83,  thick:6,  d:2, dist:1.3, mt:0.7, rgh:0.4,
     desc:'内部支撑结构。', spec:[['材料','铝合金']] },
-  { f:'top_cover-Body.stl',         n:'顶盖(输出端)',          c:0xb9c2cc, z:137, thick:6,  d:2, dist:1.3, mt:0.7, rgh:0.4,
+  { f:'top_cover-Body.stl',         n:'顶盖(输出端)',          c:0xb9c2cc, z:89,  thick:6,  d:2, dist:1.3, mt:0.7, rgh:0.4,
     desc:'输出端盖。', spec:[['材料','铝合金']] },
-  { f:'top_horn-Body.stl',          n:'输出法兰(horn)',        c:0xd8dde4, z:147, thick:7,  d:2, dist:1.5, mt:0.85, rgh:0.3,
+  { f:'top_horn-Body.stl',          n:'输出法兰(horn)',        c:0xd8dde4, z:96,  thick:7,  d:2, dist:1.5, mt:0.85, rgh:0.3,
     desc:'减速输出法兰,连接负载(关节臂)。', spec:[['减速比','27:1(示意)'],['输出','法兰']] }
 ];
 function buildMotor(group){
@@ -708,7 +708,7 @@ function buildMotor(group){
       mesh.position.set(0, y, 0);
       var home = mesh.position.clone();
       /* 爆炸方向:沿世界 y(装配轴向)分开,距离按部件厚度比例 */
-      partRec(0, it.n, mesh, home, AY, (it.thick * RVGH_SCALE + 0.15) * 2.2, it.c, it.desc, it.spec);
+      partRec(0, it.n, mesh, home, AY, (it.thick * RVGH_SCALE + 0.12) * 2.6, it.c, it.desc, it.spec);
       group.add(mesh);
     });
   });
@@ -798,7 +798,7 @@ function buildHand(group){
   /* LEAP Hand:STL 为真实装配坐标,单位 cm(手掌约 10cm 宽,手指沿 z 展开约 17cm)。
      统一 scale=0.3(整手 17cm → 5.1 世界单位),保留原始装配坐标(keepPos),
      整体旋转使手掌平放(掌心朝上),不再手动摆放——部件相对位置天然正确 */
-  var HSCALE = 0.3;
+  var HSCALE = 8;
   var cache = {};
   function loadOne(key){
     if(cache[key]) return cache[key];
@@ -962,7 +962,8 @@ function clearGlowAll(){
 }
 function buildTree(){
   var el = document.getElementById('partTree');
-  var html = '<h4>部件层级目录</h4>';
+  var collapsed = el.classList.contains('collapsed');
+  var html = '<button class="my-fold" onclick="toggleFold(\'left\')" title="收起/展开部件目录">' + (collapsed?'▶':'◀') + '</button><h4>部件层级目录</h4>';
   prodParts().forEach(function(p){
     html += '<div class="my-part' + (LAB.focusPart===p.name?' on':'') + '" onclick="pickPart(\'' + p.name.replace(/'/g,"\\'") + '\')">'
       + '<span class="dot" style="background:' + hexOf(p.color) + '"></span>' + p.name + '</div>';
@@ -971,14 +972,16 @@ function buildTree(){
 }
 function buildPanel(){
   var el = document.getElementById('paramPanel');
+  var collapsed = el.classList.contains('collapsed');
+  var foldBtn = '<button class="my-fold" onclick="toggleFold(\'right\')" title="收起/展开参数面板">' + (collapsed?'◀':'▶') + '</button>';
   if(!LAB.picked){
-    el.innerHTML = '<h4>参数信息面板</h4><div class="my-pdesc">点击左侧目录或 3D 视口中的零件,这里会显示该部件的材质、尺寸与功能参数。</div>';
+    el.innerHTML = foldBtn + '<h4>参数信息面板</h4><div class="my-pdesc">点击左侧目录或 3D 视口中的零件,这里会显示该部件的材质、尺寸与功能参数。</div>';
     return;
   }
   var p = LAB.picked;
   var rows = '';
   (p.spec || []).forEach(function(r){ rows += '<div class="my-prow"><b>' + r[0] + '</b><span>' + r[1] + '</span></div>'; });
-  el.innerHTML = '<h4>参数信息面板</h4><div class="my-pname">' + p.name + '</div>' + rows + '<div class="my-pdesc">' + p.desc + '</div>';
+  el.innerHTML = foldBtn + '<h4>参数信息面板</h4><div class="my-pname">' + p.name + '</div>' + rows + '<div class="my-pdesc">' + p.desc + '</div>';
 }
 function buildCtl(){
   var el = document.getElementById('ctlBar');
