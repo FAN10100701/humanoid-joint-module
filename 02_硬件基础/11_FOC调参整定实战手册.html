@@ -180,6 +180,66 @@
     <div class="quiz-explain">💡 解析:第 2 节警示框:带宽受 PWM 频率、电流采样噪声与执行延时约束,须 ≤ PWM 的 1/10~1/20(20 kHz PWM → 电流环 ≤ 1~2 kHz)。带宽过高反而嗡嗡声大、电流波形毛刺多,并非越高越好。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">7. 级联三环为什么要求「内环带宽 ≥ 外环 5~10 倍」?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 为了省 CPU 算力</button>
+      <button data-v="B">B. 这样外环整定时可以把内环近似成「增益为 1 的理想执行器」,内外环解耦设计、互不拖累;否则内环迟相会限制外环稳定裕度</button>
+      <button data-v="C">C. 这是硬件 ADC 的固定要求</button>
+      <button data-v="D">D. 只是为了统一命名习惯</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:级联控制的全部便利都建立在「时间尺度分离」上:内环足够快 → 在外环看来它瞬时到位 → 外环的 plant 才是干净的「速度=K×电流」模型(B)。若内外环带宽接近,两环互相争抢,整定永远调不完——这是本手册第 1 节的第一原则。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. 电流环「Kp=ωc·L、Ki=ωc·R」公式的来源是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 把绕组当一阶 RL 模型,G(s)=1/(Ls+R),配零点对消:控制器零点 s=−R/L,再令穿越频率为 ωc</button>
+      <button data-v="B">B. 从 PID 齐格勒-尼科尔斯表查出来的</button>
+      <button data-v="C">C. 由 PWM 频率直接除以 10 得到</button>
+      <button data-v="D">D. 经验凑数,没有理论依据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电机相绕组近似 R+L 一阶环节;PI 的零点 1/Kp·Ki 若精确对消被控对象极点(R/L),开环变成纯积分 1/(s·L/Kp),再令幅值穿越发生在 ωc → Kp=ωc·L、Ki=ωc·R(A)。这也是为什么 R、L 的测量精度直接决定「公式法」起点好不好——后续再按波形微调。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 空载运转时电机发出高频「嗡叫」,转速稳不住,手册推荐的第一个动作是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 立刻增大速度环 Ki 消除静差</button>
+      <button data-v="B">B. 降低母线电压</button>
+      <button data-v="C">C. 先降速度环 Kp(大约每次 20~30%)——嗡叫多为速度环增益过高引发的极限环振荡,压 Kp 立竿见影,稳住后再补 Ki</button>
+      <button data-v="D">D. 更换编码器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:症状优先级表(本节第 5 节)把「嗡叫/啸叫」的第一嫌疑给到<b>速度环 Kp 过高</b>:机械谐振或编码器噪声被高增益放大成可闻振荡(C)。加大 Ki(A)会让相位裕度更差;B/D 与振荡机理无关。口诀:先降益、后补差、再查噪。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 人形关节位置环带宽通常 5~30 Hz 就够,原因是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 位置传感器采样率只有 30 Hz</button>
+      <button data-v="B">B. 更高带宽会让电机烧毁</button>
+      <button data-v="C">C. 位置环带宽被 PWM 频率限制</button>
+      <button data-v="D">D. 步态/运动指令本身只有几~十几 Hz 的有效成分,位置环只需覆盖指令带宽;更快的动态由内层速度/电流环保证</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:带宽跟着<b>信号</b>走,不跟着「越高越好」走:人形行走/摆臂的轨迹能量集中在 10 Hz 以内,位置环 5~30 Hz 已无损跟踪(D);突发的接触动态由速度环(百 Hz 级)与电流环(kHz 级)兜住。A/C 是硬件错配,B 与事实无关。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 「空载静止时关节位置读数缓慢漂移」,排查顺序正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 先重写电流环 → 再换编码器 → 最后查机械</button>
+      <button data-v="B">B. 先查编码器零位/松动与温度(温漂) → 再看速度环 Ki 是否过大引起慢积分上翘 → 最后才考虑机械间隙</button>
+      <button data-v="C">C. 直接判定电机损坏</button>
+      <button data-v="D">D. 漂移是正常现象,不用处理</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:慢漂移的高频原因是<b>反馈链</b>(编码器零位松动/磁环温漂)与<b>慢积分</b>(Ki 大在死区里慢慢积),都属「先软后硬」排查(B);机械间隙表现为双向空程而不是单向慢漂。手册第 5 节症状速查表正是按「症状→首选参数→次选硬件」组织的,建议打印贴工位。</div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节要点速查:</b>①三环由内向外整定,内环带宽 ≥ 外环 5~10 倍;②电流环带宽法 Kp=ωc·L、Ki=ωc·R(ωc=2πf),带宽 ≤ PWM 的 1/10~1/20;③速度环 Kp,v=J·ωv/Kt、Ki 取 Kp 的 1/5~1/10,按症状表看曲线微调;④位置环 Kp≈带宽(5~30 Hz 足够),超调加 Kd;⑤嗡叫/过流/发烫/漂移各有首选排查参数,见第 5 节速查表。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>①级联三环必须由内向外整定,带宽分离 5~10 倍;②电流环用带宽法一步算出初值(Kp=ωcL,Ki=ωcR),上限受 PWM 频率约束;③速度环按"症状-参数表"看曲线微调,位置环 Kp≈带宽、Kd 管阻尼;④嗡叫/过流/发烫/漂移各有首选排查参数,配合故障诊断树页使用。</div>

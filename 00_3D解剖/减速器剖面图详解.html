@@ -110,6 +110,28 @@ body[data-theme="dark"] .svgbox [stroke="#7c5a12"]{stroke:#d4a017}
 body[data-theme="dark"] .box-tip{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.35);color:#c9d1d9}
 body[data-theme="dark"] .box-tip b{color:#9ecbff}
 </style>
+<style>
+/* ===== 深度讲解章节配套样式(V2.0.7 新增,key-point/box-warn/my-table 本页原先未定义) ===== */
+.key-point{background:linear-gradient(135deg,rgba(37,99,235,.07),rgba(37,99,235,.02));border:1px solid rgba(37,99,235,.3);border-left-width:4px;border-radius:12px;padding:14px 18px;margin:16px 0;font-size:14px;line-height:1.9;color:#1e293b}
+.kp-title{font-weight:800;color:#2563eb;margin-bottom:6px}
+.key-point b{color:#0f172a}
+.box-warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.4);color:#4a3a1c}
+.box-warn b{color:#b45309}
+.my-table{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:13px;line-height:1.7}
+.my-table th{background:#eff6ff;color:#1d4ed8;border:1px solid #dbeafe;padding:8px 10px;text-align:left;white-space:nowrap}
+.my-table td{border:1px solid #e2e8f0;color:#334155;padding:8px 10px;background:#fff}
+.my-src{font-size:12px;color:#64748b;margin-top:10px}
+.my-link{color:#2563eb}
+body[data-theme="dark"] .my-link{color:#58a6ff}
+body[data-theme="dark"] .key-point{background:linear-gradient(135deg,rgba(59,130,246,.10),rgba(59,130,246,.03));border-color:rgba(59,130,246,.4);color:#c9d1d9}
+body[data-theme="dark"] .kp-title{color:#60a5fa}
+body[data-theme="dark"] .key-point b,body[data-theme="dark"] .my-table th{color:#e6edf3}
+body[data-theme="dark"] .box-warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.45);color:#d9c9a8}
+body[data-theme="dark"] .box-warn b{color:#fbbf24}
+body[data-theme="dark"] .my-table th{background:#10233f;border-color:#1d3557;color:#93c5fd}
+body[data-theme="dark"] .my-table td{border-color:rgba(255,255,255,.09);color:#aab8c8;background:#10161f}
+body[data-theme="dark"] .my-src{color:#8b949e}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -286,10 +308,47 @@ body[data-theme="dark"] .box-tip b{color:#9ecbff}
     <div class="desc">偏心轴每转一圈，<b>摆线盘</b>反向转过一个针齿角度（齿差 1 传动），减速比 = <b>针齿数</b>。摆线盘与针齿是<b>滚动接触</b>且约一半针齿同时承载，因此<b>抗冲击能力远超谐波</b>、寿命长，但体积重量更大、有偏心振动（需双盘对消）。工业机器人（KUKA/发那科）大关节多用 RV。</div>
   </div>
 
+  <!-- 深度讲解:谐波减速比推导(2026-08-27 V2.0.7 新增) -->
+  <div class="card">
+    <h2 id="deep">四、深度讲解：谐波减速比公式从哪来（推导 + 算例）</h2>
+    <div class="sub">DEEP-DIVE · 应变式传动的本质是「用柔性变形换取逐齿错动」</div>
+
+    <div class="key-point">
+      <div class="kp-title">🧮 结论先行</div>
+      刚轮固定、波发生器输入、柔轮输出时：<br>
+      <b>i = n<sub>波</sub>/n<sub>柔</sub> = Z<sub>柔</sub> ÷ (Z<sub>刚</sub> − Z<sub>柔</sub>) = Z<sub>柔</sub> ÷ 齿差</b>，且输出与输入<b>反向</b>。<br>
+      例：Z<sub>柔</sub>=200、齿差 2 → i=100:1；齿差 4 → i=50:1（同一柔轮，换刚轮就变比）。
+    </div>
+
+    <p><b>四步推导（弹性追逐模型）：</b></p>
+    <table class="my-table">
+      <tr><th style="width:18%">步骤</th><th>物理图像</th><th style="width:34%">定量关系</th></tr>
+      <tr><td>① 基准态</td><td>波发生器把柔轮撑成椭圆，<b>长轴两端两段区域完全啮合</b>，其余区域脱开——这是每圈周期性重复的「基准相位」。</td><td>全啮合齿数 ≈ 周长的 2×约30%，其余靠齿侧间隙滑配</td></tr>
+      <tr><td>② 波发生器转 Δθ</td><td>啮合区跟随长轴整体前移 Δθ；原啮合区释放回弹、新区压入啮合。</td><td>柔轮被强制在刚轮内壁「重新找齿」</td></tr>
+      <tr><td>③ 重新全啮合的条件</td><td>两轮齿距 p 相同但<b>周长不同</b>：每绕一整圈，柔轮要比刚轮「少转」(Z<sub>刚</sub>−Z<sub>柔</sub>)个齿才能再次对齐全啮合位——这就是全部秘密：刚性齿轮副做不到的「逐齿逐步错动」，靠柔轮变形实现了。</td><td>波发生器转 2π → 柔轮相对刚轮回退 齿差×p</td></tr>
+      <tr><td>④ 化为传动比</td><td>把错动量摊到输出角位移上：θ<sub>柔</sub> = −Δθ·(Z<sub>刚</sub>−Z<sub>柔</sub>)/Z<sub>柔</sub>（负号＝反向）。</td><td>n<sub>柔</sub> = −n<sub>波</sub>·齿差/Z<sub>柔</sub> → <b>i = Z<sub>柔</sub>/齿差</b></td></tr>
+    </table>
+
+    <p><b>同构视角（进阶）：行星轮系 Willis 公式验证。</b>把波发生器看作「行星架」、柔轮看作行星轮、固定的刚轮看作内齿圈，代入 (n<sub>柔</sub>−n<sub>波</sub>)/(0−n<sub>波</sub>) = Z<sub>刚</sub>/Z<sub>柔</sub>，整理得 n<sub>柔</sub> = n<sub>波</sub>(Z<sub>柔</sub>−Z<sub>刚</sub>)/Z<sub>柔</sub>——与四步模型完全一致，反向、大比。<a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html" target="_blank" rel="noopener">行星轮系公式详见机械原理页 →</a></p>
+
+    <p><b>常见型号速查（齿差决定「变比的自由度」）：</b></p>
+    <table class="my-table">
+      <tr><th>Z<sub>柔</sub></th><th>Z<sub>刚</sub>=Z<sub>柔</sub>+齿差</th><th>齿差</th><th>i = Z<sub>柔</sub>/齿差</th><th>3000rpm 电机输入时输出转速</th></tr>
+      <tr><td>200</td><td>202</td><td>2</td><td><b>100:1</b></td><td>30 rpm（反向）</td></tr>
+      <tr><td>200</td><td>204</td><td>4</td><td><b>50:1</b></td><td>60 rpm（反向）</td></tr>
+      <tr><td>320</td><td>322</td><td>2</td><td><b>160:1</b></td><td>≈18.8 rpm（反向）</td></tr>
+      <tr><td>150</td><td>152</td><td>2</td><td><b>75:1</b></td><td>40 rpm（反向）</td></tr>
+    </table>
+
+    <div class="box box-warn"><b>⚠️ 四个高频易错点：</b>①把「齿差 2」当成减速比——它只是每周错动的齿数，真正的比还要除以 Z<sub>柔</sub>；②记成 i=Z<sub>刚</sub>/Z<sub>柔</sub>——那是「几乎等于 1」的周长比，不是传动比；③方向想当然——刚轮固定时柔轮输出<b>与波发生器反向</b>（本页动画绿色刻度即为反向输出的柔轮）；④以为谐波也要像行星那样多级串联才有大比——单级即可 50~160，级联反而引入额外背隙与惯量。另一个工程提醒：大减速比伴随高扭振密度与柔轮疲劳问题，频繁正反转+冲击工况应改选摆线 RV。</div>
+
+    <p class="my-src">资料整理更新至 2026-08 · 推导采用标准应变式（Strain Wave Gearing）刚性啮合假设，未计背隙与柔性轴承打滑。</p>
+  </div>
+
   <!-- 本节自测 -->
   <div class="card">
-    <h2>四、本节自测</h2>
-    <div class="sub">SELF-CHECK · 共 4 题 · 答后显示解析</div>
+    <h2>五、本节自测</h2>
+    <div class="sub">SELF-CHECK · 共 13 题 · 答后显示解析</div>
 
     <div class="quiz">
       <div class="quiz-q">1. 谐波减速器由哪三大核心部件组成(对应"输入—变形—输出/固定"的角色)?</div>
@@ -373,6 +432,78 @@ body[data-theme="dark"] .box-tip b{color:#9ecbff}
       </div>
       <div class="quiz-feedback"></div>
       <div class="quiz-explain">💡 解析:RV 由<b>偏心轴</b>驱动<b>摆线盘</b>与<b>针齿圈</b>滚动啮合,并不存在柔轮;「靠柔轮弹性变形」是谐波减速器的特征,是三种减速器之间最易混淆的误区,故 C 错。A、B、D 均为本页 RV 小节原文内容(滚动接触 + 约半齿承载、减速比 = 针齿数、双盘对消偏心振动)。</div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">8. 谐波减速器刚轮固定、波发生器输入时,输出端(柔轮)的转向与转速比关系,下列哪项正确?</div>
+      <div class="quiz-options" data-answer="C">
+        <button data-v="A">A. 与输入同向,i = Z刚/Z柔 ≈ 1</button>
+        <button data-v="B">B. 与输入同向,i = Z柔/齿差</button>
+        <button data-v="C">C. 与输入反向,i = Z柔/(Z刚−Z柔)</button>
+        <button data-v="D">D. 方向取决于电流相序,i 为定值 50</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:用行星轮系 Willis 公式验证(波发生器=行星架、柔轮=行星轮、刚轮=固定内齿圈):n<sub>柔</sub> = n<sub>波</sub>(Z<sub>柔</sub>−Z<sub>刚</sub>)/Z<sub>柔</sub>,齿差为正 → n<sub>柔</sub> 与输入<b>反向</b>;幅值 i = Z<sub>柔</sub>/齿差。本页动画里绿色刻度标注「柔轮输出(1/100 反向)」就是该结论的可视化。A 把周长比当传动比,B 丢掉方向,D 混淆了电机换向与机构旋向。<a href="#deep" class="my-link">回看上面的推导 →</a></div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">9. 同一柔轮 Z<sub>柔</sub>=200:配「齿差 2」与「齿差 4」的两种刚轮,减速比分别是多少?</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 都是 100:1,齿差只影响背隙</button>
+        <button data-v="B">B. 分别为 100:1 和 50:1——同一柔轮换刚轮即可改变传动比</button>
+        <button data-v="C">C. 分别为 200:1 和 400:1</button>
+        <button data-v="D">D. 分别为 2:1 和 4:1</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:i = Z<sub>柔</sub>/齿差 → 齿差 2 时 200/2=<b>100:1</b>;齿差 4 时 200/4=<b>50:1</b>。「齿差」不是背隙(A 错),也不是减速比本身(D 是最常见混淆),更不会让减速比翻倍(C 把分子搞反)。工程上正是靠更换刚轮/柔轮组合,在同一外形尺寸下派生出 50/100/120 等速比规格——这是谐波选型的重要自由度。<a href="../02_硬件基础/07_电机选型计算专题.html" target="_blank" rel="noopener">结合选型算例理解 →</a></div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">10. 为什么谐波减速器<b>单级</b>就能做到 50~160 的大减速比,而单级行星只有约 3~10?</div>
+      <div class="quiz-options" data-answer="A">
+        <button data-v="A">A. 谐波靠柔性变形实现「每圈只错动齿差个齿」的逐齿微错动,相当于把大分母摊进了变形运动学;行星受邻接条件与装配条件限制,单级齿数比做不大</button>
+        <button data-v="B">B. 因为谐波的齿加工得更小更密</button>
+        <button data-v="C">C. 因为谐波是多级串联结构</button>
+        <button data-v="D">D. 因为行星轮的材料强度不够</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:核心在<b>运动学原理不同</b>:谐波把「周长差×每周一次」变成连续可控的错动量(每月才错动齿差个齿),传动比由齿差与齿数之比决定,与「轮子大小」解耦;行星是经典定轴比例,单级大比会导致邻轮干涉与大齿轮体积爆炸,只能 3~10。C 最典型——谐波恰恰是<b>单级</b>结构,级联反而不存在;B/D 是表面误解。<a href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html" target="_blank" rel="noopener">对照行星轮系约束 →</a></div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">11. 关节电机额定 3000 rpm、额定转矩 0.3 N·m,经 i=100 的谐波减速器(效率取 80%)驱动负载。输出端的转速与转矩约为?</div>
+      <div class="quiz-options" data-answer="C">
+        <button data-v="A">A. 30 rpm / 30 N·m</button>
+        <button data-v="B">B. 30 rpm / 0.24 N·m</button>
+        <button data-v="C">C. 30 rpm / 24 N·m</button>
+        <button data-v="D">D. 300000 rpm / 0.003 N·m</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:n<sub>出</sub>=3000/100=<b>30 rpm</b>(反向);T<sub>出</sub>=T<sub>入</sub>×i×η=0.3×100×0.8=<b>24 N·m</b>。A 忘了效率(0.3×100=30);B 把效率除在了转速侧且转矩根本没放大(这是把减速器当联轴器的典型错误);D 是加速传动的关系式(减速比弄反)。「转速 ÷ i,转矩 × i × 效率」是所有减速器通用的两个换算式,务必成对记忆。<a href="../08_学习工具/05_传动与控制实验台.html" target="_blank" rel="noopener">去实验台亲手拖滑块验算 →</a></div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">12. 某膝关节需要频繁正反转并承受落地冲击(峰值 3 倍额定)。本页观点下,下面哪个判断正确?</div>
+      <div class="quiz-options" data-answer="D">
+        <button data-v="A">A. 选谐波:零背隙最适合冲击工况</button>
+        <button data-v="B">B. 选普通单级行星:i 小所以抗冲击</button>
+        <button data-v="C">C. 三种都可以,只看成本</button>
+        <button data-v="D">D. 避免谐波——柔轮反复弹性变形怕疲劳冲击,应选摆线 RV(滚动接触、约一半针齿同时承载)</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:谐波的短板恰是<b>柔轮薄壁疲劳</b>与冲击敏感——零背隙不等于抗冲击,A 把两个维度混为一谈;单级行星比小、多级才够用但累积背隙,B 不成立;工况属性(冲击/频响/寿命)优先于成本,C 错。工业机器人大关节在同类需求下几乎都选 RV,即 D。真机数据请以厂家样本峰值扭矩/寿命曲线为准(本页为教学定性结论)。<a href="../07_前沿知识库/01_全球人形机器人机型全景.html" target="_blank" rel="noopener">看主流整机如何搭配 →</a></div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-q">13. 关于三种减速器与电机编码器的安装关系,下列说法<b>错误</b>的是?</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 高分辨率位置反馈通常放在电机端(输入侧),再经减速比换算到输出角</button>
+        <button data-v="B">B. 编码器装在电机端后,输出端的真实角度就与编码器读数严格一致,无需输出端编码器</button>
+        <button data-v="C">C. 关节刚性不足或传动间隙会让「电机端角 ≠ 输出端角」,人形高端关节常再加一个输出端编码器做双反馈</button>
+        <button data-v="D">D. 输出端编码器还能兜底「碰撞/堵转时减速器打滑造成的位置丢失」</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:B 错在「严格一致」:谐波/RV 存在微量弹性变形与可能的多圈累计误差,重力/碰撞下齿面间歇脱啮会造成电机侧计数与实际输出角的偏差——这正是 A/C/D 描述的双编码器方案存在的理由。本站解剖页的三款拆解产品(RVGH 一体伺服等)都采用「电机端+输出端」双码盘架构可作实物印证。<a href="../00_3D解剖/电机编码器与灵巧手3D拆解.html" target="_blank" rel="noopener">拆解页看双编码器实物位 →</a></div>
     </div>
   </div>
 

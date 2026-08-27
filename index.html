@@ -738,10 +738,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.6</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-17 · 新增「关节执行器内部原理 3D 实验室」页</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.7</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-27 · 动画/3D 逐项校验修复 + 深度讲解与 70 道新题</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V2.0.7 · 2026-08-27 · 动画/3D 逐项校验修复 + 深度讲解与 70 道新题</summary>
+        <div class="faq-a">🔧 <b>动画/3D 校验修复(10 页取证,逐项回归)</b>:①原理实验室手指几何重建(真屈指链+腱绳跟随+被抓物体)②失步阈值统一 90°(π/2)+「转矩比 sin δ」实时读数 ③编码器光束改穿刻缝环+累计脉冲/角度读数(反转变负) ④拆解页相机全包围盒对焦+一键拆解自动重取景 ⑤高刷屏步态加速修复(主循环全量真实 dt) ⑥代码实验室视口外暂停省 CPU;📚 <b>6 章「深度讲解」</b>:谐波传动比推导/行星级联与 RV 两级分解/Clarke-Park 推导与 Id=0/SVPWM 扇区与 T1T2 实例/腱驱指尖力估算/Kt-母线-减速比联动校核;📝 <b>新增 70 题</b>(全站 550 题,均带定量解析与回链),中央题库 40→60 与 SRS 同步;3D sw v27,自检 13/13 全绿。</div>
+      </details>
+      <details class="faq">
         <summary>V2.0.6 · 2026-08-17 · 新增「关节执行器内部原理 3D 实验室」</summary>
         <div class="faq-a">🔬 <b>新页面(00-05)</b>:关节执行器内部原理 3D 实验室——纯程序化精细建模(零 STL 依赖),专讲三个机构的<b>内部工作原理动画</b>:①无刷电机旋转磁场 + 负载角滑杆(>0.95 亲眼看失步)②光电码盘明暗脉冲计数链路(可反转判向)③欠驱动手指顺序弯曲自适应抓握(近→中→末);每场景可调速/暂停,右侧同步原理讲解;原「3D 拆解页」保留(真实 STL 展示外形),本页补足原理维度;全站 66 页,自检 13/13 全绿。</div>
       </details>
@@ -881,7 +885,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.0.6(2026-08-17) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.0.7(2026-08-27) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

@@ -255,6 +255,78 @@
     <div class="quiz-explain">💡 解析:摆线盘(外齿)与针齿圈(内针齿)齿数相差 1:输入偏心轴每转一圈,摆线盘与针齿圈啮合点推进一个齿位,盘自身反向公转 1/27 圈(27 齿时)→ 减速比 27:1。约一半齿同时承载,所以 RV 抗冲击、寿命长;谐波靠柔轮弹性变形实现类似"差 1"效果,更轻更薄。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">9. RVGH 一体伺服的动力传递顺序(按本页分层),正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 输出法兰 → 摆线盘 → 磁铁座 → 底座</button>
+      <button data-v="B">B. 底座 → 输出法兰 → 磁铁座 → 摆线盘</button>
+      <button data-v="C">C. 电机壁/磁铁座(转子) → 偏心凸轮 → 摆线盘 → 轴承毂/输出法兰</button>
+      <button data-v="D">D. 磁铁座直接驱动输出法兰,中间没有减速</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:本页爆炸看传动链原文:「电机壁→磁铁座→偏心凸轮→摆线盘→输出法兰(27:1)」——转子(磁铁座)经偏心凸轮推动摆线盘做偏心滚动,再经轴承毂把低速大扭矩交给输出法兰(C)。这是把「电机+摆线减速+编码器」轴向集成进一只 40mm 级圆柱的标准一体伺服架构。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 36 线光电码盘,不插补时角度分辨率是多少?若电路四倍频呢?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 36°/脉冲;四倍频 9°</button>
+      <button data-v="B">B. 10°/脉冲;四倍频后 2.5°</button>
+      <button data-v="C">C. 10°/脉冲;四倍频不变</button>
+      <button data-v="D">D. 360°/36=10°,四倍频后 40°</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:360°/36 线 = <b>10°/脉冲</b>;A/B 正交每周期含 4 个边沿(上升/下降×2 相),四倍频把分辨率提到 10°/4 = <b>2.5°</b>(B)。工程码盘动辄上万线,再配合电子细分成秒级精度——本页码盘 36 缝是教学简化,看懂「线数×倍频=分辨率」即可。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 灵巧手产品里,LEAP Hand 手掌为什么用半透明材质摆在主模型旁边?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 作为「结构参考件」与宇树 G1 整件手并列对比——半透明提示它不是产品本体,只是开源结构示意</button>
+      <button data-v="B">B. 半透明是为了省渲染资源</button>
+      <button data-v="C">C. 它是待售配件,展示库存</button>
+      <button data-v="D">D. 透明材质能显示内部电路</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:本页 ③ 号产品实际加载了两件模型:G1 真实橡胶手(展示外形与包络)+ LEAP 手掌(MIT 开源,半透明 0.35 透明度作结构参考)。视觉上区分「本体 vs 参考」是 3D 教学页的通用手法(A),避免误解为同一只手的内外层。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. 本页剖切模式的平面常数用 +99 表示「不裁剪」而不是 −99,原因是什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. −99 是非法数值</button>
+      <button data-v="B">B. Three.js 裁剪平面保留的是「常数符号指向的那半空间」——符号取反会把所有几何裁光导致黑屏,−99 是历史事故的教训</button>
+      <button data-v="C">C. +99 才是 Three.js 的默认值</button>
+      <button data-v="D">D. 两者完全等价</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:裁剪平面方程 ax+by+cz+constant≥0 的一侧被保留;平面放远处时 constant 的符号决定「裁掉无限远一侧」还是「裁掉整个场景」。历史上 −99 曾把整幅几何裁光、页面黑屏(诊断探针读出全黑像素才定位)——这就是本页「渲染探针/装配探针」这排诊断按钮存在的原因(B)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">13. 本页爆炸拆解的「爆炸距离」按零件厚度比例计算,而不是统一距离。好处是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 渲染帧率更高</button>
+      <button data-v="B">B. 零件重量不同,重的飞得近</button>
+      <button data-v="C">C. 薄垫片不会和厚壳体飞得一样远——各零件保持「分离但不成一片」的可读装配关系,叠放次序一目了然</button>
+      <button data-v="D">D. 纯粹为了好看</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:统一爆炸距离会让 3mm 垫圈与 10mm 壳体挤在同一球面上,互相遮挡、次序错乱;按厚度定距(C)让爆炸图保持真实装配的轴向次序——这是工程「爆炸图」的标准画法。本页 RVGH 13 件按毫米站位叠放、爆炸后仍能看出动力流,就是这个设计。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">14. 本页使用的 LEAP Hand 与 RVGH 相关 STL 均为 MIT 许可,商用集成时正确的做法是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 可以自由修改与商用,但需在产品文档中保留原始版权与许可声明</button>
+      <button data-v="B">B. MIT 许可即「无主文件」,什么都不用做</button>
+      <button data-v="C">C. 必须开源自己的整机全套设计</button>
+      <button data-v="D">D. MIT 禁止商用,只能教学</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:MIT 只要求<b>保留版权与许可文本</b>,允许修改、闭源与商用(A);C 是 GPL 类「传染」条款的误套;D 与 MIT 立意相反。给「开源机器人件能不能上产品」定级的口诀:先看许可( MIT/Apache 宽松、GPL 传染、CC-BY-NC 禁商用),再看专利与商标。</div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节小结:</b>①一体伺服 = 电机本体(底座/壁/磁铁座/盖)+ 减速机构(摆线盘/轴承毂/输出法兰)+ 编码器,真实模型看分层;②光电编码器靠「码盘光栅+LED+光电管」输出脉冲计数,线数=分辨率,怕污损;③欠驱动灵巧手用「少电机+连杆/腱绳」驱动多关节,自适应抓握,减重降本;④开源模型使用必须遵守许可(本页 LEAP Hand/RVGH 均为 MIT)。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么工业伺服常用「电机端磁编 + 输出端光电/高精编」双编码器?各自在防什么?<br>2. 欠驱动手指抓握时,关节运动是「按顺序逐个锁死」还是「同时运动」?和弹簧刚度有什么关系?<br>3. 摆线减速的「齿差 1」是什么意思?为什么能实现大减速比?(提示:一圈差一个齿)</div>
 
@@ -800,17 +872,8 @@ function buildEncoder(group){
   return Promise.resolve();
 }
 
-/* ---------- 产品 2:LEAP Hand 欠驱动灵巧手(真实 STL,4 指实例化) ---------- */
-var LEAP_FILES = {
-  palm:  'palm_lower.stl',
-  mcp:   'mcp_joint.stl',
-  pip:   'pip.stl',
-  dip:   'dip.stl',
-  tip:   'fingertip.stl',
-  t_dip: 'thumb_dip.stl',
-  t_pip: 'thumb_pip.stl',
-  t_tip: 'thumb_fingertip.stl'
-};
+/* ---------- 产品 2:灵巧手(宇树 G1 整件 STL + LEAP 手掌结构参考) ----------
+   注:历史版本的 LEAP_FILES 八件分层装配映射已废弃(整件展示方案),已删除 */
 function buildHand(group){
   /* ③ 灵巧手:宇树 G1 真实橡胶手(整件 STL,13cm 手掌)。
      整件模型无法分层拆解,故用「点选高亮 + 参数说明」模式:
@@ -850,34 +913,31 @@ function buildAll(){
   });
 }
 
-/* ---------- 自动相机适配:按产品实际包围盒中心/半径对准(2026-08-17) ---------- */
+/* ---------- 自动相机适配:按产品实际包围盒中心/半径对准(2026-08-27 修正) ----------
+   旧版只取每零件「第一个子网格」的半径,纵向叠放的 RVGH 横向半径被低估 →
+   爆炸后相机距离偏近、上半截出画。现改为:遍历全部子网格,把各自身边阴盒
+   变换到世界坐标后取「整体并集」,再由并集的中心/最大半尺寸定相机目标与距离 */
 function computeFocus(pi){
   var pts = LAB.parts.filter(function(p){ return p.prod === pi; });
-  var minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9,minZ=1e9,maxZ=-1e9;
+  var gb = new THREE.Box3(); gb.makeEmpty();
+  var tb = new THREE.Box3();
   pts.forEach(function(p){
-    var m = p.mesh;
-    var r = 0.5;   /* 兜底半径 */
-    var box = null;
-    m.traverse(function(o){
-      if(o.isMesh && o.geometry && !box){
-        box = o.geometry.boundingBox;
-        if(box){
-          var s = new THREE.Vector3(); box.getSize(s);
-          r = Math.max(r, s.length()/2);
-        }
+    p.mesh.updateWorldMatrix(true, true);
+    p.mesh.traverse(function(o){
+      if(o.isMesh && o.geometry){
+        if(!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+        tb.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld);
+        gb.union(tb);
       }
     });
-    var pos = m.position;
-    minX = Math.min(minX, pos.x - r); maxX = Math.max(maxX, pos.x + r);
-    minY = Math.min(minY, pos.y - r); maxY = Math.max(maxY, pos.y + r);
-    minZ = Math.min(minZ, pos.z - r); maxZ = Math.max(maxZ, pos.z + r);
   });
-  var ok = maxX > minX && maxY > minY && maxZ > minZ;
+  if(gb.isEmpty()) return { x:0, y:0, z:0, r:2 };
+  var c = new THREE.Vector3(), sz = new THREE.Vector3();
+  gb.getCenter(c); gb.getSize(sz);
   return {
-    x: ok ? (minX+maxX)/2 : 0,
-    y: ok ? (minY+maxY)/2 : 0,
-    z: ok ? (minZ+maxZ)/2 : 0,
-    r: ok ? Math.max(maxX-minX, maxY-minY, maxZ-minZ)/2 : 2
+    x: c.x, y: c.y, z: c.z,
+    r: Math.max(sz.x, sz.y, sz.z) / 2,      /* 最大边的一半 = 包络球半径 */
+    h: sz.y                                  /* 纵向高度(爆炸时相机俯仰参考) */
   };
 }
 
@@ -891,6 +951,7 @@ function switchProd(i){
   LAB.explodeTarget = 0; LAB.explode = 0;
   /* 自动对准:dist = 半径×2.6(模型占画面 ~40%),注视产品包围盒中心 */
   var f = computeFocus(i);
+  LAB.prodFocus = f;   /* 保存供一键拆解/复位时重取景(toggleExplode) */
   var dist = Math.max(2.5, Math.min(16, f.r * 2.6 + 0.5));
   dlog('🎯 相机对准: 产品' + i + ' 中心(' + f.x.toFixed(2) + ',' + f.y.toFixed(2) + ',' + f.z.toFixed(2) + ') 半径=' + f.r.toFixed(2) + ' dist=' + dist.toFixed(1), f.r > 0.3 && f.r < 10);
   /* 平滑镜头飞行(camGoal 由 loop 每帧趋近;用户拖拽/滚轮时清空直接接管) */
@@ -997,6 +1058,13 @@ function toggleExplode(){
   var r = document.querySelector('#ctlBar input[type=range]');
   if(r) r.value = LAB.explodeTarget;
   syncExplodeBtn();
+  /* 一键拆解/复位时同步重取景:爆炸把零件串纵向拉长,按爆炸度放大目标距离,
+     避免上半截零件飞出画面(computeFocus 返回的 r 是装配态半径) */
+  if(LAB.prodFocus){
+    var f = LAB.prodFocus;
+    var dist = Math.max(2.5, Math.min(18, f.r * 2.6 * (1 + 1.15 * LAB.explodeTarget) + 0.5));
+    LAB.camGoal = { yaw: LAB.view.yaw, pitch: LAB.view.pitch, dist: dist, tx: f.x, ty: f.y, tz: f.z };
+  }
 }
 function syncSpinBtn(){
   var btns = document.querySelectorAll('#ctlBar button');
@@ -1016,7 +1084,7 @@ function buildInfo(){
   var LEGENDS = [
     '<b>RVGH 一体伺服</b>(真实 STL,MIT):<b>深灰</b>=外壳/底座;<b>橙</b>=摆线盘;<b>银</b>=轴承毂/输出法兰;<b>深黑</b>=磁铁座。爆炸看传动链:电机壁→磁铁座→偏心凸轮→摆线盘→输出法兰(27:1)。',
     '<b>光电编码器</b>(程序化示意):<b>半透明蓝</b>=玻璃码盘(蚀刻光栅);<b>红</b>=LED;<b>深灰</b>=光电管;<b>绿</b>=PCB;<b>金</b>=焊盘与接口。分层轴向展开,点「码盘」观察刻度。',
-    '<b>LEAP Hand 欠驱动灵巧手</b>(真实 STL,UC Berkeley MIT):<b>手掌</b>内 6 电机 → 腱绳/连杆 → <b>掌指关节 MCP</b> → 近端 PIP → 远端 DIP → 指尖。4 指实例化 + 拇指 3 件对掌,16 自由度 6 电机。'
+    '<b>灵巧手</b>(真实 STL):主模型为<b>宇树 G1 橡胶手整件</b>——5 指、电机经腱绳欠驱动,多关节自适应弯曲包络物体;右侧半透明件为 <b>LEAP Hand 手掌</b>(UC Berkeley 开源,仅作分层结构参考)。点选部件查看参数;欠驱动原理动画见「关节执行器内部原理 3D 实验室」③。'
   ];
   el.innerHTML = LEGENDS[LAB.prod];
   document.getElementById('legend').innerHTML = '';

@@ -107,7 +107,23 @@
 
   <div class="box box-tip"><b>💡 怎么读上图:</b>左图 αβ 平面,六边形顶点是 6 个基本矢量,绿色箭头是 V<sub>ref</sub>,橙色虚线圆是线性区边界;m&gt;0.907 进入过调制(削顶,电流环失控风险)。右图三条曲线是 U/V/W 相含共模注入后的马鞍调制波,白虚线是当前 θ 相位。m 越接近 0.907,马鞍顶部越平坦——零矢量时间被压到 0。</div>
 
-  <h2><span class="h2-num">3</span> 本节自测</h2>
+  <h2><span class="h2-num">3</span> 深度讲解：扇区判断与 T₁/T₂ 的完整数值实例（V2.0.7 新增）</h2>
+  <div class="key-point">
+    <div class="kp-title">🧮 一套可以直接抄进代码的流程</div>
+    输入 u<sub>α</sub>/u<sub>β</sub>(反 Park 之后)与开关周期 T<sub>s</sub>:①判扇区 N;②求扇区内角 θ∈[0°,60°);③按占空比 d₁=m·sin(60°−θ)、d₂=m·sinθ(m=√3·|V<sub>ref</sub>|/U<sub>dc</sub>,线性区≤1)计算相邻矢量时间;④d₀=1−d₁−d₂ 分给零矢量,中心对齐排布 PWM。
+  </div>
+  <p><b>手把手算例：</b>母线 U<sub>dc</sub>=48 V、f<sub>pwm</sub>=20 kHz(T<sub>s</sub>=50 µs)、需要 V<sub>ref</sub>=24 V @ 电角度 15°(落在以 α 轴起算的<b>第 1 扇区</b>,θ=15°)。</p>
+  <div class="table-wrap"><table>
+    <tr><th>步骤</th><th>公式</th><th>代入</th><th>结果</th></tr>
+    <tr><td>① 调制系数</td><td>m = √3·|V<sub>ref</sub>|/U<sub>dc</sub></td><td>1.732×24/48</td><td><b>0.866</b>(&lt;1,线性区成立)</td></tr>
+    <tr><td>② 主矢量时长</td><td>d₁ = m·sin(60°−θ)</td><td>0.866×sin45°=0.612</td><td>T₁ = <b>30.6 µs</b></td></tr>
+    <tr><td>③ 副矢量时长</td><td>d₂ = m·sinθ</td><td>0.866×sin15°=0.224</td><td>T₂ = <b>11.2 µs</b></td></tr>
+    <tr><td>④ 零矢量时长</td><td>d₀ = 1−d₁−d₂</td><td>1−0.836</td><td>T₀ = <b>8.2 µs</b>(V000/V111 各分一半)</td></tr>
+  </table></div>
+  <p>校验:T₁+T₂=41.8 µs &lt; T<sub>s</sub> ✓ 线性可合成。若继续增大 |V<sub>ref</sub>| 让 d₁+d₂ 冲破 1,零矢量被挤没——马鞍波削顶,即实验二里 m&gt;0.907 的过调制现象。把上面四行翻译成 C 就是中断里的全部「矢量调度」逻辑。</p>
+  <div class="box box-warn"><b>⚠️ 实现层四个坑:</b>①扇区编号从哪根轴起算、顺/逆时针,各家教材与芯片手册不一致——照搬公式前先对齐约定,否则六路整体错相;②θ 必须 mod 60° 取「扇区内角」,直接拿连续电角度代进去会周期性跳变;③轻微过调制不会立刻炸管,先表现为削顶谐波和电流环抖动,容易被误诊为「编码器坏了」;④死区让实际输出电压比指令少一点点,低速大扭矩(反电动势小)时相对误差最大,需要死区补偿。回到上方实验二亲手拖 m。</div>
+
+  <h2><span class="h2-num">4</span> 本节自测</h2>
   <div class="quiz">
     <div class="quiz-q">1. 三相逆变桥共有多少个开关状态?其中有效电压矢量和零矢量各多少?</div>
     <div class="quiz-options" data-answer="C">
@@ -173,6 +189,78 @@
     </div>
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:m &gt; 0.907 超出线性区(对应 T1+T2 &gt; 100%),零矢量时间被压到 0,调制波削顶、矢量轨迹不再可线性合成,电流环容易失控。把 m 拉向 0.907 时马鞍顶部越平坦,正是零矢量时间被压缩的直观表现(见实验二图注)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 反 Park 之后得到 u<sub>α</sub>&lt;0、u<sub>β</sub&gt;0(矢量角约 135°)。V<sub>ref</sub> 位于第几扇区?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 第 1 扇区(0°~60°)</button>
+      <button data-v="B">B. 第 2 扇区(60°~120°)</button>
+      <button data-v="C">C. 第 3 扇区(120°~180°)</button>
+      <button data-v="D">D. 第 6 扇区(300°~360°)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:以 α 轴逆时针计,135° 落在 120°~180° 区间 = <b>第 3 扇区</b>,相邻基本矢量为 V3 与 V4。扇区判断也可以不反三角:用 sign(u<sub>β</sub>)、sign(√3u<sub>α</sub>−u<sub>β</sub>)、sign(−√3u<sub>α</sub>−u<sub>β</sub>) 三个符号位组合出 N=1~6——比较器速度更快。回看第 3 节流程。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. 按「深度讲解」算例同参数(U<sub>dc</sub>=48 V,T<sub>s</sub>=50 µs),把 |V<sub>ref</sub>| 从 24 V 提高到 27 V、θ 仍为 15°。T₁ 变为?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. ≈34.4 µs(总占比 47%+,逼近线性边界)</button>
+      <button data-v="B">B. 仍 30.6 µs,T 只随角度变化</button>
+      <button data-v="C">C. 减小到 ≈27 µs</button>
+      <button data-v="D">D. 无法计算,信息不足</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:m′=√3×27/48=0.975,d₁=m′sin45°≈0.69 → T₁≈<b>34.4 µs</b>;d₂=0.975×sin15°≈0.252 → T₂≈12.6 µs;合计 47 µs,零矢量只剩 ~3 µs——离削顶一步之遥。这说明 T₁/T₂ 随幅值与角度<b>双变量</b>变化,B 错在只认角度;正弦关系下幅值增大时长单调增(C/D 无据)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 零矢量时间 d₀ 在什么工况下趋近于 0?此时意味着什么?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 空载时,d₀ 自然消失</button>
+      <button data-v="B">B. 低速时,d₀ 自动增大到 1</button>
+      <button data-v="C">C. d₀ 与工作点无关,恒为定值</button>
+      <button data-v="D">D. 幅值顶满线性圆(m→1)时 d₀→0 —— 逆变器所有时间都在发力,再往上就是过调制</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:d₀=1−d₁−d₂ 是「喘口气」的时间预算,只随 |V<sub>ref</sub>|/θ 改变:矢量越大越贴近六边形内切圆,相邻矢量占空比越高,d₀ 越小;贴满即 m=1 线性上限(按本节定义;对应马鞍波最平坦的形态)。它不是负载的直接函数——A 把因果挂错对象。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 共模注入 u<sub>cm</sub>=−(max+min)/2 为什么能白捡约 15% 的电压利用率?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 它放大了直流母线电压</button>
+      <button data-v="B">B. 它把三相调制波整体压低/抬高的「公共分量」对线电压无影响,却让峰值下降,从而允许更大的基波幅值而不触顶</button>
+      <button data-v="C">C. 它降低了开关频率</button>
+      <button data-v="D">D. 它滤除了开关谐波</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:星接电机的相电流只取决于<b>线电压差</b>,三相同时加任何公共偏置都不改变电流——这正是「共模」的特权。注入 −(max+min)/2 后三相比相波形的包络被「压」回载波范围内,等效相电压幅值上限从 U<sub>dc</sub>/2 抬到 U<sub>dc</sub>/√3(+15.5%),马鞍形状只是这个操作在三相上的投影。开关频率与谐波分布不由它决定(C/D)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 死区畸变在哪种工况下相对影响最大?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 低转速、大扭矩输出(电角度走得慢而电流大)</button>
+      <button data-v="B">B. 高转速轻载</button>
+      <button data-v="C">C. 与转速无关,只看母线电压</button>
+      <button data-v="D">D. 只在启动瞬间有意义</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:死区在每个开关周期内固定「偷走」约 2·t<sub>dt</sub> 的有效伏秒,换成的电压误差 ΔU≈U<sub>dc</sub>·2t<sub>dt</sub>/T<sub>s</sub> 是常数;基波电压幅值却随转速降低而变小 → <b>低速时 ΔU/ΔV 基波占比急剧上升</b>,且误差方向随电流极性翻转,产生 5/7 次特征谐波——表现为过零抖动与嗡鸣,需死区补偿或馈入校正。高速时基波大,占比自然小(B/C/D 均误)。在实验一里观察桥臂切换。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. 从「iq 阶跃指令」到「绕组电流真的变大」,正确的信号链顺序是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. iq 阶跃 → SVPWM → Clarke → 三相 PWM</button>
+      <button data-v="B">B. iq 阶跃 → 直接放大成 PWM 占空比 → 电机</button>
+      <button data-v="C">C. iq 阶跃 → 电流环 PI 输出 u<sub>d</sub>/u<sub>q</sub> → 反 Park 得 u<sub>α</sub>/u<sub>β</sub> → 判扇区+算 T₁/T₂ → 六路 PWM → 功率级合成实际电压 → 电流响应</button>
+      <button data-v="D">D. iq 阶跃 → Park → ADC 采样 → PWM</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:完整链路是「控制环(dq)→ 反 Park → 调制器(αβ)→ 功率级 → 物理」。C 每一步都归位正确。A/SVPWM 出现在反 Park 之前属于坐标系混乱;B 跳过了全部坐标变换(D 系列里 Park/ADC 是反馈侧的环节,方向反了)——建议对照本页两个实验把链路各走一遍。<a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html" target="_blank" rel="noopener">三环全景动画配合理解 →</a></div>
   </div>
 
   <div class="box box-tip"><b>📌 本节要点速查:</b>①三相全桥 2³=8 状态 = 6 有效矢量(V1~V6)+ 2 零矢量(V0/V7);②零矢量端口电压为零但绕组电流仍续流,不是「无电流」;③SVPWM 用相邻基本矢量+零矢量按时隙合成,T1/T2/T0 与扇区实时对应;④马鞍波来自共模注入 u<sub>cm</sub>=−(max+min)/2,线性区 m 上限约 0.907(比正弦 0.785 高约 15%);⑤死区防直通是安全底线,0.5~3 μs 间隙,畸变需补偿;⑥m&gt;0.907 过调制削顶,电流环失控风险。</div>

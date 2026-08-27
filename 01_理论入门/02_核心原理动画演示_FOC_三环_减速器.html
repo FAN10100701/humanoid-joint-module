@@ -321,6 +321,66 @@
     <div class="quiz-explain">💡 行星减速器在低减速比(3~10)时反驱透明度好,利于力矩控制与柔顺交互,是 QDD 关节首选,如小米 CyberGear 采用 3.5:1 单级行星、智元 PowerFlow 同为行星准直驱方案;重载关节才更倾向谐波或 RV。误区是「减速比越大越适合一切关节」。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">10. 从三相采样电流到「dq 直流量」,正确的变换顺序是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 先 Park 后 Clarke</button>
+      <button data-v="B">B. Clarke(abc→αβ) 再 Park(αβ→dq),后者需要电角度 θe 参与旋转</button>
+      <button data-v="C">C. 两者可互换顺序,结果一样</button>
+      <button data-v="D">D. 需要 SVPWM 先把电流变成两相</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Clarke 是「静止系内的降维」(三相→两相,不需要角度信息),Park 是「静止系→旋转系」(必须乘 θe 的 cos/sin)。顺序不可换(B),SVPWM 在输出侧而非采样侧(D)。本页 FOC 场景右侧参数板演示的就是这条链路的实时数值。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 三环闭环「位置→速度→电流」的带宽关系,正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 位置环带宽最高,因为它决定最终精度</button>
+      <button data-v="B">B. 三环带宽应相等才能同步响应</button>
+      <button data-v="C">C. 由内向外带宽逐级升高:电流环最高(约 10~40kHz 等效)、速度环次之、位置环最低——外环带宽必须显著低于内环才能把内环当「理想执行器」</button>
+      <button data-v="D">D. 带宽由电机极对数决定</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:级联控制的设计前提是「内环比外环快 5~10 倍」,这样外环 tuning 时内环近似为 1 的增益块;位置环带宽通常只有几~几十 Hz(C)。本页三环场景切到「三环闭环控制」视图可以直接看到三条指令曲线的响应快慢差。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. 谐波减速器柔轮 200 齿、刚轮 202 齿,传动比与输出方向是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. i=100:1,输出与输入反向(动画中绿色柔轮刻度反向慢转)</button>
+      <button data-v="B">B. i=101:1,同向</button>
+      <button data-v="C">C. i=2:1,同向</button>
+      <button data-v="D">D. i=200:1,反向</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:i = Z柔/(Z刚−Z柔) = 200/2 = <b>100</b>,方向由 Willis 公式的负号给出——反向(A)。B 把「齿差 2」当成除数、忽略方向;C 把齿差当传动比。对照本页谐波视图:红色波发生器高速转,柔轮以 1/100 速度倒着走。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">13. QDD(准直驱)关节偏爱行星减速器,核心理由是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 行星的减速比最大,能到 1:100</button>
+      <button data-v="B">B. 行星零背隙,力控手感最好</button>
+      <button data-v="C">C. 行星效率最低,发热小</button>
+      <button data-v="D">D. 单级 3~10 的小减速比+高效率+好反驱性,让电机「半直接」驱动负载——碰撞瞬间反向可驱动(反驱透明),保护与力控都受益</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:QDD 的设计哲学是「少减速、多靠电机」:小比行星(如 CyberGear 3.5:1)保留了接近直驱的反驱透明性与冲击耐受,同时略微放大扭矩/降低惯量比(D)。A 是谐波的领域;B 恰是谐波优势;C 效率高低与发热说法不成立。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">14. 摆线轮 20 齿、针齿 20+1 套「齿差 1」传动,减速比是多少?RV 在此基础上能到多少?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 摆线级 i=20:1(反向);再复合一级渐开线行星(约 3:1)即为 RV,总比可到 60~120:1</button>
+      <button data-v="B">B. 摆线级 i=21:1;RV=21×21</button>
+      <button data-v="C">C. 摆线级 i=1:20(加速);RV 靠谐波到 100</button>
+      <button data-v="D">D. 摆线级 i=10:1;RV=10</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:齿差 1 → 每圈反向错 1 齿,i=摆线齿数=20(A 前半);RV=渐开线行星级(输入级)×摆线针轮级串联,60~120 常见(A 后半)。B 用了针齿数+1 且同级相乘(结构理解错误);C 方向与复合对象都错。本页摆线视图里橙色摆线盘的公转+反向自转就是这个运动的分解。</div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节要点速查:</b>①FOC 经 Clarke→Park 变换把三相电流转到旋转 d/q 坐标系,Id=0 使电流全落在 q 轴、以最小电流产生最大转矩;②三环闭环由外到内为「位置环→速度环→电流环」,带宽依次升高(约 1kHz / 2~5kHz / 10~40kHz),外环带宽必须低于内环;③谐波减速比 i=柔轮齿数÷(刚轮−柔轮),零背隙大减速比(200/202 齿 → 1:100,输出反向);④行星减速比 i=1+Zr/Zs(12/48 → 1:5),低减速比反驱好,是 QDD 关节首选;⑤摆线减速比 i=摆线轮齿数(20 → 1:20 反向),抗冲击寿命长,RV 在其上复合行星级可做到 100 以上。</div>
 
   <!-- ================= 小结与思考 ================= -->

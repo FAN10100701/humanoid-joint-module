@@ -34,18 +34,18 @@
     <div class="sub">按章节检验学习成果,点击选项即时判分;答错自动显示解析并回链对应章节,把知识盲区逐个消灭。</div>
     <div class="tags">
       <span class="tag">4 组</span>
-      <span class="tag">40 题</span>
+      <span class="tag">60 题</span>
       <span class="tag">即时反馈</span>
     </div>
   </div>
 
   <!-- ================= 得分栏 ================= -->
-  <div class="qz-scorebar" id="scoreBar"><span class="qz-dot"></span>已答 0/40 · 答对 0</div>
+  <div class="qz-scorebar" id="scoreBar"><span class="qz-dot"></span>已答 0/60 · 答对 0</div>
 
   <!-- ================= 今日复习(间隔重复 SRS) ================= -->
   <div class="srs-wrap">
     <h2><span class="h2-num">S</span> 今日复习 · 间隔重复 SRS</h2>
-    <p style="font-size:13px;color:#9aa4b2">基于本页 40 题题库,按"学-练-测-复习"闭环自动安排复习:答对间隔逐级拉长(30分钟→1天→2天→4天→8天→16天),答错 30 分钟后重试。进度保存在本地浏览器。</p>
+    <p style="font-size:13px;color:#9aa4b2">基于本页 60 题题库,按"学-练-测-复习"闭环自动安排复习:答对间隔逐级拉长(30分钟→1天→2天→4天→8天→16天),答错 30 分钟后重试。进度保存在本地浏览器。</p>
     <div id="srsPanel"></div>
   </div>
 
@@ -62,7 +62,7 @@
     <b>💡 使用说明:</b><br>
     ① 点击选项即时判分,每题只计第一次作答,作答后该题锁定计分;<br>
     ② 每题解析在作答后自动显示,答错的同学请顺着解析里的链接回到对应章节复习;<br>
-    ③ 顶部得分栏实时统计「已答 X/40 · 答对 Y」,建议正确率 ≥ 70% 再进入下一部分学习。
+    ③ 顶部得分栏实时统计「已答 X/60 · 答对 Y」,建议正确率 ≥ 70% 再进入下一部分学习。
   </div>
 
   <!-- ================= 组一 · 理论入门 ================= -->
@@ -151,6 +151,66 @@
     </div>
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:电流环控制电机<b>电感-电阻(RL)回路</b>,时间常数亚毫秒级、动态最快;力矩正比于电流,电流环慢则力矩跟不上。带宽须与被控对象动态匹配:越内环对象越快、带宽越高;位置环对象是大惯量刚体,频率反而最低。<a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">FOC 三环动画 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">41. 谐波减速器柔轮 200 齿、刚轮 202 齿,传动比与输出方向是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. i=100:1,输出与输入反向</button>
+      <button data-v="B">B. i=101:1,同向</button>
+      <button data-v="C">C. i=2:1,同向</button>
+      <button data-v="D">D. i=200:1,反向</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:i = Z柔 ÷ (Z刚−Z柔) = 200 ÷ 2 = 100。刚轮固定时由 Willis 公式知输出与波发生器反向。齿差 2 只是每周错动的齿数,不是传动比本身。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">42. 同一柔轮 200 齿,改配「齿差 4」的刚轮,减速比变为?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 仍是 100:1,齿差只影响背隙</button>
+      <button data-v="B">B. 50:1——同一柔轮换刚轮即可改变传动比</button>
+      <button data-v="C">C. 25:1</button>
+      <button data-v="D">D. 200:1</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:i = Z柔 ÷ 齿差 = 200 ÷ 4 = 50。齿差是谐波「变比的自由度」:同一外形换刚轮/柔轮组合即派生 50/100/160 等规格。齿差不是背隙,更不是减速比。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">43. 两级行星减速器每级效率 90%,总效率是多少?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 90%</button>
+      <button data-v="B">B. 81%</button>
+      <button data-v="C">C. 80%</button>
+      <button data-v="D">D. 45%</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:级联效率相乘:0.9×0.9=0.81。三级就剩 0.73,所以「级联堆减速比」要同步核算效率塌缩与发热;负载需求 ÷(i×η) 才是电机端真实扭矩。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">44. RV 减速器的两级分别是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 第一级渐开线行星(约3:1降速)+ 第二级摆线针轮(i=针齿数的大比级)</button>
+      <button data-v="B">B. 两级都是摆线针轮,相位错开180°</button>
+      <button data-v="C">C. 第一级谐波柔轮+第二级行星</button>
+      <button data-v="D">D. 两级普通圆柱齿轮</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:RV = 输入级渐开线行星把高速降到中速,主力大比来自偏心轴驱动的摆线盘×针齿圈(齿差1,i=针齿数≈33~41);双摆线盘对消偏心振动是同一摆线级内的设计。复合后单台 60~130:1 且高刚度抗冲击。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">45. 行星轮系(内齿圈固定)Zs=15、Zr=60,单级减速比是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 3:1</button>
+      <button data-v="B">B. 4:1</button>
+      <button data-v="C">C. 6:1</button>
+      <button data-v="D">D. 5:1</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:i = 1 + Zr/Zs = 1 + 60/15 = 5。分子上的「1」来自行星架的公转贡献——把行星当定轴齿轮副用 60/15=4 计算是常见错误。</div>
   </div>
 
   <!-- ================= 组二 · 硬件基础 ================= -->
@@ -287,6 +347,66 @@
     </div>
     <div class="quiz-feedback"></div>
     <div class="quiz-explain">💡 解析:IMU 由<b>加速度计</b>与<b>陀螺仪</b>组成:加速度计测三轴线加速度(含重力),陀螺仪测三轴角速度,姿态靠对角速度积分得到;九轴 IMU 另含磁力计测磁场方向,用于航向修正,不是陀螺仪的职责。<a href="../06_软件与算法/06_视觉SLAM与状态估计.html">视觉 SLAM 与状态估计 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">46. Clarke 变换能把三相电流「无损压缩」成两相,原因是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 第三相电流恒为零</button>
+      <button data-v="B">B. 星接无中线时 ia+ib+ic=0,任一相可由另两相线性表出,独立自由度只有 2 个</button>
+      <button data-v="C">C. 只测两相省 ADC,信息会丢一点</button>
+      <button data-v="D">D. 电机只需两相通电</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:基尔霍夫电流定律给出线性约束:三相之和恒为零 → 秩为 2。ic=−ia−ib 随时可反推,信息不丢。这也是双电阻采样方案成立的理论依据。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">47. Park 变换在 FOC 中的核心作用是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 把三相变成两相</button>
+      <button data-v="B">B. 生成 PWM 占空比</button>
+      <button data-v="C">C. 把 αβ 静止坐标系旋到随转子转动的 dq 系,恒速正弦量变成直流量,PI 可零稳态误差调节</button>
+      <button data-v="D">D. 测量电机温度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Clarke 后的 αβ 电流仍是随转子旋转的正弦量;Park 乘上电角度 θe 旋转到转子参考系后成为直流量,电流环因此像调直流电机一样直观。反 Park 则在输出侧把 dq 电压指令转回 αβ。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">48. 14 对极电机的转子机械角转过 10°,电角度变化多少?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 10°</button>
+      <button data-v="B">B. 70°</button>
+      <button data-v="C">C. 1.4°</button>
+      <button data-v="D">D. 140°</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电角度 = 极对数 × 机械角 = 14×10°=140°。极对数填错或拿机械角直接进 Park,换向即错位:轻则抖动无力,重则失步——更换电机/编码器后必须重新校准电气零位。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">49. 表贴式 PMSM(Ld≈Lq)把 Id 设为 0 的根本理由是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 磁阻转矩项 (Ld−Lq)·Id·Iq≈0,Id 不产生转矩只贡献铜损与退磁风险,设 0 使单位电流转矩最大</button>
+      <button data-v="B">B. Id=0 让编码器更准</button>
+      <button data-v="C">C. 这是所有电机通用的定律</button>
+      <button data-v="D">D. 为了防止 SVPWM 过调制</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Te=1.5p[ψf·Iq+(Ld−Lq)·Id·Iq]。表贴式下两项结构里 Id 的收益项趋近零,只剩 I²R 发热。内置式 IPM 则可给负 Id 吃磁阻转矩(MTPA)或弱磁扩速——Id=0 是表贴式下的最优选择而非普适定律。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">50. KV=55 的无框电机(Kt=9.55/KV),输出 2.2 N·m、经 i=15、η=0.8 的减速器,持续电流约?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 12.6 A</button>
+      <button data-v="B">B. 1.05 A</button>
+      <button data-v="C">C. 0.03 A</button>
+      <button data-v="D">D. 6 A</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电机端扭矩 = 2.2/(15×0.8) ≈ 0.147 N·m;Kt = 9.55/55 ≈ 0.174 N·m/A;I = 0.147/0.174 ≈ 1.05 A。链路口诀:输出扭矩 ÷ i ÷ η ÷ Kt。低 KV=高 Kt=小电流,这正是力矩型关节选低 KV 的原因。</div>
   </div>
 
   <!-- ================= 组三 · 软件与算法 ================= -->
@@ -461,6 +581,66 @@
     <div class="quiz-explain">💡 解析:<b>内参</b>描述相机自身的成像几何:焦距 fx/fy、主点 cx/cy 构成内参矩阵 K,畸变系数刻画镜头畸变;外参才是相机在世界中的位置与朝向。内参由 Kalibr 或棋盘格标定得到,标定决定系统精度下限。<a href="../06_软件与算法/06_视觉SLAM与状态估计.html">视觉 SLAM 与状态估计 →</a></div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">51. 级联三环要求「内环带宽 ≥ 外环 5~10 倍」的设计目的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 省 CPU</button>
+      <button data-v="B">B. 让外环整定时把内环近似为理想执行器,内外环解耦设计;否则内环迟相会吃掉外环稳定裕度</button>
+      <button data-v="C">C. 硬件 ADC 的固定要求</button>
+      <button data-v="D">D. 统一命名</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:时间尺度分离是级联控制的前提:内环够快,外环看到的 plant 才干净,两环才能独立整定。典型数量级:电流环 10~40kHz、速度环 1~5kHz、位置环 5~30Hz。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">52. SVPWM 调制比 m 拖过约 0.907 会发生什么?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 进入过调制:零矢量时间被压到 0、马鞍波削顶,矢量不可线性合成,电流环有失控风险</button>
+      <button data-v="B">B. 母线电压利用率归零</button>
+      <button data-v="C">C. 自动切换纯方波且更稳</button>
+      <button data-v="D">D. 谐波完全消失</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:线性区 m≤0.907(比正弦 SPWM 高约 15%,来自共模注入)。越过之后 T1+T2> Ts,零矢量没了、波形削顶,输出电压不再跟随指令——表现为电流环震荡/嗡叫。共模注入 ucm=−(max+min)/2 是收益来源。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">53. 电流环「Kp=ωc·L、Ki=ωc·R」公式的来源是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 齐格勒-尼科尔斯查表</button>
+      <button data-v="B">B. PWM 频率除以 10</button>
+      <button data-v="C">C. 纯经验凑数</button>
+      <button data-v="D">D. 把绕组当一阶 RL 模型做零点对消:PI 零点对消极点 R/L,再令穿越频率为 ωc</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:G(s)=1/(Ls+R),PI 零点 1/(Kp/Ki·s+1) 若对准 R/L,开环变成纯积分环节,令幅值穿越 ωc 即得 Kp=ωc·L、Ki=ωc·R。所以 R/L 测得准,公式法起点就好;之后按波形微调。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">54. sim-to-real 里「域随机化」主要解决什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 提高渲染画质</button>
+      <button data-v="B">B. 让策略对质量/摩擦/延迟/尺寸等参数不确定性鲁棒——真机参数落在训练随机分布内即可直接工作</button>
+      <button data-v="C">C. 回放真机数据</button>
+      <button data-v="D">D. 压缩模型体积</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:把 real 当作 randomized domain 的一个样本:训练时故意大范围抖动物理参数,策略被迫放弃对仿真精确值的过拟合。配合触觉建模与标定渐进迁移,构成抓取/运动 sim2real 三件套。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">55. 带谐波减速器(反驱性差)的人形关节做装配类力控,优先选哪条技术路线?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 六维力传感器 + 导纳控制(力信号修正位置参考,由刚性位置环兜底)</button>
+      <button data-v="B">B. 纯阻抗控制直接调制电机位置</button>
+      <button data-v="C">C. 加大位置环刚度硬怼</button>
+      <button data-v="D">D. 开环速度控制</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:阻抗控制要求关节位置可精确柔调,直驱/QDD 才顺手;谐波/RV 反驱性差,工程上普遍走「力传感器测量→导纳律→修正参考轨迹」的导纳路线,稳定且工程化成熟。</div>
+  </div>
+
   <!-- ================= 组四 · 前沿与行业 ================= -->
   <h2><span class="h2-num">4</span> 组四 · 前沿与行业</h2>
   <p class="qz-group-intro">用整机参数与前沿概念检验你对行业现状的了解:自由度、减速比选型、VLA、世界模型、灵巧手、直线执行器,以及力 / 触觉传感。</p>
@@ -561,6 +741,66 @@
     <div class="quiz-explain">💡 解析:主流触觉传感器用<b>压阻式</b>(受压改变电阻)、<b>电容式</b>(受压改变极板电容)阵列测接触力与压力分布;另有视触觉(GelSight 类)用相机「看」软胶表面形变。三类共同目标是检测接触、压力与滑动。<a href="../07_前沿知识库/04_灵巧手专题.html">灵巧手专题 →</a></div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">56. 某灵巧手 23 个活动关节、6 台电机,它属于?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 全驱动</button>
+      <button data-v="B">B. 混合架构,无法归类</button>
+      <button data-v="C">C. 欠驱动,欠驱动系数≈23/6≈3.8,未驱动关节靠联动/弹簧/被动件分配运动</button>
+      <button data-v="D">D. 看价格才能判断</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:欠驱动定义即 M(驱动)<N(活动关节)。腱驱量产手的欠驱动系数常见 2~4;数字相近的 Shadow 手是 20 电机逼近 1:1 的全驱动研究标杆——对比参数时先分清「活动关节数/独立驱动数」两个口径。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">57. 腱驱手指的指尖力估算链路里,下列哪项「不属于」让指尖力低于电机账面值的因素?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 腱绳经过导引孔的摩擦折损</button>
+      <button data-v="B">B. 远端滑轮半径与指节力臂之比</button>
+      <button data-v="C">C. 抓握姿态带来的力线角度</button>
+      <button data-v="D">D. 小臂电机的额定转矩</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:链路:F尖 = T电机×i×η/r₁ ×路径折损× r₂/L ×cosβ。电机额定转矩是输入项,其余全是折扣项——所以样本标注的「指尖力」必须注明姿态,选型要逐级打完折扣再留 2~3 倍裕量。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">58. 双腱对抗式(屈腱+伸腱)相比单腔回弹式(拉紧弯曲+弹簧复位)的最大优势与代价是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 优势:指节可主动伸直、往复响应快;代价:腱绳通道与张紧维护点翻倍</button>
+      <button data-v="B">B. 指尖力更大;腱绳寿命更短</button>
+      <button data-v="C">C. 不再需要编码器;重量更大</button>
+      <button data-v="D">D. 两者没有区别</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:单腔回弹式靠弹簧伸直,迟滞影响定位与回弹速度;双腱对抗把「伸直」变为主动控制,动态更好(A),代价是每节多一条通道与维护点。指尖力上限由电机侧张力决定,与驱动方式无直接关系。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">59. 抓光滑不锈钢杯壁(竖直面)最关键的短板链路是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 电机 KV 偏低</button>
+      <button data-v="B">B. 力封闭:靠接触点摩擦锥内的合力抗扰动——法向压力不足即打滑,需要低延迟滑动检测才能在掉落前增压</button>
+      <button data-v="C">C. 数据集里没有杯子</button>
+      <button data-v="D">D. 减速器背隙偏大</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:竖直光滑面靠摩擦扛重力,安全裕度=μ·Fn/G。抓取控制必须尽早检测切向滑移(毫秒级)才能立即增压——这是指尖阵列/视触觉传感器的核心价值,也是「没有触觉的抓取是盲抓」的含义。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">60. 六维力传感器要求采样闭环 ≥100Hz、理想 1kHz 的原因是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 记录更长时间数据</button>
+      <button data-v="B">B. 传感器只能跑 1kHz</button>
+      <button data-v="C">C. 接触事件(碰撞/打滑)的力学瞬态在毫秒级,反馈必须比事件快一个量级才能在滑落前修正</button>
+      <button data-v="D">D. 与抓取成功率无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:滑移从开始到掉落只有几十毫秒;10Hz 闭环还没算完东西已掉。1kHz 让力控环与电流环同频,阻抗/导纳稳定裕度也更好设计——这是力控硬件选型的硬指标。</div>
+  </div>
+
   <!-- ================= 小结与思考 ================= -->
   <div class="box box-tip">
     <b>📌 小结 · 如何利用错题复习:</b>
@@ -592,7 +832,7 @@
 <script>
   /* 自测得分统计:监听整页点击,命中 .quiz-options 内按钮且该题未作答时计分 */
   (function(){
-    var TOTAL = 40;
+    var TOTAL = 60;
     var answered = 0;
     var correct = 0;
 

@@ -720,10 +720,25 @@
   })();
 
   /* ================= 主循环 ================= */
+  /* 视口外省CPU(2026-08-27):滚动到看不见的实验不再 step 积分/重绘,
+     IntersectionObserver 维护三个画布的可见性;老内核无 IO 时退回全跑 */
+  var labVisible = { l1:true, l2:true, l3:true };
+  if("IntersectionObserver" in window){
+    var watchVis = function(canvasId, key){
+      var el = document.getElementById(canvasId);
+      if(!el) return;
+      new IntersectionObserver(function(entries){
+        labVisible[key] = entries[0].isIntersecting;
+      }, { threshold: 0.05 }).observe(el);
+    };
+    watchVis("pidCanvas", "l1");
+    watchVis("focCanvas", "l2");
+    watchVis("cartCanvas", "l3");
+  }
   function loop(){
-    lab1.step(); lab1.draw();
-    lab2.step();
-    lab3.step(); lab3.draw();
+    if(labVisible.l1){ lab1.step(); lab1.draw(); }
+    if(labVisible.l2) lab2.step();
+    if(labVisible.l3){ lab3.step(); lab3.draw(); }
     requestAnimationFrame(loop);
   }
   lab1.reset("step");

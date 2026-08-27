@@ -388,6 +388,66 @@
     <div class="quiz-explain">💡 解析:见 2.2 节的四步——①输入 RGB-D 相机拍到的单帧点云;②PointNet++ 类骨干逐点提取几何特征;③在每点附近预测抓取姿态(位置、朝向、宽度)与质量分;④用质量分 + 碰撞检测过滤,输出 top-k。顺序为「输入场景 → 特征提取 → 候选生成 → 打分排序」。故选 B。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">8. 「力封闭」与「形封闭」的区别,下列正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 形封闭靠物体几何被完全卡死(如抓杯子口沿),力封闭靠接触点摩擦锥内的合力抵消任意方向扰动——后者是柔性手指抓光滑物体的工程常态</button>
+      <button data-v="B">B. 两者是同一概念的两个译名</button>
+      <button data-v="C">C. 力封闭不需要摩擦,形封闭需要</button>
+      <button data-v="D">D. 力封闭只适用于平行夹爪</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:形封闭是纯几何约束(物体怎么动都跑不出手指「笼子」),强但苛刻;力封闭承认手指可能打滑,靠多接触点的摩擦锥「合力封住」六维扰动空间(A)。人手抓鸡蛋、灵巧手抓球都是力封闭——所以触觉与法向力分配才那么重要。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 抓取质量度量 ε(epsilon 度量)衡量的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 手指数量越多 ε 越大</button>
+      <button data-v="B">B. 物体表面粗糙度</button>
+      <button data-v="C">C. 「最坏情况下抓取能抵抗多大的外部扰动旋量」——把各接触摩擦锥映射到物体旋量空间后求包含的最大球半径</button>
+      <button data-v="D">D. 抓取执行时间</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:ε 是一个 min-max 几何量:在所有可能的扰动方向里找「最脆」的那个,再问这个方向上抓取还能抗多大强度(C)。它把「稳不稳」变成可优化、可比分的数——GraspNet 候选排序本质上就是在学一个近似的 ε 排序器。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 装配一根过盈销轴,接触刚度未知且变化,应优先选阻抗控制还是导纳控制?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 阻抗控制,因为它直接控力</button>
+      <button data-v="B">B. 导纳控制——力传感器测接触力,经导纳律修正位置参考,位置环(刚性高、稳)兜底;阻抗控制假设电机端位置可精确调制,在减速器+谐波的低反驱性下实现吃力</button>
+      <button data-v="C">C. 两者等价,随便选</button>
+      <button data-v="D">D. 都不用,加大位置环刚度硬怼</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:两条经典路线的选择看「底层能不能柔」:阻抗控制要求关节反驱性好(直驱/QDD 才顺手);带谐波/RV 的人形关节反驱性差,工程上几乎都走「六维力传感器 + 导纳修正参考轨迹」(B)。C 忽略实现成本与稳定性差异;D 是装配最常见的翻车起点。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 六维力传感器的采样与闭环频率为什么要求 ≥100 Hz、理想 1 kHz?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 为了记录更长时间的数据</button>
+      <button data-v="B">B. 传感器只能工作在 1 kHz</button>
+      <button data-v="C">C. 与抓取成功率无关</button>
+      <button data-v="D">D. 接触事件(碰撞/打滑)的力学瞬态在毫秒级——反馈环必须比事件快一个量级才能在滑落/过载发生前修正力矩</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:抓握滑移从「开始滑」到「掉」往往只有几十毫秒(D);闭环若只有 10 Hz,修正还没算完东西已经掉了。1 kHz 让力控环与电流环同频对齐,阻抗/导纳的稳定性也更好设计。A 是数据记录视角不是控制视角;B/D 显然不成立。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. sim2real 里「域随机化(domain randomization)」主要解决什么?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 让仿真里学到的策略对「质量/摩擦/延迟/尺寸」等参数不确定不敏感——真机参数落在随机分布内就能直接工作</button>
+      <button data-v="B">B. 提高仿真渲染画质</button>
+      <button data-v="C">C. 把真机数据搬到仿真里重放</button>
+      <button data-v="D">D. 压缩模型体积方便部署</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:核心思想是「把 real 当作 randomized domain 的一个样本」:训练时故意把摩擦系数、负载质量、控制延迟抖动开到很宽,策略被迫学出鲁棒策略而不是过拟合仿真参数(A)。配合触觉建模与标定渐进迁移(本页 5.3 节)构成抓取 sim2real 的三件套。</div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节要点速查:</b>①抓取 = 接触点 + 接触模型 + 封闭性:力封闭(靠摩擦锥内合力抗任意扰动)是工程标准,形封闭(纯几何卡死)更强但不现实;②抓取质量用 ε 度量(可抗最大扰动球半径)等打分,GraspNet-1Billion 走「点云 → 候选 → 打分 → 排序」的 6D 范式,灵巧手因高维动作空间难度陡增;③力控 = 阻抗(控运动)/导纳(控参考)+ 六维力/力矩反馈(≥100Hz、理想 1kHz+)让接触变柔,柔顺操作是装配/拧紧/安全交互的底层能力;④数据靠 GraspNet/DexGraspNet/RoboTurk/AgiBot World 支撑,VLA 与抓取走「大模型出意图 + 低层力控」分层,sim2real 靠域随机化 + 触觉建模 + 标定渐进迁移兜底。</div>
 
   <!-- ================= 11 参考来源 ================= -->

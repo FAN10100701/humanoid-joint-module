@@ -1816,7 +1816,13 @@ function onClick(e){
 }
 
 var _szW=0,_szH=0;   /* 舞台尺寸自检:iOS 布局延迟/地址栏伸缩时自动修正 canvas 尺寸 */
+var _loopLast = 0;   /* 主循环上一帧时间戳:真实 dt 驱动,修复 120Hz 高刷屏上步态/旋转/爆炸动画速度翻倍的问题(2026-08-27) */
 function loop(){
+  var _nowMs = performance.now();
+  if(!_loopLast){ _loopLast = _nowMs; }
+  var _dt = Math.min(Math.max(_nowMs - _loopLast, 0) / 1000, 0.05);   /* 秒步长,上限 50ms 防止标签页切回时的巨幅跳变 */
+  _loopLast = _nowMs;
+  var _f60 = _dt * 60;   /* 帧率无关系数:60fps 时恰好 =1,以下所有历史「每帧」增量统一乘它 */
   /* 【移动端尺寸自检】每帧对比舞台实际尺寸,变化则重算渲染尺寸与相机宽高比
      (iOS Safari 地址栏伸缩/布局延迟常导致初始尺寸错误,点按钮后"突然出现"即此原因) */
   var _st=document.getElementById('stage');
@@ -1828,35 +1834,35 @@ function loop(){
   if(tdActive){
     if(tdSeqOn){
       /* 顺序拆解动画：按真实拆解顺序逐个零件飞出→停顿→逆序装回，循环播放 */
-      tdSeqT+=TD_SEQ_STEP;
+      tdSeqT+=TD_SEQ_STEP*_f60;
       var prog=applyTdExplodeSeq(tdSeqT);
       var rgS=document.getElementById('exrng');if(rgS)rgS.value=Math.round(prog*100);
     }
     if(tdAutoOn){
       if(tdExplodeTarget!==null){
         /* 单向爆炸/装配模式（底部栏"爆炸拆解"按钮）：朝目标爆炸度平滑移动，到达后停止 */
-        var step=0.012; /* 每帧爆炸度步进量 */
+        var step=0.012*_f60; /* 每帧爆炸度步进量(已按帧率无关化) */
         if(tdExplodeT<tdExplodeTarget){tdExplodeT=Math.min(tdExplodeTarget,tdExplodeT+step);}
         else{tdExplodeT=Math.max(tdExplodeTarget,tdExplodeT-step);}
         if(Math.abs(tdExplodeT-tdExplodeTarget)<0.002){tdExplodeT=tdExplodeTarget;tdAutoOn=false;tdExplodeTarget=null;}
       }else{
         /* 自动往返演示模式（"自动演示"按钮）：爆炸度到顶反向、到底反向 */
-        tdExplodeT+=tdAutoDir*0.006;                 /* 每帧推进爆炸度 */
+        tdExplodeT+=tdAutoDir*0.006*_f60;                 /* 每帧推进爆炸度 */
         if(tdExplodeT>=1){tdExplodeT=1;tdAutoDir=-1;}/* 到顶反向 */
         if(tdExplodeT<=0){tdExplodeT=0;tdAutoDir=1;} /* 到底反向 */
       }
       applyTdExplode(tdExplodeT);
       var rg=document.getElementById('exrng');if(rg)rg.value=Math.round(tdExplodeT*100);
     }
-    if(tdSpinOn&&tdGroup)tdGroup.rotation.y+=0.006;/* 拆解场景自动旋转 */
+    if(tdSpinOn&&tdGroup)tdGroup.rotation.y+=0.006*_f60;/* 拆解场景自动旋转 */
   }
   /* 整机自动旋转（非拆解模式、非关节动画时） */
   if(!tdActive&&autoRotate&&body3d){
-    body3d.rotation.y+=AUTO_ROTATE_SPEED;
+    body3d.rotation.y+=AUTO_ROTATE_SPEED*_f60;
   }
   /* 整机关节动画演示（非拆解模式）：拟人原地步态 */
   if(!tdActive&&animDemo&&urdfRoot){
-    animTime+=0.016;
+    animTime+=_dt;   /* 真实秒步长:步态周期与屏幕刷新率无关(120Hz 不再双倍速) */
     /* 拟人步态：左右腿相位差π，手臂与同侧腿反相摆动，膝/踝随动补偿；
        躯干上下起伏(质心 bob)与重心侧移增强真实行走感；
        所有目标角经 setJointAngle 二次夹紧在关节限位内，平滑系数保证无跳变 */
@@ -1892,9 +1898,10 @@ function loop(){
         /* wrist / hand 不参与步态，保持零位 */
       }
       if(tgt===null)return;
-      /* 惯性平滑：关节角从当前值向目标渐进过渡，杜绝硬切跳变 */
+      /* 惯性平滑：关节角从当前值向目标渐进过渡，杜绝硬切跳变
+         (平滑系数按帧率无关化:60fps 时等效 GAIT_SMOOTH) */
       if(j.gaitCur===undefined)j.gaitCur=0;
-      j.gaitCur+=(tgt-j.gaitCur)*GAIT_SMOOTH;
+      j.gaitCur+=(tgt-j.gaitCur)*(1-Math.pow(1-GAIT_SMOOTH,_f60));
       setJointAngle(jn,j.gaitCur);
     });
   }

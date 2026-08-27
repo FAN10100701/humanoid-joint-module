@@ -294,7 +294,7 @@ P(W) ≈ T(N·m) × n(rpm) / 9.55
   <div class="box box-tip"><b>📌 对照清单:</b>在解剖图上依次找出——① 谐波减速器的柔轮(薄壁杯状件);② 交叉滚子轴承(输出端的大轴承);③ 电机定子/转子(绕线/磁钢);④ 输出端编码器磁环;⑤ 抱闸(若有)。全部找到,机械原理基础就过关了。</div>
 
   <!-- ================= 8. 常见误区 ================= -->
-  <h2><span class="h2-num">8</span> 常见误区</h2>
+  <h2 id="s8"><span class="h2-num">8</span> 常见误区</h2>
   <div class="box box-warn">
     <b>⚠️ 这些坑,新手几乎都会踩:</b>
     1. <strong>「减速比越大越好」</strong>——大减速比确实扭矩大,但输出转速变慢、背隙/刚度/效率变差、柔轮疲劳加快。正确做法:按「所需峰值扭矩 + 所需输出转速」反推减速比,够用就好。<br>
@@ -305,8 +305,30 @@ P(W) ≈ T(N·m) × n(rpm) / 9.55
     6. <strong>轻量化只减壳体不减少臂/连杆</strong>——远端质量对功耗和负载链的放大效应远超壳体,减重优先级:远端连杆 &gt; 关节壳体 &gt; 近端结构。
   </div>
 
-  <!-- ================= 9. 本节自测 ================= -->
-  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <!-- ================= 9. 深度讲解(V2.0.7 新增) ================= -->
+  <h2 id="s9"><span class="h2-num">9</span> 深度讲解：行星轮系级联与 RV 的两级减速路径（含算例）</h2>
+  <div class="key-point">
+    <div class="kp-title">🧮 结论先行</div>
+    单级行星 i = 1 + Z<sub>r</sub>/Z<sub>s</sub> 天花板只有 3~10;想要更大比有两条路:<br>
+    <b>① 行星×行星级联</b>:i = i₁×i₂(可到 25~100),代价是<b>效率相乘</b>、背隙与柔顺误差逐级累加;<br>
+    <b>② RV 路径</b>:第一级「渐开线行星」(i≈3,把转速降到中速) + 第二级「摆线针轮」(i=针齿数≈33~41,负责大比),串联后单台即可 80~130,兼得高刚度与抗冲击。
+  </div>
+
+  <p><b>算例 A:两级行星级联。</b>第一级太阳轮 Z<sub>s</sub>=15、内齿圈 Z<sub>r</sub>=60 → i₁ = 1+60/15 = 5;第二级 Z<sub>s</sub>=16、Z<sub>r</sub>=64 → i₂ = 5。总传动比 i = 5×5 = <b>25</b>。若每级效率 90%,总效率 η = 0.9×0.9 = <b>81%</b>;负载端需要 50 N·m 时,电机端转矩 T = 50/(25×0.81) ≈ <b>2.5 N·m</b>。</p>
+  <p><b>算例 B:一条真实感的髋关节校核链。</b>要求输出 120 N·m @ 24 rpm,RV 减速比取 i=123(渐开线级行星 3 × 摆线级 41),总效率估 80%:</p>
+  <div class="table-wrap"><table>
+    <tr><th>步骤</th><th>公式</th><th>代入</th><th>结果</th></tr>
+    <tr><td>① 电机转速</td><td>n<sub>m</sub> = n<sub>出</sub> × i</td><td>24 × 123</td><td>2952 rpm(恰在常见无框力矩电机额定 3000 rpm 内)</td></tr>
+    <tr><td>② 电机转矩</td><td>T<sub>m</sub> = T<sub>出</sub>/(i·η)</td><td>120/(123×0.8)</td><td>≈ 1.22 N·m</td></tr>
+    <tr><td>③ 峰值校核</td><td>落地冲击按 3 倍</td><td>1.22 × 3</td><td>≈ 3.7 N·m(必须落在电机峰值区内,选型留余量)</td></tr>
+    <tr><td>④ 功率复核</td><td>P<sub>出</sub> = T·ω</td><td>120 × 2π×24/60</td><td>≈ 302 W → 电机端 ≈ 378 W(η 折算)</td></tr>
+  </table></div>
+  <p>同样的输出需求若硬塞给两级行星(i=25):n<sub>m</sub>=600 rpm、T<sub>m</sub>=120/(25×0.66)≈7.3 N·m——转速好办但转矩翻 6 倍,电机体积重量暴涨。这就是重载髋/膝几乎都走 RV 路线的定量原因。<a href="../02_硬件基础/07_电机选型计算专题.html" target="_blank" rel="noopener">完整选型流程见电机选型专题 →</a></p>
+
+  <div class="box box-warn"><b>⚠️ 级联四坑:</b>①效率是<b>相乘</b>不是平均(0.9×0.9=0.81,三级就剩 0.73);②背隙随级数只增不减,末级对精度影响最大——高端做法是把高分辨率编码器放<b>输出端</b>直接量真值兜底;③RV 两个「级」容易记反:靠近电机的是普通<b>渐开线行星(输入级)</b>,真正扛大比的是后面的<b>摆线针轮级</b>(偏心轴驱动摆线盘);④「级联把减速比放大 N 倍」正确,但「背隙也恰好放大 N 倍」不严谨——背隙取决于各级侧隙折算到输出端的几何,通常<b>劣化但不成正比</b>。<a href="../00_3D解剖/减速器剖面图详解.html" target="_blank" rel="noopener">三类减速器剖面对照 →</a></div>
+
+  <!-- ================= 10. 本节自测 ================= -->
+  <h2><span class="h2-num">10</span> 本节自测</h2>
   <div class="quiz">
     <div class="quiz-q">1. 一个平面四连杆机构(含机架共 4 个构件,4 个转动副,无高副),它的自由度 F 是多少?</div>
     <div class="quiz-options" data-answer="B">
@@ -439,6 +461,78 @@ P(W) ≈ T(N·m) × n(rpm) / 9.55
     <div class="quiz-explain">💡 解析:持续扭矩受绕组温升限制,是电机能长时间稳定输出的扭矩,选型、定减速比、配散热都看它;峰值扭矩受磁饱和与驱动器电流限制,只能短时(几秒内)输出,通常为持续的 2~4 倍。正确原则是「用持续扭矩覆盖日常工况、用峰值扭矩应对瞬间冲击」,用「峰值够用」选电机会过温烧机——这是新手几乎必踩的坑(见 6.4 节与第 8 节误区)。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">12. 两级行星级联:第一级 Z<sub>s</sub>=15/Z<sub>r</sub>=60,第二级 Z<sub>s</sub>=16/Z<sub>r</sub>=64(内齿圈均固定)。总减速比是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. i = (1+60/16)×(1+64/15) ≈ 22</button>
+      <button data-v="B">B. i = (1+60/15)×(1+64/16) = 5×5 = 25</button>
+      <button data-v="C">C. i = (60/15)+(64/16) = 9</button>
+      <button data-v="D">D. i = 60×64/(15×16) = 16</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:每级按单级行星公式 i=1+Z<sub>r</sub>/Z<sub>s</sub> 求出(内齿圈固定),再<b>相乘</b>:i₁=5、i₂=5 → i=25。C 用了「相加」、D 用了「纯齿数比」,都是把行星当成了定轴齿轮副——行星轮系的本质是「行星架既公转又参与传动」,所以分子上多出那个 1。<a href="#s9">回看第 9 节算例 A →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">13. 上题的 25:1 级联(两级效率各 90%),负载端需要恒定 50 N·m,电机端至少要输出多大转矩?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 50/25 = 2.0 N·m(不算效率)</button>
+      <button data-v="B">B. 50×25×0.81 倒推得 40.5 N·m</button>
+      <button data-v="C">C. 50/(25×0.81) ≈ 2.5 N·m</button>
+      <button data-v="D">D. 50/(25+0.9+0.9) ≈ 1.9 N·m</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:T<sub>入</sub> = T<sub>出</sub>/(i·η<sub>总</sub>),级联效率<b>相乘</b>:η=0.9×0.9=0.81,故 T=50/(25×0.81)≈2.5 N·m。A 是理想无损耗值,用于粗估会低估约 19% 的发热与电流需求;效率只能除在输出侧(B 把方向搞反);效率不能相加(D)。选型时还要在这基础上留 1.3~2 倍安全系数再看持续转矩。<a href="../08_学习工具/05_传动与控制实验台.html" target="_blank" rel="noopener">实验台拖滑块即算即验 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">14. 关于 RV 减速器的「两级」结构,下列哪项正确?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 第一级是渐开线行星齿轮副(小比降速),第二级是摆线针轮副(i=针齿数的大比级),两级共用同轴封装</button>
+      <button data-v="B">B. 两级都是摆线针轮,只是相位错开180°对消振动</button>
+      <button data-v="C">C. 第一级是谐波柔轮,第二级是行星轮</button>
+      <button data-v="D">D. RV 就是普通两级圆柱齿轮箱加了密封壳</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:RV = Rotary Vector,输入级为渐开线行星(把高速降到中速并分担扭矩),主力大比来自第二级偏心轴驱动的<b>摆线盘 × 针齿圈</b>(齿差 1,i=针齿数≈33~41);双摆线盘对消偏心振动指的是同一摆线级内的两片盘(B 错位描述)。谐波(RV 无柔轮)与圆柱齿轮箱均与结构不符(C/D)。<a href="../00_3D解剖/减速器剖面图详解.html" target="_blank" rel="noopener">剖面页看 RV 三大件动画 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">15. 同样需要约 100:1 的关节,三种方案背隙从大到小排序正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 两级行星 &lt; 单级谐波 &lt; RV</button>
+      <button data-v="B">B. 单级谐波 &lt; RV &lt; 两级行星</button>
+      <button data-v="C">C. RV &lt; 两级行星 &lt; 单级谐波</button>
+      <button data-v="D">D. 两级行星最大;单级谐波近零背隙但冲击下有弹性回差;RV 居中偏优且刚度最高</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:两级行星的侧隙经两级几何折算到输出端,<b>累积最大</b>;单级谐波因柔轮弹性啮合背隙近乎为零,但大负载/冲击下弹性变形表现为「可恢复的角度回差」;RV 齿侧预紧+多齿滚动接触,背隙小且<b>扭转刚度最高</b>,工业臂用它正是看重这一点(D 把三者位置摆对了)。注意题面问的是「排序表述全面正确」的一项,A/B/C 都存在明显位次错误。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">16. 髋关节校核链(本节 9 节算例 B):输出 120 N·m @ 24 rpm、i=123、η=80%。若把 RV 换成 i=25 的两级行星,对比结论哪个成立?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 行星方案转速更友好、转矩需求更低,全面占优</button>
+      <button data-v="B">B. 行星方案电机转矩升到约 7.3 N·m(600rpm 时 η≈0.66),电磁转矩翻数倍导致电机体积重量暴涨——大扭矩重载关节仍应选 RV 类大比路径</button>
+      <button data-v="C">C. 只要电池够大,两种方案没有差别</button>
+      <button data-v="D">D. 传动比选小一些可以让机器人跑得更快</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:i 从 123 改成 25 后 n<sub>m</sub>=24×25=600 rpm(好办),但 T<sub>m</sub>=120/(25×0.66)≈7.3 N·m——无框力矩电机的转矩正比于气隙直径²×长度,转矩翻 ~6 倍意味着关节直径和重量不可接受,B 正确。电机的强项恰是高转速(T 大则 P 相同时要 D²L 猛增),所以要用大比减速器「把转速换下来」。A 与算例结论相反,C 忽视峰值功率与机械尺寸约束,D 混淆了空载末速与带载工况。<a href="../02_硬件基础/07_电机选型计算专题.html" target="_blank" rel="noopener">KT/KV 与体积关系详见选型专题 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">17. 「级联能让减速比任意放大,那三级 10:1 行星就是 1000:1,什么关节都能用了」——这句话错在哪里?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 忽略了效率按幂次塌缩(0.9³≈0.73)、背隙与柔性误差逐级恶化、以及惯量匹配问题——实际可用性由扭矩密度/精度/响应共同决定,不是比值越大越好</button>
+      <button data-v="B">B. 三级行星在物理上装不下,根本不存在这种产品</button>
+      <button data-v="C">C. 减速比越大电机越省电,这句话其实是对的</button>
+      <button data-v="D">D. 错在只该用两级,任何三级都必然自锁</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:级联的数学没错(i 可乘到 1000),错的工程账有三笔:①效率 0.9³≈0.73 且每级还有搅油/密封损耗;②背隙与扭转柔性逐级叠加,力控手感变「橡皮」;③反驱性变差、碰撞瞬间电机端惯量折射放大(负载端看电机 J×i²),冲击保护困难。大比需求应换「原理级大比」(谐波/RV/行星滚柱丝杠)而不是硬堆级数。产品形态上三级行星是存在的(B 错),但用在工程机械而非灵巧关节。<a href="#s8">复习第 8 节误区清单 →</a></div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节要点速查:</b>① 结构四层:骨架/关节/执行器/壳体,核心矛盾「小体积大扭矩、轻重量高载荷」;② 自由度:F = 3(n-1) - 2j - h,四连杆 F=1,设计尽量让「自由度 = 电机数」;③ 减速本质:用转速换扭矩,i = Z₂/Z₁、多级相乘、功率守恒 P=T·ω;④ 减速器选型:谐波(中小扭矩、背隙近零)、行星(低成本、抗冲击)、RV(重载高刚度);⑤ 直线传动:行星滚柱丝杠(重载高刚度)、滚珠丝杠(高精度)、同步带(远距离减重);⑥ 估算与选型:先算静力矩 τ≈m·g·L,乘 1.3~2 安全系数,选电机看持续扭矩、峰值兜底。</div>
 
   <!-- ================= 小结与思考 ================= -->
@@ -453,7 +547,7 @@ P(W) ≈ T(N·m) × n(rpm) / 9.55
   </div>
 
   <!-- ================= 参考来源 ================= -->
-  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <h2><span class="h2-num">11</span> 参考来源</h2>
   <ul>
     <li><a href="https://book.qq.com/book-read/29976649/13" target="_blank" rel="noopener">机械设计手册(第六版)·单行本·机构·结构设计</a>——自由度公式、运动副与连杆机构的标准定义来源</li>
     <li><a href="https://baike.baidu.com/item/%E5%B9%B3%E9%9D%A2%E6%9C%BA%E6%9E%84%E7%9A%84%E8%87%AA%E7%94%B1%E5%BA%A6" target="_blank" rel="noopener">平面机构的自由度(百度百科)</a>——格鲁布勒公式与算例核对参考</li>

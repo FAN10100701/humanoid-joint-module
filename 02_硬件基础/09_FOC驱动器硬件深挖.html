@@ -420,8 +420,29 @@ void protection_loop(void) {
   </ul>
   <div class="box box-ok"><b>✅ 一句话总结:</b>Hdrive 的驱动器硬件,本质是把本页 1~6 节的「分层、选型、采样、母线、Layout、保护」六件事,按功率密度与可量产约束重新权衡一遍——原理完全通用,差别只在「取舍」。</div>
 
-  <!-- ================= 10 本节自测 ================= -->
-  <h2><span class="h2-num">10</span> 本节自测</h2>
+  <!-- ================= 10 深度讲解(V2.0.7 新增) ================= -->
+  <h2><span class="h2-num">10</span> 深度讲解：Clarke / Park 变换一步步推 + 为什么 Id=0</h2>
+  <div class="key-point">
+    <div class="kp-title">🧠 一句话定位</div>
+    Clarke/Park 不是什么「算法魔法」,只是<b>两次坐标变换</b>:先从「三个互差 120° 的相电流」投影到「静止的 α-β 直角坐标」(Clarke),再整体旋转到「跟着转子磁场转的 d-q 坐标」(Park)。转到转子上之后,正弦的一切都变成了直流——PID 才能对它零稳态误差。
+  </div>
+  <p><b>第一步 Clarke（3 相 → 2 相,等幅值约定）。</b>三相星接无中线时 i<sub>a</sub>+i<sub>b</sub>+i<sub>c</sub>=0,三相信息其实只有两个自由度,可以直接投影:</p>
+  <div class="table-wrap"><table>
+    <tr><th style="width:30%">正变换</th><th style="width:34%">几何直觉</th><th>反变换(用于反推某相)</th></tr>
+    <tr><td>i<sub>α</sub> = i<sub>a</sub><br>i<sub>β</sub> = (i<sub>a</sub> + 2·i<sub>b</sub>)/√3</td><td>把 a 轴放成 α 轴;b 轴超前 120°,其 α 分量 = −½、β 分量 = √3/2——三根互差 120° 的指针在平面上摆动,任意时刻的合力只有 2 个分量</td><td>i<sub>a</sub> = i<sub>α</sub><br>i<sub>b</sub> = (−i<sub>α</sub> + √3·i<sub>β</sub>)/2<br>i<sub>c</sub> = −i<sub>α</sub> − i<sub>b</sub></td></tr>
+  </table></div>
+  <p><b>第二步 Park（静止 → 随转子旋转）。</b>设电角度 θ<sub>e</sub>(注意是<b>电角度</b>=机械角×极对数),把 αβ 向量朝反方向旋回去:</p>
+  <div class="table-wrap"><table>
+    <tr><th style="width:36%">正 Park(Clarke 之后)</th><th style="width:32%">反 Park(电压指令生成前)</th><th>作用</th></tr>
+    <tr><td>i<sub>d</sub> =  i<sub>α</sub>·cosθ<sub>e</sub> + i<sub>β</sub>·sinθ<sub>e</sub><br>i<sub>q</sub> = −i<sub>α</sub>·sinθ<sub>e</sub> + i<sub>β</sub>·cosθ<sub>e</sub></td><td>u<sub>α</sub> = u<sub>d</sub>·cosθ<sub>e</sub> − u<sub>q</sub>·sinθ<sub>e</sub><br>u<sub>β</sub> = u<sub>d</sub>·sinθ<sub>e</sub> + u<sub>q</sub>·cosθ<sub>e</sub></td><td>转子参考系里,<b>恒速正弦量变成直流量</b>;电流环 PI 拿到的误差不再周期性扫过零点,才能做到零稳态误差</td></tr>
+  </table></div>
+  <p><b>数值算例(一分钟手算)：</b>测得 i<sub>α</sub>=5 A、i<sub>β</sub>=8.66 A(即幅值 10 A、矢量角 60°),当前 θ<sub>e</sub>=30°:<br>
+  i<sub>d</sub> = 5×cos30° + 8.66×sin30° = 4.33+4.33 = <b>8.66 A</b>;i<sub>q</sub> = −5×sin30° + 8.66×cos30° = −2.5+7.5 = <b>5.0 A</b>。校验:√(8.66²+5²)=10 ✓ 幅值守恒。也就是说此刻电流矢量与 d 轴夹角 arctan(5/8.66)=30°。</p>
+  <p><b>为什么常规关节电机取 I<sub>d</sub>=0?</b>PMSM 转矩方程 Te = 1.5·p·[ψ<sub>f</sub>·i<sub>q</sub> + (L<sub>d</sub>−L<sub>q</sub>)·i<sub>d</sub>·i<sub>q</sub>]。人形关节常用的表贴式磁路 L<sub>d</sub>≈L<sub>q</sub>,磁阻项归零;i<sub>d</sub> 不产生转矩却贡献铜损与退磁风险 → 把它钉死在 0,让每一安培都花在 iq 上,转矩/安培最优。<b>例外要记住:</b>内置式(IPM)L<sub>q</sub>&gt;L<sub>d</sub>,可以给负 id 换磁阻转矩(MTPA);高速区还能用负 id 削弱反电动势做弱磁扩速——CyberGear 等高转速方案内核就有这类策略,但入门一律从 Id=0 开始最稳妥。</p>
+  <div class="box box-warn"><b>⚠️ 四个手滑重灾区:</b>①Clarke 有「等幅值」与「功率不变(系数 √(2/3))」两套约定,混用会让标定值差一截;②θe 必须用电角度——14 对极电机机械转 10° 电角度已转过 140°;③Park 与反 Park 的 sin 符号方向写反,现象是「空载能转一带载就失步/抖振」;④Id=0 是表贴式下的人为选择而非物理定律,换 IPM 高速场景要会调整。<a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html" target="_blank" rel="noopener">d/q 分解的可视化见原理动画页 →</a></div>
+
+  <!-- ================= 11 本节自测 ================= -->
+  <h2><span class="h2-num">11</span> 本节自测</h2>
 
   <div class="quiz">
     <div class="quiz-q">1. 48V 母线的关节驱动板,功率 MOSFET 的 Vds 耐压最合理的量级是?</div>
@@ -543,6 +564,102 @@ void protection_loop(void) {
     <div class="quiz-explain">💡 解析:过流/过温/欠压时栅驱会拉低 nFAULT 通知 MCU,只有把它接到外部中断、让 MCU 立即关断 PWM,硬件保护才算真正生效——这条线不接,保护等于白设(见 6.1 节)。nFAULT 常态为高电平,故障时拉低,不是接地。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">11. Clarke 变换为什么可以把三相电流「无损压缩」成两相?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 因为第三相电流恒为零</button>
+      <button data-v="B">B. 星接无中线时 i<sub>a</sub>+i<sub>b</sub>+i<sub>c</sub>=0,任一相可由另外两相线性表出——独立自由度只有 2 个</button>
+      <button data-v="C">C. 为了省 ADC 通道只测两相,信息会丢但影响不大</button>
+      <button data-v="D">D. 因为电机只需要两相通电工作</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:关键在基尔霍夫电流定律给出的<b>线性约束</b>:三变量和恒为 0 → 秩为 2,C 完全错误(信息不丢,i<sub>c</sub>=−i<sub>a</sub>−i<sub>b</sub> 随时可反推)。这也解释了双电阻采样为何够用、三电阻方案的第三相常被用作校验。回看第 10 节 Clarke 推导(本页上方)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. 手算 Park:i<sub>α</sub>=4 A、i<sub>β</sub>=3 A、θ<sub>e</sub>≈36.87°(恰使 d 轴对准电流矢量)。i<sub>d</sub>/i<sub>q</sub> 等于?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. i<sub>d</sub>=5 A,i<sub>q</sub>=0 —— 全部电流落在 d 轴上</button>
+      <button data-v="B">B. i<sub>d</sub>=0,i<sub>q</sub>=5 A</button>
+      <button data-v="C">C. i<sub>d</sub>=3 A,i<sub>q</sub>=4 A</button>
+      <button data-v="D">D. i<sub>d</sub>=7 A,i<sub>q</sub>=1 A</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:i<sub>d</sub>=4×cos36.87°+3×sin36.87°=4×0.8+3×0.6=5;i<sub>q</sub>=−4×0.6+3×0.8=0。本质揭示:dq 是「跟着转子转的表」,只要电流矢量与转子同步旋转,表上读数就是常数;若 θe 错了,d/q 上会出现 ±ω 抖动的交流纹波——这正是电角度零位校准时看纹波的原理。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">13. 一台 14 对极关节电机,输出机械轴转过 10°,对应的电角度变化是多少?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 10°</button>
+      <button data-v="B">B. 70°</button>
+      <button data-v="C">C. 140°</button>
+      <button data-v="D">D. 1.4°</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:θ<sub>e</sub> = p × θ<sub>m</sub> = 14 × 10° = <b>140°</b>。一对极 = 一个完整电周期(N-S 交替一次),极对数越高同样机械角对应的电角度越大。新手最易拿机械角直接进 Park——换向错乱、转矩忽大忽小;编码器校准写死的「偏移角」也以电角度为单位。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">14. 从「电流环算出的 u<sub>d</sub>/u<sub>q</sub>」到「三相 PWM 占空比」,正确的处理链路是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 直接把 u<sub>d</sub>、u<sub>q</sub> 除以母线电压当占空比</button>
+      <button data-v="B">B. 先 SVPWM 合成,再反 Clarke 得到三相</button>
+      <button data-v="C">C. 不需要反变换,SVPWM 能直接吃 dq 指令</button>
+      <button data-v="D">D. 反 Park(u<sub>d</sub>,u<sub>q</sub>,θ<sub>e</sub>) → u<sub>α</sub>/u<sub>β</sub> → SVPWM 扇区判断/时间分配 → 三相 PWM</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:电流环活在转子坐标系(dq),逆变器只能执行静止坐标系的开关指令,必须先<b>反 Park</b> 回 αβ,再由 SVPWM 把矢量指令翻译成六管开关时间(扇区/T1/T2 实例见本站 SVPWM 实验室)。A 是常见臆想,B 颠倒顺序,C 混淆坐标系层次。<a href="../02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html" target="_blank" rel="noopener">SVPWM 完整实例在该实验室 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">15. 表贴式 PMSM(L<sub>d</sub>≈L<sub>q</sub>)控制里把 I<sub>d</sub> 设为 0 的根本理由是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. Id=0 时转矩最大,这是对所有电机都成立的定律</button>
+      <button data-v="B">B. Id=0 可以让编码器更准</button>
+      <button data-v="C">C. 磁阻转矩项 (L<sub>d</sub>−L<sub>q</sub>)·I<sub>d</sub>·I<sub>q</sub> ≈ 0,I<sub>d</sub> 只贡献铜损与退磁风险——设 0 使单位电流转矩最大</button>
+      <button data-v="D">D. I<sub>d</sub>=0 是为了防止 SVPWM 过调制</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Te = 1.5p[ψ<sub>f</sub>I<sub>q</sub>+(L<sub>d</sub>−L<sub>q</sub>)I<sub>d</sub>I<sub>q</sub>] 中第二项才是 Id 的价值;表贴结构下它趋近 0,Id 只剩副作用(I²R 发热)。注意 A 不成立——内置式 IPM 正靠负 Id 吃磁阻转矩(MTPA)或弱磁扩速;Id 与 SVPWM 调制深度无直接关系(D)。回看第 10 节结论(本页上方)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">16. 高速场景(转速冲到额定以上)常给负 I<sub>d</sub>,目的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 增大气隙磁场,提高转矩</button>
+      <button data-v="B">B. 弱磁:负 Id 的去磁分量抵消永磁通,压低反电动势,让有限母线电压继续推更高转速</button>
+      <button data-v="C">C. 减少定子铜损</button>
+      <button data-v="D">D. 校正编码器安装偏差</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:u ≈ ω<sub>e</sub>·ψ,转速升高反电动势线性涨,顶到母线电压上限后电流环饱和失步;负 Id 主动「削掉」部分有效磁链以降低电压需求,用一点转矩效率换转速范围(弱磁扩速)。代价是铜损增加、需限制幅值防退磁。A 方向说反,C 与事实相反,D 无关。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">17. 「FOC 把交流电机的控制变成了直流电机的控制」——关键机制是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. Park 变换把随转子同步旋转的正弦量映射成直流量,PI 可零稳态误差调节;iq 又与转矩近似线性——像调直流电机电枢电流一样直观</button>
+      <button data-v="B">B. FOC 用了更高频率的 PWM,所以更像直流</button>
+      <button data-v="C">C. 三相正弦电流互相抵消之后其实是直流</button>
+      <button data-v="D">D. 直流母线供电决定了内部一定是直流</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:「直流化」发生在<b>坐标系层面</b>:站在转子上看,定子合成磁势成了静止直流量,PID 对直流是强项(积分增益无穷、稳态误差为零),控制律解耦为「id 管磁场、iq 管转矩」。PWM 频率只是开关载体(B),三相瞬时值仍是正弦(C),母线只是能量来源(D)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">18. 电角度初始偏移没校准(偏差约 40°)就上电运行,现象是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 电机完全无法转动</button>
+      <button data-v="B">B. 一切正常,只是显示角度不准</button>
+      <button data-v="C">C. 转速略慢,其他无碍</button>
+      <button data-v="D">D. d/q 轴错位:iq 有效成分只剩 cos40°≈77%,其余能量跑进 id 白白发热——带载无力、发烫,重载下过流失步</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Park 用错 40° 的 θe,id/iq 就不再是真实的励磁/转矩分量:iq 中只有 cos40°≈77% 有效,等效转矩常数按 cosΔθ 下降,剩余分量进入 id 产生 I²R 热。空载不易察觉,一带载表现为「没劲、发烫、加速无力」,大偏差彻底失步——这就是每次更换电机/编码器必须做<b>电气零点标定</b>的原因。<a href="15_传感器与关节标定专题.html" target="_blank" rel="noopener">标定流程详见传感器与关节标定专题 →</a></div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节要点速查:</b>①分层:控制板(小信号)+ 功率板(大电流)分离,把 EMI 与散热拉开;②选型:MOSFET 看 Vds≥1.5~2×母线(48V→80~100V)、Id≥2~3×额定、Rds(on) 与 Qg 折中,栅驱以自举为主流(高边不能长期 100% 占空比);③采样:低边采样电阻 + 差分运放,双/三电阻为主,ADC 由定时器在 PWM 中心同步触发,注意偏置与零点校准;④母线:按 I=C·dv/dt 估算电容,电解+陶瓷组合,配 TVS/防反接/软启动预充/制动泄放;⑤Layout:功率环路最小化、Rg 贴 MOS、开尔文连接、AGND/PGND 单点连接;⑥保护:比较器逐波限流 + 栅驱 OCP + nFAULT 中断 + 过温/堵转,软硬两层兜底。</div>
 
   <!-- ================= 小结与思考 ================= -->
@@ -557,7 +674,7 @@ void protection_loop(void) {
   </div>
 
   <!-- ================= 11 参考资料 ================= -->
-  <h2><span class="h2-num">11</span> 参考资料</h2>
+  <h2><span class="h2-num">12</span> 参考资料</h2>
   <p style="color:#6b7280;font-size:12.5px;">资料整理更新至 2026-08 · 芯片参数与开源项目信息经 web_search 核实,未官方公布之处已标注「约」。</p>
   <ul>
     <li><a href="https://www.ti.com.cn/product/cn/DRV8301" target="_blank" rel="noopener">TI DRV8301:三相栅极驱动 + 双电流采样运放 + Buck 降压(官方产品页)</a></li>

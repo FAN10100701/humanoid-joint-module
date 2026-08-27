@@ -346,8 +346,27 @@
     <b>⚠️ 误区五:"开源了就能随便商用"</b><br>AgiBot World、GRAB、DexGraspNet 各有 License 与用途限制(科研 vs 商用)。动手前先读数据集的授权条款,商用项目尤其要确认(详见 07-03 页的 License 提醒)。
   </div>
 
-  <!-- ================= 9 小结与思考 ================= -->
-  <h2><span class="h2-num">9</span> 小结与思考</h2>
+  <!-- ================= 9 深度讲解(V2.0.7 新增) ================= -->
+  <h2><span class="h2-num">9</span> 深度讲解：腱驱指尖力估算 + 欠驱动自由度配置（含算例）</h2>
+  <div class="key-point">
+    <div class="kp-title">🧮 两个最常用的工程估算</div>
+    ①<b>指尖力 ≈ (r<sub>轮</sub>/r<sub>指</sub>)·i<sub>减</sub>·η·cos(β)·F<sub>电机</sub>×传动比 i<sub>腱</sub></b> 的简化链:真正决定指尖力的三件套是「电机转矩 × 总减速/偏转比 ÷ 指节力臂」,腱绳不省功只换方向;<br>
+    ②<b>驱动器数 &lt; 活动关节数 = 欠驱动</b>:差分/耦合把 N 个关节塞给 M&lt;N 个电机,靠弹簧/机械限位分配转角。
+  </div>
+  <p><b>算例 A:一根手指的指尖捏力。</b>设小臂内置无框电机额定 0.4 N·m,经 8:1 行星减速后由半径 r₁=6 mm 驱动轮引出腱绳(效率估 0.85),腱绳穿过 3 个转角各约 20° 的导引孔(每个折损估 2%),最后缠在半径 r₂=10 mm 的远端滑轮上拉动力臂 L=32 mm 的指节:</p>
+  <div class="table-wrap"><table>
+    <tr><th>步骤</th><th>公式</th><th>代入</th><th>结果</th></tr>
+    <tr><td>① 轮缘张力</td><td>F<sub>绳</sub> = T·i·η/r₁</td><td>0.4×8×0.85/0.006</td><td>≈ 453 N(电机侧贡献)</td></tr>
+    <tr><td>② 路径折损</td><td>×(1−2%)³ ≈ ×0.94</td><td>453×0.94</td><td>≈ 426 N</td></tr>
+    <tr><td>③ 指尖切向力</td><td>F<sub>尖</sub> = F<sub>绳</sub>·r₂/L·cosβ</td><td>426×10/32×0.94(cos20°)</td><td>≈ <b>125 N 峰值上限</b></td></tr>
+    <tr><td>④ 工程打折</td><td>安全系数 0.35~0.5</td><td>125×0.4</td><td>持续可用 ≈ <b>50 N</b>(对标 Shadow 指尖 ~30-70 N 量级)</td></tr>
+  </table></div>
+  <p>要点:②的路径折损与③的角度余弦都随<b>抓握姿态</b>变化——这就是为什么同一只手捏塑料杯轻松、捏钥匙串吃力;腱驱样本上标的「指尖力」必须注明姿态条件。</p>
+  <p><b>算例 B:欠驱动配置。</b>人手单指 4 DOF(MCP 两轴+PIP+DIP)。方案:拇指外展单独 1 电机,四指屈伸共用<b>1 台电机+4 根独立腱绳被同一滚轮同步供给</b>?错——那仍是每指 1 自由度。常见量产做法是:<b>每指 1 电机(屈伸)+ PIP/DIP 机械联动 + MCP 弹簧复位</b>,即整手 6 电机对 ~11 个活动关节,<b>欠驱动系数 = 关节/驱动 ≈ 1.8~2.5</b>;宇树 G1 手(本站拆解页有实物)即是「6 电机、腱绳、自适应包络」的代表。全驱动 Shadow 则以 20 电机对 ~24 关节逼近 1:1,换来独立控制的精度与代价(重量/维护)。<a href="../00_3D解剖/电机编码器与灵巧手3D拆解.html" target="_blank" rel="noopener">G1 实物拆解对照 →</a></p>
+  <div class="box box-warn"><b>⚠️ 三个认知陷阱:</b>①腱绳「放大的是布置自由度,不是力」——一切折损(摩擦/蠕变/松绳)只会让指尖力低于电机账面值,选型时要按上面的表格逐级打完折扣再留裕量;②欠驱动数别只看电机台数,还要看<b>每根腱绳的耦合关系</b>(单腱回弹式 vs 双腱对抗式决定能否主动伸直);③标称「22 DOF」的工业口径常把被联动关节也算进去,对比参数时先问清「活动关节数 / 独立驱动数」两个数字分别是多少。<a href="06_灵巧操作与抓取规划.html" target="_blank" rel="noopener">抓取规划如何利用欠驱动 →</a></div>
+
+  <!-- ================= 10 小结与思考 ================= -->
+  <h2><span class="h2-num">10</span> 小结与思考</h2>
   <div class="box box-tip">
     <b>📌 本节小结:</b>灵巧手与夹爪的本质区别是自由度与操作能力——夹爪 1~2 DOF 只做 pick &amp; place,灵巧手 6~22 DOF 为在手操作而生;自由度分单指与整手两层,欠驱动省钱省重、全驱动贵而准。驱动方式四大流派:腱驱动最轻但爱松、直驱最快最皮实但重、连杆力大但笨、混合最贵最全;选型看力 / 速度 / 重量 / 成本 / 可靠性五维。触觉三件套(指尖阵列、视触觉 / 电子皮肤、六维力)解决滑动检测与力控制,是"会摸"的前提。代表产品里,Shadow 是研究标杆、特斯拉 22 DOF 手定调量产路线、宇树 / 智元 / 众擎 / 傅利叶代表国产主力。控制靠行为克隆 + 强化学习 + 遥操作三线并进,数据靠 DexGraspNet / GRAB / Open-TeleVision / AgiBot World 支撑;与 VLA 结合时采用"大模型出意图、灵巧手出力控"的分层架构。入门路线:仿真抓取 → 策略训练 → sim2real → 真手遥操作,0 元就能起步。
   </div>
@@ -359,7 +378,7 @@
   </div>
 
   <!-- ================= 10 自测 ================= -->
-  <h2><span class="h2-num">10</span> 本节自测</h2>
+  <h2><span class="h2-num">11</span> 本节自测</h2>
   <div class="quiz">
     <div class="quiz-q">1. 关于"自由度"的概念,下列说法正确的是?</div>
     <div class="quiz-options" data-answer="C">
@@ -444,10 +463,82 @@
     <div class="quiz-explain">💡 解析:22 DOF 的手如果没有 22 DOF 的触觉、算力与数据支撑,实际表现可能不如「12 DOF + 好触觉 + 好策略」;判断操作能力要看自由度 × 触觉 × 数据 × 策略的乘积,而非单一指标(见 6.3 节警示框与第 8 节误区二)。A 是典型的「自由度军备竞赛」误区。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">8. 按本页第 9 节算例 A 的链路,下列哪一项<b>不属于</b>让指尖力低于电机账面值的因素?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 腱绳经过多个导引孔的摩擦折损</button>
+      <button data-v="B">B. 远端滑轮半径与指节力臂的比值(r₂/L)</button>
+      <button data-v="C">C. 小臂电机的额定转矩本身</button>
+      <button data-v="D">D. 抓握姿态带来的力线角度余弦</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:链条是 F<sub>尖</sub> = T<sub>电机</sub>·i·η/r₁ ×路径折损× r₂/L ×cosβ——电机额定转矩是<b>输入项</b>(C),其余都是把它打折扣的环节。工程师要做的正是把 B/D 的几何与 A 的磨损逐级算清再留安全系数;样本上的「指尖力」必须注明姿态,否则没有可比性。回看第 9 节四步表格。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 某灵巧手宣传「23 个关节自由度」,实际独立驱动电机只有 6 个。按驱动/关节口径,它属于?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 全驱动,因为关节数多于电机数</button>
+      <button data-v="B">B. 欠驱动,欠驱动系数 ≈ 23/6 ≈ 3.8——未驱动关节靠弹簧、联动机构或被动件分配运动</button>
+      <button data-v="C">C. 既非全也非欠,属于第三类混合架构</button>
+      <button data-v="D">D. 无法判断,必须看价格</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:定义看数字:M(驱动) &lt; N(活动关节) 即欠驱动,23/6≈3.8 属于典型量产腱驱手的范围(2~4)。这类手的关键细节是每根腱绳的耦合方式(单腔回弹 vs 双腱对抗)决定「能不能主动伸直」。混合架构(C)的说法通常指同一只手上并存多种传动方式,不是这组数字的含义。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 双腱对抗式(屈腱+伸腱)相比单腔回弹式(拉紧弯曲+弹簧复位),最大的优势与代价是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 优势:指节可主动伸直、往复响应快;代价:通道数翻倍、张紧维护点翻倍</button>
+      <button data-v="B">B. 优势:指尖力更大;代价:腱绳寿命变短</button>
+      <button data-v="C">C. 优势:不再需要编码器;代价:重量更大</button>
+      <button data-v="D">D. 两者没有任何区别</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:单腔回弹式的伸直靠弹簧,回弹速度与末端定位都受弹簧迟滞影响;双腱对抗把「伸直」变成主动控制,动态与可控性更好(A),但每节多一条腱绳通道与一个张紧调整点,布线和运维成本上升。指尖力的上限由电机侧张力决定(B),触觉反馈的有无不随驱动方式改变(C)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 抓一块表面光滑的不锈钢杯壁(竖直面),最关键的短板链路是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 电机的 KV 值偏低</button>
+      <button data-v="B">B. 小臂减速器背隙偏大</button>
+      <button data-v="C">C. 数据集里没有杯子类物体</button>
+      <button data-v="D">D. 缺少低延迟切向力/滑动检测触觉——法向压力不足时无法在滑落前加大捏力</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:光滑竖面的物理难点是「靠摩擦扛重力」,安全裕度 = μ·F<sub>法向</sub>/G。抓取控制需要<b>尽早检测到切向滑移</b>(哪怕几毫秒)才能立即增压防掉——这正是指尖阵列/视触觉传感器存在的意义(D)。KV/背隙/数据集都可能影响整体性能,但都不是这条任务链上「一票否决」的短板。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. 把「拇指外展+四指各 1 屈伸+PIP/DIP 联动」配置成 6 电机灵巧手,若想让它还能做「食指单指点触屏」的精细动作,最合理的升级是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 换更大转矩的小臂电机即可实现</button>
+      <button data-v="B">B. 给食指单独增加屈伸驱动(或改双腱对抗),把这根手指从联动中解耦出来——欠驱动系数下降换取独立控制</button>
+      <button data-v="C">C. 全部手指都换成连杆结构</button>
+      <button data-v="D">D. 只提高腱绳预紧力就能独立动食指</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:「单指点触屏」要求该指屈伸与其他指<b>运动学解耦</b>,而当前方案里共享驱动/联动的手指无法单独执行——本质是自由度不足的问题(B 通过增加驱动数换独立自由度)。更大的电机(A)、更高的预紧(D)改变的是力度不是自由度;全部改连杆(C)代价大且未必保留类人外形。这个取舍正是「欠驱动省钱省重 vs 全驱动贵而准」的具体化。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">13. 对比 Shadow 手(~20 电机,全驱动)与宇树 G1 手(6 电机,欠驱动腱驱),下列结论正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. G1 手一定比 Shadow 抓得稳,因为更新</button>
+      <button data-v="B">B. Shadow 手更适合消费级人形机器人,因为控制更简单</button>
+      <button data-v="C">C. 定位不同:Shadow 用电机密度换「每指独立力控」的研究上限;G1 类方案用联动与自适应包络换轻量、成本与量产可行性</button>
+      <button data-v="D">D. 两者的维护成本几乎相同</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:两条路线服务于两个目标函数:C 的说法与本页对比表一致——Shadow 是研究标杆(独立力控/高带宽),以重量与维护为代价;宇树等国产方案对标特斯拉路线,面向整机量产的轻量与成本。A 把新旧当成性能判据;B 恰好说反(20 电机协调是最难的);D 忽视了腱驱松弛维护的存在。</div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节要点速查:</b>①夹爪 1~2 DOF 只做 pick &amp; place,灵巧手 6~22 DOF 为在手操作而生;②欠驱动省钱省重适合包络抓取,全驱动贵而准适合精细操作;③驱动四流派——腱驱动最轻但爱松、直驱最快最皮实但最重、连杆力大但笨、混合最贵最全,选型看力 / 速度 / 重量 / 成本 / 可靠性五维;④触觉三件套(指尖阵列、视触觉 / 电子皮肤、六维力)解决滑动检测与力控制,没有触觉的抓取是「盲抓」;⑤控制三线并进(行为克隆 / 强化学习 / 遥操作),数据靠 DexGraspNet / GRAB / Open-TeleVision / AgiBot World 支撑;⑥与 VLA 结合用「大模型出意图、灵巧手出力控」的分层架构;⑦入门从免费仿真起步:抓取生成 → 策略训练 → sim2real → 真手遥操作。</div>
 
   <!-- ================= 11 参考来源 ================= -->
-  <h2><span class="h2-num">11</span> 参考来源</h2>
+  <h2><span class="h2-num">12</span> 参考来源</h2>
   <p>以下链接均经 web_search 核实为官方 / 稳定地址,产品参数以官网最新为准。</p>
   <ul>
     <li><b>代表产品官网:</b><a href="https://shadowrobot.com/shadow-hand-glove/" target="_blank" rel="noopener">Shadow Hand &amp; Glove(Shadow Robot)→</a> · <a href="https://robotsguide.com/robots/shadow" target="_blank" rel="noopener">Shadow Hand(Robots Guide)→</a> · <a href="https://www.unitree.com/cn/Dex3-1" target="_blank" rel="noopener">宇树 Dex3-1 官网 →</a> · <a href="https://www.agibot.com.cn/article/188/detail/33.html" target="_blank" rel="noopener">智元灵巧手家族解读 →</a> · <a href="https://www.fftai.cn/about-medium-company/29" target="_blank" rel="noopener">傅利叶 GR-2 亮相 Humanoids 2024 →</a></li>

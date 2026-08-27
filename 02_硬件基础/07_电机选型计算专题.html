@@ -317,8 +317,26 @@
     <b>⚠ 算例结论:</b>RMS 有效扭矩 2.67 N·m 已非常接近持续扭矩 2.8 N·m,<b>余量仅约 5%</b>。这提示:要么选持续扭矩更大(如 3.2~3.5 N·m)的电机,要么加强散热、缩短峰值占空比。工程上要留 20% 以上的持续扭矩余量才稳妥。
   </div>
 
-  <!-- ================= 7. 常见误区 ================= -->
-  <h2><span class="h2-num">7</span> 常见误区</h2>
+  <!-- ================= 7. 深度讲解(V2.0.7 新增) ================= -->
+  <h2 id="s7"><span class="h2-num">7</span> 深度讲解：无框力矩电机三参数联动校核（Kt·母线电压·减速比含算例）</h2>
+  <div class="key-point">
+    <div class="kp-title">🧮 校核闭环:三个参数互相咬合,不能单点选</div>
+    ①<b>Kt = 9.55/KV</b>(N·m/A):KV 定了,「每安培多少扭矩」就定了;②需求电流 I<sub>需</sub> = T<sub>电机端</sub>/Kt → 立刻检查驱动器相电流上限;③空载转速 n<sub>空</sub> ≈ KV×U<sub>母线</sub> → 检查「输出端最高转速 = n<sub>空</sub>/i」够不够。任何一项爆表,都得回头换 KV、母线或减速比——这就是「联动」。
+  </div>
+  <p><b>算例:腕关节 2.2 N·m(持续)/6 N·m(峰值)@ 90 rpm,i=15(谐波),η=0.8,候选电机 A:KV=55。</b></p>
+  <div class="table-wrap"><table>
+    <tr><th>校核项</th><th>公式</th><th>代入</th><th>结果 / 判定</th></tr>
+    <tr><td>① Kt</td><td>9.55/KV</td><td>9.55/55</td><td>≈ 0.174 N·m/A</td></tr>
+    <tr><td>② 持续电流</td><td>T<sub>m,cont</sub>/(Kt·η)</td><td>(2.2/15)/(0.174×0.8)</td><td>≈ <b>1.05 A</b> ✓(驱动器轻松)</td></tr>
+    <tr><td>③ 峰值电流</td><td>T<sub>m,pk</sub>/(Kt·η)</td><td>(6/15)/(0.174×0.8)</td><td>≈ <b>2.87 A</b> ✓</td></tr>
+    <tr><td>④ 空载转速</td><td>KV×U<sub>母线</sub></td><td>55×48</td><td>2640 rpm → 输出端 176 rpm ✓ &gt; 90 rpm(约 2 倍余量)</td></tr>
+    <tr><td>⑤ 满速反电动势</td><td>Ke·ω = (9.55/KV)·(2πn/60)</td><td>0.174×(2π×2640/60)</td><td>≈ 48 V —— 贴着母线!工作转速必须留弱磁余量,额定速点反电动势 ≈ 16 V ✓ 安全</td></tr>
+  </table></div>
+  <p>换一台 KV=200 的「高转速款」比一比:Kt=0.048 → 持续电流 3.8 A、峰值电流 10.4 A(驱动器成本↑、铜损 I²R≈(I²)×R 明显变差);空载转速 9600 rpm → 输出 640 rpm(超出需求 7 倍,纯粹浪费在减速器摩擦上)。结论一目了然:<b>力矩型关节要低 KV,而不是「KV 越高越先进」</b>。<a href="09_FOC驱动器硬件深挖.html" target="_blank" rel="noopener">电流需求如何压垮驱动器见 FOC 深挖 →</a></p>
+  <div class="box box-warn"><b>⚠️ 联动校核三坑:</b>①只对「额定」做②③项、忘了校<b>峰值电流是否落在驱动器 5~10 s 短时区</b>——落地冲击瞬间报 OC 就是这个原因;②反电动势按「额定转速」算而不是「空载最高转速」算,急停/反拖时泵升电压直接顶穿母线(要配制动泄放);③把 Kt 抄成峰值 Kt——部分电机饱和后 Kt 掉 20~30%,持续段与峰值段要分开算。<a href="../08_学习工具/05_传动与控制实验台.html" target="_blank" rel="noopener">实验台把 i/η 一起拖起来看 →</a></div>
+
+  <!-- ================= 8. 常见误区 ================= -->
+  <h2><span class="h2-num">8</span> 常见误区</h2>
   <div class="box box-warn">
     <b>🚫 误区 1 · 只看峰值扭矩,不看持续扭矩:</b>峰值扭矩是"短跑成绩",持续扭矩才是"长跑能力"。用峰值扭矩选长期工作点,绕组过热烧毁只是时间问题。<b>正确做法:峰值覆盖瞬时、RMS 对比持续。</b>
   </div>
@@ -335,8 +353,8 @@
     <b>🚫 误区 5 · 极对数/编码器方向填错不校验:</b>FOC 里电角度 = 极对数 × 机械角度,极对数或编码器相序错一位,电机轻则抖动异响,重则飞车。上电前务必做<b>开环相序与编码器方向标定</b>。
   </div>
 
-  <!-- ================= 8. 小结与思考 ================= -->
-  <h2><span class="h2-num">8</span> 小结与思考</h2>
+  <!-- ================= 9. 小结与思考 ================= -->
+  <h2><span class="h2-num">9</span> 小结与思考</h2>
   <div class="box box-tip">
     <b>📌 本节小结:</b>电机选型本质是<b>"负载需求 ∩ 电机能力 ∩ 驱动器能力"</b>三重交集的求解。先用<b>静载 + 加速 + 摩擦</b>估算峰值扭矩,用<b>峰值/持续</b>双额定覆盖瞬时与平均,用<b>减速比</b>同时权衡扭矩放大、转速降低与 i² 惯量解耦,最后用 <b>RMS 有效扭矩 ≤ 持续扭矩</b>做热校验。人形关节偏爱无框力矩电机 + 谐波/行星减速器 + 双编码器,正是因为它在这三重交集中同时拿到了最高的扭矩密度与中空集成度。
   </div>
@@ -347,8 +365,8 @@
     3. 若一个关节的负载是<b>周期往复</b>运动,静载扭矩忽正忽负(回程时重力矩反向),RMS 计算该如何正确取各段扭矩的符号与平方?试推导。
   </div>
 
-  <!-- ================= 9. 自测 ================= -->
-  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <!-- ================= 10. 自测 ================= -->
+  <h2><span class="h2-num">10</span> 本节自测</h2>
 
   <div class="quiz">
     <div class="quiz-q">1. 【扭矩计算】负载质量 m=8 kg 集中在距关节转轴 r=0.35 m 处(取 g=9.8 m/s²),连杆处于<b>水平</b>位置时,重力矩约是多少?</div>
@@ -434,10 +452,94 @@
     <div class="quiz-explain">💡 解析:电角度 = 极对数 × 机械角度 = 7 × 10° = 70°(见第 4 节「极对数 p」)。编码器读到的机械角度必须乘极对数才能得到正确转子电角度;极对数填错,电机可能不转、乱抖甚至反转(误区 5)。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">8. 【Kt 计算】KV=55 rpm/V 的无框电机,Kt 约为多少?输出 2.2 N·m(经 i=15、η=0.8)需要多大持续电流?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. Kt≈0.174 N·m/A;电机端约 0.147 N·m → 电流约 1.05 A</button>
+      <button data-v="B">B. Kt≈0.174 N·m/A;直接 2.2/0.174 → 12.6 A</button>
+      <button data-v="C">C. Kt≈55/9.55≈5.8;电流约 0.03 A</button>
+      <button data-v="D">D. Kt 与 KV 无关,必须实测才能算电流</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Kt=9.55/KV≈0.174(B 的公式对但忘了除减速比与效率);电机端扭矩 = 2.2/(15×0.8)≈0.147 N·m,I=0.147/0.174≈<b>1.05 A</b>(A)。链路口诀「输出扭矩 ÷ i ÷ η ÷ Kt」。C 把 KV/Kt 倒置;D 忽略了 SI 单位制下 Kt≈Ke≈9.55/KV 的标准关系。<a href="#s7">回看第 7 节校核表 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 【联动校核】同一关节换装 KV=200 的高转速电机(其余条件同上),最可能先出问题的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 输出端转速不够</button>
+      <button data-v="B">B. 反电动势顶穿母线</button>
+      <button data-v="C">C. 谐波减速器强度不足</button>
+      <button data-v="D">D. 相电流需求涨到约 3.8 A 持续 / 10.4 A 峰值——驱动器容量与铜损先吃不消</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:KV=200 → Kt≈0.048,同样的电机端扭矩需要电流翻约 3.6 倍,I²R 铜损翻约 13 倍,驱动器被迫升级(D)。A 恰好相反(高 KV 转速余量更大);B 是低 KV 大扭矩电机贴近母线的毛病;C 与电机 KV 无关。这正是「力矩型关节选低 KV」的定量依据。<a href="#s7">回看第 7 节对比段 →</a></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 【转速链】KV=55、母线 48 V、i=15,输出端空载最高转速约为?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 55×48 = 2640 rpm</button>
+      <button data-v="B">B. 2640/15 = 176 rpm</button>
+      <button data-v="C">C. 2640×15 ≈ 39600 rpm</button>
+      <button data-v="D">D. 48/55 ≈ 0.87 rpm</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:n<sub>空,电机</sub>≈KV×U=2640 rpm,再除以减速比 → 176 rpm(B)。A 忘了减速器「降速增扭」;D 把公式倒置;C 方向反了。工程校验口径:输出端最高转速 ≥ 需求 ×1.5~2;余量过大同样说明 i 偏小,扭矩浪费在摩擦上。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 【反电动势】反电动势校核为什么要按「空载最高转速」而不是额定工作点?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 因为空载时电流为零,反电动势也为零</button>
+      <button data-v="B">B. 额定点的反电动势无法计算</button>
+      <button data-v="C">C. 急停/外力反拖时电机会被带到接近空载极限转速,Ke·ω<sub>max</sub> 叠加母线泵升可能过压击穿——只核工作点会漏掉这种瞬态</button>
+      <button data-v="D">D. 空载时母线电压更高</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:反电动势只由转速决定(Ke·ω),与是否通电无关;危险场景是<b>关节被外力快速反拖</b>(跌倒/甩臂/相邻关节带动),电机瞬切入发电状态,反电动势+泵升一起冲击母线电容与 MOSFET(C)。所以校核取空载极限并配制动泄放。A 恰说反——空载电流小,反电动势在电压平衡里占比最高。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. 【峰值电流】落地冲击要求输出端 3 倍持续扭矩。哪条措施<b>不能</b>解决「峰值电流超驱动器短时区」?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 提高减速比 i,压低电机端扭矩需求</button>
+      <button data-v="B">B. 把过流保护阈值调高一倍,让它别误报</button>
+      <button data-v="C">C. 换相电流上限更高的驱动器 / 并联功率级</button>
+      <button data-v="D">D. 换更高 Kt(更低 KV)电机,同扭矩下电流更小</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:B 是「拆警报器」——过流保护护的是 MOSFET 与绕组,阈值硬闯只会烧板。A/C/D 分别从传动比、硬件容量、电机常数三个正经方向把电流压回安全区。判据:峰值电流落在驱动器「1~10 s 短时过载区」内、持续电流落在连续区内,两条都满足才算过。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">13. 【惯量+热联合】把 i 从 9 提到 50,负载反射惯量变为原来的多少?对热校验的主要影响是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 除以 (50/9)²≈31;同轨迹下电机端加速扭矩大幅下降、RMS 更宽裕——但要补算谐波的低效率与更大摩擦扭矩</button>
+      <button data-v="B">B. 乘 (50/9)²≈31 倍;热负载大幅恶化</button>
+      <button data-v="C">C. 惯量与热都和 i 无关</button>
+      <button data-v="D">D. 除以 (50/9)≈5.6 倍;RMS 按一次方下降</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:J<sub>ref</sub>=J<sub>L</sub>/i²,除以 (50/9)²≈31(A);τ<sub>a</sub>=J<sub>ref</sub>·α 随之骤降,RMS 热校验自然宽松。但账要算全:谐波 50:1 的效率(≈0.8)低于行星 9:1,摩擦与启动扭矩折算到电机端更大——「提高 i 换电机小型化」要扣完效率/摩擦项再比收益。B 方向颠倒;D 惯量是平方不是一次方。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">14. 【综合排查】按流程选好的腕关节「空转正常、带载抖动发热」。按联动校核思路,排查优先级最高的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 立即换更大扭矩的电机</button>
+      <button data-v="B">B. 把母线电压调高一倍</button>
+      <button data-v="C">C. 把减速比改小重买减速器</button>
+      <button data-v="D">D. 先核对软参数:极对数/电角度零位、相序与编码器方向、电流环 Kt 与电机是否一致——参数错位会精确复现「空转好、带载崩」</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:「空转正常+带载崩」是<b>有效转矩不足</b>的典型特征,最常见根因是软参数(D):电角度错位让 iq 打 cosΔθ 的折扣、Kt 抄错让电流环「以为」给了力。A/B/C 都是昂贵硬件动作,应放在软参数核对与 Kt 实测之后——先证明电磁扭矩按预期输出,再谈换件。<a href="09_FOC驱动器硬件深挖.html" target="_blank" rel="noopener">电角度错位机理详见 FOC 深挖 →</a></div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节要点速查:</b>① 选型先定「电机家族」——人形旋转关节主力用无框力矩电机(扭矩密度最高、可中空走线、集成度最好);② 负载扭矩 = 静载 τg + 加速 τa + 摩擦 τf,再乘安全系数 SF(约 1.2~1.5)得设计值;③ 峰值扭矩覆盖瞬时、RMS 有效扭矩 ≤ 持续扭矩做热校验,别只盯峰值;④ 减速器「一进三得」:扭矩 ×i、转速 ÷i、负载惯量反射 ÷i²;⑤ Kt = Ke = 9.55/KV,低 KV = 高 Kt = 力矩型;电角度 = 极对数 × 机械角度。</div>
 
-  <!-- ================= 10. 参考来源 ================= -->
-  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <!-- ================= 11. 参考来源 ================= -->
+  <h2><span class="h2-num">11</span> 参考来源</h2>
   <ul>
     <li><a href="https://www.cubemars.com/cn/how-to-choose-hip-and-knee-joint-motors-for-humanoid-robots.html" target="_blank" rel="noopener">CubeMars · 人形机器人膝关节与髋关节电机选型指南解析</a>(髋/膝关节扭矩需求与选型思路)</li>
     <li><a href="https://www.cubemars.com/cn/2026-robot-actuator-guide-frameless-vs-qdd-vs-integrated.html" target="_blank" rel="noopener">CubeMars · 2026 机器人电机指南:无框电机 vs QDD vs 一体化动力模组</a>(电机家族路线对比)</li>

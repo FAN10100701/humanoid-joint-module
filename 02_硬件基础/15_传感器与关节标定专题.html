@@ -145,6 +145,78 @@
     <div class="quiz-explain">💡 解析:软限位要内缩 2~5° 留安全余量并加限位减速(见第 4 节);正方向必须与 URDF/仿真一致,否则是 sim2real 首日事故的高频原因;输出端绝对值编码器与电机端编码器不同源,要分别记录。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">7. 「U 相通电对齐法」标电角度零位,为什么能把转子拉到已知位置?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 因为 U 相电压最高,把转子吸到电压峰处</button>
+      <button data-v="B">B. 给 U 相通直流,定子产生固定方向的磁场,转子 d 轴被磁拉力对齐到 U 相绕组轴线——此刻编码器读数即 d 轴零位</button>
+      <button data-v="C">C. 因为转子会自动转到机械零点</button>
+      <button data-v="D">D. U 相与其他相没有任何区别,随便选一相通电即可</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:直流通电不旋转,合成磁势方向固定在<b>该相绕组轴线</b>上;永磁转子总要把自己 d 轴转向对齐该磁势——于是得到一个物理上确定的参考角。「对齐→读零偏→验方向」重复取平均可压低随机误差(本节主流程)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. IMU 六面法静置标定能解出哪些误差参数?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 只能解零偏,刻度误差标不了</button>
+      <button data-v="B">B. 六面共 6 组方程,只能解 3 个轴的零偏</button>
+      <button data-v="C">C. 每个轴面提供重力投影约束,可解 3 轴零偏 + 3 轴刻度(非正交项并入刻度阵),共约 6~12 参数</button>
+      <button data-v="D">D. 六面法标的是陀螺仪噪声密度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:六面静置利用「静止时比力=重力在各轴投影、模长恒为 g」这组约束——6 个姿态给出冗余方程,最小二乘同时解出零偏与刻度;芯片级非正交误差通常并入刻度矩阵处理。陀螺零偏则靠「静置积分平均」单独标。工装平面度不够时,重力方向本身就不准,标定白做。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 关节已经有电机端高分辨率编码器,为什么很多设计还要在输出端再加一个?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 减速器的弹性变形与间隙使「电机端角度≠输出端真实角度」,输出端直测才能兜住精度与碰撞打滑</button>
+      <button data-v="B">B. 为了让两颗编码器互为备份,坏一颗也不影响读数</button>
+      <button data-v="C">C. 输出端编码器用于测量电机温度</button>
+      <button data-v="D">D. 纯粹为了冗余传感器市场销售</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:谐波/RV 传过去要经历柔轮变形、齿面啮合——重力/冲击下电机端计数与输出真实角会出现度级偏差;力控与碰撞检测更需要输出端真值。双码盘不是简单备份(B),用途和分辨率都不同(本节第 3 小节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 砝码力臂法标定关节力矩常数,拟合残差却高达 8% F.S.,最可能的原因是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 砝码质量不够精确</button>
+      <button data-v="B">B. 采样时间太短</button>
+      <button data-v="C">C. 拟合次数用了一阶</button>
+      <button data-v="D">D. 未补偿减速器与轴承的摩擦/非线性——大摩擦传动在零位附近误差可到 30%+,必须做摩擦补偿或双向加载取平均</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:静态砝码法假设「输出端力矩=砝码×力臂」无损传到电机端,但静摩擦会让电流停在一段区间内不变化(死区),残差呈系统性而非随机性——解决靠正反双向加载取均值、或动态辨识摩擦模型(D)。砝码精度与采样时长的影响属于次级(A/B)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">11. 换装了一只「同型号全新」的关节电机,原标定参数能否直接复用?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 可以,同型号参数完全一致</button>
+      <button data-v="B">B. 不可以——零偏、刻度甚至相序都存在个体差,标定数据必须绑定「硬件个体」管理,换件后按触发条件复标</button>
+      <button data-v="C">C. 只需要复用电角度零位,IMU 参数可复用</button>
+      <button data-v="D">D. 直接复用,跑半年再校即可</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:磁钢充磁一致性、编码器安装角度、IMU 贴片应力都会造成个体差(本节「数据按硬件个体管理」原则)。工程做法是给每只关节建标定档案,设定「碰撞/拆装/漂移超阈值→强制复标」的触发条件。C 之类「部分复用」要经过残差验证,不能拍脑袋。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">12. 下列哪个事件<b>不需要</b>触发关节复标?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 关节被撞后出现定位漂移</button>
+      <button data-v="B">B. 拆卸重装了编码器或减速器</button>
+      <button data-v="C">C. 站点搬迁但整机未拆装、自检零漂正常</button>
+      <button data-v="D">D. 更换了不同批次的一体伺服模块</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:复标触发条件围绕「机械/电磁关系是否被扰动」:碰撞、拆装、换件都会改变零位/刻度关系(A/B/D);整机搬迁不改变关节内部几何与电磁关系,自检零漂正常即可继续使用(C)。这一条帮你在产线/赛场快速判断「要不要重新标」——把复标当成例行仪式同样浪费产能。</div>
+  </div>
+
   <div class="box box-tip"><b>📌 本节要点速查:</b>①电角度零位=U 相通电把 d 轴拉到对齐位置,三步「对齐→读零偏→验方向」,重复 3 次取平均、重复性 &lt;0.5°;②IMU 六面法解 3 轴零偏+3 轴刻度(非正交并入刻度),工装平面度比芯片精度更重要,参数绑定安装位置;③关节零位绑定 URDF 正方向,软限位内缩 2~5° 并加限位减速,电机端/输出端编码器不同源;④力矩标定=砝码力臂+最小二乘拟合(残差 &lt;1% F.S.),大摩擦传动必须补偿否则零附近误差 30%+;⑤先标定、后参数,数据按「硬件个体」管理并设定复标触发条件。</div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>①标定决定精度天花板,排查永远"先标定后参数";②电角度零位=U 轴通电对齐法,三步:对齐→读零偏→验方向;③IMU 六面法解零偏/刻度,关节零位绑定 URDF 正方向;④力矩标定用砝码力臂+线性拟合,大摩擦传动必须摩擦补偿;⑤标定数据按"硬件个体"管理,设定复标触发条件。</div>

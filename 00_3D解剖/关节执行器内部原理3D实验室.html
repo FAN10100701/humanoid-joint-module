@@ -126,17 +126,68 @@
     <div class="quiz-explain">💡 解析:欠驱动靠「腱绳拉力 + 关节弹簧刚度分配」:近端弹簧刚度小先被拉动,近指节触物后阻力使腱绳张力转向下一关节……这样用 1 个电机实现多关节顺序弯曲,手指自动包络任意形状物体——即自适应抓握。</div>
   </div>
 
+  <div class="quiz">
+    <div class="quiz-q">4. 本页①号实验室把负载角滑杆拉过 90°(1.57 rad)会看到什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 转子加速甩脱磁场,越转越快</button>
+      <button data-v="B">B. 转子骤停并小幅抖动,绿色磁场继续空转——因为 sin δ 过 90° 后转矩不升反降,同步力矩拉不住负载</button>
+      <button data-v="C">C. 电机烧毁冒烟</button>
+      <button data-v="D">D. 没有任何变化</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:转矩 ∝ sin δ,90° 是峰值顶点;越过之后每增加负载角反而减转矩,形成「正反馈失稳」→ 失步。动画按此物理呈现「磁场空转+转子抖动锁定」(B),控制栏的「转矩比 sin δ」读数也会从 1.00 回落,可以边拖边看。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. ②号码盘 36 条缝,为什么必须「A/B 两路」才能同时测角度和判方向?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 一路坏了一路顶上</button>
+      <button data-v="B">B. A/B 是两组不同直径的缝</button>
+      <button data-v="C">C. 两路光栅错开 1/4 周期(90° 电角度),谁先跳变就暴露了旋转方向;单路只能计数不能判向</button>
+      <button data-v="D">D. 为了让 LED 亮度翻倍</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:计数只要边沿个数,方向要「先后关系」——两路相差 90° 相位,A 超前 B 与 B 超前 A 分别对应正反转,鉴相电路据此输出 ±计数(C)。这也是本页「反转」按钮按下后脉冲计数变负的原理。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. ③号手指「近→中→末」顺序弯曲的机制是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 腱绳张力先克服刚度最小的近端关节弹簧;近指节触物受阻后,张力转而压弯下一关节——逐级分配直至包络</button>
+      <button data-v="B">B. 电机转速按关节顺序依次切换</button>
+      <button data-v="C">C. 三个关节各有一台电机按程序启动</button>
+      <button data-v="D">D. 手指材质从近到远越来越软</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:欠驱动 = 1 台电机 + 弹簧刚度分配:张力的「最省力路径」先走刚度小的关节,受阻后重新分配到下一级(A)——这是机械层面的「自适应」,不依赖传感器与程序。观察方法:把抓握速度拉到最低,数三个铰链的启动先后。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 把三个实验室串成一条「闭环」,正确的数据流是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 码盘 → 磁场 → 转子 → 手指</button>
+      <button data-v="B">B. 手指 → 转子 → 码盘 → 磁场</button>
+      <button data-v="C">C. 磁场 → 码盘 → 转子 → 电流环</button>
+      <button data-v="D">D. 指令给出 iq → ①磁场按 FOC 旋转带动②转子 → 减速器传到③手指/负载 → 码盘测到的真实角度反回控制器修正 iq——三段就是一条伺服闭环</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:①是「执行」、负载与手指是「对象」、②码盘是「反馈」、控制器是「大脑」:给定 iq(力矩指令)→ 磁场拉着转子转 → 经传动到手指 → 编码器回读角度 → 与目标比较再修 iq(D)。三个实验室不是孤立玩具,正好各占闭环的一段——建议按 ①→②→③→控制 的顺序各看一个周期。</div>
+  </div>
+
   <div class="box box-warn"><b>🤔 思考题:</b>1. 如果电机负载角超过 90°,转矩会怎样?和「堵转」什么关系?<br>2. 增量编码器断电后还能知道绝对角度吗?为什么要 Z 脉冲或上电回零?<br>3. 欠驱动手指的「弹簧刚度」设计如何影响抓握力度与速度?</div>
 
 </div><!-- /container -->
 <script src="../_assets/site.js"></script>
 <script>
 /* =====================================================================
-   关节执行器内部原理 3D 实验室 v1.0(2026-08-17)
+   关节执行器内部原理 3D 实验室 v1.1(2026-08-27)
    - 程序化精细建模(零 STL 依赖,专讲内部原理)
    - ① 无刷电机:定子 12 齿 + 绕组 + 转子 14 磁钢 + 合成磁场箭头,
-     负载角滑杆 → 失步演示;② 光电编码器:码盘 36 缝 + LED + 光电管 +
-     实时脉冲计数与方向;③ 欠驱动手指:1 电机 + 腱绳 + 3 关节顺序弯曲
+     负载角滑杆(过 90°/π/2 即失步)→ 失步演示 + 转矩比读数;
+   - ② 光电编码器:码盘 36 缝 + LED + 光电管 + 垂直光束 +
+     实时脉冲计数与角度估算(反转计数变负);
+   - ③ 欠驱动手指:1 电机 + 腱绳 + 双指各 3 关节串联屈指链
+     (指节 −Y 延伸/绕 X 弯曲/子节挂父节末端),腱绳逐帧跟随
    ===================================================================== */
 var LAB = { T:null, renderer:null, scene:null, cam:null, lab:0, raf:0, t:0, speed:1, paused:false,
              yaw:0.8, pitch:0.35, dist:7, drag:null, loadAngle:0.4, encDir:1 };
@@ -295,15 +346,21 @@ function buildMotorLab(g){
   LAB.motor = { rotor:rotor, field:field, dAxis:dAxis, stator:stator };
 }
 
-function animateMotor(dt){
+function animateMotor(){
   if(!LAB.motor || LAB.lab !== 0) return;
   var M = LAB.motor;
-  var stalled = LAB.loadAngle > 0.95;
+  /* 失步判据与教学口径统一:转矩 ∝ sin(负载角),90°(π/2≈1.57 rad)时最大,
+     超过 90° 转矩回落 → 同步力矩拉不住转子 → 失步 */
+  var stalled = LAB.loadAngle >= Math.PI/2;
   var mech = LAB.t * 0.8;
   if(stalled){
-    /* 失步:转子停转+抖动,磁场继续转 */
-    mech = 0.6 + Math.sin(LAB.t * 30) * 0.08;
+    /* 失步瞬间锁定当时的转子角(保证从当前相位骤停),叠加小幅抖动;磁场继续转 */
+    if(LAB.mechHold === undefined){ LAB.mechHold = (LAB.lastMech !== undefined ? LAB.lastMech : mech); }
+    mech = LAB.mechHold + Math.sin(LAB.t * 30) * 0.06;
+  } else {
+    LAB.mechHold = undefined;
   }
+  LAB.lastMech = mech;
   M.rotor.rotation.y = mech;
   M.field.rotation.y = LAB.t * 0.8 + LAB.loadAngle;
   M.dAxis.rotation.y = mech;
@@ -338,88 +395,145 @@ function buildEncoderLab(g){
   disc.add(dshaft);
   g.add(disc);
 
-  /* LED(上) 与光电管(下) */
-  var ledM = new T.Mesh(new T.BoxGeometry(0.32, 0.2, 0.32), led);
-  ledM.position.set(0, 1.15, 0.55);
+  /* LED(上)与光电管(下):对准码盘刻缝环半径 r=0.75 处(a=0 那条缝的正上/下方),
+     光真正「穿过」刻缝而不是悬在盘前 */
+  var ledM = new T.Mesh(new T.BoxGeometry(0.26, 0.16, 0.26), led);
+  ledM.position.set(0.75, 0.32, 0);
   g.add(ledM);
-  var pdM = new T.Mesh(new T.BoxGeometry(0.36, 0.2, 0.36), dark);
-  pdM.position.set(0, -0.95, 0.55);
+  var pdM = new T.Mesh(new T.BoxGeometry(0.30, 0.16, 0.30), dark);
+  pdM.position.set(0.75, -0.32, 0);
   g.add(pdM);
-  /* 光束 */
-  var beam = new T.Mesh(new T.CylinderGeometry(0.05, 0.05, 2.0, 8), new T.MeshStandardMaterial({ color:0xff6b6b, emissive:0xff2020, emissiveIntensity:0.6, transparent:true, opacity:0.4 }));
-  beam.rotation.x = Math.PI/2; beam.position.set(0, 0.1, 0.55);
+  /* 光束:竖直短圆柱,LED→光电管,穿过刻缝环 */
+  var beam = new T.Mesh(new T.CylinderGeometry(0.032, 0.032, 0.56, 8), new T.MeshStandardMaterial({ color:0xff3030, emissive:0xff2020, emissiveIntensity:0.8, transparent:true, opacity:0.4 }));
+  beam.position.set(0.75, 0, 0);
   g.add(beam);
-  var pcbM = new T.Mesh(new T.CylinderGeometry(1.35, 1.35, 0.08, 48), pcb);
-  pcbM.rotation.x = Math.PI/2; pcbM.position.y = -0.35;
+  var pcbM = new T.Mesh(new T.CylinderGeometry(1.15, 1.15, 0.06, 48), pcb);
+  pcbM.rotation.x = Math.PI/2; pcbM.position.y = -0.72;
   g.add(pcbM);
 
-  LAB.encoder = { disc:disc, beam:beam, led:ledM };
+  LAB.encoder = { disc:disc, beam:beam, led:ledM, prevSlot:false, pulses:0, uiSkip:0 };
 }
 
 function animateEncoder(dt){
   if(!LAB.encoder || LAB.lab !== 1) return;
   var E = LAB.encoder;
-  E.disc.rotation.y += dt * LAB.speed * 2.0 * LAB.encDir;
+  var dAng = dt * LAB.speed * 2.0 * LAB.encDir;
+  E.disc.rotation.y += dAng;
   /* 光束闪烁 = 缝经过光电管 */
   var ang = E.disc.rotation.y;
   var slot = Math.abs(Math.sin(ang * 18)) < 0.55;
+  if(slot && !E.prevSlot){
+    /* 每逢「遮→透」跳变计 1 个脉冲;反转时计数为负 → 直观演示判向 */
+    E.pulses += (dAng >= 0 ? 1 : -1);
+  }
+  E.prevSlot = slot;
   E.beam.material.opacity = slot ? 0.75 : 0.15;
   E.beam.material.emissiveIntensity = slot ? 1.4 : 0.2;
   E.beam.material.needsUpdate = true;
+  /* 实时读数:脉冲计数 + 角度估算(每 6 帧刷一次 DOM,省开销) */
+  if(++E.uiSkip >= 6){
+    E.uiSkip = 0;
+    var pc = document.getElementById('encPulses');
+    if(pc) pc.textContent = (E.pulses > 0 ? '+' : '') + E.pulses;
+    var ac = document.getElementById('encAngle');
+    if(ac) ac.textContent = (((ang * 180 / Math.PI) % 360 + 360) % 360).toFixed(1);
+  }
 }
 
 /* ---------- ③ 欠驱动手指:1 电机 + 腱绳 + 3 关节顺序弯曲 ---------- */
+/* 几何约定(2026-08-27 修正):指节沿局部 −Y 方向延伸、铰链轴沿 X,
+   绕 X 负向弯曲 → 指尖朝 +Z(掌前)卷起;子关节组挂在父节末端 (0,-len,0),
+   形成真实的串联屈指链;腱绳每帧按「锚点→三关节→指尖」重画,随弯曲跟随 */
 function buildHandLab(g){
   var T = LAB.T;
   var linkM = new T.MeshStandardMaterial({ color:0xc0c8d4, metalness:0.35, roughness:0.4 });
   var jointM = new T.MeshStandardMaterial({ color:0xd9a441, metalness:0.3, roughness:0.4 });
   var palmM = new T.MeshStandardMaterial({ color:0x3a4252, roughness:0.55, metalness:0.2 });
+  var tendonM = new T.MeshStandardMaterial({ color:0xe5b53c, emissive:0xb8860b, emissiveIntensity:0.45 });
 
-  /* 手掌 */
+  /* 手掌抬升悬空,掌底前缘挂手指 */
   var palm = new T.Mesh(new T.BoxGeometry(1.6, 0.5, 1.2), palmM);
-  palm.position.y = 0.25;
+  palm.position.y = 0.55;
   g.add(palm);
 
-  /* 手指:3 段(prox/mid/dist),绕 Z 轴顺序弯曲 */
-  var finger = new T.Group();
-  var segs = [];
-  var parent = finger;
-  for(var s=0;s<3;s++){
-    var segG = new T.Group();
-    segG.position.set(0, 0.45, 0);
-    var len = 0.55 - s*0.1;
-    var link = new T.Mesh(new T.BoxGeometry(0.22, 0.18, len), linkM);
-    link.position.z = len/2;
-    segG.add(link);
-    var jc = new T.Mesh(new T.CylinderGeometry(0.09, 0.09, 0.24, 14), jointM);
-    jc.rotation.x = Math.PI/2; jc.position.z = 0.02;
-    segG.add(jc);
-    parent.add(segG);
-    segs.push({ g:segG, len:len });
-    parent = segG;
-  }
-  finger.position.set(0.3, 0.45, 0);
-  g.add(finger);
-  LAB.hand = { finger:finger, segs:segs, baseY:0.45 };
+  var SEG_LENS = [0.55, 0.45, 0.38];   /* 近/中/末指节长度 */
+  var fingers = [];
+  [-0.32, 0.32].forEach(function(fx){
+    var root = new T.Group();
+    root.position.set(fx, 0.32, 0.42);           /* 掌底前缘两根手指 */
+    var parent = root;
+    var segs = [];
+    for(var s=0;s<3;s++){
+      var segG = new T.Group();
+      if(s > 0) segG.position.set(0, -SEG_LENS[s-1], 0);   /* 子节挂父节末端 */
+      var len = SEG_LENS[s];
+      var link = new T.Mesh(new T.BoxGeometry(0.20, len, 0.16), linkM);
+      link.position.y = -len/2;                            /* 指节沿 −Y 延伸 */
+      segG.add(link);
+      var jc = new T.Mesh(new T.CylinderGeometry(0.07, 0.07, 0.24, 12), jointM);
+      jc.rotation.z = Math.PI/2;                           /* 铰链轴沿 X → 绕 X 弯曲 */
+      segG.add(jc);
+      parent.add(segG);
+      segs.push(segG);
+      parent = segG;
+    }
+    g.add(root);
+    fingers.push({ root:root, segs:segs });
+  });
 
-  /* 腱绳示意:细圆柱从掌内到指尖 */
-  var tendon = new T.Mesh(new T.CylinderGeometry(0.02, 0.02, 1.6, 8), new T.MeshStandardMaterial({ color:0xe5b53c, emissive:0xb8860b, emissiveIntensity:0.3 }));
-  tendon.rotation.x = Math.PI/2; tendon.position.set(0.3, 0.3, 0.8);
-  g.add(tendon);
-  LAB.hand.tendon = tendon;
+  /* 被抓握物体:掌前下方圆柱,展示自适应包络 */
+  var obj = new T.Mesh(new T.CylinderGeometry(0.28, 0.28, 1.15, 20),
+    new T.MeshStandardMaterial({ color:0x6b7fba, roughness:0.5 }));
+  obj.position.set(0, -0.66, 0.80);
+  g.add(obj);
+
+  /* 腱绳:每根手指 3 段金色细圆柱(掌内锚点→关节1→关节2→指尖),每帧重建位置与朝向 */
+  function makeSpan(){
+    var m = new T.Mesh(new T.CylinderGeometry(0.028, 0.028, 1, 6), tendonM);
+    g.add(m);
+    return m;
+  }
+  var spans = fingers.map(function(){ return [makeSpan(), makeSpan(), makeSpan()]; });
+
+  LAB.hand = { fingers:fingers, spans:spans,
+               anchor:new T.Vector3(0, 0.40, 0.30), lens:SEG_LENS };
 }
 
-function animateHand(dt){
+/* 在 p1→p2 之间摆放一截圆柱(细腱绳) */
+function placeTendonSpan(T, mesh, p1, p2){
+  var d = new T.Vector3().subVectors(p2, p1);
+  var len = Math.max(d.length(), 0.001);
+  mesh.position.copy(p1).addScaledVector(d, 0.5);
+  mesh.scale.set(1, len, 1);
+  mesh.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize());
+}
+
+function animateHand(){
   if(!LAB.hand || LAB.lab !== 2) return;
-  var H = LAB.hand;
+  var H = LAB.hand, T = LAB.T;
   var phase = Math.min(1, (Math.sin(LAB.t * 0.9) + 1) / 2);   /* 0→1→0 抓握循环 */
-  /* 顺序弯曲:近端先弯,远端后弯(欠驱动) */
-  var a1 = phase * 1.1;
-  var a2 = Math.max(0, (phase - 0.3)) * 1.4;
-  var a3 = Math.max(0, (phase - 0.6)) * 1.6;
-  H.segs[0].g.rotation.z = -a1;
-  H.segs[1].g.rotation.z = -a2;
-  H.segs[2].g.rotation.z = -a3;
+  /* 欠驱动顺序弯曲:近端先弯,远端后弯(相位延迟),最大角逐渐加大 */
+  var SEQ = [[0, 1.15], [0.30, 1.45], [0.60, 1.65]];
+  for(var f=0; f<H.fingers.length; f++){
+    var F = H.fingers[f];
+    for(var s=0; s<3; s++){
+      F.segs[s].rotation.x = -Math.max(0, phase - SEQ[s][0]) * SEQ[s][1] * 0.85;
+    }
+    /* 腱绳跟随:掌内锚点 → 三个关节 → 指尖,取世界坐标逐段重摆 */
+    F.root.updateWorldMatrix(true, true);
+    var a = H.anchor.clone(); a.x = F.root.position.x;
+    var pts = [];
+    var tmp = new T.Vector3();
+    for(s=0; s<3; s++){
+      pts.push(F.segs[s].getWorldPosition(tmp.clone()).add(new T.Vector3(0, 0, 0.10)));
+    }
+    var tipLocal = new T.Vector3(0, -H.lens[2], 0.10);
+    pts.push(tipLocal.applyMatrix4(F.segs[2].matrixWorld));
+    var chain = [a].concat(pts);
+    for(s=0; s<3; s++){
+      placeTendonSpan(T, H.spans[f][s], chain[s], chain[s+1]);
+    }
+  }
 }
 
 /* ---------- 切换实验室 ---------- */
@@ -427,9 +541,10 @@ function switchLab(i){
   if(!LAB.groups) return;
   LAB.lab = i;
   LAB.groups.forEach(function(g, k){ g.visible = (k === i); });
-  var dists = [7.5, 7.5, 6.5];
+  var dists = [7.5, 7.5, 6.8];
   LAB.dist = dists[i];
   LAB.yaw = 0.8; LAB.pitch = 0.35;
+  if(i === 2){ LAB.pitch = 0.28; }   /* 手指实验室俯角略低,突出屈指链 */
   var tabs = document.querySelectorAll('#myTabs button');
   for(var k=0;k<tabs.length;k++){ tabs[k].classList.toggle('on', k===i); }
   buildRight();
@@ -443,14 +558,14 @@ function buildRight(){
     { t:'🧲 无刷电机 · 旋转磁场与 FOC', html:'<div class="my-pr">' +
       '<b>① 结构:</b>定子(外侧灰色轭 + 12 齿 + 金色铜绕组)静止;转子(内侧 14 块深色磁钢 N/S 交替)随轴转。<br>' +
       '<b>② 旋转磁场:</b>三相电流按正弦相位通入 12 齿绕组,合成磁场(绿色箭头)匀速旋转——<b>磁场本身不转,是绕组电流相位在转</b>。<br>' +
-      '<b>③ 负载角:</b>绿色磁场领先橙色转子 d 轴一个角度 = 负载角。拖动下方滑杆增大负载角:<br>'
-      + '<b>· 0~0.95:</b>磁场拉着转子同步转(正常 FOC)<br>'
-      + '<b>· &gt;0.95:</b>磁场拉不住 → <b style="color:#f87171">失步</b>:转子骤停抖动,磁场继续空转<br>' +
-      '<b>④ 为什么转矩 ∝ sin(负载角):</b>磁场与磁钢的夹角越大,切向拉力越大;90° 最大,超过后反而变小 → 失步。</div>' },
+      '<b>③ 负载角:</b>绿色磁场领先橙色转子 d 轴一个角度 = 负载角(δ)。转矩 ∝ sin(δ),<b>90° 时转矩最大</b>。拖动下方滑杆增大负载角:<br>'
+      + '<b>· 0~90°:</b>磁场拉着转子同步转(正常 FOC),转矩随 δ 增大<br>'
+      + '<b>· &gt;90°(1.57 rad):</b>sin(δ) 回落,拉不住转子 → <b style="color:#f87171">失步</b>:转子骤停抖动,磁场继续空转<br>' +
+      '<b>④ 为什么 90° 是临界点:</b>磁场与磁钢夹角越大切向拉力越大;90° 后力臂分量反而变小 → 转矩跌、失步。右侧「转矩比」= sin(δ) 实时可见。</div>' },
     { t:'💿 光电编码器 · 码盘脉冲链路', html:'<div class="my-pr">' +
       '<b>① 结构:</b>半透明蓝码盘(36 条黑色光栅缝)随轴转;上方红色 LED 发光,下方灰色光电管接收。<br>' +
       '<b>② 明暗脉冲:</b>缝转到 LED 与光电管之间时光束透过(光束变亮),挡在光栅上时被遮(变暗)——每转过一条缝,光电管输出一个脉冲。<br>' +
-      '<b>③ 计数测角:</b>数脉冲数 × (360°/36 缝) = 转过的角度。转得快脉冲频率高,反向则脉冲顺序相反(判向靠 A/B 正交)。<br>' +
+      '<b>③ 计数测角:</b>控制栏实时显示累计脉冲数;数脉冲数 × (360°/36 缝) = 转过的角度。反向旋转时计数变为负 → 这就是「判向」的直观含义(A/B 正交靠相位先后判向)。<br>' +
       '<b>④ 分辨率:</b>光栅线数 = 每圈脉冲数。36 缝 → 10°/脉冲;工业级上万线 → 0.01° 级。增量式断电丢位置,需 Z 零位或上电回零。</div>' },
     { t:'🤲 欠驱动手指 · 一电机多关节', html:'<div class="my-pr">' +
       '<b>① 结构:</b>掌内 1 个电机(未画)拉金色腱绳;腱绳穿过 3 个关节(金色铰链)。<br>' +
@@ -468,27 +583,43 @@ function buildCtl(){
   if(LAB.lab === 0){
     html = '<button class="' + (LAB.paused?'':'on') + '" onclick="LAB.paused=!LAB.paused;buildCtl()">' + (LAB.paused?'▶ 继续':'⏸ 暂停') + '</button>'
       + '<label>转速 <input type="range" min="0.1" max="3" step="0.1" value="' + LAB.speed + '" oninput="LAB.speed=+this.value"></label>'
-      + '<label style="color:#f97316">负载角 <input type="range" min="0" max="1.3" step="0.01" value="' + LAB.loadAngle + '" oninput="LAB.loadAngle=+this.value;document.getElementById(\'loadVal\').textContent=LAB.loadAngle.toFixed(2)"></label>'
-      + '<span id="loadVal" style="font-family:Consolas,monospace;color:#f97316;font-size:12.5px">' + LAB.loadAngle.toFixed(2) + '</span>'
-      + '<span style="font-size:12px;color:#64748b">超过 0.95 失步</span>';
+      + '<label style="color:#f97316">负载角 δ <input type="range" min="0" max="2.2" step="0.01" value="' + LAB.loadAngle + '" oninput="LAB.loadAngle=+this.value;syncMotorReadout()"></label>'
+      + '<span id="loadVal" style="font-family:Consolas,monospace;color:#f97316;font-size:12.5px">' + LAB.loadAngle.toFixed(2) + ' rad</span>'
+      + '<span id="tqVal" style="font-family:Consolas,monospace;font-size:12.5px"></span>'
+      + '<span style="font-size:12px;color:#64748b">超过 90°(≈1.57 rad) 失步</span>';
   } else if(LAB.lab === 1){
     html = '<button class="' + (LAB.paused?'':'on') + '" onclick="LAB.paused=!LAB.paused;buildCtl()">' + (LAB.paused?'▶ 继续':'⏸ 暂停') + '</button>'
       + '<button onclick="LAB.encDir=-LAB.encDir;buildCtl()">↔ 反转</button>'
       + '<label>转速 <input type="range" min="0.2" max="4" step="0.1" value="' + LAB.speed + '" oninput="LAB.speed=+this.value"></label>'
-      + '<span style="font-size:12px;color:#64748b">码盘每过一条缝 → 一个脉冲</span>';
+      + '<span style="font-size:12.5px;font-family:Consolas,monospace">累计脉冲 <b id="encPulses" style="color:#2563eb">+0</b></span>'
+      + '<span style="font-size:12.5px;font-family:Consolas,monospace">角度 ≈ <b id="encAngle" style="color:#2563eb">0.0</b>°</span>'
+      + '<span style="font-size:12px;color:#64748b">每过一条缝 → 1 个脉冲,反转计数变负</span>';
   } else {
     html = '<button class="' + (LAB.paused?'':'on') + '" onclick="LAB.paused=!LAB.paused;buildCtl()">' + (LAB.paused?'▶ 继续':'⏸ 暂停') + '</button>'
       + '<label>抓握速度 <input type="range" min="0.2" max="2" step="0.1" value="' + LAB.speed + '" oninput="LAB.speed=+this.value"></label>'
       + '<span style="font-size:12px;color:#64748b">观察近端 → 中端 → 末端依次弯曲</span>';
   }
   el.innerHTML = html;
+  if(LAB.lab === 0){ syncMotorReadout(); }
   var fn = document.getElementById('footNote');
   var NOTES = [
-    '<b>📌 怎么用:</b>拖动绿色负载角滑杆到 0.95 以上,亲眼看「失步」——这是 FOC 调试中最常见的故障现象。',
-    '<b>📌 怎么用:</b>注意光束的明暗闪烁节奏与码盘转速的关系;点「反转」看脉冲方向变化(判向原理)。',
+    '<b>📌 怎么用:</b>拖动绿色负载角滑杆越过 <b>90°(1.57)</b>,亲眼看「失步」——同时观察「转矩比 = sin δ」先升到 1.00 再回落,这是 FOC 调试中最常见的故障现象。',
+    '<b>📌 怎么用:</b>注意光束的明暗闪烁节奏与码盘转速的关系;看「累计脉冲/角度」实时计数,点「反转」看计数变负(判向原理)。',
     '<b>📌 怎么用:</b>手指弯曲是「近→中→末」顺序,不是同时——把抓握放慢(speed 拉小)数一数三个关节的启动先后。'
   ];
   fn.innerHTML = NOTES[LAB.lab];
+}
+
+/* 电机实验室读数:负载角(rad)与转矩比 sin(δ),90° 后转矩比可见回落 */
+function syncMotorReadout(){
+  var lv = document.getElementById('loadVal');
+  if(lv) lv.textContent = LAB.loadAngle.toFixed(2) + ' rad (' + (LAB.loadAngle * 180 / Math.PI).toFixed(0) + '°)';
+  var tq = document.getElementById('tqVal');
+  if(tq){
+    var ratio = Math.sin(Math.min(LAB.loadAngle, Math.PI));
+    tq.textContent = ' 转矩比 ' + ratio.toFixed(2);
+    tq.style.color = (ratio < 0.999 && LAB.loadAngle > Math.PI/2) ? '#f87171' : '#16a34a';
+  }
 }
 </script>
 </body>
