@@ -119,8 +119,8 @@ $GRID = 96         # cluster grid for outer visible parts: keep silhouette
 $GRID_INNER = 24   # extra-coarse grid for internal rolling parts (wrist balls, invisible outside)
 $MIN_MB = 0.9      # only simplify files larger than this
 
-$x1dir = 'd:\HuaweiMoveData\Users\亓剑清\Desktop\人形机器人关节模组\00_解剖式知识可视化\models\x1'
-$backup = 'c:\Users\亓剑清\STL减面备份\x1'
+$x1dir = Join-Path $PSScriptRoot '..\00_3D解剖\models\x1'   # 模型目录（相对本脚本，避免暴露本地绝对路径）
+$backup = Join-Path $env:USERPROFILE 'STL减面备份\x1'       # 备份目录（原脚本写死了真实用户名，改用环境变量）
 if (!(Test-Path $backup)) { New-Item -ItemType Directory -Path $backup -Force | Out-Null }
 
 # read originals from backup folder (backup was made in the first run)

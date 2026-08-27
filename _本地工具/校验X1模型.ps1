@@ -1,5 +1,5 @@
 ﻿# Validate all X1 STL files (binary structure) and check .gz consistency
-$x1 = 'd:\HuaweiMoveData\Users\亓剑清\Desktop\人形机器人关节模组\00_解剖式知识可视化\models\x1'
+$x1 = Join-Path $PSScriptRoot '..\00_3D解剖\models\x1'   # 模型目录（相对本脚本，避免暴露本地绝对路径）
 Add-Type -AssemblyName System.IO.Compression
 
 $bad = 0
