@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · AI 答疑助手
+  结构遵循 _assets/页面模板.html;引擎在 _assets/ai-assistant.js(按需引入)
+  安全: API Key 仅存本机浏览器 localStorage —— 不写入代码、不经过本站任何服务器
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · AI 答疑助手(DeepSeek / 豆包)</title>
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem("site-theme") || "light";
+    document.documentElement.setAttribute("data-theme-early", t === "dark" ? "dark" : "light");
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+/* ---------- 页面级样式(前缀 ai-) ---------- */
+.ai-layout{max-width:900px;margin:0 auto}
+.ai-config{background:rgba(22,27,34,.78);border:1px solid rgba(59,130,246,.3);border-radius:14px;margin:16px 0;overflow:hidden}
+.ai-config summary{cursor:pointer;padding:14px 18px;font-size:14.5px;font-weight:700;color:#e6edf3;list-style:none;display:flex;align-items:center;gap:8px}
+.ai-config summary::-webkit-details-marker{display:none}
+.ai-config summary::after{content:"▾";margin-left:auto;color:#3b82f6;transition:.2s}
+.ai-config[open] summary::after{transform:rotate(180deg)}
+.ai-config .ai-cfg-body{padding:0 18px 18px;border-top:1px dashed rgba(255,255,255,.1)}
+.ai-field{margin:12px 0}
+.ai-field label{display:block;font-size:12.5px;color:#9aa4b2;margin-bottom:6px;font-weight:700}
+.ai-prov{display:flex;gap:8px;flex-wrap:wrap}
+.ai-prov button{background:rgba(13,17,23,.8);border:1px solid rgba(255,255,255,.14);color:#9aa4b2;font-size:13px;padding:8px 16px;border-radius:999px;cursor:pointer;font-family:inherit}
+.ai-prov button.on{background:rgba(59,130,246,.25);border-color:#3b82f6;color:#fff;font-weight:700}
+.ai-input{width:100%;background:rgba(13,17,23,.85);border:1px solid rgba(59,130,246,.4);color:#e6edf3;font-size:13.5px;padding:10px 14px;border-radius:10px;outline:none;font-family:Consolas,monospace}
+.ai-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+.ai-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ai-btn{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.4);color:#9ecbff;font-size:13px;padding:8px 16px;border-radius:9px;cursor:pointer;font-family:inherit}
+.ai-btn:hover{background:rgba(59,130,246,.3);color:#fff}
+.ai-btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:#fca5a5}
+.ai-btn.main{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-weight:700}
+.ai-note{font-size:12px;color:#6b7280;margin-top:4px;line-height:1.8}
+.ai-personas{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.ai-persona{display:inline-flex;align-items:center;gap:6px;background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:13px;padding:8px 16px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.18s}
+.ai-persona:hover{border-color:#3b82f6;color:#fff}
+.ai-persona.on{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.5);color:#86efac;font-weight:700}
+.ai-ctxrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:12.5px;color:#9aa4b2}
+.ai-ctx{background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.4);color:#fbbf24;padding:4px 12px;border-radius:999px;font-size:12px}
+.ai-ctx b{cursor:pointer;margin-left:6px}
+.ai-chat{background:rgba(22,27,34,.7);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:18px;margin:16px 0;min-height:260px;max-height:56vh;overflow-y:auto}
+.ai-msg{margin:14px 0;animation:fadeUp .3s ease both}
+.ai-msg .ai-who{font-size:11.5px;color:#6b7280;margin-bottom:4px;font-weight:700}
+.ai-msg.user .ai-who{color:#58a6ff}
+.ai-msg.bot .ai-who{color:#86efac}
+.ai-bubble{border-radius:12px;padding:12px 16px;font-size:14px;line-height:1.9}
+.ai-msg.user .ai-bubble{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:#dbe6f5;white-space:pre-wrap}
+.ai-msg.bot .ai-bubble{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:#c9d1d9}
+.ai-md p{margin:8px 0;color:#c9d1d9}
+.ai-md ul,.ai-md ol{margin:8px 0}
+.ai-md h4{margin:14px 0 6px;color:#9ecbff;font-size:15px}
+.ai-md blockquote{border-left:3px solid #3b82f6;padding:2px 12px;color:#9aa4b2;margin:8px 0;background:rgba(59,130,246,.06)}
+.ai-md .table-wrap{margin:10px 0}
+.ai-cursor{display:inline-block;width:8px;height:16px;background:#3b82f6;vertical-align:-2px;animation:blink .8s infinite}
+@keyframes blink{50%{opacity:0}}
+.ai-copy{font-size:11.5px;color:#6b7280;cursor:pointer;margin-top:6px;display:inline-block}
+.ai-copy:hover{color:#58a6ff}
+.ai-empty-hint{text-align:center;color:#6b7280;font-size:13.5px;padding:40px 10px;line-height:2.2}
+.ai-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#fca5a5;border-radius:12px;padding:12px 16px;font-size:13.5px;line-height:1.9}
+.ai-inputbar{display:flex;gap:10px;align-items:flex-end;background:rgba(22,27,34,.78);border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:12px;margin:14px 0}
+.ai-inputbar textarea{flex:1;background:transparent;border:none;outline:none;color:#e6edf3;font-size:14px;resize:none;max-height:140px;min-height:44px;font-family:inherit;line-height:1.7}
+.ai-send{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:14px;font-weight:700;padding:11px 22px;border-radius:10px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ai-send:disabled{opacity:.45;cursor:not-allowed}
+.ai-send.stop{background:linear-gradient(135deg,#dc2626,#ef4444)}
+.ai-sessions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;font-size:12.5px;color:#9aa4b2}
+.ai-sessions select{background:rgba(13,17,23,.85);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:12.5px;padding:6px 10px;border-radius:8px;font-family:inherit;max-width:220px}
+.ai-usage{font-size:11.5px;color:#6b7280}
+/* ---------- 浅色主题 ---------- */
+body:not([data-theme]),body[data-theme="light"] .ai-config,
+body:not([data-theme]),body[data-theme="light"] .ai-chat,
+body:not([data-theme]),body[data-theme="light"] .ai-inputbar{background:rgba(255,255,255,.7);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+body:not([data-theme]),body[data-theme="light"] .ai-config{border-color:rgba(37,99,235,.25)}
+body:not([data-theme]),body[data-theme="light"] .ai-config summary{color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .ai-config .ai-cfg-body{border-top-color:rgba(60,80,120,.12)}
+body:not([data-theme]),body[data-theme="light"] .ai-prov button{background:rgba(255,255,255,.8);border-color:rgba(60,80,120,.16);color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .ai-prov button.on{background:rgba(37,99,235,.14);border-color:#2563eb;color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .ai-input{background:rgba(255,255,255,.9);border-color:rgba(37,99,235,.3);color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .ai-persona{background:rgba(255,255,255,.75);border-color:rgba(60,80,120,.16);color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .ai-persona.on{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.5);color:#15803d}
+body:not([data-theme]),body[data-theme="light"] .ai-msg.user .ai-bubble{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#1e3a8a}
+body:not([data-theme]),body[data-theme="light"] .ai-msg.bot .ai-bubble{background:rgba(37,99,235,.03);border-color:rgba(60,80,120,.12)}
+body:not([data-theme]),body[data-theme="light"] .ai-md p{color:#3a4759}
+body:not([data-theme]),body[data-theme="light"] .ai-md h4{color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .ai-sessions select{background:rgba(255,255,255,.85);border-color:rgba(60,80,120,.16);color:#334155}
+body:not([data-theme]),body[data-theme="light"] .ai-cursor{background:#2563eb}
+@media print{.ai-inputbar,.ai-personas,.ai-sessions{display:none!important}.ai-chat{max-height:none}}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-13",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "AI 答疑助手" } ],
+    prev: { t: "闯关学习", u: "12_闯关学习.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🤖 AI 答疑助手</h1>
+    <div class="sub">接入 DeepSeek / 豆包大模型:复试考官模拟、课程讲解、代码答疑<br>
+    🔒 API Key 仅保存在<b>本机浏览器</b>,不经本站任何服务器,换电脑需重新填写——别人用不了你的额度</div>
+    <div class="tags">
+      <span class="tag">DeepSeek</span><span class="tag">豆包 · 火山方舟</span><span class="tag">流式输出</span><span class="tag">公式渲染</span><span class="tag">4 种人设</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页使用目标</div>
+    1. 配置一次 API Key(本机保存),即可在站内随时问问题<br>
+    2. 用「复试考官」人设模拟面试,用「课程助教」深挖知识,用「代码助手」调代码<br>
+    3. 题库/闯关页的"问 AI"按钮都会跳到这里,自动带上问题与学科上下文<br>
+    <b>建议用时:</b>配置 2 分钟 · 随问随用
+  </div>
+
+  <h2><span class="h2-num">1</span> 供应商与密钥配置(本机保存)</h2>
+  <details class="ai-config" id="aiCfgBox" open>
+    <summary>⚙️ 配置面板 <span id="aiCfgState" style="font-weight:400;font-size:12px;color:#86efac"></span></summary>
+    <div class="ai-cfg-body">
+      <div class="ai-field">
+        <label>① 选择供应商</label>
+        <div class="ai-prov" id="aiProv"></div>
+        <div class="ai-note" id="aiProvHint"></div>
+      </div>
+      <div class="ai-field">
+        <label>② API 地址 baseURL(一般无需修改)</label>
+        <input class="ai-input" id="aiBase" placeholder="https://api.deepseek.com">
+      </div>
+      <div class="ai-field">
+        <label>③ 模型名</label>
+        <input class="ai-input" id="aiModel" list="aiModelList" placeholder="deepseek-chat">
+        <datalist id="aiModelList"></datalist>
+        <div class="ai-note">豆包需填开通的模型名(如 doubao-seed-1-6-flash-250715)或你的接入点 ID(ep- 开头)。</div>
+      </div>
+      <div class="ai-field">
+        <label>④ API Key(只保存在本机浏览器,关闭页面也不会上传)</label>
+        <div class="ai-row">
+          <input class="ai-input" id="aiKey" type="password" style="flex:1" placeholder="sk-…" autocomplete="off">
+          <button class="ai-btn" id="aiKeyEye">👁 显示</button>
+        </div>
+      </div>
+      <div class="ai-row">
+        <button class="ai-btn main" id="aiSave">💾 保存配置</button>
+        <button class="ai-btn" id="aiTest">🔌 测试连接</button>
+        <button class="ai-btn danger" id="aiWipe">🧹 清除本机密钥</button>
+        <span class="ai-usage" id="aiUsage"></span>
+      </div>
+      <div class="ai-note">🔒 <b>隐私与额度说明:</b>本站是纯静态网站(GitHub Pages),没有后端服务器。你的 Key 只写入本机浏览器的 localStorage,仅在发问时由浏览器<b>直接</b>发送给你所选的 API 服务商;不会写入网站代码、不会被本站收集,其它电脑/浏览器无法使用你的额度。仍建议使用单独创建、限额的 Key。<span id="aiProvLink"></span></div>
+    </div>
+  </details>
+
+  <h2><span class="h2-num">2</span> 选择人设开始提问</h2>
+  <div class="ai-personas" id="aiPersonas"></div>
+  <div class="ai-ctxrow" id="aiCtxRow"></div>
+
+  <div class="ai-sessions">
+    <span>🕘 历史会话:</span>
+    <select id="aiSess"></select>
+    <button class="ai-btn" id="aiNewSess">＋ 新会话</button>
+    <button class="ai-btn danger" id="aiDelSess">删除当前</button>
+  </div>
+
+  <div class="ai-chat" id="aiChat"><div class="ai-empty-hint">你好!我是本站的 AI 助手 👋<br>配置好上方的 API Key 就可以开始提问了。<br>试试:「用外行听得懂的话讲讲 FOC 为什么能让电机又快又稳」<br>或切到「🎓 复试考官」人设,直接说"开始模拟面试,学科:自动控制原理"</div></div>
+
+  <div class="ai-inputbar">
+    <textarea id="aiInput" rows="2" placeholder="输入问题,Enter 发送(Shift+Enter 换行)…"></textarea>
+    <button class="ai-send" id="aiSend">发送 ➤</button>
+  </div>
+
+  <h2><span class="h2-num">3</span> 常见问题</h2>
+  <details class="faq"><summary>Key 安全吗?会不会被别人用掉额度?</summary><div class="faq-a">Key 只存于你当前浏览器(localStorage),本站无服务器可收集它;其它电脑、其它浏览器都读不到。若在公用电脑上使用,离开前点「清除本机密钥」。</div></details>
+  <details class="faq"><summary>提示"连接失败/CORS"怎么办?</summary><div class="faq-a">个别网络或服务商不允许浏览器直连。可:①换成 DeepSeek 官方地址重试;②在「自定义」填你信任的 OpenAI 兼容中转地址;③检查 baseURL 是否多了路径或少了 https。</div></details>
+  <details class="faq"><summary>402/403 是什么意思?</summary><div class="faq-a">余额不足或未开通该模型。DeepSeek 到 platform.deepseek.com 充值;豆包到火山方舟控制台开通模型/创建接入点。</div></details>
+  <details class="faq"><summary>回答里的公式显示成代码怎么办?</summary><div class="faq-a">公式依赖 KaTeX CDN(npmmirror 镜像),首次加载需 1~2 秒;若网络屏蔽了镜像,公式会以 LaTeX 原文显示,不影响文字内容。</div></details>
+
+  <div class="box box-tip"><b>📌 小技巧:</b>复试考官人设下,回答完它的一个问题即可,它会点评后继续追问;课程助教人设下,可以直接粘贴题库里的"延伸追问"让它展开讲。</div>
+  <div class="box box-warn"><b>🤔 提醒:</b>AI 可能在具体数值/型号上出错,重要结论请以站内学习页与教材为准——把 AI 当"会讲题的学长",而不是标准答案。</div>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+<script src="../_assets/ai-assistant.js"></script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var ctxSubject = null;
+  var provBtns = [], personaBtns = [];
+
+  /* ---------- URL 参数 ---------- */
+  var qs = location.search.replace("?","").split("&"), params = {};
+  for(var i = 0; i < qs.length; i++){
+    var kv = qs[i].split("=");
+    if(kv.length === 2) params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1].replace(/\+/g," "));
+  }
+  if(params.ctx) ctxSubject = params.ctx;
+  if(params.persona && AIChat.PERSONAS[params.persona]){ var c0 = AIChat.getConfig(); c0.persona = params.persona; AIChat.setConfig(c0); }
+
+  /* ---------- 配置面板 ---------- */
+  function renderProv(){
+    var cfg = AIChat.getConfig();
+    var box = $("aiProv"), html = "";
+    var ids = Object.keys(AIChat.PROVIDERS);
+    for(var i = 0; i < ids.length; i++){
+      html += "<button data-p='" + ids[i] + "'" + (cfg.provider === ids[i] ? " class='on'" : "") + ">" + AIChat.PROVIDERS[ids[i]].name + "</button>";
+    }
+    box.innerHTML = html;
+    provBtns = box.querySelectorAll("button");
+    for(var j = 0; j < provBtns.length; j++){
+      provBtns[j].onclick = function(){
+        var cfg = AIChat.getConfig();
+        cfg.provider = this.getAttribute("data-p");
+        var P = AIChat.PROVIDERS[cfg.provider];
+        cfg.baseURL = P.base;
+        if(P.models.length && P.models.indexOf(cfg.model || "") < 0 && cfg.provider !== "custom") cfg.model = P.models[0];
+        AIChat.setConfig(cfg);
+        fillConfig(); renderProv(); renderPersonas();
+      };
+    }
+  }
+  function fillConfig(){
+    var cfg = AIChat.getConfig();
+    var P = AIChat.PROVIDERS[cfg.provider || "deepseek"];
+    $("aiBase").value = cfg.baseURL || P.base;
+    $("aiModel").value = cfg.model || P.models[0] || "";
+    $("aiKey").value = cfg.key || "";
+    $("aiProvHint").textContent = "💡 " + P.hint;
+    $("aiModelList").innerHTML = P.models.map(function(m){ return "<option value='" + m + "'>"; }).join("");
+    $("aiCfgState").textContent = cfg.key ? "· 已配置 ✓" : "";
+    var links = { deepseek:" → 去开通:platform.deepseek.com", ark:" → 去开通:console.volcengine.com/ark", custom:"" };
+    $("aiProvLink").textContent = links[cfg.provider || "deepseek"] || "";
+    renderUsage();
+  }
+  function renderUsage(){
+    var u = AIChat.getUsage();
+    $("aiUsage").textContent = "本机已请求 " + u.calls + " 次 · 累计约 " + Math.round(u.chars/1000) + "k 字";
+  }
+  $("aiSave").onclick = function(){
+    var cfg = AIChat.getConfig();
+    cfg.baseURL = $("aiBase").value.trim();
+    cfg.model = $("aiModel").value.trim();
+    var k = $("aiKey").value.trim();
+    if(k) cfg.key = k; /* 留空 = 保留旧 Key */
+    AIChat.setConfig(cfg);
+    fillConfig();
+    alert("已保存到本机浏览器 ✓" + (k ? "" : "(未填新 Key,保留原 Key)"));
+  };
+  $("aiKeyEye").onclick = function(){
+    var inp = $("aiKey");
+    inp.type = inp.type === "password" ? "text" : "password";
+    this.textContent = inp.type === "password" ? "👁 显示" : "🙈 隐藏";
+  };
+  $("aiWipe").onclick = function(){
+    if(!confirm("确定清除保存在本机的 API Key?(不影响其它配置)")) return;
+    AIChat.clearKey(); fillConfig(); $("aiKey").value = "";
+  };
+  $("aiTest").onclick = function(){
+    var cfg = AIChat.getConfig();
+    cfg.baseURL = $("aiBase").value.trim(); cfg.model = $("aiModel").value.trim();
+    var k = $("aiKey").value.trim(); if(k) cfg.key = k;
+    AIChat.setConfig(cfg);
+    var btn = this;
+    btn.disabled = true; btn.textContent = "测试中…";
+    AIChat.chat([{ role:"user", content:"回复「连接成功」四个字" }], { maxTokens:16, temperature:0 })
+      .then(function(){ btn.disabled = false; btn.textContent = "✅ 连接成功"; setTimeout(function(){ btn.textContent = "🔌 测试连接"; }, 2500); })
+      .catch(function(err){ btn.disabled = false; btn.textContent = "🔌 测试连接"; showErr(err.message || String(err)); });
+    renderUsage();
+  };
+
+  /* ---------- 人设 ---------- */
+  function renderPersonas(){
+    var cfg = AIChat.getConfig();
+    if(!cfg.persona) cfg.persona = "tutor";
+    var box = $("aiPersonas"), html = "";
+    var ids = Object.keys(AIChat.PERSONAS);
+    for(var i = 0; i < ids.length; i++){
+      var P = AIChat.PERSONAS[ids[i]];
+      html += "<button class='ai-persona" + (cfg.persona === ids[i] ? " on" : "") + "' data-p='" + ids[i] + "'>" + P.icon + " " + P.name + "</button>";
+    }
+    box.innerHTML = html;
+    personaBtns = box.querySelectorAll(".ai-persona");
+    for(var j = 0; j < personaBtns.length; j++){
+      personaBtns[j].onclick = function(){
+        var cfg = AIChat.getConfig();
+        cfg.persona = this.getAttribute("data-p");
+        AIChat.setConfig(cfg);
+        renderPersonas();
+      };
+    }
+    renderCtx();
+  }
+  function renderCtx(){
+    var html = "当前学科上下文:";
+    if(ctxSubject){
+      html += "<span class='ai-ctx'>" + ctxSubject + "<b title='移除' id='aiCtxX'>✕</b></span>";
+    }else{
+      html += "<span style='color:#6b7280'>无(可从题库/闯关页的「问AI」带入)</span>";
+    }
+    $("aiCtxRow").innerHTML = html;
+    var x = document.getElementById("aiCtxX");
+    if(x) x.onclick = function(){ ctxSubject = null; renderCtx(); };
+  }
+
+  /* ---------- 会话 ---------- */
+  function renderSess(){
+    var chats = AIChat.getChats();
+    var sel = $("aiSess"), html = "";
+    for(var i = 0; i < chats.sessions.length; i++){
+      var s = chats.sessions[i];
+      html += "<option value='" + s.id + "'" + (chats.cur === s.id ? " selected" : "") + ">" +
+        (s.title || "会话").slice(0, 18) + "</option>";
+    }
+    sel.innerHTML = html || "<option value=''>（暂无）</option>";
+    sel.onchange = function(){ var c = AIChat.getChats(); c.cur = this.value; AIChat.saveChats(c); paintHistory(); };
+  }
+  $("aiNewSess").onclick = function(){ AIChat.newSession(); renderSess(); paintHistory(); $("aiInput").focus(); };
+  $("aiDelSess").onclick = function(){
+    var s = AIChat.curSession();
+    if(confirm("删除当前会话「" + (s.title||"") + "」?")){
+      AIChat.delSession(s.id);
+      if(!AIChat.getChats().cur) AIChat.newSession();
+      renderSess(); paintHistory();
+    }
+  };
+
+  /* ---------- 消息渲染 ---------- */
+  function chatBox(){ return $("aiChat"); }
+  function scrollBottom(){ var b = chatBox(); b.scrollTop = b.scrollHeight; }
+  function paintHistory(){
+    var s = AIChat.curSession();
+    var html = "";
+    for(var i = 0; i < s.msgs.length; i++){
+      if(s.msgs[i].role === "user") html += msgUser(s.msgs[i].content, false);
+      else html += msgBot(s.msgs[i].content, true);
+    }
+    if(!html){ html = "<div class='ai-empty-hint'>开始你的第一个提问吧 👆</div>"; }
+    chatBox().innerHTML = html;
+    var bodies = chatBox().querySelectorAll(".ai-md");
+    for(var j = 0; j < bodies.length; j++) AIChat.renderMath(bodies[j]);
+    scrollBottom();
+  }
+  function msgUser(text, escape){
+    var t = escape ? String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") : text;
+    return "<div class='ai-msg user'><div class='ai-who'>🙋 我</div><div class='ai-bubble'>" + t + "</div></div>";
+  }
+  function msgBot(htmlText, rendered){
+    return "<div class='ai-msg bot'><div class='ai-who'>" + personaLabel() + "</div><div class='ai-bubble" + (rendered ? " ai-md" : "") + "\">" +
+      (rendered ? htmlText : "<span style='white-space:pre-wrap'>" + htmlText + "</span><span class='ai-cursor'></span>") +
+      "</div>" + (rendered ? "<span class='ai-copy'>📋 复制</span>" : "") + "</div>";
+  }
+  function personaLabel(){
+    var cfg = AIChat.getConfig();
+    var P = AIChat.PERSONAS[cfg.persona || "tutor"];
+    return P.icon + " " + P.name;
+  }
+  function showErr(msg){
+    var div = document.createElement("div");
+    div.className = "ai-msg bot";
+    div.innerHTML = "<div class='ai-who'>⚠️ 出错了</div><div class='ai-err'>" + msg + "</div>";
+    chatBox().appendChild(div);
+    scrollBottom();
+  }
+  /* 复制 */
+  chatBox().addEventListener("click", function(e){
+    var t = e.target;
+    if(t.className === "ai-copy"){
+      var s = AIChat.curSession();
+      var last = null;
+      for(var i = s.msgs.length - 1; i >= 0; i--) if(s.msgs[i].role === "assistant"){ last = s.msgs[i].content; break; }
+      if(last){
+        if(navigator.clipboard) navigator.clipboard.writeText(last).catch(function(){});
+        t.textContent = "✅ 已复制";
+        setTimeout(function(){ t.textContent = "📋 复制"; }, 1800);
+      }
+    }
+  });
+
+  /* ---------- 发送 ---------- */
+  function send(){
+    var inp = $("aiInput");
+    var text = inp.value.trim();
+    if(!text) return;
+    if(AIChat.busy()) return;
+    var cfg = AIChat.getConfig();
+    if(!cfg.key){
+      $("aiCfgBox").open = true;
+      showErr("还没有配置 API Key:在上方面板选择服务商并填入 Key(仅本机保存),点「保存配置」。");
+      return;
+    }
+    var s = AIChat.curSession();
+    if(!s.msgs.length){
+      s.title = text.slice(0, 16);
+      renderSess();
+    }
+    var history = s.msgs.slice(-16); /* 最近 16 条作为上下文 */
+    s.msgs.push({ role:"user", content:text });
+    AIChat.saveChats(AIChat.getChats());
+    inp.value = "";
+    /* 界面:用户消息 + 空 AI 气泡(流式填充) */
+    chatBox().querySelector(".ai-empty-hint") && chatBox().querySelector(".ai-empty-hint").remove();
+    chatBox().insertAdjacentHTML("beforeend", msgUser(text, true));
+    var botWrap = document.createElement("div");
+    botWrap.className = "ai-msg bot";
+    botWrap.innerHTML = "<div class='ai-who'>" + personaLabel() + "</div><div class='ai-bubble'><span class='ai-cursor'></span></div>";
+    chatBox().appendChild(botWrap);
+    scrollBottom();
+    var bubble = botWrap.querySelector(".ai-bubble");
+    var sendBtn = $("aiSend");
+    sendBtn.className = "ai-send stop"; sendBtn.textContent = "⏹ 停止";
+    AIChat.chat(AIChat.buildMessages(history, text, ctxSubject), {
+      onDelta: function(delta, full){
+        bubble.innerHTML = "<span style='white-space:pre-wrap'>" + String(full).replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</span><span class='ai-cursor'></span>";
+        scrollBottom();
+      }
+    }).then(function(full){
+      sendBtn.className = "ai-send"; sendBtn.textContent = "发送 ➤";
+      if(full){
+        s.msgs.push({ role:"assistant", content:full });
+        AIChat.saveChats(AIChat.getChats());
+        botWrap.remove();
+        chatBox().insertAdjacentHTML("beforeend", msgBot(AIChat.md(full), true));
+        var bodies = chatBox().querySelectorAll(".ai-md");
+        AIChat.renderMath(bodies[bodies.length - 1]);
+      }else{
+        bubble.innerHTML = "<span style='color:#6b7280'>（已停止 / 无输出）</span>";
+      }
+      scrollBottom(); renderUsage();
+    }).catch(function(err){
+      sendBtn.className = "ai-send"; sendBtn.textContent = "发送 ➤";
+      botWrap.remove();
+      showErr(err.message || String(err));
+      renderUsage();
+    });
+  }
+  $("aiSend").onclick = function(){ if(AIChat.busy()) AIChat.abort(); else send(); };
+  $("aiInput").onkeydown = function(e){
+    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); if(!AIChat.busy()) send(); }
+  };
+  /* textarea 自适应 */
+  $("aiInput").oninput = function(){
+    this.style.height = "auto";
+    this.style.height = Math.min(this.scrollHeight, 140) + "px";
+  };
+
+  /* ---------- 启动 ---------- */
+  renderProv(); fillConfig(); renderPersonas(); renderSess();
+  if(params.q){
+    $("aiInput").value = params.q;
+    $("aiInput").focus();
+  }else{
+    paintHistory();
+  }
+})();
+</script>
+</body>
+</html>

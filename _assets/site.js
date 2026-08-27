@@ -605,7 +605,9 @@
     "guanjie":"关节","zhengji":"整机","xiaobo":"谐波","beixi":"背隙","dianliu":"电流","sudu":"速度",
     "weizhi":"位置","youxi":"游戏","can":"CAN","foc":"FOC","pid":"PID","ros2":"ROS2","ros":"ROS2",
     "slam":"SLAM","vla":"VLA","wbc":"全身控制","mpc":"模型预测控制","imu":"IMU","ik":"逆运动学","fk":"正运动学",
-    "urdf":"URDF","s2r":"sim2real","stl":"3D模型","dof":"自由度"
+    "urdf":"URDF","s2r":"sim2real","stl":"3D模型","dof":"自由度",
+    "mianshi":"面试","fushi":"复试","baoyan":"保研","chuangguan":"闯关","freertos":"FreeRTOS","adrc":"ADRC",
+    "dianceng":"电调","biandui":"编队","zikong":"自控","xiankong":"现控","yunsuanfangda":"运放"
   };
   function expandQuery(q){
     var parts = q.split(/\s+/), changed = false, out = [];
@@ -646,7 +648,9 @@
       if(ok) scored.push({ s: score, h: it });
     }
     if(!scored.length){
-      box.innerHTML = '<div class="search-empty">没有找到与「' + esc(q) + '」相关的内容,换个词试试</div>';
+      var r0 = page().root || "";
+      box.innerHTML = '<div class="search-empty">没有找到与「' + esc(q) + '」相关的内容,换个词试试<br>' +
+        '<a class="search-ai-link" href="' + (r0 ? r0 + "/" : "") + '08_学习工具/13_AI答疑助手.html?q=' + encodeURIComponent(q) + '">🤖 让 AI 答疑试试 →</a></div>';
       return;
     }
     scored.sort(function(a, b){ return b.s - a.s; });
@@ -663,6 +667,10 @@
     }
     box.innerHTML = html;
   }
+  function aiPageURL(q){
+    var root = page().root || "";
+    return (root ? root + "/" : "") + "08_学习工具/13_AI答疑助手.html" + (q ? "?q=" + encodeURIComponent(q) : "");
+  }
   S.openSearch = function(initQuery){
     ensureSearchIndex(function(){
       var overlay = document.getElementById("site-search-overlay");
@@ -674,7 +682,8 @@
           + '<div class="search-head">🔍 全站搜索 · ' + (buildIndex().length || 0) + ' 个页面'
           + '<span class="search-close" onclick="Site.closeSearch()">✕</span></div>'
           + '<input class="search-input" placeholder="输入关键词,回车打开第一条…">'
-          + '<div class="search-results"></div></div>';
+          + '<div class="search-results"></div>'
+          + '<div class="search-ai" title="跳转到 AI 答疑助手,自动带上当前关键词">🤖 没找到?带关键词去问 <b>AI 答疑助手</b> →</div></div>';
         document.body.appendChild(overlay);
       }
       overlay.classList.add("show");
@@ -689,6 +698,12 @@
           if(first){ window.location.href = first.getAttribute("href"); }
         }
       };
+      var aiRow = overlay.querySelector(".search-ai");
+      if(aiRow) aiRow.onclick = function(){
+        var qv = input.value.trim();
+        S.closeSearch();
+        window.location.href = aiPageURL(qv);
+      };
     });
   };
   S.closeSearch = function(){
@@ -697,7 +712,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.0.7(2026-08-27)";
+  S.VERSION = "V2.0.8(2026-08-27)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -805,6 +820,40 @@
     nav.appendChild(b);
   }
 
+  /* ---------- AI 答疑悬浮球(全站内容页右下角,位于回到顶部按钮上方) ---------- */
+  function initAiFab(){
+    if(page().pageId === "08-13") return;   /* AI 页自身不显示 */
+    var st = document.createElement("style");
+    st.textContent =
+      ".ai-fab{position:fixed;right:18px;bottom:76px;z-index:94;width:44px;height:44px;border-radius:50%;" +
+      "background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-size:20px;cursor:pointer;" +
+      "box-shadow:0 8px 24px rgba(34,197,94,.45);display:flex;align-items:center;justify-content:center;transition:.2s}" +
+      ".ai-fab:hover{transform:translateY(-3px) scale(1.07);box-shadow:0 12px 30px rgba(34,197,94,.55)}" +
+      ".ai-fab::after{content:'AI';position:absolute;bottom:-4px;right:-2px;font-size:9px;font-weight:800;" +
+      "background:#0d1117;color:#86efac;border-radius:6px;padding:1px 5px;border:1px solid rgba(134,239,172,.5)}" +
+      ".search-ai{padding:10px 16px;font-size:12.5px;color:#86efac;cursor:pointer;border-top:1px dashed rgba(255,255,255,.12)}" +
+      ".search-ai:hover{background:rgba(34,197,94,.12);color:#fff}" +
+      ".search-ai b{color:#86efac}" +
+      ".search-empty a.search-ai-link,.search-ai-link{color:#86efac;font-weight:700}" +
+      ".search-empty a.search-ai-link:hover{text-decoration:underline}" +
+      "body:not([data-theme]) .search-ai,body[data-theme=\"light\"] .search-ai{color:#15803d;border-top-color:rgba(60,80,120,.14)}" +
+      "body:not([data-theme]) .search-ai:hover,body[data-theme=\"light\"] .search-ai:hover{background:rgba(34,197,94,.1);color:#166534}" +
+      "body:not([data-theme]) .search-ai b,body[data-theme=\"light\"] .search-ai b{color:#15803d}" +
+      "body:not([data-theme]) .search-ai-link,body[data-theme=\"light\"] .search-ai-link{color:#15803d}" +
+      "body:not([data-theme]) .ai-fab::after,body[data-theme=\"light\"] .ai-fab::after{background:#fff;color:#15803d;border-color:rgba(21,128,61,.4)}" +
+      "@media print{.ai-fab{display:none!important}}";
+    document.head.appendChild(st);
+    var fab = document.createElement("button");
+    fab.className = "ai-fab";
+    fab.textContent = "🤖";
+    fab.title = "问 AI 答疑助手(带上本页上下文)";
+    fab.onclick = function(){
+      var t = document.title.replace(/^人形机器人学习站\s*·\s*/, "") || "人形机器人学习站";
+      window.location.href = aiPageURL("我在学习《" + t + "》时想问:");
+    };
+    document.body.appendChild(fab);
+  }
+
   document.addEventListener("keydown", function(e){
     if((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")){
       e.preventDefault(); S.openSearch();
@@ -813,8 +862,8 @@
   });
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd();
   }
 })();

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 保研复试面试题库
+  结构遵循 _assets/页面模板.html;数据来自 _assets/ib-data-a.js / ib-data-b.js(按需加载)
+  功能: 13 学科页签 / 浏览+自测双模式 / 关键词过滤 / 掌握度自评(本地保存) / KaTeX 公式 / AI 追问入口
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 保研复试面试题库(13 学科 117 题)</title>
+<script>
+/* 防闪白:读取主题偏好,渲染前写入 html 级标记(与 site.css 的 FOUC 映射配合) */
+(function(){
+  try{
+    var t = localStorage.getItem("site-theme") || "light";
+    document.documentElement.setAttribute("data-theme-early", t === "dark" ? "dark" : "light");
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+/* ---------- 页面级样式(前缀 ib-) ---------- */
+.ib-stats{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 20px;margin:16px 0}
+.ib-stats-row{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.ib-num{font-size:22px;font-weight:900}
+.ib-num.m{color:#22c55e}.ib-num.v{color:#f59e0b}.ib-num.u{color:#6b7280}.ib-num.t{color:#3b82f6}
+.ib-num-k{font-size:12px;color:#6b7280;margin-top:2px}
+.ib-prog-wrap{flex:1;min-width:220px;display:flex;align-items:center;gap:10px}
+.ib-prog{flex:1;height:9px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.ib-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#22c55e);border-radius:99px;transition:width .4s}
+.ib-prog-pct{font-size:12.5px;color:#9aa4b2;min-width:70px}
+.ib-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0}
+.ib-filter{flex:1;min-width:200px;background:rgba(13,17,23,.85);border:1px solid rgba(59,130,246,.4);color:#e6edf3;font-size:14px;padding:10px 16px;border-radius:10px;outline:none;font-family:inherit}
+.ib-filter:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+.ib-mode{display:inline-flex;gap:6px;padding:5px;background:rgba(22,27,34,.55);border:1px solid rgba(255,255,255,.12);border-radius:999px}
+.ib-mode button{border:none;background:transparent;color:#9aa4b2;font-size:13px;padding:7px 16px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.2s}
+.ib-mode button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-weight:700}
+.ib-chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+.ib-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.18s}
+.ib-chip:hover{border-color:#3b82f6;color:#fff;transform:translateY(-1px)}
+.ib-chip.on{background:rgba(59,130,246,.25);border-color:#3b82f6;color:#fff;font-weight:700}
+.ib-chip .ib-chip-p{font-size:10.5px;color:#86efac;font-weight:700}
+.ib-chip.on .ib-chip-p{color:#86efac}
+.ib-subhead{background:rgba(22,27,34,.8);border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:18px 20px;margin:14px 0}
+.ib-subhead h3{margin:0 0 6px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ib-subhead .ib-en{font-size:11.5px;color:#6b7280;font-weight:400}
+.ib-subhead .ib-freq{font-size:12px;color:#f59e0b;font-weight:700;letter-spacing:2px}
+.ib-subhead p{font-size:13.5px;color:#9aa4b2;margin:4px 0 10px}
+.ib-rel{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.ib-rel a,.ib-rel button{font-size:12.5px;color:#9ecbff;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);padding:5px 12px;border-radius:999px;text-decoration:none;cursor:pointer;font-family:inherit}
+.ib-rel a:hover,.ib-rel button:hover{background:rgba(59,130,246,.3);color:#fff}
+.ib-rel .ib-ai{color:#86efac;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4)}
+.ib-rel .ib-ai:hover{background:rgba(34,197,94,.28);color:#fff}
+.ib-item{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;margin:10px 0;overflow:hidden}
+.ib-item summary{cursor:pointer;padding:13px 18px;font-size:14.5px;font-weight:600;color:#e6edf3;list-style:none;position:relative;padding-right:40px}
+.ib-item summary::-webkit-details-marker{display:none}
+.ib-item summary::after{content:"＋";position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#3b82f6;font-size:16px;font-weight:800}
+.ib-item[open] summary::after{content:"－"}
+.ib-item summary:hover{background:rgba(59,130,246,.08)}
+.ib-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.ib-lv{font-size:11px;color:#f59e0b;letter-spacing:1px}
+.ib-tag{font-size:11px;color:#9aa4b2;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:1px 8px}
+.ib-ans{padding:2px 18px 16px;font-size:14px;color:#9aa4b2;line-height:1.9;border-top:1px dashed rgba(255,255,255,.08)}
+.ib-ans p{margin:8px 0;color:#9aa4b2}
+.ib-ans ul,.ib-ans ol{margin:8px 0}
+.ib-ans li{color:#9aa4b2}
+.ib-ans .formula{margin:10px 0}
+.ib-ans pre{margin:10px 0}
+.ib-svg{margin:12px 0;color:#c9d1d9}
+.ib-svg svg{width:100%;height:auto;display:block}
+.ib-follow{margin-top:12px;padding:10px 14px;background:rgba(245,158,11,.07);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;font-size:13px;color:#d9c58a;line-height:1.9}
+.ib-links-row{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.ib-links-row a{font-size:12px;color:#58a6ff;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);padding:3px 10px;border-radius:999px;text-decoration:none}
+.ib-links-row a:hover{background:rgba(59,130,246,.25);color:#fff}
+/* 自评按钮 */
+.ib-grade{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.08);font-size:12.5px;color:#6b7280}
+.ib-grade button{font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid}
+.ib-g-no{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:#fca5a5}
+.ib-g-vague{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#fbbf24}
+.ib-g-yes{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:#86efac}
+.ib-g-no.on,.ib-g-vague.on,.ib-g-yes.on{font-weight:800;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+/* 自测模式遮罩 */
+.ib-reveal{display:block;margin:10px 0}
+.ib-reveal > button{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.4);color:#9ecbff;font-size:13px;padding:8px 18px;border-radius:9px;cursor:pointer;font-family:inherit}
+.ib-reveal > button:hover{background:rgba(59,130,246,.3);color:#fff}
+.ib-hidden-ans{display:none}
+.ib-selfmode .ib-hidden-ans{display:block}
+.ib-empty{padding:30px;text-align:center;color:#6b7280;font-size:13.5px}
+/* ---------- 浅色主题适配 ---------- */
+body:not([data-theme]),body[data-theme="light"] .ib-stats{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+body:not([data-theme]),body[data-theme="light"] .ib-filter{background:rgba(255,255,255,.85);border-color:rgba(37,99,235,.3);color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .ib-mode{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.14)}
+body:not([data-theme]),body[data-theme="light"] .ib-mode button{color:#64748b}
+body:not([data-theme]),body[data-theme="light"] .ib-chip{background:rgba(255,255,255,.65);border-color:rgba(60,80,120,.16);color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .ib-chip:hover{color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .ib-chip.on{background:rgba(37,99,235,.14);border-color:#2563eb;color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .ib-chip .ib-chip-p{color:#15803d}
+body:not([data-theme]),body[data-theme="light"] .ib-subhead{background:rgba(255,255,255,.66);border-color:rgba(37,99,235,.25);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+body:not([data-theme]),body[data-theme="light"] .ib-item{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.07)}
+body:not([data-theme]),body[data-theme="light"] .ib-item summary{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .ib-item summary::after{color:#2563eb}
+body:not([data-theme]),body[data-theme="light"] .ib-ans{border-top-color:rgba(60,80,120,.12);color:#4b5c74}
+body:not([data-theme]),body[data-theme="light"] .ib-ans p,body:not([data-theme]),body[data-theme="light"] .ib-ans li{color:#4b5c74}
+body:not([data-theme]),body[data-theme="light"] .ib-tag{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.2);color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .ib-svg{color:#334155}
+body:not([data-theme]),body[data-theme="light"] .ib-follow{background:rgba(245,158,11,.08);color:#7c5a12}
+body:not([data-theme]),body[data-theme="light"] .ib-rel a,body:not([data-theme]),body[data-theme="light"] .ib-rel button{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25);color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .ib-rel .ib-ai{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#15803d}
+body:not([data-theme]),body[data-theme="light"] .ib-grade{border-top-color:rgba(60,80,120,.12);color:#94a3b8}
+body:not([data-theme]),body[data-theme="light"] .ib-g-no{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.35);color:#b91c1c}
+body:not([data-theme]),body[data-theme="light"] .ib-g-vague{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.4);color:#92400e}
+body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#15803d}
+@media print{.ib-toolbar,.ib-chips,.ib-grade,.ib-reveal{display:none!important}.ib-hidden-ans{display:block!important}.ib-item{break-inside:avoid}}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-11",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "保研复试面试题库" } ],
+    prev: { t: "学习数据分析", u: "10_学习数据分析.html" },
+    next: { t: "闯关学习", u: "12_闯关学习.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🎓 保研复试面试题库</h1>
+    <div class="sub">13 个学科 · 117 道高频复试题 · 图文解析 + 延伸追问 + 站内知识联动<br>
+    自控原理 / PID / ADRC / 运动控制 / 现代控制 / 信号处理 / 硬件电路 / 无人机电调 / ROS编队 / C / C++ / 嵌入式 / FreeRTOS</div>
+    <div class="tags">
+      <span class="tag">🎯 保研复试</span><span class="tag">📚 13 学科</span><span class="tag">🖼 图文解析</span><span class="tag">📝 掌握度自评</span><span class="tag">🤖 AI 追问</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 按学科刷完高频复试题,掌握"结论先行→原理→公式图示→工程实例"的答题结构<br>
+    2. 用自测模式先想后看,自评掌握度,薄弱学科一目了然<br>
+    3. 结合站内学习页深挖原理,用 AI 考官进行模拟追问<br>
+    <b>建议用时:</b>每学科 20~30 分钟 · 13 学科可分 5~6 次刷完
+  </div>
+
+  <h2><span class="h2-num">1</span> 我的刷题进度</h2>
+  <div class="ib-stats" id="ibStats">
+    <div class="ib-stats-row">
+      <div><div class="ib-num t" id="ibNTotal">0</div><div class="ib-num-k">总题数</div></div>
+      <div><div class="ib-num m" id="ibNYes">0</div><div class="ib-num-k">已掌握</div></div>
+      <div><div class="ib-num v" id="ibNVague">0</div><div class="ib-num-k">模糊待巩固</div></div>
+      <div><div class="ib-num u" id="ibNNo">0</div><div class="ib-num-k">未掌握 / 未刷</div></div>
+      <div class="ib-prog-wrap">
+        <div class="ib-prog"><i id="ibProgBar"></i></div>
+        <span class="ib-prog-pct" id="ibProgPct">0%</span>
+      </div>
+      <button class="srs-btn ghost" id="ibReset" title="清空本页掌握度记录">重置进度</button>
+    </div>
+  </div>
+
+  <h2><span class="h2-num">2</span> 十三学科 · 考点速览</h2>
+  <p>下表按"复试出场率"排序组织建议复习次序:控制类(自控/PID/运控)是机器人/电机方向的基本盘,硬件与嵌入式(运放/防反接/FreeRTOS)是项目面的拉分项。</p>
+  <div class="table-wrap"><table id="ibOverview">
+    <tr><th>学科</th><th>题数</th><th>复试频率</th><th>最高频考点</th></tr>
+  </table></div>
+
+  <h2><span class="h2-num">3</span> 分学科题库</h2>
+  <div class="ib-toolbar">
+    <input class="ib-filter" id="ibFilter" placeholder="🔎 在本学科内过滤:输入关键词,如 劳斯 / 积分饱和 / vtable / 优先级反转 …">
+    <div class="ib-mode" role="group" aria-label="模式切换">
+      <button id="ibModeBrowse" class="on">📖 浏览模式</button>
+      <button id="ibModeSelf">🧠 自测模式</button>
+    </div>
+  </div>
+  <div class="ib-chips" id="ibChips"></div>
+  <div id="ibSubject"><div class="ib-empty">题库数据加载中…</div></div>
+
+  <h2><span class="h2-num">4</span> 配套资源与下一步</h2>
+  <div class="grid">
+    <a class="card" href="12_闯关学习.html"><span class="go">进入 →</span><div class="ic">🎯</div><div class="t">闯关学习</div><div class="d">用闯关方式检验刷题成果:5 大陆 21 关,复试冲刺大陆直接使用本题库。</div></a>
+    <a class="card" href="13_AI答疑助手.html"><span class="go">进入 →</span><div class="ic">🤖</div><div class="t">AI 答疑助手</div><div class="d">选"复试考官"人设,让 AI 对任意学科模拟追问,针对你的回答给改进建议。</div></a>
+    <a class="card" href="07_大厂面试专题.html"><span class="go">进入 →</span><div class="ic">🏢</div><div class="t">大厂面试专题</div><div class="d">就业向面试:流程、场景题、HR 面、英文面与手撕题,与本页(升学向)互补。</div></a>
+  </div>
+  <div class="box box-tip">
+    <b>📌 使用建议:</b>第一遍用浏览模式通读,重点看"结论先行"的答题框架;第二遍切自测模式,先自己口述再看答案自评;考前把"模糊"状态的题再过一遍——面试考的不是背答案,而是"结论 + 原理 + 工程感"三层结构。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>1. 每学科学完后,能否用一句话向"非本方向考官"讲清它解决什么问题?2. 你的简历项目里,哪些地方用到了本页哪些考点?提前把两者连线。
+  </div>
+
+  <h2><span class="h2-num">5</span> 参考书目与来源</h2>
+  <ul>
+    <li>胡寿松《自动控制原理》(第七版)——自控原理/校正/根轨迹经典教材</li>
+    <li>韩京清《自抗扰控制技术》/ 高志强 LADRC 论案(Gao, <i>IEEE Trans. Ind. Electron.</i>, 2003)——ADRC 结构与带宽参数化</li>
+    <li>袁雷《现代永磁同步电机控制原理及MATLAB仿真》——FOC/SVPWM/MTPA</li>
+    <li>刘金琨《先进PID控制MATLAB仿真》——PID 整定与抗饱和</li>
+    <li>Richard Zurawski 主编工业通信章节、Bosch CAN Specification 2.0、NXP I2C-bus specification UM10204——总线时序</li>
+    <li>FreeRTOS 官方文档(Mastering the FreeRTOS Real Time Kernel)——任务/队列/优先级继承/内存管理</li>
+    <li>本站 01~07 板块对应学习页(题目内的"站内关联"链接)</li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+<script>
+/* ============================================================
+   题库页交互(ES5,零依赖;数据文件按需加载)
+============================================================ */
+(function(){
+  "use strict";
+  var KEY = "humanoid-interview-v1";
+  var SUB = [], ITEM = [], SUBJ = {};
+  var cur = null, mode = "browse", kw = "";
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---- 进度存取 ---- */
+  function loadProg(){ try{ return JSON.parse(localStorage.getItem(KEY) || "{}"); }catch(e){ return {}; } }
+  function saveProg(p){ try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){} }
+  function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function stars(n){ var s = ""; for(var i = 0; i < 5; i++) s += (i < n ? "★" : "☆"); return s; }
+
+  /* ---- 按需加载数据文件 ---- */
+  function loadScript(src, cb){
+    var s = document.createElement("script");
+    s.src = src; s.onload = cb; s.onerror = cb;
+    document.head.appendChild(s);
+  }
+  var pending = 2;
+  function onReady(){ if(--pending) return; init(); }
+  loadScript("../_assets/ib-data-a.js", onReady);
+  loadScript("../_assets/ib-data-b.js", onReady);
+
+  function init(){
+    var A = window.IB_A || {subjects:[],items:[]}, B = window.IB_B || {subjects:[],items:[]};
+    SUB = A.subjects.concat(B.subjects);
+    ITEM = A.items.concat(B.items);
+    for(var i = 0; i < SUB.length; i++) SUBJ[SUB[i].id] = SUB[i];
+    buildOverview();
+    buildChips();
+    var want = (location.search.match(/[?&]s=([a-z]+)/) || [])[1];
+    openSubject(SUBJ[want] ? want : SUB[0].id);
+    renderStats();
+  }
+
+  /* ---- 总览表 ---- */
+  function buildOverview(){
+    var tb = $("ibOverview");
+    var html = "";
+    for(var i = 0; i < SUB.length; i++){
+      var s = SUB[i];
+      var top = (s.topics || []).slice().sort(function(a,b){ return b.f - a.f; })[0];
+      html += "<tr><td><b>" + s.icon + " " + esc(s.name) + "</b></td><td>" + countOf(s.id) +
+        "</td><td style='color:#f59e0b;white-space:nowrap'>" + stars(s.freq) + "</td><td>" +
+        (top ? "<b>" + esc(top.t) + "</b> — " + esc(top.h) : "") + "</td></tr>";
+    }
+    tb.innerHTML += html;
+  }
+  function countOf(sid){ var n = 0; for(var i = 0; i < ITEM.length; i++) if(ITEM[i].s === sid) n++; return n; }
+  function itemsOf(sid){ var r = []; for(var i = 0; i < ITEM.length; i++) if(ITEM[i].s === sid) r.push(ITEM[i]); return r; }
+
+  /* ---- 学科页签 ---- */
+  function buildChips(){
+    var box = $("ibChips"), html = "", p = loadProg();
+    for(var i = 0; i < SUB.length; i++){
+      var s = SUB[i], its = itemsOf(s.id), done = 0;
+      for(var j = 0; j < its.length; j++) if(p[its[j].id] === 2) done++;
+      html += "<button class='ib-chip' data-s='" + s.id + "' id='chip-" + s.id + "'>" + s.icon + " " + esc(s.name) +
+        " <span class='ib-chip-p'>" + done + "/" + its.length + "</span></button>";
+    }
+    box.innerHTML = html;
+    var btns = box.querySelectorAll(".ib-chip");
+    for(var k = 0; k < btns.length; k++){
+      btns[k].onclick = function(){ openSubject(this.getAttribute("data-s")); };
+    }
+  }
+  function refreshChips(){
+    var p = loadProg();
+    for(var i = 0; i < SUB.length; i++){
+      var s = SUB[i], its = itemsOf(s.id), done = 0;
+      for(var j = 0; j < its.length; j++) if(p[its[j].id] === 2) done++;
+      var el = $("chip-" + s.id);
+      if(el) el.querySelector(".ib-chip-p").textContent = done + "/" + its.length;
+      el.className = "ib-chip" + (s.id === cur ? " on" : "");
+    }
+  }
+
+  /* ---- 打开学科 ---- */
+  function openSubject(sid){
+    cur = sid;
+    var s = SUBJ[sid], its = itemsOf(sid);
+    var rel = "";
+    (s.rel || []).forEach(function(r){ rel += "<a href='" + r.u + "'>📖 " + esc(r.t) + "</a>"; });
+    rel += "<button class='ib-ai' onclick=\"ibAskAI('" + esc(s.name) + "')\">🤖 让 AI 对本学科模拟追问</button>";
+    var topics = "";
+    (s.topics || []).forEach(function(t){
+      topics += "<tr><td style='white-space:nowrap'><b>" + esc(t.t) + "</b></td><td style='color:#f59e0b;white-space:nowrap'>" +
+        stars(t.f) + "</td><td>" + esc(t.h) + "</td></tr>";
+    });
+    var html = "<div class='ib-subhead'>" +
+      "<h3>" + s.icon + " " + esc(s.name) + " <span class='ib-en'>" + esc(s.en || "") + "</span>" +
+      "<span class='ib-freq' title='复试出场率'>" + stars(s.freq) + "</span></h3>" +
+      "<p>" + esc(s.desc) + "</p>" +
+      "<div class='table-wrap'><table><tr><th>高频考点</th><th>频率</th><th>一句话要领</th></tr>" + topics + "</table></div>" +
+      "<div class='ib-rel'>" + rel + "</div></div>" +
+      "<div id='ibItems'></div>" +
+      "<h3 style='margin-top:22px'>✅ 本学科选择题自测(每科 2 题)</h3><div id='ibQuiz'></div>";
+    $("ibSubject").innerHTML = html;
+    renderItems();
+    renderQuiz(sid);
+    refreshChips();
+    renderFormulas($("ibSubject"));
+  }
+
+  /* ---- 题目渲染 ---- */
+  function renderItems(){
+    var box = $("ibItems"), p = loadProg(), html = "";
+    var its = itemsOf(cur).filter(hit);
+    if(!its.length){ box.innerHTML = "<div class='ib-empty'>本学科没有匹配「" + esc(kw) + "」的题目,换个关键词试试</div>"; return; }
+    for(var i = 0; i < its.length; i++) html += itemHTML(its[i], p);
+    box.innerHTML = html;
+    bindItems(box);
+    renderFormulas(box);
+  }
+  function hit(it){
+    if(!kw) return true;
+    var hay = (it.q + " " + (it.tags || []).join(" ") + " " + it.a).toLowerCase();
+    return hay.indexOf(kw.toLowerCase()) >= 0;
+  }
+  function itemHTML(it, p){
+    var tags = "";
+    (it.tags || []).forEach(function(t){ tags += "<span class='ib-tag'>" + esc(t) + "</span>"; });
+    var body = answerHTML(it);
+    var g = p[it.id];
+    return "<details class='ib-item' id='it-" + it.id + "'><summary>" +
+      "<div class='ib-q'><b>" + esc(it.q) + "</b></div>" +
+      "<div class='ib-meta'><span class='ib-lv' title='复试频率'>复试频率 " + stars(it.lv) + "</span>" + tags + "</div></summary>" +
+      (mode === "self" ? "<div class='ib-reveal'><button data-reveal>👁 先自己想 30 秒,再显示参考答案</button></div>" : "") +
+      "<div class='ib-ans" + (mode === "self" ? " ib-hidden-ans" : "") + "'>" +
+      body + gradeHTML(it.id, g) + "</div></details>";
+  }
+  function answerHTML(it){
+    var h = "";
+    if(it.a) h += it.a;
+    if(it.formula) h += "<div class='formula'>" + esc(it.formula) + "</div>";
+    if(it.svg) h += "<div class='ib-svg'>" + it.svg + "</div>";
+    if(it.code) h += "<pre><code>" + esc(it.code) + "</code></pre>";
+    if(it.a2) h += it.a2;
+    if(it.follow && it.follow.length){
+      h += "<div class='ib-follow'><b>🔍 考官可能这样追问:</b><br>";
+      for(var i = 0; i < it.follow.length; i++) h += (i + 1) + ". " + esc(it.follow[i]) + "<br>";
+      h += "</div>";
+    }
+    if(it.links && it.links.length){
+      h += "<div class='ib-links-row'>";
+      for(var j = 0; j < it.links.length; j++)
+        h += "<a href='" + it.links[j].u + "'>📖 " + esc(it.links[j].t) + "</a>";
+      h += "</div>";
+    }
+    return h;
+  }
+  function gradeHTML(id, g){
+    return "<div class='ib-grade'>自评掌握度:" +
+      "<button class='ib-g-no" + (g === 0 ? " on" : "") + "' data-g='0' data-id='" + id + "'>✗ 未掌握</button>" +
+      "<button class='ib-g-vague" + (g === 1 ? " on" : "") + "' data-g='1' data-id='" + id + "'>~ 模糊</button>" +
+      "<button class='ib-g-yes" + (g === 2 ? " on" : "") + "' data-g='2' data-id='" + id + "'>✓ 已掌握</button>" +
+      "</div>";
+  }
+  function bindItems(box){
+    var revs = box.querySelectorAll("[data-reveal]");
+    for(var i = 0; i < revs.length; i++){
+      revs[i].onclick = function(){
+        var rev = this.parentNode;                                  /* .ib-reveal */
+        var ans = rev.nextElementSibling;                           /* 同级的 .ib-ans */
+        if(ans && ans.className.indexOf("ib-ans") >= 0){
+          ans.classList.remove("ib-hidden-ans");
+          ans.classList.add("ib-selfmode");
+        }
+        rev.style.display = "none";
+      };
+    }
+    var gs = box.querySelectorAll(".ib-grade button");
+    for(var j = 0; j < gs.length; j++){
+      gs[j].onclick = function(){
+        var p = loadProg(), id = this.getAttribute("data-id"), v = +this.getAttribute("data-g");
+        if(p[id] === v) delete p[id]; else p[id] = v;
+        saveProg(p);
+        var row = this.parentNode, btns = row.querySelectorAll("button");
+        for(var k = 0; k < btns.length; k++) btns[k].className = btns[k].className.replace(" on", "");
+        if(p[id] !== undefined) this.className += " on";
+        renderStats(); refreshChips();
+      };
+    }
+  }
+
+  /* ---- 统计 ---- */
+  function renderStats(){
+    var p = loadProg(), y = 0, v = 0, n = 0;
+    for(var i = 0; i < ITEM.length; i++){
+      var g = p[ITEM[i].id];
+      if(g === 2) y++; else if(g === 1) v++; else n++;
+    }
+    $("ibNTotal").textContent = ITEM.length;
+    $("ibNYes").textContent = y; $("ibNVague").textContent = v; $("ibNNo").textContent = n;
+    var pct = ITEM.length ? Math.round(y * 100 / ITEM.length) : 0;
+    $("ibProgBar").style.width = pct + "%";
+    $("ibProgPct").textContent = pct + "%(" + y + "/" + ITEM.length + ")";
+  }
+
+  /* ---- 每科 2 道选择题 ---- */
+  var QUIZ = {
+    zkl:[{q:"特征方程 s³+2s²+3s+6=0(劳斯表出现全零行),该系统是?",o:["A. 稳定","B. 临界稳定,有一对纯虚根","C. 有一个右半平面根","D. 有两个右半平面根"],a:"B",e:"s²(s+2)+3(s+2)=(s+2)(s²+3),根为 −2 与 ±j√3:虚轴一对共轭根 → 临界稳定。劳斯表第三行全零,由辅助方程 2s²+6=0 解得纯虚根。"},
+        {q:"超调量 σp 只由什么决定?",o:["A. 阻尼比 ζ","B. 自然频率 ωn","C. ζωn 乘积","D. 开环增益 K"],a:"A",e:"σp=e^(−πζ/√(1−ζ²)):只含 ζ。ζωn 决定调节时间,ωn 决定峰值时间——三者分工要分清。"}],
+    pid:[{q:"增大积分增益 Ki 的主要影响是?",o:["A. 只加快响应,不影响稳态","B. 消除稳态误差但振荡加剧","C. 抑制超调","D. 提高相位裕度"],a:"B",e:"I 的作用是消稳态误差(开环升型),但带来 90° 相位滞后,Ki 大振荡加剧、裕度下降;它不直接提供相位超前。"},
+        {q:"三环(电流/速度/位置)的工程整定顺序是?",o:["A. 位置→速度→电流","B. 电流→速度→位置","C. 任意顺序","D. 三环同时整定"],a:"B",e:"先内后外:内环闭环并验证后,外环把内环当理想执行器设计;反着来外环整定会被内环动态耦合,白忙。"}],
+    adrc:[{q:"ADRC 中负责实时估计总扰动的部件是?",o:["A. TD 跟踪微分器","B. ESO 扩张状态观测器","C. NLSEF 非线性反馈","D. 前馈滤波器"],a:"B",e:"ESO 把内扰+外扰扩张为第 n+1 个状态,由 u、y 实时估计 z₃ 并补偿;TD 安排过渡,NLSEF 生成反馈律。"},
+        {q:"LADRC 带宽参数化整定的三个核心参数是?",o:["A. Kp、Ki、Kd","B. ωo、ωc、b₀","C. Q、R、N","D. r、h、α"],a:"B",e:"观测器带宽 ωo、控制带宽 ωc、输入增益 b₀;经验取 ωo≈3~10ωc,b₀ 由阶跃实验辨识。"}],
+    yk:[{q:"Park 变换后,恒速下 dq 轴电流表现为?",o:["A. 正弦交流量","B. 直流量","C. 脉冲序列","D. 方波"],a:"B",e:"Park 把静止 αβ 系旋到随转子同步旋转的 dq 系,正弦量变成直流量,PI 才能无静差调节——这是 FOC 的核心动机。"},
+        {q:"电流环带宽通常取 PWM 开关频率的约?",o:["A. 1/2","B. 1/10","C. 2 倍","D. 相等"],a:"B",e:"采样+PWM 延迟(约 1.5 个开关周期)随带宽逼近而侵蚀相位裕度,工程取开关频率 1/10 左右,典型 20kHz 开关 → 2kHz 电流环。"}],
+    xk:[{q:"状态反馈可任意配置闭环极点的充要条件是?",o:["A. 系统能观","B. 系统能控","C. 系统稳定","D. 最小相位"],a:"B",e:"能控性是充要条件(Ackermann 公式);能观性对应的是观测器极点任意配置。"},
+        {q:'"分离原理"指的是?',o:["A. 观测器与状态反馈增益可独立设计","B. 零极点必须对消","C. 传函串联可拆分","D. 能控性与能观性对偶"],a:"A",e:"带观测器的闭环极点 = (A−BK) 与 (A−LC) 极点的并集,两组互不影响,可分开设计——这就是分离原理。"}],
+    dsp:[{q:"采样后已发生混叠,依靠数字滤波能恢复原信号吗?",o:["A. 能,加低通即可","B. 不能,信息已在采样瞬间丢失","C. 加窗后能","D. 做 FFT 就能"],a:"B",e:"混叠把高频折叠到低频位置,与真实低频分量叠加后数学上不可分;必须采样前用模拟抗混叠滤波器预防。"},
+        {q:"可做成严格线性相位且天然稳定的滤波器是?",o:["A. FIR","B. IIR","C. 巴特沃斯","D. 切比雪夫"],a:"A",e:"FIR 无极点故天然稳定;系数对称时严格线性相位。IIR 阶数低效率高,但相位非线性。"}],
+    hw:[{q:"数安培级电池输入的防反接,最优方案通常是?",o:["A. 串联肖特基二极管","B. P-MOS 高边防反接","C. 保险丝","D. 稳压二极管"],a:"B",e:"二极管 0.4V 压降在大电流下发热严重;P-MOS 导通后仅 I²Rds(on),几乎无热,是电池设备主流。保险丝防过流不防反接。"},
+        {q:'负反馈运放「虚短」成立的根本依据是?',o:["A. 输入阻抗高","B. 开环增益极大且负反馈","C. 输出阻抗低","D. 共模抑制比高"],a:"B",e:"V+−V−=Vout/Aol,Aol≈10⁵~10⁷ → 差值 μV 级近似短路;前提是负反馈闭环。输入阻抗高对应的是「虚断」。"}],
+    esc:[{q:"DShot600 中的 600 表示?",o:["A. 600Hz 更新率","B. 600kbps 传输速率","C. 600μs 帧长","D. 600mV 电平"],a:"B",e:"DShot 数字=速率 kbps:600kbps 时一帧 16bit 约 26.7μs,显著低于 PWM 油门的 2ms 窗口,适配高更新率控制。"},
+        {q:"方波六步电调低速性能差的根本原因是?",o:["A. MOS 发热","B. 反电动势过小,过零检测不可靠","C. PWM 分辨率不足","D. 电池内阻"],a:"B",e:"无感换相靠反电动势过零点,反电动势幅值∝转速,转速低到信号淹没在噪声里就无法可靠换相,只能开环强拖。"}],
+    ros:[{q:"持续接收激光/IMU 数据流,应选哪种通信?",o:["A. Topic 话题","B. Service 服务","C. Action 动作","D. 参数服务器"],a:"A",e:"话题是发布/订阅异步流模型,一对多、低延迟,适合传感器数据流;服务是一问一答,动作是可取消长任务。"},
+        {q:"l-ψ 编队控制中,距离误差 Δl 与方位误差 Δψ 通常分别映射到?",o:["A. 线速度与角速度","B. 角速度与线速度","C. 都是加速度","D. 位置与速度"],a:"A",e:"follower 是差速模型:距离误差调前进速度,方位角误差调转向角速度;若接全向轮/阿克曼则映射方式相应改变。"}],
+    c:[{q:"主循环 while(flag==0) 等中断置位,flag 至少要加什么?",o:["A. static","B. volatile","C. const","D. extern"],a:"B",e:"不加 volatile,编译器可能把 flag 缓存进寄存器只读一次,循环永远出不来;volatile 强制每次真实读内存。"},
+        {q:"64 位平台上 sizeof(int a[10]) 与 sizeof(int*) 分别是?",o:["A. 40 与 8","B. 8 与 8","C. 40 与 4","D. 10 与 8"],a:"A",e:"sizeof(数组)=整个数组字节数 4×10=40(数组名不退化的例外之一);指针在 64 位平台恒 8 字节。"}],
+    cpp:[{q:"delete 一个指向 Derived 的 Base*,正确执行两者析构的条件是?",o:["A. 基类析构函数为 virtual","B. 派生类析构为 virtual","C. 两者都是 public","D. 无条件正确"],a:"A",e:"基类析构 virtual 才会从最派生类开始逐层析构;否则只执行 ~Base(),派生类资源泄漏——多态基类必加虚析构。"},
+        {q:"打破 shared_ptr 循环引用应使用?",o:["A. weak_ptr","B. unique_ptr","C. 裸指针","D. 引用计数清零函数"],a:"A",e:"weak_ptr 不增加强引用计数,只作观察者;lock() 尝试安全升级。回边(父→子保留 shared,子→父改 weak)即可断环。"}],
+    emb:[{q:"ISR 与主程序共享的标志变量,声明时必须加?",o:["A. volatile","B. register","C. inline","D. auto"],a:"A",e:"防止编译器把'循环读标志'优化成读一次寄存器;注意 volatile 不保证原子性,读-改-写仍需关中断或原子操作。"},
+        {q:"I2C 多主同时发报,仲裁结果是谁胜出?",o:["A. 地址大者","B. 逐位发送 0(低电平)者","C. 先发起者","D. 随机"],a:"B",e:"开漏线与:发 1 却读到 0 的主机立即退出,等价于报文逐位比大小,0 胜出=地址小者继续占用总线,全程无冲突破坏。"}],
+    frt:[{q:"任务间保护共享资源(可能阻塞的临界区)应该用?",o:["A. 二值信号量","B. 互斥量 Mutex","C. 计数信号量","D. 任务通知"],a:"B",e:"只有互斥量带优先级继承,防优先级反转;二值信号量适合做事件同步,不用于资源锁——这是 FreeRTOS 面试最经典的区分题。"},
+        {q:"中断服务函数里调用 FreeRTOS API 必须使用?",o:["A. 关中断版本","B. FromISR 后缀版本","C. 新建任务执行","D. 禁止任何 API"],a:"B",e:"ISR 上下文不能阻塞,必须用 xQueueSendFromISR 等 FromISR API,并按需 portYIELD_FROM_ISR 触发调度;且该中断优先级数值不得高于 configMAX_SYSCALL_INTERRUPT_PRIORITY。"}]
+  };
+  function renderQuiz(sid){
+    var qs = QUIZ[sid] || [], box = $("ibQuiz"), html = "";
+    if(!qs.length){ box.innerHTML = ""; return; }
+    for(var i = 0; i < qs.length; i++){
+      var opts = "";
+      for(var j = 0; j < qs[i].o.length; j++)
+        opts += "<button data-v='" + qs[i].o[j].charAt(0) + "'>" + esc(qs[i].o[j]) + "</button>";
+      html += "<div class='quiz'><div class='quiz-q'>" + (i + 1) + ". " + esc(qs[i].q) + "</div>" +
+        "<div class='quiz-options' data-answer='" + qs[i].a + "'>" + opts + "</div>" +
+        "<div class='quiz-feedback'></div><div class='quiz-explain'>💡 " + esc(qs[i].e) + "</div></div>";
+    }
+    box.innerHTML = html;
+    var optBtns = box.querySelectorAll(".quiz-options button");
+    for(var k = 0; k < optBtns.length; k++){
+      optBtns[k].onclick = function(){
+        var wrap = this.parentNode, ans = wrap.getAttribute("data-answer");
+        var v = this.getAttribute("data-v");
+        var fb = wrap.parentNode.querySelector(".quiz-feedback");
+        var ex = wrap.parentNode.querySelector(".quiz-explain");
+        var bs = wrap.querySelectorAll("button");
+        for(var m = 0; m < bs.length; m++) bs[m].disabled = true;
+        this.classList.add(v === ans ? "correct" : "wrong");
+        if(v !== ans){
+          for(var m2 = 0; m2 < bs.length; m2++)
+            if(bs[m2].getAttribute("data-v") === ans) bs[m2].classList.add("correct");
+        }
+        if(fb){ fb.className = "quiz-feedback " + (v === ans ? "ok" : "no");
+          fb.textContent = v === ans ? "✓ 回答正确!" : "✗ 回答错误,正确答案是 " + ans; }
+        if(ex) ex.classList.add("show");
+      };
+    }
+  }
+
+  /* ---- KaTeX 公式渲染(site.js 只渲染加载时已有的 .formula,动态内容这里补渲染) ---- */
+  var katexState = 0; /* 0 未加载 1 加载中 2 就绪 */
+  var katexQueue = [];
+  function renderFormulas(scope){
+    var els = (scope || document).querySelectorAll(".formula:not([data-katex])");
+    if(!els.length) return;
+    for(var i = 0; i < els.length; i++) els[i].setAttribute("data-katex", "1");
+    function doRender(){
+      var all = document.querySelectorAll(".formula[data-katex='1']");
+      for(var i = 0; i < all.length; i++){
+        try{ window.katex.render(all[i].getAttribute("data-src") || all[i].textContent, all[i], { throwOnError:false, displayMode:true }); }
+        catch(e){}
+        all[i].setAttribute("data-katex", "2");
+      }
+    }
+    if(!katexState){
+      katexState = 1;
+      var l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
+      document.head.appendChild(l);
+      var s = document.createElement("script");
+      s.src = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js";
+      s.onload = function(){ katexState = 2; doRender(); };
+      s.onerror = function(){ /* CDN 失败则保持 LaTeX 原文显示 */ };
+      document.head.appendChild(s);
+    }else if(katexState === 2){ doRender(); }
+  }
+
+  /* ---- AI 追问入口 ---- */
+  window.ibAskAI = function(subjName){
+    window.location.href = "13_AI答疑助手.html?persona=interviewer&ctx=" + encodeURIComponent(subjName) +
+      "&q=" + encodeURIComponent("请围绕「" + subjName + "」对我进行保研复试模拟面试:先出一道中等难度的问题,等我回答后再点评并追问。");
+  };
+
+  /* ---- 工具栏事件 ---- */
+  $("ibFilter").oninput = function(){ kw = this.value.trim(); renderItems(); };
+  $("ibModeBrowse").onclick = function(){ setMode("browse"); };
+  $("ibModeSelf").onclick = function(){ setMode("self"); };
+  function setMode(m){
+    mode = m;
+    $("ibModeBrowse").className = m === "browse" ? "on" : "";
+    $("ibModeSelf").className = m === "self" ? "on" : "";
+    renderItems();
+  }
+  $("ibReset").onclick = function(){
+    if(!confirm("确定清空本题库全部掌握度记录?(不影响其它学习进度)")) return;
+    saveProg({});
+    renderItems(); renderStats(); refreshChips();
+  };
+})();
+</script>
+</body>
+</html>

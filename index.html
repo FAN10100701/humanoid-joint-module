@@ -85,7 +85,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
     { key:"04", name:"升级进阶", ids:["04-01","04-02","04-03"] },
     { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08","06-09","06-10","06-11","06-12","06-13","06-14","06-15"] },
     { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07","07-08"] },
-    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07","08-08","08-09","08-10"] }
+    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07","08-08","08-09","08-10","08-11","08-12","08-13"] }
   ];
   /* 学习页面/可打卡页面统计：由 SITE_SECTIONS 自动计算（新增页面只需更新上面的 ids，无需手改数字） */
   (function(){
@@ -143,8 +143,8 @@ html:not([data-skin]) .card:hover::before{opacity:1}
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
     零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</div>
     <div class="stats">
-      <div class="stat"><div class="v" id="statPages">65</div><div class="k">学习页面</div></div>
-      <div class="stat"><div class="v" id="statTracked">64</div><div class="k">可打卡页面</div></div>
+      <div class="stat"><div class="v" id="statPages">68</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v" id="statTracked">67</div><div class="k">可打卡页面</div></div>
       <div class="stat"><div class="v">8</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
       <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
@@ -220,6 +220,17 @@ html:not([data-skin]) .card:hover::before{opacity:1}
           <a href="08_学习工具/01_术语词典.html">术语词典</a>
         </div>
       </div>
+      <div class="rm-step">
+        <span class="rm-num">5</span>
+        <h4>🎯 复试冲刺</h4>
+        <p>13 学科 117 道复试题刷题 → 闯关检验掌握度 → AI 考官模拟面试,一条龙备战保研复试</p>
+        <p style="color:#6b7280">考前 2~4 周 · 查漏补缺</p>
+        <div class="rm-links">
+          <a href="08_学习工具/11_保研复试面试题库.html">复试题库</a>
+          <a href="08_学习工具/12_闯关学习.html">闯关学习</a>
+          <a href="08_学习工具/13_AI答疑助手.html?persona=interviewer">AI 考官</a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -236,6 +247,9 @@ html:not([data-skin]) .card:hover::before{opacity:1}
     <a href="08_学习工具/08_仿真中心.html">🕹️ 仿真中心</a>
     <a href="08_学习工具/06_学习地图.html">🗺️ 学习地图</a>
     <a href="08_学习工具/09_动手项目清单.html">🛠️ 动手项目</a>
+    <a href="08_学习工具/12_闯关学习.html">🎯 闯关学习</a>
+    <a href="08_学习工具/11_保研复试面试题库.html">🎓 复试题库</a>
+    <a href="08_学习工具/13_AI答疑助手.html">🤖 AI答疑</a>
     <a href="#progress-sec">✓ 我的进度</a>
   </nav>
 
@@ -697,6 +711,24 @@ html:not([data-skin]) .card:hover::before{opacity:1}
         <div class="t">学习数据分析</div>
         <div class="d">你的学习画像:板块完成度、12 周热力图、SRS 记忆箱、到期提醒与下一步建议(纯本地)。</div>
       </a>
+      <a class="card featured" href="08_学习工具/11_保研复试面试题库.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🎓</div>
+        <div class="t">保研复试面试题库 · 13 学科 117 题(全新)</div>
+        <div class="d">自控原理 / PID / ADRC / 运控 / 现控 / 信号处理 / 硬件电路(防反接·运放) / 无人机电调 / ROS 多机编队 / C / C++ / 嵌入式 / FreeRTOS——图文解析、延伸追问、掌握度自评,配套闯关与 AI 考官。</div>
+      </a>
+      <a class="card" href="08_学习工具/12_闯关学习.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🎯</div>
+        <div class="t">闯关学习(全新)</div>
+        <div class="d">5 大陆 21 关卡:星级评价、经验值、徽章收集、BOSS 综合关与保研复试全真模拟,通关点亮首页热力图。</div>
+      </a>
+      <a class="card" href="08_学习工具/13_AI答疑助手.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🤖</div>
+        <div class="t">AI 答疑助手(全新)</div>
+        <div class="d">接入 DeepSeek / 豆包:复试考官模拟面试、课程助教讲解、代码答疑;API Key 仅保存在本机浏览器,别人用不了你的额度。</div>
+      </a>
     </div>
   </div>
 
@@ -738,10 +770,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.7</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-27 · 动画/3D 逐项校验修复 + 深度讲解与 70 道新题</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.8</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-27 · 保研复试题库 + 闯关学习 + AI 答疑</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V2.0.8 · 2026-08-27 · 保研复试题库 + 闯关学习 + AI 答疑(三大新功能)</summary>
+        <div class="faq-a">🎓 <b>复试题库(08-11)</b>:13 学科 117 题(自控/PID/ADRC/运控/现控/信号处理/硬件电路防反接运放/无人机电调/ROS 编队/C/C++/嵌入式/FreeRTOS),结构化参考回答+延伸追问+站内联动,14 张 SVG 图解与 KaTeX 公式,浏览/自测双模式与掌握度自评;🎯 <b>闯关学习(08-12)</b>:5 大陆 21 关卡,顺序解锁、星级/XP/7 枚徽章,复试冲刺大陆直接调用面试题库,通关点亮热力图;🤖 <b>AI 答疑(08-13)</b>:接入 DeepSeek/豆包,流式输出+公式渲染,4 种人设(复试考官/课程助教/代码助手),<b>API Key 仅存本机浏览器</b>不经任何服务器;全站内容页右下角 AI 悬浮球 + Ctrl+K 搜索"问 AI"兜底;学习路径新增第 5 步「复试冲刺」,学习页面 65→68,自检 13/13 全绿。</div>
+      </details>
+      <details class="faq">
         <summary>V2.0.7 · 2026-08-27 · 动画/3D 逐项校验修复 + 深度讲解与 70 道新题</summary>
         <div class="faq-a">🔧 <b>动画/3D 校验修复(10 页取证,逐项回归)</b>:①原理实验室手指几何重建(真屈指链+腱绳跟随+被抓物体)②失步阈值统一 90°(π/2)+「转矩比 sin δ」实时读数 ③编码器光束改穿刻缝环+累计脉冲/角度读数(反转变负) ④拆解页相机全包围盒对焦+一键拆解自动重取景 ⑤高刷屏步态加速修复(主循环全量真实 dt) ⑥代码实验室视口外暂停省 CPU;📚 <b>6 章「深度讲解」</b>:谐波传动比推导/行星级联与 RV 两级分解/Clarke-Park 推导与 Id=0/SVPWM 扇区与 T1T2 实例/腱驱指尖力估算/Kt-母线-减速比联动校核;📝 <b>新增 70 题</b>(全站 550 题,均带定量解析与回链),中央题库 40→60 与 SRS 同步;3D sw v27,自检 13/13 全绿。</div>
       </details>
@@ -885,7 +921,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.0.7(2026-08-27) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.0.8(2026-08-27) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
