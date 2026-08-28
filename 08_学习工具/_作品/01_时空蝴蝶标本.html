@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!-- 个人作品 · 时空蝴蝶标本:同心环晶格有序排列的玻璃蝴蝶,每环=一个时间切片,相机沿轴穿越(星际穿越式) -->
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时空蝴蝶标本 · 个人作品台</title></head>
+<body>
+<canvas id="stage"></canvas>
+<div class="hud hud-top"><a href="../14_个人作品台.html">‹ 作品台</a>
+<span class="hud-title">时空蝴蝶标本<small>有序晶格 · 时间分层 · THREE.JS INSTANCED</small></span><span id="state"></span>
+<button id="modeBtn">✦ 切片视角</button></div>
+<div class="hud hud-bottom">每圈环带 = 一個被凝固的瞬间 · 鼠标拖动环视 · 滚轮沿时间轴穿越</div>
+<div id="loader"><div class="ring"></div><div id="loadTxt">加载中…</div></div>
+<script src="../../_assets/orbit-kit.js"></script>
+<script type="module">
+const K = window.OrbitKit; K.hud();
+const $ = (id)=>document.getElementById(id);
+try{
+  const THREE = await K.loadThree($("loadTxt"));
+  const renderer = new THREE.WebGLRenderer({ canvas:$("stage"), antialias:true });
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x04060c, 0.045);
+  const cam = new THREE.PerspectiveCamera(58, 1, 0.1, 200);
+  K.fit(renderer, cam);
+  scene.add(new THREE.AmbientLight(0x3a4a66, 1.1));
+  const key = new THREE.DirectionalLight(0xfff4e0, 2.4); key.position.set(4,6,3); scene.add(key);
+  const rim = new THREE.PointLight(0x6ec6ff, 90, 60, 1.6); rim.position.set(0,0,0); scene.add(rim);
+
+  /* 玻璃蝶:身体+双翅,InstancedMesh */
+  const N_RINGS = 7, PER = 26, N = N_RINGS*PER;
+  const bodyGeo = new THREE.CapsuleGeometry(0.03, 0.22, 3, 6); bodyGeo.rotateX(Math.PI/2);
+  const wingGeo = new THREE.PlaneGeometry(0.6, 0.42); wingGeo.translate(0.33,0,0); wingGeo.rotateX(-Math.PI/2);
+  const wingRGeo = wingGeo.clone(); wingRGeo.scale(-1,1,1);
+  const glassMat = new THREE.MeshPhysicalMaterial({ color:0xcfe4ff, roughness:0.18, metalness:0.1, transparent:true, opacity:0.72, side:THREE.DoubleSide, emissive:0x14283f, emissiveIntensity:0.7, clearcoat:1 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color:0x2a3448, roughness:0.35, metalness:0.6 });
+  const bodies = new THREE.InstancedMesh(bodyGeo, bodyMat, N);
+  const wL = new THREE.InstancedMesh(wingGeo, glassMat, N);
+  const wR = new THREE.InstancedMesh(wingRGeo, glassMat, N);
+  scene.add(bodies, wL, wR);
+
+  /* 有序晶格:每环一个"凝固时刻",环内等角排布,姿态统一朝外 —— 井然有序 */
+  const dummy = new THREE.Object3D();
+  const mW = new THREE.Matrix4(), qF = new THREE.Quaternion(), AZ = new THREE.Vector3(0,0,1);
+  function layout(t, slice){
+    let idx = 0;
+    for(let ring = 0; ring < N_RINGS; ring++){
+      const R = 1.6 + ring*1.15;
+      const zOff = (ring - N_RINGS/2 + 0.5) * 1.5;         /* 环沿 Z 轴分层=时间切片 */
+      const spin = slice ? (ring%2 ? 1 : -1) * t*0.12 : 0;  /* 切片视角:环缓慢反向旋 */
+      const flap = slice ? 0.5 : Math.sin(t*7 + ring)*0.9;  /* 标本静驻 vs 微振翅 */
+      for(let k = 0; k < PER; k++, idx++){
+        const a = (k/PER)*Math.PI*2 + ring*0.14 + spin;
+        dummy.position.set(Math.cos(a)*R, Math.sin(a)*R*0.94 + Math.sin(t*0.5+ring)*0.18, zOff);
+        dummy.rotation.set(0, -a + Math.PI/2 + Math.PI/2, Math.sin(t*0.8+ring+k)*0.12);
+        dummy.scale.setScalar(0.85 + (ring%3)*0.14);
+        dummy.updateMatrix();
+        bodies.setMatrixAt(idx, dummy.matrix);
+        qF.setFromAxisAngle(AZ, slice ? 0.55 : flap);
+        mW.copy(dummy.matrix).multiply(new THREE.Matrix4().makeRotationFromQuaternion(qF));
+        wL.setMatrixAt(idx, mW);
+        qF.setFromAxisAngle(AZ, -(slice ? 0.55 : flap));
+        mW.copy(dummy.matrix).multiply(new THREE.Matrix4().makeRotationFromQuaternion(qF));
+        wR.setMatrixAt(idx, mW);
+      }
+    }
+    bodies.instanceMatrix.needsUpdate = wL.instanceMatrix.needsUpdate = wR.instanceMatrix.needsUpdate = true;
+  }
+
+  /* 相机:Z 轴穿越(滚轮) + 拖动环视 */
+  let z = 8, tZ = 8, yaw = 0, pitch = 0, tYaw = 0, tPitch = 0, drag = false, px = 0, py = 0;
+  $("stage").addEventListener("pointerdown", e=>{ drag = true; px = e.clientX; py = e.clientY; });
+  addEventListener("pointermove", e=>{ if(!drag) return; tYaw += (e.clientX-px)*0.004; tPitch = Math.max(-0.8, Math.min(0.8, tPitch+(e.clientY-py)*0.003)); px = e.clientX; py = e.clientY; });
+  addEventListener("pointerup", ()=> drag = false);
+  addEventListener("wheel", e=>{ tZ = Math.max(-9, Math.min(14, tZ + e.deltaY*0.006)); }, { passive:true });
+
+  let slice = false, tScale = 1, sim = 0, last = performance.now(), fr = 0, ft = last;
+  $("modeBtn").onclick = ()=>{ slice = !slice; $("modeBtn").textContent = slice ? "✺ 振翅视角" : "✦ 切片视角"; };
+  (function loop(now){
+    requestAnimationFrame(loop);
+    const dt = Math.min((now-last)/1000, 0.05); last = now;
+    tScale += ((slice?0.25:1) - tScale)*Math.min(1, dt*3);
+    sim += dt*tScale;
+    layout(sim, slice);
+    z += (tZ-z)*0.06; yaw += (tYaw-yaw)*0.07; pitch += (tPitch-pitch)*0.07;
+    if(!drag) tYaw += dt*0.04;
+    cam.position.set(Math.cos(yaw)*Math.cos(pitch)*9, Math.sin(pitch)*9, z);
+    cam.lookAt(0, 0, 0);
+    renderer.render(scene, cam);
+    fr++;
+    if(now-ft > 1000){ $("state").textContent = fr + " fps · " + N + " 标本"; fr = 0; ft = now; }
+  })(last);
+  $("loader").classList.add("hide");
+}catch(err){
+  $("loadTxt").innerHTML = "three.js 加载失败:" + (err&&err.message||err) + "<br>请用本地服务器访问";
+}
+</script></body></html>

@@ -1,229 +1,88 @@
 <!DOCTYPE html>
-<!-- ============================================================
-  个人作品台 ·「时间切片 · 蝶群」(three.js 实时建模演示)
-  设计:高级简约单作品页 —— 260 只程序化建模的蝴蝶绕场飞行;
-       空格/双击"冻结时间":全群瞬间凝固成灰白切片(致敬时间切片摄影),
-       相机继续漫游,一动一静形成电影对比。
-  规范:本地 three(00_3D解剖/lib)优先 + CDN 逐级回退;ES Module;零构建
-============================================================ -->
+<!-- 个人作品台 · 玻璃气泡门厅:点击气泡进入独立作品 -->
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>时间切片 · 蝶群 — 个人作品台 · 人形机器人学习站</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人作品台 · 人形机器人学习站</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<link rel="stylesheet" href="../_assets/glass.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;background:#05070d;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC",sans-serif}
-#stage{position:fixed;inset:0;display:block;transition:filter .9s ease}
-body.frozen #stage{filter:grayscale(.88) contrast(1.14) brightness(1.06)}
-.hud{position:fixed;z-index:10;color:#c9d1d9;user-select:none}
-.hud-top{top:0;left:0;right:0;display:flex;align-items:center;gap:14px;padding:16px 20px;background:linear-gradient(rgba(5,7,13,.8),transparent);pointer-events:none}
-.hud-top a,.hud-top button{pointer-events:auto;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);color:#c9d1d9;font-size:13px;padding:7px 15px;border-radius:999px;cursor:pointer;text-decoration:none;font-family:inherit;transition:.18s;backdrop-filter:blur(8px)}
-.hud-top a:hover,.hud-top button:hover{border-color:#58a6ff;color:#fff}
-.hud-title{font-size:15px;font-weight:800;letter-spacing:2px;color:#fff}
-.hud-title small{font-weight:400;color:#7d8a9c;margin-left:10px;letter-spacing:0}
-#state{margin-left:auto;font-family:Consolas,monospace;font-size:12px;color:rgba(255,255,255,.45)}
-.hud-bottom{left:0;right:0;bottom:0;padding:16px 20px;text-align:center;font-size:12.5px;color:rgba(255,255,255,.38);pointer-events:none;letter-spacing:1px}
-.hud-bottom b{color:rgba(255,255,255,.6);font-weight:600}
-#freeze-badge{top:64px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:6px;color:#e8eef6;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);padding:6px 18px 6px 24px;border-radius:999px;opacity:0;transition:opacity .6s;backdrop-filter:blur(6px)}
-body.frozen #freeze-badge{opacity:1}
-#loader{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:#05070d;color:#8b98a9;font-size:13.5px;letter-spacing:2px;transition:opacity .7s}
-#loader.hide{opacity:0;pointer-events:none}
-#loader .ring{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.12);border-top-color:#58a6ff;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#vignette{position:fixed;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.5) 100%)}
+#stars{position:fixed;inset:0;width:100%;height:100%;display:block}
+.wrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10vh}
+.kicker{font-size:11px;letter-spacing:.42em;color:var(--glass-ice);font-weight:600;text-transform:uppercase}
+h1.glass-title{font-size:26px;margin-top:8px}
+.field{position:relative;width:min(920px,94vw);height:min(46vh,380px)}
+.bubble .ic{font-size:30px;filter:drop-shadow(0 4px 14px rgba(0,0,0,.5))}
+.back{position:fixed;top:18px;left:18px;z-index:20}
 </style>
 <script>
-  window.PAGE = {
-    pageId: "08-14",
-    root: "..",
-    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "个人作品台" } ],
-    prev: { t: "AI 答疑助手", u: "13_AI答疑助手.html" },
-    next: { t: "返回首页", u: "../index.html" }
-  };
+  window.PAGE = { pageId:"08-14", root:"..",
+    breadcrumb:[{t:"学习工具",u:"../index.html#sec8"},{t:"个人作品台"}],
+    prev:{t:"AI 答疑助手",u:"13_AI答疑助手.html"}, next:{t:"返回首页",u:"../index.html"} };
 </script>
 </head>
-<body>
-
-<canvas id="stage"></canvas>
-<div id="vignette"></div>
-
-<div class="hud hud-top">
-  <a href="../index.html">‹ 返回学习站</a>
-  <span class="hud-title">时间切片 · 蝶群<small>THREE.JS 程序化建模 · 260 INSTANCES · 实时渲染</small></span>
-  <span id="state"></span>
-  <button id="freezeBtn">⏸ 冻结时间</button>
+<body class="glass-space glass-noise">
+<canvas id="stars"></canvas>
+<a class="glass back" href="../index.html" style="padding:8px 16px;font-size:13px;color:var(--glass-ink);text-decoration:none">‹ 返回学习站</a>
+<div class="wrap">
+  <div style="text-align:center">
+    <div class="kicker">PERSONAL WORKS GALLERY</div>
+    <h1 class="glass-title">个人作品台</h1>
+    <div class="glass-rule"></div>
+    <div style="font-size:12.5px;color:var(--glass-ink-dim);letter-spacing:1px">点击气泡,进入独立的 three.js 实时作品</div>
+  </div>
+  <div class="field" id="field">
+    <a class="glass-bubble" href="_作品/01_时空蝴蝶标本.html" style="left:4%;top:8%;width:230px;height:230px">
+      <span class="ic">🦋</span><span class="gb-name">时空蝴蝶标本</span><span class="gb-sub">TIME SLICED · 有序晶格</span></a>
+    <a class="glass-bubble" href="_作品/02_悬浮粒子八大行星.html" style="left:36%;top:24%;width:270px;height:270px;animation-delay:-2.4s">
+      <span class="ic">🪐</span><span class="gb-name">粒子八大行星</span><span class="gb-sub">PARTICLES · 点击看物理</span></a>
+    <a class="glass-bubble" href="_作品/03_风吹麦浪鱼遨游.html" style="left:72%;top:6%;width:230px;height:230px;animation-delay:-4.8s">
+      <span class="ic">🌾</span><span class="gb-name">风吹麦浪 · 鱼遨游</span><span class="gb-sub">WIND WHEAT · BOIDS</span></a>
+  </div>
 </div>
-<div class="hud" id="freeze-badge">TIME SLICED</div>
-<div class="hud hud-bottom">拖动旋转 · 滚轮缩放 · <b>空格 / 双击</b> 冻结时间 —— 全群凝固成灰白切片,相机仍在漫游</div>
-
-<div id="loader"><div class="ring"></div><div id="loadTxt">正在加载 three.js …</div></div>
-
+<script src="../_assets/site.js"></script>
 <script type="module">
-const $ = function(id){ return document.getElementById(id); };
-const loadTxt = $("loadTxt");
-
-async function loadThree(){
-  const urls = [
-    "../../00_3D解剖/lib/three.module.js",
-    "https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js",
-    "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "https://unpkg.com/three@0.160.0/build/three.module.js"
-  ];
-  for(const u of urls){
-    try{ loadTxt.textContent = "正在加载 " + (u.indexOf("lib") >= 0 ? "本地 three.js" : "CDN " + u.split("/")[2]) + " …"; return await import(u); }
-    catch(e){ /* 下一个源 */ }
+/* 星尘背景:漂浮微粒 + 视差 */
+async function boot(){
+  let THREE = null;
+  try{ THREE = await import("../../00_3D解剖/lib/three.module.js"); }catch(e){
+    try{ THREE = await import("https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js"); }catch(e2){ return; }
   }
-  throw new Error("所有源均加载失败");
-}
-
-try{
-  const THREE = await loadThree();
-  loadTxt.textContent = "正在孵化 260 只蝴蝶 …";
-
-  /* ---------- 渲染器 / 场景 ---------- */
-  const canvas = $("stage");
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.12;
-
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x05070d);
-  scene.fog = new THREE.FogExp2(0x05070d, 0.052);
-
-  const cam = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);
-
-  /* ---------- 灯光(冷调主光 + 青色轮廓光) ---------- */
-  scene.add(new THREE.AmbientLight(0x334455, 0.9));
-  const key = new THREE.DirectionalLight(0xffffff, 2.2);
-  key.position.set(3, 5, 4); scene.add(key);
-  const rim = new THREE.PointLight(0x66ccff, 60, 30, 1.8);
-  rim.position.set(0, 2.5, 0); scene.add(rim);
-  const warm = new THREE.PointLight(0xff9966, 22, 24, 1.8);
-  warm.position.set(-4, -1, -3); scene.add(warm);
-
-  /* ---------- 程序化建模:身体 + 左右翅(铰链在原点) ---------- */
-  const N = 260;
-  const bodyGeo = new THREE.CapsuleGeometry(0.022, 0.16, 3, 6);
-  bodyGeo.rotateX(Math.PI/2);
-  const wingGeo = new THREE.PlaneGeometry(0.42, 0.3);
-  wingGeo.translate(0.24, 0, 0);
-  wingGeo.rotateX(-Math.PI/2);
-  const wingRGeo = wingGeo.clone();
-  wingRGeo.scale(-1, 1, 1);
-
-  const matWing = new THREE.MeshStandardMaterial({ color:0xdfe8f2, roughness:0.5, metalness:0.15, side:THREE.DoubleSide, emissive:0x0a1626, emissiveIntensity:0.6 });
-  const matBody = new THREE.MeshStandardMaterial({ color:0x1a2030, roughness:0.4, metalness:0.5 });
-
-  const bodies = new THREE.InstancedMesh(bodyGeo, matBody, N);
-  const wingsL = new THREE.InstancedMesh(wingGeo, matWing, N);
-  const wingsR = new THREE.InstancedMesh(wingRGeo, matWing, N);
-  scene.add(bodies, wingsL, wingsR);
-
-  /* ---------- 每只蝴蝶的个性 ---------- */
-  const P = [];
-  for(let i = 0; i < N; i++){
-    P.push({
-      r: 1.6 + Math.random()*3.6,
-      speed: (0.12 + Math.random()*0.3) * (Math.random() < 0.5 ? 1 : -1),
-      phase: Math.random()*Math.PI*2,
-      yBase: -1.2 + Math.random()*3.2,
-      yAmp: 0.25 + Math.random()*0.6,
-      size: 0.7 + Math.random()*0.9,
-      flap: 9 + Math.random()*8,
-      tilt: (Math.random()-0.5)*0.5
-    });
-  }
-
-  const dummy = new THREE.Object3D();
-  const qYaw = new THREE.Quaternion(), qRoll = new THREE.Quaternion(), qFlap = new THREE.Quaternion();
-  const AXIS_Y = new THREE.Vector3(0,1,0), AXIS_Z = new THREE.Vector3(0,0,1);
-  const mWing = new THREE.Matrix4();
-
-  function place(t){
-    for(let i = 0; i < N; i++){
-      const p = P[i];
-      const a = t * p.speed + p.phase;
-      const r = p.r * (1 + 0.14*Math.sin(t*0.6 + p.phase*2.3));
-      const x = Math.cos(a) * r;
-      const z = Math.sin(a) * r * 0.82;
-      const y = p.yBase + Math.sin(t*1.25 + p.phase) * p.yAmp + Math.sin(a*3.0)*0.12;
-      dummy.position.set(x, y, z);
-      qYaw.setFromAxisAngle(AXIS_Y, -a + Math.PI/2);
-      qRoll.setFromAxisAngle(AXIS_Z, Math.sin(t*1.1 + p.phase)*0.35 + p.tilt*0.4);
-      dummy.quaternion.copy(qYaw).multiply(qRoll);
-      dummy.scale.setScalar(p.size);
-      dummy.updateMatrix();
-      bodies.setMatrixAt(i, dummy.matrix);
-      const flap = Math.sin(t*p.flap + p.phase*5) * 1.05 - 0.1;
-      qFlap.setFromAxisAngle(AXIS_Z, flap);
-      mWing.copy(dummy.matrix).multiply(new THREE.Matrix4().makeRotationFromQuaternion(qFlap));
-      wingsL.setMatrixAt(i, mWing);
-      qFlap.setFromAxisAngle(AXIS_Z, -flap);
-      mWing.copy(dummy.matrix).multiply(new THREE.Matrix4().makeRotationFromQuaternion(qFlap));
-      wingsR.setMatrixAt(i, mWing);
-    }
-    bodies.instanceMatrix.needsUpdate = true;
-    wingsL.instanceMatrix.needsUpdate = true;
-    wingsR.instanceMatrix.needsUpdate = true;
-  }
-
-  /* ---------- 相机漫游(自动 + 拖拽 + 缩放) ---------- */
-  let yaw = 0.6, pitch = 0.22, dist = 7.5, tYaw = yaw, tPitch = pitch, tDist = dist;
-  let dragging = false, px = 0, py = 0;
-  canvas.addEventListener("pointerdown", function(e){ dragging = true; px = e.clientX; py = e.clientY; });
-  addEventListener("pointermove", function(e){
-    if(!dragging) return;
-    tYaw += (e.clientX - px) * 0.005;
-    tPitch = Math.max(-0.5, Math.min(1.1, tPitch + (e.clientY - py) * 0.004));
-    px = e.clientX; py = e.clientY;
-  });
-  addEventListener("pointerup", function(){ dragging = false; });
-  addEventListener("wheel", function(e){ tDist = Math.max(3.2, Math.min(14, tDist + e.deltaY * 0.004)); }, { passive:true });
-
-  /* ---------- 时间冻结(时间切片) ---------- */
-  let frozen = false, timeScale = 1, simT = 0, last = performance.now();
-  function toggleFreeze(){
-    frozen = !frozen;
-    document.body.classList.toggle("frozen", frozen);
-    $("freezeBtn").textContent = frozen ? "▶ 时间流动" : "⏸ 冻结时间";
-    $("state").textContent = frozen ? "FROZEN" : "";
-  }
-  addEventListener("keydown", function(e){ if(e.code === "Space"){ e.preventDefault(); toggleFreeze(); } });
-  canvas.addEventListener("dblclick", toggleFreeze);
-  $("freezeBtn").addEventListener("click", toggleFreeze);
-
-  addEventListener("resize", function(){
-    cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-  });
-
-  /* ---------- 主循环 ---------- */
-  let frames = 0, fpsT = performance.now();
-  (function loop(now){
+  const c = document.getElementById("stars");
+  const r = new THREE.WebGLRenderer({ canvas:c, antialias:true, alpha:true });
+  r.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const s = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 60); cam.position.z = 12;
+  const pos = new Float32Array(700*3);
+  for(let i = 0; i < 700; i++){ pos[i*3]=(Math.random()-0.5)*36; pos[i*3+1]=(Math.random()-0.5)*22; pos[i*3+2]=(Math.random()-0.5)*14; }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos,3));
+  s.add(new THREE.Points(g, new THREE.PointsMaterial({ color:0x9fc2ff, size:0.055, transparent:true, opacity:0.7 })));
+  function on(){ r.setSize(innerWidth, innerHeight); cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix(); }
+  addEventListener("resize", on); on();
+  let mx = 0, my = 0;
+  addEventListener("pointermove", e=>{ mx = (e.clientX/innerWidth-0.5); my = (e.clientY/innerHeight-0.5); });
+  (function loop(t){
     requestAnimationFrame(loop);
-    const dt = Math.min((now - last)/1000, 0.05); last = now;
-    timeScale += ((frozen ? 0 : 1) - timeScale) * Math.min(1, dt*3.2);
-    simT += dt * timeScale;
-    place(simT);
-    yaw += (tYaw - yaw)*0.06; pitch += (tPitch - pitch)*0.06; dist += (tDist - dist)*0.08;
-    if(!dragging) tYaw += dt * 0.05;
-    cam.position.set(Math.cos(yaw)*Math.cos(pitch)*dist, Math.sin(pitch)*dist + 0.6, Math.sin(yaw)*Math.cos(pitch)*dist);
-    cam.lookAt(0, 0.2, 0);
-    rim.intensity = 60 + (frozen ? 55 : 0) * (1 - Math.abs(timeScale - (frozen?0:1)));
-    renderer.render(scene, cam);
-    frames++;
-    if(now - fpsT > 1000){ $("state").textContent = frames + " fps · " + N + " 只"; frames = 0; fpsT = now; }
-  })(last);
-
-  $("loader").classList.add("hide");
-}catch(err){
-  loadTxt.innerHTML = "three.js 加载失败:" + (err && err.message || err) +
-    "<br><span style='font-size:12px;color:#667'>请检查网络(CDN 回退已尝试),或用本地服务器访问本页</span>";
-  document.querySelector("#loader .ring").style.display = "none";
+    r.render(s, cam);
+    c.style.transform = "translate(" + (mx*-14) + "px," + (my*-10) + "px)";
+  })(0);
 }
+boot();
+/* 气泡鼠标斥力(轻量视差) */
+const field = document.getElementById("field");
+field.addEventListener("pointermove", function(e){
+  const bs = field.querySelectorAll(".glass-bubble");
+  bs.forEach(function(b){
+    const r = b.getBoundingClientRect();
+    const dx = e.clientX-(r.left+r.width/2), dy = e.clientY-(r.top+r.height/2);
+    const d = Math.hypot(dx,dy);
+    if(d < 240){ b.style.translate = (dx/d*-22)+"px "+(dy/d*-16)+"px"; }
+    else b.style.translate = "0px 0px";
+  });
+});
+field.addEventListener("pointerleave", function(){
+  field.querySelectorAll(".glass-bubble").forEach(b=> b.style.translate = "0px 0px");
+});
 </script>
 </body>
 </html>

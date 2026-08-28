@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!-- 个人作品 · 风吹麦浪·鱼遨游:instanced 麦穗顶点着色器风场 + boids 鱼群半空游弋 -->
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风吹麦浪 · 鱼遨游 · 个人作品台</title></head>
+<body>
+<canvas id="stage"></canvas>
+<div class="hud hud-top"><a href="../14_个人作品台.html">‹ 作品台</a>
+<span class="hud-title">风吹麦浪 · 鱼遨游<small>INSTANCED WHEAT · VERTEX WIND · BOIDS FISH</small></span><span id="state"></span>
+<button id="windBtn">🌬 风力 弱</button></div>
+<div class="hud hud-bottom">拖动环视 · 滚轮缩放 · 麦浪起伏,鱼群半空洄游 —— 风过处,金色成浪</div>
+<div id="loader"><div class="ring"></div><div id="loadTxt">加载中…</div></div>
+<script src="../../_assets/orbit-kit.js"></script>
+<script type="module">
+const K = window.OrbitKit; K.hud();
+const $ = (id)=>document.getElementById(id);
+try{
+  const THREE = await K.loadThree($("loadTxt"));
+  const renderer = new THREE.WebGLRenderer({ canvas:$("stage"), antialias:true });
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0d14);
+  scene.fog = new THREE.FogExp2(0x0a0d14, 0.028);
+  const cam = new THREE.PerspectiveCamera(55, 1, 0.1, 300);
+  K.fit(renderer, cam);
+  scene.add(new THREE.AmbientLight(0x445577, 1.0));
+  const moon = new THREE.DirectionalLight(0xcfe0ff, 1.6); moon.position.set(-6,10,-4); scene.add(moon);
+  const gold = new THREE.PointLight(0xffb85c, 120, 60, 1.6); gold.position.set(0,2,6); scene.add(gold);
+
+  /* 渐变天穹 */
+  const skyGeo = new THREE.SphereGeometry(160, 24, 16);
+  const skyMat = new THREE.ShaderMaterial({ side:THREE.BackSide,
+    uniforms:{},
+    vertexShader:"varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
+    fragmentShader:"varying vec3 vP;void main(){float h=normalize(vP).y;vec3 top=vec3(.02,.03,.08);vec3 hor=vec3(.12,.09,.07);vec3 c=mix(hor,top,smoothstep(-.05,.5,h));float st=step(.9985,fract(sin(dot(floor(normalize(vP).xz*140.),vec2(12.9898,78.233)))*43758.5453));c+=vec3(st)*smoothstep(.05,.3,h)*.6;gl_FragColor=vec4(c,1.);}"
+  });
+  scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+  /* 麦田:instanced 麦穗,顶点着色器按世界 x/z + time 摆动(风场) */
+  const FIELD = 46, N_W = 4200;
+  const bladeGeo = new THREE.ConeGeometry(0.022, 0.85, 3, 4, true);
+  bladeGeo.translate(0, 0.42, 0);
+  const bladeMat = new THREE.ShaderMaterial({
+    side:THREE.DoubleSide,
+    uniforms:{ uT:{ value:0 }, uWind:{ value:1 } },
+    vertexShader:
+      "uniform float uT;uniform float uWind;varying float vH;\n"+
+      "void main(){\n"+
+      " vec4 wp = instanceMatrix * vec4(position,1.);\n"+
+      " vH = position.y / 0.85;\n"+   /* 0根~1穗尖 */
+      " float sway = sin(uT*1.6 + wp.x*0.55 + wp.z*0.35) * 0.28 + sin(uT*3.1 + wp.z*0.9)*0.06;\n"+
+      " wp.x += sway * vH * vH * uWind;\n"+
+      " wp.z += sway * vH * uWind * 0.4;\n"+
+      " gl_Position = projectionMatrix * modelViewMatrix * wp;\n"+
+      "}",
+    fragmentShader:
+      "varying float vH;void main(){\n"+
+      " vec3 root=vec3(.16,.10,.04);vec3 tip=vec3(.95,.72,.28);\n"+
+      " vec3 c=mix(root,tip,pow(vH,1.4));\n"+
+      " c+=vec3(.9,.6,.2)*pow(vH,3.)*.35;\n"+
+      " gl_FragColor=vec4(c,1.);\n"+
+      "}"
+  });
+  const wheat = new THREE.InstancedMesh(bladeGeo, bladeMat, N_W);
+  const dummy = new THREE.Object3D();
+  for(let i = 0; i < N_W; i++){
+    dummy.position.set((Math.random()-0.5)*FIELD, 0, (Math.random()-0.5)*FIELD*0.7 - 4);
+    dummy.rotation.set((Math.random()-0.5)*0.14, Math.random()*Math.PI, (Math.random()-0.5)*0.14);
+    dummy.scale.setScalar(0.8 + Math.random()*0.9);
+    dummy.updateMatrix();
+    wheat.setMatrixAt(i, dummy.matrix);
+  }
+  scene.add(wheat);
+
+  /* 地面微光 */
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(FIELD*1.4, FIELD), new THREE.MeshStandardMaterial({ color:0x0d0b08, roughness:1 }));
+  ground.rotation.x = -Math.PI/2; ground.position.y = -0.02; ground.position.z = -4; scene.add(ground);
+
+  /* boids 鱼群(半空洄游):简化三规则(凝聚/对齐/分离)+ 边界回转 */
+  const NF = 90;
+  const fishGeo = new THREE.ConeGeometry(0.09, 0.42, 4); fishGeo.rotateX(Math.PI/2);
+  const fishMat = new THREE.MeshStandardMaterial({ color:0x9fd8ff, roughness:0.3, metalness:0.4, emissive:0x1a4a66, emissiveIntensity:0.8 });
+  const fishes = new THREE.InstancedMesh(fishGeo, fishMat, NF);
+  scene.add(fishes);
+  const F = [];
+  for(let i = 0; i < NF; i++){
+    F.push({ p:new THREE.Vector3((Math.random()-0.5)*16, 3.2+Math.random()*2.4, (Math.random()-0.5)*10-4),
+             v:new THREE.Vector3((Math.random()-0.5), 0, (Math.random()-0.5)).multiplyScalar(1.2) });
+  }
+  const acc = new THREE.Vector3(), tmp = new THREE.Vector3();
+  function boids(dt){
+    for(let i = 0; i < NF; i++){
+      const f = F[i];
+      acc.set(0,0,0);
+      let cn = 0; const c = new THREE.Vector3(), al = new THREE.Vector3(), sep = new THREE.Vector3();
+      for(let j = 0; j < NF; j++){
+        if(j === i) continue;
+        tmp.subVectors(F[j].p, f.p);
+        const d = tmp.length();
+        if(d < 2.2 && d > 0.001){ c.add(F[j].p); al.add(F[j].v); cn++; }
+        if(d < 0.7){ sep.sub(tmp.clone().multiplyScalar(1/(d*d+0.01))); }
+      }
+      if(cn){
+        c.multiplyScalar(1/cn).sub(f.p).multiplyScalar(0.55);
+        al.multiplyScalar(1/cn).sub(f.v).multiplyScalar(0.85);
+        acc.add(c).add(al);
+      }
+      acc.add(sep.multiplyScalar(2.4));
+      /* 软边界:离开空域则向中心回拉,并限制离麦穗尖的高度 */
+      if(f.p.length() > 11) acc.add(f.p.clone().multiplyScalar(-0.6));
+      if(f.p.y < 2.1) acc.y += 2.2; if(f.p.y > 6.5) acc.y -= 2.2;
+      f.v.add(acc.multiplyScalar(dt*1.4));
+      const sp = f.v.length();
+      if(sp > 2.6) f.v.multiplyScalar(2.6/sp);
+      if(sp < 0.9) f.v.multiplyScalar(0.9/(sp+0.001));
+      f.p.addScaledVector(f.v, dt);
+      dummy.position.copy(f.p);
+      dummy.lookAt(f.p.clone().add(f.v));
+      dummy.rotateX(Math.PI/2);
+      dummy.scale.setScalar(0.8);
+      dummy.updateMatrix();
+      fishes.setMatrixAt(i, dummy.matrix);
+    }
+    fishes.instanceMatrix.needsUpdate = true;
+  }
+
+  /* 相机 */
+  let yaw = 0, pitch = 0.12, dist = 14, tY = 0, tP = 0.12, tD = 14, drag = false, px = 0, py = 0;
+  $("stage").addEventListener("pointerdown", e=>{ drag = true; px = e.clientX; py = e.clientY; });
+  addEventListener("pointermove", e=>{ if(!drag) return; tY += (e.clientX-px)*0.004; tP = Math.max(-0.1, Math.min(0.9, tP+(e.clientY-py)*0.003)); px = e.clientX; py = e.clientY; });
+  addEventListener("pointerup", ()=> drag = false);
+  addEventListener("wheel", e=>{ tD = Math.max(5, Math.min(26, tD + e.deltaY*0.01)); }, { passive:true });
+
+  let windLv = 1;
+  $("windBtn").onclick = function(){
+    windLv = windLv === 1 ? 2 : (windLv === 2 ? 0.35 : 1);
+    bladeMat.uniforms.uWind.value = windLv;
+    $("windBtn").textContent = "🌬 风力 " + (windLv === 1 ? "中" : windLv === 2 ? "强" : "弱");
+  };
+
+  let last = performance.now(), fr = 0, ft = last;
+  (function loop(now){
+    requestAnimationFrame(loop);
+    const dt = Math.min((now-last)/1000, 0.05); last = now;
+    bladeMat.uniforms.uT.value += dt;
+    boids(dt);
+    yaw += (tY-yaw)*0.07; pitch += (tP-pitch)*0.07; dist += (tD-dist)*0.08;
+    if(!drag) tY += dt*0.035;
+    cam.position.set(Math.cos(yaw)*Math.cos(pitch)*dist, 3.4 + Math.sin(pitch)*dist, Math.sin(yaw)*Math.cos(pitch)*dist);
+    cam.lookAt(0, 2.6, -4);
+    renderer.render(scene, cam);
+    fr++;
+    if(now-ft > 1000){ $("state").textContent = fr + " fps · " + N_W + " 麦穗 · " + NF + " 鱼"; fr = 0; ft = now; }
+  })(last);
+  $("loader").classList.add("hide");
+}catch(err){
+  $("loadTxt").innerHTML = "three.js 加载失败:" + (err&&err.message||err) + "<br>请用本地服务器访问";
+}
+</script></body></html>
