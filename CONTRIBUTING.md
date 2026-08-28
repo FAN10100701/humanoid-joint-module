@@ -31,12 +31,29 @@
    - 步骤流 `.step-flow > .step-item`
    - 自测题 `.quiz`(每页建议 3~5 题,`data-answer` 写正确选项)
    - 每页必须带「🎯 本页学习目标」与小结、思考题
-4. **同步登记** 4 处(漏一处会被作者退回):
-   - `index.html` 对应板块的卡片网格
+4. **同步登记** 五件套 + CHANGELOG(漏一处会被作者退回):
+   - `index.html` 对应板块的卡片网格 + `SITE_SECTIONS` ids + 前后页翻页链
    - `_assets/search-index.js` 增加一条索引(`t/u/s/d/k` 五个字段)
+   - `_assets/page-meta.js` 增加该 pageId 的学习目标/用时
    - `sitemap.xml` 增加 `<url>` 条目
+   - `08_学习工具/06_学习地图.html` 的 `PAGES` 增加节点
    - `CHANGELOG.md` 顶部登记本期更新
 5. **自查**:页面标题 / 链接 / 手机端显示 / 深浅两套主题都要正常
+
+## 题库与数据文件维护约定(2026-08-28)
+
+站内题目数据采用「数据文件 + 展示页」分离结构,改题必须**两处同步**:
+
+| 数据文件 | 展示页 | 同步规则 |
+| --- | --- | --- |
+| `_assets/quiz-bank.js`(60 题) | `08_学习工具/03_自测题库.html` | 题数与内容一致(CI 强制校验) |
+| `_assets/ib-data-a.js`(控制类 6 学科) | `08_学习工具/11_保研复试面试题库.html` | 字段 `id/s/lv/tags/q/a/svg?/formula?/code?/a2?/follow/links`;改题两处一起 |
+| `_assets/ib-data-b.js`(硬件软件 7 学科) | 同上 | 同上 |
+| `_assets/quest-data.js`(闯关 5 大陆 21 关) | `08_学习工具/12_闯关学习.html` | 关卡 `qs` 引用三种题源:`q:自建题 / qb:quiz-bank题号 / ref:面试题卡ID`;改题源时确认被引用关卡仍可及格 |
+
+## AI API Key 纪律(2026-08-28)
+
+「AI 答疑助手」由用户在**本机浏览器**填入自己的 DeepSeek/豆包 API Key(仅存 localStorage,见 `_assets/ai-assistant.js`)。贡献者**严禁**把任何真实 Key 写进代码、文档、Issue、PR、截图或 commit;示例一律用 `sk-xxxx`(占位)。发现泄漏:先到服务商控制台**作废该 Key**,再报告(报告里不要贴 Key 内容)。
 
 ## 修改共享文件(重要)
 

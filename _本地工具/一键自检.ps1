@@ -120,6 +120,11 @@ $idxHas = $index -match [regex]::Escape($ver)
 $changelog = [IO.File]::ReadAllText((Join-Path $root "CHANGELOG.md"), [Text.Encoding]::UTF8)
 $clHas = $changelog -match [regex]::Escape(($ver -split '\(')[0])
 Check "Version single-source" ($idxHas -and $clHas) ($ver + " in index=" + $idxHas + " changelog=" + $clHas)
+# sw.js CACHE name must follow site version (e.g. V2.0.9 -> hrl-site-v2.0.9)
+$swContent = [IO.File]::ReadAllText((Join-Path $root "sw.js"), [Text.Encoding]::UTF8)
+$swCache = [regex]::Match($swContent, 'var\s+CACHE\s*=\s*"hrl-site-v([^"]+)"').Groups[1].Value
+$verNum = ($ver -split '\(')[0] -replace '^V',''
+Check "sw.js CACHE follows version" ($swCache -eq $verNum) ("cache=" + $swCache + " ver=" + $verNum)
 
 # ---- 6) quiz/glossary data sync (data files vs display pages) ----
 # NOTE: no Chinese literals here - PS 5.1 reads BOM-less UTF-8 scripts as GBK and mangles them
@@ -155,6 +160,34 @@ $secIds = [regex]::Matches($secContent, '"(\d\d-\d\d)"') | ForEach-Object { $_.G
 $secOnly = $secIds | Where-Object { $_ -notin $metaKeys }
 Check "SITE_SECTIONS vs page-meta" ($secOnly.Count -eq 0) (("sections=" + $secIds.Count) + " meta=" + $metaKeys.Count)
 $secOnly | Select-Object -First 8 | ForEach-Object { Write-Host "   SECTION-ONLY: $_" }
+
+# ---- 8) interview/quest data files vs display pages (V2.0.9) ----
+# item ids look like 'zkl-01' (contain a dash); subject ids like 'zkl' do not.
+# NOTE: no Chinese literals in this .ps1 (PS 5.1 GBK pitfall) - match pages via $pages regex
+$ibA = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-a.js"), [Text.Encoding]::UTF8)
+$ibB = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-b.js"), [Text.Encoding]::UTF8)
+$ibCount = ([regex]::Matches($ibA, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibB, "\{ id:'[a-z]+-\d+'")).Count
+$ibPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\11_[^\\]*\.html$' } | Select-Object -First 1
+$ibPageHas = $false
+$ibDecl = "?"
+if($ibPage){
+  $ibHtml = [IO.File]::ReadAllText($ibPage.FullName, [Text.Encoding]::UTF8)
+  $m = [regex]::Match($ibHtml, '(\d{2,3})\D{0,4}?\u9898')   # NNN + CJK char for "ti"
+  if(-not $m.Success){ $m = [regex]::Match($ibHtml, '\x9898|(\d{2,3})') }
+  if($m.Success -and $m.Groups[1].Value){ $ibDecl = $m.Groups[1].Value }
+  $ibPageHas = ($ibDecl -eq [string]$ibCount)
+}
+Check "Interview bank sync" $ibPageHas ("ib-items=" + $ibCount + " page-declared=" + $ibDecl)
+$qst = [IO.File]::ReadAllText((Join-Path $root "_assets\quest-data.js"), [Text.Encoding]::UTF8)
+$lvCount = [regex]::Matches($qst, "\{ id:'[A-Z][A-Z0-9]*',\s*w:").Count
+$qPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\12_[^\\]*\.html$' } | Select-Object -First 1
+$qPageHas = $false
+if($qPage){
+  $qHtml = [IO.File]::ReadAllText($qPage.FullName, [Text.Encoding]::UTF8)
+  # CJK char for "guan" after the count, e.g. 21 + guan
+  $qPageHas = $qHtml -match (([string]$lvCount) + "\s*\u5173")
+}
+Check "Quest levels sync" $qPageHas ("levels=" + $lvCount + " page-mentions-match=" + $qPageHas)
 
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }

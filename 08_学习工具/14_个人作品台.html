@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 个人作品台(vibecoding 效果展台)
+  结构遵循 _assets/页面模板.html;4 个零依赖手写 WebGL/GLSL / Canvas2D demo
+  定位: 作品展示 + shader 教学(画布 + 参数滑杆 + 源码讲解三合一)
+  纪律: 不引外部库、与 00_3D解剖 three.js 体系完全隔离;视口外自动暂停
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 个人作品台(vibecoding / GLSL 效果展台)</title>
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem("site-theme") || "light";
+    document.documentElement.setAttribute("data-theme-early", t === "dark" ? "dark" : "light");
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+/* ---------- 页面级样式(前缀 pf-) ---------- */
+.pf-note{font-size:13px;color:#6b7280;margin:6px 0 14px}
+.pf-item{background:rgba(13,17,23,.66);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:18px 18px 14px;margin:18px 0;overflow:hidden}
+.pf-item h3{margin:0 0 4px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pf-item .pf-sub{font-size:12.5px;color:#9aa4b2;margin-bottom:12px;line-height:1.8}
+.pf-item .pf-tag{font-size:10.5px;padding:2px 9px;border-radius:999px;background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-weight:400}
+.pf-canvas-wrap{border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#05070c;line-height:0;position:relative}
+.pf-canvas-wrap canvas{width:100%;display:block;aspect-ratio:16/7;min-height:220px;cursor:crosshair}
+.pf-fps{position:absolute;right:10px;top:8px;font-size:10.5px;color:rgba(255,255,255,.45);font-family:Consolas,monospace;pointer-events:none}
+.pf-ctl{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:12px 2px 2px;font-size:12.5px;color:#9aa4b2}
+.pf-ctl label{display:flex;align-items:center;gap:8px;min-width:200px;flex:1}
+.pf-ctl input[type=range]{flex:1;accent-color:#3b82f6;min-width:90px}
+.pf-ctl .pf-val{font-family:Consolas,monospace;color:#9ecbff;min-width:34px;text-align:right}
+.pf-item details.faq{background:rgba(22,27,34,.6)}
+.pf-item details.faq .faq-a{color:#8ea0b5}
+.pf-item details.faq pre{margin:10px 0;font-size:12px;line-height:1.75}
+body:not([data-theme]),body[data-theme="light"] .pf-item{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 10px 30px rgba(50,80,140,.08)}
+body:not([data-theme]),body[data-theme="light"] .pf-item h3{color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .pf-item .pf-sub{color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .pf-item details.faq{background:rgba(37,99,235,.04)}
+body:not([data-theme]),body[data-theme="light"] .pf-canvas-wrap{border-color:rgba(60,80,120,.18)}
+@media print{.pf-ctl{display:none}.pf-item canvas{max-height:200px}}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-14",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "个人作品台" } ],
+    prev: { t: "AI 答疑助手", u: "13_AI答疑助手.html" },
+    next: { t: "返回首页", u: "../index.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🎮 个人作品台</h1>
+    <div class="sub">vibecoding 前端效果展台:零依赖手写 WebGL / GLSL Shader / Canvas 粒子<br>
+    每个作品 = 效果画布 + 可调参数 + 源码讲解,既是展示也是 shader 入门教学</div>
+    <div class="tags">
+      <span class="tag">WebGL / GLSL</span><span class="tag">零依赖</span><span class="tag">Raymarching</span><span class="tag">粒子系统</span><span class="tag">源码可读</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 看懂 4 类经典实时图形效果的实现思路:程序化噪声、Raymarching、粒子流场、极光 fbm<br>
+    2. 拖动参数感受 uniform 如何驱动画面,点开源码对照 GLSL 三件套(片元着色器/采样/混色)<br>
+    3. 理解"零依赖"的意义:一个 canvas + 一段 GLSL 就是一整个宇宙<br>
+    <b>建议用时:</b>15~25 分钟(拖参数比看文字有用)
+  </div>
+
+  <p class="pf-note">🔧 全部效果为零依赖手写实现(WebGL1 + GLSL ES 1.0 / Canvas2D),不引 three.js 等任何库——为的是展示"效果的本质";画布滚出视野自动暂停省电。提示:深色主题下观感最佳。</p>
+
+  <!-- ================= ① 雨柱流场 ================= -->
+  <div class="pf-item">
+    <h3>🌧️ 电磁雨柱 <span class="pf-tag">GLSL · fbm 噪声</span></h3>
+    <div class="pf-sub">灵感来自"如果降雨数据变成雨"。把关节电机的三相电流想象成三列雨柱:fbm 分形噪声沿垂直方向平流,幂函数锐化出"一柱一柱"的雨丝,底部辉光模拟地面溅射。核心只有一句话:<b>亮度 = pow(噪声, 3)</b>——高次幂把柔和噪声削成锐利雨丝。</div>
+    <div class="pf-canvas-wrap"><canvas id="pfC1" width="960" height="420"></canvas><span class="pf-fps" id="pfF1"></span></div>
+    <div class="pf-ctl">
+      <label>雨强 <input type="range" id="p1a" min="0.4" max="2.4" step="0.05" value="1.2"><span class="pf-val" id="p1av">1.20</span></label>
+      <label>流速 <input type="range" id="p1b" min="0.2" max="3" step="0.05" value="1.2"><span class="pf-val" id="p1bv">1.20</span></label>
+    </div>
+    <details class="faq"><summary>📜 源码讲解:fbm 噪声如何变成雨柱(核心 20 行)</summary><div class="faq-a">
+<pre>// 价值噪声 → 5 层分形叠加(fbm):高频细节 + 低频轮廓
+float fbm(vec2 p){ float v=0., a=.5;
+  for(int i=0;i&lt;5;i++){ v += a*noise(p); p*=2.03; a*=.5; }
+  return v; }
+void main(){
+  vec2 uv = gl_FragCoord.xy/uRes;
+  float col = 0.;
+  for(int i=0;i&lt;3;i++){                    // 三列雨柱(对应三相电流)
+    float x = uv.x*(1.+float(i)*.4) + float(i)*1.7;
+    float n = fbm(vec2(x*8., uT*uSpeed*.3 - uv.y*2. + float(i)*9.));
+    col += pow(n, 3.) * (1.-uv.y) * smoothstep(0.,.15,uv.y);
+  }
+  vec3 c = vec3(.02,.03,.05)
+         + vec3(.45,.6,.9)*col*uIntensity      // 冷色主体
+         + vec3(.2,.8,.9)*pow(col*uIntensity,3.)*.6; // 高光溅射
+  gl_FragColor = vec4(c, 1.);
+}</pre>
+        <b>要点:</b>①噪声输入的 y 分量减去 <code>uT</code> → 图案向下平流;②<code>pow(n,3.)</code> 拉开明暗对比,只有噪声峰值存活,形成"雨丝";③三层不同缩放/偏移的雨柱叠加出纵深。
+      </div></details>
+  </div>
+
+  <!-- ================= ② Raymarching 光影走廊 ================= -->
+  <div class="pf-item">
+    <h3>🌌 光影走廊 <span class="pf-tag">GLSL · Raymarching + SDF</span></h3>
+    <div class="pf-sub">致敬"时间切片"那条光影隧道。不用任何模型:每帧从相机发射 64 条光线,用<b>有向距离场(SDF)</b>描述一串无穷循环的霓虹圆环,光线步进靠近表面时累积辉光(<b>体积光</b>)。<b>整个世界只有一段距离函数</b>——这就是 Raymarching 的浪漫。</div>
+    <div class="pf-canvas-wrap"><canvas id="pfC2" width="960" height="420"></canvas><span class="pf-fps" id="pfF2"></span></div>
+    <div class="pf-ctl">
+      <label>环密度 <input type="range" id="p2a" min="2" max="8" step="0.1" value="4"><span class="pf-val" id="p2av">4.0</span></label>
+      <label>飞行速度 <input type="range" id="p2b" min="0.2" max="3" step="0.05" value="1"><span class="pf-val" id="p2bv">1.00</span></label>
+    </div>
+    <details class="faq"><summary>📜 源码讲解:SDF 圆环 + 光线步进辉光(核心 22 行)</summary><div class="faq-a">
+<pre>// 圆环 SDF:到"半径 1.4 的圆环、管径 0.06"的有向距离
+float sdTorus(vec3 p, vec2 t){
+  vec2 q = vec2(length(p.xz)-t.x, p.y);
+  return length(q)-t.y;
+}
+float map(vec3 p){
+  float d = 1e9;
+  for(int i=0;i&lt;4;i++){
+    vec3 q = p;
+    q.z += uT*uSpeed*2. + float(i)*7.2/uDensity; // 沿 z 排开并飞向相机
+    q.z = mod(q.z, 7.2) - 3.6;                   // 无限循环走廊
+    d = min(d, sdTorus(q, vec2(1.4,.06)));
+  }
+  return d;
+}
+void main(){
+  vec3 ro = vec3(0.,0.,-3.), rd = normalize(vec3(uv,.9)); // 相机+视线
+  float glow = 0.;
+  for(int i=0;i&lt;64;i++){
+    vec3 p = ro + rd*t;
+    float d = map(p);
+    glow += .02/(1. + d*d*40.);   // 越近越亮 → 体积辉光
+    t += max(d*.8, .01);          // 步进(不精确命中,只为发光)
+    if(t&gt;20.) break;
+  }
+  gl_FragColor = vec4(vec3(.1,.5,1.)*glow + vec3(.6,.2,1.)*glow*glow*2., 1.);
+}</pre>
+        <b>要点:</b>①<code>mod(q.z, 7.2)</code> 把空间折叠成无限循环;②辉光不是"打光"而是<b>累计 1/d²</b>——距离场天然给出"多接近物体";③蓝紫双色按 glow/glow² 混合出霓虹质感。
+      </div></details>
+  </div>
+
+  <!-- ================= ③ 极光 Plasma ================= -->
+  <div class="pf-item">
+    <h3>🏔️ 极光平原 <span class="pf-tag">GLSL · fbm + 色域映射</span></h3>
+    <div class="pf-sub">三层 fbm 噪声:底层做起伏"雪山剪影",中层做流动极光带(沿 x 弯曲的亮度脊线),顶层做星空。色彩的秘诀是<b>用亮度值在一条"青→紫→品红"渐变带上采样</b>,而不是直接 RGB 调色——这是所有好看 shader 的共同套路。</div>
+    <div class="pf-canvas-wrap"><canvas id="pfC3" width="960" height="420"></canvas><span class="pf-fps" id="pfF3"></span></div>
+    <div class="pf-ctl">
+      <label>极光强度 <input type="range" id="p3a" min="0.3" max="2" step="0.05" value="1"><span class="pf-val" id="p3av">1.00</span></label>
+      <label>流动速度 <input type="range" id="p3b" min="0.1" max="2" step="0.05" value="0.6"><span class="pf-val" id="p3bv">0.60</span></label>
+    </div>
+    <details class="faq"><summary>📜 源码讲解:亮度 → 色带采样(核心 14 行)</summary><div class="faq-a">
+<pre>// 极光带:水平 fbm 曲线 + 垂直衰减
+float band(vec2 uv, float t){
+  float ridge = fbm(vec2(uv.x*2.2, t*.35))*.6 + uv.x*.15;
+  float d = uv.y - (.55 + ridge*.35);          // 距极光脊线的距离
+  return exp(-abs(d)*6.) ;                     // 高斯衰减 → 柔和光带
+}
+vec3 ramp(float v){                            // 亮度 → 色
+  vec3 c = vec3(.0,.35,.3);                    // 青
+  c = mix(c, vec3(.35,.1,.55), smoothstep(.2,.7,v)); // → 紫
+  c = mix(c, vec3(.9,.25,.6), smoothstep(.7,1.,v));  // → 品红
+  return c;
+}
+void main(){
+  float a = band(uv,uT)*uIntensity;
+  float mountain = smoothstep(.32,.28,uv.y + fbm(uv*3.)*.05);
+  vec3 c = ramp(min(a,1.))*a + vec3(.01,.02,.04);
+  c = mix(c, vec3(.005,.008,.015), mountain);  // 雪山剪影盖在最上
+  c += stars(uv);                              // 顶层星点
+  gl_FragColor = vec4(c,1.);
+}</pre>
+        <b>要点:</b>①<code>exp(-|d|·k)</code> 的高斯光带比线性衰减自然得多;②ramp() 三段 mix 是"色域映射"最小实现;③雪山就是一行 <code>smoothstep</code> 阈值——shader 里"画山"只需要一个不等式。
+      </div></details>
+  </div>
+
+  <!-- ================= ④ 相位蝴蝶群 ================= -->
+  <div class="pf-item">
+    <h3>🦋 相位蝴蝶群 <span class="pf-tag">Canvas2D · 500 粒子流场</span></h3>
+    <div class="pf-sub">致敬蝶群时间切片:500 个发光粒子在三角函数流场里游动,拖尾用"半透明黑罩"实现(<b>每帧不完全清屏</b>,旧帧按 8% 衰减)——残影本质是低通滤波。粒子轨迹由一组极简流场方程驱动,鼠标移入画布会产生扰动涡旋。</div>
+    <div class="pf-canvas-wrap"><canvas id="pfC4" width="960" height="420"></canvas><span class="pf-fps" id="pfF4"></span></div>
+    <div class="pf-ctl">
+      <label>流速 <input type="range" id="p4a" min="0.2" max="2.5" step="0.05" value="1"><span class="pf-val" id="p4av">1.00</span></label>
+      <label>残影长度 <input type="range" id="p4b" min="0.02" max="0.3" step="0.01" value="0.08"><span class="pf-val" id="p4bv">0.08</span></label>
+    </div>
+    <details class="faq"><summary>📜 源码讲解:流场 + 残影(核心 16 行)</summary><div class="faq-a">
+<pre>// 每帧:半透明清屏(残影) → 粒子沿流场推进 → 加法混色画点
+ctx.fillStyle = 'rgba(3,5,10,' + fade + ')';   // fade=1-残影长度
+ctx.fillRect(0,0,W,H);
+ctx.globalCompositeOperation = 'lighter';       // 加法发光
+for(var i=0;i&lt;N;i++){
+  var p = P[i];
+  // 极简流场:两套 sin/cos 叠加出"涡旋洋流"
+  var vx = Math.sin(p.y*.008 + t*.6) + Math.cos(p.x*.006 - t*.4);
+  var vy = Math.cos(p.x*.007 - t*.5) - Math.sin(p.y*.005 + t*.3);
+  p.x += vx * speed * 1.6;  p.y += vy * speed * 1.6;
+  // 鼠标扰动:反平方斥力
+  var dx=p.x-mx, dy=p.y-my, d2=dx*dx+dy*dy;
+  if(d2 &lt; 22500){ var f=(150-Math.sqrt(d2))/150; p.x+=dx/d2*f*90; p.y+=dy/d2*f*90; }
+  // 环绕边界
+  if(p.x&lt;0)p.x+=W; if(p.x&gt;W)p.x-=W; if(p.y&lt;0)p.y+=H; if(p.y&gt;H)p.y-=H;
+  ctx.fillStyle = p.c;                       // 每粒一个青-金色相
+  ctx.fillRect(p.x, p.y, 1.6, 1.6);
+}</pre>
+        <b>要点:</b>①残影 = 不清屏 + 低透明度覆盖,一行代码的电影感;②<code>lighter</code> 混色让粒子重叠处自然过曝成白;③流场不需要 Perlin 噪声,两组不同相位的三角函数就够"有机"。
+      </div></details>
+  </div>
+
+  <h2><span class="h2-num">5</span> 工具箱展望:img2threejs 与产品级 3D 页</h2>
+  <p>本页所有效果是"手写 GLSL"路线;另一条路是<b>资产驱动</b>——开源项目 <a href="https://github.com/search?q=img2threejs&type=repositories" target="_blank" rel="noopener">img2threejs(基于参考图生成 Three.js 3D 模型)</a> 代表了"给一张参考图 → 产出可交互 three.js 场景"的工作流,类似小米汽车官网那种产品级光影展示。站内的评估结论:</p>
+  <ul>
+    <li><b>适合</b>:教学 3D 动画的"初版场景搭设"(给一张减速器剖面图 → 自动产出可旋转粗模),再人工精修——能省大量建模时间;</li>
+    <li><b>不适合</b>:直接替代 00_3D解剖 的官方 URDF/STL 精确模型(教学要的是真实尺寸与装配关系);</li>
+    <li><b>下一步</b>:若工具链成熟,优先试点"驱动电路板 3D 交互讲解页"(参考图 → 板卡粗模 → 热点标注)。</li>
+  </ul>
+
+  <div class="box box-tip">
+    <b>📌 本页小结:</b>实时图形效果的配方高度收敛——<b>噪声给形态、距离/流场给运动、亮度采样给颜色、不完全清屏给残影</b>。掌握这四件套,你也能 vibecoding 出自己的第一个 shader 作品。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>1. 雨柱 demo 里把 pow(n,3) 改成 pow(n,8) 画面会怎么变?2. 光影走廊的辉光为什么用 1/d² 而不是 1/d?3. 试试把蝴蝶群的流场系数改小 10 倍,粒子会呈现什么形态?
+  </div>
+
+  <h2><span class="h2-num">6</span> 参考与延伸</h2>
+  <ul>
+    <li><a href="https://www.shadertoy.com" target="_blank" rel="noopener">Shadertoy</a> —— GLSL 效果的全世界(本页三个 shader 的练笔场)</li>
+    <li><a href="https://thebookofshaders.com/?lan=ch" target="_blank" rel="noopener">The Book of Shaders(中文版)</a> —— 片元着色器最佳入门</li>
+    <li><a href="https://github.com/mrdoob/three.js" target="_blank" rel="noopener">three.js</a> / <a href="https://threejs.org" target="_blank" rel="noopener">官方示例</a> —— 需要场景图/相机/模型时的下一站(本站 00_3D解剖 即基于它)</li>
+    <li><a href="https://developer.mozilla.org/zh-CN/docs/Web/API/WebGL_API" target="_blank" rel="noopener">MDN WebGL 教程</a> —— 本页使用的原生 API 文档</li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+<script>
+/* ============================================================
+   作品台引擎(ES5,零依赖):共享 WebGL 样板 + 3 个片元 shader + 1 个 Canvas2D 粒子
+   纪律:视口外暂停(IntersectionObserver)、prefers-reduced-motion 单帧渲染
+============================================================ */
+(function(){
+  "use strict";
+  var REDUCED = false;
+  try{ REDUCED = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+
+  /* ---------- WebGL 样板 ---------- */
+  function glCanvas(canvas, fragSrc, uniforms){
+    var gl = canvas.getContext("webgl", { antialias:false, alpha:false }) ||
+             canvas.getContext("experimental-webgl", { antialias:false, alpha:false });
+    if(!gl) return null;
+    var VS = "attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.,1.);}";
+    function sh(type, src){
+      var s = gl.createShader(type);
+      gl.shaderSource(s, src); gl.compileShader(s);
+      if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+        console.warn("[作品台] shader 编译失败:", gl.getShaderInfoLog(s));
+        return null;
+      }
+      return s;
+    }
+    var vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, fragSrc);
+    if(!vs || !fs) return null;
+    var prog = gl.createProgram();
+    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
+      console.warn("[作品台] program 链接失败:", gl.getProgramInfoLog(prog));
+      return null;
+    }
+    gl.useProgram(prog);
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+    var loc = gl.getAttribLocation(prog, "aPos");
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    var U = {};
+    var names = ["uRes","uT"].concat(uniforms || []);
+    for(var i = 0; i < names.length; i++) U[names[i]] = gl.getUniformLocation(prog, names[i]);
+    return {
+      gl: gl, U: U,
+      resize: function(){
+        var dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+        var w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+        if(canvas.width !== w || canvas.height !== h){ canvas.width = w; canvas.height = h; }
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.useProgram(prog);
+        gl.uniform2f(U.uRes, canvas.width, canvas.height);
+      },
+      draw: function(t){
+        gl.useProgram(prog);
+        gl.uniform1f(U.uT, t);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+    };
+  }
+
+  /* ---------- 三个 GLSL 片元着色器 ---------- */
+  var F_NOISE =
+    "precision mediump float;\n" +
+    "float hash(float n){return fract(sin(n)*43758.5453123);}\n" +
+    "float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);\n" +
+    " float a=hash(i.x+i.y*57.),b=hash(i.x+1.+i.y*57.),c=hash(i.x+(i.y+1.)*57.),d=hash(i.x+1.+(i.y+1.)*57.);\n" +
+    " return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}\n" +
+    "float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.03;a*=.5;}return v;}\n";
+
+  var F_RAIN = F_NOISE +
+    "uniform vec2 uRes;uniform float uT;uniform float uA;uniform float uB;\n" +
+    "void main(){\n" +
+    " vec2 uv=gl_FragCoord.xy/uRes; float col=0.;\n" +
+    " for(int i=0;i<3;i++){\n" +
+    "  float fi=float(i);\n" +
+    "  float x=uv.x*(1.+fi*.4)+fi*1.7;\n" +
+    "  float n=fbm(vec2(x*8., uT*uB*.3 - uv.y*2. + fi*9.));\n" +
+    "  col+=pow(n,3.)*(1.-uv.y)*smoothstep(0.,.15,uv.y)*(1.-fi*.25);\n" +
+    " }\n" +
+    " col*=uA;\n" +
+    " vec3 c=vec3(.02,.03,.05)+vec3(.45,.6,.9)*col+vec3(.2,.8,.9)*pow(col,3.)*.6;\n" +
+    " gl_FragColor=vec4(c,1.);\n" +
+    "}";
+
+  var F_TUNNEL =
+    "precision mediump float;\n" +
+    "uniform vec2 uRes;uniform float uT;uniform float uA;uniform float uB;\n" +
+    "float sdTorus(vec3 p, vec2 t){vec2 q=vec2(length(p.xz)-t.x,p.y);return length(q)-t.y;}\n" +
+    "float map(vec3 p, float dens){\n" +
+    " float d=1e9;\n" +
+    " for(int i=0;i<4;i++){\n" +
+    "  vec3 q=p; q.z+=uT*uB*2.+float(i)*7.2/dens; q.z=mod(q.z,7.2)-3.6;\n" +
+    "  d=min(d,sdTorus(q,vec2(1.4,.06+float(i)*.015)));\n" +
+    " }\n" +
+    " return d;\n" +
+    "}\n" +
+    "void main(){\n" +
+    " vec2 uv=(gl_FragCoord.xy-.5*uRes)/uRes.y;\n" +
+    " vec3 ro=vec3(0.,0.,-3.), rd=normalize(vec3(uv,.85));\n" +
+    " float t=0., glow=0.; float dens=uA;\n" +
+    " for(int i=0;i<64;i++){\n" +
+    "  vec3 p=ro+rd*t;\n" +
+    "  float d=map(p,dens);\n" +
+    "  glow+=.02/(1.+d*d*40.);\n" +
+    "  t+=max(d*.8,.012);\n" +
+    "  if(t>22.) break;\n" +
+    " }\n" +
+    " float vig=1.-dot(uv,uv)*.35;\n" +
+    " vec3 c=(vec3(.1,.5,1.)*glow+vec3(.55,.2,1.)*glow*glow*2.2)*vig;\n" +
+    " gl_FragColor=vec4(c,1.);\n" +
+    "}";
+
+  var F_AURORA = F_NOISE +
+    "uniform vec2 uRes;uniform float uT;uniform float uA;uniform float uB;\n" +
+    "float band(vec2 uv, float t){\n" +
+    " float ridge=fbm(vec2(uv.x*2.2, t*.35))*.6+uv.x*.15;\n" +
+    " float d=uv.y-(.55+ridge*.35);\n" +
+    " return exp(-abs(d)*6.);\n" +
+    "}\n" +
+    "vec3 ramp(float v){\n" +
+    " vec3 c=vec3(.0,.35,.3);\n" +
+    " c=mix(c,vec3(.35,.1,.55),smoothstep(.2,.7,v));\n" +
+    " c=mix(c,vec3(.9,.25,.6),smoothstep(.7,1.,v));\n" +
+    " return c;\n" +
+    "}\n" +
+    "float stars(vec2 uv){\n" +
+    " vec2 g=floor(uv*vec2(160.,90.)); vec2 f=fract(uv*vec2(160.,90.));\n" +
+    " float h=hash(g.x+g.y*57.);\n" +
+    " float s=step(.985,h)*smoothstep(.25,.0,length(f-.5));\n" +
+    " return s*(.6+.4*sin(uT*2.+h*40.));\n" +
+    "}\n" +
+    "void main(){\n" +
+    " vec2 uv=gl_FragCoord.xy/uRes;\n" +
+    " float a=band(uv,uT*uB)*uA;\n" +
+    " float mt=smoothstep(.34,.28,uv.y+fbm(uv*3.+7.)*.06);\n" +
+    " vec3 c=ramp(min(a,1.))*a+vec3(.012,.02,.045);\n" +
+    " c=mix(c,vec3(.006,.01,.018),mt);\n" +
+    " c+=vec3(.9)*stars(uv)*step(.3,uv.y);\n" +
+    " gl_FragColor=vec4(c,1.);\n" +
+    "}";
+
+  /* ---------- 统一调度:视口外暂停 + FPS 显示 ---------- */
+  var jobs = [];
+  function addJob(canvasId, fpsId, renderFn){
+    var canvas = document.getElementById(canvasId);
+    if(!canvas || !canvas.getContext) return;
+    var visible = true, raf = null, t0 = performance.now(), frames = 0, lastFps = t0;
+    function frame(now){
+      raf = null;
+      if(!visible){ return; }
+      var t = (now - t0) / 1000;
+      renderFn(t);
+      frames++;
+      if(now - lastFps > 800){
+        var el = document.getElementById(fpsId);
+        if(el) el.textContent = Math.round(frames * 1000 / (now - lastFps)) + " fps";
+        frames = 0; lastFps = now;
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    function kick(){ if(raf === null && visible){ raf = requestAnimationFrame(frame); } }
+    if("IntersectionObserver" in window){
+      new IntersectionObserver(function(es){
+        for(var i = 0; i < es.length; i++){
+          visible = es[i].isIntersecting;
+          if(visible) kick();
+        }
+      }, { threshold: 0.05 }).observe(canvas);
+    }
+    if(REDUCED){ renderFn(1.5); return; }   /* 减少动态偏好:只渲染一帧 */
+    kick();
+    jobs.push({ kick: kick });
+  }
+
+  /* ---------- ① 雨柱 ---------- */
+  (function(){
+    var g = glCanvas(document.getElementById("pfC1"), F_RAIN, ["uA","uB"]);
+    if(!g) return;
+    var a = document.getElementById("p1a"), b = document.getElementById("p1b");
+    var av = document.getElementById("p1av"), bv = document.getElementById("p1bv");
+    addJob("pfC1", "pfF1", function(t){
+      g.resize(); g.gl.uniform1f(g.U.uA, parseFloat(a.value)); g.gl.uniform1f(g.U.uB, parseFloat(b.value));
+      av.textContent = (+a.value).toFixed(2); bv.textContent = (+b.value).toFixed(2);
+      g.draw(t);
+    });
+  })();
+
+  /* ---------- ② 光影走廊 ---------- */
+  (function(){
+    var g = glCanvas(document.getElementById("pfC2"), F_TUNNEL, ["uA","uB"]);
+    if(!g) return;
+    var a = document.getElementById("p2a"), b = document.getElementById("p2b");
+    var av = document.getElementById("p2av"), bv = document.getElementById("p2bv");
+    addJob("pfC2", "pfF2", function(t){
+      g.resize(); g.gl.uniform1f(g.U.uA, parseFloat(a.value)); g.gl.uniform1f(g.U.uB, parseFloat(b.value));
+      av.textContent = (+a.value).toFixed(1); bv.textContent = (+b.value).toFixed(2);
+      g.draw(t);
+    });
+  })();
+
+  /* ---------- ③ 极光平原 ---------- */
+  (function(){
+    var g = glCanvas(document.getElementById("pfC3"), F_AURORA, ["uA","uB"]);
+    if(!g) return;
+    var a = document.getElementById("p3a"), b = document.getElementById("p3b");
+    var av = document.getElementById("p3av"), bv = document.getElementById("p3bv");
+    addJob("pfC3", "pfF3", function(t){
+      g.resize(); g.gl.uniform1f(g.U.uA, parseFloat(a.value)); g.gl.uniform1f(g.U.uB, parseFloat(b.value));
+      av.textContent = (+a.value).toFixed(2); bv.textContent = (+b.value).toFixed(2);
+      g.draw(t);
+    });
+  })();
+
+  /* ---------- ④ 相位蝴蝶群(Canvas2D 粒子) ---------- */
+  (function(){
+    var canvas = document.getElementById("pfC4");
+    if(!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext("2d");
+    var W = canvas.width, H = canvas.height;
+    var N = 520, P = [], t0 = performance.now();
+    var mx = -9999, my = -9999;
+    var HUES = ["rgba(120,220,255,", "rgba(140,170,255,", "rgba(255,214,140,", "rgba(160,255,220,"];
+    for(var i = 0; i < N; i++){
+      P.push({ x: Math.random()*W, y: Math.random()*H, c: HUES[i % HUES.length] + (0.35 + Math.random()*0.4) + ")" });
+    }
+    canvas.addEventListener("mousemove", function(e){
+      var r = canvas.getBoundingClientRect();
+      mx = (e.clientX - r.left) * (W / r.width);
+      my = (e.clientY - r.top) * (H / r.height);
+    });
+    canvas.addEventListener("mouseleave", function(){ mx = my = -9999; });
+    var aEl = document.getElementById("p4a"), bEl = document.getElementById("p4b");
+    var avEl = document.getElementById("p4av"), bvEl = document.getElementById("p4bv");
+    var seeded = false;
+    addJob("pfC4", "pfF4", function(t){
+      var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      var w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+      if(canvas.width !== w || canvas.height !== h){ canvas.width = W = w; canvas.height = H = h; seeded = false; }
+      var speed = parseFloat(aEl.value), fade = parseFloat(bEl.value);
+      avEl.textContent = (+speed).toFixed(2); bvEl.textContent = (+fade).toFixed(2);
+      if(!seeded){ ctx.fillStyle = "#03050a"; ctx.fillRect(0,0,W,H); seeded = true; }
+      ctx.fillStyle = "rgba(3,5,10," + fade + ")";
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "lighter";
+      for(var k = 0; k < N; k++){
+        var p = P[k];
+        var vx = Math.sin(p.y*0.008 + t*0.6) + Math.cos(p.x*0.006 - t*0.4);
+        var vy = Math.cos(p.x*0.007 - t*0.5) - Math.sin(p.y*0.005 + t*0.3);
+        p.x += vx * speed * 1.7; p.y += vy * speed * 1.7;
+        var dx = p.x - mx, dy = p.y - my, d2 = dx*dx + dy*dy;
+        if(d2 < 22500 && d2 > 1){
+          var f = (150 - Math.sqrt(d2)) / 150;
+          p.x += dx / d2 * f * 90; p.y += dy / d2 * f * 90;
+        }
+        if(p.x < 0) p.x += W; if(p.x > W) p.x -= W;
+        if(p.y < 0) p.y += H; if(p.y > H) p.y -= H;
+        ctx.fillStyle = p.c;
+        ctx.fillRect(p.x, p.y, 1.7, 1.7);
+      }
+      ctx.globalCompositeOperation = "source-over";
+    });
+  })();
+})();
+</script>
+</body>
+</html>

@@ -74,6 +74,38 @@ html:not([data-skin]) body[data-theme="light"] .hero::after{opacity:.3}
 html:not([data-skin]) .hero>*{position:relative;z-index:1}
 html:not([data-skin]) .card::before{content:"";position:absolute;left:12px;right:12px;top:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.8),rgba(34,197,94,.6),transparent);opacity:.5;transition:opacity .25s}
 html:not([data-skin]) .card:hover::before{opacity:1}
+/* ===== 学习路径横滑 carousel(V2.0.9):左右循环可拖动,替代溢出箭头 ===== */
+.rm-wrap{position:relative;margin:16px 0 6px}
+.roadmap{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding:6px 6px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab}
+.roadmap::-webkit-scrollbar{display:none}
+.roadmap.dragging{cursor:grabbing;scroll-snap-type:none;user-select:none}
+.roadmap.dragging *{pointer-events:none}
+.rm-step{flex:0 0 min(300px,80vw);scroll-snap-align:center}
+.rm-step .rm-arrow{display:none}
+/* 卡内右上角呼吸箭头(不出框,末步不显示) */
+.rm-step:not(:last-child)::after{content:"›";position:absolute;right:12px;top:12px;font-size:22px;line-height:1;font-weight:800;color:#3b82f6;opacity:.4;animation:rmPulse 1.8s ease-in-out infinite;pointer-events:none}
+@keyframes rmPulse{0%,100%{transform:translateX(0);opacity:.3}50%{transform:translateX(5px);opacity:.9}}
+/* 两侧悬浮切换按钮 */
+.rm-nav{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:1px solid rgba(59,130,246,.4);background:rgba(13,17,23,.74);color:#9ecbff;font-size:18px;line-height:1;cursor:pointer;z-index:5;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:.18s;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.rm-nav:hover{background:#2563eb;border-color:#2563eb;color:#fff;transform:translateY(-50%) scale(1.1)}
+.rm-nav.prev{left:-10px}
+.rm-nav.next{right:-10px}
+/* 进度圆点 */
+.rm-progress{display:flex;gap:6px;justify-content:center;margin-top:2px}
+.rm-dot{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.16);transition:.25s;cursor:pointer;border:none;padding:0}
+.rm-dot.on{width:22px;background:linear-gradient(90deg,#2563eb,#3b82f6)}
+/* 浅色主题(双选择器,FOUC 纪律) */
+body:not([data-theme]) .rm-nav,body[data-theme="light"] .rm-nav{background:rgba(255,255,255,.88);border-color:rgba(37,99,235,.3);color:#2563eb;box-shadow:0 6px 18px rgba(40,80,160,.16)}
+body:not([data-theme]) .rm-nav:hover,body[data-theme="light"] .rm-nav:hover{background:#2563eb;color:#fff}
+body:not([data-theme]) .rm-dot,body[data-theme="light"] .rm-dot{background:rgba(60,80,120,.22)}
+body:not([data-theme]) .rm-dot.on,body[data-theme="light"] .rm-dot.on{background:linear-gradient(90deg,#2563eb,#3b82f6)}
+/* ===== 版本徽章精修(V2.0.9):玻璃胶囊 + 呼吸更新点 + 等宽字号 ===== */
+.ver-badge{display:none;margin-left:14px;align-items:center;gap:7px;font-size:11.5px;font-family:Consolas,"Courier New",monospace;letter-spacing:.3px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(148,163,184,.32);border-radius:999px;padding:5px 13px;background:rgba(148,163,184,.07);white-space:nowrap;transition:transform .25s cubic-bezier(.22,1.2,.36,1),border-color .18s,color .18s,box-shadow .25s}
+.ver-badge i{width:6px;height:6px;border-radius:99px;background:#22c55e;box-shadow:0 0 7px rgba(34,197,94,.85);animation:verBlink 2.4s ease-in-out infinite}
+.ver-badge:hover{color:#60a5fa;border-color:rgba(59,130,246,.6);transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.2);text-decoration:none}
+@keyframes verBlink{0%,100%{opacity:1}50%{opacity:.35}}
+body:not([data-theme]) .ver-badge,body[data-theme="light"] .ver-badge{color:#64748b;border-color:rgba(100,116,139,.35);background:rgba(255,255,255,.6)}
+body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hover{color:#2563eb;border-color:rgba(37,99,235,.55);box-shadow:0 4px 14px rgba(37,99,235,.16)}
 </style>
 <script>
   /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
@@ -85,7 +117,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
     { key:"04", name:"升级进阶", ids:["04-01","04-02","04-03"] },
     { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08","06-09","06-10","06-11","06-12","06-13","06-14","06-15"] },
     { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07","07-08"] },
-    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07","08-08","08-09","08-10","08-11","08-12","08-13"] }
+    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07","08-08","08-09","08-10","08-11","08-12","08-13","08-14"] }
   ];
   /* 学习页面/可打卡页面统计：由 SITE_SECTIONS 自动计算（新增页面只需更新上面的 ids，无需手改数字） */
   (function(){
@@ -143,8 +175,8 @@ html:not([data-skin]) .card:hover::before{opacity:1}
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
     零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</div>
     <div class="stats">
-      <div class="stat"><div class="v" id="statPages">68</div><div class="k">学习页面</div></div>
-      <div class="stat"><div class="v" id="statTracked">67</div><div class="k">可打卡页面</div></div>
+      <div class="stat"><div class="v" id="statPages">69</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v" id="statTracked">68</div><div class="k">可打卡页面</div></div>
       <div class="stat"><div class="v">8</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
       <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
@@ -158,7 +190,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
         <button data-t="dark" onclick="Site.setTheme('dark')">🌙 深色风格</button>
         <button data-t="light" onclick="Site.setTheme('light')">☀️ 极简浅色</button>
       </div>
-      <a id="verBadge" href="#version" title="查看版本与更新历史" style="display:none;margin-left:14px;font-size:11.5px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:4px 11px;white-space:nowrap;transition:transform .28s cubic-bezier(.22,1.2,.36,1),border-color .18s,color .18s" onmouseover="this.style.borderColor='#3b82f6';this.style.color='#60a5fa';this.style.transform='scale(1.06)'" onmouseout="this.style.borderColor='rgba(154,164,178,.35)';this.style.color='#9aa4b2';this.style.transform=''">🏷 v—</a>
+      <a id="verBadge" class="ver-badge" href="#version" title="查看版本与更新历史"><i></i>v—</a>
     </div>
     <div class="tags">
       <span class="tag">宇树 H1 / G1 / 智元 X1 官方模型</span>
@@ -172,8 +204,10 @@ html:not([data-skin]) .card:hover::before{opacity:1}
 
   <!-- ================= 学习路径 ================= -->
   <div class="learn-path" id="learn-path">
-    <div class="sec-title" style="margin-top:0"><span class="num">▶</span>新手学习路径 <span class="en">LEARNING PATH · 按顺序学,3 个月入门</span><span class="bar"></span></div>
-    <div class="roadmap">
+    <div class="sec-title" style="margin-top:0"><span class="num">▶</span>新手学习路径 <span class="en">LEARNING PATH · 按顺序学,3 个月入门 · 可左右拖动</span><span class="bar"></span></div>
+    <div class="rm-wrap">
+      <button class="rm-nav prev" id="rmPrev" title="上一步" aria-label="上一步">‹</button>
+      <div class="roadmap" id="roadmap">
       <div class="rm-step">
         <span class="rm-arrow">→</span>
         <span class="rm-num">1</span>
@@ -231,6 +265,9 @@ html:not([data-skin]) .card:hover::before{opacity:1}
           <a href="08_学习工具/13_AI答疑助手.html?persona=interviewer">AI 考官</a>
         </div>
       </div>
+      </div><!-- /roadmap -->
+      <button class="rm-nav next" id="rmNext" title="下一步" aria-label="下一步">›</button>
+      <div class="rm-progress" id="rmDots" aria-label="路径进度"></div>
     </div>
   </div>
 
@@ -726,8 +763,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <a class="card" href="08_学习工具/13_AI答疑助手.html">
         <span class="go">进入 →</span>
         <div class="ic">🤖</div>
-        <div class="t">AI 答疑助手(全新)</div>
+        <div class="t">AI 答疑助手</div>
         <div class="d">接入 DeepSeek / 豆包:复试考官模拟面试、课程助教讲解、代码答疑;API Key 仅保存在本机浏览器,别人用不了你的额度。</div>
+      </a>
+      <a class="card" href="08_学习工具/14_个人作品台.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🎮</div>
+        <div class="t">个人作品台 · vibecoding 效果展台(全新)</div>
+        <div class="d">4 个零依赖手写 WebGL/GLSL 作品:电磁雨柱、Raymarching 光影走廊、极光平原、粒子蝴蝶群——画布+参数+源码讲解,作品与 shader 教学两用。</div>
       </a>
     </div>
   </div>
@@ -770,10 +813,14 @@ html:not([data-skin]) .card:hover::before{opacity:1}
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.8</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-27 · 保研复试题库 + 闯关学习 + AI 答疑</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.9</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-28 · 动画缓存治本 + 个人作品台 + 主页UI美化 + 协作文档整改</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
+        <summary>V2.0.9 · 2026-08-28 · SW缓存治本 + 个人作品台 + 主页UI美化</summary>
+        <div class="faq-a">🛠 <b>动画"时好时坏"治本</b>:Service Worker 预缓存改容错模式(单项失败不再锁死整版缓存),线上更新后一次刷新即见新版;🎮 <b>新页面「个人作品台」(08-14)</b>:4 个零依赖手写 WebGL/GLSL 展台(粒子流场/Raymarching 光影走廊/极光 Plasma/霓虹小景),画布+参数+源码讲解三合一,vibecoding 与 shader 教学两用;🖼 <b>主页美化</b>:新手学习路径改左右循环可拖动横滑(箭头不再溢出挤框)、版本徽章精修;📋 <b>协同文档整改</b>:安全红线补 API Key 纪律、登记流程统一五件套、测试清单/README 过期项修正、自检增强至 14 项;自检 14/14 全绿。</div>
+      </details>
+      <details class="faq">
         <summary>V2.0.8 · 2026-08-27 · 保研复试题库 + 闯关学习 + AI 答疑(三大新功能)</summary>
         <div class="faq-a">🎓 <b>复试题库(08-11)</b>:13 学科 117 题(自控/PID/ADRC/运控/现控/信号处理/硬件电路防反接运放/无人机电调/ROS 编队/C/C++/嵌入式/FreeRTOS),结构化参考回答+延伸追问+站内联动,14 张 SVG 图解与 KaTeX 公式,浏览/自测双模式与掌握度自评;🎯 <b>闯关学习(08-12)</b>:5 大陆 21 关卡,顺序解锁、星级/XP/7 枚徽章,复试冲刺大陆直接调用面试题库,通关点亮热力图;🤖 <b>AI 答疑(08-13)</b>:接入 DeepSeek/豆包,流式输出+公式渲染,4 种人设(复试考官/课程助教/代码助手),<b>API Key 仅存本机浏览器</b>不经任何服务器;全站内容页右下角 AI 悬浮球 + Ctrl+K 搜索"问 AI"兜底;学习路径新增第 5 步「复试冲刺」,学习页面 65→68,自检 13/13 全绿。</div>
       </details>
@@ -921,7 +968,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.0.8(2026-08-27) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.0.9(2026-08-28) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1017,7 +1064,75 @@ html:not([data-skin]) .card:hover::before{opacity:1}
   var b = document.getElementById("verBadge");
   if(!b) return;
   var m = (document.body.textContent || "").match(/V\d+\.\d+\.\d+/);
-  if(m){ b.textContent = "🏷 " + m[0]; b.style.display = ""; }
+  if(m){ b.innerHTML = "<i></i>" + m[0].replace(/^V/, "v"); b.style.display = "inline-flex"; }
+})();
+/* 学习路径横滑 carousel:鼠标拖拽 + 循环按钮 + 进度圆点(V2.0.9) */
+(function(){
+  var sc = document.getElementById("roadmap");
+  if(!sc) return;
+  var steps = sc.querySelectorAll(".rm-step");
+  var dotsBox = document.getElementById("rmDots");
+  var btnPrev = document.getElementById("rmPrev");
+  var btnNext = document.getElementById("rmNext");
+  function cardW(){ return steps.length > 1 ? (steps[1].offsetLeft - steps[0].offsetLeft) : sc.clientWidth; }
+  function maxLeft(){ return sc.scrollWidth - sc.clientWidth; }
+  function curIdx(){
+    var w = cardW() || 1;
+    return Math.min(steps.length - 1, Math.max(0, Math.round(sc.scrollLeft / w)));
+  }
+  /* 进度圆点 */
+  if(dotsBox && steps.length){
+    for(var i = 0; i < steps.length; i++){
+      (function(idx){
+        var d = document.createElement("button");
+        d.className = "rm-dot"; d.title = "第 " + (idx + 1) + " 步";
+        d.setAttribute("aria-label", "跳到第 " + (idx + 1) + " 步");
+        d.onclick = function(){
+          sc.scrollTo({ left: idx * cardW(), behavior: "smooth" });
+        };
+        dotsBox.appendChild(d);
+      })(i);
+    }
+  }
+  function syncDots(){
+    if(!dotsBox) return;
+    var ds = dotsBox.querySelectorAll(".rm-dot");
+    var cur = curIdx();
+    for(var j = 0; j < ds.length; j++) ds[j].className = "rm-dot" + (j === cur ? " on" : "");
+  }
+  sc.addEventListener("scroll", function(){ syncDots(); }, { passive: true });
+  syncDots();
+  /* 循环:末端再下一步回到开头,开端上一步跳到末尾 */
+  function go(dir){
+    var w = cardW() || 280;
+    var target = sc.scrollLeft + dir * w;
+    if(dir > 0 && target >= maxLeft() - 4) target = 0;        /* 末→首 */
+    if(dir < 0 && sc.scrollLeft <= 4) target = maxLeft();      /* 首→末 */
+    sc.scrollTo({ left: target, behavior: "smooth" });
+  }
+  if(btnPrev) btnPrev.onclick = function(){ go(-1); };
+  if(btnNext) btnNext.onclick = function(){ go(1); };
+  /* 鼠标拖拽(触摸设备走原生滚动) */
+  var down = false, startX = 0, startLeft = 0, moved = 0;
+  sc.addEventListener("pointerdown", function(e){
+    if(e.pointerType !== "mouse") return;
+    down = true; moved = 0; startX = e.clientX; startLeft = sc.scrollLeft;
+    sc.setPointerCapture && sc.setPointerCapture(e.pointerId);
+  });
+  sc.addEventListener("pointermove", function(e){
+    if(!down) return;
+    var dx = e.clientX - startX;
+    moved = Math.max(moved, Math.abs(dx));
+    if(moved > 4){ sc.classList.add("dragging"); sc.scrollLeft = startLeft - dx; }
+  });
+  function endDrag(){ if(!down) return; down = false; sc.classList.remove("dragging"); }
+  sc.addEventListener("pointerup", endDrag);
+  sc.addEventListener("pointercancel", endDrag);
+  sc.addEventListener("pointerleave", endDrag);
+  /* 拖拽超过 6px 后抑制误触卡片内链接跳转 */
+  sc.addEventListener("click", function(e){
+    if(moved > 6){ e.preventDefault(); e.stopPropagation(); moved = 0; }
+  }, true);
 })();
 /* 版本历史整栏收起/展开(默认收起,localStorage 记忆;锚点跳转时自动展开) */
 (function(){

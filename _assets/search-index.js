@@ -92,4 +92,5 @@ window.SITE_SEARCH_INDEX = [
   { t:"保研复试面试题库(13 学科 117 题)", u:"08_学习工具/11_保研复试面试题库.html", s:"学习工具", d:"自控原理/PID/ADRC/运控/现控/信号处理/硬件电路防反接运放/无人机电调/ROS多机编队/C语言/C++/嵌入式/FreeRTOS,图文解析+自评进度", k:"保研 复试 面试 题库 自控原理 PID ADRC 自抗扰 运动控制 FOC 现代控制 现控 信号处理 采样定理 FFT 运放 防反接 LDO 硬件电路 无人机电调 DShot ROS 编队 跟随 leader follower C语言 C++ 嵌入式 FreeRTOS 优先级反转 挥发 volatile 中断 考研" },
   { t:"闯关学习(5 大陆 21 关卡)", u:"08_学习工具/12_闯关学习.html", s:"学习工具", d:"游戏化闯关:理论/硬件/控制/软件/复试冲刺五大陆,星级评价、经验值、7 枚徽章、BOSS 综合关与全真模拟关", k:"闯关 关卡 挑战 星级 徽章 经验 BOSS 游戏 复试冲刺 模拟 综合测验 地图 学习路线 巩固" },
   { t:"AI 答疑助手(DeepSeek / 豆包)", u:"08_学习工具/13_AI答疑助手.html", s:"学习工具", d:"接入 DeepSeek/豆包大模型:复试考官模拟面试、课程助教讲解、代码答疑;API Key 仅本机浏览器保存,流式输出+公式渲染", k:"AI 答疑 助手 聊天 问答 deepseek 豆包 doubao 大模型 API key 人工智能 智能问答 考官 模拟面试 密钥" },
+  { t:"个人作品台(vibecoding / GLSL 效果展台)", u:"08_学习工具/14_个人作品台.html", s:"学习工具", d:"4 个零依赖手写 WebGL/GLSL 作品:电磁雨柱 fbm 噪声、Raymarching 光影走廊、极光平原、Canvas 粒子蝴蝶群,画布+参数+源码讲解三合一", k:"作品台 作品集 vibecoding shader GLSL WebGL 粒子 光影 raymarching 噪声 fbm 极光 雨柱 蝴蝶 前端特效 创意编程 视觉" },
 ];

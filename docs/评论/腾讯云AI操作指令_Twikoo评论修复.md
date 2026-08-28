@@ -1,15 +1,17 @@
 # 腾讯云 AI Agent 操作指令:修复 Twikoo 评论(CloudBase 云接入)
 
-> 用途:把本文件内容整体粘贴给腾讯云 AI Agent(如腾讯云控制台的 AI 助手/CloudBase AI),让它代为排查并修复。所有路径均以 CloudBase 控制台为准。
+> ⚠️ **存档声明(2026-08-28)**:该云开发环境**已注销/停用**,全站评论已切换为「联系站长」卡片(见 `_assets/giscus-config.js`,provider=disabled)。**请勿照本文件恢复该环境**——它曾是匿名公开网关,存在被滥刷计费的风险;如未来要恢复评论,请重新建环境并接入鉴权。文中环境 ID 已脱敏为 `twikoo-env-****`。
+>
+> 用途(仅存档):把本文件内容整体粘贴给腾讯云 AI Agent(如腾讯云控制台的 AI 助手/CloudBase AI),让它代为排查并修复。所有路径均以 CloudBase 控制台为准。
 
 ---
 
-## 一、环境信息(必读)
+## 一、环境信息(必读,已脱敏)
 
-- 云开发环境 ID:`twikoo-env-d1gjabi5l2e5613b2`(地域 ap-shanghai)
+- 云开发环境 ID:`twikoo-env-****`(地域 ap-shanghai;真实 ID 仅站长本地留存,不入库)
 - 云函数名称:`twikoo`(运行时 Nodejs18.15,由官方模板部署)
-- 网关路由:`/twikoo`,访问地址:
-  `https://twikoo-env-d1gjabi5l2e5613b2-1384309057.ap-shanghai.app.tcloudbase.com/twikoo`
+- 网关路由:`/twikoo`,访问地址格式:
+  `https://twikoo-env-****-<账号APPID>.ap-shanghai.app.tcloudbase.com/twikoo`
 - 前端网站域名:`https://cyco.top`
 - 前端 Twikoo 版本:1.7.19(与云函数一致,要求前后端版本相同)
 - 前端配置方式:**完整 URL 模式**(envId 填完整网关地址,不填 region/path)
@@ -25,7 +27,7 @@
 
 ### 第 1 步:确认云函数代码中的 CORS 补丁在「文件最末尾」
 
-1. CloudBase 控制台 → 云开发 → 环境 `twikoo-env-d1gjabi5l2e5613b2` → 云函数 → `twikoo` → 「函数代码」
+1. CloudBase 控制台 → 云开发 → 环境 `twikoo-env-****` → 云函数 → `twikoo` → 「函数代码」
 2. 打开 `index.js`,滚动到**文件最末尾**(原始 `exports.main = async ...` 定义结束之后),必须存在以下补丁代码:
 
 ```js
@@ -87,15 +89,15 @@ exports.main = async (event, context) => {
 
 ```
 # ① 预检(应返回 204 且带 Access-Control-Allow-Origin: *)
-curl -i -X OPTIONS "https://twikoo-env-d1gjabi5l2e5613b2-1384309057.ap-shanghai.app.tcloudbase.com/twikoo" \
+curl -i -X OPTIONS "https://twikoo-env-****-<账号APPID>.ap-shanghai.app.tcloudbase.com/twikoo" \
   -H "Origin: https://cyco.top" -H "Access-Control-Request-Method: POST"
 
 # ② 业务请求(应返回 200 且 body 为 JSON,而非 401)
-curl -i -X POST "https://twikoo-env-d1gjabi5l2e5613b2-1384309057.ap-shanghai.app.tcloudbase.com/twikoo/apis/GET_FUNC_VERSION" \
+curl -i -X POST "https://twikoo-env-****-<账号APPID>.ap-shanghai.app.tcloudbase.com/twikoo/apis/GET_FUNC_VERSION" \
   -H "Origin: https://cyco.top" -H "Content-Type: application/json" -d '{}'
 
 # ③ 评论读取(应返回 200,body 含 {"code":0,...})
-curl -i -X POST "https://twikoo-env-d1gjabi5l2e5613b2-1384309057.ap-shanghai.app.tcloudbase.com/twikoo/apis/COMMENT_GET" \
+curl -i -X POST "https://twikoo-env-****-<账号APPID>.ap-shanghai.app.tcloudbase.com/twikoo/apis/COMMENT_GET" \
   -H "Origin: https://cyco.top" -H "Content-Type: application/json" \
   -d '{"url":"/test-page","page":0}'
 ```

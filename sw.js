@@ -4,9 +4,9 @@
    - 静态资源(_assets): 缓存优先
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
-   - 版本: V2.0.8 · 2026-08-27(升级站点时改 CACHE 名以强制更新)
+   - 版本: V2.0.9 · 2026-08-28(升级站点时改 CACHE 名以强制更新)
    ============================================================ */
-var CACHE = "hrl-site-v2.0.8";
+var CACHE = "hrl-site-v2.0.9";
 var PRECACHE = [
   "./index.html",
   "./404.html",
@@ -22,20 +22,21 @@ var PRECACHE = [
   "./_assets/quiz-bank.js",
   "./08_学习工具/11_保研复试面试题库.html",
   "./08_学习工具/12_闯关学习.html",
-  "./08_学习工具/13_AI答疑助手.html"
+  "./08_学习工具/13_AI答疑助手.html",
+  "./08_学习工具/14_个人作品台.html"
 ];
 
 self.addEventListener("install", function(e){
   e.waitUntil(
-    /* cache:"reload" 强制绕过 HTTP 缓存逐项网络获取,防止把上一版本的旧资源
-       预缓存进新版 CACHE(addAll 默认允许复用过期 HTTP 缓存,且 _assets 是
-       cache-first,一旦写入旧文件将永不更新——版本升级期尤其危险) */
+    /* 容错预缓存:逐项 cache:"reload" 强制网络获取(防上一版本旧资源固化);
+       单项失败仅跳过并告警,不让 install 整体 reject——否则部署期一个 404
+       就会把所有用户锁死在旧版本缓存里,页面"新旧混杂、时好时坏" */
     caches.open(CACHE).then(function(c){
       return Promise.all(PRECACHE.map(function(u){
         return fetch(u, { cache:"reload" }).then(function(r){
-          if(!r.ok) throw new Error("precache failed " + u + " " + r.status);
+          if(!r.ok){ console.warn("[SW] 预缓存跳过(非200):", u, r.status); return; }
           return c.put(u, r);
-        });
+        }).catch(function(err){ console.warn("[SW] 预缓存失败(网络):", u, err); });
       }));
     }).then(function(){ return self.skipWaiting(); })
   );

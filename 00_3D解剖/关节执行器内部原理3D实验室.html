@@ -346,21 +346,17 @@ function buildMotorLab(g){
   LAB.motor = { rotor:rotor, field:field, dAxis:dAxis, stator:stator };
 }
 
-function animateMotor(){
+function animateMotor(dt){
   if(!LAB.motor || LAB.lab !== 0) return;
   var M = LAB.motor;
   /* 失步判据与教学口径统一:转矩 ∝ sin(负载角),90°(π/2≈1.57 rad)时最大,
      超过 90° 转矩回落 → 同步力矩拉不住转子 → 失步 */
   var stalled = LAB.loadAngle >= Math.PI/2;
-  var mech = LAB.t * 0.8;
-  if(stalled){
-    /* 失步瞬间锁定当时的转子角(保证从当前相位骤停),叠加小幅抖动;磁场继续转 */
-    if(LAB.mechHold === undefined){ LAB.mechHold = (LAB.lastMech !== undefined ? LAB.lastMech : mech); }
-    mech = LAB.mechHold + Math.sin(LAB.t * 30) * 0.06;
-  } else {
-    LAB.mechHold = undefined;
-  }
-  LAB.lastMech = mech;
+  /* 转子角用增量式积分:同步时按 0.8 rad/s 推进;失步时停在当前相位只加抖动;
+     解除失步后从当前角继续转——不再跳回绝对时钟,消除视觉突跳 */
+  if(LAB.mechBase === undefined){ LAB.mechBase = LAB.t * 0.8; }
+  if(!stalled){ LAB.mechBase += dt * 0.8 * LAB.speed; }
+  var mech = LAB.mechBase + (stalled ? Math.sin(LAB.t * 30) * 0.06 : 0);
   M.rotor.rotation.y = mech;
   M.field.rotation.y = LAB.t * 0.8 + LAB.loadAngle;
   M.dAxis.rotation.y = mech;
