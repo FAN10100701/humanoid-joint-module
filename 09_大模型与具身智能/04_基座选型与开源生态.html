@@ -35,6 +35,19 @@
   </table></div>
   <div class="box box-danger"><b>⚠ 许可三句话(面试必答):</b>①<b>开放权重 ≠ 开源</b>:Llama/Gemma 只给权重+自定义条款,OSI 定义下不算开源;②MIT/Apache-2.0 才是宽松真开源(可商用可改可分发,保留版权声明);③<b>同系列不同版本许可会变</b>(Kimi K2 Modified MIT → K2 Thinking MIT),投产后要锁定版本并复查条款。</div>
 
+  <div class="my-svg" style="max-width:620px;margin:14px auto"><svg viewBox="0 0 520 130" role="img" aria-label="许可光谱">
+<defs><linearGradient id="lic" x1="0" x2="1"><stop offset="0" stop-color="#ef4444"/><stop offset=".5" stop-color="#f59e0b"/><stop offset="1" stop-color="#22c55e"/></linearGradient></defs>
+<rect x="20" y="30" width="480" height="22" rx="11" fill="url(#lic)"/>
+<text x="20" y="20" font-size="11" fill="#fca5a5">闭源 API</text>
+<text x="150" y="20" font-size="11" fill="#fbbf24">自定义条款(开放权重≠开源)</text>
+<text x="360" y="20" font-size="11" fill="#86efac">宽松开源(MIT/Apache)</text>
+<g font-size="10.5" fill="currentColor">
+  <text x="30" y="72">Llama(7亿MAU条款)</text>
+  <text x="30" y="88">Gemma / Mistral MRL</text>
+  <text x="300" y="72">Qwen3 系(Apache)</text>
+  <text x="300" y="88">DeepSeek / GLM-4.5 / K2 Thinking(MIT)</text>
+</g>
+<text x="20" y="118" font-size="10.5" fill="#9aa4b2">口径提醒:同厂不同版本许可会变(如 Kimi K2 Modified MIT → K2 Thinking MIT),投产锁版本</text></svg></div>
   <h2><span class="h2-num">2</span> 选型决策树</h2>
   <div class="my-svg"><svg viewBox="0 0 560 250" role="img" aria-label="基座选型决策树"><defs><marker id="d1" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="currentColor"/></marker></defs>
   <rect x="210" y="10" width="140" height="38" rx="9" fill="rgba(59,130,246,.15)" stroke="#58a6ff"/><text x="280" y="34" font-size="12.5" fill="currentColor" text-anchor="middle">任务:推理/Agent/多模态?</text>

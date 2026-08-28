@@ -281,3 +281,21 @@ body:not([data-theme]) table,body[data-theme="light"] table{background:rgba(255,
 body:not([data-theme]) pre,body[data-theme="light"] pre{background:rgba(244,247,252,.9);border-color:rgba(60,80,120,.16)}
 body:not([data-theme]) .quiz,body[data-theme="light"] .quiz{background:rgba(255,255,255,.6)}
 body:not([data-theme]) .quiz-options button,body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.8);border-color:rgba(60,80,120,.16);color:#334155}
+
+/* ---------- B6 移动端适配(≤640px):下拉改全宽底部贴靠、触控目标加大 ---------- */
+@media (max-width:640px){
+  .nav-dd-panel,.nav-dd.open .nav-dd-panel{
+    left:8px !important; right:8px !important; top:56px !important;
+    width:auto; min-width:0; transform-origin:top center;
+  }
+  .nav-dd-panel a{padding:11px 14px;font-size:14px}   /* 触控目标 ≥44px */
+  .nav-dd-btn{padding:8px 14px}
+  .w-row{padding:16px;gap:14px}
+  .glass-btn{padding:11px 20px}
+  .ai-fab-panel{right:8px;left:8px;width:auto;bottom:120px}
+}
+
+/* ---------- B7 排版细节 ---------- */
+h2{scroll-margin-top:76px}   /* 顶栏固定,锚点跳转不被遮挡 */
+.my-svg{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:12px 12px 6px}
+body:not([data-theme]) .my-svg,body[data-theme="light"] .my-svg{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.14)}

@@ -11,6 +11,7 @@ const cfg = JSON.parse(fs.readFileSync(process.argv[2] || "登记配置.json", "
 const root = path.join(__dirname, "..");
 const R = p => fs.readFileSync(path.join(root, p), "utf8");
 const W = (p, s) => fs.writeFileSync(path.join(root, p), s);
+const secKey = String(cfg.sec).length < 2 ? "0" + cfg.sec : String(cfg.sec);   /* 8 -> 08 */
 const urlPath = cfg.folder + "/" + cfg.file;
 
 /* 1) search-index: 末尾 "];" 前插入 */
@@ -40,13 +41,13 @@ W("08_学习工具/06_学习地图.html", s);
 
 /* 5) index.html: SITE_SECTIONS 该组 ids 追加 + sec 网格末尾插卡片 */
 s = R("index.html");
-const keyIdx = s.indexOf('key:"' + cfg.sec + '"');
-if(keyIdx < 0) throw new Error("SITE_SECTIONS 未找到板块 " + cfg.sec);
+const keyIdx = s.indexOf('key:"' + secKey + '"');
+if(keyIdx < 0) throw new Error("SITE_SECTIONS 未找到板块 " + secKey);
 const idsStart = s.indexOf("ids:[", keyIdx) + 5;
 const idsEnd = s.indexOf("]", idsStart);
 if(s.slice(idsStart, idsEnd).indexOf(cfg.pageId) < 0)
   s = s.slice(0, idsEnd) + ',"' + cfg.pageId + '"' + s.slice(idsEnd);
-const secIdx = s.indexOf('id="sec' + cfg.sec + '"');
+const secIdx = s.indexOf('id="sec' + secKey + '"');
 const gridClose = s.indexOf("    </div>", secIdx);
 s = s.slice(0, gridClose) + '      <a class="card" href="' + urlPath + '"><span class="go">进入 →</span><div class="ic">📄</div><div class="t">' + cfg.title + '</div><div class="d">' + cfg.desc + '</div></a>\n' + s.slice(gridClose);
 W("index.html", s);

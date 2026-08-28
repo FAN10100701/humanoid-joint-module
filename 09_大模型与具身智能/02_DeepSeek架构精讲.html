@@ -32,6 +32,17 @@
   </table></div>
   <div class="box box-tip"><b>📌 参数口径(重要):</b>V3 = 671B 总参 / 约 37B 激活 / 61 层 / 128K 上下文。所有第三方「实际成本 ×N」的推算都只计 GPU 租金口径,与全成本口径不矛盾——面试答到这层区分即满分。</div>
 
+  <div class="my-svg" style="max-width:620px;margin:14px auto"><svg viewBox="0 0 520 170" role="img" aria-label="MHA vs MLA 缓存对比">
+<text x="10" y="18" font-size="12" font-weight="700" fill="#ef4444">MHA 标准多头:每头各自缓存</text>
+<rect x="10" y="28" width="470" height="26" rx="6" fill="rgba(239,68,68,.2)" stroke="#ef4444"/>
+<text x="20" y="46" font-size="11" fill="currentColor">KV Cache = 头数 × 每头维度 × 词数 × 2(K与V) —— 长文迅速爆显存</text>
+<text x="10" y="84" font-size="12" font-weight="700" fill="#22c55e">MLA 潜在压缩:联合压成低维隐向量</text>
+<rect x="10" y="94" width="150" height="26" rx="6" fill="rgba(34,197,94,.22)" stroke="#22c55e"/>
+<text x="20" y="112" font-size="11" fill="currentColor">缓存 = 隐维 × 词数(≈1/10)</text>
+<path d="M160,107 L240,107" stroke="#22c55e" stroke-dasharray="4 3" marker-end="url(#g1)"/>
+<text x="250" y="111" font-size="10.5" fill="#9aa4b2">用时经上投影「升维重建」K/V,效果对齐全注意力</text>
+<defs><marker id="g1" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="#22c55e"/></marker></defs>
+<text x="10" y="150" font-size="10.5" fill="#9aa4b2">类比:以前每层每头都存完整笔记;现在只存一份压缩摘要,要用时再展开</text></svg></div>
   <h2><span class="h2-num">2</span> R1:纯强化学习「觉醒」推理</h2>
   <p>R1-Zero 证明了行业级震撼结论:<b>不做任何监督微调,直接用可验证奖励(数学/代码对错)做纯 RL,模型自己学会「先写长思考再给答案」</b>——中途出现顿悟时刻(aha moment):自我怀疑、回溯重验。R1 在此基础上加冷启动数据与可读性约束,推理性能对齐 OpenAI o1,论文登 Nature,并把 6 个 1.5B~70B 蒸馏小模型开源。</p>
   <div class="my-svg"><svg viewBox="0 0 560 150" role="img" aria-label="R1管线"><defs><marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="currentColor"/></marker></defs>

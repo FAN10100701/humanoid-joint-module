@@ -26,7 +26,7 @@
       ".ai-fab-btn:hover{transform:scale(1.1)}.ai-fab-btn:active{animation:ddJelly .5s ease}" +
       "@keyframes aifPulse{0%,100%{box-shadow:0 10px 30px rgba(30,80,200,.45), inset 0 0 18px rgba(120,180,255,.18)}50%{box-shadow:0 10px 36px rgba(30,80,200,.65), inset 0 0 26px rgba(120,180,255,.3)}}" +
       ".ai-fab-panel{position:fixed;right:18px;bottom:134px;z-index:200;width:min(380px,92vw);height:min(540px,72vh);" +
-      "background:rgba(10,15,26,.94);border:1px solid rgba(140,190,255,.36);border-radius:20px;overflow:hidden;display:none;flex-direction:column;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset, 0 34px 90px rgba(0,0,0,.6);" +
+      "border-radius:var(--gr-lg);overflow:hidden;display:none;flex-direction:column;" +
       "box-shadow:0 30px 80px rgba(0,0,0,.55);backdrop-filter:blur(22px) saturate(150%);transform-origin:bottom right;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}" +
       ".ai-fab-panel.open{display:flex}" +
       ".aif-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(140,190,255,.16);color:#eef4fb;font-size:13.5px;font-weight:700;cursor:move;user-select:none;background:linear-gradient(rgba(140,190,255,.08),transparent)}" +
@@ -55,7 +55,7 @@
     document.body.appendChild(btn);
 
     var panel = document.createElement("div");
-    panel.className = "ai-fab-panel";
+    panel.className = "ai-fab-panel glass-panel";
     panel.innerHTML =
       '<div class="aif-head">🤖 AI 答疑<span class="sp">' +
       '<button data-a="full" title="打开完整版">⧉</button>' +

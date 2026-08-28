@@ -54,6 +54,19 @@
   <p><b>三差异:</b>①去掉价值网络(critic)——省一半显存与调参;②基线从 critic 估计改为<b>同题组内平均</b>(题目难度自带归一);③仍保留重要性采样裁剪保稳定;R1 又把 KL 惩罚移除,让 RL 敢于把分布拉离底座、催化长思考涌现。</p>
   <div class="box box-warn"><b>⚠ Reward Hacking(必考):</b>奖励模型打分而非真理时,策略会钻 RM 的漏洞(谄媚、冗长、套路化)。对策:RM 迭代、KL 锚定、可验证奖励(数学/代码对错)绕开 RM——这正是推理 RL 兴起的原因之一。</div>
 
+  <div class="my-svg" style="max-width:620px;margin:14px auto"><svg viewBox="0 0 520 160" role="img" aria-label="GRPO 组采样优势示例">
+<text x="10" y="16" font-size="12" font-weight="700" fill="currentColor">同一道题采样 5 个答案(G=5),可验证奖励:对=1 错=0</text>
+<g font-size="11" fill="currentColor" text-anchor="middle">
+  <rect x="30"  y="30" width="70" height="44" rx="8" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><text x="65"  y="50">答案1</text><text x="65"  y="66" fill="#86efac">r=1</text>
+  <rect x="130" y="30" width="70" height="44" rx="8" fill="rgba(239,68,68,.18)" stroke="#ef4444"/><text x="165" y="50">答案2</text><text x="165" y="66" fill="#fca5a5">r=0</text>
+  <rect x="230" y="30" width="70" height="44" rx="8" fill="rgba(239,68,68,.18)" stroke="#ef4444"/><text x="265" y="50">答案3</text><text x="265" y="66" fill="#fca5a5">r=0</text>
+  <rect x="330" y="30" width="70" height="44" rx="8" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><text x="365" y="50">答案4</text><text x="365" y="66" fill="#86efac">r=1</text>
+  <rect x="430" y="30" width="70" height="44" rx="8" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><text x="465" y="50">答案5</text><text x="465" y="66" fill="#86efac">r=1</text>
+</g>
+<line x1="20" y1="96" x2="510" y2="96" stroke="#f59e0b" stroke-dasharray="5 4"/><text x="510" y="92" font-size="10.5" fill="#f59e0b" text-anchor="end">组均值 0.6 = 基线(代替critic)</text>
+<text x="95"  y="120" font-size="11" fill="#86efac">优势 = (1−0.6)/σ = + 正 → 强化</text>
+<text x="195" y="120" font-size="11" fill="#fca5a5">优势 = 负 → 抑制</text>
+<text x="10" y="150" font-size="10.5" fill="#9aa4b2">好答案被推高、差答案被压低——全程没有价值网络参与,组内互相当参照</text></svg></div>
   <h2><span class="h2-num">4</span> PRM vs ORM:过程奖励与结果奖励</h2>
   <ul>
     <li><b>ORM(结果奖励模型):</b>只看最终答案对错。信号稀疏但难造假;OpenAI PRM800K 论文实测:PRM 在 MATH 上约 78% vs ORM 72%。</li>

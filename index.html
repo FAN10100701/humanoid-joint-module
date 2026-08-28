@@ -30,6 +30,7 @@
 </script>
 <link rel="stylesheet" href="_assets/site.css">
 <link rel="stylesheet" href="_assets/glass.css">
+<script src="_assets/site-sections.js"></script>
 <style>
   .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(13,17,23,.6));border:1px solid rgba(59,130,246,.35);border-radius:16px;padding:22px;margin:26px 0}
   .upd-item{display:flex;gap:12px;align-items:baseline;padding:9px 4px;border-bottom:1px dashed rgba(255,255,255,.07);font-size:13.5px}
@@ -121,17 +122,8 @@ body:not([data-theme]) .nav-dd-panel a:hover,body[data-theme="light"] .nav-dd-pa
 body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
 </style>
 <script>
-  /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
-  window.SITE_SECTIONS = [
-    { key:"00", name:"3D 解剖可视化", ids:["00-02","00-04","00-05"] },
-    { key:"01", name:"理论入门", ids:["01-01","01-02","01-03","01-04","01-05","01-06"] },
-    { key:"02", name:"硬件基础", ids:["02-01","02-02","02-03","02-04","02-05","02-06","02-07","02-08","02-09","02-10","02-11","02-12","02-13"] },
-    { key:"03", name:"项目实操", ids:["03-01","03-02","03-03","03-04","03-05","03-06"] },
-    { key:"06", name:"软件算法与升级进阶", ids:["04-01","04-02","04-03","06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08","06-09","06-10","06-11","06-12","06-13","06-14","06-15"] },
-    { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07","07-08"] },
-    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07","08-08","08-09","08-10","08-11","08-12","08-13","08-14","08-15"] },
-    { key:"09", name:"大模型与具身智能", ids:["09-01","09-02","09-03","09-04","09-05"] }
-  ];
+  /* 板块清单已单源化至 _assets/site-sections.js(与学习数据分析页共用) */
+  window.SITE_SECTIONS = window.SITE_SECTIONS || [];
   /* 学习页面/可打卡页面统计：由 SITE_SECTIONS 自动计算（新增页面只需更新上面的 ids，无需手改数字） */
   (function(){
     var tracked=0;

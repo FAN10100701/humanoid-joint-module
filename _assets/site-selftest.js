@@ -121,7 +121,7 @@
 
     var panel = document.createElement("div");
     panel.id = "sstPanel";
-    panel.style.cssText = "display:none;position:fixed;top:100px;right:12px;z-index:221;width:min(360px,92vw);max-height:70vh;overflow:auto;background:rgba(10,14,24,.94);border:1px solid rgba(140,190,255,.3);border-radius:14px;padding:14px 16px;color:#dbe6f5;font-size:12.5px;line-height:1.8;backdrop-filter:blur(14px)";
+    panel.className = "glass-panel"; panel.style.cssText = "display:none;position:fixed;top:100px;right:12px;z-index:221;width:min(360px,92vw);max-height:70vh;overflow:auto;padding:14px 16px;color:#dbe6f5;font-size:12.5px;line-height:1.8";
     document.body.appendChild(panel);
 
     pill.onclick = function(){ panel.style.display = panel.style.display === "none" ? "block" : "none"; renderPanel(); };

@@ -159,7 +159,8 @@ $orphanMeta = $metaKeys | Where-Object { $_ -notin $pageIds }
 Check "pageId vs page-meta" (($missingMeta.Count -eq 0) -and ($orphanMeta.Count -eq 0)) (("meta=" + $metaKeys.Count) + " pages=" + $pageIds.Count)
 $missingMeta | Select-Object -First 8 | ForEach-Object { Write-Host "   META-MISSING: $_" }
 $orphanMeta | Select-Object -First 8 | ForEach-Object { Write-Host "   META-ORPHAN: $_" }
-$secContent = [IO.File]::ReadAllText((Join-Path $root "index.html"), [Text.Encoding]::UTF8)
+$secSecFile = Join-Path $root "_assets\site-sections.js"
+if(Test-Path $secSecFile){ $secContent = [IO.File]::ReadAllText($secSecFile, [Text.Encoding]::UTF8) } else { $secContent = [IO.File]::ReadAllText((Join-Path $root "index.html"), [Text.Encoding]::UTF8) }
 $secIds = [regex]::Matches($secContent, '"(\d\d-\d\d)"') | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique
 $secOnly = $secIds | Where-Object { $_ -notin $metaKeys }
 Check "SITE_SECTIONS vs page-meta" ($secOnly.Count -eq 0) (("sections=" + $secIds.Count) + " meta=" + $metaKeys.Count)
