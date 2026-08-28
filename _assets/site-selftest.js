@@ -103,12 +103,26 @@
 
   /* ---------- UI 挂件 ---------- */
   function ui(){
-    var pill = document.createElement("div");
+    var st = document.createElement("style");
+    st.textContent = '.nav-sst{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}' +
+      '.nav-sst:hover{background:rgba(59,130,246,.28);color:#fff}' +
+      '.nav-sst.pass{color:#86efac;border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.1)}' +
+      '.nav-sst.fail{color:#fca5a5;border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.1)}' +
+      '@media print{.nav-sst{display:none!important}}';
+    document.head.appendChild(st);
+    var pill = document.createElement("button");
     pill.id = "sstPill";
-    pill.style.cssText = "position:fixed;top:64px;right:12px;z-index:220;font-size:12px;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;color:#eef; background:rgba(34,197,94,.85);box-shadow:0 6px 20px rgba(0,0,0,.3);backdrop-filter:blur(8px)";
+    pill.className = "nav-sst";
     pill.title = "本页自检(点击展开明细)";
     pill.textContent = "🧪 自检 …";
-    document.body.appendChild(pill);
+    var navInner = document.querySelector(".topnav .nav-inner");
+    var printBtn = navInner && navInner.querySelector(".nav-print");
+    if(navInner && printBtn){ navInner.insertBefore(pill, printBtn.nextSibling); }
+    else if(navInner){ navInner.appendChild(pill); }
+    else{
+      pill.style.cssText += ";position:fixed;top:64px;right:12px;z-index:220";
+      document.body.appendChild(pill);
+    }
 
     var panel = document.createElement("div");
     panel.id = "sstPanel";
@@ -154,7 +168,7 @@
       if(!it.result || !it.result.ok){ fail++; }
     });
     if(!SST._ui) ui();
-    SST._ui.pill.style.background = fail ? "rgba(239,68,68,.88)" : "rgba(34,197,94,.85)";
+    SST._ui.pill.className = "nav-sst " + (fail ? "fail" : "pass");
     SST._ui.pill.textContent = fail ? "🧪 自检 ✗ " + fail + " 项" : "🧪 自检 ✅ 全绿";
     renderPanel();
   }

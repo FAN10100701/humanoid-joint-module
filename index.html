@@ -1178,7 +1178,9 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     (function(g){
       var cards = g.querySelectorAll(".card");
       if(cards.length <= 8) return;
-      var shown = 6;                        /* 3列网格铺满两行,不留空位 */
+      /* 自适应"保留两行":按网格实际列数 × 2 计算,任何屏宽都铺满不留空位 */
+      var cols = (getComputedStyle(g).gridTemplateColumns || "repeat(3").split(" ").length;
+      var shown = cols * 2;
       for(var i = shown; i < cards.length; i++) cards[i].style.display = "none";
       var b = document.createElement("button");
       b.className = "glass glass-ripple";
