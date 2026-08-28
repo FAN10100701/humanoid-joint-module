@@ -32,7 +32,9 @@
   register("基础环境", "localStorage 可用", function(){ try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return ok(); }catch(e){ return bad("被禁用"); } });
 
   register("共享功能", "顶部导航 .topnav", function(){ return has(".topnav"); });
-  register("共享功能", "面包屑 .breadcrumb", function(){ return has(".breadcrumb"); });
+  register("共享功能", "面包屑", function(){
+    return window.PAGE && window.PAGE.pageId ? has(".breadcrumb") : ok("首页无面包屑(正常)");
+  });
   register("共享功能", "上一篇/下一篇", function(){ return qsel(".pn-item") >= 1 ? ok(qsel(".pn-item") + " 项") : ok("本页无翻页链"); });
   register("共享功能", "页脚含版本号", function(){
     var f = $(".site-footer");
@@ -50,7 +52,17 @@
     return b ? ok() : ok("工具页无打卡钮");
   });
   register("共享功能", "回到顶部按钮", function(){ return has(".backtop"); });
-  register("共享功能", "页面更新印章", function(){ return has(".page-stamp", "印章已注入"); });
+  register("共享功能", "页面更新印章", function(){
+    if(!(window.PAGE && window.PAGE.pageId)) return ok("首页无印章(正常)");
+    /* 印章由 page-meta 懒加载后异步注入,先等 2 秒再判 */
+    return timeout(function(){
+      return new Promise(function(res){
+        setTimeout(function(){
+          res($(".page-stamp") ? ok("印章已注入") : bad("2s 内未见 .page-stamp"));
+        }, 2000);
+      });
+    }, 5000);
+  });
   register("外部资源", "页面内资源加载", function(){
     var bads = (window.__SST_RES_ERR__ || []);
     return bads.length ? { ok:false, detail:"加载失败 " + bads.length + " 项: " + bads.slice(0,3).join(", ") } : ok("无失败资源");
