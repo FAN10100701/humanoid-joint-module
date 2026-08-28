@@ -29,6 +29,7 @@
 }
 </script>
 <link rel="stylesheet" href="_assets/site.css">
+<link rel="stylesheet" href="_assets/glass.css">
 <style>
   .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(13,17,23,.6));border:1px solid rgba(59,130,246,.35);border-radius:16px;padding:22px;margin:26px 0}
   .upd-item{display:flex;gap:12px;align-items:baseline;padding:9px 4px;border-bottom:1px dashed rgba(255,255,255,.07);font-size:13.5px}
@@ -848,7 +849,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.1</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-28 · 玻璃美学+三大作品+自检挂件+09板块+首页收纳(V2.1.1 强制刷新缓存)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.2</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-28 · 玻璃美学+三大作品+自检挂件+09板块+首页收纳(V2.1.1 强制刷新缓存)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
@@ -1003,7 +1004,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.1(2026-08-28) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.2(2026-08-29) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1196,7 +1197,14 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       b.textContent = "展开全部 " + cards.length + " 页 ▾";
       b.onclick = function(){
         open = !open;
-        for(var i = 5; i < cards.length; i++) cards[i].style.display = open ? "block" : "none";
+        for(var i = 5; i < cards.length; i++){
+          cards[i].style.display = open ? "block" : "none";
+          /* 统一波浪弹出:按序 60ms 级联,替代原 nth-child 不一致动画 */
+          cards[i].style.animation = "none";
+          void cards[i].offsetWidth;
+          cards[i].style.animation = "fadeUp .5s cubic-bezier(.22,1,.36,1) both";
+          cards[i].style.animationDelay = ((i - 5) * 0.06) + "s";
+        }
         b.textContent = open ? "收起 ▴" : "展开全部 " + cards.length + " 页 ▾";
         if(!open) g.scrollIntoView({ behavior:"smooth", block:"start" });
       };

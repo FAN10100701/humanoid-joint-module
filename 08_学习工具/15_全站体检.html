@@ -105,9 +105,17 @@ details.faq .faq-a pre{font-size:11.5px;white-space:pre-wrap;color:#9aa4b2}
       row("page-meta 注册量", pageIds.length >= 60, pageIds.length + " 个 pageId");
     }catch(e){ row("页面结构抽查", false, e.message); }
 
-    sum.innerHTML = fails === 0
-      ? "<span class='ok'>✅ 体检完成:" + total + " 项全部通过</span>"
-      : "<span class='no'>❌ 体检完成:" + fails + " / " + total + " 项失败,展开下方明细</span>";
+    if(fails === 0){
+      sum.innerHTML = "<span class='ok'>✅ 体检完成:" + total + " 项全部通过</span>";
+    }else{
+      let netFail = 0;
+      document.querySelectorAll("#rows .no").forEach(function(){ netFail++; });
+      const hint = (fails >= total - 2)
+        ? "<br><span class='sk'>💡 全部链接项失败 = 本地服务器大概率未启动:请双击 _本地工具/启动教学页面.bat 后,刷新本页重新体检(离线缓存只能显示页面,不能 fetch)</span>"
+        : "";
+      sum.innerHTML = "<span class='no'>❌ 体检完成:" + fails + " / " + total + " 项失败,展开下方明细</span>" + hint;
+    }
+    sum.insertAdjacentHTML("beforeend", "<div style='font-size:10.5px;color:#6b7280;margin-top:4px'>audit v2 · 2026-08-29</div>");
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", main); else main();
 })();

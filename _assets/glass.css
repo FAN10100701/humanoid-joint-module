@@ -46,6 +46,20 @@ body:not([data-theme]) .glass-space,body[data-theme="light"] .glass-space{
 }
 /* 噪点纹理叠层(::before 挂在使用者容器上) */
 .glass-noise{position:relative}
+@keyframes glassAurora{
+  0%,100%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(60px,30px) scale(1.15)}
+  66%{transform:translate(-40px,50px) scale(1.08)}
+}
+.glass-space::after{
+  content:"";position:fixed;inset:-10%;pointer-events:none;z-index:0;opacity:.5;
+  background:
+    radial-gradient(520px 380px at 18% 24%, rgba(56,120,255,.13), transparent 65%),
+    radial-gradient(460px 340px at 78% 18%, rgba(168,85,247,.10), transparent 62%),
+    radial-gradient(560px 400px at 55% 88%, rgba(20,190,190,.09), transparent 62%);
+  animation:glassAurora 26s ease-in-out infinite alternate;
+}
+body:not([data-theme]) .glass-space::after,body[data-theme="light"] .glass-space::after{opacity:.55}
 .glass-noise::before{
   content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;border-radius:inherit;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
@@ -58,7 +72,7 @@ body:not([data-theme]) .glass-space,body[data-theme="light"] .glass-space{
   backdrop-filter:blur(var(--glass-blur)) saturate(150%);
   border:1px solid var(--glass-border);
   border-radius:var(--glass-radius);
-  box-shadow:0 12px 40px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08);
+  box-shadow:0 16px 48px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(142,197,255,.06);
 }
 body:not([data-theme]) .glass,body[data-theme="light"] .glass{
   box-shadow:0 12px 40px rgba(50,80,140,.12), inset 0 1px 0 rgba(255,255,255,.85);
@@ -88,8 +102,8 @@ body:not([data-theme]) .glass,body[data-theme="light"] .glass{
 .glass-ripple:active{transform:translateY(-1px) scale(.995)}
 .glass-ripple-wave{
   position:absolute;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle, var(--glass-ice-dim) 0%, rgba(142,197,255,.12) 45%, transparent 70%);
-  transform:scale(0);opacity:.9;
+  background:radial-gradient(circle, rgba(142,197,255,.55) 0%, rgba(142,197,255,.16) 42%, transparent 68%);
+  transform:scale(0);opacity:1;
   animation:glassWave .9s var(--glass-ease) forwards;
 }
 @keyframes glassWave{

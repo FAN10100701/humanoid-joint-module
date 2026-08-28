@@ -448,7 +448,7 @@
       + '<a class="nav-brand" href="' + root + '/index.html"><span class="brand-dot"></span>人形机器人学习站</a>'
       + '<div class="nav-links">';
     /* 顶栏收纳(V2.1.0):仅保留高频直达,其余收进「板块 ▾」玻璃下拉 */
-    var quickT = ["3D解剖", "学习工具"];
+    var quickT = ["首页", "3D解剖", "学习工具"];
     S.NAV.forEach(function(it){
       if(quickT.indexOf(it.t) >= 0) html += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
     });
@@ -740,7 +740,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.1(2026-08-28)";
+  S.VERSION = "V2.1.2(2026-08-29)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -913,12 +913,15 @@
       var r = t.getBoundingClientRect();
       var w = document.createElement("span");
       w.className = "glass-ripple-wave";
-      var size = Math.max(r.width, r.height) * 2.2;
+      var size = Math.max(r.width, r.height) * 2.6;
       w.style.width = w.style.height = size + "px";
       w.style.left = (e.clientX - r.left - size/2) + "px";
       w.style.top = (e.clientY - r.top - size/2) + "px";
-      t.appendChild(w);
-      setTimeout(function(){ if(w.parentNode) w.parentNode.removeChild(w); }, 950);
+      var w2 = w.cloneNode(true);                       /* 第二圈:延迟跟随,水面荡开感 */
+      w2.style.animationDelay = ".13s";
+      w2.style.opacity = ".55";
+      t.appendChild(w); t.appendChild(w2);
+      setTimeout(function(){ if(w.parentNode) w.remove(); if(w2.parentNode) w2.remove(); }, 1150);
     });
   }
 
