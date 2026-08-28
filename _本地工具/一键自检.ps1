@@ -131,12 +131,12 @@ Check "sw.js CACHE follows version" ($swCache -eq $verNum) ("cache=" + $swCache 
 $quizBank = [IO.File]::ReadAllText((Join-Path $root "_assets\quiz-bank.js"), [Text.Encoding]::UTF8)
 $quizPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\03_[^\\]*\.html$' } | Select-Object -First 1
 $gh1 = 0
+$qbCount = [regex]::Matches($quizBank, 'q:"').Count
 if($quizPage){
   $quizHtml = [IO.File]::ReadAllText($quizPage.FullName, [Text.Encoding]::UTF8)
   if($quizHtml -match 'data-runtime-quiz'){ $gh1 = $qbCount }   # V2.1.4 runtime-rendered page: single source
   else { $gh1 = [regex]::Matches($quizHtml, 'class="quiz-q"').Count }
 }
-$qbCount = [regex]::Matches($quizBank, '\bq:"').Count
 Check "Quiz bank sync" (($qbCount -eq $gh1) -and ($gh1 -gt 0)) ($qbCount.ToString() + " vs " + $gh1)
 $glossJs = [IO.File]::ReadAllText((Join-Path $root "_assets\glossary-tip.js"), [Text.Encoding]::UTF8)
 $glossPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\01_[^\\]*\.html$' } | Select-Object -First 1
