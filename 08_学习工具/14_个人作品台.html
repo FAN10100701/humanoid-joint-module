@@ -1,54 +1,37 @@
 <!DOCTYPE html>
 <!-- ============================================================
-  个人作品台 · 门厅页(vibecoding 效果展台)
-  设计:无目录侧栏(全文无 h2);沉浸封面 + 4 张实时动画预览卡
-  各作品为 _作品/ 下独立全屏页(自带 HUD);引擎共享 _assets/pf-kit.js
+  个人作品台 ·「时间切片 · 蝶群」(three.js 实时建模演示)
+  设计:高级简约单作品页 —— 260 只程序化建模的蝴蝶绕场飞行;
+       空格/双击"冻结时间":全群瞬间凝固成灰白切片(致敬时间切片摄影),
+       相机继续漫游,一动一静形成电影对比。
+  规范:本地 three(00_3D解剖/lib)优先 + CDN 逐级回退;ES Module;零构建
 ============================================================ -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人形机器人学习站 · 个人作品台(vibecoding / GLSL 效果展台)</title>
-<script>
-(function(){
-  try{
-    var t = localStorage.getItem("site-theme") || "light";
-    document.documentElement.setAttribute("data-theme-early", t === "dark" ? "dark" : "light");
-  }catch(e){}
-})();
-</script>
-<link rel="stylesheet" href="../_assets/site.css">
+<title>时间切片 · 蝶群 — 个人作品台 · 人形机器人学习站</title>
 <style>
-/* ---------- 页面级样式(前缀 pf-) ---------- */
-.pf-hero{position:relative;text-align:center;padding:34px 10px 20px;overflow:hidden;border-radius:0 0 22px 22px;background:radial-gradient(1200px 420px at 50% -60px,rgba(56,120,255,.16),transparent 70%),#05070d}
-.pf-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 55%,#05070d);pointer-events:none}
-.pf-hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.5}
-.pf-hero .pf-inner{position:relative;z-index:2}
-.pf-hero h1{font-size:32px;font-weight:900;color:#fff;letter-spacing:1px}
-.pf-hero .pf-sub{color:#9fb0c6;font-size:14px;margin-top:10px;line-height:1.9}
-.pf-hero .pf-chips{margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.pf-hero .pf-chip{font-size:11.5px;color:#9ecbff;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);padding:4px 12px;border-radius:999px}
-.pf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin:20px 0}
-.pf-card{display:block;text-decoration:none;color:inherit;background:#0a0f18;border:1px solid rgba(255,255,255,.09);border-radius:16px;overflow:hidden;transition:transform .32s cubic-bezier(.22,1.2,.36,1),border-color .22s,box-shadow .32s;position:relative}
-.pf-card:hover{transform:translateY(-4px) scale(1.012);border-color:rgba(88,166,255,.55);box-shadow:0 18px 44px rgba(0,0,0,.45)}
-.pf-shot{position:relative;aspect-ratio:16/8;background:#04060b;line-height:0;border-bottom:1px solid rgba(255,255,255,.07)}
-.pf-shot canvas{width:100%;height:100%;display:block}
-.pf-shot .pf-no{position:absolute;left:12px;top:10px;font-family:Consolas,monospace;font-size:11px;color:rgba(255,255,255,.55);background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);padding:2px 9px;border-radius:999px;backdrop-filter:blur(6px)}
-.pf-shot .pf-go{position:absolute;right:12px;top:10px;font-size:11.5px;color:#9ecbff;background:rgba(37,99,235,.35);border:1px solid rgba(88,166,255,.5);padding:3px 11px;border-radius:999px;opacity:0;transition:.2s;backdrop-filter:blur(6px)}
-.pf-card:hover .pf-go{opacity:1}
-.pf-meta{padding:14px 16px 15px}
-.pf-meta .t{font-size:15.5px;font-weight:800;color:#eaf2fb}
-.pf-meta .d{font-size:12.5px;color:#8b98a9;line-height:1.8;margin-top:5px}
-.pf-meta .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
-.pf-meta .tag{font-size:10.5px;color:#8fb7e8;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);padding:1px 9px;border-radius:999px}
-.pf-foot{font-size:12px;color:#6b7280;text-align:center;margin:8px 0 6px;line-height:2}
-.pf-foot a{color:#58a6ff}
-/* 浅色主题:门厅保持暗夜美术馆气质,仅卡片底/文字微调保证可读 */
-body:not([data-theme]) .pf-hero,body[data-theme="light"] .pf-hero{background:radial-gradient(1200px 420px at 50% -60px,rgba(56,120,255,.2),transparent 70%),#0a1020}
-body:not([data-theme]) .pf-hero::after,body[data-theme="light"] .pf-hero::after{background:linear-gradient(transparent 55%,#0a1020)}
-body:not([data-theme]) .pf-card,body[data-theme="light"] .pf-card{background:#0d1424;border-color:rgba(120,160,220,.16);box-shadow:0 10px 30px rgba(30,60,120,.14)}
-body:not([data-theme]) .pf-card:hover,body[data-theme="light"] .pf-card:hover{border-color:rgba(88,166,255,.6)}
-@media print{.pf-hero canvas{display:none}}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#05070d;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC",sans-serif}
+#stage{position:fixed;inset:0;display:block;transition:filter .9s ease}
+body.frozen #stage{filter:grayscale(.88) contrast(1.14) brightness(1.06)}
+.hud{position:fixed;z-index:10;color:#c9d1d9;user-select:none}
+.hud-top{top:0;left:0;right:0;display:flex;align-items:center;gap:14px;padding:16px 20px;background:linear-gradient(rgba(5,7,13,.8),transparent);pointer-events:none}
+.hud-top a,.hud-top button{pointer-events:auto;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);color:#c9d1d9;font-size:13px;padding:7px 15px;border-radius:999px;cursor:pointer;text-decoration:none;font-family:inherit;transition:.18s;backdrop-filter:blur(8px)}
+.hud-top a:hover,.hud-top button:hover{border-color:#58a6ff;color:#fff}
+.hud-title{font-size:15px;font-weight:800;letter-spacing:2px;color:#fff}
+.hud-title small{font-weight:400;color:#7d8a9c;margin-left:10px;letter-spacing:0}
+#state{margin-left:auto;font-family:Consolas,monospace;font-size:12px;color:rgba(255,255,255,.45)}
+.hud-bottom{left:0;right:0;bottom:0;padding:16px 20px;text-align:center;font-size:12.5px;color:rgba(255,255,255,.38);pointer-events:none;letter-spacing:1px}
+.hud-bottom b{color:rgba(255,255,255,.6);font-weight:600}
+#freeze-badge{top:64px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:6px;color:#e8eef6;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);padding:6px 18px 6px 24px;border-radius:999px;opacity:0;transition:opacity .6s;backdrop-filter:blur(6px)}
+body.frozen #freeze-badge{opacity:1}
+#loader{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:#05070d;color:#8b98a9;font-size:13.5px;letter-spacing:2px;transition:opacity .7s}
+#loader.hide{opacity:0;pointer-events:none}
+#loader .ring{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.12);border-top-color:#58a6ff;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#vignette{position:fixed;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.5) 100%)}
 </style>
 <script>
   window.PAGE = {
@@ -56,232 +39,191 @@ body:not([data-theme]) .pf-card:hover,body[data-theme="light"] .pf-card:hover{bo
     root: "..",
     breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "个人作品台" } ],
     prev: { t: "AI 答疑助手", u: "13_AI答疑助手.html" },
-    next: { t: "作品 01 · 电磁雨柱", u: "_作品/01_电磁雨柱.html" }
+    next: { t: "返回首页", u: "../index.html" }
   };
 </script>
 </head>
 <body>
 
-<div class="container">
+<canvas id="stage"></canvas>
+<div id="vignette"></div>
 
-  <!-- 封面:雨柱 shader 作背景 -->
-  <div class="pf-hero">
-    <canvas id="heroRain"></canvas>
-    <div class="pf-inner">
-      <h1>🎮 个人作品台</h1>
-      <div class="pf-sub">vibecoding 前端效果展台 —— 零依赖手写 WebGL / GLSL Shader / Canvas 粒子<br>
-      每个作品都是一个独立的全屏沉浸页:效果 + 参数 + 源码</div>
-      <div class="pf-chips">
-        <span class="pf-chip">WebGL / GLSL</span><span class="pf-chip">零依赖</span><span class="pf-chip">Raymarching</span><span class="pf-chip">粒子系统</span><span class="pf-chip">源码可读</span>
-      </div>
-    </div>
-  </div>
+<div class="hud hud-top">
+  <a href="../index.html">‹ 返回学习站</a>
+  <span class="hud-title">时间切片 · 蝶群<small>THREE.JS 程序化建模 · 260 INSTANCES · 实时渲染</small></span>
+  <span id="state"></span>
+  <button id="freezeBtn">⏸ 冻结时间</button>
+</div>
+<div class="hud" id="freeze-badge">TIME SLICED</div>
+<div class="hud hud-bottom">拖动旋转 · 滚轮缩放 · <b>空格 / 双击</b> 冻结时间 —— 全群凝固成灰白切片,相机仍在漫游</div>
 
-  <!-- 四张实时预览卡 -->
-  <div class="pf-grid">
+<div id="loader"><div class="ring"></div><div id="loadTxt">正在加载 three.js …</div></div>
 
-    <a class="pf-card" href="_作品/01_电磁雨柱.html">
-      <div class="pf-shot"><canvas id="pv1"></canvas><span class="pf-no">01</span><span class="pf-go">进入作品 →</span></div>
-      <div class="pf-meta">
-        <div class="t">🌧️ 电磁雨柱</div>
-        <div class="d">把三相电流想象成三列雨:fbm 分形噪声 + 幂次锐化,一行 pow() 下出一场 GPU 雨。</div>
-        <div class="tags"><span class="tag">GLSL</span><span class="tag">fbm 噪声</span></div>
-      </div>
-    </a>
+<script type="module">
+const $ = function(id){ return document.getElementById(id); };
+const loadTxt = $("loadTxt");
 
-    <a class="pf-card" href="_作品/02_光影走廊.html">
-      <div class="pf-shot"><canvas id="pv2"></canvas><span class="pf-no">02</span><span class="pf-go">进入作品 →</span></div>
-      <div class="pf-meta">
-        <div class="t">🌌 光影走廊</div>
-        <div class="d">不建任何模型:64 条光线在一串 SDF 圆环间步进,累计 1/d² 就得到体积霓虹。</div>
-        <div class="tags"><span class="tag">Raymarching</span><span class="tag">SDF</span><span class="tag">体积光</span></div>
-      </div>
-    </a>
+async function loadThree(){
+  const urls = [
+    "../../00_3D解剖/lib/three.module.js",
+    "https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js",
+    "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "https://unpkg.com/three@0.160.0/build/three.module.js"
+  ];
+  for(const u of urls){
+    try{ loadTxt.textContent = "正在加载 " + (u.indexOf("lib") >= 0 ? "本地 three.js" : "CDN " + u.split("/")[2]) + " …"; return await import(u); }
+    catch(e){ /* 下一个源 */ }
+  }
+  throw new Error("所有源均加载失败");
+}
 
-    <a class="pf-card" href="_作品/03_极光平原.html">
-      <div class="pf-shot"><canvas id="pv3"></canvas><span class="pf-no">03</span><span class="pf-go">进入作品 →</span></div>
-      <div class="pf-meta">
-        <div class="t">🏔️ 极光平原</div>
-        <div class="d">高斯光带 + 青→紫→品红色域映射 + 一行 smoothstep 画雪山,程序化星空收尾。</div>
-        <div class="tags"><span class="tag">GLSL</span><span class="tag">色域映射</span></div>
-      </div>
-    </a>
+try{
+  const THREE = await loadThree();
+  loadTxt.textContent = "正在孵化 260 只蝴蝶 …";
 
-    <a class="pf-card" href="_作品/04_相位蝴蝶群.html">
-      <div class="pf-shot"><canvas id="pv4"></canvas><span class="pf-no">04</span><span class="pf-go">进入作品 →</span></div>
-      <div class="pf-meta">
-        <div class="t">🦋 相位蝴蝶群</div>
-        <div class="d">520 个发光粒子在三角函数流场里洄游,残影=不完全清屏;鼠标穿过会搅起涡旋。</div>
-        <div class="tags"><span class="tag">Canvas2D</span><span class="tag">粒子流场</span><span class="tag">残影</span></div>
-      </div>
-    </a>
+  /* ---------- 渲染器 / 场景 ---------- */
+  const canvas = $("stage");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.12;
 
-  </div>
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x05070d);
+  scene.fog = new THREE.FogExp2(0x05070d, 0.052);
 
-  <p class="pf-foot">作品即教学:每个作品页内置「📜 源码」面板,对照滑杆理解 uniform 驱动 ·
-  下一站工具链展望:<a href="https://github.com/search?q=img2threejs&type=repositories" target="_blank" rel="noopener">img2threejs</a>(参考图生成 Three.js 模型)评估用于教学 3D 动画 ·
-  延伸阅读 <a href="https://thebookofshaders.com/?lan=ch" target="_blank" rel="noopener">The Book of Shaders</a> / <a href="https://www.shadertoy.com" target="_blank" rel="noopener">Shadertoy</a></p>
+  const cam = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);
 
-</div><!-- /container -->
+  /* ---------- 灯光(冷调主光 + 青色轮廓光) ---------- */
+  scene.add(new THREE.AmbientLight(0x334455, 0.9));
+  const key = new THREE.DirectionalLight(0xffffff, 2.2);
+  key.position.set(3, 5, 4); scene.add(key);
+  const rim = new THREE.PointLight(0x66ccff, 60, 30, 1.8);
+  rim.position.set(0, 2.5, 0); scene.add(rim);
+  const warm = new THREE.PointLight(0xff9966, 22, 24, 1.8);
+  warm.position.set(-4, -1, -3); scene.add(warm);
 
-<script src="../_assets/site.js"></script>
-<script src="../_assets/pf-kit.js"></script>
-<script>
-(function(){
-  "use strict";
-  var K = window.PFKit;
-  if(!K) return;
+  /* ---------- 程序化建模:身体 + 左右翅(铰链在原点) ---------- */
+  const N = 260;
+  const bodyGeo = new THREE.CapsuleGeometry(0.022, 0.16, 3, 6);
+  bodyGeo.rotateX(Math.PI/2);
+  const wingGeo = new THREE.PlaneGeometry(0.42, 0.3);
+  wingGeo.translate(0.24, 0, 0);
+  wingGeo.rotateX(-Math.PI/2);
+  const wingRGeo = wingGeo.clone();
+  wingRGeo.scale(-1, 1, 1);
 
-  /* 封面背景:雨柱(低强度低速度,作氛围) */
-  (function(){
-    var canvas = document.getElementById("heroRain");
-    var FRAG =
-      "precision mediump float;\n" +
-      "uniform vec2 uRes;uniform float uT;\n" +
-      K.NOISE_GLSL +
-      "void main(){\n" +
-      " vec2 uv=gl_FragCoord.xy/uRes; float col=0.;\n" +
-      " for(int i=0;i<3;i++){\n" +
-      "  float fi=float(i);\n" +
-      "  float x=uv.x*(1.+fi*.4)+fi*1.7;\n" +
-      "  float n=fbm(vec2(x*7., uT*.12 - uv.y*2. + fi*9.));\n" +
-      "  col+=pow(n,3.)*(1.-uv.y)*smoothstep(0.,.15,uv.y)*(1.-fi*.25);\n" +
-      " }\n" +
-      " vec3 c=vec3(.02,.04,.08)+vec3(.35,.5,.85)*col*.8+vec3(.2,.7,.9)*pow(col,3.)*.5;\n" +
-      " gl_FragColor=vec4(c,1.);\n" +
-      "}";
-    var g = K.glCanvas(canvas, FRAG, []);
-    if(!g) return;
-    K.loop(canvas, null, function(t){
-      g.resize(); g.draw(t * 0.6);
+  const matWing = new THREE.MeshStandardMaterial({ color:0xdfe8f2, roughness:0.5, metalness:0.15, side:THREE.DoubleSide, emissive:0x0a1626, emissiveIntensity:0.6 });
+  const matBody = new THREE.MeshStandardMaterial({ color:0x1a2030, roughness:0.4, metalness:0.5 });
+
+  const bodies = new THREE.InstancedMesh(bodyGeo, matBody, N);
+  const wingsL = new THREE.InstancedMesh(wingGeo, matWing, N);
+  const wingsR = new THREE.InstancedMesh(wingRGeo, matWing, N);
+  scene.add(bodies, wingsL, wingsR);
+
+  /* ---------- 每只蝴蝶的个性 ---------- */
+  const P = [];
+  for(let i = 0; i < N; i++){
+    P.push({
+      r: 1.6 + Math.random()*3.6,
+      speed: (0.12 + Math.random()*0.3) * (Math.random() < 0.5 ? 1 : -1),
+      phase: Math.random()*Math.PI*2,
+      yBase: -1.2 + Math.random()*3.2,
+      yAmp: 0.25 + Math.random()*0.6,
+      size: 0.7 + Math.random()*0.9,
+      flap: 9 + Math.random()*8,
+      tilt: (Math.random()-0.5)*0.5
     });
-  })();
+  }
 
-  /* 预览①:雨柱 */
-  (function(){
-    var canvas = document.getElementById("pv1");
-    var FRAG =
-      "precision mediump float;\n" +
-      "uniform vec2 uRes;uniform float uT;\n" +
-      K.NOISE_GLSL +
-      "void main(){\n" +
-      " vec2 uv=gl_FragCoord.xy/uRes; float col=0.;\n" +
-      " for(int i=0;i<3;i++){\n" +
-      "  float fi=float(i);\n" +
-      "  float x=uv.x*(1.+fi*.4)+fi*1.7;\n" +
-      "  float n=fbm(vec2(x*8., uT*.36 - uv.y*2. + fi*9.));\n" +
-      "  col+=pow(n,3.)*(1.-uv.y)*smoothstep(0.,.15,uv.y)*(1.-fi*.25);\n" +
-      " }\n" +
-      " col*=1.2;\n" +
-      " vec3 c=vec3(.02,.03,.05)+vec3(.45,.6,.9)*col+vec3(.2,.8,.9)*pow(col,3.)*.6;\n" +
-      " gl_FragColor=vec4(c,1.);\n" +
-      "}";
-    var g = K.glCanvas(canvas, FRAG, []);
-    if(!g) return;
-    K.loop(canvas, null, function(t){ g.resize(); g.draw(t); });
-  })();
+  const dummy = new THREE.Object3D();
+  const qYaw = new THREE.Quaternion(), qRoll = new THREE.Quaternion(), qFlap = new THREE.Quaternion();
+  const AXIS_Y = new THREE.Vector3(0,1,0), AXIS_Z = new THREE.Vector3(0,0,1);
+  const mWing = new THREE.Matrix4();
 
-  /* 预览②:光影走廊 */
-  (function(){
-    var canvas = document.getElementById("pv2");
-    var FRAG =
-      "precision mediump float;\n" +
-      "uniform vec2 uRes;uniform float uT;\n" +
-      "float sdTorus(vec3 p, vec2 t){vec2 q=vec2(length(p.xz)-t.x,p.y);return length(q)-t.y;}\n" +
-      "float map(vec3 p){\n" +
-      " float d=1e9;\n" +
-      " for(int i=0;i<4;i++){\n" +
-      "  vec3 q=p; q.z+=uT*2.+float(i)*1.8; q.z=mod(q.z,7.2)-3.6;\n" +
-      "  d=min(d,sdTorus(q,vec2(1.4,.06+float(i)*.015)));\n" +
-      " }\n" +
-      " return d;\n" +
-      "}\n" +
-      "void main(){\n" +
-      " vec2 uv=(gl_FragCoord.xy-.5*uRes)/uRes.y;\n" +
-      " vec3 ro=vec3(0.,0.,-3.), rd=normalize(vec3(uv,.85));\n" +
-      " float t=0., glow=0.;\n" +
-      " for(int i=0;i<48;i++){\n" +
-      "  vec3 p=ro+rd*t; float d=map(p);\n" +
-      "  glow+=.02/(1.+d*d*40.); t+=max(d*.8,.012);\n" +
-      "  if(t>22.) break;\n" +
-      " }\n" +
-      " float vig=1.-dot(uv,uv)*.35;\n" +
-      " vec3 c=(vec3(.1,.5,1.)*glow+vec3(.55,.2,1.)*glow*glow*2.2)*vig;\n" +
-      " gl_FragColor=vec4(c,1.);\n" +
-      "}";
-    var g = K.glCanvas(canvas, FRAG, []);
-    if(!g) return;
-    K.loop(canvas, null, function(t){ g.resize(); g.draw(t); });
-  })();
-
-  /* 预览③:极光 */
-  (function(){
-    var canvas = document.getElementById("pv3");
-    var FRAG =
-      "precision mediump float;\n" +
-      "uniform vec2 uRes;uniform float uT;\n" +
-      K.NOISE_GLSL +
-      "float band(vec2 uv, float t){\n" +
-      " float ridge=fbm(vec2(uv.x*2.2, t*.35))*.6+uv.x*.15;\n" +
-      " return exp(-abs(uv.y-(.55+ridge*.35))*6.);\n" +
-      "}\n" +
-      "vec3 ramp(float v){\n" +
-      " vec3 c=vec3(.0,.35,.3);\n" +
-      " c=mix(c,vec3(.35,.1,.55),smoothstep(.2,.7,v));\n" +
-      " c=mix(c,vec3(.9,.25,.6),smoothstep(.7,1.,v));\n" +
-      " return c;\n" +
-      "}\n" +
-      "float stars(vec2 uv, float t){\n" +
-      " vec2 g=floor(uv*vec2(160.,90.)); vec2 f=fract(uv*vec2(160.,90.));\n" +
-      " float h=hash(g.x+g.y*57.);\n" +
-      " return step(.985,h)*smoothstep(.25,.0,length(f-.5))*(.6+.4*sin(t*2.+h*40.));\n" +
-      "}\n" +
-      "void main(){\n" +
-      " vec2 uv=gl_FragCoord.xy/uRes;\n" +
-      " float a=band(uv,uT*.6);\n" +
-      " float mt=smoothstep(.34,.28,uv.y+fbm(uv*3.+7.)*.06);\n" +
-      " vec3 c=ramp(min(a,1.))*a+vec3(.012,.02,.045);\n" +
-      " c=mix(c,vec3(.006,.01,.018),mt);\n" +
-      " c+=vec3(.9)*stars(uv,uT)*step(.3,uv.y);\n" +
-      " gl_FragColor=vec4(c,1.);\n" +
-      "}";
-    var g = K.glCanvas(canvas, FRAG, []);
-    if(!g) return;
-    K.loop(canvas, null, function(t){ g.resize(); g.draw(t); });
-  })();
-
-  /* 预览④:迷你粒子群(canvas2d,160 粒) */
-  (function(){
-    var canvas = document.getElementById("pv4");
-    var ctx = canvas.getContext("2d");
-    if(!ctx) return;
-    var W = canvas.width = 640, H = canvas.height = 320;
-    var N = 160, P = [];
-    var HUES = ["rgba(120,220,255,", "rgba(140,170,255,", "rgba(255,214,140,", "rgba(160,255,220,"];
-    for(var i = 0; i < N; i++){
-      P.push({ x: Math.random()*W, y: Math.random()*H, c: HUES[i % HUES.length] + "0.5)" });
+  function place(t){
+    for(let i = 0; i < N; i++){
+      const p = P[i];
+      const a = t * p.speed + p.phase;
+      const r = p.r * (1 + 0.14*Math.sin(t*0.6 + p.phase*2.3));
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r * 0.82;
+      const y = p.yBase + Math.sin(t*1.25 + p.phase) * p.yAmp + Math.sin(a*3.0)*0.12;
+      dummy.position.set(x, y, z);
+      qYaw.setFromAxisAngle(AXIS_Y, -a + Math.PI/2);
+      qRoll.setFromAxisAngle(AXIS_Z, Math.sin(t*1.1 + p.phase)*0.35 + p.tilt*0.4);
+      dummy.quaternion.copy(qYaw).multiply(qRoll);
+      dummy.scale.setScalar(p.size);
+      dummy.updateMatrix();
+      bodies.setMatrixAt(i, dummy.matrix);
+      const flap = Math.sin(t*p.flap + p.phase*5) * 1.05 - 0.1;
+      qFlap.setFromAxisAngle(AXIS_Z, flap);
+      mWing.copy(dummy.matrix).multiply(new THREE.Matrix4().makeRotationFromQuaternion(qFlap));
+      wingsL.setMatrixAt(i, mWing);
+      qFlap.setFromAxisAngle(AXIS_Z, -flap);
+      mWing.copy(dummy.matrix).multiply(new THREE.Matrix4().makeRotationFromQuaternion(qFlap));
+      wingsR.setMatrixAt(i, mWing);
     }
-    var seeded = false;
-    K.loop(canvas, null, function(t){
-      if(canvas.clientWidth === 0) return;
-      if(!seeded){ ctx.fillStyle = "#04060b"; ctx.fillRect(0,0,W,H); seeded = true; }
-      ctx.fillStyle = "rgba(4,6,11,0.08)";
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalCompositeOperation = "lighter";
-      for(var k = 0; k < N; k++){
-        var p = P[k];
-        var vx = Math.sin(p.y*0.02 + t*0.6) + Math.cos(p.x*0.015 - t*0.4);
-        var vy = Math.cos(p.x*0.018 - t*0.5) - Math.sin(p.y*0.013 + t*0.3);
-        p.x += vx * 2.4; p.y += vy * 2.4;
-        if(p.x < 0) p.x += W; if(p.x > W) p.x -= W;
-        if(p.y < 0) p.y += H; if(p.y > H) p.y -= H;
-        ctx.fillStyle = p.c;
-        ctx.fillRect(p.x, p.y, 1.6, 1.6);
-      }
-      ctx.globalCompositeOperation = "source-over";
-    });
-  })();
-})();
+    bodies.instanceMatrix.needsUpdate = true;
+    wingsL.instanceMatrix.needsUpdate = true;
+    wingsR.instanceMatrix.needsUpdate = true;
+  }
+
+  /* ---------- 相机漫游(自动 + 拖拽 + 缩放) ---------- */
+  let yaw = 0.6, pitch = 0.22, dist = 7.5, tYaw = yaw, tPitch = pitch, tDist = dist;
+  let dragging = false, px = 0, py = 0;
+  canvas.addEventListener("pointerdown", function(e){ dragging = true; px = e.clientX; py = e.clientY; });
+  addEventListener("pointermove", function(e){
+    if(!dragging) return;
+    tYaw += (e.clientX - px) * 0.005;
+    tPitch = Math.max(-0.5, Math.min(1.1, tPitch + (e.clientY - py) * 0.004));
+    px = e.clientX; py = e.clientY;
+  });
+  addEventListener("pointerup", function(){ dragging = false; });
+  addEventListener("wheel", function(e){ tDist = Math.max(3.2, Math.min(14, tDist + e.deltaY * 0.004)); }, { passive:true });
+
+  /* ---------- 时间冻结(时间切片) ---------- */
+  let frozen = false, timeScale = 1, simT = 0, last = performance.now();
+  function toggleFreeze(){
+    frozen = !frozen;
+    document.body.classList.toggle("frozen", frozen);
+    $("freezeBtn").textContent = frozen ? "▶ 时间流动" : "⏸ 冻结时间";
+    $("state").textContent = frozen ? "FROZEN" : "";
+  }
+  addEventListener("keydown", function(e){ if(e.code === "Space"){ e.preventDefault(); toggleFreeze(); } });
+  canvas.addEventListener("dblclick", toggleFreeze);
+  $("freezeBtn").addEventListener("click", toggleFreeze);
+
+  addEventListener("resize", function(){
+    cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  /* ---------- 主循环 ---------- */
+  let frames = 0, fpsT = performance.now();
+  (function loop(now){
+    requestAnimationFrame(loop);
+    const dt = Math.min((now - last)/1000, 0.05); last = now;
+    timeScale += ((frozen ? 0 : 1) - timeScale) * Math.min(1, dt*3.2);
+    simT += dt * timeScale;
+    place(simT);
+    yaw += (tYaw - yaw)*0.06; pitch += (tPitch - pitch)*0.06; dist += (tDist - dist)*0.08;
+    if(!dragging) tYaw += dt * 0.05;
+    cam.position.set(Math.cos(yaw)*Math.cos(pitch)*dist, Math.sin(pitch)*dist + 0.6, Math.sin(yaw)*Math.cos(pitch)*dist);
+    cam.lookAt(0, 0.2, 0);
+    rim.intensity = 60 + (frozen ? 55 : 0) * (1 - Math.abs(timeScale - (frozen?0:1)));
+    renderer.render(scene, cam);
+    frames++;
+    if(now - fpsT > 1000){ $("state").textContent = frames + " fps · " + N + " 只"; frames = 0; fpsT = now; }
+  })(last);
+
+  $("loader").classList.add("hide");
+}catch(err){
+  loadTxt.innerHTML = "three.js 加载失败:" + (err && err.message || err) +
+    "<br><span style='font-size:12px;color:#667'>请检查网络(CDN 回退已尝试),或用本地服务器访问本页</span>";
+  document.querySelector("#loader .ring").style.display = "none";
+}
 </script>
 </body>
 </html>

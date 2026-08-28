@@ -23,8 +23,6 @@ rem   they sweep untracked personal/dev files (video assets, .trae, .zcode,
 rem   browser profiles, unfinished personal pages) into this PUBLIC repo.
 "%GIT_EXE%" add .github .gitignore .nojekyll _assets _本地工具 docs 00_3D解剖 01_理论入门 02_硬件基础 03_项目实操 04_升级进阶 05_HdriveV2工程 06_软件与算法 07_前沿知识库 08_学习工具 404.html CHANGELOG.md CONTRIBUTING.md LICENSE README.md baidu_verify_codeva-83ZAbuLmz6.html index.html manifest.json robots.txt sitemap.xml sw.js
 rem Unstage the unfinished personal study pages (add them explicitly when ready):
-"%GIT_EXE%" reset -- "08_学习工具/11_保研复试面试题库.html" "08_学习工具/12_闯关学习.html" "08_学习工具/13_AI答疑助手.html" 2>nul
-"%GIT_EXE%" reset -- "_assets/ib-data-a.js" "_assets/ib-data-b.js" "_assets/quest-data.js" "_assets/ai-assistant.js" 2>nul
 echo.
 
 echo [2/3] Creating commit...
