@@ -46,7 +46,13 @@ h1.glass-title{font-size:26px;margin-top:8px}
 async function boot(){
   let THREE = null;
   try{ THREE = await import("../../00_3D解剖/lib/three.module.js"); }catch(e){
-    try{ THREE = await import("https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js"); }catch(e2){ return; }
+    try{ THREE = await import("https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js"); }catch(e2){
+      const tip = document.createElement("div");
+      tip.style.cssText = "position:fixed;inset:auto 0 40% 0;text-align:center;color:#fca5a5;font-size:14px;z-index:30";
+      tip.textContent = "星尘背景加载失败:请先运行 _本地工具/启动教学页面.bat 启动本地服务,再刷新本页";
+      document.body.appendChild(tip);
+      return;
+    }
   }
   const c = document.getElementById("stars");
   const r = new THREE.WebGLRenderer({ canvas:c, antialias:true, alpha:true });

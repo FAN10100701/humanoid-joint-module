@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<!-- 个人作品 · 时空蝴蝶标本:同心环晶格有序排列的玻璃蝴蝶,每环=一个时间切片,相机沿轴穿越(星际穿越式) -->
+<!-- 个人作品 · 时空蝴蝶标本(V2):形状化玻璃蝶 60 只 · 5 环时间切片晶格 · 零分配热循环 -->
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>时空蝴蝶标本 · 个人作品台</title></head>
 <body>
 <canvas id="stage"></canvas>
 <div class="hud hud-top"><a href="../14_个人作品台.html">‹ 作品台</a>
-<span class="hud-title">时空蝴蝶标本<small>有序晶格 · 时间分层 · THREE.JS INSTANCED</small></span><span id="state"></span>
+<span class="hud-title">时空蝴蝶标本<small>5 环时间切片 · 60 只玻璃蝶 · 有序晶格</small></span><span id="state"></span>
 <button id="modeBtn">✦ 切片视角</button></div>
-<div class="hud hud-bottom">每圈环带 = 一個被凝固的瞬间 · 鼠标拖动环视 · 滚轮沿时间轴穿越</div>
+<div class="hud hud-bottom">每圈环带 = 一个被凝固的瞬间 · 拖动环视 · 滚轮沿时间轴穿越 · 也可双击切换视角</div>
 <div id="loader"><div class="ring"></div><div id="loadTxt">加载中…</div></div>
 <script src="../../_assets/orbit-kit.js"></script>
 <script type="module">
@@ -18,71 +18,101 @@ try{
   const renderer = new THREE.WebGLRenderer({ canvas:$("stage"), antialias:true });
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x04060c, 0.045);
-  const cam = new THREE.PerspectiveCamera(58, 1, 0.1, 200);
+  scene.fog = new THREE.FogExp2(0x04060c, 0.042);
+  const cam = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
   K.fit(renderer, cam);
-  scene.add(new THREE.AmbientLight(0x3a4a66, 1.1));
-  const key = new THREE.DirectionalLight(0xfff4e0, 2.4); key.position.set(4,6,3); scene.add(key);
-  const rim = new THREE.PointLight(0x6ec6ff, 90, 60, 1.6); rim.position.set(0,0,0); scene.add(rim);
+  scene.add(new THREE.AmbientLight(0x3a4a66, 1.2));
+  const key = new THREE.DirectionalLight(0xfff2dc, 2.6); key.position.set(5,7,4); scene.add(key);
+  const rim = new THREE.PointLight(0x6ec6ff, 140, 70, 1.6); rim.position.set(0,0,0); scene.add(rim);
 
-  /* 玻璃蝶:身体+双翅,InstancedMesh */
-  const N_RINGS = 7, PER = 26, N = N_RINGS*PER;
-  const bodyGeo = new THREE.CapsuleGeometry(0.03, 0.22, 3, 6); bodyGeo.rotateX(Math.PI/2);
-  const wingGeo = new THREE.PlaneGeometry(0.6, 0.42); wingGeo.translate(0.33,0,0); wingGeo.rotateX(-Math.PI/2);
-  const wingRGeo = wingGeo.clone(); wingRGeo.scale(-1,1,1);
-  const glassMat = new THREE.MeshPhysicalMaterial({ color:0xcfe4ff, roughness:0.18, metalness:0.1, transparent:true, opacity:0.72, side:THREE.DoubleSide, emissive:0x14283f, emissiveIntensity:0.7, clearcoat:1 });
-  const bodyMat = new THREE.MeshStandardMaterial({ color:0x2a3448, roughness:0.35, metalness:0.6 });
+  /* ---------- 形状化蝶翼:贝塞尔双叶轮廓(前翅大叶+后翅小叶),沿 x 渐变着色 ---------- */
+  function wingGeo(mirror){
+    const s = new THREE.Shape();
+    s.moveTo(0, 0);
+    s.bezierCurveTo(0.16, 0.14, 0.40, 0.20, 0.46, 0.06);   /* 前翅上缘 */
+    s.bezierCurveTo(0.50, -0.04, 0.36, -0.10, 0.22, -0.12); /* 前翅下缘 */
+    s.bezierCurveTo(0.34, -0.18, 0.30, -0.34, 0.14, -0.36); /* 后翅外缘 */
+    s.bezierCurveTo(0.05, -0.37, 0.01, -0.20, 0, 0);        /* 后翅内缘回铰链 */
+    const g = new THREE.ShapeGeometry(s, 14);
+    g.rotateX(-Math.PI/2);                                   /* 躺到 XZ 平面,铰链在原点 */
+    /* 沿 x 渐变顶点色:铰链深、翼缘亮 */
+    const p = g.attributes.position, col = new Float32Array(p.count*3);
+    for(let i = 0; i < p.count; i++){
+      const k = Math.min(1, Math.abs(p.getX(i))/0.5);
+      col[i*3] = 0.55 + 0.45*k; col[i*3+1] = 0.75 + 0.25*k; col[i*3+2] = 1.0;
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    if(mirror) g.scale(-1, 1, 1);
+    return g;
+  }
+  const glass = new THREE.MeshPhysicalMaterial({
+    color:0xbfdcff, vertexColors:true, roughness:0.15, metalness:0.05,
+    transparent:true, opacity:0.8, side:THREE.DoubleSide,
+    emissive:0x1a3a5e, emissiveIntensity:0.55, clearcoat:1, clearcoatRoughness:0.25
+  });
+  const bodyMat = new THREE.MeshStandardMaterial({ color:0x39435c, roughness:0.35, metalness:0.6 });
+
+  /* ---------- 5 环 × 12 只 = 60 只,有序晶格 ---------- */
+  const RINGS = 5, PER = 12, N = RINGS*PER;
+  const bodyGeo = new THREE.CapsuleGeometry(0.035, 0.3, 3, 8); bodyGeo.rotateX(Math.PI/2);
   const bodies = new THREE.InstancedMesh(bodyGeo, bodyMat, N);
-  const wL = new THREE.InstancedMesh(wingGeo, glassMat, N);
-  const wR = new THREE.InstancedMesh(wingRGeo, glassMat, N);
-  scene.add(bodies, wL, wR);
+  const wingsL = new THREE.InstancedMesh(wingGeo(false), glass, N);
+  const wingsR = new THREE.InstancedMesh(wingGeo(true), glass, N);
+  scene.add(bodies, wingsL, wingsR);
 
-  /* 有序晶格:每环一个"凝固时刻",环内等角排布,姿态统一朝外 —— 井然有序 */
+  /* ---------- 零分配热循环:全部复用临时对象 ---------- */
   const dummy = new THREE.Object3D();
-  const mW = new THREE.Matrix4(), qF = new THREE.Quaternion(), AZ = new THREE.Vector3(0,0,1);
-  function layout(t, slice){
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), MR = new THREE.Matrix4();
+  const AZ = new THREE.Vector3(0,0,1);
+  const lerp = (a,b,k)=>a+(b-a)*k;
+
+  let slice = true, sim = 0;
+  function layout(t){
     let idx = 0;
-    for(let ring = 0; ring < N_RINGS; ring++){
-      const R = 1.6 + ring*1.15;
-      const zOff = (ring - N_RINGS/2 + 0.5) * 1.5;         /* 环沿 Z 轴分层=时间切片 */
-      const spin = slice ? (ring%2 ? 1 : -1) * t*0.12 : 0;  /* 切片视角:环缓慢反向旋 */
-      const flap = slice ? 0.5 : Math.sin(t*7 + ring)*0.9;  /* 标本静驻 vs 微振翅 */
+    for(let ring = 0; ring < RINGS; ring++){
+      const R = 2.3 + ring*1.5;                        /* 环间距 1.5,充分留空不穿模 */
+      const zOff = (ring - RINGS/2 + 0.5) * 2.0;       /* 每环 = 一个时间切片层 */
+      const spin = slice ? (ring%2 ? 1 : -1) * t*0.1 : 0;
+      const flapBase = slice ? 0.55 : Math.sin(t*5 + ring)*0.75;
       for(let k = 0; k < PER; k++, idx++){
-        const a = (k/PER)*Math.PI*2 + ring*0.14 + spin;
-        dummy.position.set(Math.cos(a)*R, Math.sin(a)*R*0.94 + Math.sin(t*0.5+ring)*0.18, zOff);
-        dummy.rotation.set(0, -a + Math.PI/2 + Math.PI/2, Math.sin(t*0.8+ring+k)*0.12);
-        dummy.scale.setScalar(0.85 + (ring%3)*0.14);
+        const a = (k/PER)*Math.PI*2 + ring*0.16 + spin;
+        const bob = slice ? 0 : Math.sin(t*1.2 + ring + k*0.5)*0.1;
+        dummy.position.set(Math.cos(a)*R, Math.sin(a)*R*0.96 + bob, zOff);
+        dummy.rotation.set(0, -a + Math.PI, Math.sin(a*2)*0.08);   /* 统一朝外,姿态整齐 */
+        dummy.scale.setScalar(1.15 + (ring%3)*0.18);
         dummy.updateMatrix();
         bodies.setMatrixAt(idx, dummy.matrix);
-        qF.setFromAxisAngle(AZ, slice ? 0.55 : flap);
-        mW.copy(dummy.matrix).multiply(new THREE.Matrix4().makeRotationFromQuaternion(qF));
-        wL.setMatrixAt(idx, mW);
-        qF.setFromAxisAngle(AZ, -(slice ? 0.55 : flap));
-        mW.copy(dummy.matrix).multiply(new THREE.Matrix4().makeRotationFromQuaternion(qF));
-        wR.setMatrixAt(idx, mW);
+        const flap = lerp(flapBase, flapBase + Math.sin(t*6 + k)*0.05, slice?0:1);
+        Q.setFromAxisAngle(AZ, flap);
+        M.copy(dummy.matrix).multiply(MR.makeRotationFromQuaternion(Q));
+        wingsL.setMatrixAt(idx, M);
+        Q.setFromAxisAngle(AZ, -flap);
+        M.copy(dummy.matrix).multiply(MR.makeRotationFromQuaternion(Q));
+        wingsR.setMatrixAt(idx, M);
       }
     }
-    bodies.instanceMatrix.needsUpdate = wL.instanceMatrix.needsUpdate = wR.instanceMatrix.needsUpdate = true;
+    bodies.instanceMatrix.needsUpdate = wingsL.instanceMatrix.needsUpdate = wingsR.instanceMatrix.needsUpdate = true;
   }
+  layout(0);   /* 首帧同步渲染,绝不空屏 */
 
-  /* 相机:Z 轴穿越(滚轮) + 拖动环视 */
-  let z = 8, tZ = 8, yaw = 0, pitch = 0, tYaw = 0, tPitch = 0, drag = false, px = 0, py = 0;
+  /* ---------- 相机:沿 Z 时间轴穿越 + 拖动环视 ---------- */
+  let z = 7.5, tZ = 7.5, yaw = 0, pitch = 0.1, tYaw = 0, tPitch = 0.1, drag = false, px = 0, py = 0;
   $("stage").addEventListener("pointerdown", e=>{ drag = true; px = e.clientX; py = e.clientY; });
-  addEventListener("pointermove", e=>{ if(!drag) return; tYaw += (e.clientX-px)*0.004; tPitch = Math.max(-0.8, Math.min(0.8, tPitch+(e.clientY-py)*0.003)); px = e.clientX; py = e.clientY; });
+  addEventListener("pointermove", e=>{ if(!drag) return; tYaw += (e.clientX-px)*0.004; tPitch = Math.max(-0.7, Math.min(0.7, tPitch+(e.clientY-py)*0.003)); px = e.clientX; py = e.clientY; });
   addEventListener("pointerup", ()=> drag = false);
-  addEventListener("wheel", e=>{ tZ = Math.max(-9, Math.min(14, tZ + e.deltaY*0.006)); }, { passive:true });
+  addEventListener("wheel", e=>{ tZ = Math.max(-8, Math.min(13, tZ + e.deltaY*0.005)); }, { passive:true });
 
-  let slice = false, tScale = 1, sim = 0, last = performance.now(), fr = 0, ft = last;
-  $("modeBtn").onclick = ()=>{ slice = !slice; $("modeBtn").textContent = slice ? "✺ 振翅视角" : "✦ 切片视角"; };
+  let last = performance.now(), fr = 0, ft = last;
+  $("modeBtn").onclick = ()=>{ slice = !slice; $("modeBtn").textContent = slice ? "✦ 切片视角" : "✺ 振翅视角"; };
+  $("stage").addEventListener("dblclick", ()=>{ slice = !slice; $("modeBtn").textContent = slice ? "✦ 切片视角" : "✺ 振翅视角"; });
   (function loop(now){
     requestAnimationFrame(loop);
     const dt = Math.min((now-last)/1000, 0.05); last = now;
-    tScale += ((slice?0.25:1) - tScale)*Math.min(1, dt*3);
-    sim += dt*tScale;
-    layout(sim, slice);
+    sim += dt * (slice ? 0.25 : 1);
+    layout(sim);
     z += (tZ-z)*0.06; yaw += (tYaw-yaw)*0.07; pitch += (tPitch-pitch)*0.07;
-    if(!drag) tYaw += dt*0.04;
-    cam.position.set(Math.cos(yaw)*Math.cos(pitch)*9, Math.sin(pitch)*9, z);
+    if(!drag) tYaw += dt*0.035;
+    cam.position.set(Math.cos(yaw)*Math.cos(pitch)*10, Math.sin(pitch)*10, z);
     cam.lookAt(0, 0, 0);
     renderer.render(scene, cam);
     fr++;
@@ -90,6 +120,6 @@ try{
   })(last);
   $("loader").classList.add("hide");
 }catch(err){
-  $("loadTxt").innerHTML = "three.js 加载失败:" + (err&&err.message||err) + "<br>请用本地服务器访问";
+  $("loadTxt").innerHTML = "three.js 加载失败:" + (err&&err.message||err) + "<br>请先运行 _本地工具/启动教学页面.bat 再打开本页";
 }
 </script></body></html>
