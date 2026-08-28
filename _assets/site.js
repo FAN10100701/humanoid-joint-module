@@ -861,9 +861,34 @@
     if(e.key === "Escape") S.closeSearch();
   });
 
+  /* ---------- 玻璃设计系统:样式引入 + 卡片水波纹(V2.1.0) ---------- */
+  function initGlass(){
+    var root = page().root || "";
+    if(!document.querySelector('link[href*="glass.css"]')){
+      var l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = (root ? root + "/" : "") + "_assets/glass.css";
+      document.head.appendChild(l);
+    }
+    document.addEventListener("pointerdown", function(e){
+      var t = e.target;
+      while(t && t !== document.body && !(t.classList && (t.classList.contains("card") || t.classList.contains("glass-ripple")))) t = t.parentNode;
+      if(!t || t === document.body || !t.classList) return;
+      var r = t.getBoundingClientRect();
+      var w = document.createElement("span");
+      w.className = "glass-ripple-wave";
+      var size = Math.max(r.width, r.height) * 2.2;
+      w.style.width = w.style.height = size + "px";
+      w.style.left = (e.clientX - r.left - size/2) + "px";
+      w.style.top = (e.clientY - r.top - size/2) + "px";
+      t.appendChild(w);
+      setTimeout(function(){ if(w.parentNode) w.parentNode.removeChild(w); }, 950);
+    });
+  }
+
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd();
   }
 })();
