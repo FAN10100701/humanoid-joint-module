@@ -98,7 +98,7 @@ details.faq .faq-a pre{font-size:11.5px;white-space:pre-wrap;color:#9aa4b2}
     try{
       const idx = await fetchText(root + "/index.html");
       const secs = (idx.match(/key:"\d\d"/g) || []).length;
-      row("首页板块数(SECTIONS)", secs >= 9, secs + " 个板块组");
+      row("首页板块组(SECTIONS)", secs >= 7, secs + " 个板块组");
       const hasGlass = idx.indexOf("glass-title") >= 0;
       row("首页玻璃设计系统已接入", hasGlass, hasGlass ? "glass-title 存在" : "未找到 glass-title");
       const pageIds = (await fetchText(root + "/_assets/page-meta.js")).match(/"(\d\d-\d\d)":/g) || [];

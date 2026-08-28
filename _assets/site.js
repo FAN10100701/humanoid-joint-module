@@ -18,8 +18,6 @@
     { t:"理论入门", u:"01_理论入门/01_整体知识框架_思维导图.html" },
     { t:"硬件基础", u:"02_硬件基础/04_硬件设计通用要点_避坑指南.html" },
     { t:"项目实操", u:"03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html" },
-    { t:"升级进阶", u:"04_升级进阶/09_通信与控制算法升级路线.html" },
-    { t:"HdriveV2", u:"03_项目实操/10_Hdrive新版方案_交叉认证与芯片选型报告.html" },
     { t:"软件算法", u:"06_软件与算法/01_软件学习路线图.html" },
     { t:"前沿知识", u:"07_前沿知识库/01_全球人形机器人机型全景.html" },
     { t:"学习工具", u:"08_学习工具/01_术语词典.html" },
@@ -448,7 +446,7 @@
       + '<a class="nav-brand" href="' + root + '/index.html"><span class="brand-dot"></span>人形机器人学习站</a>'
       + '<div class="nav-links">';
     /* 顶栏收纳(V2.1.0):仅保留高频直达,其余收进「板块 ▾」玻璃下拉 */
-    var quickT = ["首页", "3D解剖", "学习工具"];
+    var quickT = ["首页", "3D解剖", "理论入门", "软件算法", "学习工具"];
     S.NAV.forEach(function(it){
       if(quickT.indexOf(it.t) >= 0) html += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
     });
@@ -740,7 +738,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.2(2026-08-29)";
+  S.VERSION = "V2.1.3(2026-08-29)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -848,38 +846,19 @@
     nav.appendChild(b);
   }
 
-  /* ---------- AI 答疑悬浮球(全站内容页右下角,位于回到顶部按钮上方) ---------- */
+  /* ---------- AI 内嵌聊天挂件(V2.1.3):面板直接问答,复用 ai-assistant.js 引擎 ---------- */
   function initAiFab(){
-    if(page().pageId === "08-13") return;   /* AI 页自身不显示 */
-    var st = document.createElement("style");
-    st.textContent =
-      ".ai-fab{position:fixed;right:18px;bottom:76px;z-index:94;width:44px;height:44px;border-radius:50%;" +
-      "background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-size:20px;cursor:pointer;" +
-      "box-shadow:0 8px 24px rgba(34,197,94,.45);display:flex;align-items:center;justify-content:center;transition:.2s}" +
-      ".ai-fab:hover{transform:translateY(-3px) scale(1.07);box-shadow:0 12px 30px rgba(34,197,94,.55)}" +
-      ".ai-fab::after{content:'AI';position:absolute;bottom:-4px;right:-2px;font-size:9px;font-weight:800;" +
-      "background:#0d1117;color:#86efac;border-radius:6px;padding:1px 5px;border:1px solid rgba(134,239,172,.5)}" +
-      ".search-ai{padding:10px 16px;font-size:12.5px;color:#86efac;cursor:pointer;border-top:1px dashed rgba(255,255,255,.12)}" +
-      ".search-ai:hover{background:rgba(34,197,94,.12);color:#fff}" +
-      ".search-ai b{color:#86efac}" +
-      ".search-empty a.search-ai-link,.search-ai-link{color:#86efac;font-weight:700}" +
-      ".search-empty a.search-ai-link:hover{text-decoration:underline}" +
-      "body:not([data-theme]) .search-ai,body[data-theme=\"light\"] .search-ai{color:#15803d;border-top-color:rgba(60,80,120,.14)}" +
-      "body:not([data-theme]) .search-ai:hover,body[data-theme=\"light\"] .search-ai:hover{background:rgba(34,197,94,.1);color:#166534}" +
-      "body:not([data-theme]) .search-ai b,body[data-theme=\"light\"] .search-ai b{color:#15803d}" +
-      "body:not([data-theme]) .search-ai-link,body[data-theme=\"light\"] .search-ai-link{color:#15803d}" +
-      "body:not([data-theme]) .ai-fab::after,body[data-theme=\"light\"] .ai-fab::after{background:#fff;color:#15803d;border-color:rgba(21,128,61,.4)}" +
-      "@media print{.ai-fab{display:none!important}}";
-    document.head.appendChild(st);
-    var fab = document.createElement("button");
-    fab.className = "ai-fab";
-    fab.textContent = "🤖";
-    fab.title = "问 AI 答疑助手(带上本页上下文)";
-    fab.onclick = function(){
-      var t = document.title.replace(/^人形机器人学习站\s*·\s*/, "") || "人形机器人学习站";
-      window.location.href = aiPageURL("我在学习《" + t + "》时想问:");
+    if(page().pageId === "08-13") return;   /* AI 完整页自身不显示 */
+    var root = page().root || "";
+    var s1 = document.createElement("script");
+    s1.src = (root ? root + "/" : "") + "_assets/ai-assistant.js";
+    document.head.appendChild(s1);
+    s1.onload = function(){
+      var s2 = document.createElement("script");
+      s2.src = (root ? root + "/" : "") + "_assets/ai-fab-chat.js";
+      s2.onerror = function(){};
+      document.body.appendChild(s2);
     };
-    document.body.appendChild(fab);
   }
 
   document.addEventListener("keydown", function(e){
