@@ -115,14 +115,9 @@
     pill.className = "nav-sst";
     pill.title = "本页自检(点击展开明细)";
     pill.textContent = "🧪 自检 …";
-    var navInner = document.querySelector(".topnav .nav-inner");
-    var printBtn = navInner && navInner.querySelector(".nav-print");
-    if(navInner && printBtn){ navInner.insertBefore(pill, printBtn.nextSibling); }
-    else if(navInner){ navInner.appendChild(pill); }
-    else{
-      pill.style.cssText += ";position:fixed;top:64px;right:12px;z-index:220";
-      document.body.appendChild(pill);
-    }
+    /* V2.1.4:移出顶栏 → 左下角低调悬浮(不占导航) */
+    pill.style.cssText += ";position:fixed;left:16px;bottom:18px;z-index:210;font-size:11px;padding:5px 12px;border-radius:999px;opacity:.82";
+    document.body.appendChild(pill);
 
     var panel = document.createElement("div");
     panel.id = "sstPanel";
