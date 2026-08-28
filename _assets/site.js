@@ -870,6 +870,14 @@
       l.href = (root ? root + "/" : "") + "_assets/glass.css";
       document.head.appendChild(l);
     }
+    /* 自检挂件(缺文件静默,不影响站点) */
+    if(!document.querySelector('script[src*="site-selftest.js"]')){
+      var st = document.createElement("script");
+      st.src = (root ? root + "/" : "") + "_assets/site-selftest.js";
+      st.async = true;
+      st.onerror = function(){};
+      document.body.appendChild(st);
+    }
     document.addEventListener("pointerdown", function(e){
       var t = e.target;
       while(t && t !== document.body && !(t.classList && (t.classList.contains("card") || t.classList.contains("glass-ripple")))) t = t.parentNode;
