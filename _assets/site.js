@@ -447,20 +447,37 @@
     var html = '<div class="nav-inner">'
       + '<a class="nav-brand" href="' + root + '/index.html"><span class="brand-dot"></span>人形机器人学习站</a>'
       + '<div class="nav-links">';
+    /* 顶栏收纳(V2.1.0):仅保留高频直达,其余收进「板块 ▾」玻璃下拉 */
+    var quickT = ["3D解剖", "学习工具"];
+    S.NAV.forEach(function(it){
+      if(quickT.indexOf(it.t) >= 0) html += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
+    });
+    html += '<div class="nav-dd" id="navDD">'
+      + '<button class="nav-dd-btn" type="button">板块 ▾</button>'
+      + '<div class="nav-dd-panel">';
     S.NAV.forEach(function(it){
       html += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
     });
-    html += '</div>'
+    html += '<a href="' + root + '/index.html#sec9">大模型</a>'
+      + '<a href="' + root + '/08_学习工具/12_闯关学习.html">闯关学习</a>'
+      + '<a href="' + root + '/08_学习工具/14_个人作品台.html">个人作品台</a>'
+      + '</div></div></div>'
       + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史">🏷 v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
       + '<button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>'
       + '<button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>'
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       + '</div>';
     var st = document.createElement('style');
-    st.textContent = '.nav-ver{margin-left:10px;font-size:11px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:3px 9px;white-space:nowrap;transition:.15s}.nav-ver:hover{color:#60a5fa;border-color:#3b82f6}body[data-theme=light] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}body[data-theme=light] .nav-ver:hover{color:#2563eb;border-color:#2563eb}';
+    st.textContent = '.nav-ver{margin-left:10px;font-size:11px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:3px 9px;white-space:nowrap;transition:.15s}.nav-ver:hover{color:#60a5fa;border-color:#3b82f6}body[data-theme=light] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}body[data-theme=light] .nav-ver:hover{color:#2563eb;border-color:#2563eb}.nav-dd{position:relative}.nav-dd-btn{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap}.nav-dd-btn:hover{background:rgba(59,130,246,.28);color:#fff}.nav-dd-panel{display:none;position:absolute;top:42px;left:0;min-width:190px;max-height:70vh;overflow:auto;background:rgba(12,17,26,.96);border:1px solid rgba(140,190,255,.3);border-radius:14px;padding:8px;flex-direction:column;gap:2px;box-shadow:0 20px 50px rgba(0,0,0,.5);z-index:130;backdrop-filter:blur(16px)}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none}.nav-dd-panel a:hover{background:rgba(88,166,255,.15);color:#fff}body[data-theme=light] .nav-dd-panel{background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}body[data-theme=light] .nav-dd-panel a{color:#475569}body[data-theme=light] .nav-dd-panel a:hover{background:rgba(37,99,235,.08);color:#0f172a}body[data-theme=light] .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}';
     document.head.appendChild(st);
     nav.innerHTML = html;
     document.body.insertBefore(nav, document.body.firstChild);
+    /* 下拉开合 + 点击外部关闭 */
+    var dd = nav.querySelector(".nav-dd");
+    if(dd){
+      dd.querySelector(".nav-dd-btn").addEventListener("click", function(e){ e.stopPropagation(); dd.classList.toggle("open"); });
+      document.addEventListener("click", function(e){ if(!dd.contains(e.target)) dd.classList.remove("open"); });
+    }
 
     if(P.pageId){
       var crumb = document.createElement("div");

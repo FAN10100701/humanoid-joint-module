@@ -106,6 +106,17 @@ body:not([data-theme]) .rm-dot.on,body[data-theme="light"] .rm-dot.on{background
 @keyframes verBlink{0%,100%{opacity:1}50%{opacity:.35}}
 body:not([data-theme]) .ver-badge,body[data-theme="light"] .ver-badge{color:#64748b;border-color:rgba(100,116,139,.35);background:rgba(255,255,255,.6)}
 body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hover{color:#2563eb;border-color:rgba(37,99,235,.55);box-shadow:0 4px 14px rgba(37,99,235,.16)}
+.nav-dd{position:relative}
+.nav-dd-btn{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.18s}
+.nav-dd-btn:hover{background:rgba(59,130,246,.28);color:#fff}
+.nav-dd-panel{display:none;position:absolute;top:42px;left:0;min-width:210px;background:rgba(12,17,26,.96);border:1px solid rgba(140,190,255,.3);border-radius:14px;padding:8px;flex-direction:column;gap:2px;box-shadow:0 20px 50px rgba(0,0,0,.5);z-index:130;backdrop-filter:blur(16px)}
+.nav-dd.open .nav-dd-panel{display:flex}
+.nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none;white-space:nowrap}
+.nav-dd-panel a:hover{background:rgba(88,166,255,.15);color:#fff}
+body:not([data-theme]) .nav-dd-panel,body[data-theme="light"] .nav-dd-panel{background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}
+body:not([data-theme]) .nav-dd-panel a,body[data-theme="light"] .nav-dd-panel a{color:#475569}
+body:not([data-theme]) .nav-dd-panel a:hover,body[data-theme="light"] .nav-dd-panel a:hover{background:rgba(37,99,235,.08);color:#0f172a}
+body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
 </style>
 <script>
   /* 各板块页面清单(学习进度统计用,与 site.js 的 localStorage 打卡数据同源) */
@@ -138,15 +149,16 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
     <div class="nav-links">
       <a href="#learn-path">学习路径</a>
       <a href="#sec0">3D解剖</a>
-      <a href="#sec1">理论入门</a>
-      <a href="#sec2">硬件基础</a>
-      <a href="#sec3">项目实操</a>
-      <a href="#sec4">升级进阶</a>
-      <a href="#sec5">HdriveV2</a>
-      <a href="#sec6">软件算法</a>
-      <a href="#sec7">前沿知识</a>
-      <a href="#sec8">学习工具</a>
-      <a href="#sec9">大模型</a>
+      <div class="nav-dd" id="navDD">
+        <button class="nav-dd-btn" type="button">板块 ▾</button>
+        <div class="nav-dd-panel">
+          <a href="#sec1">01 理论入门</a><a href="#sec2">02 硬件基础</a><a href="#sec3">03 项目实操</a>
+          <a href="#sec4">04 升级进阶</a><a href="#sec5">05 HdriveV2</a><a href="#sec6">06 软件算法</a>
+          <a href="#sec7">07 前沿知识</a><a href="#sec8">08 学习工具</a><a href="#sec9">09 大模型与具身</a>
+          <a href="08_学习工具/12_闯关学习.html">🎯 闯关学习</a>
+          <a href="08_学习工具/14_个人作品台.html">🎮 个人作品台</a>
+        </div>
+      </div>
     </div>
     <button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>
     <button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>
@@ -1082,6 +1094,14 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
   });
 </script>
 <script>
+/* 顶栏「板块 ▾」下拉(V2.1.0) */
+(function(){
+  var dd = document.getElementById("navDD");
+  if(!dd) return;
+  dd.querySelector(".nav-dd-btn").addEventListener("click", function(e){ e.stopPropagation(); dd.classList.toggle("open"); });
+  document.addEventListener("click", function(e){ if(!dd.contains(e.target)) dd.classList.remove("open"); });
+})();
+
 /* 版本角标:文本取自本页页脚(与 S.VERSION 同步更新的单源),点击直达 #version */
 (function(){
   var b = document.getElementById("verBadge");
@@ -1089,58 +1109,50 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
   var m = (document.body.textContent || "").match(/V\d+\.\d+\.\d+/);
   if(m){ b.innerHTML = "<i></i>" + m[0].replace(/^V/, "v"); b.style.display = "inline-flex"; }
 })();
-/* 学习路径横滑 carousel:鼠标拖拽 + 循环按钮 + 进度圆点(V2.0.9) */
+/* 学习路径横滑 carousel(V2.1.0 无限循环):克隆首尾,越过边界瞬移回真身,肉眼无缝 */
 (function(){
   var sc = document.getElementById("roadmap");
   if(!sc) return;
-  var steps = sc.querySelectorAll(".rm-step");
+  var orig = sc.querySelectorAll(".rm-step");
+  var n = orig.length;
+  if(n < 2) return;
+  for(var c = n-2; c < n; c++){ var cl = orig[c].cloneNode(true); cl.setAttribute("data-clone","1"); sc.insertBefore(cl, sc.firstChild); }
+  for(var c2 = 0; c2 < 2; c2++){ var cl2 = orig[c2].cloneNode(true); cl2.setAttribute("data-clone","1"); sc.appendChild(cl2); }
+  function cardW(){ var all = sc.querySelectorAll(".rm-step"); return all.length > 1 ? (all[1].offsetLeft - all[0].offsetLeft) : sc.clientWidth; }
   var dotsBox = document.getElementById("rmDots");
-  var btnPrev = document.getElementById("rmPrev");
-  var btnNext = document.getElementById("rmNext");
-  function cardW(){ return steps.length > 1 ? (steps[1].offsetLeft - steps[0].offsetLeft) : sc.clientWidth; }
-  function maxLeft(){ return sc.scrollWidth - sc.clientWidth; }
-  function curIdx(){
-    var w = cardW() || 1;
-    return Math.min(steps.length - 1, Math.max(0, Math.round(sc.scrollLeft / w)));
-  }
-  /* 进度圆点 */
-  if(dotsBox && steps.length){
-    for(var i = 0; i < steps.length; i++){
+  if(dotsBox && !dotsBox.children.length){
+    for(var i = 0; i < n; i++){
       (function(idx){
         var d = document.createElement("button");
-        d.className = "rm-dot"; d.title = "第 " + (idx + 1) + " 步";
-        d.setAttribute("aria-label", "跳到第 " + (idx + 1) + " 步");
-        d.onclick = function(){
-          sc.scrollTo({ left: idx * cardW(), behavior: "smooth" });
-        };
+        d.className = "rm-dot"; d.title = "第 " + (idx+1) + " 步";
+        d.setAttribute("aria-label", "跳到第 " + (idx+1) + " 步");
+        d.onclick = function(){ sc.scrollTo({ left: (idx+2) * cardW(), behavior:"smooth" }); };
         dotsBox.appendChild(d);
       })(i);
     }
   }
+  function curIdx(){ var w = cardW() || 1; return ((Math.round(sc.scrollLeft / w) - 2) % n + n) % n; }
   function syncDots(){
-    if(!dotsBox) return;
-    var ds = dotsBox.querySelectorAll(".rm-dot");
-    var cur = curIdx();
-    for(var j = 0; j < ds.length; j++) ds[j].className = "rm-dot" + (j === cur ? " on" : "");
+    var ds = dotsBox ? dotsBox.querySelectorAll(".rm-dot") : [];
+    var ci = curIdx();
+    for(var j = 0; j < ds.length; j++) ds[j].className = "rm-dot" + (j === ci ? " on" : "");
   }
-  sc.addEventListener("scroll", function(){ syncDots(); }, { passive: true });
-  syncDots();
-  /* 循环:末端再下一步回到开头,开端上一步跳到末尾 */
-  function go(dir){
-    var w = cardW() || 280;
-    var target = sc.scrollLeft + dir * w;
-    if(dir > 0 && target >= maxLeft() - 4) target = 0;        /* 末→首 */
-    if(dir < 0 && sc.scrollLeft <= 4) target = maxLeft();      /* 首→末 */
-    sc.scrollTo({ left: target, behavior: "smooth" });
+  var sTimer = null;
+  sc.addEventListener("scroll", function(){ syncDots(); clearTimeout(sTimer); sTimer = setTimeout(normalize, 150); }, { passive:true });
+  function normalize(){
+    var w = cardW() || 1;
+    if(sc.scrollLeft < w * 0.5) sc.scrollLeft += w * 2;
+    else if(sc.scrollLeft > w * (n + 1.5)) sc.scrollLeft -= w * 2;
   }
+  var btnPrev = document.getElementById("rmPrev"), btnNext = document.getElementById("rmNext");
+  function go(dir){ sc.scrollBy({ left: dir * cardW(), behavior:"smooth" }); }
   if(btnPrev) btnPrev.onclick = function(){ go(-1); };
   if(btnNext) btnNext.onclick = function(){ go(1); };
-  /* 鼠标拖拽(触摸设备走原生滚动) */
   var down = false, startX = 0, startLeft = 0, moved = 0;
   sc.addEventListener("pointerdown", function(e){
     if(e.pointerType !== "mouse") return;
     down = true; moved = 0; startX = e.clientX; startLeft = sc.scrollLeft;
-    sc.setPointerCapture && sc.setPointerCapture(e.pointerId);
+    if(sc.setPointerCapture) try{ sc.setPointerCapture(e.pointerId); }catch(err){}
   });
   sc.addEventListener("pointermove", function(e){
     if(!down) return;
@@ -1148,45 +1160,39 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
     moved = Math.max(moved, Math.abs(dx));
     if(moved > 4){ sc.classList.add("dragging"); sc.scrollLeft = startLeft - dx; }
   });
-  function endDrag(){ if(!down) return; down = false; sc.classList.remove("dragging"); }
+  function endDrag(){ if(!down) return; down = false; sc.classList.remove("dragging"); normalize(); }
   sc.addEventListener("pointerup", endDrag);
   sc.addEventListener("pointercancel", endDrag);
   sc.addEventListener("pointerleave", endDrag);
-  /* 拖拽超过 6px 后抑制误触卡片内链接跳转 */
   sc.addEventListener("click", function(e){
     if(moved > 6){ e.preventDefault(); e.stopPropagation(); moved = 0; }
   }, true);
+  sc.scrollLeft = cardW() * 2;
+  syncDots();
 })();
-/* 版本历史整栏收起/展开(默认收起,localStorage 记忆;锚点跳转时自动展开) */
+
+/* 板块卡片收纳:每板块默认显示 5 张,一键展开全部(V2.1.0) */
 (function(){
-  var VER_KEY = "hrl-verhist";
-  var sec = document.getElementById("version");
-  var btn = document.getElementById("verToggleBtn");
-  if(!sec || !btn) return;
-  var details = sec.querySelectorAll("details.faq");
-  var state = "closed";
-  try{ state = localStorage.getItem(VER_KEY) || "closed"; }catch(e){}
-  function paint(){
-    var open = (state === "open");
-    for(var i=0;i<details.length;i++){ details[i].style.display = open ? "" : "none"; }
-    btn.textContent = open ? "▲ 收起历史" : "▼ 展开历史";
-    btn.dataset.state = state;
+  var grids = document.querySelectorAll(".sec .grid");
+  for(var gi = 0; gi < grids.length; gi++){
+    (function(g){
+      var cards = g.querySelectorAll(".card");
+      if(cards.length <= 5) return;
+      for(var i = 5; i < cards.length; i++) cards[i].style.display = "none";
+      var b = document.createElement("button");
+      b.className = "glass glass-ripple";
+      b.style.cssText = "display:block;margin:12px auto 2px;padding:9px 24px;border-radius:999px;font-size:13px;color:var(--glass-ice);cursor:pointer;font-family:inherit;background:var(--glass-bg);border:1px solid var(--glass-border);letter-spacing:1px";
+      var open = false;
+      b.textContent = "展开全部 " + cards.length + " 页 ▾";
+      b.onclick = function(){
+        open = !open;
+        for(var i = 5; i < cards.length; i++) cards[i].style.display = open ? "block" : "none";
+        b.textContent = open ? "收起 ▴" : "展开全部 " + cards.length + " 页 ▾";
+        if(!open) g.scrollIntoView({ behavior:"smooth", block:"start" });
+      };
+      if(g.parentNode) g.parentNode.insertBefore(b, g.nextSibling);
+    })(grids[gi]);
   }
-  window.toggleVersionHist = function(){
-    state = (state === "open") ? "closed" : "open";
-    try{ localStorage.setItem(VER_KEY, state); }catch(e){}
-    paint();
-  };
-  /* 点版本角标/版本历史锚点跳转时自动展开,避免"跳过去什么也没有" */
-  document.addEventListener("click", function(e){
-    var a = e.target && e.target.closest ? e.target.closest("a[href='#version']") : null;
-    if(a && state === "closed"){
-      state = "open";
-      try{ localStorage.setItem(VER_KEY, state); }catch(err){}
-      paint();
-    }
-  });
-  paint();
 })();
 </script>
 <script>
