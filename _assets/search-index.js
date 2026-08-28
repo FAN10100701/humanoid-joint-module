@@ -94,4 +94,9 @@ window.SITE_SEARCH_INDEX = [
   { t:"AI 答疑助手(DeepSeek / 豆包)", u:"08_学习工具/13_AI答疑助手.html", s:"学习工具", d:"接入 DeepSeek/豆包大模型:复试考官模拟面试、课程助教讲解、代码答疑;API Key 仅本机浏览器保存,流式输出+公式渲染", k:"AI 答疑 助手 聊天 问答 deepseek 豆包 doubao 大模型 API key 人工智能 智能问答 考官 模拟面试 密钥" },
   { t:"个人作品台 · 时间切片蝶群(three.js 实时演示)", u:"08_学习工具/14_个人作品台.html", s:"学习工具", d:"全屏 three.js 程序化建模作品:260 只蝴蝶绕场飞行,一键冻结时间全群凝固成灰白切片,相机继续漫游;拖动旋转/滚轮缩放", k:"作品台 作品集 vibecoding three.js 时间切片 蝶群 蝴蝶 粒子 程序化建模 instanced 实时渲染 创意编程 视觉 demo" },
   { t:"全站体检(浏览器内审计)", u:"08_学习工具/15_全站体检.html", s:"学习工具", d:"浏览器内 fetch 全站审计:链接/索引/题库/版本/结构一键体检,✓✗ 明细与失败详情", k:"体检 审计 自检 链接检查 健康检查 诊断 维护 工具" },
+  { t:"大模型基础与 MoE 架构图解", u:"09_大模型与具身智能/01_大模型基础与MoE架构图解.html", s:"大模型与具身智能", d:"Transformer 数据流/稠密 vs MoE/总参激活参/KV Cache,机器人视角最小大模型知识", k:"MoE 混合专家 Transformer 稠密 激活参数 KV Cache 共享专家 路由器 大模型 具身智能 LLM" },
+  { t:"DeepSeek 架构精讲", u:"09_大模型与具身智能/02_DeepSeek架构精讲.html", s:"大模型与具身智能", d:"V3 四大创新(MoE/MLA/MTP/FP8)→ R1 纯RL推理觉醒与四阶段管线 → V3.1 混合推理 → V3.2 稀疏注意力", k:"DeepSeek V3 R1 GRPO MLA MTP FP8 混合推理 稀疏注意力 aha moment 蒸馏 大模型 具身智能 LLM" },
+  { t:"强化学习与后训练", u:"09_大模型与具身智能/03_强化学习与后训练.html", s:"大模型与具身智能", d:"后训练四级火箭:SFT→RLHF/DPO→推理RL→Agent RL;PPO vs GRPO 三差异、PRM vs ORM、reward hacking", k:"RLHF DPO PPO GRPO PRM ORM 过程奖励 reward hacking agent RL 后训练 大模型 具身智能 LLM" },
+  { t:"基座选型与开源生态", u:"09_大模型与具身智能/04_基座选型与开源生态.html", s:"大模型与具身智能", d:"2025-2026 开源底座版图:许可口径(MIT/Apache/开放权重)、选型决策树、具身 VLM 底座谱系", k:"基座 选型 开源 生态 MIT Apache Llama Qwen Kimi GLM 许可 开放权重 VLA 底座 大模型 具身智能 LLM" },
+  { t:"代码实战:部署微调与 Agent", u:"09_大模型与具身智能/05_代码实战_部署微调与Agent.html", s:"大模型与具身智能", d:"Ollama 部署/transformers 生成/LoRA 微调/GRPO 训练循环/function calling 最小 Agent/显存估算表", k:"Ollama transformers LoRA peft QLoRA GRPO function calling agent 显存 量化 实战 大模型 具身智能 LLM" },
 ];

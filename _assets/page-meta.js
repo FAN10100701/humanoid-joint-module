@@ -75,5 +75,10 @@ window.SITE_PAGE_META = {
   "08-12": { time:"全图约 3 小时", prereq:"08-11 或站内学习", updated:"2026-08-27", verified:"21 关题源可追溯站内题库", goals:["闯过 5 大陆 21 关卡检验知识掌握","收集 7 枚徽章与星级评价","通过保研复试全真模拟关"] },
   "08-13": { time:"配置 2 分钟+随问随用", prereq:"无", updated:"2026-08-27", verified:"Key 仅本机存储", goals:["配置本机 API Key 接入 DeepSeek/豆包","用复试考官人设模拟面试","用课程助教深挖站内知识点"] },
   "08-14": { time:"15~25 分钟", prereq:"无", updated:"2026-08-28", verified:"4 demo 实机渲染通过", goals:["看懂噪声/Raymarching/粒子流场/fbm 四类效果原理","拖参数理解 uniform 驱动","能读懂页面内给出的 GLSL 核心源码"] },
-  "08-15": { time:"1 分钟", prereq:"无", updated:"2026-08-28", verified:"浏览器内实时审计", goals:["一键体检全站链接/索引/题库/版本健康度","失败项展开定位"] }
+  "08-15": { time:"1 分钟", prereq:"无", updated:"2026-08-28", verified:"浏览器内实时审计", goals:["一键体检全站链接/索引/题库/版本健康度","失败项展开定位"] },
+  "09-01": { time:"25 分钟", prereq:"无", updated:"2026-08-28", verified:"自绘 SVG 与官方口径", goals:["画出 Decoder 块数据流","说清稠密 vs MoE 与总参/激活参","理解 KV Cache 开销来源"] },
+  "09-02": { time:"30 分钟", prereq:"09-01", updated:"2026-08-28", verified:"官方技术报告口径", goals:['画出 V3 四大架构创新','讲清 R1 纯RL推理与四阶段管线','区分 V3.1/V3.2/V4 各自解决什么'] },
+  "09-03": { time:"30 分钟", prereq:"09-02", updated:"2026-08-28", verified:"arXiv 原文口径", goals:['画出后训练四级火箭','对比 PPO 与 GRPO 三差异','理解 PRM/ORM 与 reward hacking'] },
+  "09-04": { time:"25 分钟", prereq:"09-03", updated:"2026-08-28", verified:"官方仓库 LICENSE 原文", goals:['分清开放权重与开源','用决策树选底座','知道具身 VLM 底座谱系'] },
+  "09-05": { time:"40 分钟", prereq:"09-04", updated:"2026-08-28", verified:"五段代码本地实测", goals:["本地跑起开源模型","写出最小 LoRA 微调","实现 25 行 function calling Agent"] },
 };

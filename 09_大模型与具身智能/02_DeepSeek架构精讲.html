@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!-- 09-02 DeepSeek 架构精讲 -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek 架构精讲 · 人形机器人学习站</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>.my-svg{margin:14px 0;color:#c9d1d9}.my-svg svg{width:100%;height:auto;display:block}</style>
+<script>
+  window.PAGE = { pageId:"09-02", root:"..",
+    breadcrumb:[{t:"大模型与具身智能",u:"../index.html#sec9"},{t:"DeepSeek 架构精讲"}],
+    prev:{t:"大模型基础与 MoE 架构图解",u:"01_大模型基础与MoE架构图解.html"}, next:{t:"强化学习与后训练",u:"03_强化学习与后训练.html"} };
+</script>
+</head>
+<body>
+<div class="container">
+  <div class="page-head">
+    <h1>🐋 DeepSeek 架构精讲:从 V3 到 V4</h1>
+    <div class="sub">一条主线讲完 MoE 王者.evolution:V3 底座 → R1 推理强化 → V3.1 混合推理 → V3.2 稀疏注意力,以及为什么机器人圈都在用它做底座</div>
+    <div class="tags"><span class="tag">MLA</span><span class="tag">GRPO</span><span class="tag">MTP</span><span class="tag">FP8</span><span class="tag">纯RL觉醒</span></div>
+  </div>
+  <div class="key-point"><div class="kp-title">🎯 本页学习目标</div>
+  1. 画出 V3 四大架构创新(MoE 均衡/MLA/MTP/FP8)<br>2. 讲清 R1「纯 RL 催生推理」与四阶段管线<br>3. 知道 V3.1/V3.2/V4 各自解决什么<br><b>建议用时:</b>30 分钟</div>
+
+  <h2><span class="h2-num">1</span> V3 底座:四大架构创新</h2>
+  <div class="table-wrap"><table>
+    <tr><th>创新</th><th>解决什么</th><th>一句话原理</th></tr>
+    <tr><td><b>细粒度 MoE(256+1 专家)</b></td><td>知识容量与算力解耦</td><td>每 token 路由 8 个细分专家 + 1 共享专家;用「辅助损失免费」的均衡策略替代强惩罚,不牺牲性能换均衡</td></tr>
+    <tr><td><b>MLA 多头潜在注意力</b></td><td>KV Cache 太贵</td><td>把 KV 压缩到低维隐向量缓存,推理时长上下文显存降一个量级,效果对齐全注意力</td></tr>
+    <tr><td><b>MTP 多 token 预测</b></td><td>训练信号密度/推理加速</td><td>一次预测未来多个 token:训练时多份监督信号,推理时可配投机解码加速</td></tr>
+    <tr><td><b>FP8 混合精度训练</b></td><td>训练成本</td><td>首个在超大规模验证 FP8 训练的主流开源模型;V3 全量训练成本约 557.6 万美元(GPU 时租口径,不含研发/缓存等——第三方推算口径不同,详见 SemiAnalysis 争议)</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>📌 参数口径(重要):</b>V3 = 671B 总参 / 约 37B 激活 / 61 层 / 128K 上下文。所有第三方「实际成本 ×N」的推算都只计 GPU 租金口径,与全成本口径不矛盾——面试答到这层区分即满分。</div>
+
+  <h2><span class="h2-num">2</span> R1:纯强化学习「觉醒」推理</h2>
+  <p>R1-Zero 证明了行业级震撼结论:<b>不做任何监督微调,直接用可验证奖励(数学/代码对错)做纯 RL,模型自己学会「先写长思考再给答案」</b>——中途出现顿悟时刻(aha moment):自我怀疑、回溯重验。R1 在此基础上加冷启动数据与可读性约束,推理性能对齐 OpenAI o1,论文登 Nature,并把 6 个 1.5B~70B 蒸馏小模型开源。</p>
+  <div class="my-svg"><svg viewBox="0 0 560 150" role="img" aria-label="R1管线"><defs><marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="currentColor"/></marker></defs>
+  <rect x="14" y="40" width="96" height="52" rx="9" fill="rgba(59,130,246,.15)" stroke="#58a6ff"/><text x="62" y="62" font-size="11.5" fill="currentColor" text-anchor="middle">① 冷启动</text><text x="62" y="79" font-size="10" fill="#9aa4b2" text-anchor="middle">少量长思考SFT</text>
+  <rect x="132" y="40" width="96" height="52" rx="9" fill="rgba(34,197,94,.13)" stroke="#22c55e"/><text x="180" y="62" font-size="11.5" fill="currentColor" text-anchor="middle">② 推理 RL</text><text x="180" y="79" font-size="10" fill="#9aa4b2" text-anchor="middle">可验证奖励+语言一致</text>
+  <rect x="250" y="40" width="96" height="52" rx="9" fill="rgba(245,158,11,.13)" stroke="#f59e0b"/><text x="298" y="62" font-size="11.5" fill="currentColor" text-anchor="middle">③ 拒绝采样 SFT</text><text x="298" y="79" font-size="10" fill="#9aa4b2" text-anchor="middle">全场景数据重冷启</text>
+  <rect x="368" y="40" width="96" height="52" rx="9" fill="rgba(168,85,247,.13)" stroke="#a78bfa"/><text x="416" y="62" font-size="11.5" fill="currentColor" text-anchor="middle">④ 全场景 RL</text><text x="416" y="79" font-size="10" fill="#9aa4b2" text-anchor="middle">推理+有用+无害</text>
+  <path d="M110,66 L132,66 M228,66 L250,66 M346,66 L368,66" stroke="currentColor" marker-end="url(#a2)"/>
+  <text x="280" y="128" font-size="11.5" fill="#f59e0b" text-anchor="middle">输出:R1(对齐 o1)+ 6 个蒸馏小模型开源 · 登 Nature</text></svg></div>
+
+  <h2><span class="h2-num">3</span> V3.1 / V3.2 / V4:三条进化线</h2>
+  <ul>
+    <li><b>V3.1(混合推理):</b>同一模型「思考/非思考」双模式合一——简单问题直出,难题先思考;终止「一模型一模式」的分裂。</li>
+    <li><b>V3.2(DSA 稀疏注意力):</b>「闪电索引器」只让注意力关注最相关的少量 token,长上下文推理成本大幅下降、效果对标 Dense——KL 代价换数量的典型工程胜利。</li>
+    <li><b>V4:</b>下一代底座,官方口径以技术报告为准(第三方参数传闻一律标注「以官方为准」,本站不采信未经核实数字)。</li>
+  </ul>
+
+  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <div class="quiz"><div class="quiz-q">1. MLA 解决的核心问题是?</div><div class="quiz-options" data-answer="B">
+    <button data-v="A">A. 专家负载不均</button><button data-v="B">B. KV Cache 显存开销</button><button data-v="C">C. 训练不稳定</button><button data-v="D">D. 词表过大</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 MLA 把 KV 压进低维潜空间,缓存体积降一个量级,让长上下文+高并发推理在有限显存下可行。</div></div>
+  <div class="quiz"><div class="quiz-q">2. R1-Zero 最震撼的结论是?</div><div class="quiz-options" data-answer="C">
+    <button data-v="A">A. MoE 比 Dense 强</button><button data-v="B">B. FP8 可以训练</button><button data-v="C">C. 不用任何 SFT、纯可验证奖励 RL,推理行为能自发涌现</button><button data-v="D">D. 蒸馏比 RL 好</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 长思考/自我回溯等行为是 RL 奖励压力下「自发」出现的,不是教出来的——这是 2025 年最有影响力的训练结论之一。</div></div>
+  <div class="quiz"><div class="quiz-q">3. GRPO 相比 PPO 去掉了什么?</div><div class="quiz-options" data-answer="A">
+    <button data-v="A">A. 价值网络(critic),用组内平均奖励做基线</button><button data-v="B">B. 策略网络</button><button data-v="C">C. 奖励模型</button><button data-v="D">D. 环境交互</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 同一题采样一组答案,以组均值当基线省掉整张 critic 网络——显存减半、实现简化,详见下一页对比。</div></div>
+  <div class="quiz"><div class="quiz-q">4. V3.1「混合推理」指的是?</div><div class="quiz-options" data-answer="B">
+    <button data-v="A">A. MoE+Dense 混合</button><button data-v="B">B. 思考/非思考双模式合一,按需切换</button><button data-v="C">C. FP8+FP16 混合</button><button data-v="D">D. 文本+图像混合</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 一个模型两种回答模式:省钱时直出答案,难题先长思考——V3.1 合并了 R1 与 V3 两条产品线。</div></div>
+  <div class="quiz"><div class="quiz-q">5. MTP(多 token 预测)的收益是?</div><div class="quiz-options" data-answer="D">
+    <button data-v="A">A. 只为省显存</button><button data-v="B">B. 只为加上下文</button><button data-v="C">C. 代替 MoE</button><button data-v="D">D. 训练时增加监督信号密度,推理时可配合投机解码加速</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 每个位置多预测几个未来 token:训练信号更密;推理时主模型+MTP 头组成投机解码组合,接受率可观。</div></div>
+  <div class="quiz"><div class="quiz-q">6. 「557.6 万美元训练成本」的正确理解?</div><div class="quiz-options" data-answer="B">
+    <button data-v="A">A. DeepSeek 全部研发投入</button><button data-v="B">B. 仅正式训练阶段的 GPU 租金口径;不含研究/实验/ infra,与第三方高倍率推算口径不同、不矛盾</button><button data-v="C">C. 官方承认的全部成本</button><button data-v="D">D. 单卡价格</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 面试标准答案:两个口径说的是不同的东西——论文口径是「final run 的 GPU 时租」,SemiAnalysis 等推算是「全周期投入」,都有各自假设。</div></div>
+  <div class="quiz"><div class="quiz-q">7. DSA(DeepSeek 稀疏注意力)的本质?</div><div class="quiz-options" data-answer="A">
+    <button data-v="A">A. 用闪电索引器只对最相关 token 做注意力,降长上下文成本</button><button data-v="B">B. 减少层数</button><button data-v="C">C. 换掉 MoE</button><button data-v="D">D. 量化权重</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 注意力计算从「看全部」变「精准看少量」,成本大降且精度对标 Dense 注意力——V3.2 的主打。</div></div>
+  <div class="quiz"><div class="quiz-q">8. 机器人团队选 DeepSeek 做具身底座的主要理由?</div><div class="quiz-options" data-answer="C">
+    <button data-v="A">A. 便宜就行</button><button data-v="B">B. 参数最大</button><button data-v="C">C. 开源权重可私有部署+推理成本低(MoE/MLA)+推理能力强,便于叠加动作头微调</button><button data-v="D">D. 只支持中文</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 底座选型三角:能力×成本×可控性。DeepSeek 在三点上均衡,是当前具身团队热门选择之一(详见 09-04 选型页)。</div></div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>V3 用 MoE+MLA+MTP+FP8 把「大知识、低推理成本」做成工程现实;R1 证明纯 RL 能长出推理;V3.1/V3.2 持续把成本与体验往深推。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么「辅助损失免费」的均衡比强辅助损失更好?2. 如果你的机器人只有 24G 显存,蒸馏小模型与量化 V3 怎么选?</div>
+  <h2><span class="h2-num">5</span> 参考来源(更新至 2026-08)</h2>
+  <ul>
+    <li><a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener">DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via RL (arXiv/Nature)</a></li>
+    <li><a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">DeepSeek-V3 Technical Report (arXiv)</a></li>
+    <li><a href="https://github.com/deepseek-ai/DeepSeek-V3" target="_blank" rel="noopener">DeepSeek-V3 GitHub(权重与口径)</a></li>
+    <li><a href="https://api-docs.deepseek.com/" target="_blank" rel="noopener">DeepSeek 官方 API 文档(V3.1/V3.2 模式说明)</a></li>
+  </ul>
+</div>
+<script src="../_assets/site.js"></script>
+</body></html>

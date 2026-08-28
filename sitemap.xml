@@ -71,4 +71,9 @@
   <url><loc>https://cyco.top/08_学习工具/13_AI答疑助手.html</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://cyco.top/08_学习工具/14_个人作品台.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/15_全站体检.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://cyco.top/09_大模型与具身智能/01_大模型基础与MoE架构图解.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/09_大模型与具身智能/02_DeepSeek架构精讲.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/09_大模型与具身智能/03_强化学习与后训练.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/09_大模型与具身智能/04_基座选型与开源生态.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/09_大模型与具身智能/05_代码实战_部署微调与Agent.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>

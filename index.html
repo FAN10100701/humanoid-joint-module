@@ -117,7 +117,8 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
     { key:"04", name:"升级进阶", ids:["04-01","04-02","04-03"] },
     { key:"06", name:"软件与算法", ids:["06-01","06-02","06-03","06-04","06-05","06-06","06-07","06-08","06-09","06-10","06-11","06-12","06-13","06-14","06-15"] },
     { key:"07", name:"前沿知识库", ids:["07-01","07-02","07-03","07-04","07-05","07-06","07-07","07-08"] },
-    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07","08-08","08-09","08-10","08-11","08-12","08-13","08-14","08-15"] }
+    { key:"08", name:"学习工具", ids:["08-01","08-02","08-03","08-04","08-05","08-06","08-07","08-08","08-09","08-10","08-11","08-12","08-13","08-14","08-15"] },
+    { key:"09", name:"大模型与具身智能", ids:["09-01","09-02","09-03","09-04","09-05"] }
   ];
   /* 学习页面/可打卡页面统计：由 SITE_SECTIONS 自动计算（新增页面只需更新上面的 ids，无需手改数字） */
   (function(){
@@ -145,6 +146,7 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
       <a href="#sec6">软件算法</a>
       <a href="#sec7">前沿知识</a>
       <a href="#sec8">学习工具</a>
+      <a href="#sec9">大模型</a>
     </div>
     <button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>
     <button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>
@@ -164,6 +166,7 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
   <a href="#sec6" onclick="toggleDrawer()">软件与算法</a>
   <a href="#sec7" onclick="toggleDrawer()">前沿知识库</a>
   <a href="#sec8" onclick="toggleDrawer()">学习工具</a>
+  <a href="#sec9" onclick="toggleDrawer()">大模型与具身</a>
   <a href="#version" onclick="toggleDrawer()">版本历史</a>
 </div>
 
@@ -177,9 +180,9 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
     零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</div>
     <div class="stats">
-      <div class="stat"><div class="v" id="statPages">69</div><div class="k">学习页面</div></div>
-      <div class="stat"><div class="v" id="statTracked">68</div><div class="k">可打卡页面</div></div>
-      <div class="stat"><div class="v">8</div><div class="k">学习板块</div></div>
+      <div class="stat"><div class="v" id="statPages">75</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v" id="statTracked">74</div><div class="k">可打卡页面</div></div>
+      <div class="stat"><div class="v">9</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
       <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
     </div>
@@ -283,6 +286,7 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
     <a href="#sec6"><b>06</b>软件算法</a>
     <a href="#sec7"><b>07</b>前沿</a>
     <a href="#sec8"><b>08</b>学习工具</a>
+    <a href="#sec9"><b>09</b>大模型</a>
     <a href="08_学习工具/08_仿真中心.html">🕹️ 仿真中心</a>
     <a href="08_学习工具/06_学习地图.html">🗺️ 学习地图</a>
     <a href="08_学习工具/09_动手项目清单.html">🛠️ 动手项目</a>
@@ -783,6 +787,17 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
     </div>
   </div>
 
+  <div class="sec" id="sec9">
+    <div class="sec-title"><span class="num">9</span>第九部分 · 大模型与具身智能 <span class="en">LLM · V2.1.0 新板块</span><span class="bar"></span></div>
+    <div class="grid">
+      <a class="card featured" href="09_大模型与具身智能/02_DeepSeek架构精讲.html"><span class="go">进入 →</span><div class="ic">🐋</div><div class="t">DeepSeek 架构精讲:从 V3 到 V4</div><div class="d">MoE/MLA/MTP/FP8 四大创新 → R1 纯RL推理觉醒与四阶段管线 → 混合推理与稀疏注意力;机器人圈热门底座。</div></a>
+      <a class="card" href="09_大模型与具身智能/01_大模型基础与MoE架构图解.html"><span class="go">进入 →</span><div class="ic">🧠</div><div class="t">大模型基础与 MoE 架构图解</div><div class="d">Transformer 最小知识、稠密 vs MoE、总参数≠激活参数、KV Cache 为什么贵。</div></a>
+      <a class="card" href="09_大模型与具身智能/03_强化学习与后训练.html"><span class="go">进入 →</span><div class="ic">🎛️</div><div class="t">强化学习与后训练</div><div class="d">SFT→RLHF/DPO→推理RL→Agent RL 四级火箭;PPO vs GRPO、PRM vs ORM、reward hacking。</div></a>
+      <a class="card" href="09_大模型与具身智能/04_基座选型与开源生态.html"><span class="go">进入 →</span><div class="ic">🧭</div><div class="t">基座选型与开源生态(2025-2026)</div><div class="d">许可口径红线(开放权重≠开源)、选型决策树、具身 VLM 底座实证谱系。</div></a>
+      <a class="card" href="09_大模型与具身智能/05_代码实战_部署微调与Agent.html"><span class="go">进入 →</span><div class="ic">💻</div><div class="t">代码实战:部署微调与 Agent</div><div class="d">Ollama 三条命令→transformers 十行→LoRA 三超参→GRPO 五行→function calling 二十五行最小 Agent。</div></a>
+    </div>
+  </div>
+
   <!-- ================= 学习进度 ================= -->
   <div class="sec" id="progress-sec">
     <div class="sec-title"><span class="num">✓</span>我的学习进度 <span class="en">PROGRESS · 在各页面点右上角"✓ 完成"打卡</span><span class="bar"></span></div>
@@ -821,12 +836,12 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.0.9</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-28 · 动画缓存治本 + 个人作品台 + 主页UI美化 + 协作文档整改</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-28 · 玻璃风美学改版 + 三大作品 + 自检挂件 + 09 大模型与具身智能板块</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V2.0.9 · 2026-08-28 · SW缓存治本 + 个人作品台 + 主页UI美化</summary>
-        <div class="faq-a">🛠 <b>动画"时好时坏"治本</b>:Service Worker 预缓存改容错模式(单项失败不再锁死整版缓存),线上更新后一次刷新即见新版;🎮 <b>新页面「个人作品台」(08-14)</b>:4 个零依赖手写 WebGL/GLSL 展台(粒子流场/Raymarching 光影走廊/极光 Plasma/霓虹小景),画布+参数+源码讲解三合一,vibecoding 与 shader 教学两用;🖼 <b>主页美化</b>:新手学习路径改左右循环可拖动横滑(箭头不再溢出挤框)、版本徽章精修;📋 <b>协同文档整改</b>:安全红线补 API Key 纪律、登记流程统一五件套、测试清单/README 过期项修正、自检增强至 14 项;自检 14/14 全绿。</div>
+        <summary>V2.1.0 · 2026-08-28 · 玻璃风美学改版 + 三大作品 + 自检挂件 + 09 大模型板块</summary>
+        <div class="faq-a">🎨 <b>玻璃设计系统 glass.css</b>:深空星云背景+磨砂玻璃面板+全站卡片水波纹交互(替代 hover 放大),主页 hero 现代排版去 emoji、quicknav 胶囊化;🎮 <b>个人作品台=玻璃气泡门厅</b>:星尘视差+3 颗悬浮气泡进入三大 three.js 作品——时空蝴蝶标本(7 环时间切片晶格,星际穿越式有序)、粒子八大行星(点击行星弹出玻璃物理讲解)、风吹麦浪鱼遨游(instanced 风场麦穗+boids 鱼群);🧪 <b>自检挂件</b>:每页右上角自动体检(基础/共享/页面专项,全绿✅/失败✗ 可展开),新增 08-15 全站体检页(浏览器内 fetch 审计);🧠 <b>新板块 09 大模型与具身智能(5 页)</b>:MoE 图解/DeepSeek 精讲/后训练 RL/基座选型/代码实战,约 45 题;修复学习数据分析页 SECS 未定义 bug、部署脚本误排除清单;学习页面 69→75,自检 16 项全绿。</div>
       </details>
       <details class="faq">
         <summary>V2.0.8 · 2026-08-27 · 保研复试题库 + 闯关学习 + AI 答疑(三大新功能)</summary>
@@ -976,7 +991,7 @@ body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hove
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.0.9(2026-08-28) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.0(2026-08-28) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

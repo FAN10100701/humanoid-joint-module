@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<!-- 09-01 大模型基础与 MoE 架构图解 | 模板:_assets/页面模板.html -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大模型基础与 MoE 架构图解 · 人形机器人学习站</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+.my-svg{margin:14px 0;color:#c9d1d9}.my-svg svg{width:100%;height:auto;display:block}
+</style>
+<script>
+  window.PAGE = { pageId:"09-01", root:"..",
+    breadcrumb:[{t:"大模型与具身智能",u:"../index.html#sec9"},{t:"大模型基础与 MoE 架构图解"}],
+    prev:{t:"返回首页",u:"../index.html"}, next:{t:"DeepSeek 架构精讲",u:"02_DeepSeek架构精讲.html"} };
+</script>
+</head>
+<body>
+<div class="container">
+  <div class="page-head">
+    <h1>🧠 大模型基础与 MoE 架构图解</h1>
+    <div class="sub">为机器人工程师准备的最小大模型知识:Transformer 是什么 → 为什么全行业转向 MoE → 「总参数≠激活参数」→ KV Cache 为什么贵</div>
+    <div class="tags"><span class="tag">Transformer</span><span class="tag">MoE</span><span class="tag">KV Cache</span><span class="tag">机器人方向视角</span></div>
+  </div>
+  <div class="key-point"><div class="kp-title">🎯 本页学习目标</div>
+  1. 用一张图讲清 Decoder 块的数据流<br>2. 说清稠密模型与 MoE 的本质区别与「总参数/激活参数」<br>3. 理解 KV Cache 显存开销的来源(为下一页 MLA 铺垫)<br><b>建议用时:</b>25 分钟</div>
+
+  <h2><span class="h2-num">1</span> Transformer 最小知识:只看数据流</h2>
+  <p>丢掉数学细节,记住一句话:<b>每个词都「环顾四周」(注意力) 决定该听谁的话,再各自「独立思考」(FFN),如此堆叠几十层。</b>现代主流大模型全部是 Decoder-only 结构:给定前文,逐词预测下一个词。</p>
+  <div class="my-svg"><svg viewBox="0 0 560 240" role="img" aria-label="Decoder块"><defs><marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="currentColor"/></marker></defs>
+  <rect x="40" y="26" width="200" height="44" rx="9" fill="rgba(59,130,246,.15)" stroke="#58a6ff"/><text x="140" y="53" font-size="13" fill="currentColor" text-anchor="middle">多头自注意力(环顾四周)</text>
+  <rect x="300" y="26" width="200" height="44" rx="9" fill="rgba(34,197,94,.13)" stroke="#22c55e"/><text x="400" y="53" font-size="13" fill="currentColor" text-anchor="middle">FFN 前馈网络(独立思考)</text>
+  <text x="252" y="53" font-size="16" fill="#8b98a9" text-anchor="middle">→</text>
+  <rect x="40" y="120" width="200" height="40" rx="9" fill="rgba(255,255,255,.05)" stroke="#6b7280" stroke-dasharray="5 4"/><text x="140" y="145" font-size="12" fill="#9aa4b2" text-anchor="middle">残差连接 + 层归一化</text>
+  <rect x="300" y="120" width="200" height="40" rx="9" fill="rgba(255,255,255,.05)" stroke="#6b7280" stroke-dasharray="5 4"/><text x="400" y="145" font-size="12" fill="#9aa4b2" text-anchor="middle">残差连接 + 层归一化</text>
+  <path d="M140,70 L140,120" stroke="currentColor" marker-end="url(#a1)"/><path d="M400,70 L400,120" stroke="currentColor" marker-end="url(#a1)"/>
+  <path d="M140,160 C140,205 400,205 400,160" fill="none" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#a1)"/><text x="270" y="222" font-size="11.5" fill="#f59e0b" text-anchor="middle">残差:原始信息绕行直达,防深层退化</text>
+  <text x="30" y="16" font-size="11.5" fill="#9aa4b2">↑×N 层堆叠(DeepSeek-V3 为 61 层)</text></svg></div>
+  <div class="box box-tip"><b>📌 机器人视角:</b>VLA 模型(视觉-语言-动作)的底座就是一个 Decoder 堆叠体——视觉 token 与语言 token 一起「环顾四周」,最后输出动作 token。看懂本页,07 板块的 VLA 就通了。</div>
+
+  <h2><span class="h2-num">2</span> 稠密 vs MoE:把 FFN 拆成「专家团队」</h2>
+  <p><b>稠密模型(Dense):</b>每个 token 都要过同一个完整 FFN——参数全激活,算力随参数线性上涨(如 Llama 系)。<b>MoE(Mixture of Experts):</b>把 FFN 换成 N 个「专家」FFN + 一个「路由器」:每个 token 只被送到其中少数几个专家(如 256 选 8),<b>其余专家这轮休息</b>。</p>
+  <div class="table-wrap"><table>
+    <tr><th></th><th>稠密</th><th>MoE</th></tr>
+    <tr><td>参数量</td><td>= 激活量</td><td>总参数大、<b>激活参数小</b></td></tr>
+    <tr><td>算力</td><td>随总参数线性涨</td><td>只随激活参数涨 → 「大知识量、小算力」</td></tr>
+    <tr><td>代价</td><td>简单稳定</td><td>显存要装下全部专家;需负载均衡防「专家旱涝不均」</td></tr>
+    <tr><td>代表</td><td>Llama / Qwen 稠密版</td><td>DeepSeek-V3(671B/37B)、Kimi K2、GLM-4.5</td></tr>
+  </table></div>
+  <p><b>总参数 vs 激活参数(面试高频):</b>DeepSeek-V3 总参数 671B,但每个 token 每层只路由到 8 个专家(+1 共享专家),<b>激活仅约 37B</b>——所以推理算力接近 37B 稠密模型,知识容量却看齐 671B。「共享专家」每个 token 必过,负责通用知识;「路由专家」按需选择,负责细分知识。</p>
+
+  <h2><span class="h2-num">3</span> KV Cache 为什么贵</h2>
+  <p>自回归生成每出一个词,都要拿着新词去和<b>之前所有词</b>做注意力。为避免重复计算,历史词的 Key/Vector 向量被缓存下来——这就是 KV Cache。它随「上下文长度 × 层数 × 并发数」线性膨胀,长上下文推理的显存大头不是模型权重,而是 KV Cache。<b>由此引出下一页的 MLA(Multi-head Latent Attention):把 KV 压缩到低维隐空间,缓存直接缩一个数量级。</b></p>
+
+  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <div class="quiz"><div class="quiz-q">1. MoE 中「路由器」的作用是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 把所有专家输出求平均</button>
+      <button data-v="B">B. 为每个 token 挑选少数几个专家处理</button>
+      <button data-v="C">C. 决定模型层数</button>
+      <button data-v="D">D. 压缩 KV Cache</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 路由器(通常是个小线性层+TopK)为每个 token 选出得分最高的 k 个专家,只有被选中的专家参与本轮计算——这就是「激活参数小」的来源。</div></div>
+  <div class="quiz"><div class="quiz-q">2. DeepSeek-V3 总参数 671B、激活约 37B,意味着?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 推理只需 37B 模型的显存</button>
+      <button data-v="B">B. 知识容量等价 37B 模型</button>
+      <button data-v="C">C. 推理算力接近 37B 模型,但知识容量看齐 671B——显存仍需装下全部专家</button>
+      <button data-v="D">D. 训练不需要 GPU</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 MoE 的交易:用「显存换算力」。计算量只走激活路径(≈37B),但全部专家权重都要驻留显存——这正是 MoE 部署偏好大显存/多卡的原因。</div></div>
+  <div class="quiz"><div class="quiz-q">3. 残差连接的作用是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 让原始信息绕过每层直达深层,缓解深层网络退化</button>
+      <button data-v="B">B. 减少 参数量</button>
+      <button data-v="C">C. 代替层归一化</button>
+      <button data-v="D">D. 防止 MoE 负载不均</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 每层输出 = 层(输入) + 输入:梯度可以经「捷径」直通浅层,几十上百层也能稳定训练。</div></div>
+  <div class="quiz"><div class="quiz-q">4. 长上下文推理时显存大头通常是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 模型权重</button>
+      <button data-v="B">B. KV Cache(随上下文长度与并发线性膨胀)</button>
+      <button data-v="C">C. 优化器状态</button>
+      <button data-v="D">D. 词表</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 推理无优化器;长上下文×大并发时 KV Cache 可达权重数倍。MLA/量化 KV 都是为它而生。</div></div>
+  <div class="quiz"><div class="quiz-q">5. 「共享专家」与「路由专家」的区别?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 共享专家参数更少</button>
+      <button data-v="B">B. 路由专家每个 token 必过</button>
+      <button data-v="C">C. 没有区别</button>
+      <button data-v="D">D. 共享专家每个 token 必过(承载通用知识),路由专家按 token 挑选(细分知识)</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 DeepSeek-MoE 架构的特色设计:共享专家保证通用能力不下放给路由,减轻路由学习负担。</div></div>
+  <div class="quiz"><div class="quiz-q">6. VLA 模型与 Decoder 大模型的关系?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 完全不同的架构</button>
+      <button data-v="B">B. VLA 以 Decoder 底座为骨干,把视觉/语言/动作统一为 token 序列处理</button>
+      <button data-v="C">C. VLA 只用 CNN</button>
+      <button data-v="D">D. VLA 不需要注意力</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 OpenVLA/π0/GR00T 等都是「预训练底座 + 动作输出头」范式——大模型知识被机器人直接继承。</div></div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>Decoder=注意力+FFN 堆叠;MoE 用「路由选专家」把知识容量与算力解耦;KV Cache 是长上下文的显存大头,也是 MLA 的靶子。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 如果让机器人分「底盘/机械臂/导航」各养一组专家,路由会有什么风险?2. 上下文从 8K 到 128K,KV Cache 涨多少倍?</div>
+  <h2><span class="h2-num">5</span> 参考来源(更新至 2026-08)</h2>
+  <ul>
+    <li><a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">DeepSeek-V3 Technical Report (arXiv)</a> — MoE/共享专家/负载均衡口径</li>
+    <li><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Attention Is All You Need (arXiv)</a> — Transformer 原论文</li>
+    <li><a href="https://huggingface.co/docs/transformers" target="_blank" rel="noopener">HuggingFace Transformers 文档</a></li>
+  </ul>
+</div>
+<script src="../_assets/site.js"></script>
+</body></html>

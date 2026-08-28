@@ -67,3 +67,8 @@ https://cyco.top/08_学习工具/11_保研复试面试题库.html
 https://cyco.top/08_学习工具/12_闯关学习.html
 https://cyco.top/08_学习工具/13_AI答疑助手.html
 https://cyco.top/08_学习工具/14_个人作品台.html
+https://cyco.top/09_大模型与具身智能/01_大模型基础与MoE架构图解.html
+https://cyco.top/09_大模型与具身智能/02_DeepSeek架构精讲.html
+https://cyco.top/09_大模型与具身智能/03_强化学习与后训练.html
+https://cyco.top/09_大模型与具身智能/04_基座选型与开源生态.html
+https://cyco.top/09_大模型与具身智能/05_代码实战_部署微调与Agent.html
