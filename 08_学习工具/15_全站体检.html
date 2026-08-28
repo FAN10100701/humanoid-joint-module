@@ -55,7 +55,7 @@ details.faq .faq-a pre{font-size:11.5px;white-space:pre-wrap;color:#9aa4b2}
     try{
       const sm = await fetchText(root + "/sitemap.xml");
       const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
-      const base = location.origin + location.pathname.replace(/08_[^/]+\/15_[^/]+\.html$/, "/");
+      const base = location.origin + "/";   /* 中文路径会被编码,直接用站点根 */
       let bad = 0, checked = 0;
       for(const u of locs){
         try{ const r = await fetch(new URL(u.replace("https://cyco.top", base)), { method:"GET" }); checked++; if(!r.ok) bad++; }
@@ -67,10 +67,10 @@ details.faq .faq-a pre{font-size:11.5px;white-space:pre-wrap;color:#9aa4b2}
 
     /* 2) 搜索索引一致性 */
     try{
-      await fetchText(root + "/_assets/search-index.js");
-      const n = window.SITE_SEARCH_INDEX ? window.SITE_SEARCH_INDEX.length : 0;
-      row("搜索索引已加载", n > 0, n + " 条");
-    }catch(e){ row("搜索索引已加载", false, e.message); }
+      const sj = await fetchText(root + "/_assets/search-index.js");
+      const n = (sj.match(/\{ t:"/g) || []).length;
+      row("搜索索引条目(正则计数)", n > 0, n + " 条");
+    }catch(e){ row("搜索索引条目", false, e.message); }
 
     /* 3) 题库同步 */
     try{

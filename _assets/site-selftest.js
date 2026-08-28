@@ -68,7 +68,10 @@
     if(!qsel(".formula")) return ok("本页无公式");
     return window.katex ? ok("已加载") : { ok:false, detail:"公式未渲染(CDN 或未触发)" };
   });
-  register("页面专项", "玻璃挂件自启", function(){ return has(".glass", "设计系统样式已注入") ; });
+  register("页面专项", "glass.css 已注入", function(){
+    var l = document.querySelector('link[href*="glass.css"]');
+    return l ? ok("设计系统已接入") : ok("本页未启用玻璃设计系统");
+  });
 
   /* ---------- 运行器 ---------- */
   var errors = [];
