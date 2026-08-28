@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 个人作品台 · 玻璃气泡门厅:点击气泡进入独立作品 -->
+<!-- 个人作品台 · 简约高级独立页:星尘背景 + 三行玻璃作品列表 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,12 +8,22 @@
 <link rel="stylesheet" href="../_assets/glass.css">
 <style>
 #stars{position:fixed;inset:0;width:100%;height:100%;display:block}
-.wrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10vh}
-.kicker{font-size:11px;letter-spacing:.42em;color:var(--glass-ice);font-weight:600;text-transform:uppercase}
-h1.glass-title{font-size:26px;margin-top:8px}
-.field{position:relative;width:min(920px,94vw);height:min(46vh,380px)}
-.bubble .ic{font-size:30px;filter:drop-shadow(0 4px 14px rgba(0,0,0,.5))}
-.back{position:fixed;top:18px;left:18px;z-index:20}
+main{position:relative;z-index:5;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 22px}
+.kicker{font-size:10.5px;letter-spacing:.46em;color:var(--glass-ice);font-weight:600;text-transform:uppercase}
+h1{font-family:"Segoe UI Variable Display","Segoe UI","PingFang SC",sans-serif;font-weight:300;font-size:30px;letter-spacing:.18em;color:var(--glass-ink);margin:12px 0 0}
+.rule{width:56px;height:1px;background:linear-gradient(90deg,transparent,var(--glass-ice-dim),transparent);margin:18px auto 10px}
+.sub{font-size:12.5px;color:var(--glass-ink-dim);letter-spacing:.14em;margin-bottom:42px}
+.list{display:flex;flex-direction:column;gap:14px;width:min(680px,94vw)}
+.w-row{display:flex;align-items:center;gap:20px;padding:20px 24px;text-decoration:none;color:var(--glass-ink)}
+.w-row .no{font-family:Consolas,monospace;font-size:13px;color:var(--glass-ice);opacity:.85;min-width:30px}
+.w-row .body{flex:1;min-width:0}
+.w-row .t{font-size:16px;font-weight:700;letter-spacing:2px}
+.w-row .d{font-size:12px;color:var(--glass-ink-dim);margin-top:5px;letter-spacing:.06em}
+.w-row .tech{font-size:10px;color:var(--glass-ink-dim);opacity:.75;margin-top:6px;letter-spacing:.18em}
+.w-row .arr{font-size:17px;color:var(--glass-ice);opacity:.6;transition:.35s var(--glass-ease)}
+.w-row:hover .arr{opacity:1;transform:translateX(5px)}
+.foot{margin-top:36px;font-size:11.5px;color:var(--glass-ink-dim);opacity:.7;letter-spacing:.2em}
+.foot a{color:var(--glass-ice);text-decoration:none}
 </style>
 <script>
   window.PAGE = { pageId:"08-14", root:"..",
@@ -23,33 +33,40 @@ h1.glass-title{font-size:26px;margin-top:8px}
 </head>
 <body class="glass-space glass-noise">
 <canvas id="stars"></canvas>
-<a class="glass back" href="../index.html" style="padding:8px 16px;font-size:13px;color:var(--glass-ink);text-decoration:none">‹ 返回学习站</a>
-<div class="wrap">
-  <div style="text-align:center">
-    <div class="kicker">PERSONAL WORKS GALLERY</div>
-    <h1 class="glass-title">个人作品台</h1>
-    <div class="glass-rule"></div>
-    <div style="font-size:12.5px;color:var(--glass-ink-dim);letter-spacing:1px">点击气泡,进入独立的 three.js 实时作品</div>
+<main>
+  <div class="kicker">PERSONAL WORKS</div>
+  <h1>个人作品台</h1>
+  <div class="rule"></div>
+  <div class="sub">THREE.JS · 实时渲染 · 独立全屏作品</div>
+  <div class="list">
+    <a class="glass glass-ripple w-row glass-rise" href="_作品/01_时空蝴蝶标本.html">
+      <span class="no">01</span>
+      <span class="body"><span class="t">时空蝴蝶标本</span><br><span class="d">五环时间切片晶格 —— 每一圈,都是一个被凝固的瞬间</span><br><span class="tech">INSTANCED MESH · 物理玻璃材质</span></span>
+      <span class="arr">→</span>
+    </a>
+    <a class="glass glass-ripple w-row glass-rise" href="_作品/02_悬浮粒子八大行星.html">
+      <span class="no">02</span>
+      <span class="body"><span class="t">悬浮粒子八大行星</span><br><span class="d">粒子球绕日巡行 —— 点击行星,读一段真实的天体物理</span><br><span class="tech">POINTS PARTICLES · 天体物理</span></span>
+      <span class="arr">→</span>
+    </a>
+    <a class="glass glass-ripple w-row glass-rise" href="_作品/03_风吹麦浪鱼遨游.html">
+      <span class="no">03</span>
+      <span class="body"><span class="t">风吹麦浪 · 鱼遨游</span><br><span class="d">风过处金色成浪,鱼群在半空洄游 —— 一场田园梦</span><br><span class="tech">VERTEX WIND · BOIDS 鱼群</span></span>
+      <span class="arr">→</span>
+    </a>
   </div>
-  <div class="field" id="field">
-    <a class="glass-bubble" href="_作品/01_时空蝴蝶标本.html" style="left:4%;top:8%;width:230px;height:230px">
-      <span class="ic">🦋</span><span class="gb-name">时空蝴蝶标本</span><span class="gb-sub">TIME SLICED · 有序晶格</span></a>
-    <a class="glass-bubble" href="_作品/02_悬浮粒子八大行星.html" style="left:36%;top:24%;width:270px;height:270px;animation-delay:-2.4s">
-      <span class="ic">🪐</span><span class="gb-name">粒子八大行星</span><span class="gb-sub">PARTICLES · 点击看物理</span></a>
-    <a class="glass-bubble" href="_作品/03_风吹麦浪鱼遨游.html" style="left:72%;top:6%;width:230px;height:230px;animation-delay:-4.8s">
-      <span class="ic">🌾</span><span class="gb-name">风吹麦浪 · 鱼遨游</span><span class="gb-sub">WIND WHEAT · BOIDS</span></a>
-  </div>
-</div>
+  <div class="foot"><a href="../index.html">‹ 返回学习站</a></div>
+</main>
 <script src="../_assets/site.js"></script>
 <script type="module">
-/* 星尘背景:漂浮微粒 + 视差 */
+/* 星尘背景:漂浮微粒 + 鼠标视差(简约不加戏) */
 async function boot(){
   let THREE = null;
   try{ THREE = await import("../../00_3D解剖/lib/three.module.js"); }catch(e){
     try{ THREE = await import("https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js"); }catch(e2){
       const tip = document.createElement("div");
-      tip.style.cssText = "position:fixed;inset:auto 0 40% 0;text-align:center;color:#fca5a5;font-size:14px;z-index:30";
-      tip.textContent = "星尘背景加载失败:请先运行 _本地工具/启动教学页面.bat 启动本地服务,再刷新本页";
+      tip.style.cssText = "position:fixed;inset:auto 0 40% 0;text-align:center;color:#fca5a5;font-size:13px;z-index:30";
+      tip.textContent = "星尘背景加载失败:请先运行 _本地工具/启动教学页面.bat 再刷新";
       document.body.appendChild(tip);
       return;
     }
@@ -59,36 +76,21 @@ async function boot(){
   r.setPixelRatio(Math.min(devicePixelRatio, 2));
   const s = new THREE.Scene();
   const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 60); cam.position.z = 12;
-  const pos = new Float32Array(700*3);
-  for(let i = 0; i < 700; i++){ pos[i*3]=(Math.random()-0.5)*36; pos[i*3+1]=(Math.random()-0.5)*22; pos[i*3+2]=(Math.random()-0.5)*14; }
+  const pos = new Float32Array(650*3);
+  for(let i = 0; i < 650; i++){ pos[i*3]=(Math.random()-0.5)*36; pos[i*3+1]=(Math.random()-0.5)*22; pos[i*3+2]=(Math.random()-0.5)*14; }
   const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos,3));
-  s.add(new THREE.Points(g, new THREE.PointsMaterial({ color:0x9fc2ff, size:0.055, transparent:true, opacity:0.7 })));
+  s.add(new THREE.Points(g, new THREE.PointsMaterial({ color:0x9fc2ff, size:0.05, transparent:true, opacity:0.65 })));
   function on(){ r.setSize(innerWidth, innerHeight); cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix(); }
   addEventListener("resize", on); on();
   let mx = 0, my = 0;
-  addEventListener("pointermove", e=>{ mx = (e.clientX/innerWidth-0.5); my = (e.clientY/innerHeight-0.5); });
-  (function loop(t){
+  addEventListener("pointermove", e=>{ mx = e.clientX/innerWidth-0.5; my = e.clientY/innerHeight-0.5; });
+  (function loop(){
     requestAnimationFrame(loop);
     r.render(s, cam);
-    c.style.transform = "translate(" + (mx*-14) + "px," + (my*-10) + "px)";
-  })(0);
+    c.style.transform = "translate(" + (mx*-12) + "px," + (my*-9) + "px)";
+  })();
 }
 boot();
-/* 气泡鼠标斥力(轻量视差) */
-const field = document.getElementById("field");
-field.addEventListener("pointermove", function(e){
-  const bs = field.querySelectorAll(".glass-bubble");
-  bs.forEach(function(b){
-    const r = b.getBoundingClientRect();
-    const dx = e.clientX-(r.left+r.width/2), dy = e.clientY-(r.top+r.height/2);
-    const d = Math.hypot(dx,dy);
-    if(d < 240){ b.style.translate = (dx/d*-22)+"px "+(dy/d*-16)+"px"; }
-    else b.style.translate = "0px 0px";
-  });
-});
-field.addEventListener("pointerleave", function(){
-  field.querySelectorAll(".glass-bubble").forEach(b=> b.style.translate = "0px 0px");
-});
 </script>
 </body>
 </html>
