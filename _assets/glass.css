@@ -260,3 +260,24 @@ body:not([data-theme]) .glass-input,body[data-theme="light"] .glass-input{backgr
 /* ---------- 分隔细线 ---------- */
 .glass-hr{height:1px;border:none;margin:var(--gs-3) 0;
   background:linear-gradient(90deg,transparent,var(--glass-ice-dim),transparent)}
+
+/* ============================================================
+   B3 · 内容页排版玻璃化(V2.1.4):table / pre / quiz / box
+   全局覆写,66个内容页零改动自动继承;深浅双主题
+   ============================================================ */
+table{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--gr-sm);overflow:hidden}
+th{background:var(--glass-ice-a10);color:var(--glass-ink);border-bottom:1px solid var(--glass-border)}
+td{border-top:1px solid rgba(140,190,255,.08)}
+pre{background:rgba(6,10,18,.55);border:1px solid var(--glass-border);border-radius:var(--gr-sm)}
+.quiz{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--gr-md)}
+.quiz-options button{background:rgba(255,255,255,.04);border:1px solid var(--glass-border);border-radius:10px}
+.quiz-options button:hover{border-color:var(--glass-border-hi);transform:translateX(3px)}
+.quiz-options button.correct{border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.14)}
+.quiz-options button.wrong{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.12)}
+.quiz-explain{background:var(--glass-ice-a10);border-left:3px solid var(--glass-ice);border-radius:0 10px 10px 0}
+.box{border-radius:var(--gr-sm)}
+.step-item{border-radius:var(--gr-sm)}
+body:not([data-theme]) table,body[data-theme="light"] table{background:rgba(255,255,255,.6);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+body:not([data-theme]) pre,body[data-theme="light"] pre{background:rgba(244,247,252,.9);border-color:rgba(60,80,120,.16)}
+body:not([data-theme]) .quiz,body[data-theme="light"] .quiz{background:rgba(255,255,255,.6)}
+body:not([data-theme]) .quiz-options button,body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.8);border-color:rgba(60,80,120,.16);color:#334155}
