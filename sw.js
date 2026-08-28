@@ -4,6 +4,7 @@
    - 静态资源(_assets): stale-while-revalidate(先缓存后台更新,改代码无需 bump CACHE)
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
+   - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
    - 版本: V2.1.4 · 2026-08-29(升级站点时改 CACHE 名以强制更新)
    ============================================================ */
 var CACHE = "hrl-site-v2.1.4";

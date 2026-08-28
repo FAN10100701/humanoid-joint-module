@@ -277,140 +277,25 @@
     document.addEventListener("keydown", hide);
   }
 
-  /* ---------- 评论区(Twikoo,配置见 _assets/giscus-config.js;替代被墙的 giscus.app) ---------- */
+  /* ---------- 讨论与反馈(V2.1.4 精简):云端评论已停用,仅渲染「联系站长」卡片 ---------- */
   function initComments(){
-    var P = page();
-    if(!P || !P.pageId) return;
-    if(!window.COMMENTS_CONFIG){
-      /* 动态加载配置文件(内容页未直接引入),加载成功后再挂载 */
-      var s = document.createElement("script");
-      s.src = (P.root || "") + "/_assets/giscus-config.js";
-      s.onload = function(){ mountComments(); };
-      document.head.appendChild(s);
-      return;
+    if(!window.PAGE || !window.PAGE.pageId) return;   /* 首页不渲染 */
+    try{
+      var sc = document.createElement("script");
+      sc.src = (window.PAGE.root || "") + "/_assets/giscus-config.js";
+      document.head.appendChild(sc);
+    }catch(e){}
+    function mount(){
+      var email = (window.COMMENTS_CONFIG && window.COMMENTS_CONFIG.email) || "";
+      var mailto = email ? '<a href="mailto:' + email + '" style="color:#60a5fa;font-weight:700;text-decoration:underline">' + email + '</a>' : '站长邮箱';
+      var box = document.createElement("div");
+      box.className = "giscus-wrap";
+      box.innerHTML = '<h2><span class="h2-num">✉</span> 讨论与反馈</h2>'
+        + '<div class="box box-tip" style="margin-top:10px"><b>📮 联系站长:</b>欢迎邮件联系站长: ' + mailto + '。邮件请注明页面链接与问题描述,一般 1~2 天内回复。</div>';
+      (document.querySelector(".container") || document.body).appendChild(box);
     }
-    mountComments();
-  }
-  function mountComments(){
-    var cfg = window.COMMENTS_CONFIG;
-    if(!cfg) return;
-    var c = document.querySelector(".container");
-    if(!c) return;
-    var box = document.createElement("div");
-    box.className = "giscus-wrap";
-    /* 2026-08-17:云端评论停用(免费后端均受限)→ 显示「联系站长」卡片替代 */
-    if(cfg.provider === "disabled"){
-      var email = cfg.email || "";
-      var mailto = email ? '<a href="mailto:' + email + '" style="color:#60a5fa;font-weight:700;text-decoration:underline">' + email + '</a>' : '站长邮箱(待配置)';
-      box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2>'
-        + '<div class="box box-tip" style="margin-top:10px"><b>📮 联系站长:</b>'
-        + '本站暂未接入在线评论区(免费云服务方案均已停服/受限)。如有建议、纠错或想交流的内容,'
-        + '欢迎邮件联系站长: ' + mailto + '。邮件请注明页面链接与问题描述,一般 1~2 天内回复。</div>';
-      c.appendChild(box);
-      return;
-    }
-    /* 诊断容器放在 #tcomment 之外(Twikoo 渲染会清空 #tcomment,探针放里面会被抹掉) */
-    box.innerHTML = '<h2><span class="h2-num">💬</span> 讨论与反馈</h2>'
-      + '<div id="tcomment-diag" style="font-size:12px;color:#f59e0b;font-family:Consolas,monospace;line-height:1.9;margin:6px 0;white-space:pre-wrap;display:none"></div>'
-      + '<div id="tcomment"></div>';
-    c.appendChild(box);
-    if(!cfg.envId){ return; }
-    if(cfg.provider === "valine"){
-      /* Valine:LeanCloud 存储(国内版免费,纯配置零部署);需 appId/appKey */
-      var VCDNS = [
-        "https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js",
-        "https://registry.npmmirror.com/valine/1.5.1/files/dist/Valine.min.js"
-      ];
-      function loadValine(i){
-        if(i >= VCDNS.length) return;
-        var s = document.createElement("script");
-        s.src = VCDNS[i];
-        s.onload = function(){
-          if(window.Valine){
-            try{ new Valine({ el:"#tcomment", appId:cfg.appId, appKey:cfg.appKey, serverURLs:cfg.serverURLs||"", path:location.pathname, placeholder:"友善交流,理性讨论…", avatar:"identicon", visitor:true }); }
-            catch(e){ console.warn("[评论] Valine 初始化失败:", e); }
-          }
-        };
-        s.onerror = function(){ loadValine(i + 1); };
-        document.head.appendChild(s);
-      }
-      loadValine(0);
-      return;
-    }
-    /* Twikoo:CloudBase 云接入(官方推荐配置:短 envId + region + path)。
-       加载:npmmirror 优先(国内快)→ jsdelivr → unpkg,每源 8s 超时强制跳下一源(防网络黑洞挂起)。
-       调试探针(2026-08-17):诊断「评论失败:0」——记录每步状态,输出到控制台与评论区顶部 */
-    window.__COMMENT_DIAG__ = [];
-    function diag(step, ok, detail){
-      var line = "[" + new Date().toLocaleTimeString() + "] " + step + (ok ? " ✓" : " ✗") + (detail ? " | " + detail : "");
-      window.__COMMENT_DIAG__.push(line);
-      console.log("[评论探针]", line);
-      var el = document.getElementById("tcomment-diag");
-      if(el){
-        el.style.display = "block";
-        el.textContent += (el.textContent ? "\n" : "") + "🔍 " + line;
-      }
-      return line;
-    }
-    diag("配置读取", !!cfg, "provider=" + cfg.provider + " envId=" + (cfg.envId||"").slice(0,40) + "…");
-    /* 版本必须与云函数一致(官方要求):CloudBase 部署摘要为 1.7.19;CDN 顺序按官方推荐(国内优先) */
-    var CDNS = [
-      "https://registry.npmmirror.com/twikoo/1.7.19/files/dist/twikoo.all.min.js",
-      "https://s4.zstatic.net/npm/twikoo@1.7.19/dist/twikoo.all.min.js",
-      "https://cdn.jsdelivr.net/npm/twikoo@1.7.19/dist/twikoo.all.min.js"
-    ];
-    var CDN_TIMEOUT = 8000;   /* 单源超时(ms):网络黑洞(挂起不报错)时强制跳下一源 */
-    var loaded = false;
-    function initTwikoo(){
-      if(loaded || !window.twikoo) return;
-      loaded = true;
-      diag("twikoo 脚本加载", true, "window.twikoo 就绪");
-      try{
-        var p = twikoo.init({
-          envId: cfg.envId,
-          el: "#tcomment",
-          region: cfg.region || "",
-          path: cfg.path || location.pathname   /* CloudBase 云接入需 /twikoo;自托管 URL 模式可省 */
-        });
-        diag("twikoo.init 调用", true, "envId=" + cfg.envId + " region=" + (cfg.region||"") + " path=" + (cfg.path||location.pathname));
-        if(p && p.catch){
-          p.catch(function(err){
-            diag("twikoo.init Promise 失败", false, (err && (err.message || err.code || String(err))) || "未知错误");
-          });
-        }
-      }
-      catch(e){ diag("twikoo.init 抛异常", false, (e && e.message) || String(e)); }
-    }
-    function loadTwikoo(i){
-      if(i >= CDNS.length){ diag("CDN 全部失败", false, "npmmirror/jsdelivr/unpkg 均不可达或超时"); return; }
-      diag("尝试 CDN #" + i, null, CDNS[i]);
-      var s = document.createElement("script");
-      var timer = setTimeout(function(){
-        diag("CDN #" + i + " 超时", false, "8s 无响应,强制跳下一源(疑似网络黑洞)");
-        try{ s.onload = s.onerror = null; s.parentNode && s.parentNode.removeChild(s); }catch(e){}
-        loadTwikoo(i + 1);
-      }, CDN_TIMEOUT);
-      s.src = CDNS[i];
-      s.onload = function(){
-        clearTimeout(timer);
-        if(window.twikoo){ initTwikoo(); }
-        else { diag("twikoo 全局缺失", false, "脚本加载成功但 window.twikoo 未定义"); }
-      };
-      s.onerror = function(){
-        clearTimeout(timer);
-        diag("CDN #" + i + " 加载失败", false, "网络错误");
-        loadTwikoo(i + 1);
-      };
-      document.head.appendChild(s);
-    }
-    /* 捕获浏览器层拦截(CORS 被拒时 fetch 抛 TypeError) */
-    window.addEventListener("unhandledrejection", function(ev){
-      var e = ev && ev.reason;
-      if(e && /twikoo/i.test(String(e && e.message || e))){
-        diag("未捕获 Promise 拒绝", false, (e && e.message) || String(e));
-      }
-    });
-    loadTwikoo(0);
+    if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
+    else mount();
   }
 
   /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ---------- */
@@ -841,7 +726,7 @@
     var b = document.createElement("button");
     b.className = "nav-print";
     b.textContent = "🖨️";
-    b.title = "打印 / 导出 PDF";
+    b.title = "打印 / 导出 PDF"; b.setAttribute("aria-label","打印或导出PDF");
     b.onclick = function(){ window.print(); };
     nav.appendChild(b);
   }

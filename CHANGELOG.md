@@ -6,6 +6,9 @@
 
 - ⚡ **A1 缓存SWR治本**:根 sw.js 对 `_assets/` 的策略由 cache-first 改为 stale-while-revalidate(先缓存秒开+后台拉新)——此后修改 JS/CSS **无需再 bump CACHE**,线上一次访问自动对齐;"改了没生效/时好时坏"类问题的根源消除(本轮 bump v2.1.4 仅为本变更自身上线)
 - 🎨 **B1 玻璃组件层**:glass.css 扩展为设计令牌+六件套组件库——`glass-card / glass-panel / glass-hud / glass-pill / glass-btn(+primary) / glass-input` 与 `.glass-hr` 分隔线,统一圆角阶(10/16/20)、间距阶、模糊阶、冰蓝强调透明度阶;深浅双主题齐备;存量页面增量换用
+- 🧹 **A4 site.js 瘦身**:停用的 Twikoo/Valine/giscus 死代码删除(约130行→30行「联系站长」卡片),文件 1000→794 行
+- ♿ **B4 可访问性**:顶栏主题/打印/AI圆钮等纯图标按钮补 aria-label
+- 📚 **A5 双SW策略文档化**:sw.js 头注释与协作文档写入「改动覆盖域必须 bump 缓存版本」纪律
 - 版本四处同步 V2.1.4;自检 16 项全绿
 
 ## V2.1.3 · 2026-08-29 · 板块重组 9→7 + AI 内嵌聊天面板 + 首页收纳循环
