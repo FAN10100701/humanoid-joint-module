@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  个人作品 03 · 极光平原(fbm 光带 + 色域映射 + 星空)
+  全屏沉浸页:无站点导航,自带 HUD;引擎:_assets/pf-kit.js
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>极光平原 · 个人作品 03 · 人形机器人学习站</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#04060b;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC",sans-serif}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hud{position:fixed;z-index:10;color:#c9d1d9;user-select:none}
+.hud-top{top:0;left:0;right:0;display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(rgba(4,6,11,.85),transparent);pointer-events:none}
+.hud-top a,.hud-top button{pointer-events:auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;text-decoration:none;font-family:inherit;transition:.18s;backdrop-filter:blur(8px)}
+.hud-top a:hover,.hud-top button:hover{border-color:#3b82f6;color:#fff}
+.hud-title{font-size:14px;font-weight:800;letter-spacing:1px;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+.hud-title small{font-weight:400;color:#8b98a9;margin-left:8px}
+#fps{margin-left:auto;font-family:Consolas,monospace;font-size:11px;color:rgba(255,255,255,.4)}
+.hud-ctl{left:0;right:0;bottom:0;display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:14px 20px;background:linear-gradient(transparent,rgba(4,6,11,.88));font-size:12.5px;color:#9aa4b2}
+.hud-ctl label{display:flex;align-items:center;gap:9px;min-width:210px;flex:1;max-width:330px}
+.hud-ctl input[type=range]{flex:1;accent-color:#58a6ff;min-width:80px}
+.hud-ctl .val{font-family:Consolas,monospace;color:#9ecbff;min-width:36px;text-align:right}
+.hud-nav{bottom:58px;right:18px;display:flex;flex-direction:column;gap:8px}
+.hud-nav a{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:12.5px;padding:8px 16px;border-radius:10px;text-decoration:none;transition:.18s;text-align:center;backdrop-filter:blur(8px)}
+.hud-nav a:hover{border-color:#3b82f6;color:#fff}
+.hud-src{top:58px;right:18px;bottom:110px;width:min(560px,92vw);background:rgba(6,10,18,.92);border:1px solid rgba(88,166,255,.35);border-radius:14px;overflow:auto;padding:16px 18px;backdrop-filter:blur(10px);display:none}
+.hud-src.open{display:block}
+.hud-src h4{color:#9ecbff;font-size:13.5px;margin-bottom:10px}
+.hud-src pre{font-size:11.5px;line-height:1.75;color:#a8c7e8;white-space:pre-wrap}
+.hud-src p{font-size:12px;color:#8b98a9;line-height:1.9;margin-top:10px}
+@media (max-width:640px){ .hud-src{left:12px;right:12px;width:auto} .hud-ctl label{min-width:140px} }
+</style>
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+
+<div class="hud hud-top">
+  <a href="../14_个人作品台.html">‹ 作品台</a>
+  <span class="hud-title">03 · 极光平原<small>GLSL · fbm 光带 · 色域映射 · 程序化星空</small></span>
+  <span id="fps"></span>
+  <button id="srcBtn">📜 源码</button>
+</div>
+
+<div class="hud hud-nav">
+  <a href="02_光影走廊.html">‹ 上一作品</a>
+  <a href="04_相位蝴蝶群.html">下一作品 ›</a>
+</div>
+
+<div class="hud hud-src" id="srcPanel">
+  <h4>📜 核心源码(完整可跑,约 14 行)</h4>
+<pre>// 极光带:水平 fbm 曲线 + 垂直高斯衰减
+float band(vec2 uv, float t){
+  float ridge = fbm(vec2(uv.x*2.2, t*.35))*.6 + uv.x*.15;
+  float d = uv.y - (.55 + ridge*.35);   // 距极光脊线的距离
+  return exp(-abs(d)*6.);               // 高斯衰减 → 柔和光带
+}
+vec3 ramp(float v){                     // 亮度 → 色(青→紫→品红)
+  vec3 c = vec3(.0,.35,.3);
+  c = mix(c, vec3(.35,.1,.55), smoothstep(.2,.7,v));
+  c = mix(c, vec3(.9,.25,.6),  smoothstep(.7,1.,v));
+  return c;
+}
+void main(){
+  float a = band(uv,uT)*uA;
+  float mountain = smoothstep(.34,.28, uv.y + fbm(uv*3.)*.06);
+  vec3 c = ramp(min(a,1.))*a + vec3(.012,.02,.045);
+  c = mix(c, vec3(.006,.01,.018), mountain);  // 雪山剪影
+  c += vec3(.9)*stars(uv);                    // 顶层星点
+  gl_FragColor = vec4(c,1.);
+}</pre>
+  <p><b>要点:</b>①exp(-|d|·k) 高斯光带比线性衰减自然得多;②ramp() 三段 mix 是"色域映射"最小实现;③雪山就是一行 smoothstep 阈值——shader 里"画山"只需要一个不等式;④星点 = 网格哈希 + 距离衰减 + 呼吸闪烁。</p>
+</div>
+
+<div class="hud hud-ctl">
+  <label>极光强度 <input type="range" id="pA" min="0.3" max="2" step="0.05" value="1"><span class="val" id="vA">1.00</span></label>
+  <label>流动速度 <input type="range" id="pB" min="0.1" max="2" step="0.05" value="0.6"><span class="val" id="vB">0.60</span></label>
+</div>
+
+<script src="../../_assets/pf-kit.js"></script>
+<script>
+(function(){
+  "use strict";
+  var canvas = document.getElementById("stage");
+  var NOISE = window.PFKit.NOISE_GLSL;
+  var FRAG =
+    "precision mediump float;\n" +
+    "uniform vec2 uRes;uniform float uT;uniform float uA;uniform float uB;\n" +
+    NOISE +
+    "float band(vec2 uv, float t){\n" +
+    " float ridge=fbm(vec2(uv.x*2.2, t*.35))*.6+uv.x*.15;\n" +
+    " float d=uv.y-(.55+ridge*.35);\n" +
+    " return exp(-abs(d)*6.);\n" +
+    "}\n" +
+    "vec3 ramp(float v){\n" +
+    " vec3 c=vec3(.0,.35,.3);\n" +
+    " c=mix(c,vec3(.35,.1,.55),smoothstep(.2,.7,v));\n" +
+    " c=mix(c,vec3(.9,.25,.6),smoothstep(.7,1.,v));\n" +
+    " return c;\n" +
+    "}\n" +
+    "float stars(vec2 uv, float t){\n" +
+    " vec2 g=floor(uv*vec2(160.,90.)); vec2 f=fract(uv*vec2(160.,90.));\n" +
+    " float h=hash(g.x+g.y*57.);\n" +
+    " float s=step(.985,h)*smoothstep(.25,.0,length(f-.5));\n" +
+    " return s*(.6+.4*sin(t*2.+h*40.));\n" +
+    "}\n" +
+    "void main(){\n" +
+    " vec2 uv=gl_FragCoord.xy/uRes;\n" +
+    " float a=band(uv,uT*uB)*uA;\n" +
+    " float mt=smoothstep(.34,.28,uv.y+fbm(uv*3.+7.)*.06);\n" +
+    " vec3 c=ramp(min(a,1.))*a+vec3(.012,.02,.045);\n" +
+    " c=mix(c,vec3(.006,.01,.018),mt);\n" +
+    " c+=vec3(.9)*stars(uv,uT)*step(.3,uv.y);\n" +
+    " gl_FragColor=vec4(c,1.);\n" +
+    "}";
+  var g = window.PFKit.glCanvas(canvas, FRAG, ["uA","uB"]);
+  if(!g){
+    document.getElementById("fps").textContent = "WebGL 不可用";
+    return;
+  }
+  var pA = document.getElementById("pA"), pB = document.getElementById("pB");
+  var vA = document.getElementById("vA"), vB = document.getElementById("vB");
+  var job = window.PFKit.loop(canvas, document.getElementById("fps"), function(t){
+    g.resize();
+    g.gl.uniform1f(g.U.uA, parseFloat(pA.value));
+    g.gl.uniform1f(g.U.uB, parseFloat(pB.value));
+    vA.textContent = (+pA.value).toFixed(2);
+    vB.textContent = (+pB.value).toFixed(2);
+    g.draw(t);
+  });
+  pA.addEventListener("input", function(){ job.wake(); });
+  pB.addEventListener("input", function(){ job.wake(); });
+  document.getElementById("srcBtn").onclick = function(){
+    document.getElementById("srcPanel").classList.toggle("open");
+  };
+})();
+</script>
+</body>
+</html>

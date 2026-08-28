@@ -20,10 +20,15 @@ var PRECACHE = [
   "./_assets/quest-data.js",
   "./_assets/ai-assistant.js",
   "./_assets/quiz-bank.js",
+  "./_assets/pf-kit.js",
   "./08_学习工具/11_保研复试面试题库.html",
   "./08_学习工具/12_闯关学习.html",
   "./08_学习工具/13_AI答疑助手.html",
-  "./08_学习工具/14_个人作品台.html"
+  "./08_学习工具/14_个人作品台.html",
+  "./08_学习工具/_作品/01_电磁雨柱.html",
+  "./08_学习工具/_作品/02_光影走廊.html",
+  "./08_学习工具/_作品/03_极光平原.html",
+  "./08_学习工具/_作品/04_相位蝴蝶群.html"
 ];
 
 self.addEventListener("install", function(e){
