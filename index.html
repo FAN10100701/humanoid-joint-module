@@ -1105,8 +1105,9 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
 (function(){
   var b = document.getElementById("verBadge");
   if(!b) return;
-  var m = (document.body.textContent || "").match(/V\d+\.\d+\.\d+/);
-  if(m){ b.innerHTML = "<i></i>" + m[0].replace(/^V/, "v"); b.style.display = "inline-flex"; }
+  /* V2.1.3:直接读 Site.VERSION 单源,不再从页面文本正则捞(避免文本顺序导致与页脚不一致) */
+  var v = ((window.Site && Site.VERSION) || "").split("(")[0].replace(/^V/, "v");
+  if(v){ b.innerHTML = "<i></i>" + v; b.style.display = "inline-flex"; }
 })();
 /* 学习路径横滑 carousel(V2.1.0 无限循环):克隆首尾,越过边界瞬移回真身,肉眼无缝 */
 (function(){
@@ -1177,12 +1178,13 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     (function(g){
       var cards = g.querySelectorAll(".card");
       if(cards.length <= 8) return;
-      for(var i = 8; i < cards.length; i++) cards[i].style.display = "none";
+      var shown = 6;                        /* 3列网格铺满两行,不留空位 */
+      for(var i = shown; i < cards.length; i++) cards[i].style.display = "none";
       var b = document.createElement("button");
       b.className = "glass glass-ripple";
       b.style.cssText = "display:block;margin:12px auto 2px;padding:9px 24px;border-radius:999px;font-size:13px;color:var(--glass-ice);cursor:pointer;font-family:inherit;background:var(--glass-bg);border:1px solid var(--glass-border);letter-spacing:1px";
       var open = false;
-      b.textContent = "共 " + cards.length + " 页 ▾";
+      b.textContent = "展开全部 " + cards.length + " 页 ▾";
       b.onclick = function(){
         open = !open;
         for(var i = 5; i < cards.length; i++){
@@ -1191,9 +1193,9 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
           cards[i].style.animation = "none";
           void cards[i].offsetWidth;
           cards[i].style.animation = "fadeUp .5s cubic-bezier(.22,1,.36,1) both";
-          cards[i].style.animationDelay = ((i - 8) * 0.06) + "s";
+          cards[i].style.animationDelay = ((i - shown) * 0.06) + "s";
         }
-        b.textContent = open ? "收起 ▴" : "共 " + cards.length + " 页 ▾";
+        b.textContent = open ? "收起 ▴" : "展开全部 " + cards.length + " 页 ▾";
         if(!open) g.scrollIntoView({ behavior:"smooth", block:"start" });
       };
       if(g.parentNode) g.parentNode.insertBefore(b, g.nextSibling);
