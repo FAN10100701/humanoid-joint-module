@@ -167,7 +167,15 @@ items: [
 { id:'pid-03', s:'pid', lv:5, tags:['积分饱和','抗饱和'],
   q:'什么是积分饱和(windup)?有哪些抗饱和方法?',
   a:'<p><b>现象:</b>大误差/执行器限幅期间,积分项仍持续累加"还不清的债";进入目标附近时,庞大的积分项需要反向误差长时间消化,表现为<b>大幅超调、恢复极慢</b>。典型:电机大阶跃指令下电流环饱和,速度严重过冲。</p><p><b>三类抗饱和:</b></p><ul><li><b>积分限幅(clamping):</b>积分项(或输出)超上下限即钳位。简单有效,但阈值拍脑袋。</li><li><b>反计算(back-catiation/anti-windup):</b>用"实际执行的饱和输出"与"控制器期望输出"之差反馈回积分项慢慢泄放 K<sub>t</sub>·(u_sat−u),理论性好、工业 PID 芯片标配。</li><li><b>积分分离:</b>误差大(如 >阈值)时切除积分,只留 PD;误差进入小范围再投入 I。消差与防饱和两全,电机三环常用。</li><li>附加:变积分(积分增益随误差大小连续缩放)、指令斜坡限幅(从源头减小饱和时间)。</li></ul>',
-  follow:['反计算法的泄放系数 Kt 怎么选?','指令斜坡(速度规划)为什么也能缓解积分饱和?'],
+  follow:['反计算法的泄放系数 Kt 怎么选?','指令斜坡(速度规划)为什么也能缓解积分饱和?'],  svg:'<svg viewBox="0 0 520 190" role="img" aria-label="积分饱和与抗饱和对比">'
+    +'<line x1="40" y1="20" x2="40" y2="160" stroke="currentColor"/><line x1="40" y1="160" x2="500" y2="160" stroke="currentColor"/>'
+    +'<line x1="40" y1="50" x2="500" y2="50" stroke="#6b7280" stroke-dasharray="5 4"/><text x="452" y="44" font-size="10.5" fill="#9aa4b2">目标值</text>'
+    +'<path d="M40,160 C80,160 110,50 150,50 C190,50 210,140 260,148 C310,155 340,90 380,62 C420,48 470,52 495,52" fill="none" stroke="#ef4444" stroke-width="2.2"/>'
+    +'<text x="215" y="38" font-size="11" fill="#ef4444">无抗饱和:积分疯狂累积→大幅超调、缓慢回摆</text>'
+    +'<path d="M40,160 C80,160 110,56 150,58 C190,60 220,100 265,96 C310,92 350,56 395,53 C430,51 470,52 495,52" fill="none" stroke="#22c55e" stroke-width="2.2"/>'
+    +'<text x="330" y="132" font-size="11" fill="#22c55e">钳位/反计算:积分封顶,小幅超调快速到位</text>'
+    +'<text x="40" y="178" font-size="10.5" fill="#9aa4b2">执行器饱和期间(平台段)积分仍在累加,就是「windup 绕线」的字面来源</text></svg>',
+
   links:[{t:'FOC 调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'}] },
 
 { id:'pid-04', s:'pid', lv:4, tags:['微分先行','不完全微分'],
@@ -353,7 +361,21 @@ items: [
 { id:'xk-07', s:'xk', lv:4, tags:['卡尔曼滤波'],
   q:'卡尔曼滤波的两步流程是什么?与 LQR 是什么关系?',
   a:'<p><b>模型:</b>x<sub>k+1</sub>=Ax<sub>k</sub>+Bu<sub>k</sub>+w(过程噪声 Q),y<sub>k</sub>=Cx<sub>k</sub>+v(测量噪声 R)。KF 在"预测-更新"循环里给出最小方差意义下的最优状态估计:</p><ul><li><b>预测:</b>按模型外推 x̂⁻=Ax̂+Bu,协方差 P⁻=APAᵀ+Q("信模型一秒");</li><li><b>更新:</b>用新测量修正:增益 K=P⁻Cᵀ(CP⁻Cᵀ+R)<sup>−1</sup>,x̂=x̂⁻+K(y−Cx̂⁻)("用残差拉回,信谁看谁方差小")。Q 小 R 大→信模型(平滑);Q 大 R 小→信测量(响应快、噪声大)。</li></ul><p><b>与 LQR 的对偶:</b>LQG(线性二次高斯)=卡尔曼估计状态 + LQR 反馈;对偶性指"估计器增益 L 与控制增益 K 求解结构互为转置对偶"(Riccati 方程成对)。扩展:EKF(非线性一阶线性化)、UKF(无迹变换)。机器人应用:IMU+编码器融合测姿态/速度、LOAM 里点位姿估计。</p>',
-  follow:['Q 和 R 调大调小分别什么效果?','EKF 在什么情况下发散?'],
+  follow:['Q 和 R 调大调小分别什么效果?','EKF 在什么情况下发散?'],  svg:'<svg viewBox="0 0 520 200" role="img" aria-label="卡尔曼预测-更新循环">'
+    +'<defs><marker id="kf" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="currentColor"/></marker></defs>'
+    +'<rect x="60" y="30" width="180" height="60" rx="12" fill="rgba(59,130,246,.15)" stroke="#58a6ff"/>'
+    +'<text x="150" y="55" font-size="12.5" fill="#eef4fb" text-anchor="middle" font-weight="700">① 预测 Predict</text>'
+    +'<text x="150" y="74" font-size="10.5" fill="#9ecbff" text-anchor="middle">按模型外推:x̂⁻=Ax̂+Bu,方差变大 P⁻=APAᵀ+Q</text>'
+    +'<rect x="300" y="110" width="200" height="60" rx="12" fill="rgba(34,197,94,.15)" stroke="#22c55e"/>'
+    +'<text x="400" y="135" font-size="12.5" fill="#eef4fb" text-anchor="middle" font-weight="700">② 更新 Update</text>'
+    +'<text x="400" y="154" font-size="10.5" fill="#86efac" text-anchor="middle">用测量修正:K=P⁻Cᵀ(CP⁻Cᵀ+R)⁻¹,方差缩小</text>'
+    +'<path d="M240,60 C300,40 340,60 380,108" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#kf)"/>'
+    +'<path d="M380,172 C320,190 240,170 165,92" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#kf)"/>'
+    +'<text x="120" y="150" font-size="10.5" fill="#9aa4b2">Q 小 R 大 → 信模型(平滑)</text>'
+    +'<text x="335" y="196" font-size="10.5" fill="#9aa4b2">Q 大 R 小 → 信测量(响应快)</text>'
+    +'<text x="300" y="46" font-size="10.5" fill="#9aa4b2">误差 e=y−Cx̂⁻ 拉回估计</text>'
+    +'<text x="10" y="18" font-size="10.5" fill="#9aa4b2">循环:信模型走一步 → 用测量纠偏 → 方差此消彼长,LQR 亦由此对偶而来</text></svg>',
+
   links:[{t:'传感器专题 · IMU 姿态融合',u:'../02_硬件基础/10_传感器专题_IMU力矩与触觉.html'}] },
 
 { id:'xk-08', s:'xk', lv:3, tags:['对比'],
