@@ -850,15 +850,12 @@
   function initAiFab(){
     if(page().pageId === "08-13") return;   /* AI 完整页自身不显示 */
     var root = page().root || "";
-    var s1 = document.createElement("script");
-    s1.src = (root ? root + "/" : "") + "_assets/ai-assistant.js";
-    document.head.appendChild(s1);
-    s1.onload = function(){
-      var s2 = document.createElement("script");
-      s2.src = (root ? root + "/" : "") + "_assets/ai-fab-chat.js";
-      s2.onerror = function(){};
-      document.body.appendChild(s2);
-    };
+    [ "_assets/ai-assistant.js", "_assets/ai-fab-chat.js" ].forEach(function(f){
+      var sc = document.createElement("script");
+      sc.src = (root ? root + "/" : "") + f;
+      sc.async = true;
+      document.head.appendChild(sc);
+    });
   }
 
   document.addEventListener("keydown", function(e){

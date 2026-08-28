@@ -8,7 +8,12 @@
 (function(){
   "use strict";
   function boot(){
-    if(!window.AIChat || document.getElementById("aiFabBtn")) return;
+    if(document.getElementById("aiFabBtn")) return;
+    if(!window.AIChat){                       /* 引擎未就绪:轮询等待(最多6s) */
+      if((boot._t = (boot._t||0)+1) > 60) return;
+      setTimeout(boot, 100);
+      return;
+    }
     var root = (window.PAGE && window.PAGE.root) || "";
     var chatURL = (root ? root + "/" : "") + "08_学习工具/13_AI答疑助手.html";
 
