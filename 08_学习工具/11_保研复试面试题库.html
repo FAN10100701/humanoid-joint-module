@@ -2,13 +2,13 @@
 <!-- ============================================================
   人形机器人学习站 · 保研复试面试题库
   结构遵循 _assets/页面模板.html;数据来自 _assets/ib-data-a.js / ib-data-b.js(按需加载)
-  功能: 13 学科页签 / 浏览+自测双模式 / 关键词过滤 / 掌握度自评(本地保存) / KaTeX 公式 / AI 追问入口
+  功能: 17 学科页签(专业13+通用4) / 浏览+自测双模式 / 关键词过滤 / 掌握度自评(本地保存) / KaTeX 公式 / AI 追问入口
 ============================================================ -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人形机器人学习站 · 保研复试面试题库(13 学科 117 题)</title>
+<title>人形机器人学习站 · 保研复试面试题库(17 学科 150 题)</title>
 <script>
 /* 防闪白:读取主题偏好,渲染前写入 html 级标记(与 site.css 的 FOUC 映射配合) */
 (function(){
@@ -70,16 +70,32 @@
 .ib-svg{margin:12px 0;color:#c9d1d9}
 .ib-svg svg{width:100%;height:auto;display:block}
 .ib-follow{margin-top:12px;padding:10px 14px;background:rgba(245,158,11,.07);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;font-size:13px;color:#d9c58a;line-height:1.9}
+/* 知识点拓展(V2.1.5:独立绿色区块,与「考官追问」的橙色区分) */
+.ib-extend{margin-top:12px;padding:10px 14px;background:rgba(34,197,94,.07);border-left:3px solid #22c55e;border-radius:0 8px 8px 0;font-size:13px;color:#a7e3bf;line-height:1.9}
+.ib-extend b{color:#86efac}
 .ib-links-row{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
 .ib-links-row a{font-size:12px;color:#58a6ff;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);padding:3px 10px;border-radius:999px;text-decoration:none}
 .ib-links-row a:hover{background:rgba(59,130,246,.25);color:#fff}
-/* 自评按钮 */
+/* 自评按钮(V2.1.5:on 态实心高亮 + 点击弹跳 + 即时文字回馈 + 题目行状态章) */
 .ib-grade{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.08);font-size:12.5px;color:#6b7280}
-.ib-grade button{font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid}
+.ib-grade button{font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid;transition:transform .15s,background .18s,border-color .18s,color .18s,box-shadow .18s}
+.ib-grade button:active{transform:scale(.94)}
 .ib-g-no{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:#fca5a5}
 .ib-g-vague{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#fbbf24}
 .ib-g-yes{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:#86efac}
-.ib-g-no.on,.ib-g-vague.on,.ib-g-yes.on{font-weight:800;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+.ib-g-no.on{background:#ef4444;border-color:#ef4444;color:#fff;font-weight:800;box-shadow:0 0 12px rgba(239,68,68,.45)}
+.ib-g-vague.on{background:#f59e0b;border-color:#f59e0b;color:#3b2606;font-weight:800;box-shadow:0 0 12px rgba(245,158,11,.45)}
+.ib-g-yes.on{background:#22c55e;border-color:#22c55e;color:#052e14;font-weight:800;box-shadow:0 0 12px rgba(34,197,94,.45)}
+@keyframes ibPop{0%{transform:scale(.9)}55%{transform:scale(1.12)}100%{transform:scale(1)}}
+.ib-grade button.pop{animation:ibPop .32s cubic-bezier(.22,1.2,.36,1)}
+@media (prefers-reduced-motion:reduce){.ib-grade button.pop{animation:none}.ib-grade button:active{transform:none}}
+.ib-g-hint{font-size:12.5px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none}
+.ib-g-hint.show{opacity:1}
+.ib-g-hint.h0{color:#fca5a5}.ib-g-hint.h1{color:#fbbf24}.ib-g-hint.h2{color:#86efac}.ib-g-hint.hx{color:#9aa4b2}
+.ib-state{font-size:11px;font-weight:800;border-radius:6px;padding:1px 8px;letter-spacing:.5px}
+.ib-state.s2{color:#86efac;background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.45)}
+.ib-state.s1{color:#fbbf24;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.45)}
+.ib-state.s0{color:#fca5a5;background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.45)}
 /* 自测模式遮罩 */
 .ib-reveal{display:block;margin:10px 0}
 .ib-reveal > button{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.4);color:#9ecbff;font-size:13px;padding:8px 18px;border-radius:9px;cursor:pointer;font-family:inherit}
@@ -105,12 +121,24 @@ body:not([data-theme]),body[data-theme="light"] .ib-ans p,body:not([data-theme])
 body:not([data-theme]),body[data-theme="light"] .ib-tag{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.2);color:#5a6a85}
 body:not([data-theme]),body[data-theme="light"] .ib-svg{color:#334155}
 body:not([data-theme]),body[data-theme="light"] .ib-follow{background:rgba(245,158,11,.08);color:#7c5a12}
+body:not([data-theme]),body[data-theme="light"] .ib-extend{background:rgba(34,197,94,.09);color:#14603a}
+body:not([data-theme]),body[data-theme="light"] .ib-extend b{color:#15803d}
 body:not([data-theme]),body[data-theme="light"] .ib-rel a,body:not([data-theme]),body[data-theme="light"] .ib-rel button{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25);color:#1d4ed8}
 body:not([data-theme]),body[data-theme="light"] .ib-rel .ib-ai{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#15803d}
 body:not([data-theme]),body[data-theme="light"] .ib-grade{border-top-color:rgba(60,80,120,.12);color:#94a3b8}
 body:not([data-theme]),body[data-theme="light"] .ib-g-no{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.35);color:#b91c1c}
 body:not([data-theme]),body[data-theme="light"] .ib-g-vague{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.4);color:#92400e}
 body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#15803d}
+body:not([data-theme]),body[data-theme="light"] .ib-g-no.on{background:#dc2626;border-color:#dc2626;color:#fff}
+body:not([data-theme]),body[data-theme="light"] .ib-g-vague.on{background:#d97706;border-color:#d97706;color:#fff}
+body:not([data-theme]),body[data-theme="light"] .ib-g-yes.on{background:#16a34a;border-color:#16a34a;color:#fff}
+body:not([data-theme]),body[data-theme="light"] .ib-g-hint.h0{color:#b91c1c}
+body:not([data-theme]),body[data-theme="light"] .ib-g-hint.h1{color:#92400e}
+body:not([data-theme]),body[data-theme="light"] .ib-g-hint.h2{color:#15803d}
+body:not([data-theme]),body[data-theme="light"] .ib-g-hint.hx{color:#64748b}
+body:not([data-theme]),body[data-theme="light"] .ib-state.s2{color:#15803d;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4)}
+body:not([data-theme]),body[data-theme="light"] .ib-state.s1{color:#92400e;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4)}
+body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35)}
 @media print{.ib-toolbar,.ib-chips,.ib-grade,.ib-reveal{display:none!important}.ib-hidden-ans{display:block!important}.ib-item{break-inside:avoid}}
 </style>
 <script>
@@ -129,10 +157,11 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
 
   <div class="page-head">
     <h1>🎓 保研复试面试题库</h1>
-    <div class="sub">13 个学科 · 117 道高频复试题 · 图文解析 + 延伸追问 + 站内知识联动<br>
-    自控原理 / PID / ADRC / 运动控制 / 现代控制 / 信号处理 / 硬件电路 / 无人机电调 / ROS编队 / C / C++ / 嵌入式 / FreeRTOS</div>
+    <div class="sub">17 个学科 · 150 道高频复试题 · 专业硬核 + 综合/英语/数学/科研素养普适全覆盖<br>
+    专业类:自控原理 / PID / ADRC / 运动控制 / 现代控制 / 信号处理 / 硬件电路 / 无人机电调 / ROS编队 / C / C++ / 嵌入式 / FreeRTOS<br>
+    通用类:综合素质面试 / 英语口语 / 数学基础 / 科研素养(任何专业保研都必问)</div>
     <div class="tags">
-      <span class="tag">🎯 保研复试</span><span class="tag">📚 13 学科</span><span class="tag">🖼 图文解析</span><span class="tag">📝 掌握度自评</span><span class="tag">🤖 AI 追问</span>
+      <span class="tag">🎯 保研复试</span><span class="tag">📚 17 学科</span><span class="tag">🗣 通用面全覆盖</span><span class="tag">📝 掌握度自评</span><span class="tag">🤖 AI 追问</span>
     </div>
   </div>
 
@@ -141,7 +170,7 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
     1. 按学科刷完高频复试题,掌握"结论先行→原理→公式图示→工程实例"的答题结构<br>
     2. 用自测模式先想后看,自评掌握度,薄弱学科一目了然<br>
     3. 结合站内学习页深挖原理,用 AI 考官进行模拟追问<br>
-    <b>建议用时:</b>每学科 20~30 分钟 · 13 学科可分 5~6 次刷完
+    <b>建议用时:</b>每学科 20~30 分钟 · 17 学科可分 7~8 次刷完(专业 13 科 + 通用 4 科)
   </div>
 
   <h2><span class="h2-num">1</span> 我的刷题进度</h2>
@@ -226,15 +255,17 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
     s.src = src; s.onload = cb; s.onerror = cb;
     document.head.appendChild(s);
   }
-  var pending = 2;
+  var pending = 3;
   function onReady(){ if(--pending) return; init(); }
   loadScript("../_assets/ib-data-a.js", onReady);
   loadScript("../_assets/ib-data-b.js", onReady);
+  loadScript("../_assets/ib-data-c.js", onReady);
 
   function init(){
-    var A = window.IB_A || {subjects:[],items:[]}, B = window.IB_B || {subjects:[],items:[]};
-    SUB = A.subjects.concat(B.subjects);
-    ITEM = A.items.concat(B.items);
+    var A = window.IB_A || {subjects:[],items:[]}, B = window.IB_B || {subjects:[],items:[]},
+        C = window.IB_C || {subjects:[],items:[]};
+    SUB = A.subjects.concat(B.subjects, C.subjects);
+    ITEM = A.items.concat(B.items, C.items);
     for(var i = 0; i < SUB.length; i++) SUBJ[SUB[i].id] = SUB[i];
     buildOverview();
     buildChips();
@@ -334,7 +365,7 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
     var g = p[it.id];
     return "<details class='ib-item' id='it-" + it.id + "'><summary>" +
       "<div class='ib-q'><b>" + esc(it.q) + "</b></div>" +
-      "<div class='ib-meta'><span class='ib-lv' title='复试频率'>复试频率 " + stars(it.lv) + "</span>" + tags + "</div></summary>" +
+      "<div class='ib-meta'><span class='ib-lv' title='复试频率'>复试频率 " + stars(it.lv) + "</span>" + tags + stateChip(g) + "</div></summary>" +
       (mode === "self" ? "<div class='ib-reveal'><button data-reveal>👁 先自己想 30 秒,再显示参考答案</button></div>" : "") +
       "<div class='ib-ans" + (mode === "self" ? " ib-hidden-ans" : "") + "'>" +
       body + gradeHTML(it.id, g) + "</div></details>";
@@ -346,6 +377,7 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
     if(it.svg) h += "<div class='ib-svg'>" + it.svg + "</div>";
     if(it.code) h += "<pre><code>" + esc(it.code) + "</code></pre>";
     if(it.a2) h += it.a2;
+    if(it.extend) h += "<div class='ib-extend'>💡 <b>知识点拓展:</b><br>" + it.extend + "</div>";
     if(it.follow && it.follow.length){
       h += "<div class='ib-follow'><b>🔍 考官可能这样追问:</b><br>";
       for(var i = 0; i < it.follow.length; i++) h += (i + 1) + ". " + esc(it.follow[i]) + "<br>";
@@ -359,12 +391,20 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
     }
     return h;
   }
+  var GRADE_NAMES = ["未掌握", "模糊", "已掌握"];
   function gradeHTML(id, g){
     return "<div class='ib-grade'>自评掌握度:" +
       "<button class='ib-g-no" + (g === 0 ? " on" : "") + "' data-g='0' data-id='" + id + "'>✗ 未掌握</button>" +
       "<button class='ib-g-vague" + (g === 1 ? " on" : "") + "' data-g='1' data-id='" + id + "'>~ 模糊</button>" +
       "<button class='ib-g-yes" + (g === 2 ? " on" : "") + "' data-g='2' data-id='" + id + "'>✓ 已掌握</button>" +
-      "</div>";
+      "<span class='ib-g-hint' aria-live='polite'></span></div>";
+  }
+  /* 题目行(收起态也可见)的掌握度状态章 */
+  function stateChip(g){
+    var pre = g === 2 ? "✓ " : g === 1 ? "~ " : "✗ ";
+    return (g === 0 || g === 1 || g === 2)
+      ? "<span class='ib-state s" + g + "'>" + pre + GRADE_NAMES[g] + "</span>"
+      : "";
   }
   function bindItems(box){
     var revs = box.querySelectorAll("[data-reveal]");
@@ -383,11 +423,34 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
     for(var j = 0; j < gs.length; j++){
       gs[j].onclick = function(){
         var p = loadProg(), id = this.getAttribute("data-id"), v = +this.getAttribute("data-g");
-        if(p[id] === v) delete p[id]; else p[id] = v;
+        var cancel = (p[id] === v);                       /* 再点同一档 = 取消自评 */
+        if(cancel) delete p[id]; else p[id] = v;
         saveProg(p);
         var row = this.parentNode, btns = row.querySelectorAll("button");
-        for(var k = 0; k < btns.length; k++) btns[k].className = btns[k].className.replace(" on", "");
-        if(p[id] !== undefined) this.className += " on";
+        for(var k = 0; k < btns.length; k++){
+          btns[k].classList.remove("on", "pop");
+          if(p[id] !== undefined && +btns[k].getAttribute("data-g") === p[id]) btns[k].classList.add("on");
+        }
+        if(!cancel){ this.classList.remove("pop"); void this.offsetWidth; this.classList.add("pop"); }
+        /* 即时文字回馈:"已记录 xx / 已取消自评",1.8s 后淡出 */
+        var hint = row.querySelector(".ib-g-hint");
+        if(hint){
+          clearTimeout(row._hintT);
+          hint.className = "ib-g-hint " + (cancel ? "hx" : "h" + v);
+          hint.textContent = cancel ? "已取消自评" : "已记录「" + GRADE_NAMES[v] + "」";
+          void hint.offsetWidth;
+          hint.classList.add("show");
+          row._hintT = setTimeout(function(){ hint.classList.remove("show"); }, 1800);
+        }
+        /* 题目行状态章同步:收起答案后也能一眼看到掌握度 */
+        var item = row;
+        while(item && !/(^|\s)ib-item(\s|$)/.test(item.className || "")) item = item.parentNode;
+        if(item){
+          var old = item.querySelector(".ib-state");
+          if(old && old.parentNode) old.parentNode.removeChild(old);
+          var meta = item.querySelector(".ib-meta");
+          if(meta && p[id] !== undefined) meta.insertAdjacentHTML("beforeend", stateChip(p[id]));
+        }
         renderStats(); refreshChips();
       };
     }
@@ -434,10 +497,47 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
     emb:[{q:"ISR 与主程序共享的标志变量,声明时必须加?",o:["A. volatile","B. register","C. inline","D. auto"],a:"A",e:"防止编译器把'循环读标志'优化成读一次寄存器;注意 volatile 不保证原子性,读-改-写仍需关中断或原子操作。"},
         {q:"I2C 多主同时发报,仲裁结果是谁胜出?",o:["A. 地址大者","B. 逐位发送 0(低电平)者","C. 先发起者","D. 随机"],a:"B",e:"开漏线与:发 1 却读到 0 的主机立即退出,等价于报文逐位比大小,0 胜出=地址小者继续占用总线,全程无冲突破坏。"}],
     frt:[{q:"任务间保护共享资源(可能阻塞的临界区)应该用?",o:["A. 二值信号量","B. 互斥量 Mutex","C. 计数信号量","D. 任务通知"],a:"B",e:"只有互斥量带优先级继承,防优先级反转;二值信号量适合做事件同步,不用于资源锁——这是 FreeRTOS 面试最经典的区分题。"},
-        {q:"中断服务函数里调用 FreeRTOS API 必须使用?",o:["A. 关中断版本","B. FromISR 后缀版本","C. 新建任务执行","D. 禁止任何 API"],a:"B",e:"ISR 上下文不能阻塞,必须用 xQueueSendFromISR 等 FromISR API,并按需 portYIELD_FROM_ISR 触发调度;且该中断优先级数值不得高于 configMAX_SYSCALL_INTERRUPT_PRIORITY。"}]
+        {q:"中断服务函数里调用 FreeRTOS API 必须使用?",o:["A. 关中断版本","B. FromISR 后缀版本","C. 新建任务执行","D. 禁止任何 API"],a:"B",e:"ISR 上下文不能阻塞,必须用 xQueueSendFromISR 等 FromISR API,并按需 portYIELD_FROM_ISR 触发调度;且该中断优先级数值不得高于 configMAX_SYSCALL_INTERRUPT_PRIORITY。"}],
+    zs:[{q:"介绍科研项目时,最能体现「你做过」的信号是?",o:["A. 项目名与获奖等级","B. 你个人负责的具体环节+遇到的坑+可量化的结果","C. 项目用了多先进的技术栈","D. 团队一共几个人"],a:"B",e:"面试官追问细节会拆穿没参与的人:「个人贡献+具体坑+数据结果」才证明真实性。项目名/获奖是门槛,个人细节才是区分度。"},
+        {q:"「为什么选我们学校」的高分回答,关键是?",o:["A. 学校排名高、名气大","B. 提到具体导师方向/实验室平台+与本科经历的衔接点","C. 离家近、气候好","D. 同学推荐"],a:"B",e:"功课型回答(具体到方向/导师/平台+衔接点)才显诚意与匹配度;「名气大」是最典型的低分回答,几乎等于没做功课。"}],
+    yy:[{q:"英文自我介绍最忌讳的是?",o:["A. 语法不够复杂","B. 现场逐句翻译中文自我介绍","C. 用词简单","D. 说得太快"],a:"B",e:"现场翻译容易卡壳且中英表达结构不同(中文一句话信息密度大);应提前写好英文版背熟。评分点=流畅+信息密度,不是语法复杂度。"},
+        {q:"「Why do you choose our university?」回答里的加分点是?",o:["A. Famous and beautiful campus","B. Mention a specific professor/research direction you have read about","C. My friends recommend it","D. It has a good canteen"],a:"B",e:"提及具体方向/导师(读过论文)展示你做了功课,是全网英语面攻略的共识加分点;泛泛而谈「名气/环境」是减分回答。"}],
+    sx:[{q:"拉普拉斯变换相比傅里叶变换,关键优势是?",o:["A. 只适用于周期信号","B. 引入收敛因子,可处理指数增长信号且自动带入初值","C. 计算更简单","D. 结果一定是实数"],a:"B",e:"L[ẋ]=sX(s)−x(0) 自动处理初值,e^{−σt} 放宽收敛条件,微分方程变代数方程——这是它在控制理论中地位的根本原因。"},
+        {q:"矩阵 A 的所有特征值实部均为负,对应的系统行为是?",o:["A. 发散","B. 等幅振荡","C. 渐近稳定(状态收敛到零)","D. 无法判断"],a:"C",e:"对 ẋ=Ax,特征值实部决定模态衰减:全为负→所有模态指数衰减→渐近稳定。这是「极点位置=稳定性」的代数来源,状态空间与经典控制的桥。"}],
+    ky:[{q:"证明「方法里的每个组件都有用」,应做哪种实验?",o:["A. 换数据集重跑","B. 消融实验(逐个移除组件对比)","C. 增大批量大小","D. 多跑几次取最好"],a:"B",e:"消融实验逐个去掉组件并对比性能,才能把「有效」归因到具体组件,排除「整个方法靠一个模块撑」或「纯运气」。这是论文审稿与面试追问都认的标准证据。"},
+        {q:"实验/代码不 work 时,正确的排查第一步是?",o:["A. 怀疑模型,马上换更复杂的","B. 确认现象可稳定复现,再逐环节隔离定位","C. 重新训练十遍","D. 直接看论文改参数"],a:"B",e:"先复现(确认问题稳定存在)再逐环节二分隔离,是标准排查流程;一上来就换模型/乱改参数是「玄学调试」,面试官一听就知道你缺方法论。"}]
+  };
+  /* V2.1.6 进阶选择题:每专业学科追加 1 道高区分度陷阱题(须真理解,不能靠常识蒙) */
+  var QUIZ_ADV = {
+    zkl:[{q:"系统开环增益 K 增大,稳态误差与稳定性一般如何变化?",o:["A. 两者都变好","B. 稳态误差减小,但稳定性可能变差(根轨迹可能越过虚轴)","C. 两者都变差","D. 互不影响"],a:"B",e:"型别不变时 K 增大→e_ss 按 1/(1+K) 缩小,但闭环根轨迹随 K 向右半平面移动,稳定裕度下降——「增益是双刃剑」是复试常考的辩证点。"},
+        {q:"闭环系统的极点全部在左半平面,则系统?",o:["A. 一定稳定且响应快速","B. 一定稳定,但响应快慢取决于极点距虚轴的距离","C. 一定不稳定","D. 只对线性时不变系统稳定,其他系统无法判断"],a:"B",e:"极点全在左半平面→渐近稳定(必要条件针对 LTI 也充分);实部越接近 0 模态衰减越慢,主导极点决定响应快慢。A 错在「快」不是稳定的必然结果。"}],
+    pid:[{q:"测量噪声较大的系统中,为什么微分项 D 常被禁用或加低通滤波?",o:["A. D 会降低系统增益","B. 微分对高频噪声敏感,噪声被放大导致执行器抖动","C. D 只影响稳态","D. 微分会引入积分饱和"],a:"B",e:"微分=对误差求导,高频噪声的斜率大,微分后噪声被大幅放大。工程对策:不完全微分(串一阶惯性)/微分先行/对测量值滤波——这是 PID 落地最常被问的细节之一。"},
+        {q:"位置式 PID 直接限幅输出能解决积分饱和吗?",o:["A. 能","B. 不能,饱和期间积分项继续累积,退饱和需要较长时间(超调/滞后)","C. 只能解决微分饱和","D. 与积分饱和无关"],a:"B",e:"输出限幅挡不住积分项在饱和期间的累积(「windup」),退饱和时输出被积分拖着走→大超调。抗饱和三招:限幅积分、反计算(把饱和量反馈回积分器)、积分分离。仅限幅是初学者最常见的误区。"}],
+    adrc:[{q:"LADRC 中 b₀ 偏小(实际输入增益更大)会导致?",o:["A. 无影响","B. 补偿不足,等效控制增益虚高,易振荡甚至发散","C. 稳态误差变大","D. 观测器失效"],a:"B",e:"u=(u₀−z₃)/b₀,若真实 b 大于 b₀,补偿量被放大,系统等效增益偏高、鲁棒性下降;b₀ 偏大则补偿不足、响应变慢。工程上用阶跃实验辨识 b₀ 并留裕量——这是 ADRC 整定三参数里最容易出错的一个。"},
+        {q:"ESO 为什么能估计「总扰动」而不用精确模型?",o:["A. 因为它用神经网络逼近","B. 把内扰+外扰扩张为新的状态,由 u、y 实时观测重构,再反馈补偿","C. 它假设扰动为常值","D. 它只对线性系统有效"],a:"B",e:"ESO 把「模型误差+外部扰动」合并为第 n+1 个扩张状态,通过状态观测器由 u、y 实时重构(带宽 ωo 决定跟踪速度),再在控制律中补偿。不要求扰动模型精确——这正是「自抗扰」名字的由来。"}],
+    yk:[{q:"SVPWM 相比 SPWM,母线电压利用率大约高多少?",o:["A. 一样","B. 约 15.5%(2/√3)","C. 约 50%","D. 约 5%"],a:"B",e:"SVPWM 合成电压矢量幅值可达 2/3·Vdc,相电压最大 2/√3·Vdc/2,比正弦调制(最大 Vdc/2)高 2/√3≈1.155 倍(约 15.5%)。这是电机驱动复试的高频计算题。"},
+        {q:"FOC 电流环为什么需要电机端(而不是输出端)编码器?",o:["A. 输出端编码器精度低","B. 电流解耦需要转子电角度,输出端经过减速器存在背隙/延迟,相位不准","C. 输出端编码器太贵","D. 与编码器位置无关"],a:"B",e:"Park 变换需要准确的转子电角度;输出端编码器隔了减速器(背隙+柔性),角度与电机端存在相位差,导致 dq 解耦不干净、电流环性能劣化。双编码器方案:电机端管 FOC,输出端管位置精度——这是人形关节的标配设计。"}],
+    xk:[{q:"系统能观性不足时,还能设计状态观测器吗?",o:["A. 可以,任何系统都能观测","B. 严格讲不行——能观是状态可重构的充要条件;能观性不足只能观测可观测子空间","C. 只需要能控即可","D. 观测器不需要任何条件"],a:"B",e:"观测器本质是用输出重构状态,能观性不足意味着某些状态模式在输出里没有痕迹,无法重构;但能观不足≠完全不能估,「可检测」(不稳定模态可观)下仍可用观测器镇定。分离原理要求(能控,能观)或更弱的可镇定+可检测。"},
+        {q:"分离原理说的是什么?",o:["A. 零极点可以任意对消","B. 带观测器的闭环极点=(A−BK)极点∪(A−LC)极点,状态反馈与观测器可独立设计","C. 能控与能观可以分别设计","D. 系统可以拆成两个独立子系统"],a:"B",e:"闭环极点是状态反馈极点与观测器极点的并集,两者互不影响——所以可以先按理想极点设计 K,再单独按响应速度设计 L(通常观测器更快)。这是现代控制面试的必背结论。"}],
+    dsp:[{q:"为什么工程上要在采样前用模拟抗混叠滤波器,而不是靠数字滤波?",o:["A. 数字滤波精度不够","B. 混叠发生在采样瞬间,高频已折叠到低频与真实分量叠加,数学上不可分离","C. 模拟滤波器更便宜","D. 数字滤波器有延时"],a:"B",e:"采样即「信息损失时刻」:高于奈奎斯特频率的分量折叠回低频,与真实低频无法区分(信息已丢失),事后数字滤波救不回来。必须采样前用模拟低通把高频压掉——这是 DSP 面试最经典的「为什么」问题。"},
+        {q:"FIR 与 IIR 滤波器,选择时主要权衡什么?",o:["A. FIR 一定更好","B. FIR 线性相位、稳定但阶数高;IIR 阶数低、效率高但相位非线性","C. IIR 一定更好","D. 两者无区别"],a:"B",e:"FIR 无极点→天然稳定,系数对称→严格线性相位(波形不失真),但达到同样过渡带需要更高阶数;IIR(如巴特沃斯/切比雪夫)阶数低、计算省,但相位非线性。工程上:波形保真要 FIR,资源紧张要 IIR。"}],
+    hw:[{q:"FOC 电流采样为什么要避开 PWM 开关瞬间?",o:["A. 采样电阻会发热","B. 开关瞬间 di/dt 大,地弹/振铃污染采样信号,且电流方向可能未稳定","C. 采样电阻阻值会变","D. 与 PWM 无关"],a:"B",e:"MOS 开关瞬间电流变化率极大,寄生电感产生地弹与振铃;且下桥导通/关断瞬间电流回流路径变化,采样点不在「电流稳定导通段」会采到瞬态毛刺。工程在 PWM 导通中段(±1/4 周期)采样,或加硬件采样保持。"},
+        {q:"栅极驱动中自举电容充电发生在什么时候?",o:["A. 上桥导通时","B. 下桥导通时(下管给自举电容充电,为上管悬浮供电)","C. 一直充电","D. 死区时间"],a:"B",e:"自举二极管在下桥导通、桥臂中点接地时给电容充电;上桥导通时靠电容储存的电荷维持浮动栅极电压。若占空比过大/下管导通时间不足,自举欠压→上桥驱动不足——这是高占空比工况的经典坑。"}],
+    esc:[{q:"电调刹车(主动刹车)时,电机能量去哪了?",o:["A. 凭空消失","B. 一部分回灌母线电容(母线电压升高),能量大时需泄放电阻/回馈","C. 全部变成热量损耗在电机","D. 被控制器吃掉"],a:"B",e:"刹车时电机变成发电机,能量经续流回路回灌母线电容→母线电压升高(过压风险);能量大时需泄放电阻(刹车电阻)或回馈电网。完全靠电机铜耗吸收在大惯量/高转速下会烧电机——这是电调/驱动器设计的现实问题。"},
+        {q:"无感 FOC 为什么低速时反电动势观测容易失效?",o:["A. 低速电流太大","B. 反电动势幅值∝转速,低速时信噪比极低,且需要注入高频信号辨识","C. 低速时 MOS 开关频率不够","D. 低速时采样率不足"],a:"B",e:"反电动势 e=Ke·ω,转速越低幅值越小,淹没在噪声/死区效应里。工业方案:零低速段用高频注入(INFORM/高频方波)或 I/F 开环强拖,中高速切换反电动势法——「无感=分速度段换策略」是电调面试的进阶考点。"}],
+    ros:[{q:"ROS2 相比 ROS1 的核心改进是什么?",o:["A. 只换了图标","B. 用 DDS 做通信底层,去中心化、实时性/可靠性更好,支持多机与安全","C. 取消了节点概念","D. 只能用 C++"],a:"B",e:"ROS2 以 DDS 为中间件:发布/订阅底层由 DDS 实现,天然支持发现、QoS(可靠性/时效策略)、多机分布式,节点崩溃不拖垮全局;ROS1 的 roscore 单点依赖与实时性不足是主要痛点。保研/校招 ROS 面试几乎必问 ROS1 vs ROS2。"},
+        {q:"话题(Topic)与服务(Service)的本质区别?",o:["A. 无区别","B. 话题=异步发布/订阅(一对多、连续流),服务=同步请求/响应(一问一答)","C. 服务更快","D. 话题只能发一次"],a:"B",e:"话题适合传感器数据流(激光/IMU/图像):发布者不知道订阅者存在、非阻塞、一对多;服务适合一次性请求(算一个变换、开一个灯):客户端阻塞等响应、一对一。选错通信原语是 ROS 初学者最常犯的设计错误。"}],
+    c:[{q:"volatile 与 const 能同时修饰一个变量吗?含义是什么?",o:["A. 不能,语法冲突","B. 能:const volatile 表示「软件只读、硬件会改」,典型如状态寄存器/中断标志","C. 能,但无意义","D. 只能修饰指针"],a:"B",e:"const 对编译器说「代码不能改它」(禁止软件赋值),volatile 说「每次真实读内存」(禁止优化缓存)。硬件状态寄存器正是「软件不能写、硬件随时改」——const volatile 组合是嵌入式面试最经典的挖坑题。"},
+        {q:"数组名什么时候「不等于」指针?",o:["A. 永远等于","B. sizeof 数组名、&数组名、以及作为结构体/union 成员时","C. 在函数参数里","D. 赋值给指针时"],a:"B",e:"sizeof(arr)=整个数组字节数;&arr 类型是「指向数组的指针」(步长是整个数组);这两个上下文里数组名不退化。函数参数里数组名退化为指针(传的是首地址)——「数组名是常量指针」是最大误区。"}],
+    cpp:[{q:"类成员是 unique_ptr 时,移动构造怎么写?",o:["A. 不能移动,只能拷贝","B. this->ptr = std::move(other.ptr) 转移所有权","C. delete 后重新 new","D. 用 std::copy"],a:"B",e:"unique_ptr 不可拷贝、只可移动;移动构造用 std::move 把所有权转移过来,源对象变空指针。这是「五法则」里移动语义在智能指针成员上的标准写法,也是现代 C++ 面试高频题。"},
+        {q:"vector 扩容时,迭代器会发生什么?",o:["A. 自动更新","B. 全部失效(内存重新分配,元素搬移,原迭代器指向已释放内存)","C. 只有尾迭代器失效","D. 永不失效"],a:"B",e:"扩容=新分配+整体搬移,原内存释放,所有指向旧缓冲区的迭代器/指针/引用全部失效;之后访问是未定义行为。对策:预先 reserve 或改用下标访问——「迭代器失效规则」是容器面试第一题。"}],
+    emb:[{q:"DMA 传输完成,CPU 怎么知道?",o:["A. 必须轮询","B. 传输完成中断(TC 标志)或查询 DMA 状态标志","C. 无法知道","D. 靠看门狗"],a:"B",e:"DMA 完成有两种通知:中断(半传输/传输完成中断,不占 CPU)或软件轮询状态寄存器。中断方式省 CPU——这是「DMA 为什么能解放 CPU」的关键:搬运数据不经过 CPU,完成才通知。"},
+        {q:"CAN 总线仲裁时,ID 越小的报文优先级?",o:["A. 越低","B. 越高(显性位 0 优先,ID 小=高位先出 0,赢得仲裁)","C. 无关","D. 随机"],a:"B",e:"CAN 是线与仲裁:显性(0)覆盖隐性(1),ID 逐位比较,先出 0 的一方继续,ID 越小越优先。所以 CAN 里「优先级=ID 数值从小到大」——设计报文 ID 时低数值留给高实时性消息,这是 CAN 面试第一题。"}],
+    frt:[{q:"configMAX_SYSCALL_INTERRUPT_PRIORITY 的含义是?",o:["A. 系统时钟频率","B. 允许调用 FromISR API 的中断优先级上限——更高优先级的中断不能调用 FreeRTOS API","C. 任务数量上限","D. 堆栈大小"],a:"B",e:"高于该数值(数值越小优先级越高)的中断不会被调度器屏蔽,若在其中调用 FreeRTOS API 会破坏临界区/调度一致性,必须仅做紧急处理(如置标志)。这是 FreeRTOS 移植与中断设计的核心配置。"},
+        {q:"FreeRTOS 里优先级反转的本质与解法?",o:["A. 高优先级任务被无限抢占,解法是提高时钟频率","B. 低优先级任务持锁,中优先级任务抢占,高优先级任务干等——解法是互斥量的优先级继承","C. 无法解决","D. 只发生在信号量上,互斥量不会"],a:"B",e:"反转:低优先级持锁被中优先级抢占,高优先级等锁,实际执行顺序变成 高<中<低。互斥量带优先级继承(持锁期间临时提升到等待者的最高优先级),暂时压住中优先级;二值信号量无继承→不用于资源锁。火星探路者事故就是这个机制。"}]
   };
   function renderQuiz(sid){
-    var qs = QUIZ[sid] || [], box = $("ibQuiz"), html = "";
+    var qs = (QUIZ[sid] || []).concat(QUIZ_ADV[sid] || []), box = $("ibQuiz"), html = "";
     if(!qs.length){ box.innerHTML = ""; return; }
     for(var i = 0; i < qs.length; i++){
       var opts = "";
@@ -469,7 +569,9 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
     }
   }
 
-  /* ---- KaTeX 公式渲染(site.js 只渲染加载时已有的 .formula,动态内容这里补渲染) ---- */
+  /* ---- KaTeX 公式渲染(site.js 只渲染加载时已有的 .formula,动态内容这里补渲染)
+         V2.1.5:CDN 多级回退(npmmirror → jsdelivr → unpkg → cdnjs),单源不可达时
+         不再让公式退化成原始 LaTeX 源码显示 ---- */
   var katexState = 0; /* 0 未加载 1 加载中 2 就绪 */
   var katexQueue = [];
   function renderFormulas(scope){
@@ -484,17 +586,27 @@ body:not([data-theme]),body[data-theme="light"] .ib-g-yes{background:rgba(34,197
         all[i].setAttribute("data-katex", "2");
       }
     }
+    if(window.katex){ katexState = 2; doRender(); return; }
     if(!katexState){
       katexState = 1;
       var l = document.createElement("link");
       l.rel = "stylesheet";
       l.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
       document.head.appendChild(l);
-      var s = document.createElement("script");
-      s.src = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js";
-      s.onload = function(){ katexState = 2; doRender(); };
-      s.onerror = function(){ /* CDN 失败则保持 LaTeX 原文显示 */ };
-      document.head.appendChild(s);
+      var CDNS = [
+        "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js",
+        "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js",
+        "https://unpkg.com/katex@0.16.11/dist/katex.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/katex/0.16.11/katex.min.js"
+      ];
+      (function load(i){
+        if(i >= CDNS.length){ katexState = 2; doRender(); return; }  /* 全失败:保持 LaTeX 原文 */
+        var s = document.createElement("script");
+        s.src = CDNS[i];
+        s.onload = function(){ if(window.katex){ katexState = 2; doRender(); } else load(i + 1); };
+        s.onerror = function(){ load(i + 1); };
+        document.head.appendChild(s);
+      })(0);
     }else if(katexState === 2){ doRender(); }
   }
 

@@ -269,7 +269,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <div class="rm-step">
         <span class="rm-num">5</span>
         <h4>🎯 复试冲刺</h4>
-        <p>13 学科 117 道复试题刷题 → 闯关检验掌握度 → AI 考官模拟面试,一条龙备战保研复试</p>
+        <p>17 学科 150 道复试题(专业 13 科 + 综合/英语/数学/科研素养 4 科通用)刷题 → 闯关检验掌握度 → AI 考官模拟面试,一条龙备战保研复试</p>
         <p style="color:#6b7280">考前 2~4 周 · 查漏补缺</p>
         <div class="rm-links">
           <a href="08_学习工具/11_保研复试面试题库.html">复试题库</a>
@@ -719,7 +719,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <a class="card featured" href="08_学习工具/11_保研复试面试题库.html">
         <span class="go">进入 →</span>
         <div class="ic">🎓</div>
-        <div class="t">保研复试面试题库 · 13 学科 117 题(全新)</div>
+        <div class="t">保研复试面试题库 · 17 学科 150 题(新增通用面)</div>
         <div class="d">自控原理 / PID / ADRC / 运控 / 现控 / 信号处理 / 硬件电路(防反接·运放) / 无人机电调 / ROS 多机编队 / C / C++ / 嵌入式 / FreeRTOS——图文解析、延伸追问、掌握度自评,配套闯关与 AI 考官。</div>
       </a>
       <a class="card" href="08_学习工具/12_闯关学习.html">
@@ -829,11 +829,15 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.4</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-28 · 玻璃美学改版+三大作品+自检挂件+09板块+首页收纳与循环 carousel</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.6</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-30 · 保研题库普适化 + 进阶选择题 + 刷新闪黑根治</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V2.1.4 · 2026-08-29 · 缓存SWR治本 + 玻璃组件层</summary>
+        <summary>V2.1.6 · 2026-08-30 · 保研题库普适化 + 进阶选择题 + 闪黑根治</summary>
+        <div class="faq-a">🎓 <b>保研题库普适化 13→17 学科、117→150 题</b>:新增 4 个「任何专业都必问」的通用学科——综合素质面试(自我介绍框架/选校动机/科研 STAR/压力面)、英语口语(英文模板+中文思路)、数学基础(三大变换/特征值/贝叶斯/最小二乘,全配公式)、科研素养(读论文/创新点/实验设计/调试排查),内容基于全网保研面经调研;🧠 <b>进阶选择题</b>:13 个专业学科各加 1~2 道陷阱题(积分饱和限幅误区/SVPWM 15.5%/const volatile/数组名与指针/优先级反转等),每科选择题 2→4 道;⚡ <b>刷新闪黑根治</b>:卡片动画元素加基础透明消除首帧闪现,新增深色主题首帧锁定——刷新不再闪一帧浅色再翻深色。</div>
+      </details><details class="faq"><summary>V2.1.5 · 2026-08-30 · 首页收纳铺满 + 联系站长一致性 + 公式回退 + 自评反馈 + 浅色可读性</summary>
+        <div class="faq-a">🏠 <b>首页卡片收纳修版</b>:展开后尾行卡片自动拉伸铺满(窄屏 2 列末张横跨整行),收起态「恰好两整行」,并修复原脚本硬编码索引导致部分卡片永远展开不出来的 bug;🛰 <b>联系站长一致性</b>:站长邮箱内联单源,删除异步加载 giscus-config.js 与竞态——此前脚本晚于 DOMContentLoaded 时邮箱退化为纯文本「站长邮箱」;🧮 <b>公式错乱根治</b>:KaTeX 由单一 npmmirror CDN 改四级回退(jsdelivr/unpkg/cdnjs),单源不可达不再显示原始 LaTeX 源码;修控制数学工具箱 p 内嵌 div 非法嵌套;📝 <b>题库自评反馈</b>:掌握度按钮实心高亮+弹跳+「已记录/已取消」即时回馈,题目行新增掌握度状态章,新增「💡 知识点拓展」区块(首批 5 道五星高频题补内容);♿ <b>浅色可读性统一</b>:修复 site.css 被写坏的 p/li 浅色选择器、链接与盒子强调标签映射深色系、WBC 页补漏引的 site.js、思维导图页修白底白字;全部板块网格末行统一铺满。</div>
+      </details><details class="faq"><summary>V2.1.4 · 2026-08-29 · 缓存SWR治本 + 玻璃组件层</summary>
         <div class="faq-a">⚡ <b>架构A1·缓存SWR治本</b>:_assets 静态资源从「缓存优先」改为「stale-while-revalidate」——先回缓存秒开、后台自动拉最新,从此改代码<b>不再需要 bump CACHE</b>,"改了没生效/时好时坏"一类问题从根上消除;🎨 <b>设计B1·玻璃组件层</b>:glass.css 升级为完整组件库(卡片/面板/HUD/胶囊/按钮/输入框六件套+圆角间距模糊设计令牌),全站新功能与页面改版"天生一致";🗂 板块重组 9→7 与 AI 内嵌聊天面板见 V2.1.3;自检 16 项全绿。</div>
       </details><details class="faq"><summary>V2.1.3 · 2026-08-29 · 板块重组 + AI 内嵌聊天 + 首页收纳循环</summary>
         <div class="faq-a">🗂 <b>板块重组 9→7</b>:04 升级进阶并入 06 软件算法、05 HdriveV2 并入 03 项目实操(所有页面与链接不变);🤖 <b>AI 悬浮助手重做</b>:玻璃 AI 圆钮原地面板展开直接流式问答,与 13 页共用配置;🏠 首页收纳:顶栏「板块 ▾」玻璃下拉(果冻弹入)、卡片超 8 张才收纳、学习路径克隆首尾真无缝循环。</div>
@@ -998,7 +1002,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.4(2026-08-29) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.6(2026-08-30) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1216,39 +1220,84 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   syncDots();
 })();
 
-/* 板块卡片收纳:每板块默认显示 5 张,一键展开全部(V2.1.0) */
-(function(){
-  var grids = document.querySelectorAll(".sec .grid");
-  for(var gi = 0; gi < grids.length; gi++){
-    (function(g){
-      var cards = g.querySelectorAll(".card");
-      if(cards.length <= 8) return;
-      /* 自适应"保留两行":按网格实际列数 × 2 计算,任何屏宽都铺满不留空位 */
-      var cols = (getComputedStyle(g).gridTemplateColumns || "repeat(3").split(" ").length;
-      var shown = cols * 2;
-      for(var i = shown; i < cards.length; i++) cards[i].style.display = "none";
-      var b = document.createElement("button");
-      b.className = "glass glass-ripple";
-      b.style.cssText = "display:block;margin:12px auto 2px;padding:9px 24px;border-radius:999px;font-size:13px;color:var(--glass-ice);cursor:pointer;font-family:inherit;background:var(--glass-bg);border:1px solid var(--glass-border);letter-spacing:1px";
-      var open = false;
-      b.textContent = "展开全部 " + cards.length + " 页 ▾";
-      b.onclick = function(){
-        open = !open;
-        for(var i = 5; i < cards.length; i++){
-          cards[i].style.display = open ? "block" : "none";
-          /* 统一波浪弹出:按序 60ms 级联,替代原 nth-child 不一致动画 */
-          cards[i].style.animation = "none";
-          void cards[i].offsetWidth;
-          cards[i].style.animation = "fadeUp .5s cubic-bezier(.22,1,.36,1) both";
-          cards[i].style.animationDelay = ((i - shown) * 0.06) + "s";
+  /* 板块卡片收纳(V2.1.5 修版):每板块默认保留两整行,一键展开全部;
+     不满一整行的尾行(含 featured 全宽卡前的残行)自动拉伸铺满,任何屏宽右下不留空位 */
+  (function(){
+    var grids = document.querySelectorAll(".sec .grid");
+    var pool = [];
+    for(var gi = 0; gi < grids.length; gi++){
+      (function(g){
+        var cards = g.querySelectorAll(".card");
+        if(cards.length <= 1) return;
+        var open = cards.length <= 8, btn = null, lastShown = cards.length;
+        if(!open){
+          btn = document.createElement("button");
+          btn.className = "glass glass-ripple";
+          btn.style.cssText = "display:block;margin:12px auto 2px;padding:9px 24px;border-radius:999px;font-size:13px;color:var(--glass-ice);cursor:pointer;font-family:inherit;background:var(--glass-bg);border:1px solid var(--glass-border);letter-spacing:1px";
+          btn.textContent = "展开全部 " + cards.length + " 页 ▾";
+          btn.onclick = function(){
+            var from = lastShown;
+            open = !open;
+            apply(open ? from : -1);
+            if(!open) g.scrollIntoView({ behavior:"smooth", block:"start" });
+          };
+          if(g.parentNode) g.parentNode.insertBefore(btn, g.nextSibling);
         }
-        b.textContent = open ? "收起 ▴" : "展开全部 " + cards.length + " 页 ▾";
-        if(!open) g.scrollIntoView({ behavior:"smooth", block:"start" });
-      };
-      if(g.parentNode) g.parentNode.insertBefore(b, g.nextSibling);
-    })(grids[gi]);
-  }
-})();
+        function apply(animFrom){
+          var cols = Math.max(1, (getComputedStyle(g).gridTemplateColumns || "").split(" ").filter(Boolean).length);
+          /* featured 全宽卡独占一整行;逐卡摆放,取"恰好铺满前两整行"的卡数作收纳线 */
+          var rows = 0, fill = 0, lastFull = 0;
+          for(var i = 0; i < cards.length && rows < 2; i++){
+            if(cards[i].classList.contains("featured")){ rows++; fill = 0; }
+            else if(++fill === cols){ rows++; fill = 0; }
+            if(fill === 0) lastFull = i + 1;
+          }
+          var shown = open ? cards.length : (lastFull || cards.length);
+          for(var k = 0; k < cards.length; k++){
+            var vis = k < shown;
+            cards[k].style.display = vis ? "" : "none";
+            /* 展开时新露出的卡按序 60ms 级联波浪弹出 */
+            if(animFrom >= 0 && k >= animFrom){
+              cards[k].style.animation = "none";
+              void cards[k].offsetWidth;
+              cards[k].style.animation = "fadeUp .5s cubic-bezier(.22,1.2,.36,1) both";
+              cards[k].style.animationDelay = ((k - animFrom) * 0.06) + "s";
+            }
+          }
+          lastShown = shown;
+          if(btn) btn.textContent = open ? "收起 ▴" : "展开全部 " + cards.length + " 页 ▾";
+          /* 尾行拉伸:残行内 r 张卡按近均分跨度分掉 cols 列,铺满不留空位 */
+          var run = [];
+          function flush(){
+            var r = run.length;
+            for(var j = 0; j < r; j++){
+              if(r === cols){ run[j].style.gridColumn = ""; continue; }
+              var span = Math.floor(cols * (j + 1) / r) - Math.floor(cols * j / r);
+              run[j].style.gridColumn = "span " + span;
+            }
+            run = [];
+          }
+          for(var m = 0; m < cards.length; m++){
+            var c = cards[m];
+            if(c.style.display === "none") continue;
+            if(c.classList.contains("featured")){ flush(); c.style.gridColumn = ""; continue; }
+            run.push(c);
+            if(run.length === cols) flush();
+          }
+          flush();
+        }
+        apply(-1);
+        pool.push(apply);
+      })(grids[gi]);
+    }
+    var rt = null;
+    window.addEventListener("resize", function(){
+      clearTimeout(rt);
+      rt = setTimeout(function(){
+        for(var i = 0; i < pool.length; i++) pool[i](-1);
+      }, 150);
+    });
+  })();
 </script>
 <script>
 </body>

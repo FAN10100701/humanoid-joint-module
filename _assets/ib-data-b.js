@@ -265,6 +265,7 @@ items: [
   q:'C 程序的内存是怎么分区的?各放什么?',
   a:'<p><b>四(五)区模型(以嵌入式视角):</b></p><ul><li><b>栈(stack):</b>局部变量、函数参数、返回地址,自动管理、向下生长、快但小(嵌入式默认几 KB~);溢出=Stack Overflow(递归/大数组)。</li><li><b>堆(heap):</b>malloc/free 手工管理,向上生长,碎片化风险,泄漏=只 malloc 不 free,悬垂=free 后再用。</li><li><b>全局/静态区:</b>已初始化 .data、未初始化 .bss(占文件不占初值);static 局部变量也在此——函数返回后仍在。</li><li><b>常量/代码区(.text/.rodata):</b>指令与 const 常量、字符串字面量,只读,写入→段错误。</li></ul>',
   svg:'<svg viewBox="0 0 560 210" role="img" aria-label="C 程序内存四区布局"><rect x="30" y="20" width="480" height="40" rx="6" fill="rgba(239,68,68,.12)" stroke="#ef4444"/><text x="50" y="38" font-size="12" fill="#ef4444">栈区 stack ↓生长</text><text x="50" y="54" font-size="10" fill="#9aa4b2">局部变量/参数/返回地址;快、自动、小;溢出=爆栈</text><rect x="30" y="70" width="480" height="34" rx="6" fill="rgba(255,255,255,.04)" stroke="#6b7280"/><text x="50" y="86" font-size="10" fill="#9aa4b2">……空闲……堆栈相向生长,相遇=内存不足</text><rect x="30" y="112" width="480" height="34" rx="6" fill="rgba(245,158,11,.12)" stroke="#f59e0b"/><text x="50" y="128" font-size="12" fill="#f59e0b">堆区 heap ↑生长</text><text x="250" y="128" font-size="10" fill="#9aa4b2">malloc/calloc/realloc;手动管理;碎片与泄漏</text><rect x="30" y="154" width="230" height="34" rx="6" fill="rgba(59,130,246,.12)" stroke="#58a6ff"/><text x="50" y="170" font-size="12" fill="#58a6ff">.bss 未初始化全局/静态</text><text x="50" y="184" font-size="9" fill="#9aa4b2">不占可执行文件体积</text><rect x="270" y="154" width="240" height="34" rx="6" fill="rgba(59,130,246,.2)" stroke="#58a6ff"/><text x="290" y="170" font-size="12" fill="#58a6ff">.data 已初始化全局/静态</text><text x="290" y="184" font-size="9" fill="#9aa4b2">static 局部变量也在这一带,函数返回仍存活</text><rect x="30" y="196" width="480" height="10" rx="4" fill="rgba(34,197,94,.15)" stroke="#22c55e"/><text x="50" y="205" font-size="9" fill="#22c55e">.text 代码 + .rodata 常量/字符串字面量(只读,写入=段错误)</text></svg>',
+  extend:'<b>栈与堆的取舍:</b>栈快、自动管理、有大小限制(嵌入式默认 1~8KB,递归/大局部数组会爆栈);堆慢、手动管理、有碎片化与泄漏风险——实时系统常禁用堆分配或只允许启动时分配一次。<br><b>static 的落区:</b>带初值的 static 进 .data,无初值的进 .bss(.bss 只占符号表不占可执行映像,是嵌入式省 Flash 的关键)。<br><b>经典追问:</b>「字符串常量放哪?」→ .rodata,写它会段错误;「函数返回局部数组为什么错?」→ 栈帧已销毁,返回的是悬垂指针;「大数组该放哪?」→ 全局/static 或堆,别放栈。',
   follow:['为什么 .bss 不占文件体积?','大数组为什么应放全局/static 或堆而不是栈?','栈默认多大,怎么改(STM32 启动文件/链接脚本)?'] },
 
 { id:'c-03', s:'c', lv:5, tags:['volatile'],
@@ -277,6 +278,7 @@ items: [
   q:'static 和 const 分别有哪些用法?指针的 const 怎么读?',
   a:'<p><b>static 两种语境:</b>①修饰局部变量→存储期变为整个程序运行期(放 .data/.bss,函数返回仍保留值),作用域不变;②修饰全局变量/函数→限制链接属性为"本文件可见"(内部链接),防止跨文件命名污染(模块封装)。</p><p><b>const 三层:</b>①修饰普通变量→只读(改=编译错);②修饰指针→看 const 在 * 左(指向物只读)还是右(指针本身只读):口诀"<b>const 在 * 左,物不动;在 * 右,针不动</b>";③修饰函数参数→告知调用者"我不会改你的数据"(字符串库函数惯例 const char*)。</p>',
   code:'const int *p1;      /* 指向物只读:*p1 不可改,p1 可移动 */\nint const *p2;      /* 同上 */\nint * const p3;     /* 指针只读:p3 不可改,*p3 可改 */\nconst int * const p4 = &x;  /* 都只读 */\nstatic uint8_t cnt; /* 局部 static:跨调用保留值 */',
+  extend:'<b>static 四种语境一次记全:</b>①局部变量→存储期=程序运行期,值跨调用保留;②全局变量/函数→内部链接,仅本文件可见(模块封装);③类内成员(C++)→所有对象共享一份,且不占对象大小;④C++ 静态成员函数→无需对象即可调用。<br><b>const 指针口诀:</b>从变量名往左读,最近的一个 const 修饰谁:「const 在 * 左→指向物只读;在 * 右→指针本身只读」;const int* 与 int const* 等价。<br><b>工程意义:</b>const 让编译器在编译期抓住「误改只读数据」的错误,并允许进 .rodata 段省 RAM——嵌入式里大数组声明为 const 就能从 RAM 挪到 Flash。',
   follow:['static 函数对链接器意味着什么?','const 数组放哪个区,为什么省 RAM?'] },
 
 { id:'c-05', s:'c', lv:4, tags:['结构体','对齐'],
@@ -329,6 +331,7 @@ items: [
   q:'什么是浅拷贝/深拷贝?什么是"三/五法则"?',
   a:'<p><b>浅拷贝:</b>编译器默认生成的拷贝逐成员赋值——若成员是指针,两个对象指向同一块堆内存:二次析构(double free)崩溃、修改互相串扰。<b>深拷贝:</b>自定义拷贝,重新分配并复制内容。</p><p><b>三法则(Rule of Three):</b>如果你需要自定义 <b>析构函数</b>、<b>拷贝构造</b>、<b>拷贝赋值</b> 中的任意一个,那几乎肯定三个都需要(因为通常意味着类在管理裸资源)。C++11 扩展为<b>五法则</b>:再加 <b>移动构造/移动赋值</b>。零法则:优先用智能指针/容器成员,让编译器默认生成的版本就正确(unique_ptr 成员自动不可拷贝、可移动)。</p>',
   code:'class Buf {\n    char *p_ = nullptr; size_t n_ = 0;\npublic:\n    ~Buf(){ delete[] p_; }\n    Buf(const Buf& o): p_(new char[o.n_]), n_(o.n_) {          /* 深拷贝 */\n        std::copy(o.p_, o.p_+n_, p_); }\n    Buf& operator=(const Buf& o) {                             /* 自赋值+深拷贝 */\n        if (this != &o) { char *t = new char[o.n_];\n            std::copy(o.p_, o.p_+o.n_, t); delete[] p_;\n            p_ = t; n_ = o.n_; }\n        return *this; }\n};',
+  extend:'<b>为什么二次析构会崩溃:</b>浅拷贝后两个对象各持同一裸指针,析构各 delete 一次→同一块堆内存被释放两次,堆管理元数据被破坏。<br><b>三法则的直觉:</b>凡是需要自定义析构(说明类在管理裸资源),编译器默认的逐成员拷贝大概率错误,所以拷贝构造与拷贝赋值要一起给。<br><b>五法则的补充:</b>C++11 后移动构造/移动赋值实现「资源所有权转移」——把临时对象的资源搬过来而不是复制内容,避免深拷贝开销,这是标准库容器高性能的基石。<br><b>零法则:</b>能用 unique_ptr/shared_ptr/vector 等 RAII 成员就别手写资源管理,让编译器默认生成的拷贝/移动语义自动正确(unique_ptr 成员天然不可拷贝、可移动)。',
   follow:['拷贝赋值为什么要判自赋值?','移动赋值怎么写(交换还是释放+接管)?'] },
 
 { id:'cpp-04', s:'cpp', lv:5, tags:['智能指针'],

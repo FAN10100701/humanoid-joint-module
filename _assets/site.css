@@ -307,8 +307,8 @@ body:not([data-theme]),body[data-theme="light"] .page-head .tag{color:#2563eb;ba
 body:not([data-theme]),body[data-theme="light"] h2{color:#0f172a;border-bottom-color:rgba(60,80,120,.14)}
 body:not([data-theme]),body[data-theme="light"] h3{color:#2563eb}
 body:not([data-theme]),body[data-theme="light"] h4{color:#334155}
-body:not([data-theme]),body[data-theme="light"] p,body:not([data-theme]),body[data-theme="light"] li{color:#3a4759}
-body:not([data-theme]),body[data-theme="light"] strong{color:#0f172a}
+body:not([data-theme]) p,body[data-theme="light"] p,body:not([data-theme]) li,body[data-theme="light"] li{color:#3a4759}
+body:not([data-theme]) strong,body[data-theme="light"] strong{color:#0f172a}
 
 body:not([data-theme]),body[data-theme="light"] .card,body:not([data-theme]),body[data-theme="light"] .lab,body:not([data-theme]),body[data-theme="light"] .progress-panel,
 body:not([data-theme]),body[data-theme="light"] .term-card,body:not([data-theme]),body[data-theme="light"] .quiz,body:not([data-theme]),body[data-theme="light"] details.faq,
@@ -332,6 +332,43 @@ body:not([data-theme]),body[data-theme="light"] .box-ok{background:rgba(34,197,9
 body:not([data-theme]),body[data-theme="light"] .key-point{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(255,255,255,.6));border-left-color:#2563eb;color:#334155}
 body:not([data-theme]),body[data-theme="light"] .key-point b{color:#2563eb}
 body:not([data-theme]),body[data-theme="light"] .key-point .kp-title{color:#0f172a}
+
+/* ===== V2.1.5 浅色可读性统一补丁 =====
+   浅色下深色系链接与盒子强调标签(#58a6ff/#9ecbff/#fbbf24/#f87171/#86efac)
+   对比度不足(2~3:1),统一映射到更深的同色系;html 级前缀保证压过页面内联样式 */
+.giscus-mail{color:#60a5fa;font-weight:700;text-decoration:underline}
+body:not([data-theme]) a,body[data-theme="light"] a{color:#1d4ed8}
+body:not([data-theme]) a:hover,body[data-theme="light"] a:hover{color:#1e40af}
+body:not([data-theme]) .box-tip b,body[data-theme="light"] .box-tip b{color:#1d4ed8}
+body:not([data-theme]) .box-warn b,body[data-theme="light"] .box-warn b{color:#b45309}
+body:not([data-theme]) .box-danger b,body[data-theme="light"] .box-danger b{color:#b91c1c}
+body:not([data-theme]) .box-ok b,body[data-theme="light"] .box-ok b{color:#15803d}
+body:not([data-theme]) .giscus-mail,body[data-theme="light"] .giscus-mail{color:#2563eb}
+
+/* ===== V2.1.5 首帧主题锁定 =====
+   深色用户刷新时 body 尚无 data-theme,浅色规则(body:not([data-theme])...)会先命中
+   导致一帧浅色闪现再翻深色;此处用 html[data-theme-early='dark'] 高优先级兜底,
+   保证首帧就是目标主题(须置于浅色规则之后以获胜) */
+html[data-theme-early='dark'] body{
+  background:radial-gradient(ellipse at 50% 0%,#16233c 0%,#0d1117 55%,#080b10 100%);
+}
+html[data-theme-early='dark'] .card{background:rgba(22,27,34,.75);border-color:rgba(255,255,255,.08);color:inherit}
+html[data-theme-early='dark'] .topnav{background:rgba(13,17,26,.72);border-bottom-color:rgba(255,255,255,.08)}
+html[data-theme-early='dark'] .page-head h1{color:#e6edf3}
+html[data-theme-early='dark'] .sec-title{color:#e6edf3}
+html[data-theme-early='dark'] h2{color:#e6edf3}
+html[data-theme-early='dark'] p,html[data-theme-early='dark'] li{color:#c9d1d9}
+html[data-theme-early='dark'] a{color:#58a6ff}
+html[data-theme-early='dark'] .quicknav a{color:#9ecbff;background:rgba(59,130,246,.1)}
+html[data-theme-early='dark'] .upd-item{color:#c9d1d9}
+html[data-theme-early='dark'] .box-tip{background:rgba(59,130,246,.08);color:#c9d1d9}
+html[data-theme-early='dark'] .box-warn{background:rgba(245,158,11,.08);color:#c9d1d9}
+html[data-theme-early='dark'] .box-danger{background:rgba(239,68,68,.07);color:#c9d1d9}
+html[data-theme-early='dark'] .box-ok{background:rgba(34,197,94,.08);color:#c9d1d9}
+html[data-theme-early='dark'] .key-point{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(13,17,23,.55));color:#c9d1d9}
+html[data-theme-early='dark'] .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(13,17,23,.6))}
+html[data-theme-early='dark'] .rm-nav{background:rgba(13,17,23,.74);color:#9ecbff}
+html[data-theme-early='dark'] .giscus-mail{color:#60a5fa}
 
 body:not([data-theme]),body[data-theme="light"] table{background:rgba(255,255,255,.55);box-shadow:0 6px 24px rgba(50,80,140,.07)}
 body:not([data-theme]),body[data-theme="light"] th{background:rgba(37,99,235,.12);color:#0f172a}
@@ -413,11 +450,11 @@ body:not([data-theme]),body[data-theme="light"] .toc-sidebar a.active{color:#256
 .backtop:hover{transform:translateY(-3px);background:#2563eb}
 body:not([data-theme]),body[data-theme="light"] .backtop{background:rgba(37,99,235,.88)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.card,.sec-title,.page-head,.lab,.progress-panel{animation:fadeUp .5s ease both}
+.card,.sec-title,.page-head,.lab,.progress-panel{opacity:0;animation:fadeUp .5s ease both}
 .card:nth-child(2){animation-delay:.05s}.card:nth-child(3){animation-delay:.1s}
 .card:nth-child(4){animation-delay:.15s}.card:nth-child(5){animation-delay:.2s}
 .card:nth-child(6){animation-delay:.25s}.card:nth-child(7){animation-delay:.3s}
-@media (prefers-reduced-motion:reduce){.card,.sec-title,.page-head,.lab,.progress-panel{animation:none}}
+@media (prefers-reduced-motion:reduce){.card,.sec-title,.page-head,.lab,.progress-panel{animation:none;opacity:1}}
 
 /* ============================================================
    主题分段开关(首页 Hero 醒目切换)

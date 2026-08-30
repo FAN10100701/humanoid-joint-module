@@ -47,7 +47,9 @@
   </div>
 
   <h2><span class="h2-num">1</span> 拉普拉斯变换:控制工程师的"翻译器"</h2>
-  <p>线性微分方程直接求解要背齐次解+特解,叠加初始条件,繁琐易错。拉普拉斯变换 <div class="formula">F(s) = \mathcal{L}[f(t)] = \int_0^\infty f(t)\,e^{-st}\,dt</div> 把<strong>微分变成乘 s、积分变成除 s、卷积变成乘法</strong>,整个微分方程变成关于 s 的一元代数方程:解出 F(s),再查表反变换回时域。三个最常用的对:</p>
+  <p>线性微分方程直接求解要背齐次解+特解,叠加初始条件,繁琐易错。拉普拉斯变换</p>
+  <div class="formula">F(s) = \mathcal{L}[f(t)] = \int_0^\infty f(t)\,e^{-st}\,dt</div>
+  <p>把<strong>微分变成乘 s、积分变成除 s、卷积变成乘法</strong>,整个微分方程变成关于 s 的一元代数方程:解出 F(s),再查表反变换回时域。三个最常用的对:</p>
   <div class="table-wrap"><table>
     <tr><th>时域 f(t)</th><th>s 域 F(s)</th><th>控制系统里是谁</th></tr>
     <tr><td>单位阶跃 1(t)</td><td>1/s</td><td>阶跃指令/突加负载</td></tr>

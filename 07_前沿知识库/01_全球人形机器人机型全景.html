@@ -40,6 +40,12 @@
   .my-tl b{color:#93c5fd}
   .my-tl .date{color:#fbbf24;font-weight:700;margin-right:6px}
   .my-note{font-size:12.5px;color:#6b7280;margin-top:6px}
+  /* V2.1.5 浅色适配:时间线文字/强调/日期映射到深色系,避免浅色下几乎不可见 */
+  body[data-theme="light"] .my-tl li{color:#3a4759}
+  body[data-theme="light"] .my-tl b{color:#1d4ed8}
+  body[data-theme="light"] .my-tl .date{color:#b45309}
+  body[data-theme="light"] .my-spec .k{color:#1d4ed8}
+  body[data-theme="light"] .my-spec .v{color:#334155}
 </style>
 <script>
   /* ============================================================

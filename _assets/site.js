@@ -277,17 +277,15 @@
     document.addEventListener("keydown", hide);
   }
 
-  /* ---------- 讨论与反馈(V2.1.4 精简):云端评论已停用,仅渲染「联系站长」卡片 ---------- */
+  /* ---------- 讨论与反馈(V2.1.5 修版):站长邮箱内联单源,不再动态加载配置脚本 ----------
+     旧版异步加载 giscus-config.js 再渲染卡片,脚本晚于 DOMContentLoaded 时
+     window.COMMENTS_CONFIG 尚不存在,邮箱退化为纯文本"站长邮箱"且时有时无(竞态);
+     现邮箱常量直接内联,零网络依赖、所有页面渲染结果一致 */
+  var CONTACT_EMAIL = "2061624805@qq.com";
   function initComments(){
     if(!window.PAGE || !window.PAGE.pageId) return;   /* 首页不渲染 */
-    try{
-      var sc = document.createElement("script");
-      sc.src = (window.PAGE.root || "") + "/_assets/giscus-config.js";
-      document.head.appendChild(sc);
-    }catch(e){}
     function mount(){
-      var email = (window.COMMENTS_CONFIG && window.COMMENTS_CONFIG.email) || "";
-      var mailto = email ? '<a href="mailto:' + email + '" style="color:#60a5fa;font-weight:700;text-decoration:underline">' + email + '</a>' : '站长邮箱';
+      var mailto = '<a class="giscus-mail" href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a>';
       var box = document.createElement("div");
       box.className = "giscus-wrap";
       box.innerHTML = '<h2><span class="h2-num">✉</span> 讨论与反馈</h2>'
@@ -298,25 +296,39 @@
     else mount();
   }
 
-  /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ---------- */
+  /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ----------
+     V2.1.5:CDN 多级回退。此前仅 npmmirror 单一源,该源不可达时全站公式
+     一律退化为原始 LaTeX 源码(如 \sigma_p = e^{...}),即「公式显示错乱」根因;
+     现按 npmmirror → jsdelivr → unpkg → cdnjs 逐级回退,四源全挂才保持原文 */
   function initKaTeX(){
     var els = document.querySelectorAll(".formula");
     if(!els.length) return;
-    var l = document.createElement("link");
-    l.rel = "stylesheet";
-    l.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
-    document.head.appendChild(l);
-    var s = document.createElement("script");
-    s.src = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js";
-    s.onload = function(){
-      if(!window.katex) return;
+    function renderAll(){
       for(var i = 0; i < els.length; i++){
         var el = els[i];
-        try{ katex.render(el.textContent, el, { throwOnError:false, displayMode:true }); }
+        try{ katex.render(el.getAttribute("data-src") || el.textContent, el, { throwOnError:false, displayMode:true }); }
         catch(e){ /* 保持原文 */ }
       }
-    };
-    document.head.appendChild(s);
+    }
+    if(window.katex){ renderAll(); return; }
+    var css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
+    document.head.appendChild(css);
+    var CDNS = [
+      "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js",
+      "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js",
+      "https://unpkg.com/katex@0.16.11/dist/katex.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/katex/0.16.11/katex.min.js"
+    ];
+    (function load(i){
+      if(i >= CDNS.length){ return; }                 /* 四源全失败:保持 LaTeX 原文 */
+      var s = document.createElement("script");
+      s.src = CDNS[i];
+      s.onload = function(){ if(window.katex) renderAll(); else load(i + 1); };
+      s.onerror = function(){ load(i + 1); };
+      document.head.appendChild(s);
+    })(0);
   }
 
   /* ---------- 顶部导航 + 面包屑 + 上一篇/下一篇 + 页脚 ---------- */
@@ -623,7 +635,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.4(2026-08-29)";
+  S.VERSION = "V2.1.6(2026-08-30)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
