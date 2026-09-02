@@ -1167,7 +1167,10 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     mx = (e.clientX - r.left)/r.width - 0.5;
   });
   /* V2.1.7:rAF 可暂停——标签页隐藏或 Hero 滚出视口时停止绘制,恢复可见再续,
-     后台标签与移动端不再空耗电;IO 不支持时退化为常驻绘制(旧行为) */
+     后台标签与移动端不再空耗电;IO 不支持时退化为常驻绘制(旧行为)
+     V2.1.12b:恢复统一走幂等的 resume(),并加 2 秒看门狗自愈——此前恢复完全依赖
+     IO/visibilitychange 两个事件,任一被竞态吞掉 rAF 链就永久断裂(星星"时间久了
+     就没了"的根因);看门狗同时先取消遗留排队帧,杜绝多条恢复路径叠加出双循环 */
   var raf = 0, inView = true;
   function frame(){
     if(!W || document.hidden || !inView){ raf = 0; return; }
@@ -1185,18 +1188,23 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     }
     raf = requestAnimationFrame(frame);
   }
+  function resume(){
+    if(raf) cancelAnimationFrame(raf);
+    raf = (inView && !document.hidden && W) ? requestAnimationFrame(frame) : 0;
+  }
   if("IntersectionObserver" in window){
     inView = false;   /* 初值交给 IO 首次回调判定 */
     new IntersectionObserver(function(es){
       inView = es[0].isIntersecting;
-      if(inView && !raf && !document.hidden) raf = requestAnimationFrame(frame);
+      if(inView) resume();
     }).observe(c);
   }
   document.addEventListener("visibilitychange", function(){
-    if(document.hidden){ if(raf) cancelAnimationFrame(raf); }
-    else if(inView && !raf) raf = requestAnimationFrame(frame);
+    if(document.hidden){ if(raf){ cancelAnimationFrame(raf); raf = 0; } }
+    else resume();
   });
   raf = requestAnimationFrame(frame);
+  setInterval(resume, 2000);   /* 看门狗:rAF 链断裂后 2 秒内自愈 */
 })();
 
 /* 板块卡片 3D tilt + 随鼠标光泽(V2.1.8;V2.1.12 性能修正):
