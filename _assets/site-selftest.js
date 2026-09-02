@@ -164,7 +164,10 @@
 
     var navInner = document.querySelector(".topnav .nav-inner");
     if(navInner){
-      navInner.appendChild(pill);            /* 顶栏工具区最右(打印按钮旁) */
+      /* V2.1.12c:插到「✓ 完成」旁(文字按钮聚在一起;首页无完成钮则放到主题钮前) */
+      var anchor = navInner.querySelector(".nav-done") || navInner.querySelector(".nav-theme");
+      if(anchor) navInner.insertBefore(pill, anchor);
+      else navInner.appendChild(pill);
     }else{
       /* 兜底:无顶栏页面保持左下角低调悬浮 */
       pill.style.cssText += ";position:fixed;left:16px;bottom:18px;z-index:210;font-size:11px;padding:5px 12px;border-radius:999px;opacity:.85";

@@ -81,10 +81,20 @@ img{max-width:100%}
    body:not([data-theme]) 双重否定在主题切换间隙会误染深色页面 */
 .nav-search,.nav-done,.nav-theme,.nav-print,.nav-dd-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#c9d1d9;font-size:12.5px;height:30px;padding:0 10px;border-radius:8px;cursor:pointer;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;transition:background-color .15s,border-color .15s,color .15s}
 .nav-theme,.nav-print{width:34px;padding:0}
+/* V2.1.12c:图标加克制主题色(框体保持中性玻璃,只给图标上色)——
+   主题=琥珀(暗喻日/月)、搜索=天蓝、打印=石墨、自检=语义绿(见 selftest) */
+.nav-theme{color:#fbbf24}
+body[data-theme="light"] .nav-theme{color:#f59e0b}
+.nav-search svg{color:#7cc4ff}
+body[data-theme="light"] .nav-search svg{color:#2563eb}
+.nav-print{color:#9aa4b2}
+body[data-theme="light"] .nav-print{color:#64748b}
 .nav-search:hover,.nav-done:hover,.nav-theme:hover,.nav-print:hover,.nav-dd-btn:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.24);color:#fff}
 body[data-theme="light"] .nav-search,body[data-theme="light"] .nav-done,body[data-theme="light"] .nav-theme,body[data-theme="light"] .nav-print,body[data-theme="light"] .nav-dd-btn{background:rgba(255,255,255,.65);border-color:rgba(100,116,139,.28);color:#475569}
 body[data-theme="light"] .nav-search:hover,body[data-theme="light"] .nav-done:hover,body[data-theme="light"] .nav-theme:hover,body[data-theme="light"] .nav-print:hover,body[data-theme="light"] .nav-dd-btn:hover{background:#fff;border-color:rgba(100,116,139,.45);color:#0f172a}
-.nav-search{padding:0 9px}
+/* 三个图标按钮(主题/搜索/打印)统一 34px 方形 */
+.nav-search{width:34px;padding:0}
+.nav-search svg{margin:0}
 
 .nav-done.on{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5);color:#86efac}
 
@@ -645,7 +655,7 @@ body:not([data-theme]),body[data-theme="light"] .heat-day{background:rgba(60,80,
 body[data-theme="light"] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.3)}
 body[data-theme="light"] .nav-ver:hover{color:#0f172a;border-color:rgba(100,116,139,.5)}
 /* V2.1.12b:单色 SVG 图标与文字的间距(替代原 emoji 空格) */
-.nav-search svg{display:block;margin-left:5px}
+.nav-search svg{display:block}
 body:not([data-theme]),body[data-theme="light"] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}
 body:not([data-theme]),body[data-theme="light"] .nav-ver:hover{color:#2563eb;border-color:#2563eb}
 /* V2.1.8 窄屏顶栏减负:版本/打印/自检/搜索快捷键徽标退出,保 brand+主题+搜索+打卡+汉堡 */

@@ -430,9 +430,10 @@
       + '<circle class="np-p" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" transform="rotate(-90 18 18)"/>'
       + '</svg><i id="navProgTxt">0%</i></span>'
       + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史"><i class="ver-dot"></i>v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
+      /* V2.1.12c 工具区排序:同类相邻——版本胶囊 | 文字按钮(完成) | 图标三连(主题/搜索/打印) */
+      + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       + '<button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>'
       + '<button class="nav-search" onclick="Site.openSearch()" title="搜索 (Ctrl+K)" aria-label="搜索">' + ICONS.search + '</button>'
-      + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       /* 移动端板块入口(V2.1.7):<900px 时 .nav-links 整体隐藏,内容页此前无任何
          板块导航;汉堡按钮桌面端 display:none(site.css),零桌面影响 */
       + '<button class="nav-ham" type="button" aria-label="打开板块导航" aria-expanded="false">☰</button>'
@@ -935,7 +936,10 @@
     b.innerHTML = ICONS.print;
     b.title = "打印 / 导出 PDF"; b.setAttribute("aria-label","打印或导出PDF");
     b.onclick = function(){ window.print(); };
-    nav.appendChild(b);
+    /* V2.1.12c:插到搜索按钮后(图标三连聚在一起,汉堡保持最右) */
+    var search = nav.querySelector(".nav-search");
+    if(search && search.nextSibling) nav.insertBefore(b, search.nextSibling);
+    else nav.appendChild(b);
   }
 
   /* ---------- AI 内嵌聊天挂件(V2.1.3):面板直接问答,复用 ai-assistant.js 引擎 ---------- */
