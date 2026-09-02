@@ -150,6 +150,9 @@
     document.head.appendChild(st);
   }
 
+  /* V2.1.12b:单色烧瓶图标(currentColor),与全站线性图标语言统一 */
+  var FLASK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 3h5"/><path d="M10 3v5.6L4.8 17.8a1.8 1.8 0 0 0 1.6 2.7h11.2a1.8 1.8 0 0 0 1.6-2.7L14 8.6V3"/><path d="M7.5 14.5h9"/></svg>';
+
   /* ---------- UI:DOM ---------- */
   function ui(){
     injectStyle();
@@ -157,7 +160,7 @@
     pill.id = "sstPill";
     pill.className = "nav-sst";
     pill.title = "本页自检(点击展开明细 / 双击隐藏)";
-    pill.innerHTML = '🧪 <span class="sst-txt">自检 …</span>';
+    pill.innerHTML = FLASK + ' <span class="sst-txt">自检 …</span>';
 
     var navInner = document.querySelector(".topnav .nav-inner");
     if(navInner){
@@ -204,11 +207,11 @@
   }
   function paint(txt){
     if(!SST._ui) return;
-    SST._ui.pill.innerHTML = '🧪 <span class="sst-txt">自检 ' + txt + "</span>";
+    SST._ui.pill.innerHTML = FLASK + ' <span class="sst-txt">自检 ' + txt + "</span>";
   }
   function renderPanel(){
     if(!SST._ui) return;
-    var html = "<b class='sst-t'>🧪 本页自检报告</b><span class='sst-file'>" + location.pathname.split("/").pop() + "</span><hr class='sst-hr'>";
+    var html = "<b class='sst-t'>" + FLASK + " 本页自检报告</b><span class='sst-file'>" + location.pathname.split("/").pop() + "</span><hr class='sst-hr'>";
     var curG = null;
     SST.groups.forEach(function(it){
       if(it.g !== curG){ curG = it.g; html += "<div class='sst-g'>" + curG + "</div>"; }
@@ -230,8 +233,8 @@
     if(!SST._ui) ui();
     SST._ui.pill.className = "nav-sst " + (fail ? "fail" : "pass");
     SST._ui.pill.innerHTML = fail
-      ? "🧪 <span class='sst-txt'>自检 ✗" + fail + "</span>"
-      : "🧪 <span class='sst-txt'>自检 ✅</span>";
+      ? FLASK + " <span class='sst-txt'>自检 ✗" + fail + "</span>"
+      : FLASK + " <span class='sst-txt'>自检 ✅</span>";
     renderPanel();
   }
 

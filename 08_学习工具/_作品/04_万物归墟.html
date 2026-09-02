@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<!-- 万物归墟 · SINGULARITY:raymarching 黑洞/白洞实验品。独立全屏作品,不接 site.js/页级 pageId(与 _作品/01~03 同口径);
+     主题走 localStorage["site-theme"](与全站 site.js 同键),渲染核心封装在 window.ABYSS,API 边界见类注释,供未来提取为首页背景复用 -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>万物归墟 · SINGULARITY — 人形机器人学习站</title>
+<meta name="description" content="万物归墟 SINGULARITY:光线步进实时渲染的黑洞与白洞——引力透镜、吸积盘、滚动逆转时间、拖拽喂食,一场可以上手玩的宇宙大爆炸。">
+<script>
+/* 早于 CSS 读全站主题键,防闪色(与 site.js 的 site-theme 键一致,缺省 light) */
+try{
+  var _t = localStorage.getItem("site-theme") || "light";
+  document.documentElement.setAttribute("data-theme", _t);
+}catch(e){}
+</script>
+<link rel="stylesheet" href="../../_assets/glass.css">
+<style>
+/* 页面前缀 sg-;深色为默认,浅色 body[data-theme="light"] 覆盖 */
+:root{ --sg-ease: cubic-bezier(.22,.9,.24,1); }
+*{ margin:0; padding:0; box-sizing:border-box; }
+html,body{ min-height:100%; }
+body{
+  background:#05070d; overflow-x:hidden;
+  font-family:"Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:#dbe6f5;
+}
+body[data-theme="light"]{ background:#eef2f7; color:#1c2733; }
+body.sg-shake{ animation:sgShake .32s linear; }
+@keyframes sgShake{
+  0%{transform:translate(0,0)} 20%{transform:translate(2px,-2px)} 40%{transform:translate(-2px,2px)}
+  60%{transform:translate(1px,1px)} 80%{transform:translate(-1px,-1px)} 100%{transform:translate(0,0)}
+}
+#sgStage{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:pan-y; cursor:grab; z-index:0; }
+#sgStage:active{ cursor:grabbing; }
+
+/* ---------- 顶栏 HUD ---------- */
+.sg-ui{ position:fixed; z-index:20; user-select:none; -webkit-user-select:none; }
+#sgTop{ top:0; left:0; right:0; display:flex; align-items:center; gap:14px; padding:14px 18px;
+  background:linear-gradient(rgba(5,7,13,.78), transparent); pointer-events:none; }
+body[data-theme="light"] #sgTop{ background:linear-gradient(rgba(238,242,247,.8), transparent); }
+#sgTop a,#sgTop button{ pointer-events:auto; background:rgba(255,255,255,.06); border:1px solid rgba(160,200,255,.22);
+  color:#dbe6f5; font-size:12.5px; padding:6px 14px; border-radius:999px; cursor:pointer; text-decoration:none;
+  font-family:inherit; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); transition:.2s var(--sg-ease); }
+body[data-theme="light"] #sgTop a, body[data-theme="light"] #sgTop button{ background:rgba(255,255,255,.6); border-color:rgba(30,60,120,.2); color:#243244; }
+#sgTop a:hover,#sgTop button:hover{ border-color:#58a6ff; color:#fff; }
+body[data-theme="light"] #sgTop a:hover, body[data-theme="light"] #sgTop button:hover{ border-color:#2563eb; color:#1d4ed8; }
+#sgTitle{ line-height:1.15; }
+#sgTitle .k{ font-size:9.5px; letter-spacing:.5em; color:#7fb2ff; opacity:.85; font-weight:700; }
+body[data-theme="light"] #sgTitle .k{ color:#2563eb; }
+#sgTitle .t{ font-size:17px; font-weight:800; letter-spacing:6px; color:#fff; text-shadow:0 1px 14px rgba(80,140,255,.35); }
+body[data-theme="light"] #sgTitle .t{ color:#16202e; text-shadow:none; }
+#sgFps{ margin-left:auto; font-family:Consolas,monospace; font-size:11px; color:rgba(219,230,245,.5); letter-spacing:1px; }
+body[data-theme="light"] #sgFps{ color:rgba(28,39,51,.55); }
+
+/* ---------- 章节字幕 ---------- */
+#sgTrack{ position:relative; z-index:5; pointer-events:none; }
+.sg-chap{ height:150vh; position:relative; }
+.sg-card{ position:sticky; top:22vh; margin:0 auto; width:min(600px,88vw); text-align:center; padding:30px 34px 26px;
+  border-radius:22px; background:rgba(8,12,22,.42); border:1px solid rgba(150,190,255,.18);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  box-shadow:0 24px 70px rgba(0,0,0,.4); opacity:0; transform:translateY(26px);
+  transition:opacity .9s var(--sg-ease), transform .9s var(--sg-ease); }
+body[data-theme="light"] .sg-card{ background:rgba(255,255,255,.55); border-color:rgba(30,60,120,.16); box-shadow:0 24px 70px rgba(40,70,130,.18); }
+.sg-card.on{ opacity:1; transform:translateY(0); }
+.sg-card .no{ font-family:Consolas,monospace; font-size:11px; letter-spacing:.5em; color:#7fb2ff; }
+body[data-theme="light"] .sg-card .no{ color:#2563eb; }
+.sg-card h2{ font-size:26px; font-weight:300; letter-spacing:14px; margin:10px 0 4px; color:#fff; text-indent:14px; }
+body[data-theme="light"] .sg-card h2{ color:#16202e; }
+.sg-card .en{ font-size:10px; letter-spacing:.42em; color:rgba(219,230,245,.4); text-transform:uppercase; }
+body[data-theme="light"] .sg-card .en{ color:rgba(28,39,51,.45); }
+.sg-card .quote{ font-size:14.5px; margin-top:14px; letter-spacing:2px; color:#cfe0f5; }
+body[data-theme="light"] .sg-card .quote{ color:#33465e; }
+.sg-card .tip{ font-size:11.5px; margin-top:9px; letter-spacing:1.5px; color:rgba(219,230,245,.42); }
+body[data-theme="light"] .sg-card .tip{ color:rgba(28,39,51,.5); }
+
+/* ---------- 右侧进度轨 ---------- */
+#sgRail{ right:16px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:14px; align-items:center; }
+#sgRail button{ width:9px; height:9px; border-radius:50%; border:1px solid rgba(160,200,255,.5); background:transparent; cursor:pointer; padding:0; transition:.25s; }
+#sgRail button.on{ background:#7fb2ff; box-shadow:0 0 12px rgba(127,178,255,.8); transform:scale(1.25); }
+body[data-theme="light"] #sgRail button{ border-color:rgba(30,60,120,.45); }
+body[data-theme="light"] #sgRail button.on{ background:#2563eb; box-shadow:0 0 10px rgba(37,99,235,.55); }
+
+/* ---------- 底部提示 ---------- */
+#sgHint{ bottom:14px; right:18px; font-size:11px; letter-spacing:1.6px; color:rgba(219,230,245,.4); pointer-events:none; text-align:right; }
+body[data-theme="light"] #sgHint{ color:rgba(28,39,51,.45); }
+
+/* ---------- 控制台(左下角玻璃) ---------- */
+#sgFab{ left:16px; bottom:16px; width:46px; height:46px; border-radius:50%; border:1px solid rgba(150,190,255,.3);
+  background:rgba(10,14,26,.5); color:#cfe2ff; font-size:19px; cursor:pointer; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  display:flex; align-items:center; justify-content:center; transition:.25s var(--sg-ease); box-shadow:0 10px 34px rgba(0,0,0,.35); }
+body[data-theme="light"] #sgFab{ background:rgba(255,255,255,.65); border-color:rgba(30,60,120,.22); color:#243244; }
+#sgFab:hover{ border-color:#58a6ff; transform:scale(1.06); }
+#sgPanel{ left:16px; bottom:70px; width:min(300px, calc(100vw - 32px)); max-height:min(74vh, 560px); overflow-y:auto;
+  border-radius:18px; background:rgba(9,13,24,.62); border:1px solid rgba(150,190,255,.22);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:0 24px 70px rgba(0,0,0,.45);
+  opacity:0; transform:translateY(14px) scale(.97); pointer-events:none; transition:.28s var(--sg-ease); }
+body[data-theme="light"] #sgPanel{ background:rgba(255,255,255,.72); border-color:rgba(30,60,120,.18); box-shadow:0 24px 70px rgba(40,70,130,.2); }
+#sgPanel.open{ opacity:1; transform:none; pointer-events:auto; }
+.sg-phead{ display:flex; align-items:baseline; gap:8px; padding:14px 16px 10px; border-bottom:1px solid rgba(150,190,255,.14);
+  position:sticky; top:0; background:inherit; border-radius:18px 18px 0 0; }
+body[data-theme="light"] .sg-phead{ border-bottom-color:rgba(30,60,120,.12); }
+.sg-phead b{ font-size:13.5px; letter-spacing:2px; color:#fff; }
+body[data-theme="light"] .sg-phead b{ color:#16202e; }
+.sg-phead span{ font-size:8.5px; letter-spacing:.24em; color:rgba(219,230,245,.4); flex:1; }
+body[data-theme="light"] .sg-phead span{ color:rgba(28,39,51,.4); }
+.sg-phead button{ background:none; border:none; color:rgba(219,230,245,.6); font-size:15px; cursor:pointer; }
+body[data-theme="light"] .sg-phead button{ color:rgba(28,39,51,.55); }
+.sg-pbody{ padding:10px 14px 14px; }
+.sg-grp{ margin:10px 0 2px; }
+.sg-grp > label{ display:block; font-size:10px; letter-spacing:.28em; color:#7fb2ff; margin-bottom:7px; }
+body[data-theme="light"] .sg-grp > label{ color:#2563eb; }
+.sg-seg{ display:flex; gap:5px; flex-wrap:wrap; }
+.sg-seg button{ flex:1; min-width:52px; background:rgba(255,255,255,.05); border:1px solid rgba(150,190,255,.18); color:rgba(219,230,245,.72);
+  font-size:11.5px; padding:6px 4px; border-radius:9px; cursor:pointer; font-family:inherit; letter-spacing:1px; transition:.18s; }
+body[data-theme="light"] .sg-seg button{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
+.sg-seg button.on{ background:rgba(88,166,255,.22); border-color:#58a6ff; color:#fff; }
+body[data-theme="light"] .sg-seg button.on{ background:rgba(37,99,235,.14); border-color:#2563eb; color:#1d4ed8; }
+.sg-row{ margin:9px 0; }
+.sg-row label{ display:flex; justify-content:space-between; font-size:11.5px; letter-spacing:1px; color:rgba(219,230,245,.75); margin-bottom:4px; }
+body[data-theme="light"] .sg-row label{ color:#33465e; }
+.sg-row output{ font-family:Consolas,monospace; font-size:10.5px; color:#7fb2ff; }
+body[data-theme="light"] .sg-row output{ color:#2563eb; }
+.sg-row input[type=range]{ width:100%; height:18px; accent-color:#58a6ff; cursor:pointer; background:transparent; }
+.sg-tgl-list{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.sg-tgl{ display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.05); border:1px solid rgba(150,190,255,.18);
+  border-radius:9px; padding:7px 9px; cursor:pointer; font-size:11.5px; font-family:inherit; letter-spacing:1px; color:rgba(219,230,245,.75); transition:.18s; }
+body[data-theme="light"] .sg-tgl{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
+.sg-tgl i{ width:26px; height:14px; border-radius:99px; background:rgba(150,190,255,.18); position:relative; transition:.2s; flex:none; }
+.sg-tgl i::after{ content:""; position:absolute; left:2px; top:2px; width:10px; height:10px; border-radius:50%; background:#8ea4c4; transition:.2s var(--sg-ease); }
+.sg-tgl.on i{ background:rgba(88,166,255,.45); }
+.sg-tgl.on i::after{ left:14px; background:#fff; }
+body[data-theme="light"] .sg-tgl.on i{ background:rgba(37,99,235,.4); }
+.sg-pfoot{ display:flex; gap:8px; margin-top:12px; }
+.sg-pfoot button{ flex:1; background:rgba(255,255,255,.05); border:1px solid rgba(150,190,255,.2); color:rgba(219,230,245,.7);
+  font-size:11.5px; padding:7px 0; border-radius:9px; cursor:pointer; font-family:inherit; letter-spacing:2px; transition:.18s; }
+body[data-theme="light"] .sg-pfoot button{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
+.sg-pfoot button:hover{ border-color:#58a6ff; color:#fff; }
+body[data-theme="light"] .sg-pfoot button:hover{ border-color:#2563eb; color:#1d4ed8; }
+
+/* ---------- 纯净模式 ---------- */
+body.sg-clean #sgTop, body.sg-clean .sg-card, body.sg-clean #sgRail, body.sg-clean #sgHint{ opacity:0; pointer-events:none !important; transition:opacity .5s; }
+body.sg-clean #sgPanel{ pointer-events:none; opacity:0; transform:translateY(14px) scale(.97); }
+body.sg-clean #sgFab{ opacity:.35; }
+
+/* ---------- 加载器 / 兜底 ---------- */
+#sgLoader{ position:fixed; inset:0; z-index:60; display:flex; flex-direction:column; gap:16px; align-items:center; justify-content:center;
+  background:#05070d; color:#8b98a9; font-size:13px; letter-spacing:3px; transition:opacity .8s; }
+#sgLoader.hide{ opacity:0; pointer-events:none; }
+#sgLoader .ring{ width:36px; height:36px; border-radius:50%; border:2px solid rgba(255,255,255,.1); border-top-color:#7fb2ff; animation:sgSpin 1s linear infinite; }
+@keyframes sgSpin{ to{ transform:rotate(360deg) } }
+#sgLoader .big{ font-size:19px; letter-spacing:10px; color:#cfe2ff; text-indent:10px; }
+#sgFail{ position:fixed; inset:auto 0 42% 0; z-index:61; text-align:center; color:#fca5a5; font-size:13px; letter-spacing:1px; display:none; padding:0 20px; }
+@media (max-width:640px){
+  #sgTitle .t{ font-size:14px; letter-spacing:4px; }
+  .sg-card{ padding:22px 18px 20px; top:18vh; }
+  .sg-card h2{ font-size:20px; letter-spacing:9px; text-indent:9px; }
+  #sgHint{ display:none; }
+  #sgRail{ right:8px; }
+}
+@media (prefers-reduced-motion: reduce){
+  body.sg-shake{ animation:none; }
+  .sg-card{ transition:none; }
+}
+</style>
+</head>
+<body>
+<canvas id="sgStage" aria-label="万物归墟:可交互黑洞与白洞"></canvas>
+
+<header id="sgTop" class="sg-ui">
+  <a href="../14_个人作品台.html">‹ 作品台</a>
+  <div id="sgTitle"><div class="k">SINGULARITY · GENESIS ENGINE</div><div class="t">万物归墟</div></div>
+  <span id="sgFps">— FPS</span>
+  <button id="sgThemeBtn" title="切换深浅主题(联动全站)">☾</button>
+</header>
+
+<div id="sgTrack">
+  <section class="sg-chap"><div class="sg-card" data-ch="0">
+    <div class="no">序 · CHAPTER 00</div><h2>深空</h2><div class="en">DEEP FIELD</div>
+    <div class="quote" data-dark="「万物从这一点涌出。」" data-light="「在时间开始之前,它已经在场。」"></div>
+    <div class="tip" data-dark="白洞:只吐不吞 —— 时间在这里开始" data-light="你看到的星光,正在被它弯成弧线"></div>
+  </div></section>
+  <section class="sg-chap"><div class="sg-card" data-ch="1">
+    <div class="no">壹 · CHAPTER 01</div><h2 id="sgCh1">吞噬</h2><div class="en" id="sgCh1En">ACCRETION</div>
+    <div class="quote" data-dark="「创世的余温仍在扩散。」" data-light="「百川归壑,光亦不免。」"></div>
+    <div class="tip" data-dark="试试点击画面,接住喷出的原初物质" data-light="试试点击画面,抛一团物质进视界"></div>
+  </div></section>
+  <section class="sg-chap"><div class="sg-card" data-ch="2">
+    <div class="no">贰 · CHAPTER 02</div><h2>视界</h2><div class="en">EVENT HORIZON</div>
+    <div class="quote">「此处的时间,比你的手表慢一半。」</div>
+    <div class="tip" data-dark="时间之矢正在转向,一切开始下坠" data-light="越靠近,越缓慢 —— 引力给光的最后通牒"></div>
+  </div></section>
+  <section class="sg-chap"><div class="sg-card" data-ch="3">
+    <div class="no">终 · CHAPTER 03</div><h2 id="sgCh3">太初</h2><div class="en" id="sgCh3En">GENESIS</div>
+    <div class="quote" data-dark="「百川归壑,光亦不免。」" data-light="「吞下的终将归还 —— 以大爆炸的名义。」"></div>
+    <div class="tip" data-dark="深空重归寂静,直到下一次太初" data-light="白洞:黑洞的时间反演,宇宙另一端的出口"></div>
+  </div></section>
+</div>
+
+<nav id="sgRail" class="sg-ui" aria-label="章节导航">
+  <button data-go="0" class="on" title="深空"></button><button data-go="1" title="吞噬"></button>
+  <button data-go="2" title="视界"></button><button data-go="3" title="太初"></button>
+</nav>
+
+<div id="sgHint" class="sg-ui">拖拽 环视 · 点击 涟漪/喂食 · 滚动 逆转时间 · H 纯净模式 · 空格 凝固时间 · R 复位视角</div>
+
+<button id="sgFab" class="sg-ui" title="控制台">◍</button>
+<aside id="sgPanel" class="sg-ui" aria-label="万物归墟控制台">
+  <div class="sg-phead"><b>控制台</b><span>CONSOLE</span><button id="sgCollapse" title="收起">✕</button></div>
+  <div class="sg-pbody">
+    <div class="sg-grp"><label>形态 FORM</label><div class="sg-seg" data-k="form">
+      <button data-v="auto" class="on">跟随主题</button><button data-v="bh">黑洞</button><button data-v="wh">白洞</button></div></div>
+    <div class="sg-grp"><label>光谱 SPECTRUM</label><div class="sg-seg" data-k="style">
+      <button data-v="amber" class="on">金橙</button><button data-v="violet">蓝紫</button><button data-v="jade">翡翠</button><button data-v="crimson">猩红</button></div></div>
+    <div class="sg-grp"><label>光效 LIGHT</label>
+      <div class="sg-row"><label>泛光<output data-o="glow">100%</output></label><input type="range" data-k="glow" min="0" max="200" value="100"></div>
+      <div class="sg-row"><label>透镜强度<output data-o="lens">100%</output></label><input type="range" data-k="lens" min="0" max="200" value="100"></div>
+      <div class="sg-row"><label>物质密度<output data-o="density">100%</output></label><input type="range" data-k="density" min="20" max="200" value="100"></div>
+    </div>
+    <div class="sg-grp"><label>物理 PHYSICS</label>
+      <div class="sg-row"><label>时间流速<output data-o="time">100%</output></label><input type="range" data-k="time" min="-100" max="300" value="100"></div>
+      <div class="sg-row"><label>引力强度<output data-o="grav">100%</output></label><input type="range" data-k="grav" min="50" max="200" value="100"></div>
+    </div>
+    <div class="sg-grp"><label>特效 EFFECTS</label><div class="sg-tgl-list">
+      <button class="sg-tgl on" data-k="parallax"><i></i>指针视差</button>
+      <button class="sg-tgl on" data-k="drag"><i></i>拖拽环视</button>
+      <button class="sg-tgl on" data-k="narrative"><i></i>滚动叙事</button>
+      <button class="sg-tgl" data-k="hum"><i></i>低频嗡鸣</button>
+      <button class="sg-tgl" data-k="clean"><i></i>纯净模式</button>
+    </div></div>
+    <div class="sg-grp"><label>画质 QUALITY</label><div class="sg-seg" data-k="quality">
+      <button data-v="auto" class="on">自动</button><button data-v="high">高</button><button data-v="mid">中</button><button data-v="low">低</button></div></div>
+    <div class="sg-pfoot"><button id="sgReset">恢复默认</button></div>
+  </div>
+</aside>
+
+<div id="sgLoader"><div class="big">万物归墟</div><div class="ring"></div><div id="sgLoadTxt">正在点燃奇点 …</div></div>
+<div id="sgFail">渲染核心启动失败:请先运行 _本地工具/启动教学页面.bat 再刷新(需支持 WebGL 的浏览器)</div>
+<noscript><div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#dbe6f5;background:#05070d;z-index:99">需要启用 JavaScript</div></noscript>
+
+<script src="../../_assets/orbit-kit.js"></script>
+<script type="module">
+/* ============================================================
+ * 万物归墟 · SINGULARITY
+ * —— 以下 ABYSS 类为「可剥离渲染核心」:未来提取为 _assets/abyss.js,
+ *    供首页以待机模式复用。API:mount(canvas,opts)/setWhite/setThemeMix/
+ *    setStyle/setQuality/spawnRipple/spawnComet/destroy
+ * ============================================================ */
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const FINE = matchMedia("(hover: hover) and (pointer: fine)").matches;
+const clamp = (x,a,b)=>Math.min(b,Math.max(a,x));
+const smooth = x=>x*x*(3-2*x);
+const smoothstep = (a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+
+/* 光谱预设:黑/白两套盘色(inner→outer) */
+const STYLES = {
+  amber:  { bh:[0xfff3d6,0xff7a18], wh:[0xdfeaff,0x6d7dff] },
+  violet: { bh:[0xd9e4ff,0x4a55ff], wh:[0xfff0d0,0xff9a3d] },
+  jade:   { bh:[0xd2ffef,0x14b87c], wh:[0xf4ffd8,0xd8b93a] },
+  crimson:{ bh:[0xffd9c4,0xe62020], wh:[0xffe8ee,0xff4d7d] },
+};
+const TIERS = {
+  high:{ scale:.85, steps:200, pts:9000, name:"高" },
+  mid: { scale:.66, steps:130, pts:5200, name:"中" },
+  low: { scale:.5,  steps:84,  pts:2600, name:"低" },
+};
+
+class Abyss{
+  constructor(canvas, T){
+    this.T = T;
+    this.renderer = new T.WebGLRenderer({ canvas, antialias:false, powerPreference:"high-performance" });
+    this.renderer.autoClear = false;
+    this.aspect = 1; this.dpr = Math.min(devicePixelRatio||1, 2);
+    this.tier = "mid"; this.style = "amber";
+    this.white = 0; this.whiteTarget = 0;          // 0 黑洞 ↔ 1 白洞
+    this.themeMix = 0; this.themeMixTarget = 0;    // 0 深色背景 ↔ 1 浅色背景
+    this.simT = 0; this.timeScale = 1; this.grav = 1;
+    this.glowK = 1; this.lens = 1; this.densK = 1;
+    this.ptr = { x:0, y:0, k:0, kTarget:0 };
+    this.rip = Array.from({length:6},()=>new T.Vector4(0,0,9,0)); this.ripI = 0;
+    this.feedFlash = 0;
+    this.cam = { azim: .6, elev: .14, r: 16.5, azimV: 0 };
+    this._buildQuad(); this._buildComet();
+    this.setTier("mid", true);
+    this._onResize = ()=>this.resize();
+    addEventListener("resize", this._onResize); this.resize();
+  }
+  _col(hex){ return new this.T.Color(hex); }
+  _buildQuad(){
+    const T = this.T;
+    this.uni = {
+      uTime:{value:0}, uAspect:{value:1}, uTanFov:{value:Math.tan(29*Math.PI/180)},
+      uCamPos:{value:new T.Vector3()}, uCamF:{value:new T.Vector3()}, uCamR:{value:new T.Vector3()}, uCamU:{value:new T.Vector3()},
+      uWhite:{value:0}, uTheme:{value:0}, uLens:{value:1}, uGlowK:{value:1}, uSteps:{value:105},
+      uColDiskA:{value:this._col(STYLES.amber.bh[0])}, uColDiskB:{value:this._col(STYLES.amber.bh[1])},
+      uColWhiteA:{value:this._col(STYLES.amber.wh[0])}, uColWhiteB:{value:this._col(STYLES.amber.wh[1])},
+      uColBgDark:{value:new T.Color(0x05070d)}, uColBgLight:{value:new T.Color(0xeef2f7)},
+      uRip:{value:this.rip}, uPointer:{value:new T.Vector2()}, uPointerK:{value:0},
+      uFeedFlash:{value:0}, uDiskGain:{value:1},
+    };
+    this.quadScene = new T.Scene();
+    this.quadCam = new T.OrthographicCamera(-1,1,1,-1,0,1);
+    const mat = new T.ShaderMaterial({
+      uniforms: this.uni, depthTest:false, depthWrite:false,
+      vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+      fragmentShader: FRAG,
+    });
+    this.quadScene.add(new T.Mesh(new T.PlaneGeometry(2,2), mat));
+    /* 粒子层:position 打包 (r0, 角0, 倾角),aExtra = (seed, size) */
+    this.ptScene = new T.Scene();
+    this.persp = new T.PerspectiveCamera(58, 1, .1, 300);
+    this.ptUni = {
+      uTime:{value:0}, uWhite:{value:0}, uGrav:{value:1}, uDens:{value:1}, uPx:{value:1},
+      uTanFov:{value:Math.tan(29*Math.PI/180)},
+      uCamR:{value:new T.Vector3()}, uCamU:{value:new T.Vector3()},
+      uColIn:{value:this.uni.uColDiskA.value}, uColOut:{value:this.uni.uColDiskB.value},
+      uColInW:{value:this.uni.uColWhiteA.value}, uColOutW:{value:this.uni.uColWhiteB.value},
+      uPointer:{value:this.uni.uPointer}, uPointerK:{value:this.uni.uPointerK},
+    };
+    this.ptMat = new T.ShaderMaterial({
+      uniforms: this.ptUni, transparent:true, depthTest:false, depthWrite:false, blending:T.AdditiveBlending,
+      vertexShader: PT_VERT, fragmentShader: PT_FRAG,
+    });
+    this._buildPoints(TIERS.mid.pts);
+  }
+  _buildPoints(n){
+    const T = this.T;
+    if(this.points){ this.ptScene.remove(this.points); this.points.geometry.dispose(); }
+    const pos = new Float32Array(n*3), ext = new Float32Array(n*2);
+    for(let i=0;i<n;i++){
+      pos[i*3]   = 2.7 + Math.pow(Math.random(), .72)*6.6;   // 起始半径
+      pos[i*3+1] = Math.random()*Math.PI*2;                  // 初始角
+      pos[i*3+2] = Math.random();                            // 倾角种子
+      ext[i*2]   = Math.random();                            // seed
+      ext[i*2+1] = .6 + Math.random()*1.9;                   // size
+    }
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.BufferAttribute(pos,3));
+    g.setAttribute("aExtra", new T.BufferAttribute(ext,2));
+    this.points = new T.Points(g, this.ptMat);
+    this.points.frustumCulled = false;
+    this.points.renderOrder = 1;
+    this.ptScene.add(this.points);
+  }
+  _buildComet(){
+    const T = this.T, N = 48;
+    this.cometN = N;
+    this.cometTrail = Array.from({length:N},()=>new T.Vector3(1e6,1e6,1e6));
+    this.cometHead = null; this.cometVel = new T.Vector3();
+    const pos = new Float32Array(N*3), ext = new Float32Array(N*2);
+    for(let i=0;i<N;i++){ ext[i*2] = 1 - i/N; ext[i*2+1] = 3.4; }
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.BufferAttribute(pos,3));
+    g.setAttribute("aExtra", new T.BufferAttribute(ext,2));
+    this.cometGeo = g;
+    this.cometUni = {
+      uPx:{value:1}, uCometCol:{value:this._col(STYLES.amber.bh[0])},
+    };
+    const m = new T.ShaderMaterial({
+      uniforms:this.cometUni, transparent:true, depthTest:false, depthWrite:false, blending:T.AdditiveBlending,
+      vertexShader:`attribute vec2 aExtra; uniform float uPx; varying float vA; varying vec3 vC;
+        void main(){ vec4 mv = modelViewMatrix*vec4(position,1.0); float k = aExtra.x;
+        gl_PointSize = clamp(aExtra.y*uPx*(46.0/max(-mv.z,.1))*(1.0-k*.82), 1.0, 30.0);
+        vA = (1.0-k)*.9; vC = uCometCol; gl_Position = projectionMatrix*mv; }`,
+      fragmentShader:`varying float vA; varying vec3 vC;
+        void main(){ vec2 d = gl_PointCoord-.5; float a = exp(-dot(d,d)*9.0)*vA; if(a<.02) discard;
+        gl_FragColor = vec4(vC*a, a); }`,
+    });
+    this.comet = new T.Points(g, m);
+    this.comet.frustumCulled = false; this.comet.renderOrder = 2;
+    this.ptScene.add(this.comet);
+  }
+  setTier(t, silent){
+    if(!TIERS[t]) return;
+    this.tier = t;
+    const cfg = TIERS[t];
+    this.renderer.setPixelRatio(this.dpr*cfg.scale);
+    this.uni.uSteps.value = cfg.steps;
+    this._buildPoints(cfg.pts);
+    this.ptUni.uPx.value = this.dpr*cfg.scale;
+    this.cometUni.uPx.value = this.dpr*cfg.scale;
+    if(!silent) this.resize();
+  }
+  setStyle(name){
+    const s = STYLES[name]; if(!s) return;
+    this.style = name;
+    this.uni.uColDiskA.value.set(s.bh[0]); this.uni.uColDiskB.value.set(s.bh[1]);
+    this.uni.uColWhiteA.value.set(s.wh[0]); this.uni.uColWhiteB.value.set(s.wh[1]);
+    this.cometUni.uCometCol.value.set(this.white > .5 ? s.wh[0] : s.bh[0]);
+  }
+  resize(){
+    const w = innerWidth, h = innerHeight;
+    this.renderer.setSize(w, h);
+    this.aspect = w/h;
+    this.uni.uAspect.value = w/h;
+    this.persp.aspect = w/h; this.persp.updateProjectionMatrix();
+  }
+  spawnRipple(nx, ny){
+    const v = this.rip[this.ripI++ % this.rip.length];
+    v.set(nx, ny, 0, 1);
+  }
+  spawnComet(origin, dir){
+    const T = this.T;
+    const p = origin.clone().addScaledVector(dir, 6.2);
+    const tangent = new T.Vector3(-p.z, 0, p.x).normalize();
+    this.cometHead = p;
+    this.cometVel.copy(tangent).multiplyScalar(Math.sqrt(30/p.length())*.85)
+      .addScaledVector(p.clone().normalize(), -.5)
+      .add(new T.Vector3((Math.random()-.5)*.4, (Math.random()-.5)*.2, (Math.random()-.5)*.4));
+    for(const v of this.cometTrail) v.copy(p);
+    this.cometUni.uCometCol.value.set(this.white > .5 ? STYLES[this.style].wh[0] : STYLES[this.style].bh[0]);
+  }
+  frame(dt, t){
+    /* 时间积分:时间流速 × 视界附近时间膨胀 × reduced-motion 降速 */
+    const dila = 1 - .68*smoothstep(6.5, 2.8, this.cam.r);
+    this.simT += dt * this.timeScale * dila * (RM ? .12 : 1);
+    /* 形态/主题渐变 */
+    this.white += (this.whiteTarget - this.white) * Math.min(1, dt*2.6);
+    this.themeMix += (this.themeMixTarget - this.themeMix) * Math.min(1, dt*3.2);
+    /* 相机:惯性 + 视差 */
+    const c = this.cam;
+    c.azim += c.azimV; c.azimV *= Math.pow(.06, dt);
+    const par = this.parallax ? 1 : 0;
+    const px = this.ptr.x*par*.045, py = -this.ptr.y*par*.03;
+    const r = c.r, az = c.azim + px + t*.008*(RM?.25:1), el = clamp(c.elev + py, .04, 1.2);
+    const cp = new this.T.Vector3(r*Math.cos(el)*Math.sin(az), r*Math.sin(el), r*Math.cos(el)*Math.cos(az));
+    const cf = cp.clone().negate().normalize();
+    const cr = new this.T.Vector3().crossVectors(cf, new this.T.Vector3(0,1,0)).normalize();
+    const cu = new this.T.Vector3().crossVectors(cr, cf);
+    /* 指针手势衰减 */
+    this.ptr.k += (this.ptr.kTarget - this.ptr.k)*Math.min(1, dt*5);
+    this.ptr.kTarget *= Math.pow(.35, dt);
+    this.feedFlash *= Math.pow(.04, dt);
+    /* 喂食彗星物理:黑洞吸入 / 白洞斥力 */
+    if(this.cometHead){
+      const p = this.cometHead, v = this.cometVel;
+      const rr = p.length();
+      const gsign = this.white > .5 ? 1 : -1;
+      if(rr > .05) v.addScaledVector(p.clone().normalize(), gsign*this.grav*30/(rr*rr)*dt);
+      p.addScaledVector(v, dt);
+      const dead = this.white > .5 ? (rr > 17) : (rr < 1.62);
+      if(dead){ if(this.white < .5) this.feedFlash = 1; this.cometHead = null; }
+      this.cometTrail.pop(); this.cometTrail.unshift(p.clone());
+      if(dead) for(const q of this.cometTrail) q.set(1e6,1e6,1e6);
+    }
+    const arr = this.cometGeo.attributes.position.array;
+    for(let i=0;i<this.cometN;i++){ const q=this.cometTrail[i]; arr[i*3]=q.x; arr[i*3+1]=q.y; arr[i*3+2]=q.z; }
+    this.cometGeo.attributes.position.needsUpdate = true;
+    /* uniforms */
+    this.uni.uTime.value = this.simT;
+    this.uni.uCamPos.value.copy(cp); this.uni.uCamF.value.copy(cf);
+    this.uni.uCamR.value.copy(cr); this.uni.uCamU.value.copy(cu);
+    this.uni.uWhite.value = this.white; this.uni.uTheme.value = this.themeMix;
+    this.uni.uLens.value = this.lens; this.uni.uGlowK.value = this.glowK;
+    this.uni.uDiskGain.value = .55 + .45*this.densK;
+    this.uni.uPointer.value.set(this.ptr.x, this.ptr.y); this.uni.uPointerK.value = this.ptr.k;
+    this.uni.uFeedFlash.value = this.feedFlash;
+    for(const v of this.rip) v.z += dt;
+    this.ptUni.uTime.value = this.simT; this.ptUni.uWhite.value = this.white;
+    this.ptUni.uGrav.value = this.grav; this.ptUni.uDens.value = this.densK;
+    this.ptUni.uPointerK.value = this.ptr.k;   /* 数字型 uniform 不共享引用,需逐帧同步 */
+    this.ptUni.uCamR.value.copy(cr); this.ptUni.uCamU.value.copy(cu);
+    this.persp.position.copy(cp); this.persp.lookAt(0,0,0);
+    /* 渲染:背景 quad + 加色粒子 */
+    const R = this.renderer;
+    R.clear();
+    R.render(this.quadScene, this.quadCam);
+    R.clearDepth();
+    R.render(this.ptScene, this.persp);
+  }
+  destroy(){
+    removeEventListener("resize", this._onResize);
+    this.renderer.dispose();
+  }
+}
+
+/* ---------------- 着色器 ---------------- */
+/* 黑洞主体:史瓦西时空光线步进(光子测地线近似 d²x/dλ² = -3/2·h²·x/r⁵),
+   吸积盘在 y=0 面程序化生成,泛光直接烘焙(无后处理),uWhite 单一参数做黑洞↔白洞形态渐变 */
+const FRAG = `
+varying vec2 vUv;
+uniform float uTime, uAspect, uTanFov, uWhite, uTheme, uLens, uGlowK, uSteps, uFeedFlash, uDiskGain;
+uniform vec3 uCamPos, uCamF, uCamR, uCamU;
+uniform vec3 uColDiskA, uColDiskB, uColWhiteA, uColWhiteB, uColBgDark, uColBgLight;
+uniform vec4 uRip[6];
+uniform vec2 uPointer;
+uniform float uPointerK;
+#define R_IN 2.2
+#define R_OUT 7.6
+float h12(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p,p+45.32); return fract(p.x*p.y); }
+vec3 h33(vec3 p){ p = fract(p*vec3(443.897,441.423,437.195)); p += dot(p,p.yxz+19.19); return fract((p.xxy+p.yxx)*p.zyx); }
+float vn2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+  return mix(mix(h12(i),h12(i+vec2(1.,0.)),f.x), mix(h12(i+vec2(0.,1.)),h12(i+vec2(1.,1.)),f.x), f.y); }
+float fbm(vec2 p){ float v = 0., a = .55; for(int i=0;i<3;i++){ v += a*vn2(p); p = p*2.13+7.7; a *= .5; } return v; }
+vec3 starLayer(vec3 d, float s, float th){
+  vec3 q = d*s; vec3 id = floor(q); vec3 fp = fract(q)-.5;
+  vec3 h = h33(id);
+  float br = smoothstep(th, 1.0, h.x);
+  vec3 off = (h33(id+7.1)-.5)*.55;
+  float dd = length(fp-off);
+  float tw = .65+.35*sin(uTime*(1.5+h.y*2.0)+h.z*40.0);
+  vec3 scol = mix(vec3(.72,.82,1.0), vec3(.30,.38,.62), uTheme);
+  return scol * (1.0-smoothstep(0.0,.10,dd)) * br * tw;
+}
+vec3 background(vec3 d){
+  vec3 col = mix(uColBgDark, uColBgLight, uTheme);
+  float neb = fbm(d.xy*2.3 + d.z*1.7 + 3.1);
+  vec3 nebT = mix(uColDiskB*.22 + vec3(.012,.02,.05), mix(uColBgLight, uColDiskB, .16), uTheme);
+  col = mix(col, nebT, neb*neb*.5);
+  col += starLayer(d, 26.0, .93)*.9;
+  col += starLayer(d, 61.0, .955)*.55;
+  return col;
+}
+vec3 diskCol(vec3 pc, vec3 dir, out float alpha){
+  float r = length(pc.xz);
+  float x = smoothstep(R_IN, R_IN+.55, r) * (1.0-smoothstep(R_OUT-3.2, R_OUT, r));
+  float a = atan(pc.z, pc.x);
+  float w = uTime*1.6/pow(max(r,1.0),1.5)*3.0;
+  vec2 cs = vec2(cos(a-w), sin(a-w));
+  float n = fbm(cs*r*.85 + r*.4);
+  float dens = x*(.3+.7*n)*uDiskGain;
+  vec3 tang = normalize(vec3(-pc.z, 0.0, pc.x));
+  float dop = 1.0 + .62*dot(tang, -dir);
+  float bright = min(pow(max(dop,.3), 3.0) * (R_IN*1.15/max(r,.5)), 4.0);
+  vec3 cin  = mix(uColDiskA, uColDiskB, smoothstep(R_IN, R_OUT, r));
+  vec3 cwh  = mix(uColWhiteA, uColWhiteB, smoothstep(R_IN, R_OUT, r));
+  alpha = clamp(dens*1.6, 0.0, 1.0)*mix(.85, 1.0, uWhite);
+  return mix(cin, cwh, uWhite) * dens * bright * 1.6;
+}
+void main(){
+  vec2 ndc = vUv*2.0-1.0;
+  vec2 q0 = ndc;
+  ndc.x *= uAspect;
+  /* 引力波涟漪:屏幕空间环形扰动 */
+  for(int i=0;i<6;i++){
+    vec4 rp = uRip[i];
+    if(rp.w > .003){
+      vec2 d = ndc - rp.xy; float ds = length(d)+1e-4;
+      float ring = sin(ds*20.0-rp.z*8.0)*exp(-ds*3.2)*exp(-rp.z*2.0)*rp.w;
+      ndc += (d/ds)*ring*.05;
+    }
+  }
+  /* 指针引力手势:局部时空放大 */
+  vec2 pp = vec2(uPointer.x*uAspect, uPointer.y);
+  vec2 dp = ndc - pp;
+  ndc = mix(ndc, pp, exp(-dot(dp,dp)*2.5)*.13*uPointerK);
+  vec3 rd = normalize(uCamF + uCamR*ndc.x*uTanFov + uCamU*ndc.y*uTanFov);
+  vec3 p = uCamPos, v = rd;
+  vec3 cr0 = cross(p, v);
+  float h2 = dot(cr0,cr0)*uLens;
+  float trans = 1.0, glow = 0.0, hit = 0.0;
+  vec3 acc = vec3(0.0);
+  for(int i=0;i<220;i++){
+    if(float(i) >= uSteps) break;
+    float r2 = dot(p,p); float r = sqrt(r2);
+    if(r < 1.02){ hit = 1.0; break; }
+    if(r2 > 1200.0 && dot(p,v) > 0.0) break;
+    /* 强场区(视界邻域)强制小步长,防光线隧穿视界导致阴影漏光 */
+    float dt = clamp((r-.9)*.16, .03, .5);
+    float gd = (r-1.5)*1.9;
+    glow = min(glow + dt*exp(-gd*gd), 2.6);
+    v += -1.5*h2*p/(r2*r2*r)*dt;
+    vec3 pn = p + v*dt;
+    if(p.y*pn.y < 0.0){
+      float f = p.y/(p.y-pn.y);
+      vec3 pc = mix(p, pn, f);
+      float rc = length(pc);
+      if(rc > R_IN && rc < R_OUT){
+        float aA; vec3 dc = diskCol(pc, normalize(v), aA);
+        acc += dc*trans;
+        trans *= (1.0-aA*.9);
+      }
+    }
+    float jr = length(p.xz);
+    float jet = exp(-jr*jr*1.4)*exp(-abs(p.y)*.28)*step(.7, abs(p.y));
+    acc += uColWhiteA*(jet*uWhite)*dt*.55;
+    p = pn;
+  }
+  vec3 col = acc + background(normalize(v))*trans;
+  col = mix(col, vec3(0.0), hit*(1.0-uWhite));       /* 黑洞视界剪影 */
+  col += uColWhiteA*hit*uWhite*2.6;                  /* 白洞亮核 */
+  col += mix(uColDiskB, uColWhiteA, uWhite)*glow*(.34+uFeedFlash*1.7)*uGlowK;
+  col = 1.0 - exp(-col*1.3);                         /* 曝光压缩 */
+  col *= 1.0 - .3*pow(dot(q0,q0)*.55, 1.4);          /* 暗角 */
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+/* 物质流粒子:position=(r0,角0,倾角) 打包;坠落与喷发两套轨迹按 uWhite 混合,指针手势做屏幕空间牵引 */
+const PT_VERT = `
+attribute vec2 aExtra;
+uniform float uTime, uWhite, uGrav, uDens, uPx, uTanFov;
+uniform vec3 uCamR, uCamU, uColIn, uColOut, uColInW, uColOutW;
+uniform vec2 uPointer;
+uniform float uPointerK;
+varying vec3 vCol; varying float vA;
+void main(){
+  float seed = aExtra.x, sz = aExtra.y;
+  float sp = (.05 + .09*fract(seed*7.31))*uGrav;
+  float t = fract(uTime*sp*(.6+.8*fract(seed*3.7)) + seed);
+  float r0 = position.x, a0 = position.y, incl = position.z;
+  float rIn = mix(r0, 1.35, pow(t, 1.6));
+  float om = 2.4/pow(max(rIn,1.2), 1.5);
+  float ang = a0 - uTime*om*2.0;
+  vec3 pin = vec3(cos(ang)*rIn, sin(incl*6.28)*rIn*.07*(1.0-t), sin(ang)*rIn);
+  float rEj = mix(1.5, r0*1.55, pow(t, .8));
+  float ang2 = a0 + uTime*.15;
+  vec3 pout = vec3(cos(ang2)*rEj, sign(incl-.5)*pow(t,1.5)*r0*.95, sin(ang2)*rEj);
+  vec3 p = mix(pin, pout, uWhite);
+  vec4 mv = modelViewMatrix*vec4(p, 1.0);
+  /* 指针引力手势(屏幕空间近似牵引) */
+  vec2 ndc = (projectionMatrix*mv).xy/max((projectionMatrix*mv).w, .001);
+  vec2 dpv = uPointer - ndc;
+  float pull = exp(-dot(dpv,dpv)*6.0)*uPointerK;
+  p += (uCamR*dpv.x + uCamU*dpv.y)*(length(mv.xyz)*uTanFov)*pull*.8;
+  mv = modelViewMatrix*vec4(p, 1.0);
+  float rc = mix(rIn, rEj, uWhite);
+  float heat = 1.0 - smoothstep(1.7, r0, rc);
+  vCol = mix(mix(uColOut, uColIn, heat), mix(uColOutW, uColInW, heat), uWhite);
+  float aIn = smoothstep(1.42, 1.85, rIn)*smoothstep(0.0, .06, t);
+  float aOut = (1.0 - smoothstep(.72, 1.0, t));
+  vA = mix(aIn, aOut, uWhite)*.8*uDens*mix(1.0, .55, uTheme);   /* 浅色下加色粒子易泛白,降透明度 */
+  gl_PointSize = clamp(sz*uPx*(95.0/max(-mv.z,.1))*(1.0+heat*.7), 1.0, 42.0);
+  gl_Position = projectionMatrix*mv;
+}`;
+const PT_FRAG = `
+varying vec3 vCol; varying float vA;
+void main(){
+  vec2 d = gl_PointCoord - .5;
+  float a = exp(-dot(d,d)*10.0)*vA;
+  if(a < .015) discard;
+  gl_FragColor = vec4(vCol*a, a);
+}`;
+
+/* ============================================================
+ * 以下为页面编排:设置/叙事/HUD/交互(与渲染核心的接缝仅限 ABYSS 实例)
+ * ============================================================ */
+const $ = s=>document.querySelector(s);
+const KEY = "humanoid-abyss-settings-v1";
+const DEFAULTS = { form:"auto", style:"amber", glow:100, lens:100, density:100, time:100, grav:100,
+  parallax:true, drag:true, narrative:true, hum:false, clean:false, quality:"auto" };
+let settings = { ...DEFAULTS };
+try{ Object.assign(settings, JSON.parse(localStorage.getItem(KEY)) || {}); }catch(e){}
+const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(settings)); }catch(e){} };
+
+let ABYSS = null, THREE_ = null;
+let arcDark = false;          // 深色主题:叙事倒流(太初→归墟)
+let scrollP = 0, scrollPs = 0;
+let lastT = 0, running = true;
+let camTarget = { r: 16.5, e: .14 };
+let userElev = 0;
+const KEYS = [ {r:16.5,e:.14}, {r:9,e:.30}, {r:3.6,e:.09}, {r:11.5,e:.42} ];
+
+function themeName(){ try{ return localStorage.getItem("site-theme") || "light"; }catch(e){ return "light"; } }
+function applyTheme(){
+  const t = themeName();
+  arcDark = t === "dark";
+  document.documentElement.setAttribute("data-theme", t);
+  document.body.setAttribute("data-theme", t);
+  $("#sgThemeBtn").textContent = t === "dark" ? "☀" : "☾";
+  if(ABYSS){
+    ABYSS.themeMixTarget = t === "light" ? 1 : 0;
+    if(settings.form === "auto") ABYSS.whiteTarget = arcDark ? 1 : 0;
+  }
+  applyCaptions();
+}
+function applyCaptions(){
+  const k = arcDark ? "dark" : "light";
+  document.querySelectorAll(".sg-card [data-dark]").forEach(el=>{ el.textContent = el.dataset[k]; });
+  $("#sgCh1").textContent = arcDark ? "喷发" : "吞噬";
+  $("#sgCh1En").textContent = arcDark ? "ERUPTION" : "ACCRETION";
+  $("#sgCh3").textContent = arcDark ? "归墟" : "太初";
+  $("#sgCh3En").textContent = arcDark ? "SINGULARITY" : "GENESIS";
+}
+function applySettings(){
+  if(!ABYSS) return;
+  ABYSS.glowK = settings.glow/100;
+  ABYSS.lens = settings.lens/100;
+  ABYSS.densK = settings.density/100;
+  ABYSS.timeScale = settings.time/100;
+  ABYSS.grav = settings.grav/100;
+  ABYSS.parallax = settings.parallax;
+  ABYSS.setStyle(settings.style);
+  if(settings.quality !== "auto") ABYSS.setTier(settings.quality);
+  /* 叙事轨道与形态 */
+  const track = $("#sgTrack");
+  if(settings.narrative){ track.style.height = ""; document.querySelectorAll(".sg-chap").forEach(s=>s.style.display=""); $("#sgRail").style.display=""; }
+  else{ track.style.height = "100vh"; document.querySelectorAll(".sg-chap").forEach(s=>s.style.display="none"); $("#sgRail").style.display="none"; }
+  document.body.classList.toggle("sg-clean", !!settings.clean);
+  updateHum();
+  refreshWhite();
+  save();
+}
+function refreshWhite(){
+  if(!ABYSS) return;
+  if(settings.form === "bh") ABYSS.whiteTarget = 0;
+  else if(settings.form === "wh") ABYSS.whiteTarget = 1;
+  else ABYSS.whiteTarget = arcDark ? 1 : 0;   // 叙事端点由 scroll 每帧覆写(auto+叙事时)
+}
+function camAt(p){
+  const x = clamp(p,0,1)*3;
+  const i = Math.min(Math.floor(x), 2), f = smooth(x-i);
+  return { r: KEYS[i].r + (KEYS[i+1].r-KEYS[i].r)*f, e: KEYS[i].e + (KEYS[i+1].e-KEYS[i].e)*f };
+}
+function loop(t){
+  requestAnimationFrame(loop);
+  if(!running || !ABYSS) return;
+  const dt = Math.min((t - lastT)/1000 || .016, .05); lastT = t;
+  /* 滚动进度 → 相机航点与叙事形态 */
+  scrollPs += (scrollP - scrollPs)*Math.min(1, dt*4);
+  if(settings.narrative){
+    const k = camAt(scrollPs);
+    camTarget.r = k.r; camTarget.e = k.e;
+    if(settings.form === "auto") ABYSS.whiteTarget = clamp((arcDark?1:0) + (arcDark?-1:1)*smoothstep(.80,.97,scrollPs), 0, 1);
+  }else{
+    camTarget.r = camTarget.r || 9; camTarget.e = camTarget.e || .3;
+  }
+  ABYSS.cam.r += (camTarget.r - ABYSS.cam.r)*Math.min(1, dt*3);
+  ABYSS.cam.elev += (camTarget.e + userElev - ABYSS.cam.elev)*Math.min(1, dt*3);
+  ABYSS.frame(dt, t/1000);
+  tickFps(t);
+  if(humOn) humFrame();
+}
+
+/* ---- FPS 表与自动画质 ---- */
+let fpsN = 0, fpsT = 0, probe = { n:0, t:0, done:false };
+function tickFps(t){
+  fpsN++;
+  if(!probe.done){ probe.n++; probe.t ||= t;
+    if(probe.n >= 55){
+      probe.done = true;
+      const fps = probe.n/((t-probe.t)/1000);
+      if(settings.quality === "auto"){
+        const tier = fps > 48 ? "high" : fps > 28 ? "mid" : "low";
+        ABYSS.setTier(tier);
+      }
+    }
+  }
+  if(t - fpsT > 600){
+    $("#sgFps").textContent = Math.round(fpsN*1000/(t-fpsT)) + " FPS · " +
+      (settings.quality === "auto" ? "自动·" : "") + (TIERS[ABYSS.tier]?.name || ABYSS.tier);
+    fpsN = 0; fpsT = t;
+  }
+}
+
+/* ---- 低频嗡鸣:WebAudio 合成,零素材 ---- */
+let humCtx = null, humOsc = null, humGain = null, humOn = false;
+function updateHum(){
+  const want = !!settings.hum;
+  if(want && !humCtx){
+    try{
+      humCtx = new (window.AudioContext||window.webkitAudioContext)();
+      humGain = humCtx.createGain(); humGain.gain.value = 0;
+      const lp = humCtx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 220;
+      humOsc = humCtx.createOscillator(); humOsc.type = "sine"; humOsc.frequency.value = 42;
+      const o2 = humCtx.createOscillator(); o2.type = "sine"; o2.frequency.value = 43.6;
+      humOsc.connect(lp); o2.connect(lp); lp.connect(humGain); humGain.connect(humCtx.destination);
+      humOsc.start(); o2.start();
+    }catch(e){ settings.hum = false; }
+  }
+  if(humCtx) humGain.gain.setTargetAtTime(want ? .05 : 0, humCtx.currentTime, .3);
+  humOn = want && !!humCtx;
+}
+function humFrame(){
+  if(!humCtx) return;
+  const prox = 1 - smoothstep(3.5, 15, ABYSS.cam.r);
+  humGain.gain.setTargetAtTime(.03 + .06*prox, humCtx.currentTime, .2);
+  humOsc.frequency.setTargetAtTime(42 - 14*prox, humCtx.currentTime, .25);
+}
+
+/* ---- 画布交互:拖拽环视 / 点击涟漪+喂食 / 指针手势 ---- */
+function bindStage(canvas){
+  let down = null, moved = 0, lastX = 0, lastY = 0, lastMoveT = 0, velX = 0;
+  const toNDC = e=>({ x:(e.clientX/innerWidth)*2-1, y:1-(e.clientY/innerHeight)*2 });
+  canvas.addEventListener("pointerdown", e=>{
+    down = { x:e.clientX, y:e.clientY, t:performance.now() };
+    moved = 0; velX = 0; lastX = e.clientX; lastY = e.clientY; lastMoveT = down.t;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener("pointermove", e=>{
+    const n = toNDC(e);
+    ABYSS.ptr.x = n.x; ABYSS.ptr.y = n.y;
+    ABYSS.ptr.kTarget = Math.min(1, ABYSS.ptr.kTarget + .06);
+    if(!down) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    moved += Math.abs(dx) + Math.abs(dy);
+    const now = performance.now(), mdt = Math.max(now - lastMoveT, 8);
+    if(settings.drag){
+      ABYSS.cam.azim -= dx*.005;
+      userElev = clamp(userEvelAdjust(dy), -.35, .35);
+      velX = -dx/mdt;
+    }
+    lastX = e.clientX; lastY = e.clientY; lastMoveT = now;
+  });
+  const end = e=>{
+    if(!down) return;
+    const quick = performance.now() - down.t < 320 && moved < 7;
+    if(quick){
+      const n = toNDC(e);
+      ABYSS.spawnRipple(n.x, n.y);
+      const dir = rayFromNDC(n.x, n.y);
+      ABYSS.spawnComet(ABYSS.uni.uCamPos.value.clone(), dir);
+      if(!RM){ document.body.classList.remove("sg-shake"); void document.body.offsetWidth; document.body.classList.add("sg-shake"); }
+    }else{
+      ABYSS.cam.azimV = clamp(velX*.012, -.09, .09);
+    }
+    down = null;
+  };
+  canvas.addEventListener("pointerup", end);
+  canvas.addEventListener("pointercancel", ()=>{ down = null; });
+  canvas.addEventListener("wheel", e=>{
+    if(!settings.narrative){
+      e.preventDefault();
+      camTarget.r = clamp((camTarget.r || 9)*(1 + e.deltaY*.001), 2.2, 20);
+    }
+  }, { passive:false });
+}
+function userEvelAdjust(dy){ return userElev + dy*.0022; }
+function rayFromNDC(x, y){
+  const u = ABYSS.uni;
+  const d = new THREE_.Vector3()
+    .addScaledVector(u.uCamF.value, 1)
+    .addScaledVector(u.uCamR.value, x*u.aspect*u.uTanFov.value);
+  d.addScaledVector(u.uCamU.value, y*u.uTanFov.value).normalize();
+  return d;
+}
+
+/* ---- 面板 / HUD 绑定 ---- */
+function bindUI(canvas){
+  const panel = $("#sgPanel");
+  $("#sgFab").addEventListener("click", ()=>{
+    if(settings.clean){   /* 纯净模式下先退出纯净再开面板 */
+      settings.clean = false;
+      document.body.classList.remove("sg-clean");
+      document.querySelectorAll('.sg-tgl[data-k="clean"]').forEach(t=>t.classList.remove("on"));
+      save();
+    }
+    panel.classList.toggle("open");
+  });
+  $("#sgCollapse").addEventListener("click", ()=>panel.classList.remove("open"));
+  document.querySelectorAll(".sg-seg").forEach(seg=>{
+    seg.addEventListener("click", e=>{
+      const b = e.target.closest("button"); if(!b) return;
+      seg.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x===b));
+      const k = seg.dataset.k, v = b.dataset.v;
+      if(k === "form"){ settings.form = v; refreshWhite(); }
+      else if(k === "quality"){ settings.quality = v; if(v !== "auto") ABYSS.setTier(v); }
+      else settings[k] = v;
+      save();
+    });
+  });
+  document.querySelectorAll(".sg-tgl").forEach(tg=>{
+    tg.addEventListener("click", ()=>{
+      const k = tg.dataset.k;
+      settings[k] = !settings[k];
+      tg.classList.toggle("on", settings[k]);
+      if(k === "clean") document.body.classList.toggle("sg-clean", settings.clean);
+      if(k === "hum") updateHum();
+      if(k === "narrative") applySettings();
+      save();
+    });
+  });
+  document.querySelectorAll("input[type=range]").forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      const k = inp.dataset.k;
+      settings[k] = +inp.value;
+      document.querySelector(`output[data-o="${k}"]`).textContent = inp.value + "%";
+      if(k === "time") ABYSS.timeScale = settings.time/100;
+      if(k === "grav") ABYSS.grav = settings.grav/100;
+      if(k === "glow") ABYSS.glowK = settings.glow/100;
+      if(k === "lens") ABYSS.lens = settings.lens/100;
+      if(k === "density") ABYSS.densK = settings.density/100;
+      save();
+    });
+  });
+  $("#sgReset").addEventListener("click", ()=>{
+    settings = { ...DEFAULTS };
+    save();
+    location.reload();
+  });
+  /* 初始控件状态回填 */
+  document.querySelectorAll(".sg-seg").forEach(seg=>{
+    seg.querySelectorAll("button").forEach(b=>b.classList.toggle("on", b.dataset.v === String(settings[seg.dataset.k])));
+  });
+  document.querySelectorAll(".sg-tgl").forEach(tg=>tg.classList.toggle("on", !!settings[tg.dataset.k]));
+  document.querySelectorAll("input[type=range]").forEach(inp=>{
+    inp.value = settings[inp.dataset.k];
+    document.querySelector(`output[data-o="${inp.dataset.k}"]`).textContent = settings[inp.dataset.k] + "%";
+  });
+  /* 章节导航 */
+  document.querySelectorAll("#sgRail button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const i = +b.dataset.go;
+      scrollTo({ top: i*1.5*innerHeight + innerHeight*.18, behavior:"smooth" });
+    });
+  });
+  /* 主题切换(写全站键,其他页面同步) */
+  $("#sgThemeBtn").addEventListener("click", ()=>{
+    const t = themeName() === "dark" ? "light" : "dark";
+    try{ localStorage.setItem("site-theme", t); }catch(e){}
+    applyTheme(); refreshWhite();
+  });
+  addEventListener("storage", e=>{ if(e.key === "site-theme"){ applyTheme(); refreshWhite(); } });
+  /* 滚动进度 */
+  const readScroll = ()=>{
+    const max = document.documentElement.scrollHeight - innerHeight;
+    scrollP = max > 10 ? clamp(scrollY/max, 0, 1) : 0;
+    const idx = clamp(Math.round(scrollP*3), 0, 3);
+    document.querySelectorAll("#sgRail button").forEach((b,i)=>b.classList.toggle("on", i===idx));
+    document.querySelectorAll(".sg-card").forEach((c,i)=>{
+      c.classList.toggle("on", settings.narrative && Math.abs(scrollP*3 - i) < .62);
+    });
+  };
+  addEventListener("scroll", readScroll, { passive:true });
+  readScroll();
+  /* 键盘:H 纯净 / 空格 凝固 / R 复位 */
+  addEventListener("keydown", e=>{
+    if(e.target.tagName === "INPUT") return;
+    if(e.key === "h" || e.key === "H"){
+      settings.clean = !settings.clean;
+      document.body.classList.toggle("sg-clean", settings.clean);
+      document.querySelectorAll('.sg-tgl[data-k="clean"]').forEach(t=>t.classList.toggle("on", settings.clean));
+      save();
+    }
+    if(e.code === "Space"){ e.preventDefault(); ABYSS.timeScale = ABYSS.timeScale === 0 ? (settings.time/100 || 1) : 0; }
+    if(e.key === "r" || e.key === "R"){ userElev = 0; ABYSS.cam.azimV = 0; camTarget = { r: KEYS[0].r, e: KEYS[0].e }; ABYSS.cam.azim = .6; }
+    if(e.key === "Escape") panel.classList.remove("open");
+  });
+  /* 离屏暂停(站内纪律) */
+  document.addEventListener("visibilitychange", ()=>{
+    running = !document.hidden;
+    if(running){ lastT = performance.now(); }
+  });
+  /* 初始面板开合:桌面展开,移动收起 */
+  if(innerWidth >= 900) panel.classList.add("open");
+  bindStage(canvas);
+}
+
+/* ---- 启动 ---- */
+async function boot(){
+  const canvas = $("#sgStage");
+  let T = null;
+  try{ T = await OrbitKit.loadThree($("#sgLoadTxt")); }
+  catch(e){
+    $("#sgLoader").classList.add("hide");
+    $("#sgFail").style.display = "block";
+    return;
+  }
+  THREE_ = T;
+  try{ ABYSS = new Abyss(canvas, T); }
+  catch(e){
+    $("#sgLoader").classList.add("hide");
+    $("#sgFail").style.display = "block";
+    return;
+  }
+  window.ABYSS = ABYSS;   /* ← API 边界:未来提取 abyss.js 后由首页以低强度待机模式复用 */
+  applyTheme();
+  applySettings();
+  bindUI(canvas);
+  $("#sgLoader").classList.add("hide");
+  lastT = performance.now();
+  requestAnimationFrame(loop);
+}
+boot();
+</script>
+</body>
+</html>

@@ -61,13 +61,19 @@ img{max-width:100%}
 /* ---------- 顶部导航 ---------- */
 .topnav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07)}
 .nav-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:0 16px;height:56px}
-.nav-brand{display:flex;align-items:center;gap:8px;font-weight:800;color:#fff;font-size:15px;white-space:nowrap;text-decoration:none}
+.nav-brand{display:flex;align-items:center;gap:8px;font-weight:800;color:#e6edf3;font-size:15px;white-space:nowrap;text-decoration:none}
 .nav-brand:hover{text-decoration:none}
 .brand-dot{width:10px;height:10px;border-radius:50%;background:#3b82f6;box-shadow:0 0 12px rgba(59,130,246,.9)}
 .nav-links{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
 .nav-links::-webkit-scrollbar{display:none}
-.nav-links a{color:#9aa4b2;font-size:13px;padding:6px 10px;border-radius:7px;white-space:nowrap;text-decoration:none}
-.nav-links a:hover{color:#fff;background:rgba(59,130,246,.15)}
+/* V2.1.12b:深色顶栏全面中性化——链接/品牌文字改灰白(brand-dot 蓝点保留为唯一品牌点缀)。
+   必须用 .topnav 前缀:下方 html[data-theme-early=dark] a 的全局深色链接蓝(0,1,2)
+   特异性高于裸 .nav-links a(0,1,1),会把顶栏 <a> 全部染蓝 */
+.topnav .nav-brand{color:#e6edf3}
+.topnav .nav-links a{color:#c9d1d9;font-size:13px;padding:6px 10px;border-radius:7px;white-space:nowrap;text-decoration:none}
+.topnav .nav-links a:hover{color:#fff;background:rgba(255,255,255,.1)}
+.topnav .nav-ver{color:#9aa4b2;border-color:rgba(255,255,255,.12)}
+.topnav .nav-ver:hover{color:#fff;border-color:rgba(255,255,255,.35)}
 /* V2.1.11:深色顶栏按钮去蓝改中性玻璃(文字浅灰白,hover 提亮);done 的 on 态保留语义绿 */
 .nav-search,.nav-done{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:12.5px;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;font-family:inherit}
 .nav-search:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}
@@ -475,7 +481,8 @@ body:not([data-theme]),body[data-theme="light"] .theme-seg button.on{color:#fff}
    ============================================================ */
 .search-hit mark{background:rgba(250,204,21,.35);color:#fde68a;border-radius:3px;padding:0 2px}
 body:not([data-theme]),body[data-theme="light"] .search-hit mark{background:rgba(250,204,21,.45);color:#854d0e}
-.nav-print{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;color:#9ecbff;flex-shrink:0}
+.nav-print{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;color:#c9d1d9;flex-shrink:0;transition:.15s}
+.nav-print:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28);color:#fff}
 .nav-print:hover{background:rgba(59,130,246,.28);color:#fff}
 body:not([data-theme]),body[data-theme="light"] .nav-print{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
 .page-goals{margin-top:6px}
@@ -494,7 +501,7 @@ body:not([data-theme]),body[data-theme="light"] .formula{background:#ffffff;bord
 .giscus-wrap{margin:30px 0}
 .giscus-wrap h2{margin-bottom:14px}
 /* 移动端抽屉导航(首页) */
-.nav-ham{display:none;background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:15px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit}
+.nav-ham{display:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#c9d1d9;font-size:15px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit}
 .nav-ham:hover{background:rgba(59,130,246,.28);color:#fff}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:260px;max-width:82vw;background:rgba(13,17,23,.98);border-left:1px solid rgba(255,255,255,.1);z-index:250;transform:translateX(100%);transition:transform .25s;padding:60px 20px 20px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
 .drawer.open{transform:translateX(0)}
@@ -623,8 +630,10 @@ body:not([data-theme]),body[data-theme="light"] .heat-day{background:rgba(60,80,
 }
 
 /* ---------- V2.1.8 顶栏版本胶囊(全站统一:首页静态顶栏与内容页注入顶栏共用) ---------- */
-.nav-ver{margin-left:10px;font-size:11px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:3px 9px;white-space:nowrap;transition:.15s;align-self:center}
-.nav-ver:hover{color:#60a5fa;border-color:#3b82f6}
+.nav-ver{margin-left:10px;font-size:11px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 9px;white-space:nowrap;transition:.15s;align-self:center}
+.nav-ver:hover{color:#fff;border-color:rgba(255,255,255,.35)}
+/* V2.1.12b:单色 SVG 图标与文字的间距(替代原 emoji 空格) */
+.nav-search svg{display:block;margin-left:5px}
 body:not([data-theme]),body[data-theme="light"] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}
 body:not([data-theme]),body[data-theme="light"] .nav-ver:hover{color:#2563eb;border-color:#2563eb}
 /* V2.1.8 窄屏顶栏减负:版本/打印/自检/搜索快捷键徽标退出,保 brand+主题+搜索+打卡+汉堡 */

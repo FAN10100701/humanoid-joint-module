@@ -31,6 +31,15 @@
 
   function page(){ return window.PAGE || {}; }
 
+  /* V2.1.12b:工具栏统一单色线性 SVG 图标(currentColor 随主题/状态变色),
+     替换 emoji(🔍🖨️☀️🌙🧪 各自带彩色,与中性玻璃风格不统一) */
+  var ICONS = {
+    search: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.3 20.3-4.2-4.2"/></svg>',
+    print: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="2"/><path d="M7 13.5h10v7H7z"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.2 5.2l1.5 1.5M17.3 17.3l1.5 1.5M18.8 5.2l-1.5 1.5M6.7 17.3l-1.5 1.5"/></svg>',
+    moon: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 13.6A8.2 8.2 0 1 1 10.4 3.8a6.6 6.6 0 0 0 9.8 9.8z"/></svg>'
+  };
+
   /* ---------- 主题(亮/暗风格切换) ---------- */
   var THEME_KEY = "site-theme";
   function applyTheme(){
@@ -45,7 +54,8 @@
     if(mc){ mc.setAttribute("content", t === "light" ? "#f6f8fb" : "#0d1117"); }
     var btns = document.querySelectorAll(".nav-theme");
     for(var i = 0; i < btns.length; i++){
-      btns[i].textContent = (t === "light") ? "🌙" : "☀️";
+      /* V2.1.12b:单色 SVG 随主题切换(浅色显月亮=点击切深色,深色显太阳) */
+      btns[i].innerHTML = (t === "light") ? ICONS.moon : ICONS.sun;
       btns[i].setAttribute("title", (t === "light") ? "切到深色风格" : "切到浅色风格(苹果透亮)");
     }
     var seg = document.querySelectorAll(".theme-seg button");
@@ -434,7 +444,7 @@
       + '</svg><i id="navProgTxt">0%</i></span>'
       + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史">🏷 v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
       + '<button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>'
-      + '<button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>'
+      + '<button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span>' + ICONS.search + '<kbd>Ctrl K</kbd></button>'
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       /* 移动端板块入口(V2.1.7):<900px 时 .nav-links 整体隐藏,内容页此前无任何
          板块导航;汉堡按钮桌面端 display:none(site.css),零桌面影响 */
@@ -935,7 +945,7 @@
     if(!nav) return;
     var b = document.createElement("button");
     b.className = "nav-print";
-    b.textContent = "🖨️";
+    b.innerHTML = ICONS.print;
     b.title = "打印 / 导出 PDF"; b.setAttribute("aria-label","打印或导出PDF");
     b.onclick = function(){ window.print(); };
     nav.appendChild(b);
