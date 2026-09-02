@@ -59,25 +59,27 @@ a:hover{text-decoration:underline}
 img{max-width:100%}
 
 /* ---------- 顶部导航 ---------- */
-.topnav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07)}
-.nav-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:0 16px;height:56px}
-.nav-brand{display:flex;align-items:center;gap:8px;font-weight:800;color:#e6edf3;font-size:15px;white-space:nowrap;text-decoration:none}
+/* V2.1.12b 顶栏精修:更通透的毛玻璃、按钮统一 32px 高、图标/文字对齐 */
+.topnav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,14,20,.72);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:0 16px;height:52px}
+.nav-brand{display:flex;align-items:center;gap:9px;font-weight:800;color:#e6edf3;font-size:15px;white-space:nowrap;text-decoration:none}
 .nav-brand:hover{text-decoration:none}
-.brand-dot{width:10px;height:10px;border-radius:50%;background:#3b82f6;box-shadow:0 0 12px rgba(59,130,246,.9)}
-.nav-links{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:#3b82f6;box-shadow:0 0 10px rgba(59,130,246,.8)}
+.nav-links{display:flex;gap:4px;flex:1;overflow-x:auto;scrollbar-width:none}
 .nav-links::-webkit-scrollbar{display:none}
 /* V2.1.12b:深色顶栏全面中性化——链接/品牌文字改灰白(brand-dot 蓝点保留为唯一品牌点缀)。
    必须用 .topnav 前缀:下方 html[data-theme-early=dark] a 的全局深色链接蓝(0,1,2)
    特异性高于裸 .nav-links a(0,1,1),会把顶栏 <a> 全部染蓝 */
 .topnav .nav-brand{color:#e6edf3}
-.topnav .nav-links a{color:#c9d1d9;font-size:13px;padding:6px 10px;border-radius:7px;white-space:nowrap;text-decoration:none}
-.topnav .nav-links a:hover{color:#fff;background:rgba(255,255,255,.1)}
+.topnav .nav-links a{color:#b8c2ce;font-size:13px;padding:7px 10px;border-radius:8px;white-space:nowrap;text-decoration:none;transition:color .15s,background-color .15s}
+.topnav .nav-links a:hover{color:#fff;background:rgba(255,255,255,.07)}
 .topnav .nav-ver{color:#9aa4b2;border-color:rgba(255,255,255,.12)}
 .topnav .nav-ver:hover{color:#fff;border-color:rgba(255,255,255,.35)}
-/* V2.1.11:深色顶栏按钮去蓝改中性玻璃(文字浅灰白,hover 提亮);done 的 on 态保留语义绿 */
-.nav-search,.nav-done{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:12.5px;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;font-family:inherit}
-.nav-search:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}
-.nav-search kbd{background:rgba(255,255,255,.12);border-radius:4px;padding:1px 5px;font-size:11px;margin-left:4px;color:#c9d1d9}
+/* V2.1.11:深色顶栏按钮去蓝改中性玻璃(文字浅灰白,hover 提亮);done 的 on 态保留语义绿
+   V2.1.12b:按钮统一 32px 高;搜索按钮图标化(移除文字与快捷键徽章) */
+.nav-search,.nav-done{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);color:#c9d1d9;font-size:12.5px;height:32px;padding:0 11px;border-radius:9px;cursor:pointer;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;justify-content:center}
+.nav-search{padding:0 9px}
+.nav-search:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.26);color:#fff}
 .nav-done.on{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5);color:#86efac}
 
 /* ---------- 面包屑 ---------- */
@@ -199,6 +201,9 @@ details.faq .faq-a{padding:2px 18px 16px;font-size:14px;color:#9aa4b2;line-heigh
 .hero{text-align:center;padding:34px 10px 10px}
 .hero h1{font-size:34px;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1.35}
 .hero .sub{color:#8b949e;font-size:15px;margin-top:12px;line-height:1.9}
+/* V2.1.12b:副标题第二行(特性点)降一档字号与对比,形成主次层次 */
+.hero .sub .sub-meta{font-size:13px;color:#6b7280;letter-spacing:.3px}
+body:not([data-theme]) .hero .sub .sub-meta,body[data-theme="light"] .hero .sub .sub-meta{color:#94a3b8}
 .stats{display:flex;justify-content:center;gap:26px;margin:22px 0 8px;flex-wrap:wrap}
 .stat{text-align:center}
 .stat .v{font-size:26px;font-weight:900;color:#3b82f6}
@@ -278,7 +283,6 @@ details.faq .faq-a{padding:2px 18px 16px;font-size:14px;color:#9aa4b2;line-heigh
 @media (max-width:600px){
   body{padding-top:56px}
   .nav-inner{height:52px;gap:8px}
-  .nav-search span.txt{display:none}
   .stats{gap:16px}
   .stat .v{font-size:20px}
   .container{padding:14px 14px 30px}
@@ -288,7 +292,7 @@ details.faq .faq-a{padding:2px 18px 16px;font-size:14px;color:#9aa4b2;line-heigh
 /* ============================================================
    浅色 · 苹果透亮玻璃风格(body:not([data-theme]),body[data-theme="light"])
    ============================================================ */
-.nav-theme{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;color:#c9d1d9;transition:.15s}
+.nav-theme{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);font-size:14px;height:32px;width:36px;padding:0;border-radius:9px;cursor:pointer;font-family:inherit;color:#c9d1d9;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
 .nav-theme:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3)}
 body:not([data-theme]),body[data-theme="light"] .nav-theme{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
 
@@ -481,7 +485,7 @@ body:not([data-theme]),body[data-theme="light"] .theme-seg button.on{color:#fff}
    ============================================================ */
 .search-hit mark{background:rgba(250,204,21,.35);color:#fde68a;border-radius:3px;padding:0 2px}
 body:not([data-theme]),body[data-theme="light"] .search-hit mark{background:rgba(250,204,21,.45);color:#854d0e}
-.nav-print{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;color:#c9d1d9;flex-shrink:0;transition:.15s}
+.nav-print{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);font-size:14px;height:32px;width:36px;padding:0;border-radius:9px;cursor:pointer;font-family:inherit;color:#c9d1d9;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
 .nav-print:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28);color:#fff}
 .nav-print:hover{background:rgba(59,130,246,.28);color:#fff}
 body:not([data-theme]),body[data-theme="light"] .nav-print{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
@@ -501,7 +505,7 @@ body:not([data-theme]),body[data-theme="light"] .formula{background:#ffffff;bord
 .giscus-wrap{margin:30px 0}
 .giscus-wrap h2{margin-bottom:14px}
 /* 移动端抽屉导航(首页) */
-.nav-ham{display:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#c9d1d9;font-size:15px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit}
+.nav-ham{display:none;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);color:#c9d1d9;font-size:15px;height:32px;padding:0 11px;border-radius:9px;cursor:pointer;font-family:inherit;align-items:center}
 .nav-ham:hover{background:rgba(59,130,246,.28);color:#fff}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:260px;max-width:82vw;background:rgba(13,17,23,.98);border-left:1px solid rgba(255,255,255,.1);z-index:250;transform:translateX(100%);transition:transform .25s;padding:60px 20px 20px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
 .drawer.open{transform:translateX(0)}
@@ -639,7 +643,6 @@ body:not([data-theme]),body[data-theme="light"] .nav-ver:hover{color:#2563eb;bor
 /* V2.1.8 窄屏顶栏减负:版本/打印/自检/搜索快捷键徽标退出,保 brand+主题+搜索+打卡+汉堡 */
 @media (max-width:640px){
   .topnav .nav-ver{display:none}
-  .topnav .nav-search kbd{display:none}
 }
 
 /* ---------- V2.1.11 顶栏阅读进度环 ---------- */

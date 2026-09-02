@@ -578,7 +578,8 @@ void main(){
   vec3 col = acc + background(normalize(v))*trans;
   col = mix(col, vec3(0.0), hit*(1.0-uWhite));       /* 黑洞视界剪影 */
   col += uColWhiteA*hit*uWhite*2.6;                  /* 白洞亮核 */
-  col += mix(uColDiskB, uColWhiteA, uWhite)*glow*(.34+uFeedFlash*1.7)*uGlowK;
+  /* 光子环辉光只上在未被捕获的射线上,否则会把阴影填成红色 */
+  col += mix(uColDiskB, uColWhiteA, uWhite)*glow*(.28+uFeedFlash*1.7)*uGlowK*(1.0-hit*(1.0-uWhite));
   col = 1.0 - exp(-col*1.3);                         /* 曝光压缩 */
   col *= 1.0 - .3*pow(dot(q0,q0)*.55, 1.4);          /* 暗角 */
   gl_FragColor = vec4(col, 1.0);

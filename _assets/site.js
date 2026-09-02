@@ -444,7 +444,7 @@
       + '</svg><i id="navProgTxt">0%</i></span>'
       + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史">🏷 v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
       + '<button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>'
-      + '<button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span>' + ICONS.search + '<kbd>Ctrl K</kbd></button>'
+      + '<button class="nav-search" onclick="Site.openSearch()" title="搜索 (Ctrl+K)" aria-label="搜索">' + ICONS.search + '</button>'
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       /* 移动端板块入口(V2.1.7):<900px 时 .nav-links 整体隐藏,内容页此前无任何
          板块导航;汉堡按钮桌面端 display:none(site.css),零桌面影响 */
@@ -756,7 +756,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.12(2026-09-02)";
+  S.VERSION = "V2.1.13(2026-09-02)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){

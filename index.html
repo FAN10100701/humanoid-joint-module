@@ -178,7 +178,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     </div>
     <a class="nav-ver" id="navVerHome" href="#version" title="版本与更新历史">🏷 v—</a>
     <button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>
-    <button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.3 20.3-4.2-4.2"/></svg><kbd>Ctrl K</kbd></button>
+    <button class="nav-search" onclick="Site.openSearch()" title="搜索 (Ctrl+K)" aria-label="搜索"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.3 20.3-4.2-4.2"/></svg></button>
     <button class="nav-ham" onclick="toggleDrawer()" title="菜单">☰</button>
   </div>
 </nav>
@@ -207,7 +207,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     <h1 class="glass-title" style="font-size:36px;margin-top:10px">人形机器人<b>学习站</b></h1>
     <div class="glass-rule"></div>
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
-    零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</div>
+    <span class="sub-meta">零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</span></div>
     <div class="stats">
       <div class="stat"><div class="v" id="statPages">76</div><div class="k">学习页面</div></div>
       <div class="stat"><div class="v" id="statTracked">75</div><div class="k">可打卡页面</div></div>
@@ -858,11 +858,13 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.12</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 第二梯队特效 + 性能与手感修版</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.13</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 「万物归墟」黑洞·白洞实验品上线</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V2.1.12 · 2026-09-02 · 第二梯队特效 + 性能与手感修版</summary>
+        <summary>V2.1.13 · 2026-09-02 · 「万物归墟 · SINGULARITY」黑洞·白洞实验品上线</summary>
+        <div class="faq-a">🌌 <b>个人作品台新作品「万物归墟」</b>(全屏沉浸):光线步进实时渲染黑洞——真<b>引力透镜</b>(星场弯成环/光子球亮环/吸积盘上下沿同现)、程序化吸积盘(湍流+较差自转+多普勒增亮)、辉光烘焙零后处理、零新依赖;🕳 <b>深色自动变白洞</b>高对比喷发、浅色为经典黑洞,页内可强制;📜 <b>滚动叙事逆转时间</b>(浅色:深空→吞噬→视界→太初大爆炸;深色倒流:太初→归墟),视界邻域时间膨胀;🖱 拖拽环视 / 点击引力波涟漪+抛投物质看潮汐撕扯 / 指针引力手势 / 指针视差;🎛 <b>左下玻璃控制台</b>:光谱四预设、泛光/透镜/密度/时间流速(可倒流)/引力滑条、画质自动探测三档、低频嗡鸣与纯净模式,设置本地记忆。渲染核心已封装 <b>window.ABYSS</b> API,为接入首页背景预留。</div>
+      </details><details class="faq"><summary>V2.1.12 · 2026-09-02 · 第二梯队特效 + 性能与手感修版</summary>
         <div class="faq-a">⚡ <b>滚动性能修版</b>:卡片倾斜移除常驻 will-change(77 个合成层是"变卡"根因),AI 球光晕改合成器透明度动画;🌗 <b>主题涟漪重构</b>:自绘纯色圆层扩散盖满后切主题再淡出,替换 View Transitions(消除边缘割裂与全屏截图开销);🃏 <b>卡片错峰修正</b>:同批卡片按屏幕位置自上而下依次浮现,不再随机跳序;🧲 <b>顶栏按钮磁吸</b>:hover 微移 ≤3px 弹性回弹;🌌 <b>Hero 极光流场</b>:三层渐变光晕呼吸(深色蓝青紫/浅色极淡),滚出视口自动暂停;🎯 <b>学习路径横滑惯性</b>:拖拽释放后按速度衰减滑行(修复与 scroll-snap 的吸附冲突);📝 引导页页数改由 SITE_SECTIONS 单源计算(修"35 个页面"过时文案)。</div>
       </details><details class="faq"><summary>V2.1.11 · 2026-09-02 · 微交互五件套:数字滚动 / 卡片错峰 / 主题涟漪 / 阅读进度环 / 通关彩带 + 深色顶栏去蓝</summary>
         <div class="faq-a">🔢 <b>统计数字滚动</b>:顶部 76/75/8/3 进入视口从 0 计数到位;🃏 <b>卡片滚动错峰入场</b>:视口外卡片滚到即按批错峰浮现(不用等整页加载完);🌗 <b>主题切换涟漪</b>:点主题按钮从按钮位置圆形波纹铺满全屏(View Transitions,不支持的浏览器自动降级);⭕ <b>内容页顶栏阅读进度环</b>:双环+百分比随滚动实时更新,深浅主题自适应;🎉 <b>闯关彩带</b>:通关全屏彩色喷发、解锁徽章右下角金色小喷(零依赖,播完自毁);🎨 <b>深色顶栏按钮去蓝</b>:搜索/主题/完成/板块/自检按钮文字改中性玻璃灰白(hover 提亮),「✓ 完成」点亮仍为语义绿。全部特效尊重系统"减少动态效果"设置。</div>
@@ -1043,7 +1045,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.12(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.13(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
