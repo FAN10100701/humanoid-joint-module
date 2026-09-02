@@ -619,3 +619,14 @@ body:not([data-theme]),body[data-theme="light"] .heat-day{background:rgba(60,80,
   .quiz-options button:hover,.term-card:hover,.pn-item:hover,.rm-step:hover,.step-item:hover,.toc-sidebar a:hover,.nav-links a:hover,.search-hit:hover,details.faq:hover,.srs-opt:hover,.srs-card:hover,.gloss-cats button:hover{transform:scale(1.025)}
   .nav-links a:hover,.toc-sidebar a:hover{transform:scale(1.045)}
 }
+
+/* ---------- V2.1.8 顶栏版本胶囊(全站统一:首页静态顶栏与内容页注入顶栏共用) ---------- */
+.nav-ver{margin-left:10px;font-size:11px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:3px 9px;white-space:nowrap;transition:.15s;align-self:center}
+.nav-ver:hover{color:#60a5fa;border-color:#3b82f6}
+body:not([data-theme]),body[data-theme="light"] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}
+body:not([data-theme]),body[data-theme="light"] .nav-ver:hover{color:#2563eb;border-color:#2563eb}
+/* V2.1.8 窄屏顶栏减负:版本/打印/自检/搜索快捷键徽标退出,保 brand+主题+搜索+打卡+汉堡 */
+@media (max-width:640px){
+  .topnav .nav-ver{display:none}
+  .topnav .nav-search kbd{display:none}
+}

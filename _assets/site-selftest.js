@@ -1,8 +1,11 @@
 /* ============================================================
-   人形机器人学习站 · 右上角自检挂件(site-selftest.js,V2.1.0)
+   人形机器人学习站 · 自检挂件(site-selftest.js,V2.1.8)
    - 每页自动运行基础+共享功能+页面专项检查;外部资源分组不拉红
-   - 全绿✅绿 / 有失败❌红;点击展开明细;隐藏记忆 localStorage
-   - URL 加 ?selftest=1 可重新唤回;由 site.js 注入本文件
+   - 入口按钮注入顶栏工具区最右(打印按钮旁,首页同样生效);
+     找不到顶栏时回退左下角悬浮
+   - 全绿✅ / 有失败✗;点击弹出明细面板(深浅双主题配色)
+   - 面板内「隐藏挂件」或双击按钮可隐藏;URL 加 ?selftest=1 重新唤回
+   - 由 site.js 注入本文件
    ============================================================ */
 (function(){
   "use strict";
@@ -101,70 +104,134 @@
     });
   }
 
-  /* ---------- UI 挂件 ---------- */
-  function ui(){
+  /* ---------- UI:样式(深浅双主题,全部 class 化) ---------- */
+  function injectStyle(){
     var st = document.createElement("style");
-    st.textContent = '.nav-sst{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}' +
+    st.textContent =
+      /* 顶栏按钮 */
+      '.nav-sst{display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:12px;padding:6px 11px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}' +
       '.nav-sst:hover{background:rgba(59,130,246,.28);color:#fff}' +
       '.nav-sst.pass{color:#86efac;border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.1)}' +
       '.nav-sst.fail{color:#fca5a5;border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.1)}' +
-      '@media print{.nav-sst{display:none!important}}';
+      'body:not([data-theme]),body[data-theme="light"] .nav-sst{color:#2563eb;background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25)}' +
+      'body:not([data-theme]),body[data-theme="light"] .nav-sst:hover{background:rgba(37,99,235,.15)}' +
+      'body:not([data-theme]),body[data-theme="light"] .nav-sst.pass{color:#15803d;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4)}' +
+      'body:not([data-theme]),body[data-theme="light"] .nav-sst.fail{color:#dc2626;background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.4)}' +
+      /* 窄屏:按钮整体隐藏(防顶栏拥挤;?selftest=1 时 sst-force 强制显示) */
+      '@media (max-width:640px){.nav-sst .sst-txt{display:none}.topnav .nav-sst{display:none}.topnav .nav-print{display:none}}' +
+      'body.sst-force .topnav .nav-sst{display:inline-flex !important}' +
+      /* 明细面板:深色默认 */
+      '.sst-panel{display:none;position:fixed;top:64px;right:12px;z-index:221;width:min(360px,92vw);max-height:70vh;overflow:auto;padding:14px 16px;font-size:12.5px;line-height:1.8;color:#c9d5e3}' +
+      '.sst-panel .sst-t{color:#8ec5ff;font-weight:800;font-size:13.5px}' +
+      '.sst-panel .sst-file{color:#6b7280;font-size:11px;margin-left:6px}' +
+      '.sst-panel .sst-g{margin:9px 0 3px;color:#8ec5ff;font-weight:700}' +
+      '.sst-panel .sst-ok{color:#22c55e}' +
+      '.sst-panel .sst-bad{color:#ef4444}' +
+      '.sst-panel .sst-bad-d{color:#fca5a5;font-size:11.5px;padding-left:18px;display:block}' +
+      '.sst-panel .sst-warn{color:#fbbf24}' +
+      '.sst-panel .sst-hr{border:none;border-top:1px solid rgba(255,255,255,.1);margin:6px 0}' +
+      '.sst-panel .sst-btn{background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.4);color:#9ecbff;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;margin-right:6px}' +
+      '.sst-panel .sst-btn:hover{border-color:#9ecbff}' +
+      '.sst-panel .sst-tip{color:#6b7280;font-size:11px}' +
+      /* 明细面板:浅色 */
+      'body:not([data-theme]) .sst-panel,body[data-theme="light"] .sst-panel{color:#334155;background:rgba(255,255,255,.92);border:1px solid rgba(60,80,120,.18);box-shadow:0 18px 50px rgba(40,70,130,.16)}' +
+      'body:not([data-theme]) .sst-panel .sst-t,body[data-theme="light"] .sst-panel .sst-t{color:#2563eb}' +
+      'body:not([data-theme]) .sst-panel .sst-g,body[data-theme="light"] .sst-panel .sst-g{color:#2563eb}' +
+      'body:not([data-theme]) .sst-panel .sst-ok,body[data-theme="light"] .sst-panel .sst-ok{color:#15803d}' +
+      'body:not([data-theme]) .sst-panel .sst-bad,body[data-theme="light"] .sst-panel .sst-bad{color:#dc2626}' +
+      'body:not([data-theme]) .sst-panel .sst-bad-d,body[data-theme="light"] .sst-panel .sst-bad-d{color:#b91c1c}' +
+      'body:not([data-theme]) .sst-panel .sst-warn,body[data-theme="light"] .sst-panel .sst-warn{color:#b45309}' +
+      'body:not([data-theme]) .sst-panel .sst-hr,body[data-theme="light"] .sst-panel .sst-hr{border-top-color:rgba(60,80,120,.15)}' +
+      'body:not([data-theme]) .sst-panel .sst-btn,body[data-theme="light"] .sst-panel .sst-btn{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.3);color:#2563eb}' +
+      'body:not([data-theme]) .sst-panel .sst-btn:hover,body[data-theme="light"] .sst-panel .sst-btn:hover{border-color:#2563eb}' +
+      'body:not([data-theme]) .sst-panel .sst-tip,body[data-theme="light"] .sst-panel .sst-tip{color:#94a3b8}' +
+      /* 左下角回退悬浮(无顶栏时)与打印屏蔽 */
+      '@media print{.nav-sst{display:none !important}}';
     document.head.appendChild(st);
+  }
+
+  /* ---------- UI:DOM ---------- */
+  function ui(){
+    injectStyle();
     var pill = document.createElement("button");
     pill.id = "sstPill";
     pill.className = "nav-sst";
-    pill.title = "本页自检(点击展开明细)";
-    pill.textContent = "🧪 自检 …";
-    /* V2.1.4:移出顶栏 → 左下角低调悬浮(不占导航) */
-    pill.style.cssText += ";position:fixed;left:16px;bottom:18px;z-index:210;font-size:11px;padding:5px 12px;border-radius:999px;opacity:.82";
-    document.body.appendChild(pill);
+    pill.title = "本页自检(点击展开明细 / 双击隐藏)";
+    pill.innerHTML = '🧪 <span class="sst-txt">自检 …</span>';
+
+    var navInner = document.querySelector(".topnav .nav-inner");
+    if(navInner){
+      navInner.appendChild(pill);            /* 顶栏工具区最右(打印按钮旁) */
+    }else{
+      /* 兜底:无顶栏页面保持左下角低调悬浮 */
+      pill.style.cssText += ";position:fixed;left:16px;bottom:18px;z-index:210;font-size:11px;padding:5px 12px;border-radius:999px;opacity:.85";
+      document.body.appendChild(pill);
+    }
 
     var panel = document.createElement("div");
     panel.id = "sstPanel";
-    panel.className = "glass-panel"; panel.style.cssText = "display:none;position:fixed;top:100px;right:12px;z-index:221;width:min(360px,92vw);max-height:70vh;overflow:auto;padding:14px 16px;color:#dbe6f5;font-size:12.5px;line-height:1.8";
+    panel.className = "sst-panel glass-panel";
     document.body.appendChild(panel);
 
-    pill.onclick = function(){ panel.style.display = panel.style.display === "none" ? "block" : "none"; renderPanel(); };
+    pill.onclick = function(){
+      var show = panel.style.display !== "block";
+      panel.style.display = show ? "block" : "none";
+      if(show) renderPanel();
+    };
 
     var hidden = false;
     try{ hidden = localStorage.getItem(hideKey) === "1"; }catch(e){}
     var qs = location.search.indexOf("selftest=1") >= 0;
-    if(hidden && !qs){ pill.style.display = "none"; panel.style.display = "none"; }
+    if(hidden && !qs){
+      pill.style.display = "none";
+    }else if(hidden && qs){
+      document.body.classList.add("sst-force");   /* 唤回时窄屏也强制可见 */
+    }
     var dbl = 0;
     pill.addEventListener("dblclick", function(){
       hidden = !hidden;
       try{ localStorage.setItem(hideKey, hidden ? "1" : "0"); }catch(e){}
-      pill.style.display = hidden ? "none" : "block";
+      pill.style.display = hidden ? "none" : "";
       if(hidden) panel.style.display = "none";
     });
+    SST._hide = function(){
+      hidden = true;
+      try{ localStorage.setItem(hideKey, "1"); }catch(e){}
+      pill.style.display = "none";
+      panel.style.display = "none";
+    };
     SST._ui = { pill: pill, panel: panel, renderPanel: renderPanel, paint: paint };
   }
   function paint(txt){
     if(!SST._ui) return;
-    SST._ui.pill.textContent = "🧪 自检 " + txt;
+    SST._ui.pill.innerHTML = '🧪 <span class="sst-txt">自检 ' + txt + "</span>";
   }
   function renderPanel(){
     if(!SST._ui) return;
-    var html = "<b style='color:#8ec5ff'>🧪 本页自检报告</b><br><span style='color:#8b98a9;font-size:11.5px'>" + location.pathname.split("/").pop() + "</span><hr style='border-color:rgba(255,255,255,.1)'>";
+    var html = "<b class='sst-t'>🧪 本页自检报告</b><span class='sst-file'>" + location.pathname.split("/").pop() + "</span><hr class='sst-hr'>";
     var curG = null;
     SST.groups.forEach(function(it){
-      if(it.g !== curG){ curG = it.g; html += "<div style='margin:8px 0 2px;color:#8ec5ff;font-weight:700'>" + curG + "</div>"; }
+      if(it.g !== curG){ curG = it.g; html += "<div class='sst-g'>" + curG + "</div>"; }
       var r = it.result;
-      var mark = !r ? "<span style='color:#6b7280'>…</span>" : (r.ok ? "<span style='color:#22c55e'>✓</span>" : "<span style='color:#ef4444'>✗</span>");
-      html += "<div>" + mark + " " + it.name + (r && !r.ok ? "<br><span style='color:#fca5a5;font-size:11.5px;padding-left:18px'>" + r.detail + "</span>" : "") + "</div>";
+      var mark = !r ? "<span style='opacity:.55'>…</span>" : (r.ok ? "<span class='sst-ok'>✓</span>" : "<span class='sst-bad'>✗</span>");
+      html += "<div>" + mark + " " + it.name + (r && !r.ok ? "<span class='sst-bad-d'>" + r.detail + "</span>" : "") + "</div>";
     });
-    if(errors.length) html += "<div style='margin-top:8px;color:#fbbf24'>⚠ 运行期错误 " + errors.length + " 条(详见 Console)</div>";
-    html += "<div style='margin-top:10px'><button onclick='SiteSelfTest.run()' style='background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.4);color:#9ecbff;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px'>重新检测</button> <span style='color:#6b7280;font-size:11px'>双击挂件可隐藏</span></div>";
+    if(errors.length) html += "<div class='sst-warn' style='margin-top:8px'>⚠ 运行期错误 " + errors.length + " 条(详见 Console)</div>";
+    html += "<hr class='sst-hr'><button class='sst-btn' onclick='SiteSelfTest.run()'>重新检测</button>" +
+      "<button class='sst-btn' onclick='SiteSelfTest._hide()'>隐藏挂件</button>" +
+      "<span class='sst-tip'>?selftest=1 可唤回</span>";
     SST._ui.panel.innerHTML = html;
   }
   function paintDone(){
-    var fail = 0, warn = 0;
+    var fail = 0;
     SST.groups.forEach(function(it){
       if(!it.result || !it.result.ok){ fail++; }
     });
     if(!SST._ui) ui();
     SST._ui.pill.className = "nav-sst " + (fail ? "fail" : "pass");
-    SST._ui.pill.textContent = fail ? "🧪 自检 ✗ " + fail + " 项" : "🧪 自检 ✅ 全绿";
+    SST._ui.pill.innerHTML = fail
+      ? "🧪 <span class='sst-txt'>自检 ✗" + fail + "</span>"
+      : "🧪 <span class='sst-txt'>自检 ✅</span>";
     renderPanel();
   }
 

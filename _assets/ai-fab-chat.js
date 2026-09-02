@@ -1,6 +1,8 @@
 /* ============================================================
-   人形机器人学习站 · AI 悬浮内嵌聊天(V2.1.3)
-   - 右下角玻璃 AI 圆钮:点击原地面板展开,直接提问,流式回答
+   人形机器人学习站 · AI 悬浮内嵌聊天(V2.1.8 重做)
+   - 玻璃拟态 AI 球:双主题自适应 + SVG 机器人头;可拖拽,
+     释放贴边吸附(过冲回弹),位置记忆 localStorage
+   - 位移 <6px 判定为点击(开面板);面板弹出侧跟随球所在边
    - 引擎复用 _assets/ai-assistant.js(配置/Key/历史与 13 页共用)
    - 自动携带当前页标题作为上下文;未配 Key 时面板内给引导
    由 site.js 注入本文件;加载失败静默
@@ -16,15 +18,28 @@
     }
     var root = (window.PAGE && window.PAGE.root) || "";
     var chatURL = (root ? root + "/" : "") + "08_学习工具/13_AI答疑助手.html";
+    var POS_KEY = "humanoid-ai-fab-pos-v1";
 
     var st = document.createElement("style");
     st.textContent =
-      ".ai-fab-btn{position:fixed;right:18px;bottom:76px;z-index:96;width:48px;height:48px;border-radius:50%;border:1px solid rgba(140,190,255,.45);cursor:pointer;" +
-      "background:radial-gradient(circle at 30% 25%, rgba(140,190,255,.35), rgba(20,40,80,.9) 60%),linear-gradient(160deg,#123,#0a1428);" +
-      "color:#dceaff;font-size:20px;display:flex;align-items:center;justify-content:center;" +
-      "box-shadow:0 10px 30px rgba(30,80,200,.45), inset 0 0 18px rgba(120,180,255,.18);animation:aifPulse 3.2s ease-in-out infinite;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}" +
-      ".ai-fab-btn:hover{transform:scale(1.1)}.ai-fab-btn:active{animation:ddJelly .5s ease}" +
-      "@keyframes aifPulse{0%,100%{box-shadow:0 10px 30px rgba(30,80,200,.45), inset 0 0 18px rgba(120,180,255,.18)}50%{box-shadow:0 10px 36px rgba(30,80,200,.65), inset 0 0 26px rgba(120,180,255,.3)}}" +
+      /* ---- 球体:双主题玻璃 ---- */
+      ".ai-fab-btn{position:fixed;right:18px;bottom:76px;z-index:96;width:50px;height:50px;border-radius:16px;cursor:grab;" +
+      "border:1px solid rgba(140,190,255,.4);color:#9ecbff;display:flex;align-items:center;justify-content:center;padding:0;" +
+      "background:linear-gradient(160deg,rgba(34,54,96,.88),rgba(10,18,36,.94));backdrop-filter:blur(12px) saturate(140%);" +
+      "box-shadow:0 10px 28px rgba(30,80,200,.4), inset 0 1px 0 rgba(160,200,255,.22);" +
+      "transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .3s;animation:aifPulse 3.6s ease-in-out infinite;touch-action:none}" +
+      ".ai-fab-btn svg{pointer-events:none}" +
+      ".ai-fab-btn:hover{transform:translateY(-2px) scale(1.06);border-color:rgba(140,190,255,.7)}" +
+      ".ai-fab-btn.aif-drag{cursor:grabbing;transition:none;transform:scale(1.1);animation:none;box-shadow:0 18px 44px rgba(30,80,200,.55)}" +
+      ".ai-fab-btn.aif-snap{transition:left .45s cubic-bezier(.22,1.4,.36,1),top .45s cubic-bezier(.22,1.4,.36,1)}" +
+      "body:not([data-theme]),body[data-theme='light'] .ai-fab-btn{color:#2563eb;border-color:rgba(37,99,235,.32);" +
+      "background:rgba(255,255,255,.8);box-shadow:0 10px 26px rgba(37,99,235,.2), inset 0 1px 0 rgba(255,255,255,.9)}" +
+      "body:not([data-theme]),body[data-theme='light'] .ai-fab-btn:hover{border-color:rgba(37,99,235,.6)}" +
+      "body:not([data-theme]),body[data-theme='light'] .ai-fab-btn.aif-drag{box-shadow:0 18px 40px rgba(37,99,235,.3)}" +
+      "@keyframes aifPulse{0%,100%{}50%{box-shadow:0 12px 34px rgba(30,80,200,.55), inset 0 1px 0 rgba(160,200,255,.3)}}" +
+      "body:not([data-theme]),body[data-theme='light'] .ai-fab-btn{animation-name:aifPulseL}" +
+      "@keyframes aifPulseL{0%,100%{}50%{box-shadow:0 12px 32px rgba(37,99,235,.28), inset 0 1px 0 rgba(255,255,255,.95)}}" +
+      /* ---- 面板(glass-panel 提供底色,内部元素双主题) ---- */
       ".ai-fab-panel{position:fixed;right:18px;bottom:134px;z-index:200;width:min(380px,92vw);height:min(540px,72vh);" +
       "border-radius:var(--gr-lg);overflow:hidden;display:none;flex-direction:column;" +
       "box-shadow:0 30px 80px rgba(0,0,0,.55);backdrop-filter:blur(22px) saturate(150%);transform-origin:bottom right;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}" +
@@ -45,13 +60,35 @@
       ".aif-bar textarea:focus{border-color:#58a6ff}" +
       ".aif-bar button{border:none;border-radius:11px;padding:0 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff;background:linear-gradient(135deg,#2563eb,#3b82f6)}" +
       ".aif-bar button.stop{background:linear-gradient(135deg,#dc2626,#ef4444)}" +
-      "@media (max-width:640px){.ai-fab-panel{right:8px;left:8px;width:auto}}";
+      /* ---- 面板浅色主题 ---- */
+      "body:not([data-theme]) .ai-fab-panel,body[data-theme='light'] .ai-fab-panel{box-shadow:0 24px 70px rgba(40,70,130,.25)}" +
+      "body:not([data-theme]) .aif-head,body[data-theme='light'] .aif-head{color:#0f172a;border-bottom-color:rgba(60,80,120,.14);background:linear-gradient(rgba(37,99,235,.06),transparent)}" +
+      "body:not([data-theme]) .aif-head button,body[data-theme='light'] .aif-head button{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.22);color:#475569}" +
+      "body:not([data-theme]) .aif-head button:hover,body[data-theme='light'] .aif-head button:hover{border-color:#2563eb;color:#1e3a8a}" +
+      "body:not([data-theme]) .aif-msgs .m.u,body[data-theme='light'] .aif-msgs .m.u{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#1e3a8a}" +
+      "body:not([data-theme]) .aif-msgs .m.b,body[data-theme='light'] .aif-msgs .m.b{background:rgba(60,80,120,.05);border-color:rgba(60,80,120,.16);color:#334155}" +
+      "body:not([data-theme]) .aif-msgs .m.err,body[data-theme='light'] .aif-msgs .m.err{color:#b91c1c}" +
+      "body:not([data-theme]) .aif-empty,body[data-theme='light'] .aif-empty{color:#64748b}" +
+      "body:not([data-theme]) .aif-empty a,body[data-theme='light'] .aif-empty a{color:#2563eb}" +
+      "body:not([data-theme]) .aif-bar,body[data-theme='light'] .aif-bar{border-top-color:rgba(60,80,120,.12)}" +
+      "body:not([data-theme]) .aif-bar textarea,body[data-theme='light'] .aif-bar textarea{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.2);color:#0f172a}" +
+      "body:not([data-theme]) .aif-bar textarea:focus,body[data-theme='light'] .aif-bar textarea:focus{border-color:#2563eb}" +
+      "@media (max-width:640px){.ai-fab-panel{left:8px !important;right:8px !important;width:auto}}";
     document.head.appendChild(st);
 
     /* ---------- DOM ---------- */
+    var SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<rect x="4.5" y="8.2" width="15" height="10.3" rx="3.2"/>'
+      + '<circle cx="9.3" cy="13.2" r="1.15" fill="currentColor" stroke="none"/>'
+      + '<circle cx="14.7" cy="13.2" r="1.15" fill="currentColor" stroke="none"/>'
+      + '<path d="M12 8.2V5.4"/><circle cx="12" cy="4.2" r="1.2"/>'
+      + '<path d="M4.5 12.6H2.9M21.1 12.6h-1.6"/>'
+      + '</svg>';
+
     var btn = document.createElement("button");
-    btn.id = "aiFabBtn"; btn.className = "ai-fab-btn"; btn.innerHTML = "🤖";
-    btn.title = "AI 答疑(点开直接问)";
+    btn.id = "aiFabBtn"; btn.className = "ai-fab-btn";
+    btn.innerHTML = SVG;
+    btn.title = "AI 答疑(点击提问,可拖动)"; btn.setAttribute("aria-label", "AI 答疑");
     document.body.appendChild(btn);
 
     var panel = document.createElement("div");
@@ -69,6 +106,73 @@
     var history = [];   /* {role, content} 本面板会话(轻量,不与13页历史混存) */
     var ctxPage = (document.title || "").replace(/^人形机器人学习站\s*·\s*/, "");
 
+    /* ---------- 球体定位:拖拽 / 贴边吸附 / 位置记忆 ---------- */
+    var panelSide = "r";                                  /* 面板弹出侧跟随球 */
+    function clampY(y){
+      var h = btn.offsetHeight || 50;
+      return Math.max(60, Math.min(window.innerHeight - h - 12, y));
+    }
+    function place(x, y, anim){
+      if(anim) btn.classList.add("aif-snap"); else btn.classList.remove("aif-snap");
+      var w = btn.offsetWidth || 50;
+      x = Math.max(8, Math.min(window.innerWidth - w - 8, x));
+      btn.style.left = x + "px"; btn.style.top = clampY(y) + "px";
+      btn.style.right = "auto"; btn.style.bottom = "auto";
+    }
+    function savePos(side, y){
+      try{ localStorage.setItem(POS_KEY, JSON.stringify({ side:side, y:Math.round(y) })); }catch(e){}
+    }
+    function edgeSnap(anim){
+      var x = parseFloat(btn.style.left) || 0, y = parseFloat(btn.style.top) || 0;
+      var w = btn.offsetWidth || 50;
+      var side = (x + w / 2 < window.innerWidth / 2) ? "l" : "r";
+      var nx = side === "l" ? 12 : window.innerWidth - w - 12;
+      place(nx, y, anim);
+      savePos(side, parseFloat(btn.style.top));
+      panelSide = side;
+      return side;
+    }
+    (function restore(){
+      var p = null;
+      try{ p = JSON.parse(localStorage.getItem(POS_KEY) || "null"); }catch(e){}
+      if(p && (p.side === "l" || p.side === "r") && typeof p.y === "number"){
+        panelSide = p.side;
+        place(p.side === "l" ? 12 : window.innerWidth - (btn.offsetWidth || 50) - 12, clampY(p.y), false);
+      }                                        /* 无记忆:保持 CSS 默认 right/bottom */
+    })();
+    window.addEventListener("resize", function(){
+      if(btn.style.left) place(parseFloat(btn.style.left), parseFloat(btn.style.top), false);
+    });
+
+    var dragging = false, moved = false, sx = 0, sy = 0, bx = 0, by = 0;
+    btn.addEventListener("pointerdown", function(e){
+      if(e.button) return;
+      dragging = true; moved = false;
+      sx = e.clientX; sy = e.clientY;
+      var r = btn.getBoundingClientRect(); bx = r.left; by = r.top;
+      if(btn.setPointerCapture) try{ btn.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    btn.addEventListener("pointermove", function(e){
+      if(!dragging) return;
+      if(!moved && Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) < 6) return;
+      moved = true;
+      btn.classList.add("aif-drag");
+      place(bx + (e.clientX - sx), by + (e.clientY - sy), false);
+    });
+    btn.addEventListener("pointerup", function(){
+      if(!dragging) return;
+      dragging = false;
+      btn.classList.remove("aif-drag");
+      if(!moved){ toggle(); return; }         /* 位移阈值内=点击,不误触 */
+      edgeSnap(true);
+    });
+    btn.addEventListener("pointercancel", function(){
+      dragging = false;
+      btn.classList.remove("aif-drag");
+      if(moved) edgeSnap(true);
+    });
+
+    /* ---------- 聊天逻辑 ---------- */
     function scrollEnd(){ msgs.scrollTop = msgs.scrollHeight; }
     function addMsg(cls, text){
       var d = document.createElement("div");
@@ -83,7 +187,6 @@
       addMsg("err", "还没有配置 API Key:点击右上角 ⧉ 打开完整版,在配置面板选择 DeepSeek/豆包并填入 Key(仅保存在本机浏览器)。配置一次,全站可用。");
       return false;
     }
-
     function send(){
       var text = input.value.trim();
       if(!text || window.AIChat.busy()) return;
@@ -116,9 +219,16 @@
       this.style.height = "auto"; this.style.height = Math.min(this.scrollHeight, 110) + "px";
     });
 
-    /* ---------- 开合 ---------- */
+    /* ---------- 开合(面板弹出侧跟随球所在边) ---------- */
+    function layoutPanel(){
+      if(window.innerWidth <= 640) return;    /* 窄屏由 CSS 全宽接管 */
+      if(panelSide === "l"){ panel.style.left = "12px"; panel.style.right = "auto"; }
+      else{ panel.style.right = "18px"; panel.style.left = "auto"; }
+      panel.style.transformOrigin = panelSide === "l" ? "bottom left" : "bottom right";
+    }
     function toggle(){
       var opening = !panel.classList.contains("open");
+      if(opening) layoutPanel();
       panel.classList.toggle("open", opening);
       btn.style.display = opening ? "none" : "flex";
       if(opening){
@@ -126,25 +236,24 @@
         setTimeout(function(){ input.focus(); }, 60);
       }
     }
-    btn.onclick = toggle;
-    /* 头部拖动移动面板 */
-    var head = panel.querySelector(".aif-head"), dragging = false, dx0 = 0, dy0 = 0, pl = 0, pt = 0;
+    /* 头部拖动移动面板(保留) */
+    var head = panel.querySelector(".aif-head"), hdrag = false, dx0 = 0, dy0 = 0, pl = 0, pt = 0;
     head.addEventListener("pointerdown", function(e){
       if(e.target.tagName === "BUTTON") return;
-      dragging = true;
+      hdrag = true;
       var r = panel.getBoundingClientRect();
       pl = r.left; pt = r.top;
       dx0 = e.clientX - pl; dy0 = e.clientY - pt;
       panel.style.right = "auto"; panel.style.bottom = "auto";
       panel.style.left = pl + "px"; panel.style.top = pt + "px";
-      head.setPointerCapture && head.setPointerCapture(e.pointerId);
+      if(head.setPointerCapture) try{ head.setPointerCapture(e.pointerId); }catch(err){}
     });
     head.addEventListener("pointermove", function(e){
-      if(!dragging) return;
+      if(!hdrag) return;
       panel.style.left = Math.max(6, Math.min(innerWidth - 120, e.clientX - dx0)) + "px";
       panel.style.top = Math.max(6, Math.min(innerHeight - 80, e.clientY - dy0)) + "px";
     });
-    head.addEventListener("pointerup", function(){ dragging = false; });
+    head.addEventListener("pointerup", function(){ hdrag = false; });
     panel.querySelector('[data-a="min"]').onclick = function(){ panel.classList.remove("open"); btn.style.display = "flex"; };
     panel.querySelector('[data-a="full"]').onclick = function(){
       window.location.href = chatURL + "?q=" + encodeURIComponent(input.value || "");

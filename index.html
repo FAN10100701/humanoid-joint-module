@@ -156,6 +156,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
         </div>
       </div>
     </div>
+    <a class="nav-ver" id="navVerHome" href="#version" title="版本与更新历史">🏷 v—</a>
     <button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>
     <button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>
     <button class="nav-ham" onclick="toggleDrawer()" title="菜单">☰</button>
@@ -829,11 +830,13 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.7</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 全库隐患排查治理 + 自迭代 Loop 工程</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.8</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · UI/UX 专项:悬浮球可拖拽 + 顶栏工具统一 + 星尘自适应</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V2.1.7 · 2026-09-02 · 全库隐患排查治理 + 自迭代 Loop 工程</summary>
+        <summary>V2.1.8 · 2026-09-02 · UI/UX 专项:悬浮球可拖拽 + 顶栏工具统一 + 星尘自适应</summary>
+        <div class="faq-a">🤖 <b>AI 悬浮球重做</b>:SVG 机器人头+双主题玻璃拟态(浅色不再深色突兀),<b>可拖拽</b>(点击不误触、释放贴边吸附回弹、位置记忆刷新保持),面板弹出侧跟随球所在边、浅色配色补齐;🧪 <b>自检挂件迁入顶栏</b>(打印按钮旁,首页同样生效),<b>浅色偏淡根因修复</b>(面板配色 class 化深浅双主题),新增「隐藏挂件」按钮;🏷 <b>版本入口全局统一</b>:首页顶栏新增版本胶囊,全站右上角…主题/搜索/完成|版本|打印|自检 工具区一致;⭐ <b>星尘主题自适应</b>:修复浅色模式下星点隐形(改深蓝+琥珀调色板,切换即时生效);🃏 <b>板块卡片 3D 倾斜+随鼠标光泽</b>(仅精确指针设备,±4° 克制幅度,触屏零影响);🐛 <b>修复 SWR 缓存污染缺陷</b>:不在预缓存清单的共享 JS(site-selftest/ai-fab-chat/glass.css 等)部署后 1 小时内拿不到新版;📱 移动端顶栏减负防溢出(版本/打印/自检窄屏退出)。</div>
+      </details><details class="faq"><summary>V2.1.7 · 2026-09-02 · 全库隐患排查治理 + 自迭代 Loop 工程</summary>
         <div class="faq-a">🔍 <b>首次全库隐患排查,32 项入台账(AUDIT.md)</b>,「快检→选题→修复→验证→发版→复盘→提交」固化为七步迭代循环(docs/维护/迭代循环.md);🐛 <b>P0×4</b>:index 残留未闭合 script 修复、<b>KaTeX 加载器收敛单源 KatexLoader</b>(AI 面板/闯关页漂移成 npmmirror 单源,JS+CSS 补齐四级回退)、题库数据全失败时空态兜底+重试、<b>内容页移动端板块导航</b>(<900px 汉堡+全屏抽屉,桌面零变化);🧹 <b>P1×12</b>:og 页数 52→75、page-meta 117→150 题等口径漂移清理、「21 关/14-15」徽章改数据驱动、「17 学科 150 题」收敛 S.STATS 单源、触屏 sticky-hover、星尘动画离屏暂停、window.event、题库链接转义、logActivity 去重;🧪 <b>自检 16→21 项</b>:修复漏计 ib-data-c 的 117 vs 150 长期误报(发版.ps1 从未跑通的存量 bug 一并修复),新增 C1 标签配平/C2 KaTeX 单源/C3 统计一致/C4 存储键白名单/C5 og 同步。</div>
       </details><details class="faq"><summary>V2.1.6 · 2026-08-30 · 保研题库普适化 + 进阶选择题 + 闪黑根治</summary>
         <div class="faq-a">🎓 <b>保研题库普适化 13→17 学科、117→150 题</b>:新增 4 个「任何专业都必问」的通用学科——综合素质面试(自我介绍框架/选校动机/科研 STAR/压力面)、英语口语(英文模板+中文思路)、数学基础(三大变换/特征值/贝叶斯/最小二乘,全配公式)、科研素养(读论文/创新点/实验设计/调试排查),内容基于全网保研面经调研;🧠 <b>进阶选择题</b>:13 个专业学科各加 1~2 道陷阱题(积分饱和限幅误区/SVPWM 15.5%/const volatile/数组名与指针/优先级反转等),每科选择题 2→4 道;⚡ <b>刷新闪黑根治</b>:卡片动画元素加基础透明消除首帧闪现,新增深色主题首帧锁定——刷新不再闪一帧浅色再翻深色。</div>
@@ -1004,7 +1007,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.7(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.8(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1101,6 +1104,14 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   if(!c || !c.getContext) return;
   var ctx = c.getContext("2d");
   var W, H, S = [], mx = 0;
+  /* V2.1.8:星尘调色板按主题切换——此前淡蓝星点在浅色近白背景上完全不可见,
+     浅色改用深蓝+琥珀深色星点,深色保持原有的浅蓝/暖橙 */
+  function palette(){
+    var t = document.body.getAttribute("data-theme");
+    return (t === "light" || !t)
+      ? { a: "37,99,235", b: "202,138,4", base: .42, amp: .5 }
+      : { a: "180,210,255", b: "255,214,150", base: .35, amp: .45 };
+  }
   function size(){
     W = c.width = c.offsetWidth; H = c.height = c.offsetHeight;
     S = [];
@@ -1109,7 +1120,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       r: Math.random()*1.4 + 0.3,
       v: Math.random()*0.16 + 0.04,
       tw: Math.random()*Math.PI*2,
-      hue: Math.random() < 0.75 ? "180,210,255" : "255,214,150"
+      hue: Math.random() < 0.75 ? "a" : "b"
     });
   }
   size(); addEventListener("resize", size);
@@ -1122,13 +1133,14 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   var raf = 0, inView = true;
   function frame(){
     if(!W || document.hidden || !inView){ raf = 0; return; }
+    var pal = palette();
     ctx.clearRect(0, 0, W, H);
     for(var i = 0; i < S.length; i++){
       var p = S[i];
       p.x -= p.v; p.tw += 0.03;
       if(p.x < -4) p.x = W + 4;
-      var a = 0.35 + 0.45*Math.abs(Math.sin(p.tw));
-      ctx.fillStyle = "rgba(" + p.hue + "," + a.toFixed(2) + ")";
+      var a = pal.base + pal.amp * Math.abs(Math.sin(p.tw));
+      ctx.fillStyle = "rgba(" + (p.hue === "a" ? pal.a : pal.b) + "," + a.toFixed(2) + ")";
       ctx.beginPath();
       ctx.arc(p.x + mx*p.r*22, p.y, p.r, 0, 6.284);
       ctx.fill();
@@ -1147,6 +1159,47 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     else if(inView && !raf) raf = requestAnimationFrame(frame);
   });
   raf = requestAnimationFrame(frame);
+})();
+
+/* 板块卡片 3D tilt + 随鼠标光泽(V2.1.8):仅精确指针(hover:hover + pointer:fine)
+   设备启用;最大 4°、rAF 节流;触屏/打印不受影响 */
+(function(){
+  if(!window.matchMedia || !matchMedia("(hover:hover) and (pointer:fine)").matches) return;
+  var SEL = ".sec-grid .card, .board-grid .card, .grid .card";
+  var probe = document.querySelector(SEL);
+  if(!probe) return;
+  var st = document.createElement("style");
+  st.textContent =
+    SEL + "{position:relative}" +
+    '@media(hover:hover) and (pointer:fine){' +
+    SEL + "{will-change:transform}" +
+    SEL + "::after{content:\"\";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(120,180,255,.16),transparent 65%)}" +
+    SEL + ":hover::after{opacity:1}}";
+  document.head.appendChild(st);
+  var cur = null, raf = 0, tx = 0, ty = 0;
+  function apply(){
+    raf = 0;
+    if(!cur) return;
+    var r = cur.getBoundingClientRect();
+    if(!r.width || !r.height) return;
+    var px = (tx - r.left) / r.width, py = (ty - r.top) / r.height;
+    var rx = (0.5 - py) * 8, ry = (px - 0.5) * 8;      /* 峰值 ±4° */
+    cur.style.transform = "perspective(800px) rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg) translateY(-2px)";
+    cur.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
+    cur.style.setProperty("--my", (py * 100).toFixed(1) + "%");
+  }
+  document.addEventListener("pointermove", function(e){
+    tx = e.clientX; ty = e.clientY;
+    var t = (e.target && e.target.closest) ? e.target.closest(SEL) : null;
+    if(t !== cur){
+      if(cur) cur.style.transform = "";
+      cur = t;
+    }
+    if(cur && !raf) raf = requestAnimationFrame(apply);
+  }, { passive: true });
+  document.documentElement.addEventListener("pointerleave", function(){
+    if(cur){ cur.style.transform = ""; cur = null; }
+  });
 })();
 
 /* 顶栏「板块 ▾」下拉(V2.1.0) */
@@ -1169,11 +1222,13 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
 
 /* 版本角标:文本取自本页页脚(与 S.VERSION 同步更新的单源),点击直达 #version */
 (function(){
-  var b = document.getElementById("verBadge");
-  if(!b) return;
   /* V2.1.3:直接读 Site.VERSION 单源,不再从页面文本正则捞(避免文本顺序导致与页脚不一致) */
   var v = ((window.Site && Site.VERSION) || "").split("(")[0].replace(/^V/, "v");
-  if(v){ b.innerHTML = "<i></i>" + v; b.style.display = "inline-flex"; }
+  var b = document.getElementById("verBadge");
+  if(b && v){ b.innerHTML = "<i></i>" + v; b.style.display = "inline-flex"; }
+  /* V2.1.8:顶栏版本胶囊同源填充(右上角工具栏统一入口) */
+  var nv = document.getElementById("navVerHome");
+  if(nv && v) nv.textContent = "🏷 " + v;
 })();
 /* 学习路径横滑 carousel(V2.1.0 无限循环):克隆首尾,越过边界瞬移回真身,肉眼无缝 */
 (function(){

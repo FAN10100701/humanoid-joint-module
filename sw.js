@@ -7,7 +7,7 @@
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
    - 版本: V2.1.6 · 2026-08-30(升级站点时改 CACHE 名以强制更新)
    ============================================================ */
-var CACHE = "hrl-site-v2.1.7";
+var CACHE = "hrl-site-v2.1.8";
 var PRECACHE = [
   "./index.html",
   "./404.html",
@@ -61,10 +61,13 @@ self.addEventListener("fetch", function(e){
   if(url.pathname.indexOf("/_assets/") >= 0){
     /* 静态资源: stale-while-revalidate(V2.1.4)——
        先回缓存(秒开,离线可用),同时后台拉最新更新缓存;
-       在线时最多晚一次访问看到新资源,改代码无需再 bump CACHE */
+       在线时最多晚一次访问看到新资源,改代码无需再 bump CACHE
+       V2.1.8: 后台更新加 cache:"reload" 绕过 HTTP 缓存——此前不在 PRECACHE
+       清单的文件(如 site-selftest.js/ai-fab-chat.js/glass.css)的后台 revalidate
+       会被 HTTP 缓存(max-age 3600)污染,部署后 1 小时内拿不到新版 */
     e.respondWith(
       caches.match(e.request).then(function(hit){
-        var fetchP = fetch(e.request).then(function(res){
+        var fetchP = fetch(e.request, { cache:"reload" }).then(function(res){
           if(res && res.ok){
             var cp = res.clone();
             caches.open(CACHE).then(function(c){ c.put(e.request, cp); });
@@ -76,10 +79,10 @@ self.addEventListener("fetch", function(e){
     );
     return;
   }
-  /* 页面: stale-while-revalidate */
+  /* 页面: stale-while-revalidate(V2.1.8: 后台更新同样 cache:"reload" 防HTTP缓存污染) */
   e.respondWith(
     caches.match(e.request).then(function(hit){
-      var fetchP = fetch(e.request).then(function(res){
+      var fetchP = fetch(e.request, { cache:"reload" }).then(function(res){
         if(res && res.ok){
           var cp = res.clone();
           caches.open(CACHE).then(function(c){ c.put(e.request, cp); });

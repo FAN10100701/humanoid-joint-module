@@ -37,6 +37,7 @@
 | A-15 | 已修(V2.1.7) | 健壮性 | `site.js` 不蒜子注入 | 第三方统计脚本加载失败后节点残留 | 已加 `onerror` 移除,页脚保持 `--` |
 | A-16 | 已修(V2.1.7) | 规范 | `12_闯关学习.html:220-229` | `logActivity()` 整函数复制,`humanoid-site-activity-v1` 字面量两处 | 已收敛:`site.js` 暴露 `S.logActivity`,闯关页删副本 |
 | A-33 | 已修(V2.1.7) | 工具脚本 | `_本地工具/发版.ps1` | `$enc.ReadFile/WriteFile` 不是 UTF8Encoding 的方法,**发版脚本从未跑通过**(版本一直手工同步) | 已改 `[IO.File]::ReadAllText/WriteAllText`,V2.1.7 发版实测走通;教训:新脚本必须实跑一次再入库 |
+| A-34 | 已修(V2.1.8) | 缓存 | `sw.js` SWR 后台更新 | SWR 的后台 revalidate `fetch(e.request)` 走 HTTP 缓存(max-age 3600),**不在 PRECACHE 清单的 `_assets` 文件(site-selftest.js / ai-fab-chat.js / glass.css 等)部署后 1 小时内访客拿不到新版**,且自检/C2 类检查无法发现 | 后台更新改 `fetch(req, { cache:"reload" })` 强制回源(资源与页面两分支);教训:SW 策略改动必须用双次刷新实测缓存链路 |
 
 ## P2(有价值,排队消化)
 
