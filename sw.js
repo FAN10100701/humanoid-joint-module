@@ -23,6 +23,7 @@ var PRECACHE = [
   "./_assets/quiz-bank.js",
   "./_assets/en-interview-data.js",
   "./_assets/en-dict.js",
+  "./_assets/en-notes.js",
   "./08_学习工具/11_保研复试面试题库.html",
   "./08_学习工具/16_保研英语面试.html",
   "./08_学习工具/12_闯关学习.html",

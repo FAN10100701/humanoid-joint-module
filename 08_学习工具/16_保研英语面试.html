@@ -127,6 +127,12 @@ body.en-hidezh .en-zh.en-reveal{opacity:1}
 .en-pop-close{position:absolute;top:10px;right:12px;background:transparent;border:none;color:#6b7280;font-size:15px;cursor:pointer;padding:4px 8px;border-radius:6px}
 .en-pop-close:hover{color:#fff;background:rgba(255,255,255,.08)}
 .en-pop-word{font-family:"Segoe UI",-apple-system,sans-serif;font-size:26px;font-weight:800;color:#fff}
+.en-pop-badge{display:none;font-family:inherit;font-size:10.5px;font-weight:700;color:#fbbf24;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.45);padding:1px 9px;border-radius:999px;margin-left:9px;vertical-align:4px;letter-spacing:1px}
+.en-w.en-ph{border-bottom:1px solid rgba(245,158,11,.65)}
+.en-pop-sec{display:none;margin-top:11px;padding:9px 12px;border-left:3px solid #f59e0b;background:rgba(245,158,11,.07);border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.85;color:#d9c58a;text-align:left}
+.en-pop-sec b{display:block;font-size:11px;letter-spacing:1px;color:#fbbf24;margin-bottom:2px}
+.en-pop-sec.en-sec-root{border-left-color:#22c55e;background:rgba(34,197,94,.07);color:#a7e3bf}
+.en-pop-sec.en-sec-root b{color:#86efac}
 .en-pop-ipa{font-family:"Segoe UI",-apple-system,sans-serif;font-size:14px;color:#58a6ff;margin:3px 0 8px}
 .en-pop-def{font-size:14px;color:#c9d1d9;line-height:1.9;margin-bottom:16px}
 .en-pop-btns{display:flex;gap:8px;flex-wrap:wrap}
@@ -215,6 +221,12 @@ body:not([data-theme]),body[data-theme="light"] .en-tip-body{color:#4b5c74}
 body:not([data-theme]),body[data-theme="light"] .en-pop-mask{background:rgba(30,41,59,.35)}
 body:not([data-theme]),body[data-theme="light"] .en-pop{background:rgba(255,255,255,.98);border-color:rgba(37,99,235,.35);box-shadow:0 18px 50px rgba(30,50,90,.25)}
 body:not([data-theme]),body[data-theme="light"] .en-pop-word{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .en-pop-badge{color:#92400e;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.45)}
+body:not([data-theme]),body[data-theme="light"] .en-w.en-ph{border-bottom-color:rgba(217,119,6,.7)}
+body:not([data-theme]),body[data-theme="light"] .en-pop-sec{background:rgba(245,158,11,.09);color:#7c5a12;border-left-color:#d97706}
+body:not([data-theme]),body[data-theme="light"] .en-pop-sec b{color:#92400e}
+body:not([data-theme]),body[data-theme="light"] .en-pop-sec.en-sec-root{background:rgba(34,197,94,.09);color:#14603a;border-left-color:#16a34a}
+body:not([data-theme]),body[data-theme="light"] .en-pop-sec.en-sec-root b{color:#15803d}
 body:not([data-theme]),body[data-theme="light"] .en-pop-ipa{color:#1d4ed8}
 body:not([data-theme]),body[data-theme="light"] .en-pop-def{color:#334155}
 body:not([data-theme]),body[data-theme="light"] .en-p-speak{background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.35);color:#1d4ed8}
@@ -331,9 +343,11 @@ body:not([data-theme]),body[data-theme="light"] .en-lock-hint{color:#64748b}
 <div class="en-pop-mask" id="enPopMask">
   <div class="en-pop" id="enPop">
     <button class="en-pop-close" id="enPopClose" title="关闭">✕</button>
-    <div class="en-pop-word" id="enPopWord">word</div>
+    <div class="en-pop-word"><span id="enPopWord">word</span><span class="en-pop-badge" id="enPopBadge">词组短语</span></div>
     <div class="en-pop-ipa" id="enPopIpa">/ipa/</div>
     <div class="en-pop-def" id="enPopDef">释义</div>
+    <div class="en-pop-sec" id="enPopGram"><b>📐 语法用法</b><span id="enPopGramT"></span></div>
+    <div class="en-pop-sec en-sec-root" id="enPopRoot"><b>🌱 词根词缀</b><span id="enPopRootT"></span></div>
     <div class="en-pop-btns">
       <button class="en-p-speak" id="enPopSpeak">🔊 读这个词</button>
       <button class="en-p-star" id="enPopStar">⭐ 加入生词本</button>
@@ -392,12 +406,13 @@ function loadScript(src, cb){
   s.src = src; s.onload = cb; s.onerror = cb;
   document.head.appendChild(s);
 }
-var pending = 2;
+var pending = 3;
 function onReady(){ if(--pending) return; init(); }
 /* 密码锁纪律:解锁前不注入任何内容数据文件 */
 function loadData(){
   loadScript("../_assets/en-interview-data.js", onReady);
   loadScript("../_assets/en-dict.js", onReady);
+  loadScript("../_assets/en-notes.js", onReady);   /* 词组/语法/词根三层讲解 */
 }
 
 /* ---------- 离线词典查询(词形还原回退) ---------- */
@@ -412,15 +427,44 @@ function lookup(word){
   }
   return null;
 }
-/* 把英文句子的单词包成可点 span,命中词典附悬停释义 */
+/* 把英文句子包成可点 span:词组(EN_NOTES.phrases)整块优先,单词其次 */
 function wrapWords(en){
-  var e = esc(en);
-  return e.replace(/[A-Za-z][A-Za-z'\u2019]*/g, function(m){
-    var hit = lookup(m), def = "";
-    if(hit) def = esc(hit.entry.split("|")[0] + "  " + (hit.entry.split("|")[1] || ""));
-    return '<span class="en-w" data-w="' + m + '"' +
-      (def ? ' data-def="' + def.replace(/"/g,"&quot;") + '"' : "") + ">" + m + "</span>";
-  });
+  var e = esc(en), toks = [], m, re = /[A-Za-z][A-Za-z'\u2019]*/g;
+  while((m = re.exec(e))) toks.push({ w: m[0], s: m.index, e: m.index + m[0].length });
+  if(!toks.length) return e;
+  var out = "", pos = 0, i = 0;
+  while(i < toks.length){
+    out += e.slice(pos, toks[i].s);
+    var ph = phraseFor(e, toks, i);
+    if(ph){
+      var raw = e.slice(toks[i].s, toks[ph.end].e);
+      out += '<span class="en-w en-ph" data-w="' + raw + '" data-ph="' + ph.key + '">' + raw + "</span>";
+      pos = toks[ph.end].e; i = ph.end + 1;
+    }else{
+      var w0 = toks[i].w, hit = lookup(w0), def = "";
+      if(hit) def = esc(hit.entry.split("|")[0] + "  " + (hit.entry.split("|")[1] || ""));
+      out += '<span class="en-w" data-w="' + w0 + '"' +
+        (def ? ' data-def="' + def.replace(/"/g, "&quot;") + '"' : "") + ">" + w0 + "</span>";
+      pos = toks[i].e; i++;
+    }
+  }
+  out += e.slice(pos);
+  return out;
+}
+/* 从第 i 个词起尝试最长词组匹配(间隔须为纯空格或单个连字符) */
+function phraseFor(e, toks, i){
+  var PH = (window.EN_NOTES || {}).phrases || {};
+  var parts = [toks[i].w.toLowerCase()], best = null, j = i;
+  for(var n = 0; n < 3; n++){
+    if(j + 1 >= toks.length) break;
+    var gap = e.slice(toks[j].e, toks[j + 1].s);
+    if(!/^\s+$/.test(gap) && !/^[-]$/.test(gap)) break;
+    j++;
+    parts.push(toks[j].w.toLowerCase());
+    var key = parts.join(" ");
+    if(PH[key]) best = { key: key, end: j };
+  }
+  return best;
 }
 
 /* ---------- 生词本( localStorage 持久化) ---------- */
@@ -789,24 +833,77 @@ function resetReadBtns(){
   }
 }
 
-/* ---------- 单词弹窗 ---------- */
-function openPop(word, vocabEntry){
-  var info;
-  if(vocabEntry){
+/* ---------- 单词/词组弹窗(释义 + 语法用法 + 词根词缀) ---------- */
+function openPop(word, vocabEntry, phrKey){
+  var NOTES = window.EN_NOTES || {}, info, gram = "", root = "", isPh = false;
+  if(phrKey && NOTES.phrases && NOTES.phrases[phrKey]){
+    var ph = NOTES.phrases[phrKey];
+    isPh = true;
+    info = { w: word, ipa: "", def: ph.d };
+    gram = ph.g || "";
+  }else if(vocabEntry){
     info = { w: vocabEntry.w, ipa: vocabEntry.ipa, def: vocabEntry.zh + (vocabEntry.ex ? "　📝 " + vocabEntry.ex : "") };
   }else{
-    var hit = lookup(word);
+    var wl = String(word).toLowerCase();
+    var hit = lookup(wl);
     info = hit
       ? { w: word, ipa: hit.entry.split("|")[0], def: hit.entry.split("|")[1] }
       : { w: word, ipa: "", def: "词典暂未收录(可能是专有名词),点下面按钮仍可听发音" };
+    gram = (NOTES.grammar || {})[wl] || "";
+    if(!gram) gram = suffixNote(wl);
+    root = (NOTES.roots || {})[wl] || "";
+    if(!root){
+      var b = baseForm(wl);
+      if(b) root = "原形「" + b + "」：" + NOTES.roots[b];
+    }
   }
   popCtx = info;
   $("enPopWord").textContent = info.w;
+  $("enPopBadge").style.display = isPh ? "inline-block" : "none";
   $("enPopIpa").textContent = info.ipa || "";
   $("enPopIpa").style.display = info.ipa ? "" : "none";
   $("enPopDef").textContent = info.def;
+  setPopSec("enPopGram", "enPopGramT", gram);
+  setPopSec("enPopRoot", "enPopRootT", root);
   refreshPopStar();
   $("enPopMask").classList.add("show");
+}
+function setPopSec(boxId, txtId, txt){
+  var box = $(boxId);
+  if(txt){ $(txtId).textContent = txt; box.style.display = "block"; }
+  else box.style.display = "none";
+}
+function baseForm(w){
+  var R = (window.EN_NOTES || {}).roots || {}, cands = [];
+  if(/ies$/.test(w)) cands.push(w.replace(/ies$/, "y"));
+  if(/es$/.test(w)) cands.push(w.slice(0, -2));
+  if(/s$/.test(w)) cands.push(w.slice(0, -1));
+  if(/ied$/.test(w)) cands.push(w.replace(/ied$/, "y"));
+  if(/ed$/.test(w)){ cands.push(w.slice(0, -1)); cands.push(w.slice(0, -2)); }
+  if(/ing$/.test(w)){ cands.push(w.slice(0, -3) + "e"); cands.push(w.slice(0, -3)); }
+  for(var i = 0; i < cands.length; i++) if(R[cands[i]]) return cands[i];
+  return null;
+}
+function suffixNote(w){
+  var SUF = (window.EN_NOTES || {}).suffix || {};
+  var order = ["tion", "ies", "ing", "est", "ed", "es", "ly", "er", "s", "d"];
+  for(var i = 0; i < order.length; i++){
+    var sx = order[i];
+    if(w.length <= sx.length + 2 || w.slice(-sx.length) !== sx || !SUF[sx]) continue;
+    var cands = [];
+    if(sx === "ing"){ cands.push(w.slice(0, -3), w.slice(0, -3) + "e"); }
+    else if(sx === "ed" || sx === "d"){ cands.push(w.slice(0, -sx.length)); }
+    else if(sx === "ies"){ cands.push(w.slice(0, -3) + "y"); }
+    else if(sx === "es"){ cands.push(w.slice(0, -2)); }
+    else if(sx === "s"){ cands.push(w.slice(0, -1)); }
+    for(var j = 0; j < cands.length; j++){
+      if(lookup(cands[j])){
+        var dd = lookup(cands[j]).entry.split("|")[1] || "";
+        return SUF[sx] + " 这里是「" + cands[j] + "」（" + dd + "）的变化形式。";
+      }
+    }
+  }
+  return "";
 }
 function refreshPopStar(){
   var inWb = popCtx && wbHas(popCtx.w), b = $("enPopStar");
@@ -885,7 +982,7 @@ function bindEvents(){
       return;
     }
     var w = t.closest ? t.closest(".en-w") : null;
-    if(w){ openPop(w.getAttribute("data-w")); return; }
+    if(w){ openPop(w.getAttribute("data-w"), null, w.getAttribute("data-ph")); return; }
 
     var vs = t.closest ? t.closest(".en-vspeak") : null;
     if(vs){ TTS.speakWord(vs.getAttribute("data-w")); return; }
