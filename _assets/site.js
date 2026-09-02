@@ -67,32 +67,19 @@
      替代此前的 View Transitions 实现:VT 每次切换做两次全屏截图(低配机卡顿),
      且扩散边缘与旧画面有割裂感;自绘方案全浏览器一致、零截图开销。
      降级:prefers-reduced-motion / 无坐标时瞬时切换 */
-  S.setTheme = function(name, e){
+  /* V2.1.12c:主题切换回归瞬时——涟漪扩散(自绘全屏圆层)在低端机/集成显卡上
+     触发整页重绘+大层合成,切换明显卡顿,按用户反馈整个移除。
+     保留 e 参数兼容既有 onclick="Site.setTheme('dark', event)" 接线 */
+  S.setTheme = function(name){
     var next = (name === "light") ? "light" : "dark";
-    var apply = function(){
-      document.body.setAttribute("data-theme", next);
-      try{ document.documentElement.setAttribute("data-theme-early", next); }catch(e2){}
-      try{ localStorage.setItem(THEME_KEY, next); }catch(e2){}
-      applyTheme();
-    };
-    var reduce = false;
-    try{ reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e2){}
-    if(!e || typeof e.clientX !== "number" || reduce){ apply(); return; }
-    var ov = document.createElement("div");
-    ov.className = "theme-ripple";
-    ov.setAttribute("data-next", next);
-    var maxR = Math.hypot(Math.max(e.clientX, window.innerWidth - e.clientX), Math.max(e.clientY, window.innerHeight - e.clientY));
-    ov.style.left = e.clientX + "px";
-    ov.style.top = e.clientY + "px";
-    ov.style.width = ov.style.height = (maxR * 2 + 4) + "px";
-    document.body.appendChild(ov);
-    setTimeout(apply, 430);                                   /* 圆盖满后再切,过程被纯色圆遮住 */
-    setTimeout(function(){ ov.classList.add("fade"); }, 520);
-    setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }, 1250);
+    document.body.setAttribute("data-theme", next);
+    try{ document.documentElement.setAttribute("data-theme-early", next); }catch(e){}
+    try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+    applyTheme();
   };
-  S.toggleTheme = function(e){
+  S.toggleTheme = function(){
     var cur = document.body.getAttribute("data-theme") === "light";
-    S.setTheme(cur ? "dark" : "light", e);
+    S.setTheme(cur ? "dark" : "light");
   };
   window.toggleTheme = function(){ if(window.Site) Site.toggleTheme(); };
 
@@ -442,7 +429,7 @@
       + '<circle class="np-t" cx="18" cy="18" r="15.5"/>'
       + '<circle class="np-p" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" transform="rotate(-90 18 18)"/>'
       + '</svg><i id="navProgTxt">0%</i></span>'
-      + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史">🏷 v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
+      + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史"><i class="ver-dot"></i>v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
       + '<button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>'
       + '<button class="nav-search" onclick="Site.openSearch()" title="搜索 (Ctrl+K)" aria-label="搜索">' + ICONS.search + '</button>'
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'

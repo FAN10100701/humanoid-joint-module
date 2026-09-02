@@ -108,18 +108,18 @@
   function injectStyle(){
     var st = document.createElement("style");
     st.textContent =
-      /* 顶栏按钮(V2.1.11:深色中性玻璃,与搜索/主题按钮统一) */
-      '.nav-sst{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:12px;padding:6px 11px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}' +
-      '.nav-sst:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}' +
-      '.nav-sst.pass{color:#86efac;border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.1)}' +
-      '.nav-sst.fail{color:#fca5a5;border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.1)}' +
-      'body:not([data-theme]),body[data-theme="light"] .nav-sst{color:#2563eb;background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25)}' +
-      'body:not([data-theme]),body[data-theme="light"] .nav-sst:hover{background:rgba(37,99,235,.15)}' +
-      'body:not([data-theme]),body[data-theme="light"] .nav-sst.pass{color:#15803d;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4)}' +
-      'body:not([data-theme]),body[data-theme="light"] .nav-sst.fail{color:#dc2626;background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.4)}' +
-      /* 窄屏:按钮整体隐藏(防顶栏拥挤;?selftest=1 时 sst-force 强制显示) */
-      '@media (max-width:640px){.nav-sst .sst-txt{display:none}.topnav .nav-sst{display:none}.topnav .nav-print{display:none}}' +
-      'body.sst-force .topnav .nav-sst{display:inline-flex !important}' +
+      /* 顶栏按钮(V2.1.12c):与 site.css 工具区统一令牌一致(30px 高、中性玻璃、只 hover 提亮);
+         状态色只染文字与图标(✓绿/✗红),不再整块变色,保持框体一致 */
+      '.nav-sst{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#c9d1d9;font-size:12px;height:30px;padding:0 10px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background-color .15s,border-color .15s,color .15s}' +
+      '.nav-sst:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.24);color:#fff}' +
+      '.nav-sst.pass{color:#4ade80}' +
+      '.nav-sst.fail{color:#f87171}' +
+      'body[data-theme="light"] .nav-sst{background:rgba(255,255,255,.65);border-color:rgba(100,116,139,.28);color:#475569}' +
+      'body[data-theme="light"] .nav-sst:hover{background:#fff;border-color:rgba(100,116,139,.45);color:#0f172a}' +
+      'body[data-theme="light"] .nav-sst.pass{color:#16a34a}' +
+      'body[data-theme="light"] .nav-sst.fail{color:#dc2626}' +
+      /* 窄屏:按钮整体隐藏防顶栏拥挤(?selftest=1 唤回时同时清除隐藏记忆,见下) */
+      '@media (max-width:640px){.topnav .nav-sst{display:none}.topnav .nav-print{display:none}}' +
       /* 明细面板:深色默认 */
       '.sst-panel{display:none;position:fixed;top:64px;right:12px;z-index:221;width:min(360px,92vw);max-height:70vh;overflow:auto;padding:14px 16px;font-size:12.5px;line-height:1.8;color:#c9d5e3}' +
       '.sst-panel .sst-t{color:#8ec5ff;font-weight:800;font-size:13.5px}' +
@@ -185,10 +185,14 @@
     var hidden = false;
     try{ hidden = localStorage.getItem(hideKey) === "1"; }catch(e){}
     var qs = location.search.indexOf("selftest=1") >= 0;
-    if(hidden && !qs){
+    /* V2.1.12c:?selftest=1 现在同时清除隐藏记忆——用户用唤回参数即视为要重新启用,
+       否则记忆会让"按钮不见了"且常规手段找不回 */
+    if(hidden && qs){
+      hidden = false;
+      try{ localStorage.removeItem(hideKey); }catch(e){}
+    }
+    if(hidden){
       pill.style.display = "none";
-    }else if(hidden && qs){
-      document.body.classList.add("sst-force");   /* 唤回时窄屏也强制可见 */
     }
     var dbl = 0;
     pill.addEventListener("dblclick", function(){

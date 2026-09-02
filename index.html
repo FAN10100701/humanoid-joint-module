@@ -176,7 +176,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
         </div>
       </div>
     </div>
-    <a class="nav-ver" id="navVerHome" href="#version" title="版本与更新历史">🏷 v—</a>
+    <a class="nav-ver" id="navVerHome" href="#version" title="版本与更新历史"><i class="ver-dot"></i>v—</a>
     <button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>
     <button class="nav-search" onclick="Site.openSearch()" title="搜索 (Ctrl+K)" aria-label="搜索"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.3 20.3-4.2-4.2"/></svg></button>
     <button class="nav-ham" onclick="toggleDrawer()" title="菜单">☰</button>
@@ -863,7 +863,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
 
       <details class="faq" open>
         <summary>V2.1.13 · 2026-09-02 · 「万物归墟 · SINGULARITY」黑洞·白洞实验品上线</summary>
-        <div class="faq-a">🌌 <b>个人作品台新作品「万物归墟」</b>(全屏沉浸):光线步进实时渲染黑洞——真<b>引力透镜</b>(星场弯成环/光子球亮环/吸积盘上下沿同现)、程序化吸积盘(湍流+较差自转+多普勒增亮)、辉光烘焙零后处理、零新依赖;🕳 <b>深色自动变白洞</b>高对比喷发、浅色为经典黑洞,页内可强制;📜 <b>滚动叙事逆转时间</b>(浅色:深空→吞噬→视界→太初大爆炸;深色倒流:太初→归墟),视界邻域时间膨胀;🖱 拖拽环视 / 点击引力波涟漪+抛投物质看潮汐撕扯 / 指针引力手势 / 指针视差;🎛 <b>左下玻璃控制台</b>:光谱四预设、泛光/透镜/密度/时间流速(可倒流)/引力滑条、画质自动探测三档、低频嗡鸣与纯净模式,设置本地记忆。渲染核心已封装 <b>window.ABYSS</b> API,为接入首页背景预留。</div>
+        <div class="faq-a">🌌 <b>个人作品台新作品「万物归墟」</b>(全屏单屏沉浸):光线步进实时渲染黑洞——真<b>引力透镜</b>、体积化吸积盘(内白热外深红+多普勒色移)、软边视界+外侧光子环、浅色星场银河带、白洞湍流喷流+外扩冲击环,零新依赖;✏️ <b>引力场模式</b>:爱因斯坦纯黑白线稿——弯曲网格+向奇点漂移的引力线+光子环双线,白洞网格外凸,控制台一键切换;🪨 <b>天外来客</b>:点击随机投放 陨石/火箭/宇航员/鲸/恐龙/大厦 等,螺旋坠入被潮汐撕长、闪爆吞噬,环境自动投放;🕳 深色自动变白洞、浅色为黑洞;🎛 <b>控制台</b>:光谱四预设、泛光/时空弯曲/时间流速(可倒流)三滑条、画质自动探测、✕ 收回左侧、闲置 5 秒 HUD 自动淡出。渲染核心已封装 <b>window.ABYSS</b> API,为接入首页背景预留。</div>
       </details><details class="faq"><summary>V2.1.12 · 2026-09-02 · 第二梯队特效 + 性能与手感修版</summary>
         <div class="faq-a">⚡ <b>滚动性能修版</b>:卡片倾斜移除常驻 will-change(77 个合成层是"变卡"根因),AI 球光晕改合成器透明度动画;🌗 <b>主题涟漪重构</b>:自绘纯色圆层扩散盖满后切主题再淡出,替换 View Transitions(消除边缘割裂与全屏截图开销);🃏 <b>卡片错峰修正</b>:同批卡片按屏幕位置自上而下依次浮现,不再随机跳序;🧲 <b>顶栏按钮磁吸</b>:hover 微移 ≤3px 弹性回弹;🌌 <b>Hero 极光流场</b>:三层渐变光晕呼吸(深色蓝青紫/浅色极淡),滚出视口自动暂停;🎯 <b>学习路径横滑惯性</b>:拖拽释放后按速度衰减滑行(修复与 scroll-snap 的吸附冲突);📝 引导页页数改由 SITE_SECTIONS 单源计算(修"35 个页面"过时文案)。</div>
       </details><details class="faq"><summary>V2.1.11 · 2026-09-02 · 微交互五件套:数字滚动 / 卡片错峰 / 主题涟漪 / 阅读进度环 / 通关彩带 + 深色顶栏去蓝</summary>
@@ -1285,7 +1285,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   if(b && v){ b.innerHTML = "<i></i>" + v; b.style.display = "inline-flex"; }
   /* V2.1.8:顶栏版本胶囊同源填充(右上角工具栏统一入口) */
   var nv = document.getElementById("navVerHome");
-  if(nv && v) nv.textContent = "🏷 " + v;
+  if(nv && v) nv.querySelector(".ver-dot") ? (nv.innerHTML = '<i class="ver-dot"></i>' + v) : (nv.textContent = v);
 })();
 
 /* Hero 统计数字滚动(V2.1.11):进入视口从 0 计数到目标值(目标取 DOM 现值,
