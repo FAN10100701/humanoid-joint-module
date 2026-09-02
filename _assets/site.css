@@ -48,7 +48,7 @@ html{scroll-behavior:smooth}
 body{
   background:radial-gradient(ellipse at 50% 0%,#16233c 0%,#0d1117 55%,#080b10 100%);
   color:#e6edf3;
-  font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif;
+  font-family:"Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
   line-height:1.7;
   -webkit-font-smoothing:antialiased;
   min-height:100vh;

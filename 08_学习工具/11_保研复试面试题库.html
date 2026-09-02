@@ -140,6 +140,28 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s2{color:#15803d;backg
 body:not([data-theme]),body[data-theme="light"] .ib-state.s1{color:#92400e;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4)}
 body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35)}
 @media print{.ib-toolbar,.ib-chips,.ib-grade,.ib-reveal{display:none!important}.ib-hidden-ans{display:block!important}.ib-item{break-inside:avoid}}
+/* 英语面试密码入口(V2.1.10,与 16 页共用口令哈希与解锁标记) */
+.ib-enlock{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:rgba(22,27,34,.75);border:1px solid rgba(59,130,246,.35);border-radius:14px;padding:14px 18px;margin:16px 0 4px}
+.ib-enlock-l{flex:1;min-width:260px}
+.ib-enlock-t{font-size:15px;font-weight:800;color:#e6edf3;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ib-enlock-badge{font-size:11px;color:#fbbf24;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);padding:1px 10px;border-radius:999px;font-weight:700}
+.ib-enlock-d{font-size:12.5px;color:#9aa4b2;line-height:1.8;margin-top:4px}
+.ib-enlock-r{display:flex;gap:8px;align-items:center}
+.ib-enlock-pw{width:150px;background:rgba(13,17,23,.85);border:1px solid rgba(59,130,246,.4);color:#e6edf3;font-size:14px;letter-spacing:3px;padding:9px 12px;border-radius:9px;outline:none;text-align:center;font-family:inherit}
+.ib-enlock-pw:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+.ib-enlock-go{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ib-enlock-go:hover{filter:brightness(1.15)}
+.ib-enlock-err{flex-basis:100%;font-size:12.5px;color:#fca5a5;min-height:0}
+.ib-enlock-err:empty{display:none}
+@keyframes ibEnShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+.ib-enlock-shake{animation:ibEnShake .4s}
+body:not([data-theme]),body[data-theme="light"] .ib-enlock{background:rgba(255,255,255,.66);border-color:rgba(37,99,235,.25);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+body:not([data-theme]),body[data-theme="light"] .ib-enlock-t{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .ib-enlock-d{color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .ib-enlock-pw{background:rgba(255,255,255,.85);border-color:rgba(37,99,235,.3);color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .ib-enlock-err{color:#b91c1c}
+@media print{.ib-enlock{display:none!important}}
+@media (prefers-reduced-motion:reduce){.ib-enlock-shake{animation:none}}
 </style>
 <script>
   window.PAGE = {
@@ -147,7 +169,7 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;backg
     root: "..",
     breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "保研复试面试题库" } ],
     prev: { t: "学习数据分析", u: "10_学习数据分析.html" },
-    next: { t: "闯关学习", u: "12_闯关学习.html" }
+    next: { t: "保研英语面试", u: "16_保研英语面试.html" }
   };
 </script>
 </head>
@@ -210,6 +232,18 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;backg
     <a class="card" href="12_闯关学习.html"><span class="go">进入 →</span><div class="ic">🎯</div><div class="t">闯关学习</div><div class="d">用闯关方式检验刷题成果:5 大陆 21 关,复试冲刺大陆直接使用本题库。</div></a>
     <a class="card" href="13_AI答疑助手.html"><span class="go">进入 →</span><div class="ic">🤖</div><div class="t">AI 答疑助手</div><div class="d">选"复试考官"人设,让 AI 对任意学科模拟追问,针对你的回答给改进建议。</div></a>
     <a class="card" href="07_大厂面试专题.html"><span class="go">进入 →</span><div class="ic">🏢</div><div class="t">大厂面试专题</div><div class="d">就业向面试:流程、场景题、HR 面、英文面与手撕题,与本页(升学向)互补。</div></a>
+  </div>
+
+  <div class="ib-enlock" id="ibEnLock">
+    <div class="ib-enlock-l">
+      <div class="ib-enlock-t">🗣️ 保研英语面试 · 口语训练台<span class="ib-enlock-badge">🔒 个人定制 · 密码访问</span></div>
+      <div class="ib-enlock-d">2 版自我介绍 / 20 题高频问答 / 8 条救场金句 / 91 个专业词汇:点词查词、TTS 逐句跟读、背诵模式、生词本与卡片速记——内容基于个人简历定制,输入访问密码进入。</div>
+    </div>
+    <div class="ib-enlock-r">
+      <input type="password" id="ibEnPw" class="ib-enlock-pw" placeholder="访问密码" inputmode="numeric" autocomplete="off">
+      <button id="ibEnGo" class="ib-enlock-go">进入 →</button>
+    </div>
+    <div class="ib-enlock-err" id="ibEnErr"></div>
   </div>
   <div class="box box-tip">
     <b>📌 使用建议:</b>第一遍用浏览模式通读,重点看"结论先行"的答题框架;第二遍切自测模式,先自己口述再看答案自评;考前把"模糊"状态的题再过一遍——面试考的不是背答案,而是"结论 + 原理 + 工程感"三层结构。
@@ -624,6 +658,37 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;backg
     saveProg({});
     renderItems(); renderStats(); refreshChips();
   };
+})();
+</script>
+<script>
+/* 英语面试训练台密码入口(与 16 页共用 FNV-1a 口令哈希与解锁标记 humanoid-en-unlock-v1) */
+(function(){
+"use strict";
+var UNLOCK_KEY = "humanoid-en-unlock-v1";
+var PW_HASH = "19517f64";
+function fnv(s){
+  var h = 0x811c9dc5, i;
+  for(i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return ("0000000" + h.toString(16)).slice(-8);
+}
+function $(id){ return document.getElementById(id); }
+function go(){
+  var v = $("ibEnPw").value || "";
+  if(fnv(v) === PW_HASH){
+    try{ localStorage.setItem(UNLOCK_KEY, "1"); }catch(e){}
+    location.href = "16_保研英语面试.html";
+  }else{
+    $("ibEnErr").textContent = "密码不对,请输入 6 位访问密码";
+    var bar = $("ibEnLock");
+    bar.classList.remove("ib-enlock-shake");
+    void bar.offsetWidth;
+    bar.classList.add("ib-enlock-shake");
+    $("ibEnPw").value = "";
+    $("ibEnPw").focus();
+  }
+}
+$("ibEnGo").onclick = go;
+$("ibEnPw").onkeydown = function(e){ if(e.key === "Enter") go(); };
 })();
 </script>
 </body>

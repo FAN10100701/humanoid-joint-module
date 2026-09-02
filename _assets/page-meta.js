@@ -76,6 +76,7 @@ window.SITE_PAGE_META = {
   "08-13": { time:"配置 2 分钟+随问随用", prereq:"无", updated:"2026-08-27", verified:"Key 仅本机存储", goals:["配置本机 API Key 接入 DeepSeek/豆包","用复试考官人设模拟面试","用课程助教深挖站内知识点"] },
   "08-14": { time:"15~25 分钟", prereq:"无", updated:"2026-08-28", verified:"4 demo 实机渲染通过", goals:["看懂噪声/Raymarching/粒子流场/fbm 四类效果原理","拖参数理解 uniform 驱动","能读懂页面内给出的 GLSL 核心源码"] },
   "08-15": { time:"1 分钟", prereq:"无", updated:"2026-08-28", verified:"浏览器内实时审计", goals:["一键体检全站链接/索引/题库/版本健康度","失败项展开定位"] },
+  "08-16": { time:"每天 20 分钟", prereq:"无", updated:"2026-09-02", verified:"内容自英文面试训练台迁移人工复核", goals:["30 秒版自我介绍脱口而出,60 秒版按场合展开","20 题高频问答每题用 2~3 句短句答完","听不懂时用救场金句化解;专业名词中英对照不卡壳"] },
   "09-01": { time:"25 分钟", prereq:"无", updated:"2026-08-28", verified:"自绘 SVG 与官方口径", goals:["画出 Decoder 块数据流","说清稠密 vs MoE 与总参/激活参","理解 KV Cache 开销来源"] },
   "09-02": { time:"30 分钟", prereq:"09-01", updated:"2026-08-28", verified:"官方技术报告口径", goals:['画出 V3 四大架构创新','讲清 R1 纯RL推理与四阶段管线','区分 V3.1/V3.2/V4 各自解决什么'] },
   "09-03": { time:"30 分钟", prereq:"09-02", updated:"2026-08-28", verified:"arXiv 原文口径", goals:['画出后训练四级火箭','对比 PPO 与 GRPO 三差异','理解 PRM/ORM 与 reward hacking'] },

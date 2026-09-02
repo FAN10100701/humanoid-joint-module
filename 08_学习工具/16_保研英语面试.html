@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 保研英语面试(口语训练台)
+  结构遵循 _assets/页面模板.html;数据来自 _assets/en-interview-data.js / en-dict.js(按需加载)
+  功能: 7 页签(自我介绍/高频问答/救场金句/专业词汇/生词本/卡片速记/应试策略)
+        + TTS 逐句跟读(音色/语速) + 点词查词(离线词典) + 生词本(本地保存)
+        + 卡片翻面速记 + 背诵模式(隐藏中文点按偷看)
+        + 密码锁(内容含个人简历信息;锁定时不加载数据文件;
+          口令仅存 FNV-1a 哈希;11_保研复试面试题库.html 内嵌同一口令入口)
+  版式纪律: 页内样式全部 en- 前缀;浅色适配用双选择器
+        body:not([data-theme]),body[data-theme="light"]
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 保研英语面试(口语训练台)</title>
+<script>
+/* 防闪白:读取主题偏好,渲染前写入 html 级标记(与 site.css 的 FOUC 映射配合) */
+(function(){
+  try{
+    var t = localStorage.getItem("site-theme") || "light";
+    document.documentElement.setAttribute("data-theme-early", t === "dark" ? "dark" : "light");
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+/* ---------- 页面级样式(前缀 en-) · 深色为默认 ---------- */
+.en-stats{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 20px;margin:16px 0}
+.en-stats-row{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.en-num{font-size:22px;font-weight:900}
+.en-num.t{color:#3b82f6}.en-num.m{color:#22c55e}.en-num.g{color:#06b6d4}.en-num.v{color:#f59e0b}.en-num.w{color:#a78bfa}
+.en-num-k{font-size:12px;color:#6b7280;margin-top:2px}
+.en-note{flex:1;min-width:240px;font-size:12.5px;color:#6b7280;line-height:1.7}
+.en-toolbar{position:sticky;top:60px;z-index:60;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0 4px;padding:9px 12px;background:rgba(13,17,23,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.en-tctl{display:inline-flex;align-items:center;gap:7px;background:rgba(13,17,23,.85);border:1px solid rgba(59,130,246,.4);color:#c9d1d9;font-size:13px;padding:8px 14px;border-radius:10px;cursor:pointer}
+.en-tctl select{background:transparent;border:none;color:#e6edf3;font-size:13px;font-family:inherit;outline:none;max-width:210px}
+.en-tctl select option{background:#161b22;color:#e6edf3}
+.en-tctl input[type=range]{width:110px;accent-color:#3b82f6}
+.en-tctl .en-rate-lb{min-width:42px;color:#9ecbff;font-weight:700}
+.en-tbtn{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.4);color:#9ecbff;font-size:13px;padding:8px 16px;border-radius:10px;cursor:pointer;font-family:inherit;transition:.18s}
+.en-tbtn:hover{background:rgba(59,130,246,.3);color:#fff}
+.en-tbtn.on{background:#3b82f6;border-color:#3b82f6;color:#fff;font-weight:700}
+.en-voice-status{font-size:12px;color:#6b7280;margin:6px 0 2px}
+.en-chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+.en-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.18s}
+.en-chip:hover{border-color:#3b82f6;color:#fff;transform:translateY(-1px)}
+.en-chip.on{background:rgba(59,130,246,.25);border-color:#3b82f6;color:#fff;font-weight:700}
+.en-chip .en-chip-p{font-size:10.5px;color:#86efac;font-weight:700}
+.en-desc{font-size:13.5px;color:#8b949e;margin:10px 0 14px;line-height:1.8}
+/* ---- 内容卡(自我介绍/问答/救场/生词本共用) ---- */
+.en-card{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;margin:12px 0;padding:16px 18px}
+.en-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.en-card-head h3{margin:0;font-size:16.5px;color:#fff;display:flex;align-items:center;gap:9px}
+.en-q-no{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#3b82f6);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+.en-read{font-size:12.5px;color:#9ecbff;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);padding:6px 14px;border-radius:999px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.en-read:hover{background:rgba(59,130,246,.3);color:#fff}
+.en-read.reading{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.45);color:#fca5a5}
+.en-tip{margin:8px 0;padding:8px 13px;background:rgba(34,197,94,.07);border-left:3px solid #22c55e;border-radius:0 8px 8px 0;font-size:13px;color:#a7e3bf;line-height:1.8}
+.en-qzh{font-size:13.5px;color:#8b949e;margin:2px 0 4px}
+.en-line{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;padding:8px 10px;border-radius:9px;margin:4px 0;transition:background .2s}
+.en-line.speaking{background:rgba(59,130,246,.13);outline:1px solid rgba(59,130,246,.4)}
+.en-speak{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:13px;line-height:1;grid-row:1;align-self:start;transition:.15s}
+.en-speak:hover{background:rgba(59,130,246,.25);border-color:#3b82f6}
+/* 英文行:拉丁优先字体栈+加大字号行高,是本页字体美化的核心 */
+.en-en{grid-column:2;font-family:"Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15.5px;font-weight:600;letter-spacing:.1px;line-height:1.9;color:#dbe9fb}
+.en-zh{grid-column:2;font-size:13.5px;color:#8b949e;line-height:1.8;cursor:pointer}
+.en-w{cursor:pointer;border-bottom:1px dashed rgba(88,166,255,.5);padding:0 1px;border-radius:3px;transition:background .15s,color .15s}
+.en-w:hover{background:rgba(59,130,246,.22);color:#fff}
+body.en-hidezh .en-zh{opacity:0;user-select:none}
+body.en-hidezh .en-zh.en-reveal{opacity:1}
+.en-scene{font-size:12.5px;color:#f59e0b;font-weight:700;margin:12px 0 2px}
+.en-empty{padding:30px;text-align:center;color:#6b7280;font-size:13.5px;line-height:2}
+/* ---- 专业词汇 ---- */
+.en-vgroup{margin:18px 0 8px}
+.en-vg-title{font-size:16px;color:#9ecbff;margin:0 0 10px;display:flex;align-items:center;gap:10px}
+.en-vg-count{font-size:11.5px;color:#86efac;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);padding:1px 10px;border-radius:999px;font-weight:700}
+.en-vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.en-vcard{background:rgba(13,17,23,.6);border:1px solid rgba(255,255,255,.08);border-radius:11px;padding:12px 13px;transition:.18s}
+.en-vcard:hover{border-color:rgba(59,130,246,.45);transform:translateY(-2px)}
+.en-vtop{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.en-vword{font-family:"Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16.5px;font-weight:700;color:#f1f6fc;cursor:pointer}
+.en-vword:hover{color:#58a6ff}
+.en-iconbtn{background:transparent;border:none;cursor:pointer;font-size:13px;padding:3px 4px;border-radius:6px;opacity:.75}
+.en-iconbtn:hover{opacity:1;background:rgba(59,130,246,.15)}
+.en-vstar.stared{opacity:1}
+.en-vipa{font-family:"Segoe UI",-apple-system,sans-serif;font-size:12.5px;color:#58a6ff;margin:3px 0 1px;letter-spacing:.3px}
+.en-vzh{font-size:13px;color:#c9d1d9;line-height:1.7}
+.en-vex{font-family:"Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:13px;color:#9db4d0;margin-top:6px;line-height:1.8}
+.en-vexzh{font-size:12px;color:#6b7280;line-height:1.7}
+/* ---- 卡片速记(3D 翻面) ---- */
+.en-cards-ctl{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:13px;color:#9aa4b2;margin-bottom:12px}
+.en-cards-ctl label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.en-cards-ctl input{accent-color:#3b82f6}
+.en-cpos{margin-left:auto;font-size:12.5px;color:#6b7280}
+.en-flip{perspective:1200px;cursor:pointer;user-select:none}
+.en-flip-inner{position:relative;width:100%;min-height:250px;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,.1,.2,1)}
+.en-flip.flipped .en-flip-inner{transform:rotateY(180deg)}
+.en-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;border:1px solid rgba(59,130,246,.35);background:linear-gradient(160deg,rgba(37,99,235,.16),rgba(22,27,34,.9));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px;text-align:center}
+.en-face.back{transform:rotateY(180deg)}
+.en-cword{font-family:"Segoe UI",-apple-system,sans-serif;font-size:32px;font-weight:800;color:#fff;letter-spacing:.5px}
+.en-cword.en-czh-big{font-family:inherit;font-size:26px}
+.en-cipa{font-family:"Segoe UI",-apple-system,sans-serif;font-size:14px;color:#58a6ff}
+.en-chint{font-size:12px;color:#6b7280;margin-top:10px}
+.en-cex{font-family:"Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;color:#dbe9fb;line-height:1.9}
+.en-cexzh{font-size:12.5px;color:#8b949e}
+.en-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.en-card-actions button{font-size:13px;padding:9px 16px;border-radius:10px;cursor:pointer;font-family:inherit;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;transition:.18s}
+.en-card-actions button:hover{border-color:#3b82f6;color:#fff}
+.en-abtn{background:rgba(59,130,246,.2)!important;border-color:rgba(59,130,246,.5)!important;color:#9ecbff!important}
+.en-hbtn{background:rgba(239,68,68,.12)!important;border-color:rgba(239,68,68,.4)!important;color:#fca5a5!important}
+.en-finish{text-align:center;padding:40px 0;color:#c9d1d9;font-size:15px}
+.en-finish-emoji{font-size:42px;margin-bottom:8px}
+/* ---- 应试策略 ---- */
+.en-tips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.en-tipcard{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:16px 18px;transition:.18s}
+.en-tipcard:hover{border-color:rgba(59,130,246,.4);transform:translateY(-2px)}
+.en-tip-icon{font-size:22px;margin-bottom:6px}
+.en-tip-title{font-size:14.5px;font-weight:700;color:#fff;margin-bottom:4px}
+.en-tip-body{font-size:13px;color:#9aa4b2;line-height:1.85}
+/* ---- 单词弹窗 + 轻提示 ---- */
+.en-pop-mask{position:fixed;inset:0;background:rgba(4,8,15,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:400;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.en-pop-mask.show{opacity:1;pointer-events:auto}
+.en-pop{width:min(400px,92vw);background:rgba(22,27,34,.96);border:1px solid rgba(59,130,246,.4);border-radius:16px;padding:24px 24px 20px;position:relative;transform:translateY(10px);transition:transform .2s}
+.en-pop-mask.show .en-pop{transform:translateY(0)}
+.en-pop-close{position:absolute;top:10px;right:12px;background:transparent;border:none;color:#6b7280;font-size:15px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.en-pop-close:hover{color:#fff;background:rgba(255,255,255,.08)}
+.en-pop-word{font-family:"Segoe UI",-apple-system,sans-serif;font-size:26px;font-weight:800;color:#fff}
+.en-pop-ipa{font-family:"Segoe UI",-apple-system,sans-serif;font-size:14px;color:#58a6ff;margin:3px 0 8px}
+.en-pop-def{font-size:14px;color:#c9d1d9;line-height:1.9;margin-bottom:16px}
+.en-pop-btns{display:flex;gap:8px;flex-wrap:wrap}
+.en-pop-btns button{font-size:13px;padding:9px 16px;border-radius:10px;cursor:pointer;font-family:inherit;transition:.18s}
+.en-p-speak{background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.45);color:#9ecbff}
+.en-p-speak:hover{background:rgba(59,130,246,.35);color:#fff}
+.en-p-star{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#fbbf24}
+.en-p-star:hover{background:rgba(245,158,11,.3);color:#fff}
+.en-p-star.stared{background:rgba(245,158,11,.85);border-color:#f59e0b;color:#2b1d04;font-weight:700}
+.en-toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(16px);background:rgba(22,27,34,.96);border:1px solid rgba(59,130,246,.45);color:#e6edf3;font-size:13.5px;padding:10px 20px;border-radius:999px;z-index:500;opacity:0;pointer-events:none;transition:.25s;max-width:92vw}
+.en-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ---- 密码锁(锁定时不加载任何内容数据文件) ---- */
+.en-lock{position:fixed;inset:0;z-index:900;background:rgba(4,8,15,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:20px}
+.en-lock.show{display:flex}
+.en-lock-card{width:min(390px,94vw);background:rgba(22,27,34,.97);border:1px solid rgba(59,130,246,.4);border-radius:18px;padding:30px 28px 22px;text-align:center}
+.en-lock-ico{font-size:38px}
+.en-lock-title{font-size:19px;font-weight:800;color:#fff;margin:8px 0 6px}
+.en-lock-desc{font-size:13px;color:#8b949e;line-height:1.8;margin-bottom:18px}
+.en-lock-row{display:flex;gap:8px}
+.en-lock-pw{flex:1;min-width:0;background:rgba(13,17,23,.85);border:1px solid rgba(59,130,246,.4);color:#e6edf3;font-size:16px;letter-spacing:4px;padding:11px 14px;border-radius:10px;outline:none;text-align:center;font-family:inherit}
+.en-lock-pw:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+.en-lock-go{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:14px;font-weight:700;padding:11px 20px;border-radius:10px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.en-lock-go:hover{filter:brightness(1.15)}
+.en-lock-remember{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:#8b949e;margin:12px 0 2px;cursor:pointer}
+.en-lock-remember input{accent-color:#3b82f6}
+.en-lock-err{min-height:18px;font-size:12.5px;color:#fca5a5;margin-top:6px}
+.en-lock-hint{font-size:11.5px;color:#6b7280;margin-top:8px;line-height:1.7}
+@keyframes enShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+.en-lock-card.shake{animation:enShake .4s}
+/* ---------- 浅色主题适配 ---------- */
+body:not([data-theme]),body[data-theme="light"] .en-stats{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+body:not([data-theme]),body[data-theme="light"] .en-num.w{color:#7c3aed}
+body:not([data-theme]),body[data-theme="light"] .en-note,body:not([data-theme]),body[data-theme="light"] .en-num-k{color:#64748b}
+body:not([data-theme]),body[data-theme="light"] .en-tctl{background:rgba(255,255,255,.85);border-color:rgba(37,99,235,.3);color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-tctl select{color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-tctl select option{background:#fff;color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-tctl .en-rate-lb{color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-tbtn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.3);color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-tbtn:hover{background:rgba(37,99,235,.18);color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-tbtn.on{background:#2563eb;border-color:#2563eb;color:#fff}
+body:not([data-theme]),body[data-theme="light"] .en-voice-status{color:#64748b}
+body:not([data-theme]),body[data-theme="light"] .en-chip{background:rgba(255,255,255,.65);border-color:rgba(60,80,120,.16);color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .en-chip:hover{color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-chip.on{background:rgba(37,99,235,.14);border-color:#2563eb;color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-chip .en-chip-p{color:#15803d}
+body:not([data-theme]),body[data-theme="light"] .en-desc{color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .en-card{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.07)}
+body:not([data-theme]),body[data-theme="light"] .en-card-head h3{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .en-read{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25);color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-read:hover{background:rgba(37,99,235,.18);color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-read.reading{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.35);color:#b91c1c}
+body:not([data-theme]),body[data-theme="light"] .en-tip{background:rgba(34,197,94,.09);color:#14603a}
+body:not([data-theme]),body[data-theme="light"] .en-qzh,body:not([data-theme]),body[data-theme="light"] .en-zh{color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .en-en{color:#17263b}
+body:not([data-theme]),body[data-theme="light"] .en-w{border-bottom-color:rgba(37,99,235,.45)}
+body:not([data-theme]),body[data-theme="light"] .en-w:hover{background:rgba(37,99,235,.14);color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-speak{background:rgba(37,99,235,.07);border-color:rgba(60,80,120,.18)}
+body:not([data-theme]),body[data-theme="light"] .en-speak:hover{background:rgba(37,99,235,.18);border-color:#2563eb}
+body:not([data-theme]),body[data-theme="light"] .en-line.speaking{background:rgba(37,99,235,.1);outline-color:rgba(37,99,235,.35)}
+body:not([data-theme]),body[data-theme="light"] .en-scene{color:#92400e}
+body:not([data-theme]),body[data-theme="light"] .en-vcard{background:rgba(255,255,255,.72);border-color:rgba(60,80,120,.14);box-shadow:0 4px 16px rgba(50,80,140,.06)}
+body:not([data-theme]),body[data-theme="light"] .en-vcard:hover{border-color:rgba(37,99,235,.4)}
+body:not([data-theme]),body[data-theme="light"] .en-vword{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .en-vword:hover{color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-vipa{color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-vzh{color:#334155}
+body:not([data-theme]),body[data-theme="light"] .en-vex{color:#3d5270}
+body:not([data-theme]),body[data-theme="light"] .en-vexzh,body:not([data-theme]),body[data-theme="light"] .en-chint,body:not([data-theme]),body[data-theme="light"] .en-cpos{color:#64748b}
+body:not([data-theme]),body[data-theme="light"] .en-vg-title{color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-vg-count{color:#15803d;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35)}
+body:not([data-theme]),body[data-theme="light"] .en-cards-ctl{color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .en-face{border-color:rgba(37,99,235,.3);background:linear-gradient(160deg,rgba(37,99,235,.08),rgba(255,255,255,.92))}
+body:not([data-theme]),body[data-theme="light"] .en-cword{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .en-cipa{color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-cex{color:#17263b}
+body:not([data-theme]),body[data-theme="light"] .en-cexzh{color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .en-card-actions button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.2);color:#334155}
+body:not([data-theme]),body[data-theme="light"] .en-card-actions button:hover{border-color:#2563eb;color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-abtn{background:rgba(37,99,235,.1)!important;border-color:rgba(37,99,235,.35)!important;color:#1d4ed8!important}
+body:not([data-theme]),body[data-theme="light"] .en-hbtn{background:rgba(239,68,68,.07)!important;border-color:rgba(239,68,68,.3)!important;color:#b91c1c!important}
+body:not([data-theme]),body[data-theme="light"] .en-finish{color:#334155}
+body:not([data-theme]),body[data-theme="light"] .en-tipcard{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.07)}
+body:not([data-theme]),body[data-theme="light"] .en-tipcard:hover{border-color:rgba(37,99,235,.35)}
+body:not([data-theme]),body[data-theme="light"] .en-tip-title{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .en-tip-body{color:#4b5c74}
+body:not([data-theme]),body[data-theme="light"] .en-pop-mask{background:rgba(30,41,59,.35)}
+body:not([data-theme]),body[data-theme="light"] .en-pop{background:rgba(255,255,255,.98);border-color:rgba(37,99,235,.35);box-shadow:0 18px 50px rgba(30,50,90,.25)}
+body:not([data-theme]),body[data-theme="light"] .en-pop-word{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .en-pop-ipa{color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-pop-def{color:#334155}
+body:not([data-theme]),body[data-theme="light"] .en-p-speak{background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.35);color:#1d4ed8}
+body:not([data-theme]),body[data-theme="light"] .en-p-speak:hover{background:rgba(37,99,235,.22);color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-p-star{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.4);color:#92400e}
+body:not([data-theme]),body[data-theme="light"] .en-p-star:hover{background:rgba(245,158,11,.25);color:#451a03}
+body:not([data-theme]),body[data-theme="light"] .en-p-star.stared{background:#d97706;border-color:#d97706;color:#fff}
+body:not([data-theme]),body[data-theme="light"] .en-toast{background:rgba(255,255,255,.97);border-color:rgba(37,99,235,.35);color:#1a2332;box-shadow:0 10px 30px rgba(30,50,90,.18)}
+body:not([data-theme]),body[data-theme="light"] .en-toolbar{background:rgba(255,255,255,.92);border-color:rgba(60,80,120,.16);box-shadow:0 8px 24px rgba(50,80,140,.12)}
+body:not([data-theme]),body[data-theme="light"] .en-lock{background:rgba(30,41,59,.4)}
+body:not([data-theme]),body[data-theme="light"] .en-lock-card{background:rgba(255,255,255,.98);border-color:rgba(37,99,235,.35);box-shadow:0 18px 50px rgba(30,50,90,.25)}
+body:not([data-theme]),body[data-theme="light"] .en-lock-title{color:#1a2332}
+body:not([data-theme]),body[data-theme="light"] .en-lock-desc{color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .en-lock-pw{background:rgba(255,255,255,.9);border-color:rgba(37,99,235,.3);color:#0f172a}
+body:not([data-theme]),body[data-theme="light"] .en-lock-remember{color:#5a6a85}
+body:not([data-theme]),body[data-theme="light"] .en-lock-err{color:#b91c1c}
+body:not([data-theme]),body[data-theme="light"] .en-lock-hint{color:#64748b}
+@media (max-width:600px){
+  .en-cword{font-size:24px}
+  .en-cword.en-czh-big{font-size:20px}
+  .en-tctl select{max-width:130px}
+  .en-toolbar{gap:7px}
+  .en-vgrid{grid-template-columns:1fr}
+}
+@media print{
+  .en-toolbar,.en-chips,.en-pop-mask,.en-toast,.en-voice-status,.en-lock{display:none!important}
+  body.en-hidezh .en-zh{opacity:1}
+}
+@media (prefers-reduced-motion:reduce){
+  .en-flip-inner{transition:none}
+  .en-chip:hover,.en-vcard:hover,.en-tipcard:hover{transform:none}
+  .en-lock-card.shake{animation:none}
+}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-16",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec8" }, { t: "保研英语面试" } ],
+    prev: { t: "保研复试面试题库", u: "11_保研复试面试题库.html" },
+    next: { t: "闯关学习", u: "12_闯关学习.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🗣️ 保研英语面试</h1>
+    <div class="sub">英语口语专项训练台:2 版自我介绍 · 20 题高频问答 · 8 条救场金句 · 91 个专业名词 · 367 词离线词典<br>
+    点词即查 · TTS 逐句跟读 · 背诵模式 · 生词本 + 卡片速记——句子短、词简单,说得少、说得对</div>
+    <div class="tags">
+      <span class="tag">🗣 口语训练</span><span class="tag">🔊 TTS 跟读</span><span class="tag">📖 点词查词</span><span class="tag">⭐ 生词本</span><span class="tag">🙈 背诵模式</span><span class="tag">🔒 密码访问</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 30 秒版自我介绍能脱口而出,60 秒版按场合展开<br>
+    2. 20 题高频问答每题能用 2~3 句短句答完:先看思路提示,再背答案<br>
+    3. 听不懂时用救场金句体面化解;专业名词中英对照不卡壳<br>
+    <b>建议用时:</b>每天 20 分钟跟读 · 考前一周开背诵模式自测
+  </div>
+
+  <h2><span class="h2-num">1</span> 训练台总览</h2>
+  <div class="en-stats">
+    <div class="en-stats-row">
+      <div><div class="en-num t" id="enSIntro">0</div><div class="en-num-k">自我介绍(版)</div></div>
+      <div><div class="en-num m" id="enSQA">0</div><div class="en-num-k">高频问答(题)</div></div>
+      <div><div class="en-num g" id="enSRescue">0</div><div class="en-num-k">救场金句(条)</div></div>
+      <div><div class="en-num v" id="enSVocab">0</div><div class="en-num-k">专业词汇(词)</div></div>
+      <div><div class="en-num w" id="enSWB">0</div><div class="en-num-k">生词本(词)</div></div>
+      <div class="en-note">🔊 朗读使用浏览器自带语音(Web Speech API,免费离线):<b>Edge / Chrome 效果最好</b>,音色选带 Natural 的最接近真人。</div>
+    </div>
+  </div>
+  <div class="en-toolbar">
+    <label class="en-tctl" title="选择朗读音色:推荐带 Natural 的(最像真人),切换后自动试读一句">🎙 <select id="enVoice"><option value="">音色:自动</option></select></label>
+    <label class="en-tctl" title="朗读语速:越慢越容易跟读">🐢 <input type="range" id="enRate" min="0.5" max="1" step="0.05" value="0.75"><span class="en-rate-lb" id="enRateLb">0.75x</span> 🐇</label>
+    <button class="en-tbtn" id="enRecite" title="隐藏所有中文翻译,测自己能不能看懂;点中文位置可偷看该句">🙈 背诵模式</button>
+    <button class="en-tbtn" id="enStop" title="停止当前朗读">⏹ 停止朗读</button>
+    <button class="en-tbtn" id="enRelock" title="清空本机的解锁记忆,重新上锁(换设备/离开电脑时用)">🔒 重新锁定</button>
+  </div>
+  <div class="en-voice-status" id="enVoiceStatus">🔊 语音加载中…</div>
+
+  <h2><span class="h2-num">2</span> 分板块训练</h2>
+  <div class="en-chips" id="enChips"></div>
+  <div class="en-desc" id="enDesc"></div>
+  <div id="enStage"><div class="en-empty">内容加载中…</div></div>
+
+  <h2><span class="h2-num">3</span> 配套资源与下一步</h2>
+  <div class="grid">
+    <a class="card" href="11_保研复试面试题库.html"><span class="go">进入 →</span><div class="ic">🎓</div><div class="t">保研复试面试题库</div><div class="d">通用类里有"英语口语"学科:笔头问答准备与本页口语训练互补,先背思路再开口。</div></a>
+    <a class="card" href="13_AI答疑助手.html?persona=interviewer"><span class="go">进入 →</span><div class="ic">🤖</div><div class="t">AI 答疑助手(复试考官)</div><div class="d">选"复试考官"人设,让它用英文向你追问,模拟真实问答后再回本页订正表达。</div></a>
+    <a class="card" href="07_大厂面试专题.html"><span class="go">进入 →</span><div class="ic">🏢</div><div class="t">大厂面试专题</div><div class="d">就业向英文面:流程、场景题与 HR 面,与本页(升学向口语)互相补充。</div></a>
+  </div>
+  <div class="box box-tip">
+    <b>📌 使用建议:</b>每天固定 20 分钟——先用 0.75x 慢速把 30 秒自我介绍逐句跟读 3 遍,再刷 2~3 道高频问答(先看绿色思路,遮住中文背英文);遇到不会的词点一下收进生词本,睡前用卡片速记过一遍。考前一周只做两件事:背诵模式自测 + 救场金句通读。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>1. 不看稿能把自我介绍压缩进 30 秒吗?让同学掐表验一次。2. "缺点 / 读研规划 / 为什么选这个学校"三题,你的答案里有没有一句"具体证据"(排名、项目、奖项)?没有就补上。
+  </div>
+
+  <h2><span class="h2-num">4</span> 说明与来源</h2>
+  <ul>
+    <li>内容基于本人简历(机器人工程 · 排名 1/50 · 省二等奖 · 三段项目)定制,原则是"句子短、词简单,说得少、说得对"。</li>
+    <li>朗读与发音使用浏览器内置 <a href="https://developer.mozilla.org/docs/Web/API/SpeechSynthesis" target="_blank" rel="noopener">Web Speech API (MDN)</a>,本地运行、不联网也能用(神经网络音色需联网)。</li>
+    <li>离线词典 367 词条内置本页数据文件;生词本保存在本机浏览器 localStorage,不上传服务器。</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 单词弹窗 -->
+<div class="en-pop-mask" id="enPopMask">
+  <div class="en-pop" id="enPop">
+    <button class="en-pop-close" id="enPopClose" title="关闭">✕</button>
+    <div class="en-pop-word" id="enPopWord">word</div>
+    <div class="en-pop-ipa" id="enPopIpa">/ipa/</div>
+    <div class="en-pop-def" id="enPopDef">释义</div>
+    <div class="en-pop-btns">
+      <button class="en-p-speak" id="enPopSpeak">🔊 读这个词</button>
+      <button class="en-p-star" id="enPopStar">⭐ 加入生词本</button>
+    </div>
+  </div>
+</div>
+
+<!-- 密码锁(个人定制内容,锁定时不加载任何数据文件) -->
+<div class="en-lock" id="enLock">
+  <div class="en-lock-card" id="enLockCard">
+    <div class="en-lock-ico">🔒</div>
+    <div class="en-lock-title">保研英语面试 · 私人定制</div>
+    <div class="en-lock-desc">本页内容基于个人简历定制(自我介绍 / 问答答案 / 生词本),<br>仅限本人使用,请输入访问密码。</div>
+    <div class="en-lock-row">
+      <input type="password" id="enLockPw" class="en-lock-pw" placeholder="······" inputmode="numeric" autocomplete="off" autofocus>
+      <button class="en-lock-go" id="enLockGo">解锁进入</button>
+    </div>
+    <label class="en-lock-remember"><input type="checkbox" id="enLockRemember" checked> 记住本机,下次免输入</label>
+    <div class="en-lock-err" id="enLockErr"></div>
+    <div class="en-lock-hint">纯前端口令锁:防止顺手翻看,不是加密级防护。<br>忘记密码请查看本人的密码备忘。</div>
+  </div>
+</div>
+
+<!-- 轻提示 -->
+<div class="en-toast" id="enToast"></div>
+
+<script src="../_assets/site.js"></script>
+<script>
+/* ============================================================
+   英语面试训练台交互(零依赖;数据文件按需加载,失败有空态兜底)
+============================================================ */
+(function(){
+"use strict";
+var WB_KEY = "humanoid-en-wordbook-v1";      /* 生词本 */
+var VOICE_KEY = "humanoid-en-voice-v1";      /* 音色选择 */
+var UNLOCK_KEY = "humanoid-en-unlock-v1";    /* 密码解锁记忆(11 题库页入口共用) */
+var PW_HASH = "19517f64";                    /* 访问口令的 FNV-1a 哈希(明文不进源码) */
+var WB = [], curTab = "intro", popCtx = null;
+var deck = [], deckPos = 0, cardMode = "en2zh";
+var $ = function(id){ return document.getElementById(id); };
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function toast(msg){
+  var t = $("enToast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function(){ t.classList.remove("show"); }, 1800);
+}
+
+/* ---------- 数据加载(两个文件,全失败给空态) ---------- */
+function loadScript(src, cb){
+  var s = document.createElement("script");
+  s.src = src; s.onload = cb; s.onerror = cb;
+  document.head.appendChild(s);
+}
+var pending = 2;
+function onReady(){ if(--pending) return; init(); }
+/* 密码锁纪律:解锁前不注入任何内容数据文件 */
+function loadData(){
+  loadScript("../_assets/en-interview-data.js", onReady);
+  loadScript("../_assets/en-dict.js", onReady);
+}
+
+/* ---------- 离线词典查询(词形还原回退) ---------- */
+function lookup(word){
+  var D = window.EN_DICT || {};
+  var w = String(word).toLowerCase().replace(/[^a-z'\u2019-]/g, "");
+  var tries = [w, w.replace(/ies$/,"y"), w.replace(/es$/,""), w.replace(/s$/,""),
+    w.replace(/ied$/,"y"), w.replace(/ed$/,""), w.replace(/d$/,""),
+    w.replace(/ing$/,"e"), w.replace(/ing$/,""), w.replace(/ly$/,"")];
+  for(var i = 0; i < tries.length; i++){
+    if(tries[i] && D[tries[i]]) return { key: tries[i], entry: D[tries[i]] };
+  }
+  return null;
+}
+/* 把英文句子的单词包成可点 span,命中词典附悬停释义 */
+function wrapWords(en){
+  var e = esc(en);
+  return e.replace(/[A-Za-z][A-Za-z'\u2019]*/g, function(m){
+    var hit = lookup(m), def = "";
+    if(hit) def = esc(hit.entry.split("|")[0] + "  " + (hit.entry.split("|")[1] || ""));
+    return '<span class="en-w" data-w="' + m + '"' +
+      (def ? ' data-def="' + def.replace(/"/g,"&quot;") + '"' : "") + ">" + m + "</span>";
+  });
+}
+
+/* ---------- 生词本( localStorage 持久化) ---------- */
+function wbLoad(){ try{ return JSON.parse(localStorage.getItem(WB_KEY) || "[]"); }catch(e){ return []; } }
+function wbSave(){ try{ localStorage.setItem(WB_KEY, JSON.stringify(WB)); }catch(e){} updateWB(); }
+function wbHas(w){
+  for(var i = 0; i < WB.length; i++) if(WB[i].w.toLowerCase() === w.toLowerCase()) return true;
+  return false;
+}
+function wbAdd(item){
+  if(wbHas(item.w)) return;
+  WB.push(item); wbSave();
+  if(curTab === "vocab") rVocab(); else if(curTab === "cards") rCards();
+}
+function wbRemove(w){
+  var out = [];
+  for(var i = 0; i < WB.length; i++) if(WB[i].w.toLowerCase() !== w.toLowerCase()) out.push(WB[i]);
+  WB = out; wbSave();
+  if(curTab === "vocab") rVocab(); else if(curTab === "cards") rCards();
+}
+function updateWB(){
+  $("enSWB").textContent = WB.length;
+  var chip = document.querySelector('.en-chip[data-k="wb"] .en-chip-p');
+  if(chip) chip.textContent = WB.length;
+}
+function findVocabZh(w){
+  var i, j, D = window.EN_DATA;
+  if(D) for(i = 0; i < D.vocab.length; i++)
+    for(j = 0; j < D.vocab[i].words.length; j++)
+      if(D.vocab[i].words[j].w.toLowerCase() === w.toLowerCase()) return D.vocab[i].words[j].zh;
+  var hit = lookup(w);
+  return hit ? hit.entry.split("|")[1] : "";
+}
+
+/* ---------- TTS 朗读引擎(Web Speech API) ---------- */
+var TTS = (function(){
+  var allVoices = [], enVoices = [], autoVoice = null;
+  var userVoiceURI = "";
+  try{ userVoiceURI = localStorage.getItem(VOICE_KEY) || ""; }catch(e){}
+  var rate = 0.75, session = 0, currentEl = null;
+  var ok = ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window);
+
+  function pickBest(list){
+    if(!list.length) return null;
+    var us = [], i;
+    for(i = 0; i < list.length; i++) if(/en[-_]US/i.test(list[i].lang)) us.push(list[i]);
+    var pool = us.length ? us : list;
+    var find = function(re){
+      for(var j = 0; j < pool.length; j++) if(re.test(pool[j].name)) return pool[j];
+      return null;
+    };
+    return find(/natural/i) || find(/google/i) ||
+      find(/aria|jenny|zira|libby|sonia|samantha|emma/i) ||
+      find(/guy|davis|ryan|christopher/i) || pool[0];
+  }
+  function currentVoice(){
+    if(userVoiceURI){
+      for(var i = 0; i < enVoices.length; i++)
+        if(enVoices[i].voiceURI === userVoiceURI) return enVoices[i];
+    }
+    return autoVoice;
+  }
+  function initVoices(cb){
+    if(!ok){ cb && cb([], null); return; }
+    var n = 0, t;
+    function tryPick(){
+      allVoices = speechSynthesis.getVoices();
+      if(!allVoices.length) return false;
+      enVoices = [];
+      for(var i = 0; i < allVoices.length; i++)
+        if(/^en([-_]|$)/i.test(allVoices[i].lang)) enVoices.push(allVoices[i]);
+      autoVoice = pickBest(enVoices);
+      cb && cb(enVoices, autoVoice);
+      return true;
+    }
+    if(tryPick()) return;
+    if(speechSynthesis.addEventListener)
+      speechSynthesis.addEventListener("voiceschanged", tryPick);
+    t = setInterval(function(){ if(tryPick() || ++n > 30) clearInterval(t); }, 300);
+  }
+  /* 缩写词按字母朗读 */
+  var ABBR = { "ROS":"R O S", "AI":"A I", "PCB":"P C B", "ESC":"E S C", "ADC":"A D C",
+    "FFT":"F F T", "GPA":"G P A", "PWM":"P W M", "PID":"P I D", "PhD":"P h D",
+    "STM32":"S T M thirty two", "Hz":"hertz" };
+  function normalize(text){
+    var out = text;
+    for(var k in ABBR) out = out.replace(new RegExp("\\b" + k + "\\b", "g"), ABBR[k]);
+    return out;
+  }
+  function clearHi(){
+    if(currentEl){ currentEl.classList.remove("speaking"); currentEl = null; }
+  }
+  function makeUtterance(text){
+    var u = new SpeechSynthesisUtterance(normalize(text));
+    var v = currentVoice();
+    if(v) u.voice = v;
+    u.lang = (v && v.lang) || "en-US";
+    return u;
+  }
+  function stop(){
+    session++;
+    if(ok) speechSynthesis.cancel();
+    clearHi();
+  }
+  function speakWord(word){
+    if(!ok) return;
+    stop();
+    var u = makeUtterance(word);
+    u.rate = Math.min(rate, 0.8);
+    speechSynthesis.speak(u);
+  }
+  function speakSample(){
+    if(!ok) return;
+    stop();
+    var u = makeUtterance("Hello! This is my interview. My name is Fan Jiahao.");
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
+  }
+  function speakSequence(items, opt){
+    var onStart = opt && opt.onStart, onDone = opt && opt.onDone;
+    stop();
+    if(!ok){ onDone && onDone(); return; }
+    var sid = ++session, i = 0;
+    (function next(){
+      if(sid !== session) return;
+      if(i >= items.length){ clearHi(); onDone && onDone(); return; }
+      var it = items[i];
+      clearHi();
+      currentEl = it.el;
+      if(currentEl) currentEl.classList.add("speaking");
+      var u = makeUtterance(it.text);
+      u.rate = rate;
+      u.onend = function(){ i++; next(); };
+      u.onerror = function(){ i++; next(); };
+      speechSynthesis.speak(u);
+    })();
+    onStart && onStart();
+  }
+  return {
+    initVoices: initVoices, speakWord: speakWord, speakSample: speakSample,
+    speakSequence: speakSequence, stop: stop,
+    setRate: function(r){ rate = r; },
+    setUserVoice: function(uri){
+      userVoiceURI = uri || "";
+      try{
+        if(userVoiceURI) localStorage.setItem(VOICE_KEY, userVoiceURI);
+        else localStorage.removeItem(VOICE_KEY);
+      }catch(e){}
+    },
+    getUserVoice: function(){ return userVoiceURI; },
+    getEnVoices: function(){ return enVoices; },
+    getVoice: function(){ return currentVoice(); },
+    available: function(){ return ok; }
+  };
+})();
+
+/* ---------- 渲染:公共行/卡 ---------- */
+function lineHTML(en, zh){
+  return '<div class="en-line">' +
+    '<button class="en-speak" title="读这一句">🔊</button>' +
+    '<div class="en-en">' + wrapWords(en) + '</div>' +
+    '<div class="en-zh">' + esc(zh) + '</div>' +
+  '</div>';
+}
+
+/* ---------- 各页签渲染 ---------- */
+function rIntro(){
+  var D = window.EN_DATA, h = "";
+  for(var i = 0; i < D.intro.length; i++){
+    var v = D.intro[i], lines = "";
+    for(var j = 0; j < v.lines.length; j++) lines += lineHTML(v.lines[j].en, v.lines[j].zh);
+    h += '<div class="en-card">' +
+      '<div class="en-card-head"><h3>' + esc(v.name) + '</h3>' +
+      '<button class="en-read" data-label="▶ 朗读全文">▶ 朗读全文</button></div>' +
+      '<div class="en-tip">💡 ' + esc(v.tip) + '</div>' + lines + '</div>';
+  }
+  return h;
+}
+function rQA(){
+  var D = window.EN_DATA, h = "";
+  for(var i = 0; i < D.qa.length; i++){
+    var it = D.qa[i], lines = lineHTML(it.q, it.qZh);
+    for(var j = 0; j < it.lines.length; j++) lines += lineHTML(it.lines[j].en, it.lines[j].zh);
+    h += '<div class="en-card">' +
+      '<div class="en-card-head"><h3><span class="en-q-no">Q' + (i + 1) + '</span>' + esc(it.q) + '</h3>' +
+      '<button class="en-read" data-label="▶ 朗读">▶ 朗读</button></div>' +
+      '<div class="en-qzh">' + esc(it.qZh) + '</div>' +
+      '<div class="en-tip">💡 ' + esc(it.tip) + '</div>' + lines + '</div>';
+  }
+  return h;
+}
+function rRescue(){
+  var D = window.EN_DATA, rows = "";
+  for(var i = 0; i < D.rescue.length; i++){
+    rows += '<div class="en-scene">🏷 ' + esc(D.rescue[i].scene) + '</div>' +
+      lineHTML(D.rescue[i].en, D.rescue[i].zh);
+  }
+  return '<div class="en-card">' +
+    '<div class="en-card-head"><h3>🛟 全部读一遍(跟读训练)</h3>' +
+    '<button class="en-read" data-label="▶ 朗读全部">▶ 朗读全部</button></div>' + rows + '</div>';
+}
+function rVocab(){
+  var D = window.EN_DATA, h = "";
+  for(var g = 0; g < D.vocab.length; g++){
+    var grp = D.vocab[g], cards = "";
+    for(var i = 0; i < grp.words.length; i++){
+      var v = grp.words[i];
+      cards += '<div class="en-vcard">' +
+        '<div class="en-vtop"><span class="en-vword" data-g="' + g + '" data-i="' + i + '">' + esc(v.w) + '</span>' +
+        '<span class="en-vbtns">' +
+        '<button class="en-iconbtn en-vspeak" data-w="' + esc(v.w) + '" title="发音">🔊</button>' +
+        '<button class="en-iconbtn en-vstar' + (wbHas(v.w) ? " stared" : "") + '" data-w="' + esc(v.w) + '" title="加入/移出生词本">' + (wbHas(v.w) ? "★" : "⭐") + '</button>' +
+        '</span></div>' +
+        '<div class="en-vipa">' + esc(v.ipa) + '</div>' +
+        '<div class="en-vzh">' + esc(v.zh) + '</div>' +
+        '<div class="en-vex">' + wrapWords(v.ex) + '</div>' +
+        '<div class="en-vexzh">' + esc(v.exZh) + '</div>' +
+      '</div>';
+    }
+    h += '<div class="en-vgroup"><h3 class="en-vg-title">' + esc(grp.name) +
+      '<span class="en-vg-count">' + grp.words.length + ' 词</span></h3>' +
+      '<div class="en-vgrid">' + cards + '</div></div>';
+  }
+  return h;
+}
+function rWB(){
+  if(!WB.length){
+    return '<div class="en-empty">生词本是空的。<br>点击页面里任何英文单词,在弹窗里按 ⭐ 就能收进来。</div>';
+  }
+  var rows = "";
+  for(var i = 0; i < WB.length; i++){
+    var x = WB[i], def = (x.ipa ? x.ipa + "  " : "") + x.def;
+    rows += '<div class="en-line">' +
+      '<button class="en-speak" title="读这个词">🔊</button>' +
+      '<div class="en-en"><span class="en-w" data-w="' + esc(x.w) + '" data-def="' + esc(def).replace(/"/g,"&quot;") + '">' + esc(x.w) + '</span></div>' +
+      '<div class="en-zh">' + esc(def) + '</div>' +
+    '</div>';
+  }
+  return '<div class="en-card">' +
+    '<div class="en-card-head"><h3>⭐ 共 ' + WB.length + ' 个生词</h3><span>' +
+    '<button class="en-read" id="enWbExport" data-label="📋 导出(复制)">📋 导出(复制)</button> ' +
+    '<button class="en-read" id="enWbClear" data-label="🗑 清空">🗑 清空</button></span></div>' + rows + '</div>';
+}
+/* 卡片速记 */
+function buildDeck(){
+  var seen = {}, d = [], rest = [], i, j, g;
+  for(i = 0; i < WB.length; i++){
+    var k = WB[i].w.toLowerCase();
+    if(!seen[k]){ seen[k] = 1; d.push({ w: WB[i].w, ipa: WB[i].ipa || "", zh: WB[i].def, ex: "", exZh: "", star: true }); }
+  }
+  var D = window.EN_DATA;
+  if(D) for(g = 0; g < D.vocab.length; g++)
+    for(i = 0; i < D.vocab[g].words.length; i++){
+      var v = D.vocab[g].words[i], k2 = v.w.toLowerCase();
+      if(!seen[k2]){ seen[k2] = 1; rest.push({ w: v.w, ipa: v.ipa, zh: v.zh, ex: v.ex, exZh: v.exZh, star: false }); }
+    }
+  for(i = rest.length - 1; i > 0; i--){
+    j = Math.floor(Math.random() * (i + 1));
+    var tmp = rest[i]; rest[i] = rest[j]; rest[j] = tmp;
+  }
+  deck = d.concat(rest);
+  deckPos = 0;
+}
+function cardHTML(){
+  if(!deck.length) return '<div class="en-empty">词库为空</div>';
+  if(deckPos >= deck.length) deckPos = deck.length - 1;
+  var c = deck[deckPos], front, back;
+  if(cardMode === "en2zh"){
+    front = '<div class="en-cword">' + esc(c.w) + '</div><div class="en-cipa">' + esc(c.ipa) + '</div><div class="en-chint">点击卡片看中文</div>';
+    back = '<div class="en-cword en-czh-big">' + esc(c.zh) + '</div>' +
+      (c.ex ? '<div class="en-cex">' + wrapWords(c.ex) + '</div><div class="en-cexzh">' + esc(c.exZh) + '</div>' : '');
+  }else{
+    front = '<div class="en-cword en-czh-big">' + esc(c.zh) + '</div><div class="en-chint">点击卡片看英文</div>';
+    back = '<div class="en-cword">' + esc(c.w) + '</div><div class="en-cipa">' + esc(c.ipa) + '</div>' +
+      (c.ex ? '<div class="en-cex">' + wrapWords(c.ex) + '</div><div class="en-cexzh">' + esc(c.exZh) + '</div>' : '');
+  }
+  return '<div class="en-cards-ctl">' +
+      '<label><input type="radio" name="en-cmode" value="en2zh"' + (cardMode === "en2zh" ? " checked" : "") + '> 看英文想中文</label>' +
+      '<label><input type="radio" name="en-cmode" value="zh2en"' + (cardMode === "zh2en" ? " checked" : "") + '> 看中文想英文</label>' +
+      '<button class="en-read" id="enCardRestart" data-label="🔄 重新洗牌">🔄 重新洗牌</button>' +
+      '<span class="en-cpos">' + (deckPos + 1) + " / " + deck.length + (c.star ? " ⭐生词" : "") + '</span>' +
+    '</div>' +
+    '<div class="en-flip" id="enFlip">' +
+      '<div class="en-flip-inner"><div class="en-face front">' + front + '</div><div class="en-face back">' + back + '</div></div>' +
+    '</div>' +
+    '<div class="en-card-actions">' +
+      '<button id="enCardPrev">⬅ 上一个</button>' +
+      '<button id="enCardFlip" class="en-abtn">🔁 翻面</button>' +
+      '<button id="enCardSpeak">🔊 发音</button>' +
+      '<button id="enCardNext" class="en-abtn">下一个 ➡</button>' +
+      '<button id="enCardHard" class="en-hbtn">❌ 不熟,收进生词本</button>' +
+    '</div>';
+}
+function showCard(){
+  $("enStage").innerHTML = cardHTML();
+}
+function showFinish(){
+  $("enStage").innerHTML =
+    '<div class="en-finish"><div class="en-finish-emoji">🎉</div>这一轮过完啦!<br><br>' +
+    '<button class="en-read" id="enAgain" data-label="🔄 再来一轮">🔄 再来一轮</button></div>';
+}
+function rCards(){
+  if(!deck.length) buildDeck();
+  return cardHTML();
+}
+function rTips(){
+  var D = window.EN_DATA, h = '<div class="en-tips-grid">';
+  for(var i = 0; i < D.tips.length; i++){
+    var t = D.tips[i];
+    h += '<div class="en-tipcard"><div class="en-tip-icon">' + esc(t.icon) + '</div>' +
+      '<div class="en-tip-title">' + esc(t.title) + '</div>' +
+      '<div class="en-tip-body">' + esc(t.body) + '</div></div>';
+  }
+  return h + '</div>';
+}
+
+/* ---------- 页签框架 ---------- */
+var TABS = [
+  { k: "intro",  ic: "🎤", n: "自我介绍" },
+  { k: "qa",     ic: "💬", n: "高频问答" },
+  { k: "rescue", ic: "🛟", n: "救场金句" },
+  { k: "vocab",  ic: "📚", n: "专业词汇" },
+  { k: "wb",     ic: "⭐", n: "生词本" },
+  { k: "cards",  ic: "🃏", n: "卡片速记" },
+  { k: "tips",   ic: "🎯", n: "应试策略" }
+];
+var RENDER = { intro: rIntro, qa: rQA, rescue: rRescue, vocab: rVocab, wb: rWB, cards: rCards, tips: rTips };
+var COUNTS = function(){
+  var D = window.EN_DATA || { intro: [], qa: [], rescue: [], vocab: [], tips: [] };
+  var nv = 0;
+  for(var i = 0; i < D.vocab.length; i++) nv += D.vocab[i].words.length;
+  return { intro: D.intro.length, qa: D.qa.length, rescue: D.rescue.length, vocab: nv, wb: WB.length, cards: "翻面", tips: D.tips.length };
+};
+var DESC = {
+  intro: "基于简历定制,句子短、词简单,背下来就能用。点单词看释义,点 🔊 听读音,点「朗读全文」逐句跟读。",
+  qa: "每题只给 2~3 个短句——英语弱的重点是「说得少、说得对」。先看绿色思路提示,再背答案。",
+  rescue: "面试卡壳时的话术。背熟这几句,天塌不下来。",
+  vocab: "按场景分组,都来自简历里的东西。听不懂老师问题时,很可能是这些词没反应过来。",
+  wb: "在页面任何位置点英文单词,弹窗里按 ⭐ 收进生词本。生词保存在本机浏览器,关掉网页也不丢;卡片速记会优先复习这里的词。",
+  cards: "看英文想中文,点击卡片翻面;生词本里的词排在最前面。「不熟」按钮把卡壳的词直接送回生词本。",
+  tips: "英语不好不丢人,策略对了照样稳。"
+};
+function buildChips(){
+  var c = COUNTS(), h = "";
+  for(var i = 0; i < TABS.length; i++){
+    var t = TABS[i];
+    h += '<button class="en-chip' + (t.k === curTab ? " on" : "") + '" data-k="' + t.k + '">' +
+      t.ic + " " + t.n + ' <span class="en-chip-p">' + c[t.k] + '</span></button>';
+  }
+  $("enChips").innerHTML = h;
+}
+function openTab(k){
+  curTab = k;
+  var chips = $("enChips").children;
+  for(var i = 0; i < chips.length; i++)
+    chips[i].className = "en-chip" + (chips[i].getAttribute("data-k") === k ? " on" : "");
+  $("enDesc").textContent = DESC[k] || "";
+  if(k === "cards" && !deck.length) buildDeck();
+  $("enStage").innerHTML = RENDER[k]() || "";
+}
+function resetReadBtns(){
+  var btns = document.querySelectorAll(".en-read.reading");
+  for(var i = 0; i < btns.length; i++){
+    btns[i].classList.remove("reading");
+    btns[i].textContent = btns[i].getAttribute("data-label") || "▶ 朗读";
+  }
+}
+
+/* ---------- 单词弹窗 ---------- */
+function openPop(word, vocabEntry){
+  var info;
+  if(vocabEntry){
+    info = { w: vocabEntry.w, ipa: vocabEntry.ipa, def: vocabEntry.zh + (vocabEntry.ex ? "　📝 " + vocabEntry.ex : "") };
+  }else{
+    var hit = lookup(word);
+    info = hit
+      ? { w: word, ipa: hit.entry.split("|")[0], def: hit.entry.split("|")[1] }
+      : { w: word, ipa: "", def: "词典暂未收录(可能是专有名词),点下面按钮仍可听发音" };
+  }
+  popCtx = info;
+  $("enPopWord").textContent = info.w;
+  $("enPopIpa").textContent = info.ipa || "";
+  $("enPopIpa").style.display = info.ipa ? "" : "none";
+  $("enPopDef").textContent = info.def;
+  refreshPopStar();
+  $("enPopMask").classList.add("show");
+}
+function refreshPopStar(){
+  var inWb = popCtx && wbHas(popCtx.w), b = $("enPopStar");
+  b.textContent = inWb ? "★ 移出生词本" : "⭐ 加入生词本";
+  b.className = "en-p-star" + (inWb ? " stared" : "");
+}
+function closePop(){
+  $("enPopMask").classList.remove("show");
+  popCtx = null;
+}
+
+/* ---------- 音色下拉与状态 ---------- */
+function fillVoiceSelect(){
+  var sel = $("enVoice"), voices = TTS.getEnVoices(), saved = TTS.getUserVoice();
+  var sorted = voices.slice().sort(function(a, b){
+    function score(v){ return /natural/i.test(v.name) ? 0 : /google/i.test(v.name) ? 1 : 2; }
+    return score(a) - score(b) || a.name.localeCompare(b.name);
+  });
+  var auto = TTS.getVoice() && !saved ? "（" + TTS.getVoice().name.slice(0, 18) + "）" : "";
+  var h = '<option value="">音色:自动' + auto + '</option>';
+  for(var i = 0; i < sorted.length; i++){
+    var v = sorted[i];
+    var tag = /natural/i.test(v.name) ? " ★推荐" : /google/i.test(v.name) ? " ★" : "";
+    h += '<option value="' + String(v.voiceURI).replace(/"/g, "&quot;") + '"' +
+      (v.voiceURI === saved ? " selected" : "") + ">" + v.name.slice(0, 30) + tag + "</option>";
+  }
+  sel.innerHTML = h;
+}
+function updateVoiceStatus(){
+  var v = TTS.getVoice();
+  $("enVoiceStatus").innerHTML = v
+    ? "🔊 当前音色:" + esc(v.name)
+    : (TTS.available() ? "⚠ 未找到英文语音,用 Edge/Chrome 打开效果最好" : "⚠ 当前浏览器不支持语音合成");
+}
+
+/* ---------- 初始化 ---------- */
+function init(){
+  var D = window.EN_DATA;
+  if(!D || !D.qa || !D.qa.length){
+    $("enStage").innerHTML = '<div class="en-empty">数据加载失败:en-interview-data.js 未载入。本地预览请先双击 <b>_本地工具/启动教学页面.bat</b> 经 http 访问;线上请检查网络后 <a href="javascript:location.reload()" style="color:#60a5fa">重试刷新</a>。</div>';
+    return;
+  }
+  WB = wbLoad();
+  buildChips();
+  openTab(curTab);
+  $("enSIntro").textContent = D.intro.length;
+  $("enSQA").textContent = D.qa.length;
+  $("enSRescue").textContent = D.rescue.length;
+  var nv = 0;
+  for(var i = 0; i < D.vocab.length; i++) nv += D.vocab[i].words.length;
+  $("enSVocab").textContent = nv;
+  updateWB();
+  bindEvents();
+  TTS.initVoices(function(){
+    fillVoiceSelect();
+    updateVoiceStatus();
+  });
+  setTimeout(function(){
+    if(TTS.available() && !TTS.getEnVoices().length)
+      $("enVoiceStatus").innerHTML = "⚠ 未找到英文语音,用 Edge/Chrome 打开效果最好";
+  }, 9000);
+}
+
+/* ---------- 事件绑定(委托) ---------- */
+function bindEvents(){
+  document.addEventListener("click", function(e){
+    var t = e.target;
+
+    var chip = t.closest ? t.closest(".en-chip") : null;
+    if(chip){ openTab(chip.getAttribute("data-k")); return; }
+
+    var vw = t.closest ? t.closest(".en-vword") : null;
+    if(vw){
+      var g = window.EN_DATA.vocab[+vw.getAttribute("data-g")];
+      openPop(null, g.words[+vw.getAttribute("data-i")]);
+      return;
+    }
+    var w = t.closest ? t.closest(".en-w") : null;
+    if(w){ openPop(w.getAttribute("data-w")); return; }
+
+    var vs = t.closest ? t.closest(".en-vspeak") : null;
+    if(vs){ TTS.speakWord(vs.getAttribute("data-w")); return; }
+    var st = t.closest ? t.closest(".en-vstar") : null;
+    if(st){
+      var w2 = st.getAttribute("data-w");
+      if(wbHas(w2)){ wbRemove(w2); toast("已移出「" + w2 + "」"); }
+      else { wbAdd({ w: w2, ipa: "", def: findVocabZh(w2) }); toast("已加入「" + w2 + "」"); }
+      return;
+    }
+
+    var sl = t.closest ? t.closest(".en-speak") : null;
+    if(sl){
+      var line = sl.closest(".en-line");
+      var enBox = line.querySelector(".en-en");
+      TTS.speakSequence([{ text: enBox.textContent, el: line }]);
+      return;
+    }
+    var rb = t.closest ? t.closest(".en-read") : null;
+    if(rb){
+      if(rb.id === "enWbExport"){
+        var text = "", i;
+        for(i = 0; i < WB.length; i++) text += WB[i].w + "\t" + (WB[i].ipa || "") + "\t" + WB[i].def + "\n";
+        var done = false;
+        try{
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          done = document.execCommand("copy");
+          document.body.removeChild(ta);
+        }catch(err){}
+        toast(done ? "已复制到剪贴板,可粘贴到 Excel/记事本" : "复制失败,请手动记录");
+        return;
+      }
+      if(rb.id === "enWbClear"){
+        if(confirm("确定清空生词本吗?")){
+          WB = []; wbSave(); rWB(); toast("生词本已清空");
+        }
+        return;
+      }
+      if(rb.id === "enCardRestart"){ buildDeck(); showCard(); toast("已重新洗牌"); return; }
+      if(rb.id === "enAgain"){ buildDeck(); showCard(); return; }
+      /* 整卡朗读(自我介绍/问答/救场) */
+      if(rb.classList.contains("reading")){ TTS.stop(); resetReadBtns(); return; }
+      var card = rb.closest(".en-card");
+      if(!card) return;
+      var lines = card.querySelectorAll(".en-line"), items = [];
+      for(var j = 0; j < lines.length; j++)
+        items.push({ text: lines[j].querySelector(".en-en").textContent, el: lines[j] });
+      resetReadBtns();
+      rb.classList.add("reading");
+      rb.textContent = "⏹ 停止";
+      TTS.speakSequence(items, { onDone: resetReadBtns });
+      return;
+    }
+
+    /* 卡片速记按钮 */
+    if(t.id === "enCardPrev"){ if(deckPos > 0){ deckPos--; showCard(); } return; }
+    if(t.id === "enCardFlip" || (t.closest && t.closest(".en-flip"))){
+      var f = $("enFlip");
+      if(f) f.classList.toggle("flipped");
+      if(t.id === "enCardFlip") return;
+      return;
+    }
+    if(t.id === "enCardSpeak"){ if(deck[deckPos]) TTS.speakWord(deck[deckPos].w); return; }
+    if(t.id === "enCardNext"){
+      if(deckPos < deck.length - 1){ deckPos++; showCard(); } else showFinish();
+      return;
+    }
+    if(t.id === "enCardHard"){
+      var c = deck[deckPos];
+      if(c && !wbHas(c.w)){ wbAdd({ w: c.w, ipa: c.ipa, def: c.zh }); toast("「" + c.w + "」已加入生词本"); }
+      else if(c) toast("已经在生词本里了");
+      if(deckPos < deck.length - 1){ deckPos++; showCard(); } else showFinish();
+      return;
+    }
+
+    /* 背诵模式:点中文偷看该句 */
+    var zh = t.closest ? t.closest(".en-zh") : null;
+    if(zh && document.body.classList.contains("en-hidezh")){
+      zh.classList.toggle("en-reveal");
+      return;
+    }
+
+    /* 弹窗:点遮罩关闭 */
+    if(t.id === "enPopMask"){ closePop(); return; }
+  });
+
+  $("enPopClose").onclick = closePop;
+  $("enPopSpeak").onclick = function(){ if(popCtx) TTS.speakWord(popCtx.w); };
+  $("enPopStar").onclick = function(){
+    if(!popCtx) return;
+    if(wbHas(popCtx.w)){ wbRemove(popCtx.w); toast("已移出「" + popCtx.w + "」"); }
+    else { wbAdd({ w: popCtx.w, ipa: popCtx.ipa, def: popCtx.def }); toast("已加入「" + popCtx.w + "」"); }
+    refreshPopStar();
+  };
+
+  $("enRate").oninput = function(e){
+    TTS.setRate(+e.target.value);
+    $("enRateLb").textContent = (+e.target.value).toFixed(2).replace(/0$/, "") + "x";
+  };
+  $("enVoice").onchange = function(e){
+    TTS.setUserVoice(e.target.value);
+    fillVoiceSelect();
+    updateVoiceStatus();
+    TTS.speakSample();
+    var v = TTS.getVoice();
+    toast(v ? "已切换音色:" + v.name : "已恢复自动选择音色");
+  };
+  $("enRecite").onclick = function(){
+    var on = document.body.classList.toggle("en-hidezh");
+    this.classList.toggle("on", on);
+    this.textContent = on ? "👀 显示中文" : "🙈 背诵模式";
+    if(on) toast("中文已隐藏,点击任意中文位置可偷看该句");
+  };
+  $("enStop").onclick = function(){ TTS.stop(); resetReadBtns(); };
+}
+
+/* ---------- 密码锁门禁 ---------- */
+function fnv(s){
+  var h = 0x811c9dc5, i;
+  for(i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return ("0000000" + h.toString(16)).slice(-8);
+}
+function unlockedFlag(){
+  try{ return localStorage.getItem(UNLOCK_KEY) || sessionStorage.getItem(UNLOCK_KEY); }catch(e){ return null; }
+}
+function lockPage(){ $("enLock").classList.add("show"); }
+function unlockPage(){ $("enLock").classList.remove("show"); loadData(); }
+function tryUnlock(remember){
+  var v = $("enLockPw").value || "";
+  if(fnv(v) === PW_HASH){
+    try{ (remember ? localStorage : sessionStorage).setItem(UNLOCK_KEY, "1"); }catch(e){}
+    $("enLockErr").textContent = "";
+    $("enLockPw").value = "";
+    unlockPage();
+  }else{
+    $("enLockErr").textContent = "密码不对,再想想(6 位数字)";
+    var card = $("enLockCard");
+    card.classList.remove("shake");
+    void card.offsetWidth;
+    card.classList.add("shake");
+  }
+}
+$("enLockGo").onclick = function(){ tryUnlock($("enLockRemember").checked); };
+$("enLockPw").onkeydown = function(e){ if(e.key === "Enter") tryUnlock($("enLockRemember").checked); };
+$("enRelock").onclick = function(){
+  try{ localStorage.removeItem(UNLOCK_KEY); sessionStorage.removeItem(UNLOCK_KEY); }catch(e){}
+  TTS.stop(); resetReadBtns();
+  lockPage();
+  $("enLockPw").focus();
+  toast("已重新锁定,本机记忆已清除");
+};
+/* 启动门禁:已解锁直接进,否则停在锁屏(不加载任何内容数据) */
+if(unlockedFlag()) unlockPage(); else lockPage();
+})();
+</script>
+</body>
+</html>

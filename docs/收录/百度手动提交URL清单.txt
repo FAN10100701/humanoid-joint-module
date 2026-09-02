@@ -72,3 +72,4 @@ https://cyco.top/09_大模型与具身智能/02_DeepSeek架构精讲.html
 https://cyco.top/09_大模型与具身智能/03_强化学习与后训练.html
 https://cyco.top/09_大模型与具身智能/04_基座选型与开源生态.html
 https://cyco.top/09_大模型与具身智能/05_代码实战_部署微调与Agent.html
+https://cyco.top/08_学习工具/16_保研英语面试.html
