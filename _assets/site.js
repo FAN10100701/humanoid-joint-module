@@ -53,16 +53,32 @@
       seg[j].classList.toggle("on", seg[j].getAttribute("data-t") === t);
     }
   }
-  S.setTheme = function(name){
+  /* V2.1.11:主题切换涟漪扩散——从触发按钮坐标圆形铺开(View Transitions);
+     不支持的浏览器 / prefers-reduced-motion / 无坐标时自动降级为瞬时切换 */
+  S.setTheme = function(name, e){
     var next = (name === "light") ? "light" : "dark";
-    document.body.setAttribute("data-theme", next);
-    try{ document.documentElement.setAttribute("data-theme-early", next); }catch(e){}
-    try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
-    applyTheme();
+    var apply = function(){
+      document.body.setAttribute("data-theme", next);
+      try{ document.documentElement.setAttribute("data-theme-early", next); }catch(e2){}
+      try{ localStorage.setItem(THEME_KEY, next); }catch(e2){}
+      applyTheme();
+    };
+    var reduce = false;
+    try{ reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e2){}
+    if(!e || typeof e.clientX !== "number" || !document.startViewTransition || reduce){ apply(); return; }
+    var x = e.clientX, y = e.clientY;
+    var vt = document.startViewTransition(apply);
+    vt.ready.then(function(){
+      var r = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      document.documentElement.animate(
+        { clipPath: [ "circle(0px at " + x + "px " + y + "px)", "circle(" + r + "px at " + x + "px " + y + "px)" ] },
+        { duration: 480, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
+      );
+    }).catch(function(){ /* ready 竞态失败:主题切换本身已完成 */ });
   };
-  S.toggleTheme = function(){
+  S.toggleTheme = function(e){
     var cur = document.body.getAttribute("data-theme") === "light";
-    S.setTheme(cur ? "dark" : "light");
+    S.setTheme(cur ? "dark" : "light", e);
   };
   window.toggleTheme = function(){ if(window.Site) Site.toggleTheme(); };
 
@@ -407,8 +423,13 @@
       + '<a href="' + root + '/08_学习工具/12_闯关学习.html">闯关学习</a>'
       + '<a href="' + root + '/08_学习工具/14_个人作品台.html">个人作品台</a>'
       + '</div></div></div>'
+      /* V2.1.11:本页阅读进度环(窄屏隐藏) */
+      + '<span class="nav-prog" title="本页阅读进度"><svg viewBox="0 0 36 36" width="22" height="22" aria-hidden="true">'
+      + '<circle class="np-t" cx="18" cy="18" r="15.5"/>'
+      + '<circle class="np-p" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" transform="rotate(-90 18 18)"/>'
+      + '</svg><i id="navProgTxt">0%</i></span>'
       + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史">🏷 v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
-      + '<button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>'
+      + '<button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>'
       + '<button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>'
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       /* 移动端板块入口(V2.1.7):<900px 时 .nav-links 整体隐藏,内容页此前无任何
@@ -417,7 +438,7 @@
       + '</div>';
     var st = document.createElement('style');
     /* V2.1.8:.nav-ver 样式迁至 site.css(首页静态顶栏共用),此处仅保留下拉与版本外样式 */
-    st.textContent = '.nav-dd{position:relative}.nav-dd-btn{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap}.nav-dd-btn:hover{background:rgba(59,130,246,.28);color:#fff}.nav-dd-panel{display:none;position:fixed;top:0;left:0;min-width:200px;max-height:70vh;overflow:auto;background:rgba(12,17,26,.94);border:1px solid rgba(140,190,255,.32);border-radius:16px;padding:10px;flex-direction:column;gap:3px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:300;backdrop-filter:blur(20px) saturate(150%);transform-origin:top left;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd.open .nav-dd-panel{left:8px !important;right:8px !important;top:56px !important;min-width:0}@keyframes ddPop{0%{opacity:0;transform:translateY(-10px) scale(.9)}55%{opacity:1;transform:translateY(3px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}.nav-dd-btn:active{animation:ddJelly .5s ease}@keyframes ddJelly{0%{transform:scale(1,1)}28%{transform:scale(.9,1.1)}55%{transform:scale(1.08,.92)}75%{transform:scale(.97,1.03)}100%{transform:scale(1,1)}}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none}.nav-dd-panel a:hover{background:rgba(88,166,255,.15);color:#fff}body[data-theme=light] .nav-dd-panel{background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}body[data-theme=light] .nav-dd-panel a{color:#475569}body[data-theme=light] .nav-dd-panel a:hover{background:rgba(37,99,235,.08);color:#0f172a}body[data-theme=light] .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}';
+    st.textContent = '.nav-dd{position:relative}.nav-dd-btn{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}.nav-dd-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}.nav-dd-panel{display:none;position:fixed;top:0;left:0;min-width:200px;max-height:70vh;overflow:auto;background:rgba(12,17,26,.94);border:1px solid rgba(140,190,255,.32);border-radius:16px;padding:10px;flex-direction:column;gap:3px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:300;backdrop-filter:blur(20px) saturate(150%);transform-origin:top left;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd.open .nav-dd-panel{left:8px !important;right:8px !important;top:56px !important;min-width:0}@keyframes ddPop{0%{opacity:0;transform:translateY(-10px) scale(.9)}55%{opacity:1;transform:translateY(3px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}.nav-dd-btn:active{animation:ddJelly .5s ease}@keyframes ddJelly{0%{transform:scale(1,1)}28%{transform:scale(.9,1.1)}55%{transform:scale(1.08,.92)}75%{transform:scale(.97,1.03)}100%{transform:scale(1,1)}}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none}.nav-dd-panel a:hover{background:rgba(88,166,255,.15);color:#fff}body[data-theme=light] .nav-dd-panel{background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}body[data-theme=light] .nav-dd-panel a{color:#475569}body[data-theme=light] .nav-dd-panel a:hover{background:rgba(37,99,235,.08);color:#0f172a}body[data-theme=light] .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}';
     document.head.appendChild(st);
     nav.innerHTML = html;
     document.body.insertBefore(nav, document.body.firstChild);
@@ -721,7 +742,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.10(2026-09-02)";
+  S.VERSION = "V2.1.11(2026-09-02)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -817,6 +838,54 @@
     render();
   }
 
+  /* ---------- V2.1.11 顶栏阅读进度环(scroll rAF 节流) ---------- */
+  function initScrollProgress(){
+    var el = document.querySelector(".nav-prog .np-p");
+    if(!el) return;
+    var txt = document.getElementById("navProgTxt");
+    var ticking = false;
+    function update(){
+      ticking = false;
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      var pct = h > 40 ? Math.min(100, Math.max(0, Math.round(window.scrollY / h * 100))) : 100;
+      el.style.strokeDashoffset = (97.4 * (1 - pct / 100)).toFixed(1);
+      if(txt) txt.textContent = pct + "%";
+    }
+    window.addEventListener("scroll", function(){
+      if(!ticking){ ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
+  }
+
+  /* ---------- V2.1.11 卡片滚动错峰入场:只挂初始视口外的 .grid>.card,
+     进入视口按批 60ms 错峰重播 fadeUp;JS 不可用时不加 hold、一切如旧 ---------- */
+  function initReveal(){
+    var els = [];
+    try{
+      var all = document.querySelectorAll(".grid > .card");
+      for(var i = 0; i < all.length; i++){
+        if(all[i].getBoundingClientRect().top > window.innerHeight + 40) els.push(all[i]);
+      }
+    }catch(e){ return; }
+    if(!els.length || !("IntersectionObserver" in window)) return;
+    var reduce = false;
+    try{ reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+    if(reduce) return;
+    var batch = 0;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        io.unobserve(en.target);
+        var el = en.target;
+        setTimeout(function(){
+          el.classList.remove("rv-hold");
+          el.style.animation = "fadeUp .55s cubic-bezier(.2,.8,.3,1.05) both";
+        }, (batch++ % 6) * 60);
+      });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    els.forEach(function(el){ el.classList.add("rv-hold"); io.observe(el); });
+  }
+
   /* ---------- 打印按钮(导航右侧) ---------- */
   function initPrintBtn(){
     var nav = document.querySelector(".topnav .nav-inner");
@@ -885,8 +954,8 @@
   }
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); initScrollProgress(); initReveal(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); initScrollProgress(); initReveal();
   }
 })();

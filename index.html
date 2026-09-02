@@ -110,8 +110,8 @@ body:not([data-theme]) .rm-dot.on,body[data-theme="light"] .rm-dot.on{background
 body:not([data-theme]) .ver-badge,body[data-theme="light"] .ver-badge{color:#64748b;border-color:rgba(100,116,139,.35);background:rgba(255,255,255,.6)}
 body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hover{color:#2563eb;border-color:rgba(37,99,235,.55);box-shadow:0 4px 14px rgba(37,99,235,.16)}
 .nav-dd{position:relative}
-.nav-dd-btn{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.18s}
-.nav-dd-btn:hover{background:rgba(59,130,246,.28);color:#fff}
+.nav-dd-btn{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.18s}
+.nav-dd-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}
 .nav-dd-panel{display:none;position:fixed;top:0;left:0;min-width:220px;background:rgba(12,17,26,.94);border:1px solid rgba(140,190,255,.32);border-radius:16px;padding:10px;flex-direction:column;gap:3px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:300;backdrop-filter:blur(20px) saturate(150%);transform-origin:top left;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}.nav-dd.open .nav-dd-panel{display:flex}@keyframes ddPop{0%{opacity:0;transform:translateY(-10px) scale(.9)}55%{opacity:1;transform:translateY(3px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}.nav-dd-btn:active{animation:ddJelly .5s ease}@keyframes ddJelly{0%{transform:scale(1,1)}28%{transform:scale(.9,1.1)}55%{transform:scale(1.08,.92)}75%{transform:scale(.97,1.03)}100%{transform:scale(1,1)}}
 .nav-dd.open .nav-dd-panel{display:flex}
 .nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none;white-space:nowrap}
@@ -157,7 +157,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       </div>
     </div>
     <a class="nav-ver" id="navVerHome" href="#version" title="版本与更新历史">🏷 v—</a>
-    <button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>
+    <button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>
     <button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>
     <button class="nav-ham" onclick="toggleDrawer()" title="菜单">☰</button>
   </div>
@@ -200,8 +200,8 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     </div>
     <div style="margin-top:18px;text-align:center">
       <div class="theme-seg" role="group" aria-label="风格切换">
-        <button data-t="dark" onclick="Site.setTheme('dark')">🌙 深色风格</button>
-        <button data-t="light" onclick="Site.setTheme('light')">☀️ 极简浅色</button>
+        <button data-t="dark" onclick="Site.setTheme('dark', event)">🌙 深色风格</button>
+        <button data-t="light" onclick="Site.setTheme('light', event)">☀️ 极简浅色</button>
       </div>
       <a id="verBadge" class="ver-badge" href="#version" title="查看版本与更新历史"><i></i>v—</a>
     </div>
@@ -837,11 +837,13 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.10</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 英语面试页密码锁 + 题库页密码入口 + 训练台工具条吸附</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.11</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 微交互五件套 + 深色顶栏去蓝</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V2.1.10 · 2026-09-02 · 英语面试页密码锁 + 题库页密码入口 + 工具条吸附</summary>
+        <summary>V2.1.11 · 2026-09-02 · 微交互五件套:数字滚动 / 卡片错峰 / 主题涟漪 / 阅读进度环 / 通关彩带 + 深色顶栏去蓝</summary>
+        <div class="faq-a">🔢 <b>统计数字滚动</b>:顶部 76/75/8/3 进入视口从 0 计数到位;🃏 <b>卡片滚动错峰入场</b>:视口外卡片滚到即按批错峰浮现(不用等整页加载完);🌗 <b>主题切换涟漪</b>:点主题按钮从按钮位置圆形波纹铺满全屏(View Transitions,不支持的浏览器自动降级);⭕ <b>内容页顶栏阅读进度环</b>:双环+百分比随滚动实时更新,深浅主题自适应;🎉 <b>闯关彩带</b>:通关全屏彩色喷发、解锁徽章右下角金色小喷(零依赖,播完自毁);🎨 <b>深色顶栏按钮去蓝</b>:搜索/主题/完成/板块/自检按钮文字改中性玻璃灰白(hover 提亮),「✓ 完成」点亮仍为语义绿。全部特效尊重系统"减少动态效果"设置。</div>
+      </details><details class="faq"><summary>V2.1.10 · 2026-09-02 · 英语面试页密码锁 + 题库页密码入口 + 工具条吸附</summary>
         <div class="faq-a">🔒 <b>英语面试页密码访问</b>:内容基于个人简历定制,加全页口令锁——<b>锁定期间不加载任何内容数据文件</b>(自我介绍/问答答案/生词本全部锁在数据文件里),口令只存 FNV-1a 哈希不进源码明文;支持「记住本机」免重复输入,工具条新增「🔒 重新锁定」一键清除记忆;纯前端口令锁,防顺手翻看而非加密级防护。🗣️ <b>题库页嵌入密码入口</b>:配套资源区新增英语口语训练台入口条,输入密码直达英语面试页(与英语页共用解锁标记,进了入口无需二次输密码)。🎛 <b>训练台工具条吸附置顶</b>:音色/语速/背诵/停止工具条改为 sticky 跟随滚动,逐句跟读时随手可调,不用再滚回页顶。</div>
       </details><details class="faq"><summary>V2.1.9 · 2026-09-02 · 新增「保研英语面试」口语训练台 + 全站字体栈优化</summary>
         <div class="faq-a">🗣️ <b>新页面 08-16 保研英语面试</b>(插于保研题库之后):2 版自我介绍 / 20 题高频问答 / 8 条救场金句 / 91 个专业名词中英对照,<b>点词查词</b>(367 词离线词典 + 词形还原回退)、<b>TTS 逐句跟读</b>(Natural 音色优先 / 0.5~1.0x 语速 / 缩写词转读 / 当前句高亮)、<b>背诵模式</b>(隐藏中文、点按偷看)、<b>生词本</b>(本地保存 + 一键导出)与<b>卡片 3D 翻面速记</b>(生词优先、双向自测、不熟一键回收);阅读链重接 题库→英语面试→闯关,首页卡片/快捷胶囊/搜索/学习地图/SW 预缓存全登记,页数口径 75→76 三处同步。🔤 <b>全站字体栈优化</b>:拉丁字符统一 Segoe UI(苹果设备自动落系统 SF),中文仍苹方/雅黑,深浅色同时生效——中英混排与英文显示整体更精致。</div>
@@ -1018,7 +1020,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.10(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.11(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1240,6 +1242,44 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   /* V2.1.8:顶栏版本胶囊同源填充(右上角工具栏统一入口) */
   var nv = document.getElementById("navVerHome");
   if(nv && v) nv.textContent = "🏷 " + v;
+})();
+
+/* Hero 统计数字滚动(V2.1.11):进入视口从 0 计数到目标值(目标取 DOM 现值,
+   statPages/statTracked 由 head 脚本动态填充后此处再读);∞ 等非数字直显;
+   prefers-reduced-motion 或无 IO 时直接显示 */
+(function(){
+  var vals = document.querySelectorAll(".hero .stats .v");
+  if(!vals.length) return;
+  var targets = [];
+  for(var i = 0; i < vals.length; i++){
+    var n = parseInt(vals[i].textContent, 10);
+    targets.push(isNaN(n) ? null : n);
+  }
+  var reduce = false;
+  try{ reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+  if(reduce || !("IntersectionObserver" in window)) return;
+  var hasNum = false;
+  for(var j = 0; j < vals.length; j++){
+    if(targets[j] !== null){ vals[j].textContent = "0"; hasNum = true; }
+  }
+  if(!hasNum) return;
+  var done = false;
+  var io = new IntersectionObserver(function(es){
+    if(done || !es[0].isIntersecting) return;
+    done = true; io.disconnect();
+    var t0 = null;
+    function step(t){
+      if(t0 === null) t0 = t;
+      var p = Math.min(1, (t - t0) / 900);
+      var ease = 1 - Math.pow(1 - p, 3);            /* easeOutCubic */
+      for(var k = 0; k < vals.length; k++){
+        if(targets[k] !== null) vals[k].textContent = String(Math.round(targets[k] * ease));
+      }
+      if(p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }, { threshold: 0.4 });
+  io.observe(document.querySelector(".hero .stats"));
 })();
 /* 学习路径横滑 carousel(V2.1.0 无限循环):克隆首尾,越过边界瞬移回真身,肉眼无缝 */
 (function(){

@@ -108,9 +108,9 @@
   function injectStyle(){
     var st = document.createElement("style");
     st.textContent =
-      /* 顶栏按钮 */
-      '.nav-sst{display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:12px;padding:6px 11px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}' +
-      '.nav-sst:hover{background:rgba(59,130,246,.28);color:#fff}' +
+      /* 顶栏按钮(V2.1.11:深色中性玻璃,与搜索/主题按钮统一) */
+      '.nav-sst{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:12px;padding:6px 11px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}' +
+      '.nav-sst:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}' +
       '.nav-sst.pass{color:#86efac;border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.1)}' +
       '.nav-sst.fail{color:#fca5a5;border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.1)}' +
       'body:not([data-theme]),body[data-theme="light"] .nav-sst{color:#2563eb;background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25)}' +

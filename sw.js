@@ -7,7 +7,7 @@
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
    - 版本: V2.1.10 · 2026-09-02(升级站点时改 CACHE 名以强制更新)
    ============================================================ */
-var CACHE = "hrl-site-v2.1.10";
+var CACHE = "hrl-site-v2.1.11";
 var PRECACHE = [
   "./index.html",
   "./404.html",
