@@ -27,7 +27,10 @@
       "border:1px solid rgba(140,190,255,.4);color:#9ecbff;display:flex;align-items:center;justify-content:center;padding:0;" +
       "background:linear-gradient(160deg,rgba(34,54,96,.88),rgba(10,18,36,.94));backdrop-filter:blur(12px) saturate(140%);" +
       "box-shadow:0 10px 28px rgba(30,80,200,.4), inset 0 1px 0 rgba(160,200,255,.22);" +
-      "transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .3s;animation:aifPulse 3.6s ease-in-out infinite;touch-action:none}" +
+      "transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .3s;touch-action:none}" +
+      /* V2.1.12:呼吸光晕改由伪元素 opacity 动画承担(box-shadow 逐帧重绘→合成器透明度,省绘制) */
+      ".ai-fab-btn::before{content:\"\";position:absolute;inset:-3px;border-radius:20px;pointer-events:none;box-shadow:0 12px 32px rgba(30,80,200,.5);opacity:.55;animation:aifGlow 3.6s ease-in-out infinite}" +
+      ".ai-fab-btn.aif-drag::before{animation:none;opacity:0}" +
       ".ai-fab-btn svg{pointer-events:none}" +
       ".ai-fab-btn:hover{transform:translateY(-2px) scale(1.06);border-color:rgba(140,190,255,.7)}" +
       ".ai-fab-btn.aif-drag{cursor:grabbing;transition:none;transform:scale(1.1);animation:none;box-shadow:0 18px 44px rgba(30,80,200,.55)}" +
@@ -36,9 +39,8 @@
       "background:rgba(255,255,255,.8);box-shadow:0 10px 26px rgba(37,99,235,.2), inset 0 1px 0 rgba(255,255,255,.9)}" +
       "body:not([data-theme]),body[data-theme='light'] .ai-fab-btn:hover{border-color:rgba(37,99,235,.6)}" +
       "body:not([data-theme]),body[data-theme='light'] .ai-fab-btn.aif-drag{box-shadow:0 18px 40px rgba(37,99,235,.3)}" +
-      "@keyframes aifPulse{0%,100%{}50%{box-shadow:0 12px 34px rgba(30,80,200,.55), inset 0 1px 0 rgba(160,200,255,.3)}}" +
-      "body:not([data-theme]),body[data-theme='light'] .ai-fab-btn{animation-name:aifPulseL}" +
-      "@keyframes aifPulseL{0%,100%{}50%{box-shadow:0 12px 32px rgba(37,99,235,.28), inset 0 1px 0 rgba(255,255,255,.95)}}" +
+      "@keyframes aifGlow{0%,100%{opacity:.4}50%{opacity:1}}" +
+      "body:not([data-theme]),body[data-theme='light'] .ai-fab-btn::before{box-shadow:0 12px 30px rgba(37,99,235,.32)}" +
       /* ---- 面板(glass-panel 提供底色,内部元素双主题) ---- */
       ".ai-fab-panel{position:fixed;right:18px;bottom:134px;z-index:200;width:min(380px,92vw);height:min(540px,72vh);" +
       "border-radius:var(--gr-lg);overflow:hidden;display:none;flex-direction:column;" +

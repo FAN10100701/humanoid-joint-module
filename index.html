@@ -81,6 +81,7 @@ html:not([data-skin]) .card:hover::before{opacity:1}
 .roadmap{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding:6px 6px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab}
 .roadmap::-webkit-scrollbar{display:none}
 .roadmap.dragging{cursor:grabbing;scroll-snap-type:none;user-select:none}
+.roadmap.gliding{scroll-snap-type:none}
 .roadmap.dragging *{pointer-events:none}
 .rm-step{flex:0 0 min(300px,80vw);scroll-snap-align:center}
 .rm-step .rm-arrow{display:none}
@@ -104,6 +105,25 @@ body:not([data-theme]) .rm-dot.on,body[data-theme="light"] .rm-dot.on{background
 /* ===== 版本徽章精修(V2.0.9):玻璃胶囊 + 呼吸更新点 + 等宽字号 ===== */
 .ver-badge{display:none;margin-left:14px;align-items:center;gap:7px;font-size:11.5px;font-family:Consolas,"Courier New",monospace;letter-spacing:.3px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(148,163,184,.32);border-radius:999px;padding:5px 13px;background:rgba(148,163,184,.07);white-space:nowrap;transition:transform .25s cubic-bezier(.22,1.2,.36,1),border-color .18s,color .18s,box-shadow .25s}
 #heroStars{position:absolute;inset:0;width:100%;height:100%;opacity:.8;pointer-events:none}
+/* ===== Hero 极光流场(V2.1.12):纯 CSS 渐变斑缓慢位移(transform 合成器动画,
+   不占 rAF);滚出视口由 JS 暂停;浅色下降到极淡避免脏背景 ===== */
+.aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit}
+/* 不用 filter:blur——超大模糊层在部分环境引发渲染拼接异常;radial-gradient 自带柔边即可 */
+.aurora i{position:absolute;width:64%;height:76%;opacity:.5;border-radius:50%}
+.aurora i:nth-child(1){left:-14%;top:-30%;background:radial-gradient(closest-side,rgba(59,130,246,.42),rgba(59,130,246,.12) 55%,transparent 75%);animation:aur1 26s ease-in-out infinite alternate}
+.aurora i:nth-child(2){right:-18%;top:-20%;background:radial-gradient(closest-side,rgba(14,165,233,.32),rgba(14,165,233,.08) 55%,transparent 75%);animation:aur2 33s ease-in-out infinite alternate}
+.aurora i:nth-child(3){left:22%;bottom:-50%;background:radial-gradient(closest-side,rgba(147,112,219,.26),rgba(147,112,219,.07) 55%,transparent 75%);animation:aur3 39s ease-in-out infinite alternate}
+.aurora.off i{animation-play-state:paused}
+/* V2.1.12:光晕用透明度呼吸而非位移——大元素 translate 动画在部分合成器下产生
+   tile 错位伪影;opacity 动画最稳,明暗流转同样有"活着"的感觉 */
+.aurora i:nth-child(1){animation:aurGlow 14s ease-in-out infinite alternate}
+.aurora i:nth-child(2){animation:aurGlow 18s ease-in-out infinite alternate-reverse}
+.aurora i:nth-child(3){animation:aurGlow 23s ease-in-out infinite alternate}
+@keyframes aurGlow{from{opacity:.3}to{opacity:.6}}
+body:not([data-theme]) .aurora i,body[data-theme="light"] .aurora i{opacity:.2}
+body:not([data-theme]) .aurora i,body[data-theme="light"] .aurora i{animation-duration:20s}
+.aurora i:nth-child(2){background:radial-gradient(closest-side,rgba(14,165,233,.26),rgba(14,165,233,.06) 55%,transparent 75%)}
+@media (prefers-reduced-motion: reduce){.aurora i{animation:none}}
 .ver-badge i{width:6px;height:6px;border-radius:99px;background:#22c55e;box-shadow:0 0 7px rgba(34,197,94,.85);animation:verBlink 2.4s ease-in-out infinite}
 .ver-badge:hover{color:#60a5fa;border-color:rgba(59,130,246,.6);transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.2);text-decoration:none}
 @keyframes verBlink{0%,100%{opacity:1}50%{opacity:.35}}
@@ -180,7 +200,8 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
 <div class="container wide">
 
   <!-- ================= Hero ================= -->
-  <div class="hero glass-noise" style="position:relative;border-radius:0 0 26px 26px">
+    <div class="hero glass-noise" style="position:relative;border-radius:0 0 26px 26px">
+    <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
     <canvas id="heroStars"></canvas>
     <div class="glass-kicker">HUMANOID ROBOT LEARNING LAB</div>
     <h1 class="glass-title" style="font-size:36px;margin-top:10px">人形机器人<b>学习站</b></h1>
@@ -837,11 +858,13 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.11</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 微交互五件套 + 深色顶栏去蓝</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.12</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 第二梯队特效 + 性能与手感修版</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V2.1.11 · 2026-09-02 · 微交互五件套:数字滚动 / 卡片错峰 / 主题涟漪 / 阅读进度环 / 通关彩带 + 深色顶栏去蓝</summary>
+        <summary>V2.1.12 · 2026-09-02 · 第二梯队特效 + 性能与手感修版</summary>
+        <div class="faq-a">⚡ <b>滚动性能修版</b>:卡片倾斜移除常驻 will-change(77 个合成层是"变卡"根因),AI 球光晕改合成器透明度动画;🌗 <b>主题涟漪重构</b>:自绘纯色圆层扩散盖满后切主题再淡出,替换 View Transitions(消除边缘割裂与全屏截图开销);🃏 <b>卡片错峰修正</b>:同批卡片按屏幕位置自上而下依次浮现,不再随机跳序;🧲 <b>顶栏按钮磁吸</b>:hover 微移 ≤3px 弹性回弹;🌌 <b>Hero 极光流场</b>:三层渐变光晕呼吸(深色蓝青紫/浅色极淡),滚出视口自动暂停;🎯 <b>学习路径横滑惯性</b>:拖拽释放后按速度衰减滑行(修复与 scroll-snap 的吸附冲突);📝 引导页页数改由 SITE_SECTIONS 单源计算(修"35 个页面"过时文案)。</div>
+      </details><details class="faq"><summary>V2.1.11 · 2026-09-02 · 微交互五件套:数字滚动 / 卡片错峰 / 主题涟漪 / 阅读进度环 / 通关彩带 + 深色顶栏去蓝</summary>
         <div class="faq-a">🔢 <b>统计数字滚动</b>:顶部 76/75/8/3 进入视口从 0 计数到位;🃏 <b>卡片滚动错峰入场</b>:视口外卡片滚到即按批错峰浮现(不用等整页加载完);🌗 <b>主题切换涟漪</b>:点主题按钮从按钮位置圆形波纹铺满全屏(View Transitions,不支持的浏览器自动降级);⭕ <b>内容页顶栏阅读进度环</b>:双环+百分比随滚动实时更新,深浅主题自适应;🎉 <b>闯关彩带</b>:通关全屏彩色喷发、解锁徽章右下角金色小喷(零依赖,播完自毁);🎨 <b>深色顶栏按钮去蓝</b>:搜索/主题/完成/板块/自检按钮文字改中性玻璃灰白(hover 提亮),「✓ 完成」点亮仍为语义绿。全部特效尊重系统"减少动态效果"设置。</div>
       </details><details class="faq"><summary>V2.1.10 · 2026-09-02 · 英语面试页密码锁 + 题库页密码入口 + 工具条吸附</summary>
         <div class="faq-a">🔒 <b>英语面试页密码访问</b>:内容基于个人简历定制,加全页口令锁——<b>锁定期间不加载任何内容数据文件</b>(自我介绍/问答答案/生词本全部锁在数据文件里),口令只存 FNV-1a 哈希不进源码明文;支持「记住本机」免重复输入,工具条新增「🔒 重新锁定」一键清除记忆;纯前端口令锁,防顺手翻看而非加密级防护。🗣️ <b>题库页嵌入密码入口</b>:配套资源区新增英语口语训练台入口条,输入密码直达英语面试页(与英语页共用解锁标记,进了入口无需二次输密码)。🎛 <b>训练台工具条吸附置顶</b>:音色/语速/背诵/停止工具条改为 sticky 跟随滚动,逐句跟读时随手可调,不用再滚回页顶。</div>
@@ -1020,7 +1043,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.11(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.12(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1174,8 +1197,10 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   raf = requestAnimationFrame(frame);
 })();
 
-/* 板块卡片 3D tilt + 随鼠标光泽(V2.1.8):仅精确指针(hover:hover + pointer:fine)
-   设备启用;最大 4°、rAF 节流;触屏/打印不受影响 */
+/* 板块卡片 3D tilt + 随鼠标光泽(V2.1.8;V2.1.12 性能修正):
+   - 移除常驻 will-change:此前 77 张卡各建一个常驻合成层,内存/合成开销大(变卡主因)
+   - closest 查找从每个 pointermove 事件挪进 rAF(每帧最多一次)
+   仅精确指针(hover:hover + pointer:fine)设备启用,峰值 ±4° */
 (function(){
   if(!window.matchMedia || !matchMedia("(hover:hover) and (pointer:fine)").matches) return;
   var SEL = ".sec-grid .card, .board-grid .card, .grid .card";
@@ -1185,13 +1210,18 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   st.textContent =
     SEL + "{position:relative}" +
     '@media(hover:hover) and (pointer:fine){' +
-    SEL + "{will-change:transform}" +
     SEL + "::after{content:\"\";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(120,180,255,.16),transparent 65%)}" +
     SEL + ":hover::after{opacity:1}}";
   document.head.appendChild(st);
-  var cur = null, raf = 0, tx = 0, ty = 0;
+  var cur = null, raf = 0, tx = 0, ty = 0, pend = null;
   function apply(){
     raf = 0;
+    var t = pend;
+    var hit = (t && t.closest) ? t.closest(SEL) : null;
+    if(hit !== cur){
+      if(cur) cur.style.transform = "";
+      cur = hit;
+    }
     if(!cur) return;
     var r = cur.getBoundingClientRect();
     if(!r.width || !r.height) return;
@@ -1202,17 +1232,21 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     cur.style.setProperty("--my", (py * 100).toFixed(1) + "%");
   }
   document.addEventListener("pointermove", function(e){
-    tx = e.clientX; ty = e.clientY;
-    var t = (e.target && e.target.closest) ? e.target.closest(SEL) : null;
-    if(t !== cur){
-      if(cur) cur.style.transform = "";
-      cur = t;
-    }
-    if(cur && !raf) raf = requestAnimationFrame(apply);
+    tx = e.clientX; ty = e.clientY; pend = e.target;
+    if(!raf) raf = requestAnimationFrame(apply);
   }, { passive: true });
   document.documentElement.addEventListener("pointerleave", function(){
     if(cur){ cur.style.transform = ""; cur = null; }
   });
+})();
+
+/* 极光层离屏暂停(V2.1.12):hero 滚出视口即暂停渐变位移动画,回来再续 */
+(function(){
+  var au = document.querySelector(".hero .aurora");
+  if(!au || !("IntersectionObserver" in window)) return;
+  new IntersectionObserver(function(es){
+    au.classList.toggle("off", !es[0].isIntersecting);
+  }).observe(au);
 })();
 
 /* 顶栏「板块 ▾」下拉(V2.1.0) */
@@ -1321,18 +1355,44 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   if(btnPrev) btnPrev.onclick = function(){ go(-1); };
   if(btnNext) btnNext.onclick = function(){ go(1); };
   var down = false, startX = 0, startLeft = 0, moved = 0;
+  /* V2.1.12 拖拽惯性:记录松手前速度,松手后按帧衰减滑行 */
+  var vel = 0, lastX = 0, lastT = 0, momRAF = 0;
   sc.addEventListener("pointerdown", function(e){
     if(e.pointerType !== "mouse") return;
-    down = true; moved = 0; startX = e.clientX; startLeft = sc.scrollLeft;
+    cancelAnimationFrame(momRAF);                       /* 新按下即打断惯性滑行 */
+    down = true; moved = 0; vel = 0;
+    startX = lastX = e.clientX; lastT = performance.now();
+    startLeft = sc.scrollLeft;
     if(sc.setPointerCapture) try{ sc.setPointerCapture(e.pointerId); }catch(err){}
   });
   sc.addEventListener("pointermove", function(e){
     if(!down) return;
     var dx = e.clientX - startX;
     moved = Math.max(moved, Math.abs(dx));
-    if(moved > 4){ sc.classList.add("dragging"); sc.scrollLeft = startLeft - dx; }
+    if(moved > 4){
+      sc.classList.add("dragging");
+      sc.scrollLeft = startLeft - dx;
+      var now = performance.now();
+      vel = (lastX - e.clientX) / Math.max(1, now - lastT) * 16;   /* 折算每帧位移 */
+      lastX = e.clientX; lastT = now;
+    }
   });
-  function endDrag(){ if(!down) return; down = false; sc.classList.remove("dragging"); normalize(); }
+  function endDrag(){
+    if(!down) return;
+    down = false;
+    sc.classList.remove("dragging");
+    var slow = true;
+    try{ slow = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+    if(slow || Math.abs(vel) < 1.5){ normalize(); return; }
+    /* V2.1.12:滑行期间必须维持 snap 关闭,否则 proximity 吸附会把每一步拉回原点 */
+    sc.classList.add("gliding");
+    (function glide(){
+      sc.scrollLeft += vel;
+      vel *= 0.94;
+      if(Math.abs(vel) > 0.25){ momRAF = requestAnimationFrame(glide); }
+      else{ sc.classList.remove("gliding"); normalize(); }
+    })();
+  }
   sc.addEventListener("pointerup", endDrag);
   sc.addEventListener("pointercancel", endDrag);
   sc.addEventListener("pointerleave", endDrag);

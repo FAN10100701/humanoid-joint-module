@@ -647,5 +647,12 @@ body:not([data-theme]),body[data-theme="light"] .nav-prog i{color:#64748b}
    进入视口移除并重播 fadeUp;本规则须可覆盖上方原 fadeUp 规则(同特异性靠后取胜) ---------- */
 .rv-hold{animation:none;opacity:0}
 
-/* ---------- V2.1.11 主题切换涟漪:禁用 View Transitions 默认交叉淡化,只用自定义圆扩散 ---------- */
-::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+/* ---------- V2.1.12 主题切换涟漪层(site.js setTheme 创建):
+   纯色圆(取目标主题底色)从按钮坐标 scale 0→1 盖满全屏,
+   盖满瞬间 JS 切主题,随后整层淡出露出新主题——无重影、无边缘割裂 ---------- */
+.theme-ripple{position:fixed;z-index:2000;border-radius:50%;pointer-events:none;background:#0d1117;
+  transform:translate(-50%,-50%) scale(0);
+  animation:themeRip .42s cubic-bezier(.3,.6,.35,1) forwards}
+.theme-ripple[data-next="light"]{background:#f6f8fb}
+.theme-ripple.fade{transition:opacity .55s ease;opacity:0}
+@keyframes themeRip{to{transform:translate(-50%,-50%) scale(1)}}

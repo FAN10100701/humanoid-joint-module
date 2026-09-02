@@ -53,8 +53,10 @@
       seg[j].classList.toggle("on", seg[j].getAttribute("data-t") === t);
     }
   }
-  /* V2.1.11:主题切换涟漪扩散——从触发按钮坐标圆形铺开(View Transitions);
-     不支持的浏览器 / prefers-reduced-motion / 无坐标时自动降级为瞬时切换 */
+  /* V2.1.12:主题切换涟漪——自绘纯色圆层从按钮坐标扩散,盖满瞬间切主题再淡出。
+     替代此前的 View Transitions 实现:VT 每次切换做两次全屏截图(低配机卡顿),
+     且扩散边缘与旧画面有割裂感;自绘方案全浏览器一致、零截图开销。
+     降级:prefers-reduced-motion / 无坐标时瞬时切换 */
   S.setTheme = function(name, e){
     var next = (name === "light") ? "light" : "dark";
     var apply = function(){
@@ -65,16 +67,18 @@
     };
     var reduce = false;
     try{ reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e2){}
-    if(!e || typeof e.clientX !== "number" || !document.startViewTransition || reduce){ apply(); return; }
-    var x = e.clientX, y = e.clientY;
-    var vt = document.startViewTransition(apply);
-    vt.ready.then(function(){
-      var r = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
-      document.documentElement.animate(
-        { clipPath: [ "circle(0px at " + x + "px " + y + "px)", "circle(" + r + "px at " + x + "px " + y + "px)" ] },
-        { duration: 480, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
-      );
-    }).catch(function(){ /* ready 竞态失败:主题切换本身已完成 */ });
+    if(!e || typeof e.clientX !== "number" || reduce){ apply(); return; }
+    var ov = document.createElement("div");
+    ov.className = "theme-ripple";
+    ov.setAttribute("data-next", next);
+    var maxR = Math.hypot(Math.max(e.clientX, window.innerWidth - e.clientX), Math.max(e.clientY, window.innerHeight - e.clientY));
+    ov.style.left = e.clientX + "px";
+    ov.style.top = e.clientY + "px";
+    ov.style.width = ov.style.height = (maxR * 2 + 4) + "px";
+    document.body.appendChild(ov);
+    setTimeout(apply, 430);                                   /* 圆盖满后再切,过程被纯色圆遮住 */
+    setTimeout(function(){ ov.classList.add("fade"); }, 520);
+    setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }, 1250);
   };
   S.toggleTheme = function(e){
     var cur = document.body.getAttribute("data-theme") === "light";
@@ -742,7 +746,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.11(2026-09-02)";
+  S.VERSION = "V2.1.12(2026-09-02)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -799,7 +803,16 @@
     var seen = false;
     try{ seen = localStorage.getItem(ON_KEY) === "1"; }catch(e){}
     if(seen) return;
-    var nPages = (window.SITE_SEARCH_INDEX ? window.SITE_SEARCH_INDEX.length - 1 : 35);
+    /* V2.1.12:页数从 SITE_SECTIONS 单源计算(与首页统计/C5 同口径);
+       原先读异步的 search-index,未就绪时长期落到 fallback 35 */
+    var nPages = 76;
+    try{
+      if(window.SITE_SECTIONS){
+        var tk2 = 0;
+        window.SITE_SECTIONS.forEach(function(sc2){ tk2 += (sc2.ids ? sc2.ids.length : 0); });
+        nPages = tk2 + 1;
+      }
+    }catch(e2){}
     var steps = [
       { t:"👋 欢迎来到人形机器人学习站", d:"这里是从关节模组到具身智能的免费学习网站:3D 解剖、FOC 原理、硬件实战、软件算法、前沿知识,共 " + nPages + " 个页面。" },
       { t:"🔍 用搜索快速定位", d:"按 Ctrl+K(手机点顶部「搜索」按钮)打开全站搜索,输入 FOC、谐波、ROS2、VLA 等关键词,直达对应页面。" },
@@ -857,8 +870,9 @@
     update();
   }
 
-  /* ---------- V2.1.11 卡片滚动错峰入场:只挂初始视口外的 .grid>.card,
-     进入视口按批 60ms 错峰重播 fadeUp;JS 不可用时不加 hold、一切如旧 ---------- */
+  /* ---------- V2.1.11 卡片滚动错峰入场:只挂初始视口外的 .grid>.card;
+     V2.1.12 修正:同一批进入视口的卡片按屏幕位置自上而下排序后依次播放,
+     节奏整齐不再随机跳序;JS 不可用时不加 hold、一切如旧 ---------- */
   function initReveal(){
     var els = [];
     try{
@@ -871,19 +885,48 @@
     var reduce = false;
     try{ reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
     if(reduce) return;
-    var batch = 0;
     var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(en){
-        if(!en.isIntersecting) return;
-        io.unobserve(en.target);
-        var el = en.target;
-        setTimeout(function(){
-          el.classList.remove("rv-hold");
-          el.style.animation = "fadeUp .55s cubic-bezier(.2,.8,.3,1.05) both";
-        }, (batch++ % 6) * 60);
-      });
+      var coming = [];
+      for(var i = 0; i < entries.length; i++){
+        if(entries[i].isIntersecting) coming.push(entries[i].target);
+      }
+      if(!coming.length) return;
+      coming.sort(function(a, b){ return a.getBoundingClientRect().top - b.getBoundingClientRect().top; });
+      for(var j = 0; j < coming.length; j++){
+        (function(el, idx){
+          io.unobserve(el);
+          setTimeout(function(){
+            el.classList.remove("rv-hold");
+            el.style.animation = "fadeUp .5s cubic-bezier(.2,.8,.3,1.05) both";
+          }, idx * 70);
+        })(coming[j], j);
+      }
     }, { rootMargin: "0px 0px -8% 0px" });
     els.forEach(function(el){ el.classList.add("rv-hold"); io.observe(el); });
+  }
+
+  /* ---------- V2.1.12 顶栏按钮磁吸(hover 时按钮向鼠标微移 ≤3px,离开回弹) ---------- */
+  function initMagnet(){
+    if(!window.matchMedia || !matchMedia("(hover:hover) and (pointer:fine)").matches) return;
+    try{ if(matchMedia("(prefers-reduced-motion: reduce)").matches) return; }catch(e){}
+    var st = document.createElement("style");
+    st.textContent = ".topnav .nav-search,.topnav .nav-theme,.topnav .nav-done,.topnav .nav-print,.topnav .nav-dd-btn,.topnav .nav-sst{transition:transform .2s cubic-bezier(.2,.8,.3,1.15),background-color .15s,border-color .15s,color .15s}";
+    document.head.appendChild(st);
+    var sel = ".nav-search,.nav-theme,.nav-done,.nav-print,.nav-sst,.nav-dd-btn";
+    var btns = document.querySelectorAll(".topnav " + sel);
+    for(var i = 0; i < btns.length; i++){
+      (function(b){
+        if(b.__mag) return;
+        b.__mag = true;
+        b.addEventListener("pointermove", function(e){
+          var r = b.getBoundingClientRect();
+          var dx = (e.clientX - r.left - r.width / 2) / (r.width / 2);
+          var dy = (e.clientY - r.top - r.height / 2) / (r.height / 2);
+          b.style.transform = "translate(" + (dx * 3).toFixed(1) + "px," + (dy * 2.5).toFixed(1) + "px)";
+        });
+        b.addEventListener("pointerleave", function(){ b.style.transform = ""; });
+      })(btns[i]);
+    }
   }
 
   /* ---------- 打印按钮(导航右侧) ---------- */
@@ -954,8 +997,8 @@
   }
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); initScrollProgress(); initReveal(); });
+    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); initScrollProgress(); initReveal(); initMagnet(); });
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); initScrollProgress(); initReveal();
+    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); initScrollProgress(); initReveal(); initMagnet();
   }
 })();
