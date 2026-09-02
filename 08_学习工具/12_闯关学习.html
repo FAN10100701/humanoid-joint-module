@@ -217,16 +217,8 @@ body:not([data-theme]),body[data-theme="light"] .qg-card{background:rgba(37,99,2
   function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(save)); }catch(e){} }
   function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
-  /* 学习活动打卡(与首页热力图同源:humanoid-site-activity-v1) */
-  function logActivity(){
-    try{
-      var d = new Date();
-      var key = d.getFullYear() + "-" + (d.getMonth()+1 < 10 ? "0":"") + (d.getMonth()+1) + "-" + (d.getDate() < 10 ? "0":"") + d.getDate();
-      var a = JSON.parse(localStorage.getItem("humanoid-site-activity-v1") || "{}");
-      a[key] = (a[key] || 0) + 1;
-      localStorage.setItem("humanoid-site-activity-v1", JSON.stringify(a));
-    }catch(e){}
-  }
+  /* 学习活动打卡(V2.1.7 起)复用 site.js 的 Site.logActivity 单源实现
+     (首页热力图数据 humanoid-site-activity-v1),本页不再持副本 */
 
   /* ---------- 数据加载 ---------- */
   function loadScript(src, cb){
@@ -325,16 +317,23 @@ body:not([data-theme]),body[data-theme="light"] .qg-card{background:rgba(37,99,2
     { id:'b_star3',   i:'⭐', n:'三星达人', d:'任意关卡获得三星' },
     { id:'b_world',   i:'🗺️', n:'大陆征服者', d:'通关任意 BOSS 关' },
     { id:'b_streak',  i:'🔥', n:'五连对', d:'单次挑战连对 5 题' },
-    { id:'b_allworld',i:'👑', n:'五洲称霸', d:'通关全部 21 关' },
-    { id:'b_final',   i:'🎓', n:'复试之星', d:'全真模拟 ≥14/15' },
+    { id:'b_allworld',i:'👑', n:'五洲称霸', d:'通关全部 {LVLEN} 关' },
+    { id:'b_final',   i:'🎓', n:'复试之星', d:'全真模拟 ≥{FINM1}/{FINLEN}' },
     { id:'b_allstar', i:'🌟', n:'满星传奇', d:'全部关卡三星' }
   ];
   function buildBadges(){
+    /* V2.1.7:关数与全真模拟题数由 quest-data 动态解析,文案不再写死 */
+    var fin = null;
+    for(var f = 0; f < LV.length; f++){ if(LV[f].id === "FIN"){ fin = LV[f]; break; } }
+    var finLen = (fin && fin.qs) ? fin.qs.length : 15;
     var html = "";
     for(var i = 0; i < BADGES.length; i++){
       var got = save.bd.indexOf(BADGES[i].id) >= 0;
+      var bd = BADGES[i].d.replace("{LVLEN}", LV.length)
+                         .replace("{FINM1}", Math.max(finLen - 1, 1))
+                         .replace("{FINLEN}", finLen);
       html += "<div class='qg-badge" + (got ? " got" : "") + "'><div class='bi'>" + BADGES[i].i +
-        "</div><div class='bn'>" + BADGES[i].n + "</div><div class='bd'>" + BADGES[i].d + "</div></div>";
+        "</div><div class='bn'>" + BADGES[i].n + "</div><div class='bd'>" + bd + "</div></div>";
     }
     $("qgBadgeWall").innerHTML = html;
   }
@@ -522,12 +521,18 @@ body:not([data-theme]),body[data-theme="light"] .qg-card{background:rgba(37,99,2
       var first = old.s === 0;
       save.lv[L.id] = { s: Math.max(old.s, stars), best: Math.max(old.best, pct), n: (old.n||0)+1 };
       save.xp += first ? L.exp : 10;
-      if(first) logActivity();
+      if(first && window.Site && Site.logActivity) Site.logActivity();
       var nb = grant('b_first');
       if(nb) run.newBd.push(nb);
       if(stars === 3){ var b3 = grant('b_star3'); if(b3) run.newBd.push(b3); }
       if(L.type === 'boss'){ var bw = grant('b_world'); if(bw) run.newBd.push(bw); }
-      if(L.id === 'FIN' && run.right >= 14){ var bf = grant('b_final'); if(bf) run.newBd.push(bf); }
+      /* V2.1.7:达标线改为 FIN 关题数-1(数据驱动),与徽章文案同源 */
+      if(L.id === 'FIN'){
+        var finL = null;
+        for(var fi = 0; fi < LV.length; fi++){ if(LV[fi].id === 'FIN'){ finL = LV[fi]; break; } }
+        var finPass = ((finL && finL.qs) ? finL.qs.length : 15) - 1;
+        if(run.right >= finPass){ var bf = grant('b_final'); if(bf) run.newBd.push(bf); }
+      }
       var allClear = true, allStar = true;
       for(var i = 0; i < LV.length; i++){
         var st = save.lv[LV[i].id];
@@ -564,8 +569,9 @@ body:not([data-theme]),body[data-theme="light"] .qg-card{background:rgba(37,99,2
     run = null;
   }
 
-  /* ---------- KaTeX(动态内容补渲染,同题库页) ---------- */
-  var katexState = 0;
+  /* ---------- KaTeX(动态内容补渲染,同题库页)
+     V2.1.7:统一走 site.js 的 KatexLoader 单源加载器(JS+CSS 四级回退,
+     全挂保持 LaTeX 原文);此前本处为 npmmirror 单源,与 site.js 漂移 ---------- */
   function renderFormulas(scope){
     var els = (scope || document).querySelectorAll(".formula:not([data-katex])");
     if(!els.length) return;
@@ -577,18 +583,8 @@ body:not([data-theme]),body[data-theme="light"] .qg-card{background:rgba(37,99,2
         all[i].setAttribute("data-katex", "2");
       }
     }
-    if(katexState === 2){ doRender(); return; }
-    if(katexState === 0){
-      katexState = 1;
-      var l = document.createElement("link");
-      l.rel = "stylesheet";
-      l.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
-      document.head.appendChild(l);
-      var s = document.createElement("script");
-      s.src = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js";
-      s.onload = function(){ katexState = 2; doRender(); };
-      document.head.appendChild(s);
-    }
+    if(window.katex){ doRender(); return; }
+    (window.KatexLoader || { ensure:function(cb){ cb(); } }).ensure(doRender);
   }
 })();
 </script>

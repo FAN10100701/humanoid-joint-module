@@ -7,7 +7,7 @@
 <title>人形机器人学习站 · 从关节模组到具身智能</title>
 <meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具,软件+硬件全覆盖。">
 <meta property="og:title" content="人形机器人学习站 · 从关节模组到具身智能">
-<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,52 个学习页面,零基础可学。">
+<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,75 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <meta name="baidu-site-verification" content="codeva-83ZAbuLmz6">
@@ -829,11 +829,13 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.6</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-08-30 · 保研题库普适化 + 进阶选择题 + 刷新闪黑根治</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.7</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 全库隐患排查治理 + 自迭代 Loop 工程</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V2.1.6 · 2026-08-30 · 保研题库普适化 + 进阶选择题 + 闪黑根治</summary>
+        <summary>V2.1.7 · 2026-09-02 · 全库隐患排查治理 + 自迭代 Loop 工程</summary>
+        <div class="faq-a">🔍 <b>首次全库隐患排查,32 项入台账(AUDIT.md)</b>,「快检→选题→修复→验证→发版→复盘→提交」固化为七步迭代循环(docs/维护/迭代循环.md);🐛 <b>P0×4</b>:index 残留未闭合 script 修复、<b>KaTeX 加载器收敛单源 KatexLoader</b>(AI 面板/闯关页漂移成 npmmirror 单源,JS+CSS 补齐四级回退)、题库数据全失败时空态兜底+重试、<b>内容页移动端板块导航</b>(<900px 汉堡+全屏抽屉,桌面零变化);🧹 <b>P1×12</b>:og 页数 52→75、page-meta 117→150 题等口径漂移清理、「21 关/14-15」徽章改数据驱动、「17 学科 150 题」收敛 S.STATS 单源、触屏 sticky-hover、星尘动画离屏暂停、window.event、题库链接转义、logActivity 去重;🧪 <b>自检 16→21 项</b>:修复漏计 ib-data-c 的 117 vs 150 长期误报(发版.ps1 从未跑通的存量 bug 一并修复),新增 C1 标签配平/C2 KaTeX 单源/C3 统计一致/C4 存储键白名单/C5 og 同步。</div>
+      </details><details class="faq"><summary>V2.1.6 · 2026-08-30 · 保研题库普适化 + 进阶选择题 + 闪黑根治</summary>
         <div class="faq-a">🎓 <b>保研题库普适化 13→17 学科、117→150 题</b>:新增 4 个「任何专业都必问」的通用学科——综合素质面试(自我介绍框架/选校动机/科研 STAR/压力面)、英语口语(英文模板+中文思路)、数学基础(三大变换/特征值/贝叶斯/最小二乘,全配公式)、科研素养(读论文/创新点/实验设计/调试排查),内容基于全网保研面经调研;🧠 <b>进阶选择题</b>:13 个专业学科各加 1~2 道陷阱题(积分饱和限幅误区/SVPWM 15.5%/const volatile/数组名与指针/优先级反转等),每科选择题 2→4 道;⚡ <b>刷新闪黑根治</b>:卡片动画元素加基础透明消除首帧闪现,新增深色主题首帧锁定——刷新不再闪一帧浅色再翻深色。</div>
       </details><details class="faq"><summary>V2.1.5 · 2026-08-30 · 首页收纳铺满 + 联系站长一致性 + 公式回退 + 自评反馈 + 浅色可读性</summary>
         <div class="faq-a">🏠 <b>首页卡片收纳修版</b>:展开后尾行卡片自动拉伸铺满(窄屏 2 列末张横跨整行),收起态「恰好两整行」,并修复原脚本硬编码索引导致部分卡片永远展开不出来的 bug;🛰 <b>联系站长一致性</b>:站长邮箱内联单源,删除异步加载 giscus-config.js 与竞态——此前脚本晚于 DOMContentLoaded 时邮箱退化为纯文本「站长邮箱」;🧮 <b>公式错乱根治</b>:KaTeX 由单一 npmmirror CDN 改四级回退(jsdelivr/unpkg/cdnjs),单源不可达不再显示原始 LaTeX 源码;修控制数学工具箱 p 内嵌 div 非法嵌套;📝 <b>题库自评反馈</b>:掌握度按钮实心高亮+弹跳+「已记录/已取消」即时回馈,题目行新增掌握度状态章,新增「💡 知识点拓展」区块(首批 5 道五星高频题补内容);♿ <b>浅色可读性统一</b>:修复 site.css 被写坏的 p/li 浅色选择器、链接与盒子强调标签映射深色系、WBC 页补漏引的 site.js、思维导图页修白底白字;全部板块网格末行统一铺满。</div>
@@ -1002,7 +1004,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.6(2026-08-30) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.7(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1115,9 +1117,11 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     var r = c.parentNode.getBoundingClientRect();
     mx = (e.clientX - r.left)/r.width - 0.5;
   });
-  (function loop(t){
-    requestAnimationFrame(loop);
-    if(!W) return;
+  /* V2.1.7:rAF 可暂停——标签页隐藏或 Hero 滚出视口时停止绘制,恢复可见再续,
+     后台标签与移动端不再空耗电;IO 不支持时退化为常驻绘制(旧行为) */
+  var raf = 0, inView = true;
+  function frame(){
+    if(!W || document.hidden || !inView){ raf = 0; return; }
     ctx.clearRect(0, 0, W, H);
     for(var i = 0; i < S.length; i++){
       var p = S[i];
@@ -1129,7 +1133,20 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       ctx.arc(p.x + mx*p.r*22, p.y, p.r, 0, 6.284);
       ctx.fill();
     }
-  })(0);
+    raf = requestAnimationFrame(frame);
+  }
+  if("IntersectionObserver" in window){
+    inView = false;   /* 初值交给 IO 首次回调判定 */
+    new IntersectionObserver(function(es){
+      inView = es[0].isIntersecting;
+      if(inView && !raf && !document.hidden) raf = requestAnimationFrame(frame);
+    }).observe(c);
+  }
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden){ if(raf) cancelAnimationFrame(raf); }
+    else if(inView && !raf) raf = requestAnimationFrame(frame);
+  });
+  raf = requestAnimationFrame(frame);
 })();
 
 /* 顶栏「板块 ▾」下拉(V2.1.0) */
@@ -1299,6 +1316,5 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     });
   })();
 </script>
-<script>
 </body>
 </html>

@@ -2,6 +2,15 @@
 
 > 人形机器人学习站 · 版本历史。每次更新在**顶部**新增一条,并同步登记到首页底部"版本与更新历史"。
 
+## V2.1.7 · 2026-09-02 · 全库隐患排查治理(P0×4 + P1×12)+ 自迭代 Loop 工程上线
+
+- 🔍 **首次全库隐患排查,32 项入台账 `AUDIT.md`**:依赖/数据口径/健壮性/移动端/安全/性能/兼容/可维护八类,每条带证据(文件:行号)、优先级与防回归去向,已排除项(API Key 泄漏疑云等)一并记录复查结论;**迭代循环(LOOP)上线**——「S1 快检 → S2 台账选题 → S3 修复 → S4 验证 → S5 发版 → S6 复盘回写 → S7 提交」固化为 `docs/维护/迭代循环.md`,后续每轮优化照流程自主执行
+- 🐛 **P0×4**:①`index.html` 尾部残留**未闭合空 `<script>`** 删除(上轮删码遗留);②**KaTeX 加载器收敛单源 `window.KatexLoader`**:原 site.js / AI 面板 / 题库页 / 闯关页四处各自实现且已漂移——AI 面板与闯关页只剩 npmmirror 单源无回退、四处 CSS 全部单源;现 JS+CSS 均四级回退(npmmirror→jsdelivr→unpkg→cdnjs),全挂保持 LaTeX 原文;③题库 ib-data 三文件**全部加载失败时不再抛 TypeError** 卡死「加载中」,改明确空态 + 重试入口;④**内容页移动端板块导航从无到有**:`<900px` 隐藏 `.nav-links` 后全站内容页无任何板块入口,现 injectChrome 生成汉堡按钮 + 复用首页 `.drawer` 全屏抽屉(桌面端零变化)
+- 🧹 **P1×12**:og:description 页数 52→75、page-meta 08-11「117 题/13 学科」→「150 题/17 学科」、srs.js「40 题」与 quiz-bank「两处同步」过时注释更正、闯关徽章「通关全部 21 关」「全真模拟 ≥14/15」及达标线改由 quest-data 动态解析(`LV.length`/`FIN.qs.length`)、「17 学科 150 题」7 处硬编码收敛 `site.js` 的 `S.STATS` 单源、触屏 sticky-hover 修复(site.css 包 `@media(hover:hover)` + glass.css `hover:none` 覆盖)、首页星尘 rAF 加 visibilitychange/IntersectionObserver 离屏暂停、`window.event` 改事件对象(修 Firefox 术语提示位置退化)、题库延伸链接 `safeLink` 协议白名单+引号转义、不蒜子失败 onerror 移除脚本节点、闯关页 logActivity 副本收敛 `Site.logActivity` 单源
+- 🧪 **一键自检 16→21 项,并修一个存量误报**:「Interview bank sync」漏计 V2.1.6 新增的 `ib-data-c.js`,导致 **117 vs 150 长期 FAIL**(CI 形同虚设)——已修;`发版.ps1` 的 `$enc.ReadFile/WriteFile` 方法不存在导致脚本从未跑通——改 `[IO.File]` 静态方法后实测可用;新增 C1 script 标签配平(兼容 `document.write('<\/script>')` 模板)/ C2 KaTeX 单源(CDN 只许出现在 site.js)/ C3 SITE_STATS 与 ib-data 实际计数一致 / C4 localStorage 键前缀白名单(humanoid-/site-/robot-)/ C5 og 页数=占位=SECTIONS+1
+- 📚 **文档**:CONTRIBUTING 题库约定更新为单源现状(展示页 runtime 渲染,补 ib-data-c 行);README 目录表与参与方式增补台账/LOOP 指引
+- 版本五处同步 V2.1.7;发版后自检 21 项全绿
+
 ## V2.1.6 · 2026-08-30 · 保研题库普适化 + 进阶选择题 + 刷新闪黑根治
 
 - 🎓 **保研题库普适化(13 学科 → 17 学科,117 题 → 150 题)**:新增 `_assets/ib-data-c.js` 四个「任何专业保研都必问」的通用学科——🗣️ <b>综合素质面试</b>(1 分钟自我介绍框架/为什么读研/选校动机/科研 STAR/优缺点/压力面等 9 题)、🇬🇧 <b>英语口语</b>(英文自我介绍/Why choose/科研经历/优缺点等 7 题带英文模板+中文思路)、📐 <b>数学基础</b>(三大变换关系/特征值/贝叶斯/最小二乘/梯度下降等 9 题,均配 KaTeX 公式)、🔬 <b>科研素养</b>(三遍读论文/创新点定义/实验与消融/调试排查/选导师等 8 题);内容基于全网保研面经调研(自我介绍/选校动机/科研经历/压力面/英文面五大类高频题),每题带「思路+范例/模板+避坑+延伸追问+知识点拓展」

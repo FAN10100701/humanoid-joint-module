@@ -247,6 +247,12 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;backg
   function loadProg(){ try{ return JSON.parse(localStorage.getItem(KEY) || "{}"); }catch(e){ return {}; } }
   function saveProg(p){ try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){} }
   function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  /* V2.1.7:延伸阅读链接协议白名单 + 引号转义(数据虽为一方文件,纵深防御) */
+  function safeLink(u){
+    u = String(u == null ? "" : u).trim();
+    if(!/^(https?:|\/|\.\.\/|\.\/)/i.test(u)) return "#";
+    return u.replace(/"/g, "%22").replace(/'/g, "%27");
+  }
   function stars(n){ var s = ""; for(var i = 0; i < 5; i++) s += (i < n ? "★" : "☆"); return s; }
 
   /* ---- 按需加载数据文件 ---- */
@@ -266,6 +272,14 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;backg
         C = window.IB_C || {subjects:[],items:[]};
     SUB = A.subjects.concat(B.subjects, C.subjects);
     ITEM = A.items.concat(B.items, C.items);
+    /* V2.1.7:三个数据文件全部加载失败时(离线/file:// 直开且 SW 未命中等),
+       此前会在 openSubject 里因 SUB[0].id 抛 TypeError,页面永远停留"加载中"。
+       现给出明确空态 + 重试入口 */
+    if(!ITEM.length || !SUB.length){
+      document.getElementById("ibSubject").innerHTML =
+        '<div class="ib-empty">题库数据加载失败:ib-data-a / b / c 三个数据文件均未载入。本地预览请先双击 <b>_本地工具/启动教学页面.bat</b> 经 http 访问;线上请检查网络后 <a href="javascript:location.reload()" style="color:#60a5fa">重试刷新</a>。</div>';
+      return;
+    }
     for(var i = 0; i < SUB.length; i++) SUBJ[SUB[i].id] = SUB[i];
     buildOverview();
     buildChips();
@@ -386,7 +400,7 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;backg
     if(it.links && it.links.length){
       h += "<div class='ib-links-row'>";
       for(var j = 0; j < it.links.length; j++)
-        h += "<a href='" + it.links[j].u + "'>📖 " + esc(it.links[j].t) + "</a>";
+        h += "<a href='" + safeLink(it.links[j].u) + "'>📖 " + esc(it.links[j].t) + "</a>";
       h += "</div>";
     }
     return h;
@@ -570,10 +584,9 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;backg
   }
 
   /* ---- KaTeX 公式渲染(site.js 只渲染加载时已有的 .formula,动态内容这里补渲染)
-         V2.1.5:CDN 多级回退(npmmirror → jsdelivr → unpkg → cdnjs),单源不可达时
-         不再让公式退化成原始 LaTeX 源码显示 ---- */
-  var katexState = 0; /* 0 未加载 1 加载中 2 就绪 */
-  var katexQueue = [];
+         V2.1.7:统一走 site.js 的 KatexLoader 单源加载器(JS+CSS 四级回退,
+         npmmirror → jsdelivr → unpkg → cdnjs,四源全挂保持 LaTeX 原文),
+         页内不再自持 CDN 清单,消除与 site.js 的实现漂移 ---- */
   function renderFormulas(scope){
     var els = (scope || document).querySelectorAll(".formula:not([data-katex])");
     if(!els.length) return;
@@ -586,28 +599,8 @@ body:not([data-theme]),body[data-theme="light"] .ib-state.s0{color:#b91c1c;backg
         all[i].setAttribute("data-katex", "2");
       }
     }
-    if(window.katex){ katexState = 2; doRender(); return; }
-    if(!katexState){
-      katexState = 1;
-      var l = document.createElement("link");
-      l.rel = "stylesheet";
-      l.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
-      document.head.appendChild(l);
-      var CDNS = [
-        "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js",
-        "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js",
-        "https://unpkg.com/katex@0.16.11/dist/katex.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/katex/0.16.11/katex.min.js"
-      ];
-      (function load(i){
-        if(i >= CDNS.length){ katexState = 2; doRender(); return; }  /* 全失败:保持 LaTeX 原文 */
-        var s = document.createElement("script");
-        s.src = CDNS[i];
-        s.onload = function(){ if(window.katex){ katexState = 2; doRender(); } else load(i + 1); };
-        s.onerror = function(){ load(i + 1); };
-        document.head.appendChild(s);
-      })(0);
-    }else if(katexState === 2){ doRender(); }
+    if(window.katex){ doRender(); return; }
+    (window.KatexLoader || { ensure:function(cb){ cb(); } }).ensure(doRender);
   }
 
   /* ---- AI 追问入口 ---- */

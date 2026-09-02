@@ -256,7 +256,6 @@
   };
 
   /* ---------- KaTeX 按需加载与公式渲染 ---------- */
-  var katexState = 0;
   AIC.renderMath = function(scope){
     var els = (scope || document).querySelectorAll(".ai-math:not([data-done])");
     if(!els.length) return;
@@ -271,17 +270,10 @@
         all[i].setAttribute("data-done","2");
       }
     }
-    if(katexState === 2){ doRender(); return; }
-    if(katexState === 0){
-      katexState = 1;
-      var l = document.createElement("link");
-      l.rel = "stylesheet";
-      l.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
-      document.head.appendChild(l);
-      var s = document.createElement("script");
-      s.src = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js";
-      s.onload = function(){ katexState = 2; doRender(); };
-      document.head.appendChild(s);
-    }
+    if(window.katex){ doRender(); return; }
+    /* V2.1.7:统一走 site.js 的 KatexLoader 单源加载器(JS+CSS 四级回退)。
+       此前本处为 npmmirror 单源且无 onerror 回退,与 site.js 实现已漂移;
+       site.js 不在场的兜底直接回调,doRender 内 try/catch 保持 LaTeX 原文 */
+    (window.KatexLoader || { ensure:function(cb){ cb(); } }).ensure(doRender);
   };
 })();

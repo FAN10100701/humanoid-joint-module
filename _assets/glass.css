@@ -299,3 +299,9 @@ body:not([data-theme]) .quiz-options button,body[data-theme="light"] .quiz-optio
 h2{scroll-margin-top:76px}   /* 顶栏固定,锚点跳转不被遮挡 */
 .my-svg{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:12px 12px 6px}
 body:not([data-theme]) .my-svg,body[data-theme="light"] .my-svg{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.14)}
+
+/* ---------- V2.1.7 触屏防 sticky-hover ----------
+   hover:none(纯触屏)设备上取消 hover 位移,点击后不再残留抬起/放大态 */
+@media (hover:none){
+  .glass-ripple:hover,.backtop:hover,.glass-card:hover,.glass-btn:hover,.quiz-options button:hover{transform:none}
+}

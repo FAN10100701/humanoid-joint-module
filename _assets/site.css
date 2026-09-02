@@ -610,9 +610,12 @@ body:not([data-theme]),body[data-theme="light"] .heat-day{background:rgba(60,80,
   .heat-grid{grid-template-columns:repeat(10,1fr)}
 }
 
-/* ===== 悬停微放大 + 丝滑弹性(2026-08-17 补强,卡片弹性动画已有) ===== */
+/* ===== 悬停微放大 + 丝滑弹性(2026-08-17 补强,卡片弹性动画已有)
+   V2.1.7:transform 放大包进 @media(hover:hover),触屏点击后不再残留放大态 ===== */
 .quiz-options button,.term-card,.pn-item,.rm-step,.step-item,.toc-sidebar a,.nav-links a,.search-hit,.lab,details.faq,.srs-opt,.srs-card,.gloss-cats button{
   transition:transform .22s cubic-bezier(.2,.8,.3,1.18),background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease;
 }
-.quiz-options button:hover,.term-card:hover,.pn-item:hover,.rm-step:hover,.step-item:hover,.toc-sidebar a:hover,.nav-links a:hover,.search-hit:hover,details.faq:hover,.srs-opt:hover,.srs-card:hover,.gloss-cats button:hover{transform:scale(1.025)}
-.nav-links a:hover,.toc-sidebar a:hover{transform:scale(1.045)}
+@media (hover:hover){
+  .quiz-options button:hover,.term-card:hover,.pn-item:hover,.rm-step:hover,.step-item:hover,.toc-sidebar a:hover,.nav-links a:hover,.search-hit:hover,details.faq:hover,.srs-opt:hover,.srs-card:hover,.gloss-cats button:hover{transform:scale(1.025)}
+  .nav-links a:hover,.toc-sidebar a:hover{transform:scale(1.045)}
+}

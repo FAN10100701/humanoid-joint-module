@@ -171,7 +171,9 @@ $secOnly | Select-Object -First 8 | ForEach-Object { Write-Host "   SECTION-ONLY
 # NOTE: no Chinese literals in this .ps1 (PS 5.1 GBK pitfall) - match pages via $pages regex
 $ibA = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-a.js"), [Text.Encoding]::UTF8)
 $ibB = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-b.js"), [Text.Encoding]::UTF8)
-$ibCount = ([regex]::Matches($ibA, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibB, "\{ id:'[a-z]+-\d+'")).Count
+$ibC = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-c.js"), [Text.Encoding]::UTF8)
+# V2.1.7 fix: ib-data-c (added in V2.1.6) was missing from the count -> 117 vs 150 false FAIL
+$ibCount = ([regex]::Matches($ibA, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibB, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibC, "\{ id:'[a-z]+-\d+'")).Count
 $ibPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\11_[^\\]*\.html$' } | Select-Object -First 1
 $ibPageHas = $false
 $ibDecl = "?"
@@ -193,6 +195,78 @@ if($qPage){
   $qPageHas = $qHtml -match (([string]$lvCount) + "\s*\u5173")
 }
 Check "Quest levels sync" $qPageHas ("levels=" + $lvCount + " page-mentions-match=" + $qPageHas)
+
+# ---- 9) C1: <script> tag balance (V2.1.7: unclosed/residue script tag guard) ----
+$tagFail = @()
+foreach($f in $pages){
+  $c = [IO.File]::ReadAllText($f.FullName, [Text.Encoding]::UTF8)
+  $openTags = [regex]::Matches($c, '<script\b').Count
+  # count escaped <\/script> too: document.write('<script...><\/script>') templates (importmap fallback)
+  $closeTags = ([regex]::Matches($c, '</script>') + [regex]::Matches($c, '<\\/script>')).Count
+  if($openTags -ne $closeTags){ $tagFail += ($f.Name + " open=" + $openTags + " close=" + $closeTags) }
+}
+Check "C1 script tag balance" ($tagFail.Count -eq 0) ($tagFail.Count.ToString() + " unbalanced files")
+$tagFail | Select-Object -First 6 | ForEach-Object { Write-Host "   SCRIPT-TAG: $_" }
+
+# ---- 10) C2: KaTeX loader single source (V2.1.7) ----
+# The ONLY KaTeX CDN list must live in site.js (KatexLoader). Pages and other JS
+# files must not embed their own katex CDN urls (drift guard: ai-assistant.js and
+# quest page both regressed to npmmirror single-source once already).
+$katexCdn = '(npmmirror\.com|cdn\.jsdelivr\.net|unpkg\.com|cdnjs\.cloudflare\.com)[^"''\s>]*katex'
+$katexStray = @()
+foreach($f in $pages){
+  $c = [IO.File]::ReadAllText($f.FullName, [Text.Encoding]::UTF8)
+  if($c -match $katexCdn){ $katexStray += $f.Name }
+}
+foreach($j in $jsFiles){
+  if($j.Name -ieq 'site.js'){ continue }
+  $c = [IO.File]::ReadAllText($j.FullName, [Text.Encoding]::UTF8)
+  if($c -match $katexCdn){ $katexStray += $j.Name }
+}
+$katJsCnt = [regex]::Matches($siteJs, 'katex\.min\.js').Count
+$katCssCnt = [regex]::Matches($siteJs, 'katex\.min\.css').Count
+$katOk = (($siteJs -match 'KatexLoader') -and ($katJsCnt -ge 4) -and ($katCssCnt -ge 4) -and ($katexStray.Count -eq 0))
+Check "C2 KaTeX loader single-source" $katOk ("site.js js=" + $katJsCnt + " css=" + $katCssCnt + " stray=" + $katexStray.Count)
+$katexStray | Select-Object -First 6 | ForEach-Object { Write-Host "   KATEX-STRAY: $_" }
+
+# ---- 11) C3: SITE_STATS vs real ib-data counts (V2.1.7) ----
+$ibItemRe = "\{ id:'[a-z]+-\d+'"
+$ibSubjRe = "\{ id:'[a-z]+', name:"
+$ibTotal = ([regex]::Matches($ibA, $ibItemRe) + [regex]::Matches($ibB, $ibItemRe) + [regex]::Matches($ibC, $ibItemRe)).Count
+$ibSubj = ([regex]::Matches($ibA, $ibSubjRe) + [regex]::Matches($ibB, $ibSubjRe) + [regex]::Matches($ibC, $ibSubjRe)).Count
+$statsM = [regex]::Match($siteJs, 'S\.STATS\s*=\s*\{[^}]*ibSubjects:\s*(\d+)[^}]*ibItems:\s*(\d+)')
+$stOk = $statsM.Success -and ([int]$statsM.Groups[1].Value -eq $ibSubj) -and ([int]$statsM.Groups[2].Value -eq $ibTotal)
+Check "C3 SITE_STATS vs ib-data" $stOk ("stats=" + $statsM.Groups[1].Value + "subj/" + $statsM.Groups[2].Value + "items real=" + $ibSubj + "subj/" + $ibTotal + "items")
+
+# ---- 12) C4: localStorage key prefix whitelist (V2.1.7) ----
+# Allowed: humanoid-* (site data) / site-* (chrome) / robot-* (3D pages) / __t (selftest probe)
+$lsKeyRe = 'localStorage\.(getItem|setItem|removeItem)\(\s*["'']([^"'']+)["'']'
+$badKeys = @()
+foreach($j in $jsFiles){
+  $c = [IO.File]::ReadAllText($j.FullName, [Text.Encoding]::UTF8)
+  foreach($m in [regex]::Matches($c, $lsKeyRe)){
+    $k = $m.Groups[2].Value
+    if($k -notmatch '^(humanoid-|site-|robot-|__t)'){ $badKeys += ($j.Name + " -> " + $k) }
+  }
+}
+foreach($f in $pages){
+  $c = [IO.File]::ReadAllText($f.FullName, [Text.Encoding]::UTF8)
+  foreach($m in [regex]::Matches($c, $lsKeyRe)){
+    $k = $m.Groups[2].Value
+    if($k -notmatch '^(humanoid-|site-|robot-|__t)'){ $badKeys += ($f.Name + " -> " + $k) }
+  }
+}
+Check "C4 localStorage key prefixes" ($badKeys.Count -eq 0) ($badKeys.Count.ToString() + " off-prefix keys")
+$badKeys | Select-Object -First 6 | ForEach-Object { Write-Host "   LS-KEY: $_" }
+
+# ---- 13) C5: og:description page count in sync (V2.1.7) ----
+# og number == statPages placeholder == SITE_SECTIONS ids + 1 (homepage)
+$ogM = [regex]::Match($index, 'og:description" content="[^"]*?(?<!\d)(\d{2,3})(?!\d)')
+$ogPages = if($ogM.Success){ [int]$ogM.Groups[1].Value } else { -1 }
+$phM = [regex]::Match($index, 'id="statPages">(\d+)<')
+$phPages = if($phM.Success){ [int]$phM.Groups[1].Value } else { -2 }
+$c5ok = ($ogPages -eq $phPages) -and ($phPages -eq ($secIds.Count + 1))
+Check "C5 og pages count sync" $c5ok ("og=" + $ogPages + " placeholder=" + $phPages + " sections+1=" + ($secIds.Count + 1))
 
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }

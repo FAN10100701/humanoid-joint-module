@@ -24,6 +24,11 @@
     { t:"大模型", u:"09_大模型与具身智能/01_大模型基础与MoE架构图解.html" }
   ];
 
+  /* 全站统计单源(V2.1.7):pages = site-sections.js 全部 pageId + 首页;
+     ibSubjects/ibItems 必须与 ib-data-a/b/c 实际计数一致(一键自检.ps1 C3 校验)。
+     改题库或增删页面时同步这里;新文案引用这里,别再写死数字 */
+  S.STATS = { pages: 75, ibSubjects: 17, ibItems: 150, quizItems: 60 };
+
   function page(){ return window.PAGE || {}; }
 
   /* ---------- 主题(亮/暗风格切换) ---------- */
@@ -83,6 +88,8 @@
   S.getActivity = function(){
     try{ return JSON.parse(localStorage.getItem(AKEY) || "{}"); }catch(e){ return {}; }
   };
+  /* V2.1.7:开放给闯关等页面复用,消除 humanoid-site-activity-v1 字面量副本 */
+  S.logActivity = logActivity;
   S.toggleDone = function(){
     var id = page().pageId; if(!id) return;
     var p = getProgress();
@@ -247,7 +254,10 @@
   function initTermTip(){
     var tip = null;
     function hide(){ if(tip){ tip.remove(); tip = null; } }
-    document.addEventListener("mouseup", function(){
+    document.addEventListener("mouseup", function(e){
+      /* V2.1.7:改用事件对象坐标——此前读 window.event,Firefox 无此全局,
+         提示位置会退化到屏幕左上角 */
+      var cx = e.clientX || 0, cy = e.clientY || 0;
       setTimeout(function(){
         var sel = window.getSelection ? window.getSelection().toString().trim() : "";
         if(!sel || sel.length > 30){ hide(); return; }
@@ -265,8 +275,8 @@
           tip.className = "term-tip";
           tip.innerHTML = "<b>" + key + "</b><br>" + G[key];
           document.body.appendChild(tip);
-          var x = (window.event && window.event.clientX) || 0;
-          var y = (window.event && window.event.clientY) || 0;
+          var x = cx;
+          var y = cy;
           tip.style.left = Math.min(x + 14, window.innerWidth - 280) + "px";
           tip.style.top = (y + 16) + "px";
         });
@@ -297,9 +307,66 @@
   }
 
   /* ---------- KaTeX 公式渲染(元素 class="formula" 内为 LaTeX) ----------
-     V2.1.5:CDN 多级回退。此前仅 npmmirror 单一源,该源不可达时全站公式
-     一律退化为原始 LaTeX 源码(如 \sigma_p = e^{...}),即「公式显示错乱」根因;
-     现按 npmmirror → jsdelivr → unpkg → cdnjs 逐级回退,四源全挂才保持原文 */
+     V2.1.7:KaTeX 全站唯一加载器,收敛单源。此前 site.js / ai-assistant.js /
+     11_保研复试面试题库.html 三处各自实现且已漂移(AI 面板只剩 npmmirror 单源,
+     且三处 katex.min.css 全部无回退,npmmirror 不可达时公式结构错乱)。
+     KatexLoader.ensure(cb):JS 与 CSS 均按 npmmirror → jsdelivr → unpkg → cdnjs
+     四级回退,首次调用才懒加载;四源全挂时 cb 仍会执行,调用方以 window.katex
+     是否存在为准,不存在则保持 LaTeX 原文,不报错 */
+  var KatexLoader = window.KatexLoader = (function(){
+    var KV = "0.16.11";
+    var JS_CDNS = [
+      "https://registry.npmmirror.com/katex/" + KV + "/files/dist/katex.min.js",
+      "https://cdn.jsdelivr.net/npm/katex@" + KV + "/dist/katex.min.js",
+      "https://unpkg.com/katex@" + KV + "/dist/katex.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/katex/" + KV + "/katex.min.js"
+    ];
+    var CSS_CDNS = [
+      "https://registry.npmmirror.com/katex/" + KV + "/files/dist/katex.min.css",
+      "https://cdn.jsdelivr.net/npm/katex@" + KV + "/dist/katex.min.css",
+      "https://unpkg.com/katex@" + KV + "/dist/katex.min.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/katex/" + KV + "/katex.min.css"
+    ];
+    var state = 0;                       /* 0 未加载 1 加载中 2 已完成(成功或全败) */
+    var queue = [];                      /* ensure 的待派发回调 */
+    function flush(){
+      for(var i = 0; i < queue.length; i++){ try{ queue[i](); }catch(e){} }
+      queue = [];
+    }
+    function loadCss(){
+      (function css(i){
+        if(i >= CSS_CDNS.length) return;
+        var l = document.createElement("link");
+        l.rel = "stylesheet";
+        l.href = CSS_CDNS[i];
+        l.onerror = function(){ css(i + 1); };
+        document.head.appendChild(l);
+      })(0);
+    }
+    function loadJs(){
+      (function js(i){
+        if(i >= JS_CDNS.length){ state = 2; flush(); return; }   /* 全败:由调用方保持原文 */
+        var s = document.createElement("script");
+        s.src = JS_CDNS[i];
+        s.onload = function(){ if(window.katex){ state = 2; flush(); } else js(i + 1); };
+        s.onerror = function(){ js(i + 1); };
+        document.head.appendChild(s);
+      })(0);
+    }
+    return {
+      ensure: function(cb){
+        if(state === 2){ cb(); return; }
+        queue.push(cb);
+        if(state === 0){
+          state = 1;
+          if(window.katex){ state = 2; flush(); return; }
+          loadCss();
+          loadJs();
+        }
+      }
+    };
+  })();
+
   function initKaTeX(){
     var els = document.querySelectorAll(".formula");
     if(!els.length) return;
@@ -311,24 +378,7 @@
       }
     }
     if(window.katex){ renderAll(); return; }
-    var css = document.createElement("link");
-    css.rel = "stylesheet";
-    css.href = "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css";
-    document.head.appendChild(css);
-    var CDNS = [
-      "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.js",
-      "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js",
-      "https://unpkg.com/katex@0.16.11/dist/katex.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/katex/0.16.11/katex.min.js"
-    ];
-    (function load(i){
-      if(i >= CDNS.length){ return; }                 /* 四源全失败:保持 LaTeX 原文 */
-      var s = document.createElement("script");
-      s.src = CDNS[i];
-      s.onload = function(){ if(window.katex) renderAll(); else load(i + 1); };
-      s.onerror = function(){ load(i + 1); };
-      document.head.appendChild(s);
-    })(0);
+    KatexLoader.ensure(renderAll);
   }
 
   /* ---------- 顶部导航 + 面包屑 + 上一篇/下一篇 + 页脚 ---------- */
@@ -361,12 +411,46 @@
       + '<button class="nav-theme" onclick="Site.toggleTheme()" title="切换亮/暗风格">☀️</button>'
       + '<button class="nav-search" onclick="Site.openSearch()"><span class="txt">搜索</span> 🔍<kbd>Ctrl K</kbd></button>'
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
+      /* 移动端板块入口(V2.1.7):<900px 时 .nav-links 整体隐藏,内容页此前无任何
+         板块导航;汉堡按钮桌面端 display:none(site.css),零桌面影响 */
+      + '<button class="nav-ham" type="button" aria-label="打开板块导航" aria-expanded="false">☰</button>'
       + '</div>';
     var st = document.createElement('style');
     st.textContent = '.nav-ver{margin-left:10px;font-size:11px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(154,164,178,.35);border-radius:999px;padding:3px 9px;white-space:nowrap;transition:.15s}.nav-ver:hover{color:#60a5fa;border-color:#3b82f6}body[data-theme=light] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}body[data-theme=light] .nav-ver:hover{color:#2563eb;border-color:#2563eb}.nav-dd{position:relative}.nav-dd-btn{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);color:#9ecbff;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap}.nav-dd-btn:hover{background:rgba(59,130,246,.28);color:#fff}.nav-dd-panel{display:none;position:fixed;top:0;left:0;min-width:200px;max-height:70vh;overflow:auto;background:rgba(12,17,26,.94);border:1px solid rgba(140,190,255,.32);border-radius:16px;padding:10px;flex-direction:column;gap:3px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:300;backdrop-filter:blur(20px) saturate(150%);transform-origin:top left;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd.open .nav-dd-panel{left:8px !important;right:8px !important;top:56px !important;min-width:0}@keyframes ddPop{0%{opacity:0;transform:translateY(-10px) scale(.9)}55%{opacity:1;transform:translateY(3px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}.nav-dd-btn:active{animation:ddJelly .5s ease}@keyframes ddJelly{0%{transform:scale(1,1)}28%{transform:scale(.9,1.1)}55%{transform:scale(1.08,.92)}75%{transform:scale(.97,1.03)}100%{transform:scale(1,1)}}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none}.nav-dd-panel a:hover{background:rgba(88,166,255,.15);color:#fff}body[data-theme=light] .nav-dd-panel{background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}body[data-theme=light] .nav-dd-panel a{color:#475569}body[data-theme=light] .nav-dd-panel a:hover{background:rgba(37,99,235,.08);color:#0f172a}body[data-theme=light] .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}';
     document.head.appendChild(st);
     nav.innerHTML = html;
     document.body.insertBefore(nav, document.body.firstChild);
+    /* 移动端板块抽屉(V2.1.7):复用 site.css 的 .drawer 样式(与首页抽屉同款,
+       含浅色主题变体),内容与「板块 ▾」下拉一致 */
+    var ham = nav.querySelector(".nav-ham");
+    if(ham){
+      var drawer = document.createElement("div");
+      drawer.className = "drawer";
+      var dhtml = '<button class="drawer-close" type="button" aria-label="关闭导航">✕</button>';
+      S.NAV.forEach(function(it){
+        dhtml += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
+      });
+      dhtml += '<a href="' + root + '/08_学习工具/12_闯关学习.html">闯关学习</a>'
+        + '<a href="' + root + '/08_学习工具/14_个人作品台.html">个人作品台</a>';
+      drawer.innerHTML = dhtml;
+      document.body.appendChild(drawer);
+      var closeDrawer = function(){
+        drawer.classList.remove("open");
+        ham.setAttribute("aria-expanded", "false");
+      };
+      ham.addEventListener("click", function(e){
+        e.stopPropagation();
+        var open = drawer.classList.toggle("open");
+        ham.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      drawer.querySelector(".drawer-close").addEventListener("click", closeDrawer);
+      drawer.addEventListener("click", function(e){
+        if(e.target && e.target.tagName === "A") closeDrawer();
+      });
+      document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeDrawer(); });
+      /* 视口回到桌面宽度时自动收起(手机横屏/旋转平板的残留抽屉) */
+      window.addEventListener("resize", function(){ if(window.innerWidth > 900) closeDrawer(); });
+    }
     /* 下拉开合 + 点击外部关闭 */
     var dd = nav.querySelector(".nav-dd");
     if(dd){
@@ -413,11 +497,12 @@
       + '<a href="' + root + '/index.html#version">版本历史</a>'
       + ' · 👀 <span id="busuanzi_value_site_pv">--</span> 次访问';
     document.body.appendChild(ft);
-    /* 不蒜子访问统计：零后端、懒加载；脚本不可达时仅显示 "--"，不影响页面 */
+    /* 不蒜子访问统计：零后端、懒加载；脚本不可达时移除节点、页脚保持 "--"，不影响页面 */
     try{
       var bs = document.createElement("script");
       bs.async = true;
       bs.src = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+      bs.onerror = function(){ if(bs.parentNode) bs.parentNode.removeChild(bs); };
       document.body.appendChild(bs);
     }catch(e){}
 
@@ -635,7 +720,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.6(2026-08-30)";
+  S.VERSION = "V2.1.7(2026-09-02)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
