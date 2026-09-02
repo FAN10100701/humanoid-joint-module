@@ -12,39 +12,33 @@ window.EN_DATA = {
   intro: [
     {
       id: "intro-30",
-      name: "⏱ 30秒极简版（约60词）",
-      tip: "英语没把握就用这版。短到不容易出错，老师追问再展开。问候语按面试时间选：上午 Good morning, professors. ／ 下午 Good afternoon, professors. ／ 傍晚 Good evening, professors. ／ 拿不准就用下面的 Hello，任何时候都不会错。学有余力可在倒数第二句后加奖项：I won a second prize in the National Electronic Design Contest.（全国电赛省赛二等奖）",
+      name: "⏱ 30秒极简版（约75词）",
+      tip: "英语没把握就用这版。句子之间用 As / Outside / which 串联，背的时候按「问候 → 自我 → 学业 → 项目 → 愿望」五段记，不用逐句死记。问候语按面试时间选：上午 Good morning, professors. ／ 下午 Good afternoon, professors. ／ 拿不准就用 Hello，任何时候都不会错。学有余力可在结尾感谢前加一句奖项：I won a second prize in the National Electronic Design Contest.（全国电赛省赛二等奖）",
       lines: [
         { en: "Hello, professors.",                        zh: "各位老师好。" },
-        { en: "Thank you for this interview.",             zh: "感谢这次面试。" },
-        { en: "My name is Fan Jiahao.",                    zh: "我叫范佳豪。" },
-        { en: "I am from Wuhan University of Science and Technology.", zh: "我来自武汉科技大学。" },
-        { en: "My major is Robot Engineering.",            zh: "我的专业是机器人工程。" },
-        { en: "I rank first in my major.",                 zh: "我在专业排名第一（1/50）。" },
-        { en: "I love making robots.",                     zh: "我热爱动手做机器人。" },
-        { en: "I made a drone motor board and a robot learning website.", zh: "我做过一块无人机电调板和一个机器人学习网站。" },
-        { en: "I want to study humanoid robots in your university.",     zh: "我想在贵校研究人形机器人。" },
+        { en: "It is a great honor to be here.",           zh: "非常荣幸能来到这里。" },
+        { en: "My name is Fan Jiahao, a Robot Engineering student at Wuhan University of Science and Technology.", zh: "我是武汉科技大学机器人工程专业的范佳豪。" },
+        { en: "As the top student in my major, I have a solid foundation in circuits and control.", zh: "作为专业第一，我在电路和控制方面基础扎实。" },
+        { en: "Outside class, I designed a drone motor board and a robot learning website, which brought my ideas to life.", zh: "课余时间我设计了无人机电调板，还做了一个机器人学习网站，把想法变成了现实。" },
+        { en: "In the future, I hope to study humanoid robots at your university.", zh: "希望将来能在贵校研究人形机器人。" },
         { en: "That is all. Thank you.",                   zh: "我说完了，谢谢大家。" }
       ]
     },
     {
       id: "intro-60",
-      name: "⏱ 60秒标准版（约130词）",
-      tip: "有一定把握后再背这版，信息更全：排名 + 电赛奖 + 三个项目 + 研究方向。问候语按时间换：上午 Good morning ／ 下午 Good afternoon ／ 傍晚 Good evening，拿不准就保持 Hello。",
+      name: "⏱ 60秒标准版（约145词）",
+      tip: "有一定把握后再背这版，信息更全：排名 + 电赛奖 + 三个项目 + 研究方向。整版用从句串成一条线（Because / which / To understand / Working with / If），按「问候 → 学业 → 项目 → 梦想」四段背，每段记住第一句就能带出后面。问候语按时间换：上午 Good morning ／ 下午 Good afternoon ／ 傍晚 Good evening，拿不准就保持 Hello。",
       lines: [
-        { en: "Hello, professors.",                        zh: "各位老师好。" },
-        { en: "It is my honor to be here.",                zh: "很荣幸来到这里。" },
-        { en: "My name is Fan Jiahao.",                    zh: "我叫范佳豪。" },
-        { en: "I come from Wuhan University of Science and Technology.", zh: "我来自武汉科技大学。" },
-        { en: "My major is Robot Engineering.",            zh: "我的专业是机器人工程。" },
-        { en: "I rank first among fifty students in my major.", zh: "我在专业50名同学中排名第一。" },
-        { en: "I like making robots with my own hands.",   zh: "我喜欢亲手制作机器人。" },
-        { en: "I won a second prize in the National Electronic Design Contest.", zh: "我在全国大学生电子设计竞赛中获得了省赛二等奖。" },
-        { en: "I designed a four-layer circuit board for a drone.",  zh: "我为无人机设计了一块四层电路板。" },
-        { en: "I also built a multi-robot formation system with ROS.", zh: "我还用ROS搭建了多机器人编队系统。" },
-        { en: "Besides, I made an open-source website about humanoid robots.", zh: "另外，我做了一个关于人形机器人的开源网站。" },
-        { en: "My dream is to study humanoid robots and embodied AI.",  zh: "我的梦想是研究人形机器人和具身智能。" },
-        { en: "I hope to make my dream come true here.",   zh: "我希望在这里实现我的梦想。" },
+        { en: "Hello, professors. It is a great honor to be here.", zh: "各位老师好，非常荣幸能来到这里。" },
+        { en: "My name is Fan Jiahao, a Robot Engineering major at Wuhan University of Science and Technology.", zh: "我是武汉科技大学机器人工程专业的范佳豪。" },
+        { en: "Out of fifty students, I rank first in my major, which comes from steady effort.", zh: "在专业 50 名学生中，我排名第一，这来自于持续的投入。" },
+        { en: "Because I love turning ideas into real machines, I spend much spare time on hands-on projects.", zh: "因为喜欢把想法变成真正的机器，我把很多课余时间花在动手项目上。" },
+        { en: "In the National Electronic Design Contest, I won a second prize, which strengthened my hardware skills.", zh: "在全国大学生电子设计竞赛中，我获得了省赛二等奖，硬件能力也更扎实了。" },
+        { en: "To understand how drones really fly, I designed a four-layer circuit board for a drone.", zh: "为了弄懂无人机到底怎么飞，我为它设计了一块四层电路板。" },
+        { en: "Working with ROS, I also built a multi-robot formation system.", zh: "在使用 ROS 的过程中，我还搭建了多机器人编队系统。" },
+        { en: "Besides, I made an open-source website about humanoid robots.", zh: "另外，我还做了一个关于人形机器人的开源网站。" },
+        { en: "My dream is to study humanoid robots and embodied AI, because I believe they will change the world.", zh: "我的梦想是研究人形机器人与具身智能，因为我相信它们会改变世界。" },
+        { en: "If I could join your university, I would work hard to make this dream come true.", zh: "如果能加入贵校，我会为实现这个梦想而全力以赴。" },
         { en: "That is all. Thank you very much.",         zh: "我说完了，非常感谢。" }
       ]
     }
