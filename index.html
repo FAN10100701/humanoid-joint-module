@@ -39,22 +39,26 @@
   .upd-item a{color:#9ecbff}
   .upd-item .badge-new{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px}
   /* ---- 浅色主题适配(首页专属区块) ---- */
-  body[data-theme="light"] .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(255,255,255,.92));border-color:rgba(37,99,235,.32)}
-  body[data-theme="light"] .rm-links a{color:#1d4ed8;background:rgba(37,99,235,.09);border-color:rgba(37,99,235,.28)}
-  body[data-theme="light"] .rm-step p{color:#4b5c74}
+  html:not([data-theme-early="dark"]) .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(255,255,255,.92));border-color:rgba(37,99,235,.32)}
+  html:not([data-theme-early="dark"]) .rm-links a{color:#1d4ed8;background:rgba(37,99,235,.09);border-color:rgba(37,99,235,.28)}
+  html:not([data-theme-early="dark"]) .rm-step p{color:#4b5c74}
 @media (prefers-reduced-motion: reduce){.card,.quicknav a{transition:none!important;transform:none!important}}
-/* 性能:首屏外的板块惰性渲染(大 DOM 首帧提速;滚动到附近才布局绘制) */
+/* 性能:首屏外的板块惰性渲染(大 DOM 首帧提速;滚动到附近才布局绘制)
+   V2.1.14:估值按实测校准(1280~1600 宽)——旧 640px 一刀切,#version 实际 3500+px,
+   首滚进该板块时页面总高突增约 2900px,滚动条跳动+单帧长任务(实测 363ms 冻结)。
+   auto 关键字首渲后会记忆真实高度,估值只影响第一次接近时的滚动条稳定性 */
 @media (min-width: 861px){
-  .sec{content-visibility:auto;contain-intrinsic-size:auto 640px}
+  .sec{content-visibility:auto;contain-intrinsic-size:auto 700px}
+  #version{contain-intrinsic-size:auto 3500px}
 }
 /* ================= 默认风格:深空蓝(唯一方案,浅色/深色主题切换保留) ================= */
 
 /* 浅色模式对比度修复:进度条轨道/文字/进度环轨道 */
-body[data-theme="light"] .pbar{background:rgba(15,23,42,.1)}
-body[data-theme="light"] .pbar-row .pl{color:#475569}
-body[data-theme="light"] .pbar-row .pv{color:#334155}
+html:not([data-theme-early="dark"]) .pbar{background:rgba(15,23,42,.1)}
+html:not([data-theme-early="dark"]) .pbar-row .pl{color:#475569}
+html:not([data-theme-early="dark"]) .pbar-row .pv{color:#334155}
 .ring-track{stroke:rgba(255,255,255,.08)}
-body[data-theme="light"] .ring-track{stroke:rgba(15,23,42,.1)}
+html:not([data-theme-early="dark"]) .ring-track{stroke:rgba(15,23,42,.1)}
 
 /* 快速导航条 */
 .sec{scroll-margin-top:84px}
@@ -64,14 +68,14 @@ body[data-theme="light"] .ring-track{stroke:rgba(15,23,42,.1)}
 .quicknav a:hover{background:rgba(59,130,246,.25);color:#fff;transform:translateY(-1px) scale(1.045)}
 .quicknav a:active{transform:scale(.96);transition-duration:.1s}
 .quicknav a b{font-weight:700;margin-right:2px}
-body[data-theme="light"] .quicknav a{color:#2563eb;background:rgba(37,99,235,.07)}
+html:not([data-theme-early="dark"]) .quicknav a{color:#2563eb;background:rgba(37,99,235,.07)}
 /* ===== 默认皮肤高级感特效(2026-08-17):hero 动态光晕 + 卡片顶光条(仅默认皮肤,不干扰 5 套方案) ===== */
 html:not([data-skin]) .hero{position:relative;overflow:hidden}
 html:not([data-skin]) .hero::before,html:not([data-skin]) .hero::after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;filter:blur(90px);-webkit-filter:blur(90px);pointer-events:none;z-index:0;opacity:.5;animation:heroGlow 16s ease-in-out infinite alternate}
 html:not([data-skin]) .hero::before{background:radial-gradient(circle,rgba(59,130,246,.55),transparent 65%);top:-130px;left:-90px}
 html:not([data-skin]) .hero::after{background:radial-gradient(circle,rgba(34,197,94,.35),transparent 65%);bottom:-150px;right:-70px;animation-delay:-8s}
-html:not([data-skin]) body[data-theme="light"] .hero::before{opacity:.4}
-html:not([data-skin]) body[data-theme="light"] .hero::after{opacity:.3}
+html:not([data-skin]):not([data-theme-early="dark"]) .hero::before{opacity:.4}
+html:not([data-skin]):not([data-theme-early="dark"]) .hero::after{opacity:.3}
 @keyframes heroGlow{from{transform:translate(0,0) scale(1)}to{transform:translate(44px,26px) scale(1.18)}}
 html:not([data-skin]) .hero>*{position:relative;z-index:1}
 html:not([data-skin]) .card::before{content:"";position:absolute;left:12px;right:12px;top:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.8),rgba(34,197,94,.6),transparent);opacity:.5;transition:opacity .25s}
@@ -98,10 +102,10 @@ html:not([data-skin]) .card:hover::before{opacity:1}
 .rm-dot{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.16);transition:.25s;cursor:pointer;border:none;padding:0}
 .rm-dot.on{width:22px;background:linear-gradient(90deg,#2563eb,#3b82f6)}
 /* 浅色主题(双选择器,FOUC 纪律) */
-body:not([data-theme]) .rm-nav,body[data-theme="light"] .rm-nav{background:rgba(255,255,255,.88);border-color:rgba(37,99,235,.3);color:#2563eb;box-shadow:0 6px 18px rgba(40,80,160,.16)}
-body:not([data-theme]) .rm-nav:hover,body[data-theme="light"] .rm-nav:hover{background:#2563eb;color:#fff}
-body:not([data-theme]) .rm-dot,body[data-theme="light"] .rm-dot{background:rgba(60,80,120,.22)}
-body:not([data-theme]) .rm-dot.on,body[data-theme="light"] .rm-dot.on{background:linear-gradient(90deg,#2563eb,#3b82f6)}
+html:not([data-theme-early="dark"]) .rm-nav {background:rgba(255,255,255,.88);border-color:rgba(37,99,235,.3);color:#2563eb;box-shadow:0 6px 18px rgba(40,80,160,.16)}
+html:not([data-theme-early="dark"]) .rm-nav:hover {background:#2563eb;color:#fff}
+html:not([data-theme-early="dark"]) .rm-dot {background:rgba(60,80,120,.22)}
+html:not([data-theme-early="dark"]) .rm-dot.on {background:linear-gradient(90deg,#2563eb,#3b82f6)}
 /* ===== 版本徽章精修(V2.0.9):玻璃胶囊 + 呼吸更新点 + 等宽字号 ===== */
 .ver-badge{display:none;margin-left:14px;align-items:center;gap:7px;font-size:11.5px;font-family:Consolas,"Courier New",monospace;letter-spacing:.3px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(148,163,184,.32);border-radius:999px;padding:5px 13px;background:rgba(148,163,184,.07);white-space:nowrap;transition:transform .25s cubic-bezier(.22,1.2,.36,1),border-color .18s,color .18s,box-shadow .25s}
 #heroStars{position:absolute;inset:0;width:100%;height:100%;opacity:.8;pointer-events:none}
@@ -113,33 +117,34 @@ body:not([data-theme]) .rm-dot.on,body[data-theme="light"] .rm-dot.on{background
 .aurora i:nth-child(1){left:-14%;top:-30%;background:radial-gradient(closest-side,rgba(59,130,246,.42),rgba(59,130,246,.12) 55%,transparent 75%);animation:aur1 26s ease-in-out infinite alternate}
 .aurora i:nth-child(2){right:-18%;top:-20%;background:radial-gradient(closest-side,rgba(14,165,233,.32),rgba(14,165,233,.08) 55%,transparent 75%);animation:aur2 33s ease-in-out infinite alternate}
 .aurora i:nth-child(3){left:22%;bottom:-50%;background:radial-gradient(closest-side,rgba(147,112,219,.26),rgba(147,112,219,.07) 55%,transparent 75%);animation:aur3 39s ease-in-out infinite alternate}
-.aurora.off i{animation-play-state:paused}
+.aurora.off i,.hero.off .aurora i{animation-play-state:paused}
+/* V2.1.14:hero 滚出视口时暂停双光晕的 transform 动画(离屏不占合成器) */
+.hero.off::before,.hero.off::after{animation-play-state:paused}
 /* V2.1.12:光晕用透明度呼吸而非位移——大元素 translate 动画在部分合成器下产生
    tile 错位伪影;opacity 动画最稳,明暗流转同样有"活着"的感觉 */
 .aurora i:nth-child(1){animation:aurGlow 14s ease-in-out infinite alternate}
 .aurora i:nth-child(2){animation:aurGlow 18s ease-in-out infinite alternate-reverse}
 .aurora i:nth-child(3){animation:aurGlow 23s ease-in-out infinite alternate}
 @keyframes aurGlow{from{opacity:.3}to{opacity:.6}}
-body:not([data-theme]) .aurora i,body[data-theme="light"] .aurora i{opacity:.2}
-body:not([data-theme]) .aurora i,body[data-theme="light"] .aurora i{animation-duration:20s}
+html:not([data-theme-early="dark"]) .aurora i {opacity:.2}
+html:not([data-theme-early="dark"]) .aurora i {animation-duration:20s}
 .aurora i:nth-child(2){background:radial-gradient(closest-side,rgba(14,165,233,.26),rgba(14,165,233,.06) 55%,transparent 75%)}
 @media (prefers-reduced-motion: reduce){.aurora i{animation:none}}
 .ver-badge i{width:6px;height:6px;border-radius:99px;background:#22c55e;box-shadow:0 0 7px rgba(34,197,94,.85);animation:verBlink 2.4s ease-in-out infinite}
 .ver-badge:hover{color:#60a5fa;border-color:rgba(59,130,246,.6);transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.2);text-decoration:none}
 @keyframes verBlink{0%,100%{opacity:1}50%{opacity:.35}}
-body:not([data-theme]) .ver-badge,body[data-theme="light"] .ver-badge{color:#64748b;border-color:rgba(100,116,139,.35);background:rgba(255,255,255,.6)}
-body:not([data-theme]) .ver-badge:hover,body[data-theme="light"] .ver-badge:hover{color:#2563eb;border-color:rgba(37,99,235,.55);box-shadow:0 4px 14px rgba(37,99,235,.16)}
+html:not([data-theme-early="dark"]) .ver-badge {color:#64748b;border-color:rgba(100,116,139,.35);background:rgba(255,255,255,.6)}
+html:not([data-theme-early="dark"]) .ver-badge:hover {color:#2563eb;border-color:rgba(37,99,235,.55);box-shadow:0 4px 14px rgba(37,99,235,.16)}
 .nav-dd{position:relative}
-.nav-dd-btn{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.18s}
-.nav-dd-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}
+/* V2.1.14:.nav-dd-btn 统一走 site.css 工具区令牌(30px 高),此处不再重复定义 */
 .nav-dd-panel{display:none;position:fixed;top:0;left:0;min-width:220px;background:rgba(12,17,26,.94);border:1px solid rgba(140,190,255,.32);border-radius:16px;padding:10px;flex-direction:column;gap:3px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:300;backdrop-filter:blur(20px) saturate(150%);transform-origin:top left;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}.nav-dd.open .nav-dd-panel{display:flex}@keyframes ddPop{0%{opacity:0;transform:translateY(-10px) scale(.9)}55%{opacity:1;transform:translateY(3px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}.nav-dd-btn:active{animation:ddJelly .5s ease}@keyframes ddJelly{0%{transform:scale(1,1)}28%{transform:scale(.9,1.1)}55%{transform:scale(1.08,.92)}75%{transform:scale(.97,1.03)}100%{transform:scale(1,1)}}
 .nav-dd.open .nav-dd-panel{display:flex}
 .nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none;white-space:nowrap}
 .nav-dd-panel a:hover{background:rgba(88,166,255,.15);color:#fff}
-body:not([data-theme]) .nav-dd-panel,body[data-theme="light"] .nav-dd-panel{background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}
-body:not([data-theme]) .nav-dd-panel a,body[data-theme="light"] .nav-dd-panel a{color:#475569}
-body:not([data-theme]) .nav-dd-panel a:hover,body[data-theme="light"] .nav-dd-panel a:hover{background:rgba(37,99,235,.08);color:#0f172a}
-body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
+html:not([data-theme-early="dark"]) .nav-dd-panel {background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}
+html:not([data-theme-early="dark"]) .nav-dd-panel a {color:#475569}
+html:not([data-theme-early="dark"]) .nav-dd-panel a:hover {background:rgba(37,99,235,.08);color:#0f172a}
+html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
 </style>
 <script>
   /* 板块清单已单源化至 _assets/site-sections.js(与学习数据分析页共用) */
@@ -168,11 +173,14 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <div class="nav-dd" id="navDD">
         <button class="nav-dd-btn" type="button">板块 ▾</button>
         <div class="nav-dd-panel">
+          <!-- V2.1.14:清单与抽屉/内容页统一(补学习路径·3D解剖·版本历史,命名归一) -->
+          <a href="#learn-path">学习路径</a><a href="#sec0">3D解剖</a>
           <a href="#sec1">01 理论入门</a><a href="#sec2">02 硬件基础</a><a href="#sec3">03 项目实操</a>
-          <a href="#sec6">06 软件算法·进阶</a>
-          <a href="#sec7">07 前沿知识</a><a href="#sec8">08 学习工具</a><a href="#sec9">09 大模型与具身</a>
+          <a href="#sec6">06 软件算法</a>
+          <a href="#sec7">07 前沿知识</a><a href="#sec8">08 学习工具</a><a href="#sec9">09 大模型</a>
           <a href="08_学习工具/12_闯关学习.html">🎯 闯关学习</a>
           <a href="08_学习工具/14_个人作品台.html">🎮 个人作品台</a>
+          <a href="#version">版本历史</a>
         </div>
       </div>
     </div>
@@ -186,14 +194,14 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
 <div id="drawer" class="drawer">
   <button class="drawer-close" onclick="toggleDrawer()">✕</button>
   <a href="#learn-path" onclick="toggleDrawer()">学习路径</a>
-  <a href="#sec0" onclick="toggleDrawer()">3D 解剖</a>
+  <a href="#sec0" onclick="toggleDrawer()">3D解剖</a>
   <a href="#sec1" onclick="toggleDrawer()">理论入门</a>
   <a href="#sec2" onclick="toggleDrawer()">硬件基础</a>
   <a href="#sec3" onclick="toggleDrawer()">项目实操</a>
-  <a href="#sec6" onclick="toggleDrawer()">软件与算法</a>
-  <a href="#sec7" onclick="toggleDrawer()">前沿知识库</a>
+  <a href="#sec6" onclick="toggleDrawer()">软件算法</a>
+  <a href="#sec7" onclick="toggleDrawer()">前沿知识</a>
   <a href="#sec8" onclick="toggleDrawer()">学习工具</a>
-  <a href="#sec9" onclick="toggleDrawer()">大模型与具身</a>
+  <a href="#sec9" onclick="toggleDrawer()">大模型</a>
   <a href="#version" onclick="toggleDrawer()">版本历史</a>
 </div>
 
@@ -858,12 +866,14 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.13</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-02 · 「万物归墟」黑洞·白洞实验品上线</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.14</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-03 · 「丝般顺滑」滚动性能修版 + 顶栏板块统一</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
       <details class="faq" open>
-        <summary>V2.1.13 · 2026-09-02 · 「万物归墟 · SINGULARITY」黑洞·白洞实验品上线</summary>
-        <div class="faq-a">🌌 <b>个人作品台新作品「万物归墟」</b>(全屏单屏沉浸):光线步进实时渲染黑洞——真<b>引力透镜</b>、体积化吸积盘、软边视界+外侧光子环、浅色星场银河带、白洞湍流喷流+外扩冲击环,零新依赖;✏️ <b>时空之兜</b>:爱因斯坦引力场真 3D 化——网格平面被质量压出漏斗"兜"、双光子环绕口,白洞网格外凸物品被甩飞,黑白纯线稿双主题;🪨 <b>天外来客 3D 化</b>:8 种程序化低模(陨石/火箭/卫星/宇航员/鲸/象/恐龙/大厦)带光照着色,点击投放螺旋坠入被潮汐撕长吞噬,环境自动投放;🕳 深色自动变白洞、浅色为黑洞;🎛 光谱四预设、泛光/时空弯曲/时间流速(可倒流)三滑条、画质自动探测、✕ 收回左侧、闲置 HUD 淡出;光圈整体调柔。渲染核心已封装 <b>window.ABYSS</b> API,为接入首页背景预留。</div>
+        <summary>V2.1.14 · 2026-09-03 · 「丝般顺滑」滚动性能修版 + 顶栏板块统一 + 全站健壮性加固</summary>
+        <div class="faq-a">⚡ <b>首页滚动卡顿根治(实测驱动)</b>:浅色主题下约 136 个卡片/折叠项同时挂 backdrop-filter 毛玻璃,滚动时每帧全部重新模糊——同机对照实测:浅色稳态 p95 24.8ms vs 深色(卡片无滤镜)12.3ms,滚入版本板块单帧冻结 363ms vs 深色 16.6ms;现浅色卡片族移除 backdrop-filter 改近实底(背景不透明度 .62→.87 保留通透感,顶栏/下拉面板/快速导航胶囊等小面积毛玻璃不动),顶栏模糊 22px→14px。🎚 <b>content-visibility 估值校准</b>:旧 640px 一刀切 vs 版本板块实际 3500px,首滚进板块页面总高突增约 2900px 致滚动条跳动+单帧长任务,现按实测校准(#version 3500px)。🌌 <b>hero 光晕离屏暂停</b>(与极光统一挂 .hero 的 IO);🖱 星尘 pointermove 布局读缓存;↩️ 回顶按钮 rAF 节流 + passive;🎠 学习路径横滑步宽/圆点缓存(消除滑行期读写交错的强制布局);🃏 入场动画 0.5s→0.4s、错峰 70→40ms。📏 <b>顶栏统一</b>:导航链接与按钮族同高 30px(此前链接被 line-height:1.7 撑到约 36px,顶栏左右不齐);「板块 ▾」下拉/移动端抽屉/内容页下拉三处清单归一——补 学习路径/3D解剖/版本历史,「软件算法·进阶」「软件与算法」「前沿知识库」「大模型与具身」命名统一,内容页下拉重复两次的「大模型」删除。🛡 <b>健壮性</b>:浅色主题规则全站改挂 html[data-theme-early](head 内联脚本渲染前写入,深色用户首帧零浅色规则命中,顺带根治孤立 body:not([data-theme]) 误套 body 自身的首帧全屏模糊);site.js 初始化链逐项 try-catch 隔离(单项异常不再连坐吞掉后续功能);打印样式补齐(AI 球/横滑箭头圆点/循环克隆卡不再印出);根目录新增 favicon.ico(全站消 404);导出进度 URL 用后即 revoke;若干可空链守卫与死引用清理。</div>
+      </details><details class="faq"><summary>V2.1.13 · 2026-09-02 · 「万物归墟 · SINGULARITY」黑洞·白洞实验品上线</summary>
+        <div class="faq-a">🌌 <b>个人作品台新作品「万物归墟」</b>(全屏单屏沉浸):光线步进实时渲染黑洞——真<b>引力透镜</b>、体积化吸积盘、软边视界+外侧光子环、浅色星场银河带、白洞湍流喷流+外扩冲击环,零新依赖;✏️ <b>时空之兜</b>:爱因斯坦引力场真 3D 化——网格平面被质量压出漏斗"兜"、双光子环绕口,白洞网格外凸陨石被甩飞,黑白纯线稿双主题;🪨 <b>天外陨石</b>:不规则岩石程序化生成(颗颗不同、岩质顶点色材质、近界熔岩发热+红移淡出),仅点击投放,螺旋坠入被潮汐撕长吞噬;🕳 深色自动变白洞、浅色为黑洞;🎛 光谱四预设、泛光/时空弯曲/时间流速(可倒流)三滑条、画质自动探测、✕ 收回左侧、闲置 HUD 淡出;光圈整体调柔。渲染核心已封装 <b>window.ABYSS</b> API,为接入首页背景预留。</div>
       </details><details class="faq"><summary>V2.1.12 · 2026-09-02 · 第二梯队特效 + 性能与手感修版</summary>
         <div class="faq-a">⚡ <b>滚动性能修版</b>:卡片倾斜移除常驻 will-change(77 个合成层是"变卡"根因),AI 球光晕改合成器透明度动画;🌗 <b>主题涟漪重构</b>:自绘纯色圆层扩散盖满后切主题再淡出,替换 View Transitions(消除边缘割裂与全屏截图开销);🃏 <b>卡片错峰修正</b>:同批卡片按屏幕位置自上而下依次浮现,不再随机跳序;🧲 <b>顶栏按钮磁吸</b>:hover 微移 ≤3px 弹性回弹;🌌 <b>Hero 极光流场</b>:三层渐变光晕呼吸(深色蓝青紫/浅色极淡),滚出视口自动暂停;🎯 <b>学习路径横滑惯性</b>:拖拽释放后按速度衰减滑行(修复与 scroll-snap 的吸附冲突);📝 引导页页数改由 SITE_SECTIONS 单源计算(修"35 个页面"过时文案)。</div>
       </details><details class="faq"><summary>V2.1.11 · 2026-09-02 · 微交互五件套:数字滚动 / 卡片错峰 / 主题涟漪 / 阅读进度环 / 通关彩带 + 深色顶栏去蓝</summary>
@@ -1045,7 +1055,7 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.13(2026-09-02) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.14(2026-09-03) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1162,9 +1172,13 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     });
   }
   size(); addEventListener("resize", size);
+  /* V2.1.14:hero 矩形缓存——此前每次 pointermove 都 getBoundingClientRect(强制布局);
+     仅 r.left/r.width 参与 mx 计算,纵向滚动不影响二者,resize 时失效重测即可 */
+  var heroR = null;
+  addEventListener("resize", function(){ heroR = null; });
   c.parentNode.addEventListener("pointermove", function(e){
-    var r = c.parentNode.getBoundingClientRect();
-    mx = (e.clientX - r.left)/r.width - 0.5;
+    if(!heroR) heroR = c.parentNode.getBoundingClientRect();
+    mx = (e.clientX - heroR.left)/heroR.width - 0.5;
   });
   /* V2.1.7:rAF 可暂停——标签页隐藏或 Hero 滚出视口时停止绘制,恢复可见再续,
      后台标签与移动端不再空耗电;IO 不支持时退化为常驻绘制(旧行为)
@@ -1250,13 +1264,15 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   });
 })();
 
-/* 极光层离屏暂停(V2.1.12):hero 滚出视口即暂停渐变位移动画,回来再续 */
+/* hero 离屏暂停(V2.1.12 极光;V2.1.14 扩展到 ::before/::after 光晕):
+   hero 滚出视口即暂停全部装饰动画(极光呼吸 + blur(90px) 光晕),回来再续。
+   统一观察 .hero 自身,不再分别挂在 .aurora 上 */
 (function(){
-  var au = document.querySelector(".hero .aurora");
-  if(!au || !("IntersectionObserver" in window)) return;
+  var hero = document.querySelector(".hero");
+  if(!hero || !("IntersectionObserver" in window)) return;
   new IntersectionObserver(function(es){
-    au.classList.toggle("off", !es[0].isIntersecting);
-  }).observe(au);
+    hero.classList.toggle("off", !es[0].isIntersecting);
+  }).observe(hero);
 })();
 
 /* 顶栏「板块 ▾」下拉(V2.1.0) */
@@ -1323,7 +1339,8 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
     }
     requestAnimationFrame(step);
   }, { threshold: 0.4 });
-  io.observe(document.querySelector(".hero .stats"));
+  var heroStats = document.querySelector(".hero .stats");
+  if(heroStats) io.observe(heroStats);   /* V2.1.14:判空守卫 */
 })();
 /* 学习路径横滑 carousel(V2.1.0 无限循环):克隆首尾,越过边界瞬移回真身,肉眼无缝 */
 (function(){
@@ -1334,7 +1351,16 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
   if(n < 2) return;
   for(var c = n-2; c < n; c++){ var cl = orig[c].cloneNode(true); cl.setAttribute("data-clone","1"); sc.insertBefore(cl, sc.firstChild); }
   for(var c2 = 0; c2 < 2; c2++){ var cl2 = orig[c2].cloneNode(true); cl2.setAttribute("data-clone","1"); sc.appendChild(cl2); }
-  function cardW(){ var all = sc.querySelectorAll(".rm-step"); return all.length > 1 ? (all[1].offsetLeft - all[0].offsetLeft) : sc.clientWidth; }
+  /* V2.1.14:布局读缓存——此前每次 scroll 事件都 querySelectorAll+读 offsetLeft,
+     惯性滑行期与 rAF 写 scrollLeft 形成读写交错(强制布局);步宽只在 resize 时变化 */
+  var _cw = 0;
+  function cardW(){
+    if(_cw > 0) return _cw;
+    var all = sc.querySelectorAll(".rm-step");
+    _cw = all.length > 1 ? (all[1].offsetLeft - all[0].offsetLeft) : sc.clientWidth;
+    return _cw;
+  }
+  addEventListener("resize", function(){ _cw = 0; });
   var dotsBox = document.getElementById("rmDots");
   if(dotsBox && !dotsBox.children.length){
     for(var i = 0; i < n; i++){
@@ -1347,11 +1373,11 @@ body:not([data-theme]) .nav-dd-btn,body[data-theme="light"] .nav-dd-btn{backgrou
       })(i);
     }
   }
+  var _dots = dotsBox ? Array.prototype.slice.call(dotsBox.querySelectorAll(".rm-dot")) : [];
   function curIdx(){ var w = cardW() || 1; return ((Math.round(sc.scrollLeft / w) - 2) % n + n) % n; }
   function syncDots(){
-    var ds = dotsBox ? dotsBox.querySelectorAll(".rm-dot") : [];
     var ci = curIdx();
-    for(var j = 0; j < ds.length; j++) ds[j].className = "rm-dot" + (j === ci ? " on" : "");
+    for(var j = 0; j < _dots.length; j++) _dots[j].className = "rm-dot" + (j === ci ? " on" : "");
   }
   var sTimer = null;
   sc.addEventListener("scroll", function(){ syncDots(); clearTimeout(sTimer); sTimer = setTimeout(normalize, 150); }, { passive:true });

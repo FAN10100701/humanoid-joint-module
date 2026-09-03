@@ -82,37 +82,37 @@ body{padding-top:62px!important}
 
 /* ---- 浅色外壳(苹果透亮玻璃) ---- */
 .nav-theme{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);font-size:14px;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;color:#9ecbff}
-body[data-theme="light"] .nav-theme{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
-body[data-theme="light"] .topnav{background:rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-bottom:1px solid rgba(60,80,120,.12)}
-body[data-theme="light"] .nav-brand{color:#111827!important}
-body[data-theme="light"] .nav-links a{color:#475569!important}
-body[data-theme="light"] .nav-links a:hover{color:#111827!important;background:rgba(37,99,235,.08)}
-body[data-theme="light"] .nav-search{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.28);color:#2563eb}
-body[data-theme="light"] .nav-done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#15803d}
-body[data-theme="light"] .breadcrumb{color:#94a3b8}
-body[data-theme="light"] .breadcrumb a{color:#64748b}
-body[data-theme="light"] .prevnext .pn-item{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
-body[data-theme="light"] .prevnext .pn-item b{color:#2563eb}
-body[data-theme="light"] .prevnext .pn-item span{color:#94a3b8}
-body[data-theme="light"] .site-footer{color:#94a3b8;border-top-color:rgba(60,80,120,.12)}
-body[data-theme="light"] .search-box{background:rgba(255,255,255,.9);border-color:rgba(37,99,235,.3)}
-body[data-theme="light"] .search-input{color:#0f172a}
-body[data-theme="light"] .search-head{color:#64748b}
-body[data-theme="light"] .search-hit:hover{background:rgba(37,99,235,.08)}
-body[data-theme="light"] .hit-t{color:#0f172a}
-body[data-theme="light"] .hit-meta{color:#94a3b8}
-body[data-theme="light"] .quiz{background:rgba(255,255,255,.62)}
-body[data-theme="light"] .quiz-q{color:#0f172a}
-body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#334155}
+html:not([data-theme-early="dark"]) .nav-theme{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
+html:not([data-theme-early="dark"]) .topnav{background:rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-bottom:1px solid rgba(60,80,120,.12)}
+html:not([data-theme-early="dark"]) .nav-brand{color:#111827!important}
+html:not([data-theme-early="dark"]) .nav-links a{color:#475569!important}
+html:not([data-theme-early="dark"]) .nav-links a:hover{color:#111827!important;background:rgba(37,99,235,.08)}
+html:not([data-theme-early="dark"]) .nav-search{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.28);color:#2563eb}
+html:not([data-theme-early="dark"]) .nav-done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#15803d}
+html:not([data-theme-early="dark"]) .breadcrumb{color:#94a3b8}
+html:not([data-theme-early="dark"]) .breadcrumb a{color:#64748b}
+html:not([data-theme-early="dark"]) .prevnext .pn-item{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+html:not([data-theme-early="dark"]) .prevnext .pn-item b{color:#2563eb}
+html:not([data-theme-early="dark"]) .prevnext .pn-item span{color:#94a3b8}
+html:not([data-theme-early="dark"]) .site-footer{color:#94a3b8;border-top-color:rgba(60,80,120,.12)}
+html:not([data-theme-early="dark"]) .search-box{background:rgba(255,255,255,.9);border-color:rgba(37,99,235,.3)}
+html:not([data-theme-early="dark"]) .search-input{color:#0f172a}
+html:not([data-theme-early="dark"]) .search-head{color:#64748b}
+html:not([data-theme-early="dark"]) .search-hit:hover{background:rgba(37,99,235,.08)}
+html:not([data-theme-early="dark"]) .hit-t{color:#0f172a}
+html:not([data-theme-early="dark"]) .hit-meta{color:#94a3b8}
+html:not([data-theme-early="dark"]) .quiz{background:rgba(255,255,255,.62)}
+html:not([data-theme-early="dark"]) .quiz-q{color:#0f172a}
+html:not([data-theme-early="dark"]) .quiz-options button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#334155}
 
 /* ---- 回到顶部按钮(存量页外壳) ---- */
 .backtop{position:fixed;right:18px;bottom:22px;z-index:95;width:44px;height:44px;border-radius:50%;
   background:rgba(37,99,235,.9);color:#fff;border:none;font-size:20px;font-weight:800;cursor:pointer;
   display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(37,99,235,.4);transition:.2s}
 .backtop:hover{transform:translateY(-3px);background:#2563eb}
-body[data-theme="light"] .backtop{background:rgba(37,99,235,.88)}
+html:not([data-theme-early="dark"]) .backtop{background:rgba(37,99,235,.88)}
 /* ---- 术语悬浮提示气泡(存量页外壳) ---- */
 .term-tip{position:fixed;z-index:400;max-width:260px;background:rgba(17,22,30,.95);border:1px solid rgba(59,130,246,.45);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#c9d1d9;line-height:1.7;box-shadow:0 14px 40px rgba(0,0,0,.45);pointer-events:none}
 .term-tip b{color:#9ecbff;margin-right:6px}
-body[data-theme="light"] .term-tip{background:rgba(255,255,255,.97);border-color:rgba(37,99,235,.35);color:#334155}
-body[data-theme="light"] .term-tip b{color:#2563eb}
+html:not([data-theme-early="dark"]) .term-tip{background:rgba(255,255,255,.97);border-color:rgba(37,99,235,.35);color:#334155}
+html:not([data-theme-early="dark"]) .term-tip b{color:#2563eb}

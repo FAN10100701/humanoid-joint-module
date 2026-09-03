@@ -8,15 +8,15 @@
 <link rel="stylesheet" href="../_assets/site.css">
 <style>
   .my-lab{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px;margin:16px 0;background:rgba(15,23,42,.45)}
-  body[data-theme="light"] .my-lab{background:rgba(255,255,255,.65)}
+  html:not([data-theme-early="dark"]) .my-lab{background:rgba(255,255,255,.65)}
   .my-vbtns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
   .my-vbtns button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:6px 13px;cursor:pointer;font-size:13px;font-family:Consolas,monospace}
   .my-vbtns button.on{background:#16a34a;color:#fff;border-color:#16a34a}
-  body[data-theme="light"] .my-vbtns button{background:#fff;color:#334155}
+  html:not([data-theme-early="dark"]) .my-vbtns button{background:#fff;color:#334155}
   .my-vbtns button:hover{border-color:#2563eb}
   .my-read{font-size:13.5px;line-height:2;margin-top:8px}
   .my-read b{font-family:Consolas,monospace;color:#34d399}
-  body[data-theme="light"] .my-read b{color:#047857}
+  html:not([data-theme-early="dark"]) .my-read b{color:#047857}
   .my-lab canvas{max-width:100%;height:auto;background:#0b1626;border-radius:10px;touch-action:none}
   .my-lab label{font-size:13px;margin-right:14px}
   .my-lab input[type=range]{vertical-align:middle;accent-color:#2563eb}

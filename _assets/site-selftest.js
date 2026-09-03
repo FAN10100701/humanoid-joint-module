@@ -114,10 +114,10 @@
       '.nav-sst:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.24);color:#fff}' +
       '.nav-sst.pass{color:#4ade80}' +
       '.nav-sst.fail{color:#f87171}' +
-      'body[data-theme="light"] .nav-sst{background:rgba(255,255,255,.65);border-color:rgba(100,116,139,.28);color:#475569}' +
-      'body[data-theme="light"] .nav-sst:hover{background:#fff;border-color:rgba(100,116,139,.45);color:#0f172a}' +
-      'body[data-theme="light"] .nav-sst.pass{color:#16a34a}' +
-      'body[data-theme="light"] .nav-sst.fail{color:#dc2626}' +
+      'html:not([data-theme-early="dark"]) .nav-sst{background:rgba(255,255,255,.65);border-color:rgba(100,116,139,.28);color:#475569}' +
+      'html:not([data-theme-early="dark"]) .nav-sst:hover{background:#fff;border-color:rgba(100,116,139,.45);color:#0f172a}' +
+      'html:not([data-theme-early="dark"]) .nav-sst.pass{color:#16a34a}' +
+      'html:not([data-theme-early="dark"]) .nav-sst.fail{color:#dc2626}' +
       /* 窄屏:按钮整体隐藏防顶栏拥挤(?selftest=1 唤回时同时清除隐藏记忆,见下) */
       '@media (max-width:640px){.topnav .nav-sst{display:none}.topnav .nav-print{display:none}}' +
       /* 明细面板:深色默认 */
@@ -134,17 +134,17 @@
       '.sst-panel .sst-btn:hover{border-color:#9ecbff}' +
       '.sst-panel .sst-tip{color:#6b7280;font-size:11px}' +
       /* 明细面板:浅色 */
-      'body:not([data-theme]) .sst-panel,body[data-theme="light"] .sst-panel{color:#334155;background:rgba(255,255,255,.92);border:1px solid rgba(60,80,120,.18);box-shadow:0 18px 50px rgba(40,70,130,.16)}' +
-      'body:not([data-theme]) .sst-panel .sst-t,body[data-theme="light"] .sst-panel .sst-t{color:#2563eb}' +
-      'body:not([data-theme]) .sst-panel .sst-g,body[data-theme="light"] .sst-panel .sst-g{color:#2563eb}' +
-      'body:not([data-theme]) .sst-panel .sst-ok,body[data-theme="light"] .sst-panel .sst-ok{color:#15803d}' +
-      'body:not([data-theme]) .sst-panel .sst-bad,body[data-theme="light"] .sst-panel .sst-bad{color:#dc2626}' +
-      'body:not([data-theme]) .sst-panel .sst-bad-d,body[data-theme="light"] .sst-panel .sst-bad-d{color:#b91c1c}' +
-      'body:not([data-theme]) .sst-panel .sst-warn,body[data-theme="light"] .sst-panel .sst-warn{color:#b45309}' +
-      'body:not([data-theme]) .sst-panel .sst-hr,body[data-theme="light"] .sst-panel .sst-hr{border-top-color:rgba(60,80,120,.15)}' +
-      'body:not([data-theme]) .sst-panel .sst-btn,body[data-theme="light"] .sst-panel .sst-btn{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.3);color:#2563eb}' +
-      'body:not([data-theme]) .sst-panel .sst-btn:hover,body[data-theme="light"] .sst-panel .sst-btn:hover{border-color:#2563eb}' +
-      'body:not([data-theme]) .sst-panel .sst-tip,body[data-theme="light"] .sst-panel .sst-tip{color:#94a3b8}' +
+      'html:not([data-theme-early=dark]) .sst-panel {color:#334155;background:rgba(255,255,255,.92);border:1px solid rgba(60,80,120,.18);box-shadow:0 18px 50px rgba(40,70,130,.16)}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-t {color:#2563eb}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-g {color:#2563eb}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-ok {color:#15803d}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-bad {color:#dc2626}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-bad-d {color:#b91c1c}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-warn {color:#b45309}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-hr {border-top-color:rgba(60,80,120,.15)}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-btn {background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.3);color:#2563eb}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-btn:hover {border-color:#2563eb}' +
+      'html:not([data-theme-early=dark]) .sst-panel .sst-tip {color:#94a3b8}' +
       /* 左下角回退悬浮(无顶栏时)与打印屏蔽 */
       '@media print{.nav-sst{display:none !important}}';
     document.head.appendChild(st);

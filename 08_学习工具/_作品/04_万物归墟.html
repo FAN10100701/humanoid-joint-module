@@ -7,7 +7,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>万物归墟 · SINGULARITY — 人形机器人学习站</title>
-<meta name="description" content="万物归墟 SINGULARITY:光线步进实时渲染的黑洞与白洞——引力透镜、光子环、天外来客吞噬现场,以及爱因斯坦纯黑白引力场线稿模式。">
+<meta name="description" content="万物归墟 SINGULARITY:光线步进实时渲染的黑洞与白洞——引力透镜、光子环、不规则陨石坠入吞噬现场,以及爱因斯坦时空之兜引力场模式。">
 <script>
 /* 早于 CSS 读全站主题键,防闪色(与 site.js 的 site-theme 键一致,缺省 light) */
 try{
@@ -17,7 +17,7 @@ try{
 </script>
 <link rel="stylesheet" href="../../_assets/glass.css">
 <style>
-/* 页面前缀 sg-;深色为默认,浅色 body[data-theme="light"] 覆盖 */
+/* 页面前缀 sg-;深色为默认,浅色 html[data-theme="light"] 覆盖 */
 :root{ --sg-ease: cubic-bezier(.22,.9,.24,1); }
 *{ margin:0; padding:0; box-sizing:border-box; }
 html,body{ height:100%; overflow:hidden; }
@@ -26,7 +26,7 @@ body{
   font-family:"Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
   color:#dbe6f5;
 }
-body[data-theme="light"]{ background:#eef2f7; color:#1c2733; }
+html[data-theme="light"] { background:#eef2f7; color:#1c2733; }
 body.sg-shake{ animation:sgShake .32s linear; }
 @keyframes sgShake{
   0%{transform:translate(0,0)} 20%{transform:translate(2px,-2px)} 40%{transform:translate(-2px,2px)}
@@ -40,28 +40,28 @@ body.sg-shake{ animation:sgShake .32s linear; }
 #sgTop{ top:0; left:0; right:0; display:flex; align-items:center; gap:14px; padding:14px 18px;
   background:linear-gradient(rgba(5,7,13,.78), transparent); pointer-events:none;
   transition:opacity .9s var(--sg-ease); }
-body[data-theme="light"] #sgTop{ background:linear-gradient(rgba(238,242,247,.8), transparent); }
+html[data-theme="light"] #sgTop{ background:linear-gradient(rgba(238,242,247,.8), transparent); }
 body.sg-idle #sgTop{ opacity:0; }
 body.sg-idle #sgFab{ opacity:.22; }
 #sgTop a,#sgTop button{ pointer-events:auto; background:rgba(255,255,255,.06); border:1px solid rgba(160,200,255,.22);
   color:#dbe6f5; font-size:12.5px; padding:6px 14px; border-radius:999px; cursor:pointer; text-decoration:none;
   font-family:inherit; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); transition:.2s var(--sg-ease); }
-body[data-theme="light"] #sgTop a, body[data-theme="light"] #sgTop button{ background:rgba(255,255,255,.6); border-color:rgba(30,60,120,.2); color:#243244; }
+html[data-theme="light"] #sgTop a, html[data-theme="light"] #sgTop button{ background:rgba(255,255,255,.6); border-color:rgba(30,60,120,.2); color:#243244; }
 #sgTop a:hover,#sgTop button:hover{ border-color:#58a6ff; color:#fff; }
-body[data-theme="light"] #sgTop a:hover, body[data-theme="light"] #sgTop button:hover{ border-color:#2563eb; color:#1d4ed8; }
+html[data-theme="light"] #sgTop a:hover, html[data-theme="light"] #sgTop button:hover{ border-color:#2563eb; color:#1d4ed8; }
 #sgTitle{ line-height:1.15; }
 #sgTitle .k{ font-size:9.5px; letter-spacing:.5em; color:#7fb2ff; opacity:.85; font-weight:700; }
-body[data-theme="light"] #sgTitle .k{ color:#2563eb; }
+html[data-theme="light"] #sgTitle .k{ color:#2563eb; }
 #sgTitle .t{ font-size:17px; font-weight:800; letter-spacing:6px; color:#fff; text-shadow:0 1px 14px rgba(80,140,255,.35); }
-body[data-theme="light"] #sgTitle .t{ color:#16202e; text-shadow:none; }
+html[data-theme="light"] #sgTitle .t{ color:#16202e; text-shadow:none; }
 #sgFps{ margin-left:auto; font-family:Consolas,monospace; font-size:11px; color:rgba(219,230,245,.5); letter-spacing:1px; }
-body[data-theme="light"] #sgFps{ color:rgba(28,39,51,.55); }
+html[data-theme="light"] #sgFps{ color:rgba(28,39,51,.55); }
 
 /* ---------- 控制台(左下角玻璃,可整体收回左侧) ---------- */
 #sgFab{ left:16px; bottom:16px; width:46px; height:46px; border-radius:50%; border:1px solid rgba(150,190,255,.3);
   background:rgba(10,14,26,.5); color:#cfe2ff; font-size:19px; cursor:pointer; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   display:flex; align-items:center; justify-content:center; transition:.25s var(--sg-ease); box-shadow:0 10px 34px rgba(0,0,0,.35); z-index:22; }
-body[data-theme="light"] #sgFab{ background:rgba(255,255,255,.65); border-color:rgba(30,60,120,.22); color:#243244; }
+html[data-theme="light"] #sgFab{ background:rgba(255,255,255,.65); border-color:rgba(30,60,120,.22); color:#243244; }
 #sgFab:hover{ border-color:#58a6ff; transform:scale(1.06); }
 #sgPanel{ left:16px; bottom:70px; width:min(300px, calc(100vw - 32px)); max-height:min(76vh, 580px); overflow-y:auto;
   border-radius:18px; background:rgba(9,13,24,.62); border:1px solid rgba(150,190,255,.22);
@@ -70,51 +70,51 @@ body[data-theme="light"] #sgFab{ background:rgba(255,255,255,.65); border-color:
 #sgPanel::-webkit-scrollbar{ width:5px; }
 #sgPanel::-webkit-scrollbar-thumb{ background:rgba(150,190,255,.35); border-radius:99px; }
 #sgPanel::-webkit-scrollbar-track{ background:transparent; }
-body[data-theme="light"] #sgPanel{ background:rgba(255,255,255,.72); border-color:rgba(30,60,120,.18); box-shadow:0 24px 70px rgba(40,70,130,.2); }
+html[data-theme="light"] #sgPanel{ background:rgba(255,255,255,.72); border-color:rgba(30,60,120,.18); box-shadow:0 24px 70px rgba(40,70,130,.2); }
 #sgPanel.closed{ transform:translateX(calc(-100% - 26px)); opacity:0; pointer-events:none; }
 .sg-phead{ display:flex; align-items:baseline; gap:8px; padding:13px 16px 10px; border-bottom:1px solid rgba(150,190,255,.14);
   position:sticky; top:0; z-index:2; background:rgba(11,15,27,.94); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
-body[data-theme="light"] .sg-phead{ background:rgba(252,253,255,.96); border-bottom-color:rgba(30,60,120,.12); }
+html[data-theme="light"] .sg-phead{ background:rgba(252,253,255,.96); border-bottom-color:rgba(30,60,120,.12); }
 .sg-phead b{ font-size:13.5px; letter-spacing:2px; color:#fff; }
-body[data-theme="light"] .sg-phead b{ color:#16202e; }
+html[data-theme="light"] .sg-phead b{ color:#16202e; }
 .sg-phead span{ font-size:8.5px; letter-spacing:.24em; color:rgba(219,230,245,.4); flex:1; }
-body[data-theme="light"] .sg-phead span{ color:rgba(28,39,51,.4); }
+html[data-theme="light"] .sg-phead span{ color:rgba(28,39,51,.4); }
 .sg-phead button{ background:none; border:none; color:rgba(219,230,245,.6); font-size:15px; cursor:pointer; }
-body[data-theme="light"] .sg-phead button{ color:rgba(28,39,51,.55); }
+html[data-theme="light"] .sg-phead button{ color:rgba(28,39,51,.55); }
 .sg-pbody{ padding:10px 14px 12px; }
 .sg-grp{ margin:10px 0 2px; }
 .sg-grp > label{ display:block; font-size:10px; letter-spacing:.28em; color:#7fb2ff; margin-bottom:7px; }
-body[data-theme="light"] .sg-grp > label{ color:#2563eb; }
+html[data-theme="light"] .sg-grp > label{ color:#2563eb; }
 .sg-seg{ display:flex; gap:5px; flex-wrap:wrap; }
 .sg-seg button{ flex:1; min-width:52px; background:rgba(255,255,255,.05); border:1px solid rgba(150,190,255,.18); color:rgba(219,230,245,.72);
   font-size:11.5px; padding:6px 4px; border-radius:9px; cursor:pointer; font-family:inherit; letter-spacing:1px; transition:.18s; }
-body[data-theme="light"] .sg-seg button{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
+html[data-theme="light"] .sg-seg button{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
 .sg-seg button.on{ background:rgba(88,166,255,.22); border-color:#58a6ff; color:#fff; }
-body[data-theme="light"] .sg-seg button.on{ background:rgba(37,99,235,.14); border-color:#2563eb; color:#1d4ed8; }
+html[data-theme="light"] .sg-seg button.on{ background:rgba(37,99,235,.14); border-color:#2563eb; color:#1d4ed8; }
 .sg-row{ margin:9px 0; }
 .sg-row label{ display:flex; justify-content:space-between; font-size:11.5px; letter-spacing:1px; color:rgba(219,230,245,.75); margin-bottom:4px; }
-body[data-theme="light"] .sg-row label{ color:#33465e; }
+html[data-theme="light"] .sg-row label{ color:#33465e; }
 .sg-row output{ font-family:Consolas,monospace; font-size:10.5px; color:#7fb2ff; }
-body[data-theme="light"] .sg-row output{ color:#2563eb; }
+html[data-theme="light"] .sg-row output{ color:#2563eb; }
 .sg-row input[type=range]{ width:100%; height:18px; accent-color:#58a6ff; cursor:pointer; background:transparent; }
 .sg-tgl-list{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
 .sg-tgl{ display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.05); border:1px solid rgba(150,190,255,.18);
   border-radius:9px; padding:7px 9px; cursor:pointer; font-size:11.5px; font-family:inherit; letter-spacing:1px; color:rgba(219,230,245,.75); transition:.18s; }
-body[data-theme="light"] .sg-tgl{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
+html[data-theme="light"] .sg-tgl{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
 .sg-tgl i{ width:26px; height:14px; border-radius:99px; background:rgba(150,190,255,.18); position:relative; transition:.2s; flex:none; }
 .sg-tgl i::after{ content:""; position:absolute; left:2px; top:2px; width:10px; height:10px; border-radius:50%; background:#8ea4c4; transition:.2s var(--sg-ease); }
 .sg-tgl.on i{ background:rgba(88,166,255,.45); }
 .sg-tgl.on i::after{ left:14px; background:#fff; }
-body[data-theme="light"] .sg-tgl.on i{ background:rgba(37,99,235,.4); }
+html[data-theme="light"] .sg-tgl.on i{ background:rgba(37,99,235,.4); }
 .sg-pfoot{ display:flex; gap:8px; margin-top:12px; }
 .sg-pfoot button{ flex:1; background:rgba(255,255,255,.05); border:1px solid rgba(150,190,255,.2); color:rgba(219,230,245,.7);
   font-size:11.5px; padding:7px 0; border-radius:9px; cursor:pointer; font-family:inherit; letter-spacing:2px; transition:.18s; }
-body[data-theme="light"] .sg-pfoot button{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
+html[data-theme="light"] .sg-pfoot button{ background:rgba(30,60,120,.05); border-color:rgba(30,60,120,.16); color:#33465e; }
 .sg-pfoot button:hover{ border-color:#58a6ff; color:#fff; }
-body[data-theme="light"] .sg-pfoot button:hover{ border-color:#2563eb; color:#1d4ed8; }
+html[data-theme="light"] .sg-pfoot button:hover{ border-color:#2563eb; color:#1d4ed8; }
 .sg-tips{ margin-top:10px; padding-top:9px; border-top:1px solid rgba(150,190,255,.12); font-size:10px; letter-spacing:1.2px;
   color:rgba(219,230,245,.42); text-align:center; line-height:1.9; }
-body[data-theme="light"] .sg-tips{ border-top-color:rgba(30,60,120,.12); color:rgba(28,39,51,.45); }
+html[data-theme="light"] .sg-tips{ border-top-color:rgba(30,60,120,.12); color:rgba(28,39,51,.45); }
 
 /* ---------- 纯净模式 ---------- */
 body.sg-clean #sgTop{ opacity:0; pointer-events:none !important; }
@@ -166,14 +166,13 @@ body.sg-clean #sgFab{ opacity:.35; }
     <div class="sg-grp"><label>特效 EFFECTS</label><div class="sg-tgl-list">
       <button class="sg-tgl on" data-k="parallax"><i></i>指针视差</button>
       <button class="sg-tgl on" data-k="drag"><i></i>拖拽环视</button>
-      <button class="sg-tgl on" data-k="items"><i></i>天外来客</button>
       <button class="sg-tgl" data-k="hum"><i></i>低频嗡鸣</button>
       <button class="sg-tgl" data-k="clean"><i></i>纯净模式</button>
     </div></div>
     <div class="sg-grp"><label>画质 QUALITY</label><div class="sg-seg" data-k="quality">
       <button data-v="auto" class="on">自动</button><button data-v="high">高</button><button data-v="mid">中</button><button data-v="low">低</button></div></div>
     <div class="sg-pfoot"><button id="sgReset">恢复默认</button></div>
-    <div class="sg-tips">点击 投放天外来客 · 拖拽 环视<br>滚轮 缩放 · H 纯净 · 空格 凝固时间 · R 复位</div>
+    <div class="sg-tips">点击 投放陨石 · 拖拽 环视<br>滚轮 缩放 · H 纯净 · 空格 凝固时间 · R 复位</div>
   </div>
 </aside>
 
@@ -201,13 +200,72 @@ const STYLES = {
   jade:   { bh:[0xd2ffef,0x14b87c], wh:[0xf4ffd8,0xd8b93a] },
   crimson:{ bh:[0xffd9c4,0xe62020], wh:[0xffe8ee,0xff4d7d] },
 };
-/* 天外来客:随机被吞噬的过客 */
-const ITEM_KINDS = ["🪨","🚀","🛰️","🧑‍🚀","🐋","🐘","🦕","🏢"];
+/* 天外陨石:不规则岩石(点击投放,不做自动生成) */
+/* rt = 写实黑洞主体(全屏 raymarch)的渲染分辨率比;粒子和陨石始终全分辨率 */
 const TIERS = {
-  high:{ scale:1.0, steps:280, pts:9000, name:"高" },
-  mid: { scale:.78, steps:200, pts:5200, name:"中" },
-  low: { scale:.6,  steps:130, pts:2600, name:"低" },
+  high:{ rt:.8,  steps:280, pts:6600, name:"高" },
+  mid: { rt:.62, steps:200, pts:3800, name:"中" },
+  low: { rt:.45, steps:130, pts:2000, name:"低" },
 };
+const TAU = Math.PI*2;
+/* ---- 全屏后处理着色器:亮部提取 → 双轮高斯模糊 → 合成(真 Bloom) ---- */
+const FX_VERT = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+const FX_BRIGHT = `varying vec2 vUv; uniform sampler2D tex;
+void main(){ vec3 c = texture2D(tex, vUv).rgb;
+  float l = dot(c, vec3(.2126,.7156,.0722));
+  gl_FragColor = vec4(c*smoothstep(.92, 1.3, l), 1.0); }`;
+const FX_BLUR = `varying vec2 vUv; uniform sampler2D tex; uniform vec2 uDir;
+void main(){ vec3 c = texture2D(tex,vUv).rgb*.2270270;
+  c += (texture2D(tex, vUv+uDir*1.3846).rgb + texture2D(tex, vUv-uDir*1.3846).rgb)*.3162162;
+  c += (texture2D(tex, vUv+uDir*3.2308).rgb + texture2D(tex, vUv-uDir*3.2308).rgb)*.0702703;
+  gl_FragColor = vec4(c, 1.0); }`;
+const FX_COMP = `varying vec2 vUv; uniform sampler2D tex; uniform sampler2D uBloomTex; uniform float uBloomK;
+void main(){ gl_FragColor = vec4(texture2D(tex,vUv).rgb + uBloomK*texture2D(uBloomTex,vUv).rgb, 1.0); }`;
+/* ---- 陨石余烬尾迹(全局点池,CPU 只写环形缓冲) ---- */
+const TRAIL_VERT = `attribute float aAge; uniform float uPx; varying float vA; varying float vAge;
+void main(){ vAge = aAge; vec4 mv = modelViewMatrix*vec4(position,1.0);
+  gl_PointSize = clamp((1.0-aAge)*15.0*uPx*(55.0/max(-mv.z,.1)), 0.0, 26.0);
+  vA = (1.0-aAge)*(1.0-aAge)*.6;
+  gl_Position = projectionMatrix*mv; }`;
+const TRAIL_FRAG = `uniform vec3 uColA; uniform vec3 uColB; varying float vA; varying float vAge;
+void main(){ vec2 d = gl_PointCoord-.5; float a = exp(-dot(d,d)*9.0)*vA; if(a < .012) discard;
+  gl_FragColor = vec4(mix(uColA, uColB, vAge)*a, a); }`;
+/* ---- JS 侧盘噪声烘焙:角向(cos/sin 域)低频 + 径向高频 = 拉丝流纹,一次性生成供着色器采样 ---- */
+function bakeDiskTexture(T){
+  const W = 768, H = 384;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(W, H);
+  const data = img.data;
+  const hash = (x,y,z)=>{ const s = Math.sin(x*127.1 + y*311.7 + z*74.7)*43758.5453; return s - Math.floor(s); };
+  const sm = t=>t*t*(3-2*t);
+  const vn3 = (x,y,z)=>{
+    const xi=Math.floor(x), yi=Math.floor(y), zi=Math.floor(z);
+    const xf=x-xi, yf=y-yi, zf=z-zi, u=sm(xf), v=sm(yf), w=sm(zf);
+    const l = (a,b,t)=>a+(b-a)*t;
+    return l(
+      l( l(hash(xi,yi,zi),   hash(xi+1,yi,zi),   u), l(hash(xi,yi+1,zi),   hash(xi+1,yi+1,zi),   u), v),
+      l( l(hash(xi,yi,zi+1), hash(xi+1,yi,zi+1), u), l(hash(xi,yi+1,zi+1), hash(xi+1,yi+1,zi+1), u), v), w);
+  };
+  const fbm3 = (x,y,z)=> vn3(x,y,z)*.55 + vn3(x*2.1,y*2.1,z*2.1)*.28 + vn3(x*4.3,y*4.3,z*4.3)*.17;
+  for(let y=0; y<H; y++){
+    const rn = y/(H-1);
+    for(let x=0; x<W; x++){
+      const a = x/W*TAU;
+      const cx = Math.cos(a)*2.4, cy = Math.sin(a)*2.4;   /* 角向走圆域:无缝 */
+      let n = fbm3(cx, cy, rn*16.0);                       /* 径向高频 → 拉丝流纹 */
+      n = .28 + .72*Math.pow(Math.max(n,0), 1.35);
+      const i = (y*W+x)*4;
+      const v = Math.round(Math.min(n,1)*255);
+      data[i] = v; data[i+1] = v; data[i+2] = v; data[i+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new T.CanvasTexture(cv);
+  tex.wrapS = T.RepeatWrapping; tex.wrapT = T.ClampToEdgeWrapping;
+  tex.minFilter = T.LinearFilter; tex.magFilter = T.LinearFilter; tex.generateMipmaps = false;
+  return tex;
+}
 
 class Abyss{
   constructor(canvas, T){
@@ -225,6 +283,11 @@ class Abyss{
     this.rip = Array.from({length:6},()=>new T.Vector4(0,0,9,0)); this.ripI = 0;
     this.feedFlash = 0;
     this.cam = { azim: .6, elev: .18, r: 13.5, azimV: 0 };
+    /* 电影运镜 + GC 零分配临时向量(每帧复用,杜绝 GC 抖动) */
+    this.fov = 58; this.fovKick = 0; this.idleF = 0; this.idleNow = 0;
+    this._cp = new T.Vector3(); this._cf = new T.Vector3(); this._cr = new T.Vector3(); this._cu = new T.Vector3();
+    this._t1 = new T.Vector3(); this._t2 = new T.Vector3(); this._t3 = new T.Vector3(); this._up = new T.Vector3(0,1,0);
+    this.waveI = 0;
     this._buildQuad();
     this._buildItems();
     this._buildField();
@@ -244,6 +307,8 @@ class Abyss{
       uColBgDark:{value:new T.Color(0x05070d)}, uColBgLight:{value:new T.Color(0xeef2f7)},
       uRip:{value:this.rip}, uPointer:{value:new T.Vector2()}, uPointerK:{value:0},
       uFeedFlash:{value:0}, uDiskGain:{value:1}, uCenterOff:{value:new T.Vector2(0,-.08)},
+      uDiskTex:{value:bakeDiskTexture(T)},   /* 预烘焙盘噪声(一次性 ~100ms,loader 期间) */
+      uWaves:{value:[new T.Vector3(9,9,0), new T.Vector3(9,9,0), new T.Vector3(9,9,0)]},
     };
     this.quadScene = new T.Scene();
     this.quadCam = new T.OrthographicCamera(-1,1,1,-1,0,1);
@@ -253,173 +318,146 @@ class Abyss{
       fragmentShader: FRAG,
     });
     this.quadScene.add(new T.Mesh(new T.PlaneGeometry(2,2), mat));
-    /* 粒子层:position 打包 (r0, 角0, 倾角),aExtra = (seed, size) */
+    /* 尾迹场景:陨石余烬(粒子群已按反馈移除) */
     this.ptScene = new T.Scene();
     this.persp = new T.PerspectiveCamera(58, 1, .1, 300);
-    this.ptUni = {
-      uTime:{value:0}, uWhite:{value:0}, uGrav:{value:1}, uDens:{value:1}, uPx:{value:1}, uTheme:{value:0},
-      uTanFov:{value:Math.tan(29*Math.PI/180)},
-      uCamR:{value:new T.Vector3()}, uCamU:{value:new T.Vector3()},
-      uColIn:{value:this.uni.uColDiskA.value}, uColOut:{value:this.uni.uColDiskB.value},
-      uColInW:{value:this.uni.uColWhiteA.value}, uColOutW:{value:this.uni.uColWhiteB.value},
-      uPointer:{value:this.uni.uPointer}, uPointerK:{value:0},
-    };
-    this.ptMat = new T.ShaderMaterial({
-      uniforms: this.ptUni, transparent:true, depthTest:false, depthWrite:false, blending:T.AdditiveBlending,
-      vertexShader: PT_VERT, fragmentShader: PT_FRAG,
-    });
-    this._buildPoints(TIERS.mid.pts);
+    this._buildFX();
+    this._buildTrails();
   }
-  _buildPoints(n){
+  /* ---- 真 Bloom 后期链:亮部提取 → 双轮高斯 → 合成(全部低分辨率 RT,WebGL2 HalfFloat) ---- */
+  _buildFX(){
     const T = this.T;
-    if(this.points){ this.ptScene.remove(this.points); this.points.geometry.dispose(); }
-    const pos = new Float32Array(n*3), ext = new Float32Array(n*2);
-    for(let i=0;i<n;i++){
-      pos[i*3]   = 2.7 + Math.pow(Math.random(), .72)*6.6;   // 起始半径
-      pos[i*3+1] = Math.random()*Math.PI*2;                  // 初始角
-      pos[i*3+2] = Math.random();                            // 倾角种子
-      ext[i*2]   = Math.random();                            // seed
-      ext[i*2+1] = .6 + Math.random()*1.9;                   // size
-    }
-    const g = new T.BufferGeometry();
-    g.setAttribute("position", new T.BufferAttribute(pos,3));
-    g.setAttribute("aExtra", new T.BufferAttribute(ext,2));
-    this.points = new T.Points(g, this.ptMat);
-    this.points.frustumCulled = false;
-    this.points.renderOrder = 1;
-    this.ptScene.add(this.points);
+    const opt = { type:T.HalfFloatType, depthBuffer:false, stencilBuffer:false,
+      minFilter:T.LinearFilter, magFilter:T.LinearFilter, generateMipmaps:false };
+    this.rtScene = new T.WebGLRenderTarget(2, 2, opt);
+    this.rtBright = new T.WebGLRenderTarget(2, 2, opt);
+    this.rtBlurA = new T.WebGLRenderTarget(2, 2, opt);
+    this.rtBlurB = new T.WebGLRenderTarget(2, 2, opt);
+    this.fxScene = new T.Scene();
+    this.fxQuad = new T.Mesh(new T.PlaneGeometry(2,2), null);
+    this.fxQuad.frustumCulled = false;
+    this.fxScene.add(this.fxQuad);
+    this.brightMat = new T.ShaderMaterial({ uniforms:{ tex:{value:null} }, vertexShader:FX_VERT, fragmentShader:FX_BRIGHT, depthTest:false, depthWrite:false });
+    this.blurMat = new T.ShaderMaterial({ uniforms:{ tex:{value:null}, uDir:{value:new T.Vector2()} }, vertexShader:FX_VERT, fragmentShader:FX_BLUR, depthTest:false, depthWrite:false });
+    this.compMat = new T.ShaderMaterial({ uniforms:{ tex:{value:null}, uBloomTex:{value:null}, uBloomK:{value:1} }, vertexShader:FX_VERT, fragmentShader:FX_COMP, depthTest:false, depthWrite:false });
   }
-  /* ---------- 天外来客:程序化低多边形 3D 网格(带光照着色,真立体) + plunge 轨道 + 潮汐拉伸 ---------- */
+  /* ---- 陨石余烬尾迹:全局点池 8×14,每帧只写环形缓冲 ---- */
+  _buildTrails(){
+    const T = this.T, N = 8*14;
+    this.trailN = N; this.trailPer = 14;
+    const pos = new Float32Array(N*3), age = new Float32Array(N).fill(1);
+    this.trailPosAttr = new T.BufferAttribute(pos, 3); this.trailPosAttr.setUsage(T.DynamicDrawUsage);
+    this.trailAgeAttr = new T.BufferAttribute(age, 1); this.trailAgeAttr.setUsage(T.DynamicDrawUsage);
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", this.trailPosAttr);
+    g.setAttribute("aAge", this.trailAgeAttr);
+    this.trailUni = { uPx:{value:1}, uColA:{value:new T.Color(0xffb347)}, uColB:{value:new T.Color(0x521208)} };
+    const m = new T.ShaderMaterial({ uniforms:this.trailUni, transparent:true, depthTest:false, depthWrite:false,
+      blending:T.AdditiveBlending, vertexShader:TRAIL_VERT, fragmentShader:TRAIL_FRAG });
+    const pts = new T.Points(g, m);
+    pts.frustumCulled = false; pts.renderOrder = 2;
+    this.ptScene.add(pts);
+  }
+  /* ---------- 天外陨石:不规则岩石 3D 网格(每颗独立形状,顶点色明暗,熔岩发热+红移淡出) ---------- */
   _buildItems(){
     this.itemScene = new this.T.Scene();
     this._addLights(this.itemScene);
     this.items = [];
     this.fieldItems = [];
-    this._matCache = {};
-    this.itemT = 2.5;
+    /* 视界遮挡体:只写深度不写颜色,陨石转到黑洞背后时被正确挡住 */
+    const T = this.T;
+    const occ = new T.Mesh(new T.SphereGeometry(2.55, 24, 16), new T.MeshBasicMaterial({ colorWrite:false }));
+    occ.renderOrder = -1;
+    this.itemScene.add(occ);
   }
+  /* --- 背景行星纹理工具已随行星系移除(按反馈) --- */
   _addLights(scene){
     const T = this.T;
-    scene.add(new T.HemisphereLight(0xffffff, 0x3a4658, 1.15));
-    const d = new T.DirectionalLight(0xffffff, 1.7); d.position.set(6, 9, 4); scene.add(d);
-    const d2 = new T.DirectionalLight(0x9db8ff, .5); d2.position.set(-5, -3, -4); scene.add(d2);
+    scene.add(new T.HemisphereLight(0xffffff, 0x3a4658, .95));
+    const d = new T.DirectionalLight(0xfff2df, 1.35); d.position.set(6, 9, 4); scene.add(d);
+    const d2 = new T.DirectionalLight(0x9db8ff, .45); d2.position.set(-5, -3, -4); scene.add(d2);
   }
-  _M(color, opt){   /* 材质缓存(按颜色),几何体随物品销毁 */
-    const key = color + JSON.stringify(opt||{});
-    if(!this._matCache[key]) this._matCache[key] = new this.T.MeshStandardMaterial({ color, roughness:.55, metalness:.12, flatShading:true, ...(opt||{}) });
-    return this._matCache[key];
-  }
-  _itemMesh(kind){
+  _makeMeteor(){
     const T = this.T;
-    const g = new T.Group();
-    const add = (geo, m, x=0, y=0, z=0, r=[0,0,0], s=[1,1,1])=>{
-      const ms = new T.Mesh(geo, m);
-      ms.position.set(x,y,z); ms.rotation.set(...r); ms.scale.set(...s);
-      g.add(ms); return ms;
-    };
-    const sph = (r,seg=18)=>new T.SphereGeometry(r, seg, Math.max(8, seg>>1));
-    switch(kind){
-      case "meteor":{   /* 陨石:顶点扰动岩石 */
-        const geo = new T.IcosahedronGeometry(.52, 1);
-        const pa = geo.attributes.position;
-        for(let i=0;i<pa.count;i++){
-          const k = 1 + (Math.random()-.5)*.42;
-          pa.setXYZ(i, pa.getX(i)*k, pa.getY(i)*(1+(Math.random()-.5)*.3), pa.getZ(i)*k);
-        }
-        geo.computeVertexNormals();
-        add(geo, this._M(0x8a7866));
-        break;
-      }
-      case "rocket":{   /* 火箭 */
-        add(new T.CylinderGeometry(.14,.18,.62,10), this._M(0xe8ecf2), 0,.06,0);
-        add(new T.ConeGeometry(.15,.3,10), this._M(0xd8443c), 0,.5,0);
-        for(let i=0;i<3;i++){ const a=i*2.094;
-          add(new T.BoxGeometry(.05,.24,.14), this._M(0xd8443c), Math.cos(a)*.17, -.22, Math.sin(a)*.17); }
-        add(new T.ConeGeometry(.09,.16,8), this._M(0xffb347), 0,-.36,0, [Math.PI,0,0]);
-        break;
-      }
-      case "satellite":{  /* 卫星 */
-        add(new T.BoxGeometry(.32,.32,.32), this._M(0xc9a86a));
-        add(new T.BoxGeometry(.66,.02,.26), this._M(0x22335e), .48,0,0);
-        add(new T.BoxGeometry(.66,.02,.26), this._M(0x22335e), -.48,0,0);
-        add(new T.CylinderGeometry(.02,.02,.2,6), this._M(0x9aa4b0), 0,.24,0);
-        break;
-      }
-      case "astronaut":{  /* 宇航员 */
-        add(sph(.19,14), this._M(0xf2f4f8), 0,.32,0);
-        add(sph(.12,12), this._M(0x2a3646), 0,.32,.1);
-        add(new T.CylinderGeometry(.16,.2,.34,10), this._M(0xf2f4f8), 0,.02,0);
-        add(new T.BoxGeometry(.24,.28,.12), this._M(0xb9c2cc), 0,.06,-.16);
-        add(new T.BoxGeometry(.09,.26,.1), this._M(0xf2f4f8), .2,-.06,0, [0,0,.3]);
-        add(new T.BoxGeometry(.09,.26,.1), this._M(0xf2f4f8), -.2,-.06,0, [0,0,-.3]);
-        break;
-      }
-      case "whale":{    /* 鲸 */
-        add(sph(.3,16), this._M(0x4a6a8a), 0,0,0, [0,0,0], [1.7,.75,.65]);
-        add(sph(.14,10), this._M(0x3c5a78), 0,.12,-.5, [0,0,0], [.3,1,.9]);
-        add(sph(.12,10), this._M(0x3c5a78), 0,.1,-.62, [0,0,0], [.1,.9,.7]);
-        add(sph(.1,10), this._M(0xf0f4f8), 0,-.02,.42, [0,0,0], [.9,.5,1.2]);
-        break;
-      }
-      case "elephant":{ /* 象 */
-        add(sph(.28,14), this._M(0x9aa0a8), 0,.02,0, [0,0,0], [1.25,1,.85]);
-        add(sph(.17,12), this._M(0x9aa0a8), .3,.16,0);
-        add(new T.CylinderGeometry(.045,.06,.3,8), this._M(0x8a9098), .44,.02,0, [0,0,-.5]);
-        add(new T.CylinderGeometry(.13,.15,.03,10), this._M(0x8a9098), .28,.2,.13, [.4,0,0]);
-        add(new T.CylinderGeometry(.13,.15,.03,10), this._M(0x8a9098), .28,.2,-.13, [-.4,0,0]);
-        for(const [lx,lz] of [[.16,.12],[.16,-.12],[-.16,.12],[-.16,-.12]])
-          add(new T.CylinderGeometry(.055,.06,.2,8), this._M(0x8a9098), lx,-.18,lz);
-        break;
-      }
-      case "dino":{     /* 恐龙 */
-        add(sph(.26,14), this._M(0x5f8a5a), 0,0,0, [0,0,0], [1.15,1,.8]);
-        add(new T.CylinderGeometry(.07,.11,.34,8), this._M(0x5f8a5a), .24,.26,0, [0,0,-.5]);
-        add(new T.BoxGeometry(.16,.12,.2), this._M(0x547951), .4,.42,0);
-        add(new T.ConeGeometry(.09,.44,8), this._M(0x547951), -.36,.02,0, [0,0,1.35]);
-        for(const lx of [.1,-.1])
-          add(new T.CylinderGeometry(.05,.06,.18,8), this._M(0x547951), lx,-.2,.05);
-        break;
-      }
-      case "tower":{    /* 大厦(程序化窗户贴图) */
-        if(!this._winTex){
-          const c = document.createElement("canvas"); c.width = c.height = 64;
-          const x = c.getContext("2d");
-          x.fillStyle = "#cfd6de"; x.fillRect(0,0,64,64);
-          x.fillStyle = "#35507a";
-          for(let i=0;i<8;i++) for(let j=0;j<8;j++) if((i*7+j*3)%5<3) x.fillRect(i*8+2, j*8+2, 4, 5);
-          this._winTex = new T.CanvasTexture(c);
-        }
-        const m = this._towerMat ||= new T.MeshStandardMaterial({ map:this._winTex, roughness:.5, metalness:.1 });
-        add(new T.BoxGeometry(.4,.86,.4), m, 0,.08,0);
-        add(new T.BoxGeometry(.46,.06,.46), this._M(0x8a94a0), 0,.55,0);
-        add(new T.CylinderGeometry(.015,.015,.3,6), this._M(0x8a94a0), 0,.62,0);
-        break;
-      }
+    const g = new T.IcosahedronGeometry(.55, 2);
+    const pa = g.attributes.position;
+    const v = new T.Vector3();
+    const s1 = Math.random()*10, s2 = Math.random()*10, s3 = Math.random()*10;
+    /* 每颗独立随机形状:低频鼓包 + 高频粗糙,绝不重样 */
+    for(let i=0;i<pa.count;i++){
+      v.fromBufferAttribute(pa, i);
+      const lump = Math.sin(v.x*3.1+s1)*Math.cos(v.y*2.7+s2)*Math.sin(v.z*3.3+s3);
+      const rough = Math.sin(v.x*8.9+s2)*Math.cos(v.z*7.6+s1)*Math.sin(v.y*7.1+s3);
+      v.multiplyScalar(1 + lump*.34 + rough*.13);
+      pa.setXYZ(i, v.x, v.y, v.z);
     }
-    return g;
+    /* 顶点色:坑洼压暗、棱脊提亮,深褐岩石带铁锈斑(压暗以对抗强灯光,避免发白) */
+    const colors = new Float32Array(pa.count*3);
+    const c = new T.Color();
+    for(let i=0;i<pa.count;i++){
+      v.fromBufferAttribute(pa, i);
+      const h = .5 + .5*Math.sin(v.x*6.2+s3)*Math.cos(v.y*5.1+s1);
+      const shade = .36 + h*.36;
+      const rust = .16*Math.max(0, Math.sin(v.x*4.3+s2)*Math.sin(v.z*3.7+s1));
+      c.setRGB(shade*.58+rust, shade*.46+rust*.45, shade*.38);
+      colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+    }
+    g.setAttribute('color', new T.BufferAttribute(colors, 3));
+    g.computeVertexNormals();
+    /* 实例材质:程序化岩石纹理(色 + 凹凸)+ 顶点色 AO,透明通道留给红移淡出 */
+    if(!this._rockTex){
+      const s = 256;
+      const c = document.createElement("canvas"); c.width = c.height = s;
+      const x = c.getContext("2d");
+      x.fillStyle = "#4c4238"; x.fillRect(0, 0, s, s);
+      const img = x.getImageData(0, 0, s, s), dd = img.data;
+      for(let i=0; i<dd.length; i+=4){
+        const n = (Math.random()-.5)*52;
+        dd[i] += n; dd[i+1] += n*.9; dd[i+2] += n*.8;
+      }
+      x.putImageData(img, 0, 0);
+      for(let i=0; i<52; i++){
+        const r = 2+Math.random()*13, px = Math.random()*s, py = Math.random()*s;
+        x.fillStyle = "rgba(18,14,10,"+(.18+Math.random()*.22)+")";
+        x.beginPath(); x.arc(px, py, r, 0, 6.283); x.fill();
+        x.strokeStyle = "rgba(196,176,152,"+(.1+Math.random()*.16)+")"; x.lineWidth = 1.4;
+        x.beginPath(); x.arc(px, py, r, -2.6, -.6); x.stroke();
+      }
+      this._rockTex = new this.T.CanvasTexture(c);
+      this._rockTex.wrapS = this._rockTex.wrapT = this.T.RepeatWrapping;
+    }
+    const mat = new T.MeshStandardMaterial({ map:this._rockTex, bumpMap:this._rockTex, bumpScale:.55,
+      vertexColors:true, roughness:.94, metalness:.03,
+      flatShading:true, transparent:true, opacity:1, emissive:0x000000 });
+    mat._abyssInstance = true;
+    mat.color.setScalar(.9 + Math.random()*.2);   /* 每颗明暗微差 */
+    const mesh = new T.Mesh(g, mat);
+    const wrap = new T.Group();
+    wrap.add(mesh);
+    return { wrap, mat };
   }
   /* 时空之兜:爱因斯坦嵌入图 —— 网格平面被质量压出"兜",物品沿面滚落被吞 */
   _buildField(){
     const T = this.T;
     this.fieldScene = new T.Scene();
     this._addLights(this.fieldScene);
-    this.fUni = { uWell:{value:3.8}, uTheme:{value:0}, uFade:{value:0} };
-    const gridGeo = new T.PlaneGeometry(64, 64, 96, 96);
+    this.fUni = { uWell:{value:5.2}, uTheme:{value:0}, uFade:{value:0} };
+    const gridGeo = new T.PlaneGeometry(64, 64, 128, 128);
     gridGeo.rotateX(-Math.PI/2);
     const gridMat = new T.ShaderMaterial({
       uniforms: this.fUni, transparent: true, depthWrite: false, side: T.DoubleSide,
       vertexShader: `uniform float uWell; varying vec2 vUv; varying float vR;
         void main(){ vUv = uv; vec3 p = position; float r = length(p.xz); vR = r;
-          p.y += -uWell/(r+1.1);
+          p.y += -uWell/(r+1.0);
           gl_Position = projectionMatrix*modelViewMatrix*vec4(p,1.0); }`,
       fragmentShader: `uniform float uTheme, uFade; varying vec2 vUv; varying float vR;
         float gline(float f, float w){ return 1.0 - smoothstep(0.0, w, min(f, 1.0-f)); }
         void main(){
           vec3 ink = mix(vec3(.93,.93,.96), vec3(.10,.10,.11), uTheme);
-          vec2 f = fract(vUv*32.0);
-          float line = max(gline(f.x,.05), gline(f.y,.05));
-          float mask = smoothstep(1.4, 2.4, vR) * (1.0 - smoothstep(19.0, 31.0, vR));
-          float a = line*mask*uFade*.85;
+          vec2 f = fract(vUv*60.0);                     /* 每单位 0.94 格:密网才衬得出兜形 */
+          float line = max(gline(f.x,.075), gline(f.y,.075));
+          float mask = smoothstep(1.35, 2.2, vR) * (1.0 - smoothstep(19.0, 31.0, vR));
+          float a = line*mask*uFade*.9;
           if(a < .012) discard;
           gl_FragColor = vec4(ink, a);
         }`,
@@ -427,7 +465,7 @@ class Abyss{
     this.fGrid = new T.Mesh(gridGeo, gridMat);
     this.fieldScene.add(this.fGrid);
     this.fSphereMat = new T.MeshBasicMaterial({ color:0x020204, transparent:true, opacity:0 });
-    this.fSphere = new T.Mesh(new T.SphereGeometry(.9, 40, 28), this.fSphereMat);
+    this.fSphere = new T.Mesh(new T.SphereGeometry(1.7, 48, 32), this.fSphereMat);
     this.fieldScene.add(this.fSphere);
     this.fRings = new T.Group();
     for(const [r, w] of [[2.5, .06], [2.95, .045]]){
@@ -438,77 +476,98 @@ class Abyss{
     }
     this.fieldScene.add(this.fRings);
     this.fPulse = 0;
+    /* 教学测地线:三条发光对数螺旋嵌入兜面(与兜同顶点位移),慢旋示意"为什么走螺旋" */
+    this.fUni.uTime = { value:0 }; this.fUni.uGeo = { value:0 };
+    this.fGeo = new T.Group();
+    const geoMat = new T.ShaderMaterial({
+      uniforms: this.fUni, transparent:true, depthWrite:false,
+      vertexShader:`uniform float uWell; void main(){ vec3 p = position; float r = length(p.xz);
+        p.y += -uWell/(r+1.0) + .12;
+        gl_Position = projectionMatrix*modelViewMatrix*vec4(p,1.0); }`,
+      fragmentShader:`uniform float uTheme, uFade, uGeo; void main(){
+        vec3 ink = mix(vec3(.55,.78,1.0), vec3(.16,.34,.62), uTheme);
+        float a = uFade*(.7+.3*uGeo);
+        if(a < .01) discard;
+        gl_FragColor = vec4(ink, a); }`,
+    });
+    for(let k=0;k<3;k++){
+      const pts = [];
+      for(let j=0;j<=140;j++){
+        const t = j/140;
+        const r = 15*Math.pow(1.5/15, t);
+        const ang = k*(TAU/3) + t*4.6;
+        pts.push(new T.Vector3(Math.cos(ang)*r, 0, Math.sin(ang)*r));
+      }
+      const line = new T.Line(new T.BufferGeometry().setFromPoints(pts), geoMat);
+      this.fGeo.add(line);
+    }
+    this.fieldScene.add(this.fGeo);
   }
-  sheetY(r){ return -this.fUni.uWell.value/(r+1.1); }
-  /* --- 投放路由:写实模式物品飞入引力场;引力场模式物品在网格兜上滚落 --- */
+  sheetY(r){ return -this.fUni.uWell.value/(r+1.0); }
+  /* --- 投放路由:写实模式陨石飞入引力场;时空之兜模式陨石落在网格兜上滚入兜底(仅点击投放,无自动生成) --- */
   spawnItemFromRay(origin, dir){
-    const kind = ITEM_KINDS[(Math.random()*ITEM_KINDS.length)|0];
     if(this.lineMixTarget > .5){
-      /* 点击射线与兜面(y=sheetY 平面)求交,物品落在点击处滚向兜底 */
       let t = dir.y !== 0 ? -(origin.y + 1.1)/dir.y : -1;
       let px, pz;
       if(t > 0){ px = origin.x + dir.x*t; pz = origin.z + dir.z*t; }
       else { const a = Math.random()*6.283; px = Math.cos(a)*10; pz = Math.sin(a)*10; }
-      let r = Math.max(Math.hypot(px, pz), 2.6);
-      const a2 = Math.atan2(pz, px);
-      this._spawnFieldItem(kind, r, a2);
+      const r0 = Math.hypot(px, pz);
+      /* 高机位陡视角的射线会交在漏斗内壁,统一摊到 5~8.5 的观赏区间(保留点击方位角) */
+      const r = r0 < 5 ? 5 + Math.random()*3.5 : Math.min(r0, 11);
+      this._spawnFieldItem(r, Math.atan2(pz, px));
       return;
     }
     const p = origin.clone().addScaledVector(dir, 11.5);
+    /* 生成半径固定在世界 r≈10.5:取点击射线与该天球的"近"交点(生成在点击处前方,
+       而非穿过黑洞的背面),避免贴着视界生成转瞬即吞 */
+    const R = 10.5;
+    const od = origin.dot(dir);
+    const disc = od*od - origin.lengthSq() + R*R;
+    let t = disc >= 0 ? -od - Math.sqrt(disc) : -od;
+    if(t < 3) t = disc >= 0 ? -od + Math.sqrt(disc) : Math.max(-od, 3);
+    p.copy(origin).addScaledVector(dir, Math.max(t, 3));
     if(p.lengthSq() < 1e-6 || !isFinite(p.x)) return;
     const tangent = new this.T.Vector3(-p.z, 0, p.x).normalize();
     const speed = Math.sqrt(20/Math.max(p.length(), 2))*(.8+Math.random()*.3);
     const v = tangent.multiplyScalar(speed)
       .addScaledVector(p.clone().normalize(), -(.7+Math.random()*.6))
       .add(new this.T.Vector3((Math.random()-.5)*.5, (Math.random()-.5)*.3, (Math.random()-.5)*.5));
-    this._spawnRealItem(kind, p, v);
+    this._spawnRealItem(p, v);
   }
-  spawnAmbientItem(){
-    const kind = ITEM_KINDS[(Math.random()*ITEM_KINDS.length)|0];
-    if(this.lineMixTarget > .5){
-      this._spawnFieldItem(kind, 7 + Math.random()*5, Math.random()*6.283);
-      return;
-    }
-    const az = Math.random()*Math.PI*2, rad = 10 + Math.random()*4;
-    const p = new this.T.Vector3(Math.cos(az)*rad, (Math.random()-.5)*3, Math.sin(az)*rad);
-    const tangent = new this.T.Vector3(-p.z, 0, p.x).normalize();
-    const v = tangent.multiplyScalar(Math.sqrt(20/rad)*(.8+Math.random()*.3))
-      .addScaledVector(p.clone().normalize(), -(.5+Math.random()*.6));
-    this._spawnRealItem(kind, p, v);
-  }
-  tickAmbient(dt, want){
-    if(!want) return;
-    this.itemT -= dt;
-    if(this.itemT <= 0){ this.itemT = 4 + Math.random()*3; this.spawnAmbientItem(); }
-  }
-  _spawnRealItem(kind, p, v){
+  _spawnRealItem(p, v){
     if(this.items.length >= 8){
       const old = this.items.shift();
       this.itemScene.remove(old.g); this._disposeGroup(old.g);
     }
-    const g = this._itemMesh(kind);
-    g.position.copy(p);
-    const size = .8 + Math.random()*.45;
-    g.scale.setScalar(size);
-    this.itemScene.add(g);
-    this.items.push({ g, vel:v.clone(), size, spin:(Math.random()-.5)*2.4, seed:Math.random()*10 });
+    const { wrap, mat } = this._makeMeteor();
+    wrap.position.copy(p);
+    const size = .8 + Math.random()*.5;
+    wrap.scale.setScalar(size);
+    this.itemScene.add(wrap);
+    this.items.push({ g:wrap, mat, vel:v.clone(), size, spin:(Math.random()-.5)*2.4, seed:Math.random()*10,
+      trail:Array.from({length:14}, ()=>wrap.position.clone()), trailHead:0 });
   }
-  _spawnFieldItem(kind, r, ang){
+  _spawnFieldItem(r, ang){
     if(this.fieldItems.length >= 8){
       const old = this.fieldItems.shift();
       this.fieldScene.remove(old.g); this._disposeGroup(old.g);
     }
-    const g = this._itemMesh(kind);
-    const size = 1.5 + Math.random()*.7;   /* 兜上物品放大,保证可读性 */
-    g.scale.setScalar(size);
+    const { wrap, mat } = this._makeMeteor();
+    const size = 1.5 + Math.random()*.7;   /* 兜上陨石放大,保证可读性 */
+    wrap.scale.setScalar(size);
     const white = this.white > .5;
     const rr = white ? Math.max(r*.22, 1.7) : r;   /* 白洞:从兜心喷出 */
-    g.position.set(Math.cos(ang)*rr, this.sheetY(rr)+.18, Math.sin(ang)*rr);
-    this.fieldScene.add(g);
-    this.fieldItems.push({ g, r:rr, ang, size, spin:(Math.random()-.5)*1.6,
+    wrap.position.set(Math.cos(ang)*rr, this.sheetY(rr)+.18, Math.sin(ang)*rr);
+    this.fieldScene.add(wrap);
+    this.fieldItems.push({ g:wrap, mat, r:rr, ang, size, spin:(Math.random()-.5)*1.6,
       vr: white ? 1.4+Math.random()*1.2 : .35+Math.random()*.3, seed:Math.random()*10 });
   }
-  _disposeGroup(g){ g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
+  _disposeGroup(g){
+    g.traverse(o=>{
+      if(o.geometry) o.geometry.dispose();
+      if(o.material && o.material._abyssInstance) o.material.dispose();
+    });
+  }
   clearItems(){
     for(const it of this.items){ this.itemScene.remove(it.g); this._disposeGroup(it.g); }
     for(const it of this.fieldItems){ this.fieldScene.remove(it.g); this._disposeGroup(it.g); }
@@ -516,40 +575,51 @@ class Abyss{
   }
   _updateItems(dt){
     const T = this.T;
-    /* --- 写实模式:准牛顿 plunge + 潮汐拉伸(沿指向奇点的 z 轴撕长) --- */
+    /* --- 写实模式:准牛顿 plunge + 潮汐拉伸(沿指向奇点的轴撕长)+ 时间膨胀 --- */
     const heatCol = this.white > .5 ? this.uni.uColWhiteA.value : this.uni.uColDiskA.value;
     for(let i=this.items.length-1; i>=0; i--){
       const it = this.items[i], p = it.g.position, v = it.vel;
       const r = Math.max(p.length(), .8);
+      /* 引力时间膨胀作用在物体上:越近视界走得越慢(远处观察者视角),也拉长观赏窗口 */
+      const dila = clamp(Math.sqrt(Math.max(1 - 1/r, .16)), .4, 1);
+      const idt = dt * dila;
       const gsign = this.white > .5 ? 1 : -1;
-      v.addScaledVector(p.clone().normalize(), gsign*this.lens*30/(r*r)*dt);
-      if(this.white < .5) v.multiplyScalar(1 - Math.min(.4, .10*dt*(4/r)));
-      p.addScaledVector(v, dt);
+      v.addScaledVector(this._t1.copy(p).normalize(), gsign*this.lens*30/(r*r)*idt);
+      if(this.white < .5) v.multiplyScalar(1 - Math.min(.4, .10*idt*(4/r)));
+      p.addScaledVector(v, idt);
       const r2 = Math.max(p.length(), .8);
       const s = Math.min(2.4, 5.0/(r2*r2));
       it.g.lookAt(0,0,0);
       it.g.rotateZ(it.spin*dt);
       it.g.scale.set(it.size/(1+s*.5), it.size/(1+s*.5), it.size*(1+s));
+      /* 近界观感(更接近真实):摩擦发热熔岩色 emissive + 引力红移淡出 */
+      const heat = 1 - smoothstep(1.8, 5.0, r2);
+      it.mat.emissive.copy(heatCol).multiplyScalar(heat*.85);
+      it.mat.opacity = smoothstep(1.55, 2.15, r2);
+      /* 尾迹环形缓冲推进 */
+      it.trailHead = (it.trailHead + 1) % this.trailPer;
+      it.trail[it.trailHead].copy(p);
       let gone = false;
       if(this.white > .5){ if(r2 > 26) gone = true; }
-      else if(r2 < 1.45){
-        this.feedFlash = 1;
-        const pr = p.clone().project(this.persp);
+      else if(r2 < 1.56){
+        this.feedFlash = 1; this.fovKick = 1;                    /* 坠入闪爆 + 镜头脉冲 */
+        const pr = this._t2.copy(p).project(this.persp);
         this.spawnRipple(pr.x/this.aspect, pr.y);
+        this._pushWave();                                        /* 盘上激起密度波 */
         gone = true;
       }
       if(gone){ this.itemScene.remove(it.g); this._disposeGroup(it.g); this.items.splice(i,1); }
     }
-    /* --- 引力场模式:物品在网格兜上滚落(白洞:被兜心喷出甩飞) --- */
+    /* --- 时空之兜:陨石沿兜面滚落(白洞:从兜心喷出甩飞) --- */
     const white = this.white > .5;
     for(let i=this.fieldItems.length-1; i>=0; i--){
       const it = this.fieldItems[i];
-      it.vr += (white ? 1.2 : this.lens*2.6)/Math.max(it.r*it.r, .5)*dt;   /* 兜越深滚越快 */
+      it.vr += (white ? 1.2 : this.lens*2.6)/Math.max(it.r*it.r, .5)*dt;
       it.r += it.vr*dt*(white ? 1 : -1);
       it.ang += dt*(white ? .3 : 1.4)/Math.max(it.r, .8);
       const gone = white ? it.r > 18 : it.r < 1.22;
       if(gone){
-        if(!white){ this.fPulse = 1; }
+        if(!white){ this.fPulse = 1; this.fovKick = Math.max(this.fovKick, .7); }
         this.fieldScene.remove(it.g); this._disposeGroup(it.g); this.fieldItems.splice(i,1);
         continue;
       }
@@ -558,16 +628,38 @@ class Abyss{
       it.g.lookAt(0, it.g.position.y, 0);
       it.g.rotateZ(it.spin*dt);
       it.g.scale.set(it.size/(1+s*.5), it.size/(1+s*.5), it.size*(1+s));
+      const heatF = white ? 0 : 1 - smoothstep(1.8, 4.5, it.r);
+      it.mat.emissive.copy(this.uni.uColDiskA.value).multiplyScalar(heatF*.7);
     }
+    this._updateTrails(heatCol);
+  }
+  _pushWave(){
+    const w = this.uni.uWaves.value[this.waveI++ % 3];
+    w.set(2.3, 0, 1.15);
+  }
+  _updateTrails(heatCol){
+    const pos = this.trailPosAttr.array, age = this.trailAgeAttr.array;
+    const P = this.trailPer;
+    for(let m=0; m<8; m++){
+      const it = this.items[m];
+      for(let k=0; k<P; k++){
+        const bi = m*P + k;
+        if(!it){ age[bi] = 1; continue; }
+        const idx = (it.trailHead - k + P*2) % P;
+        const tp = it.trail[idx];
+        pos[bi*3] = tp.x; pos[bi*3+1] = tp.y; pos[bi*3+2] = tp.z;
+        age[bi] = k/P;
+      }
+    }
+    this.trailPosAttr.needsUpdate = true;
+    this.trailAgeAttr.needsUpdate = true;
+    this.trailUni.uColA.value.copy(heatCol);
+    this.trailUni.uColB.value.copy(this.white > .5 ? this.uni.uColWhiteB.value : this.uni.uColDiskB.value).multiplyScalar(.35);
   }
   setTier(t, silent){
     if(!TIERS[t]) return;
     this.tier = t;
-    const cfg = TIERS[t];
-    this.renderer.setPixelRatio(this.dpr*cfg.scale);
-    this.uni.uSteps.value = cfg.steps;
-    this._buildPoints(cfg.pts);
-    this.ptUni.uPx.value = this.dpr*cfg.scale;
+    this.uni.uSteps.value = TIERS[t].steps;
     if(!silent) this.resize();
   }
   setStyle(name){
@@ -578,10 +670,19 @@ class Abyss{
   }
   resize(){
     const w = innerWidth, h = innerHeight;
+    const pr = Math.min(devicePixelRatio||1, 2);
+    this.renderer.setPixelRatio(pr);
     this.renderer.setSize(w, h);
     this.aspect = w/h;
     this.uni.uAspect.value = w/h;
     this.persp.aspect = w/h; this.persp.updateProjectionMatrix();
+    this.trailUni.uPx.value = pr;
+    /* 黑洞主体(raymarch)单独降分辨率:frustum 全屏但在低分辨率 RT 上行进,再放大合成 */
+    const rtW = Math.max(2, Math.floor(w*pr*TIERS[this.tier].rt));
+    const rtH = Math.max(2, Math.floor(h*pr*TIERS[this.tier].rt));
+    this.rtScene.setSize(rtW, rtH);
+    const bw = Math.max(2, rtW>>1), bh = Math.max(2, rtH>>1);
+    this.rtBright.setSize(bw, bh); this.rtBlurA.setSize(bw, bh); this.rtBlurB.setSize(bw, bh);
   }
   spawnRipple(nx, ny){
     const v = this.rip[this.ripI++ % this.rip.length];
@@ -595,61 +696,114 @@ class Abyss{
     this.white += (this.whiteTarget - this.white) * Math.min(1, dt*2.6);
     this.themeMix += (this.themeMixTarget - this.themeMix) * Math.min(1, dt*3.2);
     this.lineMix += (this.lineMixTarget - this.lineMix) * Math.min(1, dt*4);
-    /* 相机:惯性 + 视差 */
+    /* 相机:惯性 + 视差 + 电影运镜(闲置缓漂移/呼吸,事件 FOV 脉冲) */
     const c = this.cam;
-    c.azim += c.azimV; c.azimV *= Math.pow(.06, dt);
+    this.idleF += (this.idleNow - this.idleF)*Math.min(1, dt*1.2);
+    this.fovKick *= Math.pow(.02, dt);
+    c.azim += c.azimV + this.idleF*dt*.05*(RM?.3:1); c.azimV *= Math.pow(.06, dt);
     const par = this.parallax ? 1 : 0;
     const px = this.ptr.x*par*.045, py = -this.ptr.y*par*.03;
-    const r = c.r, az = c.azim + px + t*.008*(RM?.25:1), el = clamp(c.elev + py, .04, 1.2);
-    const cp = new this.T.Vector3(r*Math.cos(el)*Math.sin(az), r*Math.sin(el), r*Math.cos(el)*Math.cos(az));
-    const cf = cp.clone().negate().normalize();
-    const cr = new this.T.Vector3().crossVectors(cf, new this.T.Vector3(0,1,0)).normalize();
-    const cu = new this.T.Vector3().crossVectors(cr, cf);
+    const r = c.r + Math.sin(t*.11)*.7*this.idleF;
+    const az = c.azim + px + t*.008*(RM?.25:1);
+    const el = clamp(c.elev + py + Math.sin(t*.07)*.035*this.idleF, .04, 1.2);
+    const cp = this._cp.set(r*Math.cos(el)*Math.sin(az), r*Math.sin(el), r*Math.cos(el)*Math.cos(az));
+    const cf = this._cf.copy(cp).negate().normalize();
+    const cr = this._cr.crossVectors(cf, this._up).normalize();
+    const cu = this._cu.crossVectors(cr, cf);
+    /* 自愈:任何分量异常(NaN/Infinity)时回到安全机位,防止一次脏状态毁掉后续所有帧 */
+    if(!isFinite(cp.x+cp.y+cp.z+cf.x+cf.y+cf.z+cr.x+cr.y+cr.z+cu.x+cu.y+cu.z)){
+      cp.set(0, 0, r || 13.5); cf.set(0, 0, -1); cr.set(1, 0, 0); cu.set(0, 1, 0);
+      c.azim = .6; c.elev = .18; c.azimV = 0;
+    }
     /* 指针手势衰减 */
     this.ptr.k += (this.ptr.kTarget - this.ptr.k)*Math.min(1, dt*5);
     this.ptr.kTarget *= Math.pow(.35, dt);
     this.feedFlash *= Math.pow(.04, dt);
+    /* FOV:事件脉冲(吸入感)+ 闲置慢呼吸 */
+    this.fov = 58 - this.fovKick*2.6 + Math.sin(t*.09)*1.3*this.idleF;
+    this.uni.uTanFov.value = Math.tan(this.fov*Math.PI/360);
+    this.persp.fov = this.fov; this.persp.updateProjectionMatrix();
     /* uniforms */
     this.uni.uTime.value = this.simT;
     this.uni.uCamPos.value.copy(cp); this.uni.uCamF.value.copy(cf);
     this.uni.uCamR.value.copy(cr); this.uni.uCamU.value.copy(cu);
     this.uni.uWhite.value = this.white; this.uni.uTheme.value = this.themeMix;
     this.uni.uLens.value = this.lens; this.uni.uGlowK.value = this.glowK;
-    this.uni.uLineMix.value = this.lineMix;
     this.uni.uDiskGain.value = .55 + .45*this.densK;
     this.uni.uPointer.value.set(this.ptr.x, this.ptr.y); this.uni.uPointerK.value = this.ptr.k;
     this.uni.uFeedFlash.value = this.feedFlash;
     for(const v of this.rip) v.z += dt;
-    this.ptUni.uTime.value = this.simT; this.ptUni.uWhite.value = this.white;
-    this.ptUni.uGrav.value = this.lens; this.ptUni.uDens.value = this.densK;
-    this.ptUni.uTheme.value = this.themeMix;
-    this.ptUni.uPointerK.value = this.ptr.k;   /* 数字型 uniform 不共享引用,需逐帧同步 */
-    this.ptUni.uCamR.value.copy(cr); this.ptUni.uCamU.value.copy(cu);
+    for(const w of this.uni.uWaves.value){ w.y += dt; if(w.y > 3.5) w.z = 0; }
     this.persp.position.copy(cp); this.persp.lookAt(0,0,0);
     this._updateItems(dt);
     /* 时空之兜 uniforms / 融合 */
-    this.fUni.uWell.value = 3.8*this.lens*(1 - 1.8*this.white);   /* 黑洞下陷 / 白洞外凸 */
+    this.fUni.uWell.value = 5.2*this.lens*(1 - 1.8*this.white);   /* 黑洞下陷 / 白洞外凸 */
     this.fUni.uTheme.value = this.themeMix;
     this.fUni.uFade.value = this.lineMix;
+    this.fUni.uTime.value = this.simT;
+    this.fUni.uGeo.value = this.lineMix*(.85 + .15*Math.sin(t*.8));
     this.fSphereMat.color.setScalar(.02 + .96*this.white);
     this.fSphereMat.opacity = this.lineMix;
     this.fSphere.scale.setScalar(1 + .3*this.fPulse);
     this.fPulse *= Math.pow(.04, dt);
-    this.fSphere.position.y = -this.fUni.uWell.value/1.1 + .9;
+    /* 球嵌在兜底:球心略高于兜底,球顶接近兜口,兜壁完整包住球体 */
+    this.fSphere.position.y = -this.fUni.uWell.value + 1.9;
     this.fRings.position.y = this.sheetY(2.72) + .05;
     this.fRings.scale.setScalar(Math.max(this.lens, .4));
     for(const rm of this.fRings.children){
       rm.material.opacity = .8*this.lineMix;
       rm.material.color.setScalar(.07 + .86*this.themeMix);   /* 浅色墨环 / 深色白环 */
     }
-    /* 渲染:写实(quad+粒子+物品)按 lineMix 淡出,时空之兜淡入; clearColor 跟主题走 */
+    this.fGeo.rotation.y += dt*.05;
+    /* clearColor:写实模式永远深空(星空必须暗才成立);兜模式保留纸面 */
     if(!this._cc){ this._cc = new this.T.Color(); this._cA = new this.T.Color(0x0c0d11); this._cB = new this.T.Color(0xf9f8f4); }
-    this._cc.copy(this._cA).lerp(this._cB, this.themeMix);
-    this.renderer.setClearColor(this._cc);
     const R = this.renderer;
+    if(this.lineMix > .999){
+      this._cc.copy(this._cA).lerp(this._cB, this.themeMix);
+      R.setClearColor(this._cc);
+      R.clear();
+      R.render(this.fieldScene, this.persp);
+      return;
+    }
+    R.setClearColor(this._cA);
+    /* 写实链:黑洞主体 → 低分辨率 RT → 真 Bloom(亮部/模糊/合成)→ 粒子/陨石全分辨率叠加 */
+    R.setRenderTarget(this.rtScene);
     R.clear();
-    if(this.lineMix < .999) R.render(this.quadScene, this.quadCam);
-    if(this.lineMix < .6){ R.clearDepth(); R.render(this.ptScene, this.persp); }
+    R.render(this.quadScene, this.quadCam);
+    if(this.glowK > .02){
+      this.fxQuad.material = this.brightMat;
+      this.brightMat.uniforms.tex.value = this.rtScene.texture;
+      R.setRenderTarget(this.rtBright); R.clear(); R.render(this.fxScene, this.quadCam);
+      this.fxQuad.material = this.blurMat;
+      const bw = this.rtBright.width, bh = this.rtBright.height;
+      this.blurMat.uniforms.tex.value = this.rtBright.texture;
+      this.blurMat.uniforms.uDir.value.set(1/bw, 0);
+      R.setRenderTarget(this.rtBlurA); R.clear(); R.render(this.fxScene, this.quadCam);
+      this.blurMat.uniforms.tex.value = this.rtBlurA.texture;
+      this.blurMat.uniforms.uDir.value.set(0, 1/bh);
+      R.setRenderTarget(this.rtBlurB); R.clear(); R.render(this.fxScene, this.quadCam);
+      this.blurMat.uniforms.tex.value = this.rtBlurB.texture;
+      this.blurMat.uniforms.uDir.value.set(2.3/bw, 0);
+      R.setRenderTarget(this.rtBlurA); R.clear(); R.render(this.fxScene, this.quadCam);
+      this.blurMat.uniforms.tex.value = this.rtBlurA.texture;
+      this.blurMat.uniforms.uDir.value.set(0, 2.3/bh);
+      R.setRenderTarget(this.rtBlurB); R.clear(); R.render(this.fxScene, this.quadCam);
+    }
+    R.setRenderTarget(null);
+    R.clear();
+    if(this.glowK > .02){
+      this.fxQuad.material = this.compMat;
+      this.compMat.uniforms.tex.value = this.rtScene.texture;
+      this.compMat.uniforms.uBloomTex.value = this.rtBlurB.texture;
+      this.compMat.uniforms.uBloomK.value = .3*this.glowK;   /* 深空背景下 bloom 只提亮真高光,不再泛白 */
+      R.render(this.fxScene, this.quadCam);
+    }else{
+      this.fxQuad.material = this.compMat;
+      this.compMat.uniforms.tex.value = this.rtScene.texture;
+      this.compMat.uniforms.uBloomK.value = 0;
+      R.render(this.fxScene, this.quadCam);
+    }
+    if(this.lineMix < .6){ R.clearDepth(); R.render(this.ptScene, this.persp); }   /* 尾迹(粒子群已移除) */
     if(this.lineMix < .5){ R.clearDepth(); R.render(this.itemScene, this.persp); }
     if(this.lineMix > .001){ R.clearDepth(); R.render(this.fieldScene, this.persp); }
   }
@@ -672,44 +826,56 @@ uniform vec4 uRip[6];
 uniform vec2 uPointer;
 uniform float uPointerK;
 uniform vec2 uCenterOff;
+uniform sampler2D uDiskTex;   /* 预烘焙盘噪声(角向拉丝),替代逐像素 fbm —— 最大性能项 */
+uniform vec3 uWaves[3];       /* 吞噬冲击波在盘上激起的密度波 (r0, age, amp) */
 #define R_IN 2.2
 #define R_OUT 7.6
+#define TAU 6.283185307
 float h12(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p,p+45.32); return fract(p.x*p.y); }
 vec3 h33(vec3 p){ p = fract(p*vec3(443.897,441.423,437.195)); p += dot(p,p.yxz+19.19); return fract((p.xxy+p.yxx)*p.zyx); }
 float vn2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
   return mix(mix(h12(i),h12(i+vec2(1.,0.)),f.x), mix(h12(i+vec2(0.,1.)),h12(i+vec2(1.,1.)),f.x), f.y); }
 float fbm(vec2 p){ float v = 0., a = .55; for(int i=0;i<3;i++){ v += a*vn2(p); p = p*2.13+7.7; a *= .5; } return v; }
-vec3 starLayer(vec3 d, float s, float th){
+vec3 starLayer(vec3 d, float s, float th, float spike){
   vec3 q = d*s; vec3 id = floor(q); vec3 fp = fract(q)-.5;
   vec3 h = h33(id);
   float br = smoothstep(th, 1.0, h.x);
   vec3 off = (h33(id+7.1)-.5)*.55;
-  float dd = length(fp-off);
+  vec3 dv = fp-off;
+  float dd = length(dv);
   float tw = .65+.35*sin(uTime*(1.5+h.y*2.0)+h.z*40.0);
-  vec3 scol = mix(vec3(.72,.82,1.0), vec3(.13,.21,.44), uTheme);   /* 浅色:深藏青星点 */
-  return scol * (1.0-smoothstep(0.0,.20,dd)) * br * tw * 1.6;
+  vec3 scol = mix(vec3(.72,.82,1.0), vec3(.88,.92,1.05), uTheme);   /* 深空背景:两种主题都用亮星 */
+  float core = (1.0-smoothstep(0.0,.20,dd))*br*1.6;
+  /* 亮星衍射星芒:亮层沿胞元十字向四方射出 */
+  float sp = 0.0;
+  if(spike > .5 && br > .35){
+    sp = (exp(-abs(dv.x)*22.0) + exp(-abs(dv.y)*22.0)) * br * .5;
+  }
+  return scol*(core+sp)*tw;
 }
 vec3 background(vec3 d){
-  vec3 col = mix(uColBgDark, uColBgLight, uTheme);
+  /* 深空底:不再跟随主题变灰——星空必须是暗的才读得出"星空" */
+  vec3 col = mix(uColBgDark, uColBgDark*1.45 + vec3(.008,.014,.03), uTheme);
   /* 银河带:倾斜大圆 + 沿带湍流,给背景第一层景深 */
   vec3 bn = normalize(vec3(.34, 1.0, .18));
   float bandD = dot(d, bn);
   float band = exp(-bandD*bandD*9.0);
   float mb = fbm(d.xz*2.6 + d.y*1.3);
   vec3 bandT = mix(uColDiskB, uColDiskA, .4);
-  bandT = mix(bandT, mix(uColBgLight, uColDiskB, .40), uTheme);
-  col = mix(col, mix(col, bandT, .34), band*(.25+.75*mb)*mix(.55, .95, uTheme));
+  bandT = mix(bandT, mix(uColBgDark*2.2, uColDiskB, .42), uTheme);
+  col = mix(col, mix(col, bandT, .36), band*(.25+.75*mb)*mix(.55, .8, uTheme));
   /* 双色星云:主色 + 补色 */
   float neb = fbm(d.xy*2.3 + d.z*1.7 + 3.1);
-  vec3 nebT = mix(uColDiskB*.20 + vec3(.012,.02,.05), mix(uColBgLight, uColDiskB, .38), uTheme);
+  vec3 nebT = mix(uColDiskB*.22 + vec3(.012,.02,.05), uColDiskB*.34 + vec3(.02,.03,.08), uTheme);
   col = mix(col, nebT, neb*neb*.6);
   float neb2 = fbm(d.zy*1.7 - d.x*1.1 + 9.7);
-  vec3 neb2T = mix(vec3(.05,.03,.09), mix(uColBgLight, vec3(.45,.35,.85), .40), uTheme);
+  vec3 neb2T = mix(vec3(.05,.03,.09), vec3(.08,.06,.15), uTheme);
   col = mix(col, neb2T, neb2*neb2*.45);
-  /* 三层星场:远近错落出视差 */
-  col += starLayer(d, 26.0, .90);
-  col += starLayer(d, 61.0, .94)*.6;
-  col += starLayer(d, 113.0, .96)*.4;
+  /* 星场:亮层带星芒;沿银河带加密两层碎星 */
+  col += starLayer(d, 26.0, .90, 1.0);
+  col += starLayer(d, 61.0, .94, 0.0)*.6;
+  col += starLayer(d, 113.0, .96, 0.0)*(.3+band*1.2);
+  col += starLayer(d, 87.0, .965, 0.0)*(.15+band*.9);
   return col;
 }
 vec3 diskCol(vec3 pc, vec3 dir, out float alpha){
@@ -717,23 +883,30 @@ vec3 diskCol(vec3 pc, vec3 dir, out float alpha){
   float x = smoothstep(R_IN, R_IN+.55, r) * (1.0-smoothstep(R_OUT-3.2, R_OUT, r));
   float a = atan(pc.z, pc.x);
   float w = uTime*1.6/pow(max(r,1.0),1.5)*3.0;
-  vec2 cs = vec2(cos(a-w), sin(a-w));
-  float n = fbm(cs*r*.85 + r*.4);
+  float n = texture2D(uDiskTex, vec2(fract((a-w)/TAU), clamp((r-R_IN)/(R_OUT-R_IN),0.,1.))).r;
+  /* 内缘热斑闪烁(仅内半区,块状脉动) */
+  float heat = 1.0 - smoothstep(R_IN, R_OUT, r);
+  float flick = 1.0 + .5*pow(heat,2.0)*sin(a*9.0 - uTime*2.3)*sin(a*5.3 + uTime*1.6);
+  /* 吞噬冲击波密度波:从内缘向外跑的增亮环 */
+  float wave = 0.0;
+  for(int i=0;i<3;i++){
+    float wr = uWaves[i].x + uWaves[i].y*3.4;
+    wave += exp(-pow(r-wr,2.0)*1.7)*uWaves[i].z*max(0.0, 1.0-uWaves[i].y/3.5);
+  }
   float dens = x*(.3+.7*n)*uDiskGain;
+  float densAll = dens*(1.0+wave*1.4);
   vec3 tang = normalize(vec3(-pc.z, 0.0, pc.x));
   float dop = 1.0 + .62*dot(tang, -dir);
-  float bright = min(pow(max(dop,.3), 3.0) * (R_IN*1.15/max(r,.5)), 4.0);
+  float bright = min(pow(max(dop,.3), 3.0) * (R_IN*1.15/max(r,.5)), 4.0) * flick * (1.0+wave*2.2);
   /* 色彩纵深:内缘白热 → 外缘深色;多普勒色移:近侧偏冷、远侧偏暖 */
-  float heat = 1.0 - smoothstep(R_IN, R_OUT, r);
   vec3 cin  = mix(uColDiskB, uColDiskA, heat);
-  cin = mix(cin, vec3(1.0,.97,.90), pow(heat,3.0)*.75);
+  cin = mix(cin, vec3(1.0,.97,.90), pow(heat,3.0)*.45);
   vec3 cwh  = mix(uColWhiteB, uColWhiteA, heat);
-  cwh = mix(cwh, vec3(.98,.99,1.0), pow(heat,3.0)*.75);
+  cwh = mix(cwh, vec3(.98,.99,1.0), pow(heat,3.0)*.45);
   vec3 shift = mix(vec3(1.10,.90,.80), vec3(.90,.96,1.08), clamp(dot(tang,-dir)*.5+.5, 0.0, 1.0));
-  alpha = clamp(dens*1.6, 0.0, 1.0)*mix(.85, 1.0, uWhite);
-  return mix(cin, cwh, uWhite) * shift * dens * bright * 1.6;
+  alpha = clamp(densAll*1.6, 0.0, 1.0)*mix(.85, 1.0, uWhite);
+  return mix(cin, cwh, uWhite) * shift * densAll * bright * 1.05;
 }
-/* 爱因斯坦时空之兜:真 3D 场景在 JS 侧构建(网格平面下陷 + 墨线着色),着色器只保留写实渲染 */
 void main(){
   vec2 ndc = vUv*2.0-1.0;
   vec2 q0 = ndc;
@@ -772,28 +945,27 @@ void main(){
     float inDisk = (r2 < 130.0 && abs(p.y) < 1.4) ? 1.0 : 0.0;
     float dt = clamp((r-.9)*.14, .018, .5);
     if(inDisk > .5) dt = min(dt, .14);
-    float gd = (r-2.6)*1.05;                          /* 光子环:阴影外侧 r≈2.6(调柔) */
+    float gd = (r-2.6)*1.05;                          /* 光子环:阴影外侧 r≈2.6 */
     glow = min(glow + dt*exp(-gd*gd), 1.6);
     float gd2 = (r-3.6)*.6;
     halo = min(halo + dt*exp(-gd2*gd2), 2.0);
     v += -1.5*h2*p/(r2*r2*r)*dt;
     vec3 pn = p + v*dt;
-    /* 盘包围域内的体积大气:垂直高斯连续发光,给吸积盘厚度与包裹感 */
+    /* 盘包围域内的体积大气:垂直高斯连续发光(纹理化噪声,大幅省算) */
     if(r2 < 130.0 && abs(p.y) < 1.4){
       float rr = r;
       if(rr > 1.9 && rr < R_OUT){
-        float h2v = .16 + .028*rr;              /* 薄大气:远景保住薄盘剪影,近景仍有包裹感 */
+        float h2v = .16 + .028*rr;
         float yv = p.y/h2v;
         float body = smoothstep(1.9, R_IN+.6, rr)*(1.0-smoothstep(R_OUT-3.6, R_OUT, rr));
         float angA = atan(p.z, p.x);
         float wA = uTime*1.6/pow(max(rr,1.0),1.5)*3.0;
-        vec2 csA = vec2(cos(angA-wA), sin(angA-wA));
-        float nA = fbm(csA*rr*.85 + rr*.4);
+        float nA = texture2D(uDiskTex, vec2(fract((angA-wA)/TAU), clamp((rr-R_IN)/(R_OUT-R_IN),0.,1.))).r;
         float densA = body*exp(-yv*yv)*(.25+.75*nA)*uDiskGain;
         float heatA = pow(clamp(1.0-(rr-R_IN)/(R_OUT-R_IN), 0.0, 1.0), 1.5);
         vec3 cA = mix(uColDiskB*.5, uColDiskA, heatA);
         cA = mix(cA, uColWhiteA, uWhite*.85);
-        acc += cA * densA * dt * .6 * trans;
+        acc += cA * densA * dt * .42 * trans;
         trans *= (1.0 - clamp(densA*dt*.7, 0.0, .5));
       }
     }
@@ -809,85 +981,36 @@ void main(){
     }
     float jr = length(p.xz);
     float jetA = atan(p.z, p.x);
-    float jn = fbm(vec2(jetA*1.6, p.y*.5 - uTime*.6));
+    float jn = texture2D(uDiskTex, vec2(fract(jetA/TAU - uTime*.02), clamp(.5+p.y*.06,0.,1.))).r;
     float jet = exp(-jr*jr*1.4)*exp(-abs(p.y)*.28)*step(.7, abs(p.y));
-    acc += uColWhiteA*(jet*(0.55+jn*.9)*uWhite)*dt*1.4;   /* 白洞双极喷流(湍流增艳) */
+    acc += uColWhiteA*(jet*(0.55+jn*.9)*uWhite)*dt*1.0;   /* 白洞双极喷流(湍流增艳) */
     if(uWhite > .01){                                      /* 白洞:周期性外扩冲击环 */
       float ringR = mod(uTime*1.8, 10.0);
       float shell = exp(-pow(r-ringR, 2.0)*5.0)*exp(-ringR*.2);
-      acc += uColWhiteA*shell*uWhite*dt*.9;
+      acc += uColWhiteA*shell*uWhite*dt*.65;
     }
     if(trans < .04) break;                                 /* 已被盘完全不透明遮挡,省步数 */
     p = pn;
   }
   vec3 col = acc + background(normalize(v))*trans;
-  /* 捕获分类:近点 < 光子球半径(≈1.5)的射线必然坠入;步数耗尽时 pMin 停在 1.0~1.5 也归入捕获,
-     根治"步数预算耗尽导致阴影泛褐噪"的问题 */
+  /* 捕获分类:近点 < 光子球半径(≈1.5)的射线必然坠入;步数耗尽时 pMin 停在 1.0~1.5 也归入捕获 */
   float captured = 1.0 - smoothstep(1.02, 1.5, pMin);
   col = mix(col, vec3(0.0), captured*(1.0-uWhite));
-  col += uColWhiteA*captured*uWhite*(1.0 + 1.05*min(glow,1.4));   /* 白洞亮核(调柔) */
+  col += uColWhiteA*captured*uWhite*(.8 + .75*min(glow,1.4))*(1.0 - uTheme*.4);   /* 白洞亮核(浅色底下降亮) */
   float surv = 1.0 - captured*(1.0-uWhite);
-  /* 光子环:窄亮主环 + 平方锐化,整体调柔(反馈:光圈太亮);宽域光晕瓣提供空间层次 */
-  col += mix(uColDiskB, uColWhiteA, uWhite)*(glow*.13 + glow*glow*.24)*(1.0+uFeedFlash*3.0)*uGlowK*surv;
-  col += mix(uColDiskB*.7, uColWhiteA*.8, uWhite)*halo*.10*uGlowK*surv;
-  col = 1.0 - exp(-col*1.3);                         /* 曝光压缩 */
+  /* 光子环辉光降档:主体辉光交给真 Bloom 后期,着色器内只留窄核 */
+  col += mix(uColDiskB, uColWhiteA, uWhite)*(glow*.10 + glow*glow*.14)*(1.0+uFeedFlash*1.6)*uGlowK*surv;
+  col += mix(uColDiskB*.7, uColWhiteA*.8, uWhite)*halo*.06*uGlowK*surv;
+  col = 1.0 - exp(-col*1.12);                        /* 曝光压缩(压低防过曝) */
   col *= 1.0 - .34*pow(dot(q0,q0)*.55, 1.4);         /* 暗角 */
   gl_FragColor = vec4(col, 1.0);
 }`;
 
-/* 物质流粒子:position=(r0,角0,倾角) 打包;坠落与喷发两套轨迹按 uWhite 混合,指针手势做屏幕空间牵引 */
-const PT_VERT = `
-attribute vec2 aExtra;
-uniform float uTime, uWhite, uGrav, uDens, uPx, uTanFov, uTheme;
-uniform vec3 uCamR, uCamU, uColIn, uColOut, uColInW, uColOutW;
-uniform vec2 uPointer;
-uniform float uPointerK;
-varying vec3 vCol; varying float vA;
-void main(){
-  float seed = aExtra.x, sz = aExtra.y;
-  float sp = (.05 + .09*fract(seed*7.31))*uGrav;
-  float t = fract(uTime*sp*(.6+.8*fract(seed*3.7)) + seed);
-  float r0 = position.x, a0 = position.y, incl = position.z;
-  float rIn = mix(r0, 1.35, pow(t, 1.6));
-  float om = 2.4/pow(max(rIn,1.2), 1.5);
-  float ang = a0 - uTime*om*2.0;
-  vec3 pin = vec3(cos(ang)*rIn, sin(incl*6.28)*rIn*.07*(1.0-t), sin(ang)*rIn);
-  float rEj = mix(1.5, r0*1.55, pow(t, .8));
-  float ang2 = a0 + uTime*.15;
-  vec3 pout = vec3(cos(ang2)*rEj, sign(incl-.5)*pow(t,1.5)*r0*.95, sin(ang2)*rEj);
-  vec3 p = mix(pin, pout, uWhite);
-  vec4 mv = modelViewMatrix*vec4(p, 1.0);
-  /* 指针引力手势(屏幕空间近似牵引) */
-  vec2 ndc = (projectionMatrix*mv).xy/max((projectionMatrix*mv).w, .001);
-  vec2 dpv = uPointer - ndc;
-  float pull = exp(-dot(dpv,dpv)*6.0)*uPointerK;
-  p += (uCamR*dpv.x + uCamU*dpv.y)*(length(mv.xyz)*uTanFov)*pull*.8;
-  mv = modelViewMatrix*vec4(p, 1.0);
-  float rc = mix(rIn, rEj, uWhite);
-  float heat = 1.0 - smoothstep(1.7, r0, rc);
-  vCol = mix(mix(uColOut, uColIn, heat), mix(uColOutW, uColInW, heat), uWhite);
-  float aIn = smoothstep(1.42, 1.85, rIn)*smoothstep(0.0, .06, t);
-  float aOut = (1.0 - smoothstep(.72, 1.0, t));
-  vA = mix(aIn, aOut, uWhite)*.85*uDens*mix(1.0, .68, uTheme0);
-  gl_PointSize = clamp(sz*uPx*(120.0/max(-mv.z,.1))*(1.0+heat*.7), 1.0, 46.0);
-  gl_Position = projectionMatrix*mv;
-}`;
-const PT_FRAG = `
-varying vec3 vCol; varying float vA;
-void main(){
-  vec2 d = gl_PointCoord - .5;
-  float a = exp(-dot(d,d)*10.0)*vA;
-  if(a < .015) discard;
-  gl_FragColor = vec4(vCol*a, a);
-}`;
-
-/* ============================================================
- * 以下为页面编排:设置/HUD/交互(与渲染核心的接缝仅限 ABYSS 实例)
- * ============================================================ */
+/* ---------------- 页面编排:设置/HUD/交互 ---------------- */
 const $ = s=>document.querySelector(s);
 const KEY = "humanoid-abyss-settings-v1";
 const DEFAULTS = { form:"auto", mode:"realistic", style:"amber", glow:100, lens:100, time:100,
-  parallax:true, drag:true, items:true, hum:false, clean:false, quality:"auto", panelOpen:true };
+  parallax:true, drag:true, hum:false, clean:false, quality:"auto", panelOpen:true };
 let settings = { ...DEFAULTS };
 try{ Object.assign(settings, JSON.parse(localStorage.getItem(KEY)) || {}); }catch(e){}
 settings.lens = clamp(settings.lens, 50, 150);   /* 旧存档兼容:透镜滑条上限已从 200 收到 150 */
@@ -900,6 +1023,7 @@ let camTarget = { r: 13.5, e: .18 };
 const portraitFit = ()=> innerHeight > innerWidth ? 19.5 : 13.5;   /* 竖屏默认拉远 */
 let userElev = 0;
 let idleAcc = 0;
+let emaDt = 16.7, lastTierSwitch = 0, upStreak = 0;   /* 帧时间滑动平均 → 自适应降/升档 */
 
 function themeName(){ try{ return localStorage.getItem("site-theme") || "light"; }catch(e){ return "light"; } }
 function applyTheme(){
@@ -942,13 +1066,15 @@ function loop(t){
   requestAnimationFrame(loop);
   if(!running || !ABYSS) return;
   const dt = Math.min((t - lastT)/1000 || .016, .05); lastT = t;
+  if(!isFinite(userElev)) userElev = 0;                 /* 防御:交互脏值自愈 */
+  if(!isFinite(camTarget.r) || !isFinite(camTarget.e)) camTarget = { r: portraitFit(), e: .18 };
+  emaDt += (dt*1000 - emaDt)*.05;                       /* 帧时间滑动平均 */
   ABYSS.cam.r += (camTarget.r - ABYSS.cam.r)*Math.min(1, dt*3);
   ABYSS.cam.elev += (camTarget.e + userElev - ABYSS.cam.elev)*Math.min(1, dt*3);
+  ABYSS.idleNow = (idleAcc > 8 && !RM) ? 1 : 0;         /* 闲置 → 电影运镜 */
   ABYSS.frame(dt, t/1000);
   tickFps(t);
   if(humOn) humFrame();
-  /* 天外来客:环境自动投放(路由由渲染核心按当前模式决定) */
-  ABYSS.tickAmbient(dt, settings.items && !RM);
   /* 闲置 5s:HUD 淡出 */
   idleAcc += dt;
   if(idleAcc > 5 && !document.body.classList.contains("sg-idle")) document.body.classList.add("sg-idle");
@@ -972,6 +1098,15 @@ function tickFps(t){
     $("#sgFps").textContent = Math.round(fpsN*1000/(t-fpsT)) + " FPS · " +
       (settings.quality === "auto" ? "自动·" : "") + (TIERS[ABYSS.tier]?.name || ABYSS.tier);
     fpsN = 0; fpsT = t;
+    /* 帧时间自适应:带迟滞的降/升档(仅自动画质),升档需连续 3 次达标防抖 */
+    if(settings.quality === "auto" && probe.done && t - lastTierSwitch > 5000){
+      const order = ["low", "mid", "high"];
+      const cur = order.indexOf(ABYSS.tier);
+      if(emaDt > 24 && cur > 0){ ABYSS.setTier(order[cur-1]); lastTierSwitch = t; upStreak = 0; }
+      else if(emaDt < 11 && cur < 2){
+        if(++upStreak >= 3){ ABYSS.setTier(order[cur+1]); lastTierSwitch = t; upStreak = 0; }
+      }else upStreak = 0;
+    }
   }
 }
 
@@ -991,7 +1126,7 @@ function updateHum(){
     }catch(e){ settings.hum = false; }
   }
   if(humCtx){
-    if(humCtx.state === "suspended") humCtx.resume();
+    if(humCtx.state === "suspended"){ var _rp = humCtx.resume(); if(_rp && _rp.catch) _rp.catch(function(){}); }   /* V2.1.14:自动播放策略拒绝时不抛未处理 rejection */
     humGain.gain.setTargetAtTime(want ? .05 : 0, humCtx.currentTime, .3);
   }
   humOn = want && !!humCtx;
@@ -1010,7 +1145,7 @@ function bindStage(canvas){
   canvas.addEventListener("pointerdown", e=>{
     down = { x:e.clientX, y:e.clientY, t:performance.now() };
     moved = 0; velX = 0; lastX = e.clientX; lastY = e.clientY; lastMoveT = down.t;
-    canvas.setPointerCapture(e.pointerId);
+    try{ canvas.setPointerCapture(e.pointerId); }catch(err){}   /* V2.1.14:极端时序下 pointerId 失效会抛 NotFoundError */
   });
   canvas.addEventListener("pointermove", e=>{
     const n = toNDC(e);
@@ -1034,6 +1169,7 @@ function bindStage(canvas){
       const n = toNDC(e);
       ABYSS.spawnRipple(n.x, n.y);
       ABYSS.spawnItemFromRay(ABYSS.uni.uCamPos.value.clone(), rayFromNDC(n.x, n.y));
+      ABYSS.fovKick = Math.max(ABYSS.fovKick, .8);   /* 投放瞬间轻微吸入感 */
       if(!RM){ document.body.classList.remove("sg-shake"); void document.body.offsetWidth; document.body.classList.add("sg-shake"); }
     }else{
       ABYSS.cam.azimV = clamp(velX*.012, -.09, .09);
@@ -1053,6 +1189,7 @@ function rayFromNDC(x, y){
     .addScaledVector(u.uCamF.value, 1)
     .addScaledVector(u.uCamR.value, x*u.aspect*u.uTanFov.value);
   d.addScaledVector(u.uCamU.value, y*u.uTanFov.value).normalize();
+  if(!isFinite(d.x) || d.lengthSq() < 1e-9) d.copy(u.uCamF.value);   /* 防御:基向量异常时退回视线方向 */
   return d;
 }
 

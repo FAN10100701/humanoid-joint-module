@@ -1,7 +1,8 @@
 
 /* ===== html 级主题映射(2026-08-17):head 内联脚本在 CSS 渲染前写入 html[data-theme-early],
    此处将浅色首屏关键元素(背景/卡片/导航/搜索/区块)映射为浅色,消除 FOUC 首帧闪深色。
-   body 级选择器(body[data-theme="light"] ...)由 site.js applyTheme 同步保持 ===== */
+   V2.1.14 规约:全站浅色覆盖统一挂 html:not([data-theme-early="dark"]) 单选择器
+   (site.js applyTheme 切换时同步双属性);body 级双选择器写法已全站清除 ===== */
 html[data-theme-early='light'] body{background:#f6f8fb}
 html[data-theme-early='light'] .card{background:rgba(255,255,255,.86);border-color:rgba(15,23,42,.1);color:#1e293b}
 html[data-theme-early='light'] .card .t{color:#111827}
@@ -71,30 +72,31 @@ img{max-width:100%}
    必须用 .topnav 前缀:下方 html[data-theme-early=dark] a 的全局深色链接蓝(0,1,2)
    特异性高于裸 .nav-links a(0,1,1),会把顶栏 <a> 全部染蓝 */
 .topnav .nav-brand{color:#e6edf3}
-.topnav .nav-links a{color:#b8c2ce;font-size:13px;padding:7px 10px;border-radius:8px;white-space:nowrap;text-decoration:none;transition:color .15s,background-color .15s}
+/* V2.1.14:链接与按钮族同高 30px(此前 line-height:1.7+padding 撑到约 36px,顶栏左右不齐) */
+.topnav .nav-links a{color:#b8c2ce;font-size:13px;height:30px;display:inline-flex;align-items:center;padding:0 10px;border-radius:8px;white-space:nowrap;text-decoration:none;transition:color .15s,background-color .15s}
 .topnav .nav-links a:hover{color:#fff;background:rgba(255,255,255,.07)}
 
 /* V2.1.11:深色顶栏按钮去蓝改中性玻璃(文字浅灰白,hover 提亮);done 的 on 态保留语义绿
    V2.1.12b:按钮统一 32px 高;搜索按钮图标化(移除文字与快捷键徽章) */
 /* V2.1.12c 工具区统一:30px 高、中性玻璃(只 brand-dot 保留蓝)。
-   浅色覆盖一律用 body[data-theme="light"] 单选择器——此前的
-   body:not([data-theme]) 双重否定在主题切换间隙会误染深色页面 */
+   V2.1.14 规约:浅色覆盖一律挂 html:not([data-theme-early="dark"]) 单选择器——
+   head 内联脚本在任何渲染前写好该属性,深色用户首帧零浅色规则命中;
+   旧 body:not([data-theme]) 双重否定(孤立段还会把样式误套 body 自身)已全站清除 */
 .nav-search,.nav-done,.nav-theme,.nav-print,.nav-dd-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#c9d1d9;font-size:12.5px;height:30px;padding:0 10px;border-radius:8px;cursor:pointer;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;transition:background-color .15s,border-color .15s,color .15s}
-.nav-theme,.nav-print{width:34px;padding:0}
+/* 三个图标按钮(主题/搜索/打印)统一 34 宽 × 30 高 */
+.nav-theme,.nav-print,.nav-search{width:34px;padding:0}
+.nav-search svg{margin:0}
 /* V2.1.12c:图标加克制主题色(框体保持中性玻璃,只给图标上色)——
    主题=琥珀(暗喻日/月)、搜索=天蓝、打印=石墨、自检=语义绿(见 selftest) */
 .nav-theme{color:#fbbf24}
-body[data-theme="light"] .nav-theme{color:#f59e0b}
+html:not([data-theme-early="dark"]) .nav-theme{color:#f59e0b}
 .nav-search svg{color:#7cc4ff}
-body[data-theme="light"] .nav-search svg{color:#2563eb}
+html:not([data-theme-early="dark"]) .nav-search svg{color:#2563eb}
 .nav-print{color:#9aa4b2}
-body[data-theme="light"] .nav-print{color:#64748b}
+html:not([data-theme-early="dark"]) .nav-print{color:#64748b}
 .nav-search:hover,.nav-done:hover,.nav-theme:hover,.nav-print:hover,.nav-dd-btn:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.24);color:#fff}
-body[data-theme="light"] .nav-search,body[data-theme="light"] .nav-done,body[data-theme="light"] .nav-theme,body[data-theme="light"] .nav-print,body[data-theme="light"] .nav-dd-btn{background:rgba(255,255,255,.65);border-color:rgba(100,116,139,.28);color:#475569}
-body[data-theme="light"] .nav-search:hover,body[data-theme="light"] .nav-done:hover,body[data-theme="light"] .nav-theme:hover,body[data-theme="light"] .nav-print:hover,body[data-theme="light"] .nav-dd-btn:hover{background:#fff;border-color:rgba(100,116,139,.45);color:#0f172a}
-/* 三个图标按钮(主题/搜索/打印)统一 34px 方形 */
-.nav-search{width:34px;padding:0}
-.nav-search svg{margin:0}
+html:not([data-theme-early="dark"]) .nav-search,html:not([data-theme-early="dark"]) .nav-done,html:not([data-theme-early="dark"]) .nav-theme,html:not([data-theme-early="dark"]) .nav-print,html:not([data-theme-early="dark"]) .nav-dd-btn{background:rgba(255,255,255,.65);border-color:rgba(100,116,139,.28);color:#475569}
+html:not([data-theme-early="dark"]) .nav-search:hover,html:not([data-theme-early="dark"]) .nav-done:hover,html:not([data-theme-early="dark"]) .nav-theme:hover,html:not([data-theme-early="dark"]) .nav-print:hover,html:not([data-theme-early="dark"]) .nav-dd-btn:hover{background:#fff;border-color:rgba(100,116,139,.45);color:#0f172a}
 
 .nav-done.on{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5);color:#86efac}
 
@@ -219,7 +221,7 @@ details.faq .faq-a{padding:2px 18px 16px;font-size:14px;color:#9aa4b2;line-heigh
 .hero .sub{color:#8b949e;font-size:15px;margin-top:12px;line-height:1.9}
 /* V2.1.12b:副标题第二行(特性点)降一档字号与对比,形成主次层次 */
 .hero .sub .sub-meta{font-size:13px;color:#6b7280;letter-spacing:.3px}
-body:not([data-theme]) .hero .sub .sub-meta,body[data-theme="light"] .hero .sub .sub-meta{color:#94a3b8}
+html:not([data-theme-early="dark"]) .hero .sub .sub-meta {color:#94a3b8}
 .stats{display:flex;justify-content:center;gap:26px;margin:22px 0 8px;flex-wrap:wrap}
 .stat{text-align:center}
 .stat .v{font-size:26px;font-weight:900;color:#3b82f6}
@@ -306,69 +308,74 @@ body:not([data-theme]) .hero .sub .sub-meta,body[data-theme="light"] .hero .sub 
 }
 
 /* ============================================================
-   浅色 · 苹果透亮玻璃风格(body:not([data-theme]),body[data-theme="light"])
+   浅色 · 苹果透亮玻璃风格(html:not([data-theme-early="dark"]) )
    ============================================================ */
 
 
-body:not([data-theme]),body[data-theme="light"]{
+html:not([data-theme-early="dark"]) {
   background:
     radial-gradient(1100px 520px at 12% -8%, rgba(220,232,248,.55), transparent 60%),
     radial-gradient(900px 460px at 100% 0%, rgba(230,238,250,.6), transparent 55%),
     linear-gradient(160deg,#fbfcfe 0%,#f3f6fb 50%,#ebeff7 100%);
   color:#1a2332;
 }
-body:not([data-theme]),body[data-theme="light"] .topnav{background:rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-bottom:1px solid rgba(60,80,120,.12);box-shadow:0 2px 24px rgba(40,70,130,.06)}
-body:not([data-theme]),body[data-theme="light"] .nav-brand{color:#111827}
-body:not([data-theme]),body[data-theme="light"] .nav-links a{color:#475569}
-body:not([data-theme]),body[data-theme="light"] .nav-links a:hover{color:#111827;background:rgba(37,99,235,.08)}
-body[data-theme="light"] .nav-done{color:#15803d}
-body:not([data-theme]),body[data-theme="light"] .breadcrumb{color:#94a3b8}
-body:not([data-theme]),body[data-theme="light"] .breadcrumb a{color:#64748b}
-body:not([data-theme]),body[data-theme="light"] .breadcrumb a:hover{color:#2563eb}
+html:not([data-theme-early="dark"]) .topnav{background:rgba(255,255,255,.72);backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);border-bottom:1px solid rgba(60,80,120,.12);box-shadow:0 2px 24px rgba(40,70,130,.06)}
+html:not([data-theme-early="dark"]) .nav-brand{color:#111827}
+html:not([data-theme-early="dark"]) .nav-links a{color:#475569}
+html:not([data-theme-early="dark"]) .nav-links a:hover{color:#111827;background:rgba(37,99,235,.08)}
+html:not([data-theme-early="dark"]) .nav-done{color:#15803d}
+html:not([data-theme-early="dark"]) .breadcrumb{color:#94a3b8}
+html:not([data-theme-early="dark"]) .breadcrumb a{color:#64748b}
+html:not([data-theme-early="dark"]) .breadcrumb a:hover{color:#2563eb}
 
-body:not([data-theme]),body[data-theme="light"] .page-head h1{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .page-head .sub{color:#5a6a85}
-body:not([data-theme]),body[data-theme="light"] .page-head .tag{color:#2563eb;background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25)}
-body:not([data-theme]),body[data-theme="light"] h2{color:#0f172a;border-bottom-color:rgba(60,80,120,.14)}
-body:not([data-theme]),body[data-theme="light"] h3{color:#2563eb}
-body:not([data-theme]),body[data-theme="light"] h4{color:#334155}
-body:not([data-theme]) p,body[data-theme="light"] p,body:not([data-theme]) li,body[data-theme="light"] li{color:#3a4759}
-body:not([data-theme]) strong,body[data-theme="light"] strong{color:#0f172a}
+html:not([data-theme-early="dark"]) .page-head h1{color:#0f172a}
+html:not([data-theme-early="dark"]) .page-head .sub{color:#5a6a85}
+html:not([data-theme-early="dark"]) .page-head .tag{color:#2563eb;background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25)}
+html:not([data-theme-early="dark"]) h2{color:#0f172a;border-bottom-color:rgba(60,80,120,.14)}
+html:not([data-theme-early="dark"]) h3{color:#2563eb}
+html:not([data-theme-early="dark"]) h4{color:#334155}
+html:not([data-theme-early="dark"]) p ,html:not([data-theme-early="dark"]) li {color:#3a4759}
+html:not([data-theme-early="dark"]) strong {color:#0f172a}
 
-body:not([data-theme]),body[data-theme="light"] .card,body:not([data-theme]),body[data-theme="light"] .lab,body:not([data-theme]),body[data-theme="light"] .progress-panel,
-body:not([data-theme]),body[data-theme="light"] .term-card,body:not([data-theme]),body[data-theme="light"] .quiz,body:not([data-theme]),body[data-theme="light"] details.faq,
-body:not([data-theme]),body[data-theme="light"] .rm-step,body:not([data-theme]),body[data-theme="light"] .step-item{
-  background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
-  border:1px solid rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09);border-radius:16px;
+/* V2.1.14 性能:浅色卡片族移除 backdrop-filter——首页约 136 个玻璃面在滚动时逐帧重模糊,
+   是浅色掉帧主因(Iris Xe/120Hz 实测:浅色稳态 p95 24.8ms vs 深色无滤镜 12.3ms;
+   版本板块首渲染 363ms 冻结 vs 深色 16.6ms)。背景 .62→.87 保持通透感,
+   毛玻璃主载体(顶栏/下拉面板/快速导航胶囊/深色主题)全部保留。
+   选择器改挂 html[data-theme-early](head 内联脚本渲染前写入):深色用户首帧零浅色规则命中 */
+html:not([data-theme-early="dark"]) .card,html:not([data-theme-early="dark"]) .lab,html:not([data-theme-early="dark"]) .progress-panel,
+html:not([data-theme-early="dark"]) .term-card,html:not([data-theme-early="dark"]) .quiz,html:not([data-theme-early="dark"]) details.faq,
+html:not([data-theme-early="dark"]) .rm-step,html:not([data-theme-early="dark"]) .step-item{
+  background:rgba(255,255,255,.87);
+  border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 34px rgba(50,80,140,.09);border-radius:16px;
 }
-body:not([data-theme]),body[data-theme="light"] .card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
-body:not([data-theme]),body[data-theme="light"] .card .t{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .card .d{color:#5a6a85}
-body:not([data-theme]),body[data-theme="light"] .card.featured{background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(255,255,255,.7));border-color:rgba(37,99,235,.28)}
-body:not([data-theme]),body[data-theme="light"] .step-item{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(147,197,253,.16));border-color:rgba(37,99,235,.22);color:#1e3a8a}
-body:not([data-theme]),body[data-theme="light"] .step-item b{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .rm-step h4{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .rm-step p{color:#5a6a85}
+html:not([data-theme-early="dark"]) .card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.96);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+html:not([data-theme-early="dark"]) .card .t{color:#0f172a}
+html:not([data-theme-early="dark"]) .card .d{color:#5a6a85}
+html:not([data-theme-early="dark"]) .card.featured{background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(255,255,255,.7));border-color:rgba(37,99,235,.28)}
+html:not([data-theme-early="dark"]) .step-item{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(147,197,253,.16));border-color:rgba(37,99,235,.22);color:#1e3a8a}
+html:not([data-theme-early="dark"]) .step-item b{color:#0f172a}
+html:not([data-theme-early="dark"]) .rm-step h4{color:#0f172a}
+html:not([data-theme-early="dark"]) .rm-step p{color:#5a6a85}
 
-body:not([data-theme]),body[data-theme="light"] .box-tip{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.3);color:#3a4759}
-body:not([data-theme]),body[data-theme="light"] .box-warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);color:#7c5a12}
-body:not([data-theme]),body[data-theme="light"] .box-danger{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.35);color:#9f3b3b}
-body:not([data-theme]),body[data-theme="light"] .box-ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35);color:#146c3c}
-body:not([data-theme]),body[data-theme="light"] .key-point{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(255,255,255,.6));border-left-color:#2563eb;color:#334155}
-body:not([data-theme]),body[data-theme="light"] .key-point b{color:#2563eb}
-body:not([data-theme]),body[data-theme="light"] .key-point .kp-title{color:#0f172a}
+html:not([data-theme-early="dark"]) .box-tip{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.3);color:#3a4759}
+html:not([data-theme-early="dark"]) .box-warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);color:#7c5a12}
+html:not([data-theme-early="dark"]) .box-danger{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.35);color:#9f3b3b}
+html:not([data-theme-early="dark"]) .box-ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35);color:#146c3c}
+html:not([data-theme-early="dark"]) .key-point{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(255,255,255,.6));border-left-color:#2563eb;color:#334155}
+html:not([data-theme-early="dark"]) .key-point b{color:#2563eb}
+html:not([data-theme-early="dark"]) .key-point .kp-title{color:#0f172a}
 
 /* ===== V2.1.5 浅色可读性统一补丁 =====
    浅色下深色系链接与盒子强调标签(#58a6ff/#9ecbff/#fbbf24/#f87171/#86efac)
    对比度不足(2~3:1),统一映射到更深的同色系;html 级前缀保证压过页面内联样式 */
 .giscus-mail{color:#60a5fa;font-weight:700;text-decoration:underline}
-body:not([data-theme]) a,body[data-theme="light"] a{color:#1d4ed8}
-body:not([data-theme]) a:hover,body[data-theme="light"] a:hover{color:#1e40af}
-body:not([data-theme]) .box-tip b,body[data-theme="light"] .box-tip b{color:#1d4ed8}
-body:not([data-theme]) .box-warn b,body[data-theme="light"] .box-warn b{color:#b45309}
-body:not([data-theme]) .box-danger b,body[data-theme="light"] .box-danger b{color:#b91c1c}
-body:not([data-theme]) .box-ok b,body[data-theme="light"] .box-ok b{color:#15803d}
-body:not([data-theme]) .giscus-mail,body[data-theme="light"] .giscus-mail{color:#2563eb}
+html:not([data-theme-early="dark"]) a {color:#1d4ed8}
+html:not([data-theme-early="dark"]) a:hover {color:#1e40af}
+html:not([data-theme-early="dark"]) .box-tip b {color:#1d4ed8}
+html:not([data-theme-early="dark"]) .box-warn b {color:#b45309}
+html:not([data-theme-early="dark"]) .box-danger b {color:#b91c1c}
+html:not([data-theme-early="dark"]) .box-ok b {color:#15803d}
+html:not([data-theme-early="dark"]) .giscus-mail {color:#2563eb}
 
 /* ===== V2.1.5 首帧主题锁定 =====
    深色用户刷新时 body 尚无 data-theme,浅色规则(body:not([data-theme])...)会先命中
@@ -395,45 +402,45 @@ html[data-theme-early='dark'] .learn-path{background:linear-gradient(135deg,rgba
 html[data-theme-early='dark'] .rm-nav{background:rgba(13,17,23,.74);color:#9ecbff}
 html[data-theme-early='dark'] .giscus-mail{color:#60a5fa}
 
-body:not([data-theme]),body[data-theme="light"] table{background:rgba(255,255,255,.55);box-shadow:0 6px 24px rgba(50,80,140,.07)}
-body:not([data-theme]),body[data-theme="light"] th{background:rgba(37,99,235,.12);color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] td{color:#3a4759;border-top-color:rgba(60,80,120,.1)}
-body:not([data-theme]),body[data-theme="light"] tr:hover td{background:rgba(37,99,235,.05)}
-body:not([data-theme]),body[data-theme="light"] pre{background:#f4f7fc;border-color:rgba(60,80,120,.14);color:#1e293b}
-body:not([data-theme]),body[data-theme="light"] :not(pre)>code{background:rgba(37,99,235,.1);color:#1d4ed8}
-body:not([data-theme]),body[data-theme="light"] pre code{color:#1e3a8a}
+html:not([data-theme-early="dark"]) table{background:rgba(255,255,255,.55);box-shadow:0 6px 24px rgba(50,80,140,.07)}
+html:not([data-theme-early="dark"]) th{background:rgba(37,99,235,.12);color:#0f172a}
+html:not([data-theme-early="dark"]) td{color:#3a4759;border-top-color:rgba(60,80,120,.1)}
+html:not([data-theme-early="dark"]) tr:hover td{background:rgba(37,99,235,.05)}
+html:not([data-theme-early="dark"]) pre{background:#f4f7fc;border-color:rgba(60,80,120,.14);color:#1e293b}
+html:not([data-theme-early="dark"]) :not(pre)>code{background:rgba(37,99,235,.1);color:#1d4ed8}
+html:not([data-theme-early="dark"]) pre code{color:#1e3a8a}
 
-body:not([data-theme]),body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#334155}
-body:not([data-theme]),body[data-theme="light"] .quiz-options button:hover{border-color:#2563eb;color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .quiz-q{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .quiz-explain{background:rgba(37,99,235,.07);border-left-color:#2563eb;color:#4b5c74}
-body:not([data-theme]),body[data-theme="light"] details.faq summary{color:#1a2332}
-body:not([data-theme]),body[data-theme="light"] details.faq .faq-a{color:#4b5c74}
-body:not([data-theme]),body[data-theme="light"] .prevnext .pn-item{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
-body:not([data-theme]),body[data-theme="light"] .prevnext .pn-item b{color:#2563eb}
-body:not([data-theme]),body[data-theme="light"] .prevnext .pn-item span{color:#94a3b8}
-body:not([data-theme]),body[data-theme="light"] .site-footer{color:#94a3b8;border-top-color:rgba(60,80,120,.12)}
-body:not([data-theme]),body[data-theme="light"] .site-footer a{color:#2563eb}
+html:not([data-theme-early="dark"]) .quiz-options button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#334155}
+html:not([data-theme-early="dark"]) .quiz-options button:hover{border-color:#2563eb;color:#0f172a}
+html:not([data-theme-early="dark"]) .quiz-q{color:#0f172a}
+html:not([data-theme-early="dark"]) .quiz-explain{background:rgba(37,99,235,.07);border-left-color:#2563eb;color:#4b5c74}
+html:not([data-theme-early="dark"]) details.faq summary{color:#1a2332}
+html:not([data-theme-early="dark"]) details.faq .faq-a{color:#4b5c74}
+html:not([data-theme-early="dark"]) .prevnext .pn-item{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+html:not([data-theme-early="dark"]) .prevnext .pn-item b{color:#2563eb}
+html:not([data-theme-early="dark"]) .prevnext .pn-item span{color:#94a3b8}
+html:not([data-theme-early="dark"]) .site-footer{color:#94a3b8;border-top-color:rgba(60,80,120,.12)}
+html:not([data-theme-early="dark"]) .site-footer a{color:#2563eb}
 
-body:not([data-theme]),body[data-theme="light"] .search-box{background:rgba(255,255,255,.9);border-color:rgba(37,99,235,.3)}
-body:not([data-theme]),body[data-theme="light"] .search-input{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .search-head{color:#64748b}
-body:not([data-theme]),body[data-theme="light"] .search-hit:hover{background:rgba(37,99,235,.08)}
-body:not([data-theme]),body[data-theme="light"] .hit-t{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .hit-meta{color:#94a3b8}
+html:not([data-theme-early="dark"]) .search-box{background:rgba(255,255,255,.9);border-color:rgba(37,99,235,.3)}
+html:not([data-theme-early="dark"]) .search-input{color:#0f172a}
+html:not([data-theme-early="dark"]) .search-head{color:#64748b}
+html:not([data-theme-early="dark"]) .search-hit:hover{background:rgba(37,99,235,.08)}
+html:not([data-theme-early="dark"]) .hit-t{color:#0f172a}
+html:not([data-theme-early="dark"]) .hit-meta{color:#94a3b8}
 
-body:not([data-theme]),body[data-theme="light"] .hero h1{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .hero .sub{color:#5a6a85}
-body:not([data-theme]),body[data-theme="light"] .stat .v{color:#2563eb}
-body:not([data-theme]),body[data-theme="light"] .stat .k{color:#94a3b8}
-body:not([data-theme]),body[data-theme="light"] .hero-search input{background:rgba(255,255,255,.8);border-color:rgba(37,99,235,.3);color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .gloss-search input{background:rgba(255,255,255,.8);border-color:rgba(37,99,235,.3);color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .gloss-cats button{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.16);color:#64748b}
-body:not([data-theme]),body[data-theme="light"] .gloss-cats button.on{background:rgba(37,99,235,.15);border-color:#2563eb;color:#1d4ed8}
-body:not([data-theme]),body[data-theme="light"] .term-name{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .term-desc{color:#5a6a85}
-body:not([data-theme]),body[data-theme="light"] .sec-title{color:#334155}
-body:not([data-theme]),body[data-theme="light"] .sec-title .en{color:#94a3b8}
+html:not([data-theme-early="dark"]) .hero h1{color:#0f172a}
+html:not([data-theme-early="dark"]) .hero .sub{color:#5a6a85}
+html:not([data-theme-early="dark"]) .stat .v{color:#2563eb}
+html:not([data-theme-early="dark"]) .stat .k{color:#94a3b8}
+html:not([data-theme-early="dark"]) .hero-search input{background:rgba(255,255,255,.8);border-color:rgba(37,99,235,.3);color:#0f172a}
+html:not([data-theme-early="dark"]) .gloss-search input{background:rgba(255,255,255,.8);border-color:rgba(37,99,235,.3);color:#0f172a}
+html:not([data-theme-early="dark"]) .gloss-cats button{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.16);color:#64748b}
+html:not([data-theme-early="dark"]) .gloss-cats button.on{background:rgba(37,99,235,.15);border-color:#2563eb;color:#1d4ed8}
+html:not([data-theme-early="dark"]) .term-name{color:#0f172a}
+html:not([data-theme-early="dark"]) .term-desc{color:#5a6a85}
+html:not([data-theme-early="dark"]) .sec-title{color:#334155}
+html:not([data-theme-early="dark"]) .sec-title .en{color:#94a3b8}
 
 /* ============================================================
    文档式目录侧边栏(DeepSeek 官方文档风)
@@ -453,11 +460,11 @@ body:not([data-theme]),body[data-theme="light"] .sec-title .en{color:#94a3b8}
 body.has-toc .container{max-width:960px;margin-left:256px;margin-right:auto}
 body.has-toc .prevnext{max-width:960px;margin-left:256px;margin-right:auto}
 body.has-toc .breadcrumb{max-width:960px;margin-left:256px}
-body:not([data-theme]),body[data-theme="light"] .toc-sidebar{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.1)}
-body:not([data-theme]),body[data-theme="light"] .toc-title{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .toc-sidebar a{color:#5a6a85}
-body:not([data-theme]),body[data-theme="light"] .toc-sidebar a:hover{color:#0f172a;background:rgba(37,99,235,.08);border-left-color:#2563eb}
-body:not([data-theme]),body[data-theme="light"] .toc-sidebar a.active{color:#2563eb;background:rgba(37,99,235,.12);border-left-color:#2563eb}
+html:not([data-theme-early="dark"]) .toc-sidebar{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.1)}
+html:not([data-theme-early="dark"]) .toc-title{color:#0f172a}
+html:not([data-theme-early="dark"]) .toc-sidebar a{color:#5a6a85}
+html:not([data-theme-early="dark"]) .toc-sidebar a:hover{color:#0f172a;background:rgba(37,99,235,.08);border-left-color:#2563eb}
+html:not([data-theme-early="dark"]) .toc-sidebar a.active{color:#2563eb;background:rgba(37,99,235,.12);border-left-color:#2563eb}
 
 @media (max-width:1180px){
   .toc-sidebar{transform:translateX(-120%);transition:transform .25s}
@@ -473,7 +480,7 @@ body:not([data-theme]),body[data-theme="light"] .toc-sidebar a.active{color:#256
   background:rgba(37,99,235,.9);color:#fff;border:none;font-size:20px;font-weight:800;cursor:pointer;
   display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(37,99,235,.4);transition:.2s}
 .backtop:hover{transform:translateY(-3px);background:#2563eb}
-body:not([data-theme]),body[data-theme="light"] .backtop{background:rgba(37,99,235,.88)}
+html:not([data-theme-early="dark"]) .backtop{background:rgba(37,99,235,.88)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card,.sec-title,.page-head,.lab,.progress-panel{opacity:0;animation:fadeUp .5s ease both}
 .card:nth-child(2){animation-delay:.05s}.card:nth-child(3){animation-delay:.1s}
@@ -488,31 +495,31 @@ body:not([data-theme]),body[data-theme="light"] .backtop{background:rgba(37,99,2
 .theme-seg button{border:none;background:transparent;color:#9aa4b2;font-size:13px;padding:7px 18px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.2s}
 .theme-seg button:hover{color:#fff}
 .theme-seg button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-weight:700;box-shadow:0 4px 14px rgba(37,99,235,.4)}
-body:not([data-theme]),body[data-theme="light"] .theme-seg{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.14)}
-body:not([data-theme]),body[data-theme="light"] .theme-seg button{color:#64748b}
-body:not([data-theme]),body[data-theme="light"] .theme-seg button:hover{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .theme-seg button.on{color:#fff}
+html:not([data-theme-early="dark"]) .theme-seg{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.14)}
+html:not([data-theme-early="dark"]) .theme-seg button{color:#64748b}
+html:not([data-theme-early="dark"]) .theme-seg button:hover{color:#0f172a}
+html:not([data-theme-early="dark"]) .theme-seg button.on{color:#fff}
 
 /* ============================================================
    V1.5.0 · 搜索高亮 / 打印按钮 / 学习目标注入 / 新手引导 / 打印样式
    ============================================================ */
 .search-hit mark{background:rgba(250,204,21,.35);color:#fde68a;border-radius:3px;padding:0 2px}
-body:not([data-theme]),body[data-theme="light"] .search-hit mark{background:rgba(250,204,21,.45);color:#854d0e}
+html:not([data-theme-early="dark"]) .search-hit mark{background:rgba(250,204,21,.45);color:#854d0e}
 /* 打印按钮样式已并入上方工具区统一令牌(V2.1.12c) */
 .nav-print{flex-shrink:0}
 .nav-print svg{width:15px;height:15px}
 .page-goals{margin-top:6px}
 /* 更新日期+核实状态印章 */
 .page-stamp{text-align:center;font-size:12px;color:#6b7280;margin:12px 0 0}
-body:not([data-theme]),body[data-theme="light"] .page-stamp{color:#94a3b8}
+html:not([data-theme-early="dark"]) .page-stamp{color:#94a3b8}
 /* 术语悬浮提示气泡 */
 .term-tip{position:fixed;z-index:400;max-width:260px;background:rgba(17,22,30,.95);border:1px solid rgba(59,130,246,.45);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#c9d1d9;line-height:1.7;box-shadow:0 14px 40px rgba(0,0,0,.45);pointer-events:none;animation:fadeUp .18s ease both}
 .term-tip b{color:#9ecbff;margin-right:6px}
-body:not([data-theme]),body[data-theme="light"] .term-tip{background:rgba(255,255,255,.97);border-color:rgba(37,99,235,.35);color:#334155;box-shadow:0 14px 40px rgba(40,80,160,.2)}
-body:not([data-theme]),body[data-theme="light"] .term-tip b{color:#2563eb}
+html:not([data-theme-early="dark"]) .term-tip{background:rgba(255,255,255,.97);border-color:rgba(37,99,235,.35);color:#334155;box-shadow:0 14px 40px rgba(40,80,160,.2)}
+html:not([data-theme-early="dark"]) .term-tip b{color:#2563eb}
 /* KaTeX 公式块(LaTeX 渲染前显示为等宽原文) */
 .formula{display:block;text-align:center;margin:14px auto;padding:12px 14px;background:rgba(13,17,23,.6);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow-x:auto;font-size:16px;color:#e6edf3;font-family:KaTeX_Main,"Times New Roman",serif}
-body:not([data-theme]),body[data-theme="light"] .formula{background:#ffffff;border-color:rgba(60,80,120,.14);color:#0f172a}
+html:not([data-theme-early="dark"]) .formula{background:#ffffff;border-color:rgba(60,80,120,.14);color:#0f172a}
 /* Giscus 评论区 */
 .giscus-wrap{margin:30px 0}
 .giscus-wrap h2{margin-bottom:14px}
@@ -524,9 +531,9 @@ body:not([data-theme]),body[data-theme="light"] .formula{background:#ffffff;bord
 .drawer a{color:#9aa4b2;font-size:14.5px;padding:11px 14px;border-radius:10px;text-decoration:none}
 .drawer a:hover{background:rgba(59,130,246,.15);color:#fff;text-decoration:none}
 .drawer-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.08);border:none;color:#c9d1d9;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:14px}
-body:not([data-theme]),body[data-theme="light"] .drawer{background:rgba(255,255,255,.98);border-left-color:rgba(60,80,120,.14)}
-body:not([data-theme]),body[data-theme="light"] .drawer a{color:#334155}
-body:not([data-theme]),body[data-theme="light"] .drawer a:hover{background:rgba(37,99,235,.1);color:#0f172a}
+html:not([data-theme-early="dark"]) .drawer{background:rgba(255,255,255,.98);border-left-color:rgba(60,80,120,.14)}
+html:not([data-theme-early="dark"]) .drawer a{color:#334155}
+html:not([data-theme-early="dark"]) .drawer a:hover{background:rgba(37,99,235,.1);color:#0f172a}
 @media (max-width:900px){ .nav-ham{display:block} }
 
 /* ---------- 新手引导 ---------- */
@@ -544,17 +551,20 @@ body:not([data-theme]),body[data-theme="light"] .drawer a:hover{background:rgba(
 .onboard-skip:hover{color:#c9d1d9}
 .onboard-next{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:14px;font-weight:700;padding:9px 20px;border-radius:10px;cursor:pointer;font-family:inherit}
 .onboard-next:hover{filter:brightness(1.15)}
-body:not([data-theme]),body[data-theme="light"] .onboard-overlay{background:rgba(240,245,253,.72)}
-body:not([data-theme]),body[data-theme="light"] .onboard-card{background:linear-gradient(160deg,#ffffff,#eef3fb);border-color:rgba(37,99,235,.35);box-shadow:0 30px 80px rgba(40,80,160,.25)}
-body:not([data-theme]),body[data-theme="light"] .onboard-title{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .onboard-desc{color:#3a4759}
-body:not([data-theme]),body[data-theme="light"] .onboard-nav{border-top-color:rgba(60,80,120,.12)}
-body:not([data-theme]),body[data-theme="light"] .onboard-skip{color:#94a3b8}
+html:not([data-theme-early="dark"]) .onboard-overlay{background:rgba(240,245,253,.72)}
+html:not([data-theme-early="dark"]) .onboard-card{background:linear-gradient(160deg,#ffffff,#eef3fb);border-color:rgba(37,99,235,.35);box-shadow:0 30px 80px rgba(40,80,160,.25)}
+html:not([data-theme-early="dark"]) .onboard-title{color:#0f172a}
+html:not([data-theme-early="dark"]) .onboard-desc{color:#3a4759}
+html:not([data-theme-early="dark"]) .onboard-nav{border-top-color:rgba(60,80,120,.12)}
+html:not([data-theme-early="dark"]) .onboard-skip{color:#94a3b8}
 
 /* ---------- 打印样式(打印 / 导出 PDF) ---------- */
 @media print{
   body{padding-top:0!important;background:#fff!important;color:#000!important}
-  .topnav,.toc-sidebar,.toc-toggle,.backtop,.prevnext,.site-footer,.nav-done,.nav-theme,.nav-search,.nav-print,.onboard-overlay,.theme-seg{display:none!important}
+  /* V2.1.14 补齐:AI 悬浮球/面板、横滑箭头与进度圆点、循环克隆卡(data-clone)、
+     移动端抽屉(translateX(100%) 撑宽页面的隐患)、汉堡/板块下拉/版本胶囊/进度环 */
+  .topnav,.toc-sidebar,.toc-toggle,.backtop,.prevnext,.site-footer,.nav-done,.nav-theme,.nav-search,.nav-print,.onboard-overlay,.theme-seg,
+  .ai-fab-btn,.ai-fab-panel,.rm-nav,.rm-progress,.rm-step[data-clone],.drawer,.nav-ham,.nav-dd,.nav-ver,.nav-prog{display:none!important}
   .container,.breadcrumb{max-width:100%!important;margin:0!important}
   body.has-toc .container,body.has-toc .prevnext,body.has-toc .breadcrumb{margin:0!important}
   a{color:#000!important;text-decoration:underline}
@@ -598,15 +608,15 @@ body:not([data-theme]),body[data-theme="light"] .onboard-skip{color:#94a3b8}
 .srs-fb.ok{color:#86efac}.srs-fb.no{color:#fca5a5}
 .srs-explain{margin-top:10px;padding:10px 14px;background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;font-size:13px;color:#aab8c8;line-height:1.8}
 .srs-after{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-body:not([data-theme]),body[data-theme="light"] .srs-title{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .srs-stat{color:#64748b}
-body:not([data-theme]),body[data-theme="light"] .srs-done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4);color:#15803d}
-body:not([data-theme]),body[data-theme="light"] .srs-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.3);color:#1d4ed8}
-body:not([data-theme]),body[data-theme="light"] .srs-btn.ghost{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.2);color:#64748b}
-body:not([data-theme]),body[data-theme="light"] .srs-card{background:rgba(255,255,255,.7);border-color:rgba(37,99,235,.3);box-shadow:0 10px 30px rgba(50,80,140,.08)}
-body:not([data-theme]),body[data-theme="light"] .srs-question{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .srs-opt{background:rgba(255,255,255,.75);border-color:rgba(60,80,120,.16);color:#334155}
-body:not([data-theme]),body[data-theme="light"] .srs-explain{background:rgba(37,99,235,.07);border-left-color:#2563eb;color:#4b5c74}
+html:not([data-theme-early="dark"]) .srs-title{color:#0f172a}
+html:not([data-theme-early="dark"]) .srs-stat{color:#64748b}
+html:not([data-theme-early="dark"]) .srs-done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4);color:#15803d}
+html:not([data-theme-early="dark"]) .srs-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.3);color:#1d4ed8}
+html:not([data-theme-early="dark"]) .srs-btn.ghost{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.2);color:#64748b}
+html:not([data-theme-early="dark"]) .srs-card{background:rgba(255,255,255,.7);border-color:rgba(37,99,235,.3);box-shadow:0 10px 30px rgba(50,80,140,.08)}
+html:not([data-theme-early="dark"]) .srs-question{color:#0f172a}
+html:not([data-theme-early="dark"]) .srs-opt{background:rgba(255,255,255,.75);border-color:rgba(60,80,120,.16);color:#334155}
+html:not([data-theme-early="dark"]) .srs-explain{background:rgba(37,99,235,.07);border-left-color:#2563eb;color:#4b5c74}
 
 /* ============================================================
    V1.5.0 · 进度可视化(环形图 + 日历热力图)
@@ -628,9 +638,9 @@ body:not([data-theme]),body[data-theme="light"] .srs-explain{background:rgba(37,
 .heat-day.today{outline:2px solid #22c55e}
 .heat-legend{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;color:#6b7280}
 .heat-legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
-body:not([data-theme]),body[data-theme="light"] .ring-center .v{color:#0f172a}
-body:not([data-theme]),body[data-theme="light"] .heat-title{color:#5a6a85}
-body:not([data-theme]),body[data-theme="light"] .heat-day{background:rgba(60,80,120,.1)}
+html:not([data-theme-early="dark"]) .ring-center .v{color:#0f172a}
+html:not([data-theme-early="dark"]) .heat-title{color:#5a6a85}
+html:not([data-theme-early="dark"]) .heat-day{background:rgba(60,80,120,.1)}
 @media (max-width:600px){
   .heat-grid{grid-template-columns:repeat(10,1fr)}
 }
@@ -652,12 +662,12 @@ body:not([data-theme]),body[data-theme="light"] .heat-day{background:rgba(60,80,
 @keyframes verBlink{0%,100%{opacity:1}50%{opacity:.35}}
 .nav-ver{gap:0;font-family:Consolas,"Courier New",monospace;letter-spacing:.3px}
 .nav-ver:hover{color:#fff;border-color:rgba(255,255,255,.3)}
-body[data-theme="light"] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.3)}
-body[data-theme="light"] .nav-ver:hover{color:#0f172a;border-color:rgba(100,116,139,.5)}
+html:not([data-theme-early="dark"]) .nav-ver{color:#64748b;border-color:rgba(100,116,139,.3)}
+html:not([data-theme-early="dark"]) .nav-ver:hover{color:#0f172a;border-color:rgba(100,116,139,.5)}
 /* V2.1.12b:单色 SVG 图标与文字的间距(替代原 emoji 空格) */
 .nav-search svg{display:block}
-body:not([data-theme]),body[data-theme="light"] .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}
-body:not([data-theme]),body[data-theme="light"] .nav-ver:hover{color:#2563eb;border-color:#2563eb}
+html:not([data-theme-early="dark"]) .nav-ver{color:#64748b;border-color:rgba(100,116,139,.4)}
+html:not([data-theme-early="dark"]) .nav-ver:hover{color:#2563eb;border-color:#2563eb}
 /* V2.1.8 窄屏顶栏减负:版本/打印/自检/搜索快捷键徽标退出,保 brand+主题+搜索+打卡+汉堡 */
 @media (max-width:640px){
   .topnav .nav-ver{display:none}
@@ -669,8 +679,8 @@ body:not([data-theme]),body[data-theme="light"] .nav-ver:hover{color:#2563eb;bor
 .nav-prog .np-t{fill:none;stroke:rgba(255,255,255,.18);stroke-width:3.6}
 .nav-prog .np-p{fill:none;stroke:#3b82f6;stroke-width:3.6;stroke-linecap:round;transition:stroke-dashoffset .15s linear}
 .nav-prog i{font-style:normal;font-size:10px;color:#9aa4b2;min-width:24px}
-body:not([data-theme]),body[data-theme="light"] .nav-prog .np-t{stroke:rgba(100,116,139,.25)}
-body:not([data-theme]),body[data-theme="light"] .nav-prog i{color:#64748b}
+html:not([data-theme-early="dark"]) .nav-prog .np-t{stroke:rgba(100,116,139,.25)}
+html:not([data-theme-early="dark"]) .nav-prog i{color:#64748b}
 @media (max-width:640px){.nav-prog{display:none}}
 
 /* ---------- V2.1.11 卡片滚动错峰入场:site.js 只对初始视口外元素加 .rv-hold,

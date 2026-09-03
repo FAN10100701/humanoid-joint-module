@@ -8,16 +8,16 @@
 <link rel="stylesheet" href="../_assets/site.css">
 <style>
   .my-calc{border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:14px 18px;margin:18px 0;background:rgba(15,23,42,.4)}
-  body[data-theme="light"] .my-calc{background:rgba(255,255,255,.6)}
+  html:not([data-theme-early="dark"]) .my-calc{background:rgba(255,255,255,.6)}
   .my-calc h3{margin-top:0}
   .my-calc .my-f{font-family:Consolas,monospace;font-size:13px;color:#9ecbff;margin:6px 0 10px}
-  body[data-theme="light"] .my-calc .my-f{color:#1d4ed8}
+  html:not([data-theme-early="dark"]) .my-calc .my-f{color:#1d4ed8}
   .my-calc label{display:inline-block;margin:5px 12px 5px 0;font-size:13px}
   .my-calc input{width:86px;background:rgba(2,6,23,.6);border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:4px 8px;font-family:Consolas,monospace}
-  body[data-theme="light"] .my-calc input{background:#fff;border-color:#cbd5e1;color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-calc input{background:#fff;border-color:#cbd5e1;color:#0f172a}
   .my-calc .my-res{margin-top:8px;font-size:14px;line-height:2}
   .my-calc .my-res b{font-family:Consolas,monospace;color:#34d399}
-  body[data-theme="light"] .my-calc .my-res b{color:#047857}
+  html:not([data-theme-early="dark"]) .my-calc .my-res b{color:#047857}
   .my-calc .my-note{font-size:12.5px;color:#94a3b8;margin-top:6px;line-height:1.8}
 </style>
 <script>

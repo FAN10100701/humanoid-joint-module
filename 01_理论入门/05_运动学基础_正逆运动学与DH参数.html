@@ -11,10 +11,10 @@
   /* 页面级补充样式(命名加 my- 前缀,避免与全局冲突) */
   .my-ascii{font-size:12.5px;line-height:1.6}
   .my-mono{font-family:Consolas,"Courier New",monospace;color:#9ecbff}
-  body[data-theme="light"] .my-mono{color:#1d4ed8}
+  html:not([data-theme-early="dark"]) .my-mono{color:#1d4ed8}
   /* ===== 5.4 FK/IK 交互实验(命名加 my-ik 前缀) ===== */
   .my-iklab{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:14px;margin:20px 0;background:rgba(15,23,42,.45)}
-  body[data-theme="light"] .my-iklab{background:rgba(255,255,255,.6);border-color:rgba(37,99,235,.28)}
+  html:not([data-theme-early="dark"]) .my-iklab{background:rgba(255,255,255,.6);border-color:rgba(37,99,235,.28)}
   .my-ikbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;font-size:13px}
   .my-ikbar button{border:1px solid rgba(59,130,246,.45);background:rgba(59,130,246,.12);color:#9ecbff;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px}
   .my-ikbar button.active{background:#2563eb;color:#fff;border-color:#2563eb}
@@ -24,14 +24,14 @@
   .my-ikside{flex:0 0 250px;min-width:220px;font-size:13px;line-height:1.7}
   .my-ikside .my-ikro{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(100,116,139,.35);padding:2px 0}
   .my-ikside .my-ikro b{font-family:Consolas,monospace;color:#9ecbff}
-  body[data-theme="light"] .my-ikside .my-ikro b{color:#1d4ed8}
+  html:not([data-theme-early="dark"]) .my-ikside .my-ikro b{color:#1d4ed8}
   .my-ikside .my-ikwarn{color:#f87171;font-weight:700}
   .my-ikside .my-ikok{color:#34d399}
   .my-ikside input[type=range]{width:100%;accent-color:#2563eb}
   .my-ikside .my-iktip{margin-top:8px;color:#94a3b8;font-size:12px}
   .my-ikside label{color:#94a3b8}
-  body[data-theme="light"] .my-ikside label{color:#5a6a85}
-  body[data-theme="light"] .my-ikside .my-iktip{color:#5a6a85}
+  html:not([data-theme-early="dark"]) .my-ikside label{color:#5a6a85}
+  html:not([data-theme-early="dark"]) .my-ikside .my-iktip{color:#5a6a85}
 </style>
 <script>
   /* 页面配置:导航/面包屑/前后翻页/打卡 全部由 site.js 读取 */

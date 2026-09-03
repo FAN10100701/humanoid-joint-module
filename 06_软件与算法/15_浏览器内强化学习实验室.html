@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="../_assets/site.css">
 <style>
   .my-rl{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px;margin:16px 0;background:rgba(15,23,42,.45)}
-  body:not([data-theme]) .my-rl,body[data-theme="light"] .my-rl{background:rgba(255,255,255,.65)}
+  html:not([data-theme-early="dark"]) .my-rl {background:rgba(255,255,255,.65)}
   /* canvas 尺寸交给 CSS(宽度自适应),位图由 JS 按 devicePixelRatio 重建,高分屏清晰且不拉伸变形 */
   .my-rl canvas{background:#0b1626;border-radius:10px;display:block}
   .my-rl #rlPole{width:100%;height:250px}
@@ -19,7 +19,7 @@
   .my-rl .my-bar button:disabled{opacity:.45;cursor:not-allowed}
   .my-stat{font-size:13.5px;line-height:2}
   .my-stat b{font-family:Consolas,monospace;color:#34d399}
-  body:not([data-theme]) .my-stat b,body[data-theme="light"] .my-stat b{color:#047857}
+  html:not([data-theme-early="dark"]) .my-stat b {color:#047857}
 </style>
 <script>
   window.PAGE = {
@@ -132,7 +132,7 @@
   <ul>
     <li><a href="https://www.gwern.net/docs/rl/sutton/barto/2017-sutton-rlintro.pdf" target="_blank" rel="noopener">Sutton &amp; Barto · Reinforcement Learning: An Introduction(第 6 章 Q-Learning)</a></li>
     <li><a href="https://gymnasium.farama.org/environments/classic_control/cart_pole/" target="_blank" rel="noopener">Gymnasium · CartPole(经典 RL 环境,本页为其倒立摆变体)</a></li>
-    <li><a href="04_仿真与强化学习_MuJoCo_Isaac.html" target="_blank">本站 · 仿真与强化学习 MuJoCo/Isaac(整机级 RL)</a></li>
+    <li><a href="04_仿真与强化学习_MuJoCo_Isaac.html" target="_blank" rel="noopener">本站 · 仿真与强化学习 MuJoCo/Isaac(整机级 RL)</a></li>
   </ul>
 
 </div><!-- /container -->

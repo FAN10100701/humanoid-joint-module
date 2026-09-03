@@ -2,8 +2,7 @@
    人形机器人学习站 · 玻璃拟态设计系统(V2.1.0)
    基调: 深空影院 —— 深空渐变 + 噪点纹理 + 磨砂玻璃 + 单一冰蓝强调色
    用法: 在 site.css 之后引入;全部类名 glass- 前缀,不与全局冲突
-   浅色主题: 双选择器 body:not([data-theme]), body[data-theme="light"]
-   ============================================================ */
+   浅色主题: 双选择器 html:not([data-theme-early="dark"]) ============================================================ */
 
 /* ---------- 设计令牌 ---------- */
 :root{
@@ -19,7 +18,7 @@
   --glass-radius: 18px;
   --glass-ease: cubic-bezier(.22,1,.36,1);
 }
-body:not([data-theme]),body[data-theme="light"]{
+html:not([data-theme-early="dark"]) {
   --glass-bg: rgba(255,255,255,.5);
   --glass-bg-strong: rgba(255,255,255,.72);
   --glass-border: rgba(60,90,140,.14);
@@ -38,7 +37,7 @@ body:not([data-theme]),body[data-theme="light"]{
     radial-gradient(700px 500px at 50% 115%, rgba(20,180,190,.08), transparent 60%),
     linear-gradient(165deg,#070b14 0%,#0a0f1c 45%,#060a12 100%);
 }
-body:not([data-theme]) .glass-space,body[data-theme="light"] .glass-space{
+html:not([data-theme-early="dark"]) .glass-space {
   background:
     radial-gradient(1100px 520px at 15% -10%, rgba(56,120,255,.14), transparent 60%),
     radial-gradient(900px 460px at 90% 0%, rgba(150,90,255,.08), transparent 55%),
@@ -59,7 +58,7 @@ body:not([data-theme]) .glass-space,body[data-theme="light"] .glass-space{
     radial-gradient(560px 400px at 55% 88%, rgba(20,190,190,.09), transparent 62%);
   animation:glassAurora 26s ease-in-out infinite alternate;
 }
-body:not([data-theme]) .glass-space::after,body[data-theme="light"] .glass-space::after{opacity:.55}
+html:not([data-theme-early="dark"]) .glass-space::after {opacity:.55}
 .glass-noise::before{
   content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;border-radius:inherit;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
@@ -74,7 +73,7 @@ body:not([data-theme]) .glass-space::after,body[data-theme="light"] .glass-space
   border-radius:var(--glass-radius);
   box-shadow:0 16px 48px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(142,197,255,.06);
 }
-body:not([data-theme]) .glass,body[data-theme="light"] .glass{
+html:not([data-theme-early="dark"]) .glass {
   box-shadow:0 12px 40px rgba(50,80,140,.12), inset 0 1px 0 rgba(255,255,255,.85);
 }
 .glass:hover{border-color:var(--glass-border-hi)}
@@ -175,10 +174,9 @@ body:not([data-theme]) .glass,body[data-theme="light"] .glass{
   background:radial-gradient(circle at 30% 25%, rgba(140,190,255,.35), rgba(20,40,80,.9) 60%),linear-gradient(160deg,#123,#0a1428) !important;
   border:1px solid rgba(140,190,255,.45) !important;
   box-shadow:0 10px 30px rgba(30,80,200,.45), inset 0 0 18px rgba(120,180,255,.18) !important;
-  animation:aifPulse 3.2s ease-in-out infinite;
 }
 .backtop:hover{transform:translateY(-3px) scale(1.08);box-shadow:0 14px 40px rgba(30,80,200,.6) !important}
-body:not([data-theme]) .backtop,body[data-theme="light"] .backtop{
+html:not([data-theme-early="dark"]) .backtop {
   background:radial-gradient(circle at 30% 25%, rgba(255,255,255,.7), rgba(210,228,252,.95) 60%),linear-gradient(160deg,#eaf1fc,#dbe8fa) !important;
   color:#2563eb;border-color:rgba(37,99,235,.4) !important;
   box-shadow:0 10px 30px rgba(40,80,160,.25) !important;
@@ -217,7 +215,7 @@ body:not([data-theme]) .backtop,body[data-theme="light"] .backtop{
   -webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);
   box-shadow:0 26px 70px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12);
 }
-body:not([data-theme]) .glass-panel,body[data-theme="light"] .glass-panel{
+html:not([data-theme-early="dark"]) .glass-panel {
   box-shadow:0 26px 70px rgba(40,80,160,.22), inset 0 1px 0 rgba(255,255,255,.9);
 }
 
@@ -255,7 +253,7 @@ body:not([data-theme]) .glass-panel,body[data-theme="light"] .glass-panel{
 }
 .glass-input:focus{border-color:var(--glass-ice);box-shadow:0 0 0 3px var(--glass-ice-a20)}
 .glass-input::placeholder{color:var(--glass-ink-dim);opacity:.7}
-body:not([data-theme]) .glass-input,body[data-theme="light"] .glass-input{background:rgba(255,255,255,.8)}
+html:not([data-theme-early="dark"]) .glass-input {background:rgba(255,255,255,.8)}
 
 /* ---------- 分隔细线 ---------- */
 .glass-hr{height:1px;border:none;margin:var(--gs-3) 0;
@@ -277,10 +275,10 @@ pre{background:rgba(6,10,18,.55);border:1px solid var(--glass-border);border-rad
 .quiz-explain{background:var(--glass-ice-a10);border-left:3px solid var(--glass-ice);border-radius:0 10px 10px 0}
 .box{border-radius:var(--gr-sm)}
 .step-item{border-radius:var(--gr-sm)}
-body:not([data-theme]) table,body[data-theme="light"] table{background:rgba(255,255,255,.6);box-shadow:0 8px 26px rgba(50,80,140,.08)}
-body:not([data-theme]) pre,body[data-theme="light"] pre{background:rgba(244,247,252,.9);border-color:rgba(60,80,120,.16)}
-body:not([data-theme]) .quiz,body[data-theme="light"] .quiz{background:rgba(255,255,255,.6)}
-body:not([data-theme]) .quiz-options button,body[data-theme="light"] .quiz-options button{background:rgba(255,255,255,.8);border-color:rgba(60,80,120,.16);color:#334155}
+html:not([data-theme-early="dark"]) table {background:rgba(255,255,255,.6);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+html:not([data-theme-early="dark"]) pre {background:rgba(244,247,252,.9);border-color:rgba(60,80,120,.16)}
+html:not([data-theme-early="dark"]) .quiz {background:rgba(255,255,255,.6)}
+html:not([data-theme-early="dark"]) .quiz-options button {background:rgba(255,255,255,.8);border-color:rgba(60,80,120,.16);color:#334155}
 
 /* ---------- B6 移动端适配(≤640px):下拉改全宽底部贴靠、触控目标加大 ---------- */
 @media (max-width:640px){
@@ -298,7 +296,7 @@ body:not([data-theme]) .quiz-options button,body[data-theme="light"] .quiz-optio
 /* ---------- B7 排版细节 ---------- */
 h2{scroll-margin-top:76px}   /* 顶栏固定,锚点跳转不被遮挡 */
 .my-svg{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:12px 12px 6px}
-body:not([data-theme]) .my-svg,body[data-theme="light"] .my-svg{background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.14)}
+html:not([data-theme-early="dark"]) .my-svg {background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.14)}
 
 /* ---------- V2.1.7 触屏防 sticky-hover ----------
    hover:none(纯触屏)设备上取消 hover 位移,点击后不再残留抬起/放大态 */

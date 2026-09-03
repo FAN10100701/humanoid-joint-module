@@ -125,6 +125,34 @@ $swContent = [IO.File]::ReadAllText((Join-Path $root "sw.js"), [Text.Encoding]::
 $swCache = [regex]::Match($swContent, 'var\s+CACHE\s*=\s*"hrl-site-v([^"]+)"').Groups[1].Value
 $verNum = ($ver -split '\(')[0] -replace '^V',''
 Check "sw.js CACHE follows version" ($swCache -eq $verNum) ("cache=" + $swCache + " ver=" + $verNum)
+# V2.1.14: README version line + sw.js header comment also follow site version
+# (both drifted once in V2.1.13 era; no Chinese literals here - build from code points, PS5.1 GBK-safe)
+$zuixinbanben = [string]::Join('', [char]0x6700, [char]0x65B0, [char]0x7248, [char]0x672C)
+$banben = [string]::Join('', [char]0x7248, [char]0x672C)
+$verShort = ($ver -split '\(')[0]
+$readme = [IO.File]::ReadAllText((Join-Path $root "README.md"), [Text.Encoding]::UTF8)
+$rmVer = [regex]::Match($readme, [regex]::Escape($zuixinbanben) + '\s*\*\*(V[^*]+)\*\*').Groups[1].Value
+Check "README version follows site" ($rmVer -eq $verShort) ("readme=" + $rmVer + " ver=" + $verShort)
+$swHead = [regex]::Match($swContent, [regex]::Escape($banben) + ':\s*(V[0-9][0-9.]*)').Groups[1].Value
+Check "sw.js header follows version" ($swHead -eq $verShort) ("swhead=" + $swHead + " ver=" + $verShort)
+# ---- 5b) V2.1.14 fog guard: a bare html:not([data-theme-early...]) selector (no descendant)
+# whose block sets opacity would paint the WHOLE root translucent (the "fog" bug).
+$root2 = (Get-Location).Path
+$toolsDir2 = [string]::Join('', [char]0x672C, [char]0x5730, [char]0x5DE5, [char]0x5177)
+$d3dir2 = '00_3D' + [string]::Join('', [char]0x89E3, [char]0x5256)
+$scanFiles = Get-ChildItem -Path $root2 -Recurse -Include *.html,*.css,*.js -File | Where-Object {
+  $p = $_.FullName
+  ($p -notmatch '\\lib\\') -and ($_.Name -notmatch '\.min\.') -and
+  ($p -notmatch ('\\' + $toolsDir2 + '\\')) -and ($p -notmatch '\\\.git\\') -and
+  ($p -notmatch '\\\.zcode\\') -and ($p -notmatch ('\\' + $d3dir2 + '\\'))
+}
+$bareRe = 'html:not\(\[data-theme-early=(?:"dark"|dark|''dark'')\]\)\s*\{[^}]*opacity'
+$bareHits = 0
+foreach($bf in $scanFiles){
+  $bt = [IO.File]::ReadAllText($bf.FullName, [Text.Encoding]::UTF8)
+  $bareHits += [regex]::Matches($bt, $bareRe).Count
+}
+Check "Root fog guard (bare selector + opacity)" ($bareHits -eq 0) ("hits=" + $bareHits)
 
 # ---- 6) quiz/glossary data sync (data files vs display pages) ----
 # NOTE: no Chinese literals here - PS 5.1 reads BOM-less UTF-8 scripts as GBK and mangles them

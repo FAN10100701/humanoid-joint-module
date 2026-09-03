@@ -8,15 +8,15 @@
 <link rel="stylesheet" href="../_assets/site.css">
 <style>
   .my-tree{border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:18px;margin:16px 0;background:rgba(15,23,42,.45)}
-  body[data-theme="light"] .my-tree{background:rgba(255,255,255,.65)}
+  html:not([data-theme-early="dark"]) .my-tree{background:rgba(255,255,255,.65)}
   .my-path{font-size:12.5px;color:#94a3b8;margin-bottom:12px;line-height:2}
   .my-path .my-p{display:inline-block;background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.4);color:#9ecbff;border-radius:6px;padding:2px 10px;margin:2px 4px 2px 0;cursor:pointer}
-  body[data-theme="light"] .my-path .my-p{color:#1d4ed8}
+  html:not([data-theme-early="dark"]) .my-path .my-p{color:#1d4ed8}
   .my-q{font-size:15.5px;font-weight:700;margin:6px 0 12px}
   .my-opts{display:flex;flex-direction:column;gap:8px}
   .my-opts button{text-align:left;background:rgba(30,41,59,.7);border:1px solid #334155;color:#e2e8f0;font-size:14px;padding:10px 14px;border-radius:9px;cursor:pointer;font-family:inherit;transition:.15s}
   .my-opts button:hover{border-color:#2563eb;background:rgba(37,99,235,.12)}
-  body[data-theme="light"] .my-opts button{background:#fff;color:#1e293b}
+  html:not([data-theme-early="dark"]) .my-opts button{background:#fff;color:#1e293b}
   .my-leaf{border-left:3px solid #22c55e;padding:12px 16px;background:rgba(34,197,94,.07);border-radius:0 10px 10px 0;line-height:1.9}
   .my-leaf b{color:#34d399}
   .my-leaf a{color:#60a5fa}

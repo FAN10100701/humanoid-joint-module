@@ -123,9 +123,11 @@
     var p = getProgress();
     var blob = new Blob([JSON.stringify(p, null, 2)], { type:"application/json" });
     var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    var url = URL.createObjectURL(blob);
+    a.href = url;
     a.download = "人形机器人学习进度-" + new Date().toISOString().slice(0,10) + ".json";
     document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);   /* V2.1.14:用后释放(pagehide 自动导出频繁触发时不再累积) */
   };
   /* 退出自动保存: 本页进度有变化且开关开启时,pagehide 自动导出一次 */
   var AUTO_KEY = "site-autosave-v1";
@@ -243,8 +245,14 @@
     btn.onclick = function(){ window.scrollTo({ top:0, behavior:'smooth' }); };
     document.body.appendChild(btn);
     window.addEventListener('scroll', function(){
-      btn.style.display = window.scrollY > 600 ? 'flex' : 'none';
-    });
+      /* V2.1.14:rAF 合并 + passive——此前每个滚动事件都同步写 style */
+      if(initBackTop._t) return;
+      initBackTop._t = true;
+      requestAnimationFrame(function(){
+        initBackTop._t = false;
+        btn.style.display = window.scrollY > 600 ? 'flex' : 'none';
+      });
+    }, { passive: true });
   }
 
   /* ---------- 全站 PWA:注册 Service Worker + manifest ---------- */
@@ -420,8 +428,8 @@
     S.NAV.forEach(function(it){
       html += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
     });
-    html += '<a href="' + root + '/index.html#sec9">大模型</a>'
-      + '<a href="' + root + '/08_学习工具/12_闯关学习.html">闯关学习</a>'
+    /* V2.1.14:去掉 index.html#sec9「大模型」——S.NAV 已含大模型条目,此前下拉里重复出现两次 */
+    html += '<a href="' + root + '/08_学习工具/12_闯关学习.html">闯关学习</a>'
       + '<a href="' + root + '/08_学习工具/14_个人作品台.html">个人作品台</a>'
       + '</div></div></div>'
       /* V2.1.11:本页阅读进度环(窄屏隐藏) */
@@ -440,7 +448,7 @@
       + '</div>';
     var st = document.createElement('style');
     /* V2.1.8:.nav-ver 样式迁至 site.css(首页静态顶栏共用),此处仅保留下拉与版本外样式 */
-    st.textContent = '.nav-dd{position:relative}.nav-dd-btn{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}.nav-dd-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}.nav-dd-panel{display:none;position:fixed;top:0;left:0;min-width:200px;max-height:70vh;overflow:auto;background:rgba(12,17,26,.94);border:1px solid rgba(140,190,255,.32);border-radius:16px;padding:10px;flex-direction:column;gap:3px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:300;backdrop-filter:blur(20px) saturate(150%);transform-origin:top left;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd.open .nav-dd-panel{left:8px !important;right:8px !important;top:56px !important;min-width:0}@keyframes ddPop{0%{opacity:0;transform:translateY(-10px) scale(.9)}55%{opacity:1;transform:translateY(3px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}.nav-dd-btn:active{animation:ddJelly .5s ease}@keyframes ddJelly{0%{transform:scale(1,1)}28%{transform:scale(.9,1.1)}55%{transform:scale(1.08,.92)}75%{transform:scale(.97,1.03)}100%{transform:scale(1,1)}}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none}.nav-dd-panel a:hover{background:rgba(88,166,255,.15);color:#fff}body[data-theme=light] .nav-dd-panel{background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}body[data-theme=light] .nav-dd-panel a{color:#475569}body[data-theme=light] .nav-dd-panel a:hover{background:rgba(37,99,235,.08);color:#0f172a}body[data-theme=light] .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}';
+    st.textContent = '.nav-dd{position:relative}.nav-dd-btn{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;font-size:13px;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}.nav-dd-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}.nav-dd-panel{display:none;position:fixed;top:0;left:0;min-width:200px;max-height:70vh;overflow:auto;background:rgba(12,17,26,.94);border:1px solid rgba(140,190,255,.32);border-radius:16px;padding:10px;flex-direction:column;gap:3px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:300;backdrop-filter:blur(20px) saturate(150%);transform-origin:top left;animation:ddPop .42s cubic-bezier(.34,1.56,.64,1) both}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd.open .nav-dd-panel{left:8px !important;right:8px !important;top:56px !important;min-width:0}@keyframes ddPop{0%{opacity:0;transform:translateY(-10px) scale(.9)}55%{opacity:1;transform:translateY(3px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}.nav-dd-btn:active{animation:ddJelly .5s ease}@keyframes ddJelly{0%{transform:scale(1,1)}28%{transform:scale(.9,1.1)}55%{transform:scale(1.08,.92)}75%{transform:scale(.97,1.03)}100%{transform:scale(1,1)}}.nav-dd.open .nav-dd-panel{display:flex}.nav-dd-panel a{color:#aab8c8;font-size:13px;padding:8px 13px;border-radius:9px;text-decoration:none}.nav-dd-panel a:hover{background:rgba(88,166,255,.15);color:#fff}html:not([data-theme-early="dark"]) .nav-dd-panel{background:rgba(255,255,255,.97);border-color:rgba(60,90,140,.2);box-shadow:0 20px 50px rgba(40,70,130,.2)}html:not([data-theme-early="dark"]) .nav-dd-panel a{color:#475569}html:not([data-theme-early="dark"]) .nav-dd-panel a:hover{background:rgba(37,99,235,.08);color:#0f172a}html:not([data-theme-early="dark"]) .nav-dd-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}';
     document.head.appendChild(st);
     nav.innerHTML = html;
     document.body.insertBefore(nav, document.body.firstChild);
@@ -630,7 +638,7 @@
   }
   /* 拼音/别名扩展:输入 xiebo 也能搜到"谐波",输入 foc 直达 FOC */
   var PINYIN = {
-    "xiebo":"谐波","xingxing":"行星","b aixian":"摆线","jiansuqi":"减速器","dianji":"电机","mada":"马达",
+    "xiebo":"谐波","xingxing":"行星","baixian":"摆线","jiansuqi":"减速器","dianji":"电机","mada":"马达",
     "qudong":"驱动","kongzhi":"控制","tongxin":"通信","ruanjian":"软件","yingjian":"硬件",
     "lingqiaoshou":"灵巧手","lingqiao":"灵巧","chuanganqi":"传感器","dianchi":"电池","rengongzhineng":"人工智能",
     "zhineng":"智能","shijie":"世界","moxing":"模型","bufa":"步态","pingheng":"平衡","daolibai":"倒立摆",
@@ -744,7 +752,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.13(2026-09-02)";
+  S.VERSION = "V2.1.14(2026-09-03)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -895,8 +903,8 @@
           io.unobserve(el);
           setTimeout(function(){
             el.classList.remove("rv-hold");
-            el.style.animation = "fadeUp .5s cubic-bezier(.2,.8,.3,1.05) both";
-          }, idx * 70);
+            el.style.animation = "fadeUp .4s cubic-bezier(.2,.8,.3,1.05) both";
+          }, idx * 40);
         })(coming[j], j);
       }
     }, { rootMargin: "0px 0px -8% 0px" });
@@ -997,9 +1005,23 @@
     });
   }
 
+  /* V2.1.14:初始化链逐项 try-catch 隔离——此前串行裸调用,任一上游抛错
+     (第三方脚本污染/未来改动引入)会连带丢失 SW 注册/自动保存/自检挂件等全部下游 */
+  var INIT_CHAIN = [
+    applyTheme, injectChrome, buildToc, initBackTop, S.initQuiz,
+    injectLearningGoals, injectPageStamp, initPrintBtn, initGlass, initAiFab,
+    initOnboarding, initSW, initAutoSave, initTermTip, initComments,
+    initKaTeX, injectJsonLd, initScrollProgress, initReveal, initMagnet
+  ];
+  function bootSite(){
+    for(var i = 0; i < INIT_CHAIN.length; i++){
+      try{ INIT_CHAIN[i](); }
+      catch(err){ try{ console.warn("[site] 初始化项失败(已隔离,不影响其余功能):", (INIT_CHAIN[i].name || "anonymous"), err); }catch(e2){} }
+    }
+  }
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", function(){ applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); initScrollProgress(); initReveal(); initMagnet(); });
+    document.addEventListener("DOMContentLoaded", bootSite);
   }else{
-    applyTheme(); injectChrome(); buildToc(); initBackTop(); S.initQuiz(); injectLearningGoals(); injectPageStamp(); initPrintBtn(); initGlass(); initAiFab(); initOnboarding(); initSW(); initAutoSave(); initTermTip(); initComments(); initKaTeX(); injectJsonLd(); initScrollProgress(); initReveal(); initMagnet();
+    bootSite();
   }
 })();
