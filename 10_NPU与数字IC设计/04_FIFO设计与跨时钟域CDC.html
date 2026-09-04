@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 10-04 NPU与数字IC设计 · FIFO设计与跨时钟域CDC
+  板块·第一阶段第3页:数字前端的「试金石」专题
+  结构严格遵循 _assets/页面模板.html
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · FIFO设计与跨时钟域CDC</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名加 my- 前缀,避免与全局冲突) ===== */
+
+  /* 流程图容器(固定深色底,保证 SVG 配色在明暗主题下一致) */
+  .my-fig{background:rgba(13,17,23,.78);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 12px;margin:16px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:520px;max-width:100%;height:auto;margin:0 auto}
+  .my-fig-cap{font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6}
+
+  /* 资源卡片(与 02-05 参考资料页同构) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-desc a{color:#58a6ff}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+  /* 徽章配色 */
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+
+  /* 标签 */
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-zhihu{background:#e0e7ff;color:#3730a3}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-1{background:#dcfce7;color:#166534}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+  .my-tag-paper{background:#bae6fd;color:#075985}
+  .my-tag-cdc{background:#f5d0fe;color:#86198f}
+  .my-tag-plain{background:#e2e8f0;color:#475569}
+
+  /* 浅色主题适配(与 site.css 玻璃风格一致) */
+  html:not([data-theme-early="dark"]) .my-res-card {background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover {border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title {color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc {color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "10-04",
+    root: "..",
+    breadcrumb: [
+      { t: "NPU与数字IC设计", u: "../index.html#sec10" },
+      { t: "FIFO设计与跨时钟域CDC" }
+    ],
+    prev: { t: "Verilog语法与状态机", u: "03_Verilog语法与状态机设计.html" },
+    next: { t: "APB总线协议与接口设计", u: "05_APB总线协议与接口设计.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🪣 FIFO 设计与跨时钟域 CDC —— 数字前端的「试金石」</h1>
+    <div class="sub">同步 FIFO → 深度计算 → 亚稳态 → 两级同步器 → 格雷码 → 异步 FIFO → 握手与 CDC 检查清单。这是数字前端面试出现率最高的一套组合拳,也是 NPU 里数据通路设计绕不开的基本功。</div>
+    <div class="tags">
+      <span class="tag">同步FIFO</span>
+      <span class="tag">异步FIFO</span>
+      <span class="tag">格雷码</span>
+      <span class="tag">亚稳态</span>
+      <span class="tag">CDC</span>
+      <span class="tag">面试高频</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能徒手写出同步 FIFO(计数器法 / 指针最高位拓展法两种空满判断)的完整 Verilog<br>
+    2. 能用突发模型推导 FIFO 最小深度公式,并独立完成面试笔试中的深度计算题<br>
+    3. 能讲清亚稳态的物理成因、MTBF 公式含义,以及两级同步器「只能降概率、不能消除」的原因<br>
+    4. 能说明格雷码为什么适合跨时钟域指针,并写出完整的异步 FIFO(双口 RAM + 格雷码指针 + 同步器)<br>
+    5. 能按 CDC 检查清单逐条自查设计,并回答「亚稳态怎么消除 / 为什么用格雷码 / 深度怎么算」三大面试高频题<br>
+    <b>建议用时:</b>约 60 分钟(代码建议亲手抄一遍并仿真)
+  </div>
+
+  <h2><span class="h2-num">1</span> FIFO 是什么:数字芯片里的「蓄水池」</h2>
+  <h3>1.1 是什么 · 为什么:FIFO 的三大工程用途</h3>
+  <p><b>FIFO(First In First Out,先进先出队列)</b>是数字芯片里最常用的存储缓冲结构:数据从写口按顺序写入、从读口按同样顺序读出,读写两侧各有一套控制逻辑,中间是一片存储阵列。它像一个蓄水池 —— 上游往里灌水(写)、下游往外抽水(读),两边速率可以不同,池子负责「削峰填谷」。工程上 FIFO 有三大用途:</p>
+  <ul>
+    <li><b>速率匹配:</b>快模块与慢模块对接时做缓冲。例如 AXI DMA 以 256bit/拍往里灌,后级 MAC 一拍只能消化 64bit,中间必须有一个 FIFO 拉平速率差。</li>
+    <li><b>数据缓冲(突发吸收):</b>上游突发(burst)连发一大段数据,下游只能匀速处理,FIFO 把「瞬时洪峰」存起来慢慢放。</li>
+    <li><b>跨时钟域数据传递:</b>写口在 clk_a 域、读口在 clk_b 域,FIFO 天然把「数据怎么安全跨域」这个问题封装在自己内部(用格雷码指针,见第 6~7 节)。这也是它和普通寄存器组最大的区别。</li>
+  </ul>
+  <p><b>NPU 里的真实例子:</b>卷积计算时,feature map 从 DDR/NoC 读进来的速度和 PE 阵列(MaxPool/MAC 阵列)消费的速度不一致;滑窗每次要凑齐 K×K 窗口数据才开始算,窗口间的行重叠(比如 3×3 卷积 stride 1 要缓存上两行)也常用 <b>line buffer(本质是按行组织的 FIFO/移位链)</b> 实现。NPU 的数据通路里,FIFO 出现的密度非常高 —— 所以数字前端面试几乎必考。</p>
+  <div class="box box-tip"><b>💡 一句话记忆:</b>FIFO = 「解耦生产者与消费者的速度差 + 顺带解决数据跨域」。读快写慢会读空(empty),写快读慢会写满(full)—— FIFO 设计的全部难点就是:<b>怎么可靠地判断空和满</b>。</div>
+
+  <h3>1.2 两个先修概念:满不写、空不读,以及指针</h3>
+  <p>FIFO 的基本规矩只有两条:<b>空(empty)时不读</b>(读会拿到无效/重复数据,<b>underflow</b>),<b>满(full)时不写</b>(写会覆盖还没读走的数据,<b>overflow</b>)。判断空满靠两个指针:</p>
+  <ul>
+    <li><b>写指针 wptr:</b>指向下一个要写入的位置,每写一个加 1;</li>
+    <li><b>读指针 rptr:</b>指向下一个要读出的位置,每读一个加 1。</li>
+  </ul>
+  <p>指针其实是「一直加 1 的计数器」,回绕(wrap-around)后自然循环访问存储阵列 —— 所以指针位宽通常比地址多 1 位,用来区分「空」和「满」两种「指针相等」的状态(见 2.3 节)。同步 FIFO 的读写用同一个时钟;异步 FIFO 读写各用一个时钟,那是本页的重头戏。</p>
+  <!-- /SEC1 -->
+
+  <h2><span class="h2-num">2</span> 同步 FIFO 设计:两种空满判断法 + 完整代码逐行讲</h2>
+  <h3>2.1 结构图:写口、读口、存储阵列与空满逻辑</h3>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 330" role="img" aria-label="同步FIFO结构框图:左侧写口 wr_en、wr_data 与满标志 full,右侧读口 rd_en、rd_data 与空标志 empty,中间是存储阵列 mem,下方空满逻辑由读写指针与计数器比较产生">
+      <defs>
+        <marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b98a9"/></marker>
+        <marker id="faBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#58a6ff"/></marker>
+        <marker id="faGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/></marker>
+      </defs>
+
+      <!-- 写口 -->
+      <rect x="18" y="40" width="120" height="120" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="78" y="63" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#58a6ff">写口(wr 域)</text>
+      <text x="78" y="88" text-anchor="middle" font-size="11.5" fill="#c9d1d9">wr_en / wr_data</text>
+      <text x="78" y="108" text-anchor="middle" font-size="11.5" fill="#9aa4b2">满不写</text>
+      <text x="78" y="132" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">full ←</text>
+
+      <!-- 读口 -->
+      <rect x="502" y="40" width="120" height="120" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="562" y="63" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#22c55e">读口(rd 域)</text>
+      <text x="562" y="88" text-anchor="middle" font-size="11.5" fill="#c9d1d9">rd_en / rd_data</text>
+      <text x="562" y="108" text-anchor="middle" font-size="11.5" fill="#9aa4b2">空不读</text>
+      <text x="562" y="132" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">→ empty</text>
+
+      <!-- 存储阵列 -->
+      <rect x="230" y="30" width="180" height="150" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="320" y="55" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#f59e0b">存储阵列 mem</text>
+      <rect x="252" y="68" width="136" height="16" rx="3" fill="rgba(245,158,11,.16)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="320" y="80" text-anchor="middle" font-size="10.5" fill="#c9d1d9">mem[0]</text>
+      <rect x="252" y="90" width="136" height="16" rx="3" fill="rgba(245,158,11,.16)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="320" y="102" text-anchor="middle" font-size="10.5" fill="#c9d1d9">mem[1]</text>
+      <text x="320" y="124" text-anchor="middle" font-size="11" fill="#9aa4b2">……</text>
+      <rect x="252" y="134" width="136" height="16" rx="3" fill="rgba(245,158,11,.16)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="320" y="146" text-anchor="middle" font-size="10.5" fill="#c9d1d9">mem[DEPTH-1]</text>
+
+      <!-- 写路径箭头 -->
+      <line x1="138" y1="80" x2="226" y2="80" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#faBlue)"/>
+      <text x="182" y="72" text-anchor="middle" font-size="10.5" fill="#58a6ff">wptr 选中地址</text>
+      <text x="182" y="94" text-anchor="middle" font-size="10.5" fill="#58a6ff">写入数据</text>
+
+      <!-- 读路径箭头 -->
+      <line x1="414" y1="80" x2="498" y2="80" stroke="#22c55e" stroke-width="1.8" marker-end="url(#faGreen)"/>
+      <text x="456" y="72" text-anchor="middle" font-size="10.5" fill="#22c55e">rptr 选中地址</text>
+      <text x="456" y="94" text-anchor="middle" font-size="10.5" fill="#22c55e">读出数据</text>
+
+      <!-- 空满逻辑 -->
+      <rect x="120" y="228" width="400" height="76" rx="10" fill="rgba(239,68,68,.08)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="320" y="252" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#ef4444">空满逻辑(同一 clk 域,纯组合比较)</text>
+      <text x="320" y="274" text-anchor="middle" font-size="11.5" fill="#c9d1d9">法一:count == 0 → empty ; count == DEPTH → full</text>
+      <text x="320" y="293" text-anchor="middle" font-size="11.5" fill="#c9d1d9">法二:wptr == rptr → empty ;wptr 与 rptr 最高位相异、其余位相同 → full</text>
+
+      <!-- 指针到空满逻辑 -->
+      <path d="M 78 160 L 78 266 L 116 266" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#faBlue)"/>
+      <path d="M 562 160 L 562 266 L 524 266" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#faGreen)"/>
+      <line x1="320" y1="180" x2="320" y2="224" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#fa)"/>
+
+      <!-- 标志回授 -->
+      <path d="M 150 228 L 150 196 L 120 196 L 120 140" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#fa)"/>
+      <path d="M 490 228 L 490 196 L 520 196 L 520 140" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#fa)"/>
+      <text x="106" y="188" text-anchor="middle" font-size="10.5" fill="#f59e0b">full</text>
+      <text x="536" y="188" text-anchor="middle" font-size="10.5" fill="#f59e0b">empty</text>
+    </svg>
+    <div class="my-fig-cap">图 1 · 同步 FIFO 结构:读写共用一个 clk;写口经写指针写 mem,读口经读指针读 mem;空满逻辑比较两个指针(计数器法或最高位拓展法)产生 full/empty,并回授阻止「满写 / 空读」。</div>
+  </div>
+
+  <h3>2.2 法一:计数器法 —— 完整 Verilog 代码</h3>
+  <p>用一个额外的 <b>count 计数器</b>实时记录 FIFO 里的数据个数:写有效且不满则 +1,读有效且不空则 −1。空满判断最直观:</p>
+  <pre><code>module sync_fifo #(
+    parameter DEPTH = 8,              // FIFO 深度(建议取 2 的幂)
+    parameter DW    = 8               // 数据位宽
+)(
+    input  wire            clk,       // 读写共用时钟(同步 FIFO 的"同")
+    input  wire            rst_n,     // 低有效复位
+    input  wire            wr_en,     // 写使能
+    input  wire [DW-1:0]   wr_data,   // 写数据
+    input  wire            rd_en,     // 读使能
+    output reg  [DW-1:0]   rd_data,   // 读数据(时序逻辑输出)
+    output wire            full,      // 满标志
+    output wire            empty      // 空标志
+);
+    localparam AW = $clog2(DEPTH);    // 地址位宽:DEPTH=8 时 AW=3
+
+    reg [DW-1:0] mem  [0:DEPTH-1];    // ① 存储阵列:DEPTH 个 DW 位寄存器
+    reg [AW:0]   wptr;                // ② 写指针(比地址多 1 位,见 2.3)
+    reg [AW:0]   rptr;                // ③ 读指针
+    reg [AW:0]   count;               // ④ 当前数据个数(0~DEPTH)
+
+    assign full  = (count == DEPTH);  // ⑤ 满:个数达到深度
+    assign empty = (count == 0);      // ⑥ 空:个数为 0
+
+    /* ⑦ 写指针更新:满不写 */
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)              wptr &lt;= {AW+1{1'b0}};
+        else if (wr_en &amp;&amp; !full) wptr &lt;= wptr + 1'b1;   // 回绕循环
+    end
+
+    /* ⑧ 写数据:用写指针低 AW 位当 RAM 地址 */
+    always @(posedge clk) begin
+        if (wr_en &amp;&amp; !full)
+            mem[wptr[AW-1:0]] &lt;= wr_data;
+    end
+
+    /* ⑨ 读指针更新:空不读 */
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)              rptr &lt;= {AW+1{1'b0}};
+        else if (rd_en &amp;&amp; !empty) rptr &lt;= rptr + 1'b1;
+    end
+
+    /* ⑩ 读数据:寄存器输出,延迟一拍(FW=1 的同步读) */
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)               rd_data &lt;= {DW{1'b0}};
+        else if (rd_en &amp;&amp; !empty) rd_data &lt;= mem[rptr[AW-1:0]];
+    end
+
+    /* ⑪ 计数器:同拍又读又写时个数不变 */
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            count &lt;= {AW+1{1'b0}};
+        else begin
+            case ({wr_en &amp;&amp; !full, rd_en &amp;&amp; !empty})
+                2'b10:   count &lt;= count + 1'b1;   // 只写 +1
+                2'b01:   count &lt;= count - 1'b1;   // 只读 -1
+                2'b11:   count &lt;= count;          // 读写相抵
+                default: count &lt;= count;          // 都不动
+            endcase
+        end
+    end
+endmodule</code></pre>
+  <p><b>逐行关键点讲解:</b></p>
+  <ul>
+    <li><b>① 存储阵列:</b><code>reg [DW-1:0] mem [0:DEPTH-1]</code> 是 DEPTH 个 DW 位寄存器,FPGA 综合成分布式 RAM/BRAM,ASIC 综合成寄存器堆或双口 SRAM。</li>
+    <li><b>⑦⑨ 指针防护:</b>写操作必须带 <code>!full</code>、读操作必须带 <code>!empty</code> —— 这是 FIFO 的「满不写、空不读」铁律;指针本身只加不减,回绕后自然循环。</li>
+    <li><b>⑧⑩ 地址取低 AW 位:</b>指针多出的最高位只参与空满判断,不参与寻址(参见图 1 的空满逻辑)。</li>
+    <li><b>⑪ case 2'b11:</b>同拍同时读写时计数不变 —— 忘了这一分支是笔试常见坑;count 参与了 full/empty 的组合判断,所以它是「影响组合输出的寄存器」,读写两条件都做了门控,不会出现 count 已满但还在写的时序漏洞。</li>
+    <li><b>时序参数:</b>full/empty 为组合输出(当拍有效);rd_data 打了一拍(读使能下一拍数据有效),写 testbench 时注意这个延迟。</li>
+  </ul>
+
+  <h3>2.3 法二:指针最高位拓展法(不用计数器)</h3>
+  <p>计数器法的代价是 count 这个 <b>AW+1 位加/减法器</b>,位宽大时面积和时序都不划算。更优雅的经典做法:<b>指针多留 1 位最高位,每次回绕时把它取反</b>。于是:</p>
+  <ul>
+    <li><b>空:</b>wptr 与 rptr <b>完全相等</b>(含最高位)—— 读指针追上了写指针;</li>
+    <li><b>满:</b>wptr 与 rptr <b>最高位相异、其余位全同</b> —— 写指针多绕了一整圈追上读指针。</li>
+  </ul>
+  <p>为什么成立?DEPTH=8 时指针 4 位(0000~1111+回绕)。未回绕时两个指针相同 → 空;写指针恰好比读指针多转一圈时,只有最高位相反、低 3 位相同 → 满。两种「低 3 位相等」的情形被最高位干净地区分开 —— 这一位就是「圈数奇偶性」。</p>
+  <pre><code>// 法二核心:只改判断,其余与法一相同(删去 count)
+wire rem = (wptr == rptr);                                        // 空:完全相等
+wire ful = (wptr[AW] != rptr[AW]) &amp;&amp; (wptr[AW-1:0] == rptr[AW-1:0]); // 满:最高位相反 + 其余相同</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>法一:计数器法</th><th>法二:最高位拓展法</th></tr>
+    <tr><td>空判断</td><td>count == 0</td><td>wptr == rptr</td></tr>
+    <tr><td>满判断</td><td>count == DEPTH</td><td>最高位相异 + 其余位相同</td></tr>
+    <tr><td>额外资源</td><td>AW+1 位加减计数器</td><td>无(指针本就多 1 位)</td></tr>
+    <tr><td>读写同拍</td><td>需专门处理 2'b11 分支</td><td>天然正确(两指针独立更新)</td></tr>
+    <tr><td>可读性 / 面试</td><td>直观,适合先讲</td><td>更常见于工业代码,是异步 FIFO 格雷码判断的基础,必须掌握</td></tr>
+  </table></div>
+
+  <h3>2.4 面试怎么问 + 易错点</h3>
+  <p><b>工程与面试怎么问:</b></p>
+  <ul>
+    <li>「手写一个同步 FIFO,要求空满判断」—— 十分钟白板题,先写端口,再写四段 always(写指针 / 写数据 / 读指针 / 读数据),最后空满判断。按本页 2.2 的结构练到默写。</li>
+    <li>「两种空满判断法的区别?为什么指针要比地址多 1 位?」—— 答 2.3 的圈数奇偶性。</li>
+    <li>「FIFO 输出的 full 是组合逻辑还是时序逻辑?对上游时序收敛有什么影响?」—— full 由比较器组合产生,直接门控上游写使能,深 FIFO 大比较器可能成为关键路径;工业上常把 full 打一拍输出,代价是保守一拍。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 写数据忘了门控 <code>!full</code>(或读忘了 <code>!empty</code>),testbench 里故意写满 / 读空必现 bug;<br>
+    2. 计数器法漏掉「同拍读写」的 2'b11 分支,深度判断出错;<br>
+    3. 指针位宽写成 AW 而不是 AW+1,空和满两种状态混在一起无法区分;<br>
+    4. mem 地址误用整个 wptr(含最高位),DEPTH=8 的 FIFO 却访问 mem[8],仿真出 X;<br>
+    5. 把法二的满判断写成 <code>wptr[AW]==~rptr[AW]</code> 之外还要求比较所有位取反 —— 只有最高位相反,<b>其余位必须相同</b>。
+  </div>
+  <!-- /SEC2 -->
+
+  <h2><span class="h2-num">3</span> FIFO 深度计算:突发读写模型与最小深度公式(笔试必考)</h2>
+  <h3>3.1 怎么算:突发读写模型与最小深度公式推导</h3>
+  <p>FIFO 深度 = 「突发期间最多会积压多少数据」。设:<b>写侧每个写周期写 N 个数据,读侧每个读周期读 M 个数据,一次突发共写入 B 个数据</b>,写时钟频率 f<sub>w</sub>、读时钟频率 f<sub>r</sub>。推导只需三步:</p>
+  <ol>
+    <li><b>突发持续多长时间?</b>写入 B 个需要 B/N 个写周期,即 T = (B/N)·(1/f<sub>w</sub>);</li>
+    <li><b>这段时间读走了多少?</b>读走的个数 = T × f<sub>r</sub> × (M/1) = (B/N)·M·(f<sub>r</sub>/f<sub>w</sub>);</li>
+    <li><b>积压 = 写入 − 读走</b>,这就是 FIFO 必须容纳的最大水量:</li>
+  </ol>
+  <span class="formula">D_{min} = B - \frac{B}{N} \cdot M \cdot \frac{f_r}{f_w}\quad(\text{向上取整})</span>
+  <p>两个极端自检:读比写慢(f<sub>r</sub>·M/f<sub>w</sub>·N 越小)→ 深度趋近 B,整包都得存;读比写快 → 公式出现负数,说明瓶颈不在 FIFO,理论深度为 0。另外注意<b>平均速率相等 ≠ 深度为 0</b>:突发是「先集中灌、再慢慢抽」,峰值积压必须由深度兜住。</p>
+
+  <h3>3.2 典型计算题详解(面试笔试原题套路)</h3>
+  <p><b>例题 1(基础直套公式):</b>写时钟 200MHz 连续写入,读时钟 100MHz,读写侧每拍各处理 1 个数据,突发长度 1000。求最小 FIFO 深度。</p>
+  <pre><code>写入 B = 1000,N = M = 1,f_w = 200MHz,f_r = 100MHz
+读走   = 1000 × (100/200) = 500
+D_min  = 1000 − 500 = 500   → 工程上向上取 512(2 的幂,给格雷码方案留余地)</code></pre>
+  <p><b>例题 2(经典 24 深):</b>写时钟 100MHz,读时钟 80MHz,一次突发写入 120 个数据,两侧每拍各 1 个。</p>
+  <pre><code>读走   = 120 × (80/100) = 96
+D_min  = 120 − 96 = 24</code></pre>
+  <p><b>例题 3(带 idle 的真实突发):</b>写时钟 100MHz 连续写 1000 个(耗时 10μs);读时钟 80MHz,但读使能每 4 拍只有效 3 拍(平均读速率 80M×3/4 = 60M/s)。</p>
+  <pre><code>突发期间读走 = 10μs × 60M = 600
+D_min  = 1000 − 600 = 400  → 取 512</code></pre>
+  <div class="box box-tip"><b>💡 解题三步固定动作:</b>① 写侧「突发共写多少、花多长时间」;② 读侧「换算成平均速率,这段时间读走多少」;③ 相减向上取整,<b>常取 2 的幂</b>。题目里的占空比、每拍处理 N/M 个,全都是换算进「平均速率」的障眼法。</div>
+
+  <h3>3.3 面试怎么问 + 易错点</h3>
+  <p><b>工程与面试怎么问:</b>「给你两个时钟频率和突发长度,算 FIFO 最小深度」—— 就是 3.2 的套路;追问「为什么实际深度要大于计算值」—— 答:公式假设读写严格连续,没有算控制握手开销、同步器延迟(异步 FIFO 见第 8 节)和工程裕量,实际按 2 的幂向上取并留 20% 裕量。</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 单位没统一:把「每 2 拍读 1 个」直接当 2 倍速率 —— 要先换算成平均速率;<br>
+    2. 忘记突发期间读侧也在工作,直接答「深度 = B」;<br>
+    3. 读快于写时硬套公式得出负深度 —— 应当分析瓶颈,答案是不会溢出;<br>
+    4. 只算数据积压,忘算异步 FIFO 格雷码同步带来的 2~3 拍额外保守延迟(见 8.1)。
+  </div>
+  <!-- /SEC3 -->
+
+  <h2><span class="h2-num">4</span> 亚稳态:跨时钟域一切噩梦的根源</h2>
+  <h3>4.1 是什么 · 为什么:触发器为什么会亚稳</h3>
+  <p><b>亚稳态(Metastability)</b>指触发器在时钟有效沿采样到「正在变化」的数据时,输出既不是稳定的 0 也不是稳定的 1,而是停留在中间电平、或在返回合法电平前不规则振荡,并且<b>经过多长时间、最终停在 0 还是 1 都不确定</b>。物理成因:触发器内部由背靠背反相器构成双稳态存储环,像「立在碗底的球」;只有在时钟沿附近的 setup/hold 窗口内数据保持稳定,球才能落进 0 或 1 两个稳态之一。异步信号(来自另一个时钟域)随时可能变化,一旦翻转事件落进这个窗口,球就被踢到碗壁上 —— 滚多久、滚向哪边,纯看物理运气。</p>
+  <p>三个必须记住的性质:</p>
+  <ul>
+    <li><b>无法根除:</b>只要存在异步采样,亚稳态就一定可能发生,只能<b>降低发生概率 / 降低危害</b>;</li>
+    <li><b>概率可量化:</b>发生频率与数据翻转率、采样时钟频率、采样窗口宽度成正比;</li>
+    <li><b>危害会传播:</b>亚稳输出若直接进组合逻辑,可能被不同门解读成不同值,造成数据撕裂、状态机跑飞。</li>
+  </ul>
+
+  <h3>4.2 MTBF:平均无故障时间公式与含义</h3>
+  <p>亚稳态的危害用 <b>MTBF(Mean Time Between Failures,平均无故障时间)</b> 量化:</p>
+  <span class="formula">MTBF = \dfrac{e^{\,t_{MET}/\tau}}{W \cdot f_{clk} \cdot f_{data}}</span>
+  <ul>
+    <li><b>W:</b>触发器的亚稳态捕获窗口(约等于 setup + hold,工艺常数,皮秒级);</li>
+    <li><b>f<sub>clk</sub>:</b>采样时钟频率 —— 采样越频繁,撞上窗口的机会越多;</li>
+    <li><b>f<sub>data</sub>:</b>异步数据的翻转频率 —— 数据变得越勤,撞窗概率越大;</li>
+    <li><b>t<sub>MET</sub>:</b>留给亚稳态的<b>恢复(分辨)时间</b>;τ 是器件的时间常数(工艺常数)。</li>
+  </ul>
+  <p><b>公式的灵魂在指数项:</b>恢复时间每多一个时钟周期,MTBF 乘上 e<sup>T<sub>clk</sub>/τ</sup>,呈<b>指数级</b>增长。假设 500MHz 系统、τ ≈ 50ps,不打任何恢复时间直接用亚稳输出,MTBF 可能只有纳秒级(必挂);让它多等一拍再使用,MTBF 可达秒级;等两拍,轻松达到年/百年量级 —— 这就是「打两拍」的数学依据。</p>
+
+  <h3>4.3 危害案例 + 面试怎么问 + 易错点</h3>
+  <p><b>三个典型翻车现场:</b></p>
+  <ul>
+    <li><b>FIFO 空满误判:</b>异步 FIFO 的指针没编码直接跨域,某一位亚稳导致 full 被误判为「未满」,继续写入 → 覆盖未读数据,几百次的仿真可能才复现一次(恰恰是最难调的 bug);</li>
+    <li><b>多比特总线撕裂:</b>8 位总线各位经各自同步器,亚稳恢复时间不同,同一拍采到「一半新值一半旧值」;</li>
+    <li><b>状态机非法跳转:</b>亚稳的状态寄存器让 next-state 逻辑走歪,状态机进入死循环或非法态。</li>
+  </ul>
+  <p><b>面试怎么问:</b>「什么是亚稳态?」「亚稳态能被消除吗?」(不能,只能降概率)「MTBF 公式里各项是什么?为什么打两拍能极大提升 MTBF?」「亚稳态的输出如果进了组合逻辑会怎样?」</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 以为「加了同步器就不会亚稳」—— 同步器第一级照样亚稳,只是给了它一整拍的恢复时间,并把亚稳挡在使用点之前;<br>
+    2. 以为亚稳输出一定是 0~1 之间的固定中间电平 —— 也可能长时间振荡后随机落在任一合法值;<br>
+    3. 用降低时钟频率来「解决」亚稳态 —— 只是提高 MTBF,不改变问题的异步本质。
+  </div>
+  <!-- /SEC4 -->
+
+  <h2><span class="h2-num">5</span> 两级同步器:打两拍为什么是行业默认</h2>
+  <h3>5.1 怎么做:两级同步器(打两拍)与结构图</h3>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 300" role="img" aria-label="亚稳态两级同步器示意:异步输入信号分别进入第一级与第二级触发器,第一级输出出现亚稳态中间电平,经过一个时钟周期恢复后第二级输出干净的电平,虚线框高亮两级同步器">
+      <defs>
+        <marker id="fb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b98a9"/></marker>
+        <marker id="fbRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/></marker>
+        <marker id="fbGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/></marker>
+      </defs>
+
+      <!-- 异步输入波形 -->
+      <text x="30" y="40" font-size="12" fill="#c9d1d9">异步输入</text>
+      <text x="30" y="56" font-size="10.5" fill="#9aa4b2">(另一时钟域)</text>
+      <polyline points="30,90 90,90 90,66 168,66 168,90 240,90" fill="none" stroke="#58a6ff" stroke-width="2"/>
+
+      <!-- 第一级 DFF -->
+      <rect x="252" y="52" width="66" height="52" rx="6" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.8"/>
+      <text x="285" y="74" text-anchor="middle" font-size="12" font-weight="bold" fill="#ef4444">FF1</text>
+      <text x="285" y="92" text-anchor="middle" font-size="10" fill="#9aa4b2">可能亚稳!</text>
+      <line x1="240" y1="78" x2="248" y2="78" stroke="#58a6ff" stroke-width="2" marker-end="url(#fb)"/>
+
+      <!-- 第二级 DFF -->
+      <rect x="392" y="52" width="66" height="52" rx="6" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.8"/>
+      <text x="425" y="74" text-anchor="middle" font-size="12" font-weight="bold" fill="#22c55e">FF2</text>
+      <text x="425" y="92" text-anchor="middle" font-size="10" fill="#9aa4b2">已恢复</text>
+      <line x1="318" y1="78" x2="388" y2="78" stroke="#8b98a9" stroke-width="2" marker-end="url(#fb)"/>
+      <text x="353" y="70" text-anchor="middle" font-size="10.5" fill="#8b98a9">q1</text>
+
+      <!-- 使用点 -->
+      <line x1="458" y1="78" x2="520" y2="78" stroke="#22c55e" stroke-width="2" marker-end="url(#fbGreen)"/>
+      <text x="566" y="82" text-anchor="middle" font-size="11.5" fill="#22c55e">后级使用</text>
+
+      <!-- 高亮框:两级同步器 -->
+      <rect x="240" y="38" width="232" height="80" rx="10" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="7 5"/>
+      <text x="356" y="30" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b">两级同步器(打两拍)</text>
+
+      <!-- 目的时钟 -->
+      <text x="356" y="136" text-anchor="middle" font-size="11" fill="#9aa4b2">两支 DFF 共用目的时钟 clk_dst</text>
+
+      <!-- 波形区:q1 亚稳 -->
+      <text x="30" y="182" font-size="11.5" fill="#ef4444">q1(无恢复时间)</text>
+      <polyline points="30,236 96,236" fill="none" stroke="#8b98a9" stroke-width="1.6"/>
+      <path d="M 96 236 C 112 236 112 208 128 214 S 148 238 164 236 L 240 236" fill="none" stroke="#ef4444" stroke-width="2"/>
+      <text x="168" y="204" font-size="10" fill="#ef4444">中间电平/振荡,恢复时间不定</text>
+
+      <!-- 波形区:q2 干净 -->
+      <text x="30" y="264" font-size="11.5" fill="#22c55e">q2(等一拍后)</text>
+      <polyline points="30,290 128,290" fill="none" stroke="#8b98a9" stroke-width="1.6"/>
+      <polyline points="128,290 128,266 240,266" fill="none" stroke="#22c55e" stroke-width="2"/>
+      <text x="246" y="282" font-size="10" fill="#22c55e">已分辨干净的合法电平</text>
+
+      <!-- 同步时钟沿提示 -->
+      <line x1="96" y1="46" x2="96" y2="286" stroke="#8b98a9" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="128" y1="46" x2="128" y2="286" stroke="#8b98a9" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="164" y1="46" x2="164" y2="286" stroke="#8b98a9" stroke-width="1" stroke-dasharray="3 4"/>
+      <text x="96" y="298" text-anchor="middle" font-size="9.5" fill="#8b98a9">沿1</text>
+      <text x="128" y="298" text-anchor="middle" font-size="9.5" fill="#8b98a9">沿2</text>
+      <text x="164" y="298" text-anchor="middle" font-size="9.5" fill="#8b98a9">沿3</text>
+    </svg>
+    <div class="my-fig-cap">图 2 · 两级同步器:异步信号先打 FF1 —— 它可能亚稳(红色波形段);但到 FF2 采样时 q1 已有一整拍恢复时间,MTBF 指数级提升;FF2 输出的 q2 是干净电平,才允许进后级逻辑。q1 永远不要直接使用。</div>
+  </div>
+  <pre><code>// 两级同步器:每个跨域单 bit 信号一套
+module sync2 (
+    input  wire clk_dst,     // 目的时钟域
+    input  wire rst_n,
+    input  wire d_async,     // 异步输入(来自别的时钟域/引脚)
+    output wire q_sync       // 同步后的信号
+);
+    reg q1, q2;
+    always @(posedge clk_dst or negedge rst_n) begin
+        if (!rst_n) {q2, q1} &lt;= 2'b00;
+        else        {q2, q1} &lt;= {q1, d_async};   // 打两拍
+    end
+    assign q_sync = q2;
+endmodule</code></pre>
+
+  <h3>5.2 为什么是两拍?什么时候三拍?</h3>
+  <ul>
+    <li><b>为什么两拍:</b>第一拍「牺牲」FF1 去承受亚稳,第二拍采样前 q1 获得了近一个完整周期的恢复时间,由 4.2 的 MTBF 公式,概率指数级下降,对多数中低速设计已够百年量级。同时两拍引入固定 2 拍延迟,代价可控。</li>
+    <li><b>什么时候三拍:</b>时钟频率极高(恢复时间短)、数据翻转率极高、或安全关键场景(汽车/医疗)会打三拍甚至更多 —— 每多一拍,MTBF 再乘一个 e 指数因子,代价是延迟再+1 拍。高频 SoC 常对 CDC 同步器做成参数化单元(sync2/sync3)统一审签。</li>
+    <li><b>同步器不是「过滤器」:</b>它假设输入是「缓慢变化的合法电平」。若输入是比目的时钟更快跳变的信号或组合逻辑毛刺,两拍也救不了。</li>
+  </ul>
+
+  <h3>5.3 铁律:同步器只能用于「单一、不经组合逻辑」的信号</h3>
+  <div class="box box-danger">
+    <b>🚫 两大禁忌:</b>
+    <b>1. 多 bit 总线禁止逐位打两拍:</b>各 bit 恢复时间不同,可能采到「一半新一半旧」的撕裂值。多 bit 数据要么编码(格雷码,见第 6 节),要么用握手/DMUX/异步 FIFO(见第 9 节)。<br>
+    <b>2. 组合逻辑输出禁止直接跨域:</b>组合逻辑会产生毛刺(glitch),同步器会把毛刺当成真实数据采进去(毛刺不需要满足 setup/hold —— 它本身就是异步事件)。正确做法:<b>先在本域用寄存器打一拍,再用寄存器输出跨域</b>。
+  </div>
+  <p><b>面试怎么问:</b>「两级同步器的原理?打三拍行不行,代价是什么?」「为什么不能把 32 位数据总线直接打两拍?」「为什么跨域信号前要先寄存一级?」—— 全部对应上面三条。</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 同步器两支 FF 之间插入任何组合逻辑(哪怕一个与门)都会破坏 MTBF —— 结构必须 FF 直连 FF;<br>
+    2. 忘了给跨域信号做 SDC 约束(set_false_path / set_max_delay),综合工具把异步路径当同步路径优化,报假违例或延迟异常;<br>
+    3. 对「单 bit 但跳变极快」的信号(如对方域 2 分频时钟当数据用)用两拍同步 —— 采样定理都不允许,应改用脉冲同步(9.2)。
+  </div>
+  <!-- /SEC5 -->
+
+  <h2><span class="h2-num">6</span> 格雷码:每次只变一位的「安全码」</h2>
+  <h3>6.1 是什么:二进制 ↔ 格雷码转换公式与对照表</h3>
+  <p><b>格雷码(Gray Code)</b>是一种<b>相邻两个码字之间只有 1 位不同</b>的二进制编码(单位距离码)。转换公式只有两条,必须背下来:</p>
+  <span class="formula">G = B \oplus (B \gg 1) \qquad\qquad B_i = G_i \oplus B_{i+1}\ (\text{自高位向低位恢复})</span>
+  <ul>
+    <li><b>二进制 → 格雷:</b>格雷码第 i 位 = 二进制第 i 位 ⊕ 二进制第 i+1 位(最高位保留,即整体右移一位后与自身异或);</li>
+    <li><b>格雷 → 二进制:</b>从最高位往低位累加异或:二进制最高位 = 格雷最高位;二进制第 i 位 = 格雷第 i 位 ⊕ 已恢复出的第 i+1 位。</li>
+  </ul>
+  <h3>6.2 对照表:看懂「每次只变一位」</h3>
+  <div class="table-wrap"><table>
+    <tr><th>十进制</th><th>二进制 B</th><th>格雷码 G</th><th>相对上一行变化位数</th></tr>
+    <tr><td>0</td><td>0000</td><td>0000</td><td>—</td></tr>
+    <tr><td>1</td><td>0001</td><td>0001</td><td>1 位(LSB)</td></tr>
+    <tr><td>2</td><td>0010</td><td>0011</td><td>1 位</td></tr>
+    <tr><td>3</td><td>0011</td><td>0010</td><td>1 位</td></tr>
+    <tr><td>4</td><td>0100</td><td>0110</td><td>1 位</td></tr>
+    <tr><td>5</td><td>0101</td><td>0111</td><td>1 位</td></tr>
+    <tr><td>6</td><td>0110</td><td>0101</td><td>1 位</td></tr>
+    <tr><td>7</td><td>0111</td><td>0100</td><td>1 位</td></tr>
+    <tr><td>8</td><td>1000</td><td>1100</td><td>1 位(回绕到 0 也只变 1 位)</td></tr>
+    <tr><td>…</td><td>…</td><td>…</td><td>恒为 1 位</td></tr>
+  </table></div>
+  <p>对照二进制:0111(7)→ 1000(8)四位同时翻转;格雷码 0100 → 1100 只翻最高位。注意 15 → 0 的回绕(1111 → 0000,格雷 1000 → 0000)同样只变 1 位 —— 这保证了 FIFO 指针循环计数时性质不破。</p>
+  <pre><code>// 二进制 → 格雷(纯组合,一行)
+function [AW:0] bin2gray(input [AW:0] b);
+    bin2gray = (b &gt;&gt; 1) ^ b;
+endfunction
+
+// 格雷 → 二进制(自高位向低位累异或)
+function [AW:0] gray2bin(input [AW:0] g);
+    integer i;
+    begin
+        for (i = AW; i &gt;= 0; i = i - 1)
+            gray2bin[i] = ^(g &gt;&gt; i);   // 高位前缀异或:B[i] = G[i]^G[i+1]^...^G[AW]
+    end
+endfunction</code></pre>
+
+  <h3>6.3 为什么格雷码适合跨时钟域指针</h3>
+  <p>异步 FIFO 中,写指针要在<b>写时钟域产生</b>、<b>读时钟域比较</b>(判空),读指针同理(判满)—— 多位指针必须跨域。若用二进制指针直采:4 位指针 0111→1000 四位同时翻转,恰逢采样沿时各位恢复结果不一致,可能采出 0111~1000 之外的<b>非法中间值</b>(如 1111),空满判断直接错乱。换成格雷码指针再跨域:</p>
+  <ul>
+    <li><b>每次只有 1 位变化 → 采样要么得到旧值、要么得到新值,绝不会是第三种值。</b>多位撕裂问题从根上消失;</li>
+    <li><b>采样旧值的后果是「保守」的:</b>读域看到的写指针偏旧 → 以为数据比实际少 → 提前报空(不丢数据,只是晚读);写域看到的读指针偏旧 → 提前报满(不覆盖数据,只是晚写)。两种误差都<b>安全</b>,只损失一点点效率;</li>
+    <li>指针同步回来后可先转回二进制再比较(好理解),也可直接在格雷码域比较 —— 判空「完全相等」、判满「最高两位相反、其余位相同」(见 7.3)。</li>
+  </ul>
+  <p><b>面试怎么问:</b>「异步 FIFO 为什么用格雷码?」「格雷码怎么转换,写个函数」「用格雷码后空满判断怎么做的?」「为什么指针必须同步到对方域而不是把数据同步过去?」(数据量太大逐个同步不现实,只同步指针,FIFO 存储阵列本身是双口共享的)。</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 先同步、后译码顺序搞反:必须「格雷码打两拍同步 → 再 gray2bin」或「格雷码直接比较」;<b>先转二进制再同步</b>就白编码了;<br>
+    2. 格雷码判断的方案要求 <b>DEPTH 必须是 2 的幂</b>,否则回绕破坏单位距离性质;<br>
+    3. 以为格雷码「消除」了亚稳态 —— 单 bit 依然可能亚稳,格雷码消除的是「多 bit 撕裂」这一更大的危害。
+  </div>
+  <!-- /SEC6 -->
+
+  <h2><span class="h2-num">7</span> 异步 FIFO:双口 RAM + 格雷码指针 + 同步器</h2>
+  <h3>7.1 结构图:双时钟域、双口 RAM 与两条格雷码同步链</h3>
+  <div class="my-fig">
+    <svg viewBox="0 0 660 360" role="img" aria-label="异步FIFO框图:左侧写时钟域含写指针二进制转格雷码与满判断,右侧读时钟域含读指针与空判断,中间双口RAM共享存储,两条格雷码指针同步链高亮两级同步器">
+      <defs>
+        <marker id="fc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b98a9"/></marker>
+        <marker id="fcOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/></marker>
+        <marker id="fcBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#58a6ff"/></marker>
+        <marker id="fcGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/></marker>
+      </defs>
+
+      <!-- 写时钟域外框 -->
+      <rect x="14" y="18" width="200" height="326" rx="12" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.4"/>
+      <text x="114" y="42" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#58a6ff">写时钟域(wclk)</text>
+      <text x="114" y="60" text-anchor="middle" font-size="10.5" fill="#9aa4b2">wr_en / wdata / wfull</text>
+
+      <!-- 读时钟域外框 -->
+      <rect x="446" y="18" width="200" height="326" rx="12" fill="rgba(34,197,94,.06)" stroke="#22c55e" stroke-width="1.4"/>
+      <text x="546" y="42" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#22c55e">读时钟域(rclk)</text>
+      <text x="546" y="60" text-anchor="middle" font-size="10.5" fill="#9aa4b2">rinc / rdata / rempty</text>
+
+      <!-- 写指针 -->
+      <rect x="34" y="80" width="160" height="58" rx="8" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="114" y="102" text-anchor="middle" font-size="12" font-weight="bold" fill="#58a6ff">写指针 wbin</text>
+      <text x="114" y="122" text-anchor="middle" font-size="10.5" fill="#c9d1d9">二进制 → wgray 格雷码</text>
+
+      <!-- 读指针 -->
+      <rect x="466" y="80" width="160" height="58" rx="8" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="546" y="102" text-anchor="middle" font-size="12" font-weight="bold" fill="#22c55e">读指针 rbin</text>
+      <text x="546" y="122" text-anchor="middle" font-size="10.5" fill="#c9d1d9">二进制 → rgray 格雷码</text>
+
+      <!-- 双口RAM -->
+      <rect x="248" y="150" width="164" height="96" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="330" y="176" text-anchor="middle" font-size="13" font-weight="bold" fill="#f59e0b">双口 RAM mem</text>
+      <text x="330" y="196" text-anchor="middle" font-size="10.5" fill="#c9d1d9">写口:wclk + wptr 寻址</text>
+      <text x="330" y="214" text-anchor="middle" font-size="10.5" fill="#c9d1d9">读口:rclk + rptr 寻址</text>
+      <text x="330" y="234" text-anchor="middle" font-size="10.5" fill="#9aa4b2">数据本身不跨时钟域!</text>
+
+      <!-- 写数据路径 -->
+      <line x1="114" y1="138" x2="114" y2="252" stroke="#58a6ff" stroke-width="1.5"/>
+      <line x1="114" y1="252" x2="244" y2="252" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#fcBlue)"/>
+      <text x="178" y="244" text-anchor="middle" font-size="10" fill="#58a6ff">wdata 写入</text>
+      <!-- 读数据路径 -->
+      <line x1="546" y1="138" x2="546" y2="252" stroke="#22c55e" stroke-width="1.5"/>
+      <line x1="546" y1="252" x2="416" y2="252" stroke="#22c55e" stroke-width="1.5" marker-end="url(#fcGreen)"/>
+      <text x="482" y="244" text-anchor="middle" font-size="10" fill="#22c55e">rdata 读出</text>
+
+      <!-- 同步链1:wgray → 读域 (上弧) -->
+      <path d="M 194 100 C 240 100 240 76 300 76 L 470 76 C 520 76 510 96 540 98" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#fcOrange)"/>
+      <rect x="298" y="60" width="120" height="34" rx="8" fill="rgba(239,68,68,.14)" stroke="#ef4444" stroke-width="1.8"/>
+      <text x="358" y="75" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#ef4444">★ 格雷码同步器</text>
+      <text x="358" y="88" text-anchor="middle" font-size="9.5" fill="#fca5a5">wgray 打两拍 → 读域</text>
+
+      <!-- 同步链2:rgray → 写域 (下弧) -->
+      <path d="M 540 120 C 500 120 510 296 430 296 L 260 296 C 200 296 214 118 200 112" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#fcOrange)"/>
+      <rect x="266" y="280" width="128" height="34" rx="8" fill="rgba(239,68,68,.14)" stroke="#ef4444" stroke-width="1.8"/>
+      <text x="330" y="295" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#ef4444">★ 格雷码同步器</text>
+      <text x="330" y="308" text-anchor="middle" font-size="9.5" fill="#fca5a5">rgray 打两拍 → 写域</text>
+
+      <!-- 满判断 -->
+      <rect x="34" y="176" width="160" height="52" rx="8" fill="rgba(239,68,68,.08)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="114" y="197" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">满判断(写域)</text>
+      <text x="114" y="215" text-anchor="middle" font-size="10" fill="#c9d1d9">wgray_next vs 同步来的 rgray</text>
+
+      <!-- 空判断 -->
+      <rect x="466" y="176" width="160" height="52" rx="8" fill="rgba(239,68,68,.08)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="546" y="197" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">空判断(读域)</text>
+      <text x="546" y="215" text-anchor="middle" font-size="10" fill="#c9d1d9">rgray_next vs 同步来的 wgray</text>
+
+      <line x1="114" y1="138" x2="114" y2="172" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#fc)"/>
+      <line x1="546" y1="138" x2="546" y2="172" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#fc)"/>
+    </svg>
+    <div class="my-fig-cap">图 3 · 异步 FIFO 全景:<b>数据不跨域</b>(双口 RAM 两侧各自访问),跨域的只有两个指针,且都先转成格雷码再过「打两拍同步器」(红色高亮);空标志在读域产生、满标志在写域产生。</div>
+  </div>
+  <p><b>要点:</b>① 存储阵列必须是<b>双口 RAM</b>(写口时钟与读口时钟独立,普通单口寄存器组做不到);② 跨域的只有指针,且指针编码成格雷码;③ 每个指针的每一位都经过<b>同一套两级同步器</b>;④ empty 只能在读域算(它需要最新的读指针),wfull 只能在写域算。</p>
+  <h3>7.2 完整 Verilog 代码框架(Cummings 经典结构)</h3>
+  <pre><code>module async_fifo #(
+    parameter DEPTH = 8,               // 深度必须为 2 的幂(格雷码回绕要求)
+    parameter DW    = 8
+)(
+    // 写时钟域
+    input  wire           wclk,
+    input  wire           wrst_n,
+    input  wire           winc,        // 写使能
+    input  wire [DW-1:0]  wdata,
+    output wire           wfull,
+    // 读时钟域
+    input  wire           rclk,
+    input  wire           rrst_n,
+    input  wire           rinc,        // 读使能
+    output reg  [DW-1:0]  rdata,
+    output wire           rempty
+);
+    localparam AW = $clog2(DEPTH);
+
+    reg [DW-1:0] mem [0:DEPTH-1];                       // 双口 RAM
+    reg [AW:0]  wbin, wbin_next, wgray_next, wptr;      // 写指针:二进制 + 格雷
+    reg [AW:0]  rbin, rbin_next, rgray_next, rptr;      // 读指针:二进制 + 格雷
+    reg [AW:0]  wptr_sync1, wptr_sync2;                 // wgray → 读域 同步器
+    reg [AW:0]  rptr_sync1, rptr_sync2;                 // rgray → 写域 同步器
+
+    /* ---------- 写时钟域 ---------- */
+    // 指针与格雷码一起更新:{二进制, 格雷}
+    always @(posedge wclk or negedge wrst_n) begin
+        if (!wrst_n) {wbin, wptr} &lt;= 0;
+        else         {wbin, wptr} &lt;= {wbin_next, wgray_next};
+    end
+    assign wbin_next  = wbin + (winc &amp; ~wfull);         // 满不写
+    assign wgray_next = (wbin_next &gt;&gt; 1) ^ wbin_next;   // 组合格雷码
+    // 满:wgray_next 与「同步进写域的 rgray」最高两位相反、其余位相同
+    assign wfull = (wgray_next ==
+                    {~rptr_sync2[AW:AW-1], rptr_sync2[AW-2:0]});
+
+    // 读格雷指针 → 写域:两级同步器(FF 直连 FF,不许插组合逻辑)
+    always @(posedge wclk or negedge wrst_n) begin
+        if (!wrst_n) {rptr_sync2, rptr_sync1} &lt;= 0;
+        else         {rptr_sync2, rptr_sync1} &lt;= {rptr_sync1, rptr};
+    end
+
+    /* ---------- 读时钟域 ---------- */
+    always @(posedge rclk or negedge rrst_n) begin
+        if (!rrst_n) {rbin, rptr} &lt;= 0;
+        else         {rbin, rptr} &lt;= {rbin_next, rgray_next};
+    end
+    assign rbin_next  = rbin + (rinc &amp; ~rempty);        // 空不读
+    assign rgray_next = (rbin_next &gt;&gt; 1) ^ rbin_next;
+    // 空:rgray_next 与「同步进读域的 wgray」完全相等
+    assign rempty = (rgray_next == wptr_sync2);
+
+    always @(posedge rclk or negedge rrst_n) begin
+        if (!rrst_n) {wptr_sync2, wptr_sync1} &lt;= 0;
+        else         {wptr_sync2, wptr_sync1} &lt;= {wptr_sync1, wptr};
+    end
+
+    /* ---------- 读数据(寄存器输出,延迟一拍) ---------- */
+    always @(posedge rclk or negedge rrst_n) begin
+        if (!rrst_n)                 rdata &lt;= 0;
+        else if (rinc &amp;&amp; !rempty)    rdata &lt;= mem[rbin[AW-1:0]];
+    end
+endmodule</code></pre>
+
+  <h3>7.3 关键段讲解:空满判断为什么这样写</h3>
+  <ul>
+    <li><b>空判断(读域):</b><code>rempty = (rgray_next == wptr_sync2)</code> —— 同步进来的写格雷指针<b>最多落后真实值</b>,「以为还没写」只会误报空(保守),绝不漏报空;用 rgray_next(而非 rptr)判断是把「本拍要发生的读」也提前算进去,标志时序更保守。</li>
+    <li><b>满判断(写域):</b>格雷码域里「满」不再是简单相等:<b>最高两位相反、其余位相同</b>。推导:二进制指针满 = 最高位相异 + 其余相同;格雷码 G=B⊕(B&gt;&gt;1) 后,这个条件恰好映射成「最高两位相反、其余相同」。判满用「同步过来的读指针」,它只可能偏旧 → 只会误报满(保守),绝不漏报满 —— <b>方向性安全</b>是整个设计的灵魂。</li>
+    <li><b>为什么比较的是 wgray_next:</b>Cummings 论文里的推荐写法,把指针下一拍可能到达的位置提前参与比较,空满标志提前一拍置位,给上游反压留出时间;代价是轻微牺牲容量利用率。</li>
+    <li><b>mem[rbin[AW-1:0]]:</b>读写各用各的时钟访问同一片双口 RAM;若工艺库只有单口 SRAM,需退化成「乒乓 buffer」方案。</li>
+    <li><b>复位:</b>两个域各自「异步复位、同步释放」的 wrst_n / rrst_n,不能共用一根未同步的复位线(见 10 节清单)。</li>
+  </ul>
+
+  <h3>7.4 面试怎么问 + 易错点</h3>
+  <p><b>工程与面试怎么问:</b>「画出异步 FIFO 框图」(按图 3 讲四要素:双口 RAM / 两个格雷码指针 / 两条同步链 / 空满逻辑);「空和满分别在哪个域产生,为什么?」;「指针同步用几拍,延迟对 FIFO 有什么影响?」(2 拍,标志保守但安全);「如果深度不是 2 的幂怎么办?」(非 2 幂深度要用特殊格雷码/非对称指针方案,或直接取 2 的幂)。</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 数据路径也去打两拍 —— 逐位同步多 bit 数据是最经典的翻车点,数据必须走双口 RAM,跨域的只有指针;<br>
+    2. 满判断条件记成「最高一位相反」—— 格雷码域是<b>最高两位</b>相反;<br>
+    3. 同步器第一级输出 wptr_sync1 被拿去用了 —— 只有第二级才是干净信号;<br>
+    4. wfull 用 wptr(当前值)而 rempty 用 rptr,两边口径不一致 —— 通常成对使用 next 值或成对使用当前值,写清注释;<br>
+    5. DEPTH 用了非 2 的幂(如 12),格雷码回绕时多位同变,同步链形同虚设。
+  </div>
+  <!-- /SEC7 -->
+  <h2><span class="h2-num">8</span> 异步 FIFO 深度计算:跨时钟域突发场景</h2>
+  <h3>8.1 跨时钟域场景的三个修正项</h3>
+  <p>异步 FIFO 的深度计算在 3.1 公式基础上,还要叠加跨域特有的考虑:</p>
+  <ul>
+    <li><b>同步延迟:</b>指针过两级同步器要 2~3 个目的域周期,期间空满标志偏保守,数据通路照常积压 —— 突发高峰叠加同步延迟窗口,实际最大积压比公式略大;</li>
+    <li><b>时钟相位无关:</b>f<sub>r</sub>/f<sub>w</sub> 的比值仍是主导,但读写沿完全异步,「同拍读写抵消」的乐观假设不成立,按最坏突发(连续不间断写入)计算;</li>
+    <li><b>取 2 的幂:</b>格雷码方案要求 DEPTH 为 2 的幂,算出的深度必须向上取整到最近的 2 的幂。</li>
+  </ul>
+  <span class="formula">D_{min} = \left\lceil B - \frac{B}{N}\, M\, \frac{f_r}{f_w} \right\rceil \quad\Rightarrow\quad \text{再向上取 } 2^n,\ \text{并留 } 10\%\sim20\%\ \text{裕量}</span>
+
+  <h3>8.2 例题:跨时钟域 FIFO 深度详解</h3>
+  <p><b>例题:</b>写时钟 100MHz,连续突发写入 512 个数据;读时钟 66MHz,每拍读出 1 个。求异步 FIFO 最小深度。</p>
+  <pre><code>① 突发时间   = 512 / 100MHz = 5.12 μs
+② 期间读走   = 5.12 μs × 66MHz = 337.92 → 337 个
+③ 公式深度   = 512 − 337.92 ≈ 174.08 → 175
+④ 格雷码方案 → 向上取 2 的幂 = 256
+⑤ 再核对:同步器 2~3 拍延迟期间多积压 ≈ 3 × 66MHz⁻¹ 内的写入量(约 3 个),裕量充分 ✔</code></pre>
+  <p><b>变式(读写平均速率相同的错峰突发):</b>写域 100MHz、读域 100MHz,写侧每 10 拍突发 8 拍(平均 80M/s),读侧连续读(100M/s)。由于读快于写,峰值积压出现在「8 拍写入窗口」内:8 写 − 窗口内读走 8×(100/100)×(8/10)=6.4 → 峰值积压 1.6 → 深度取 2~4 即可,但工程上仍常给到 8/16 以吸收抖动。</p>
+
+  <h3>8.3 面试怎么问 + 易错点</h3>
+  <p><b>面试怎么问:</b>「异步 FIFO 深度和同步 FIFO 深度算法有什么区别?」(同步延迟 + 2 的幂约束 + 最坏突发假设);「读比写快还需要 FIFO 吗?」(数据到达本身就是突发的仍需要,深度按峰值积压算);「为什么深度取 2 的幂?」(格雷码回绕保持单位距离)。</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 算完 175 就交卷 —— 忘了格雷码方案必须 2 的幂;<br>
+    2. 把「平均速率相等」当成「深度为 0」—— 相位/突发错峰仍会瞬时积压;<br>
+    3. 忽略同步器延迟:标志晚 2~3 拍,深度按公式零裕量拍板,极限场景溢出。
+  </div>
+  <!-- /SEC8 -->
+
+  <h2><span class="h2-num">9</span> CDC 其他方法:电平同步 / 脉冲同步 / DMUX / 握手</h2>
+  <h3>9.1 单 bit 电平同步与脉冲同步(toggle 同步)</h3>
+  <p><b>电平同步:</b>跨域信号是「会保持一段时间的电平」(如中断、忙标志),直接过两级同步器(第 5 节)。约束:<b>电平必须保持至少 2~3 个目的域时钟周期</b>,否则会被漏采。</p>
+  <p><b>脉冲同步(toggle 同步):</b>要传的是「单拍脉冲」(比目的域周期还窄,或相位随机直接同步会丢),经典做法是<b>把脉冲转成电平翻转</b>再跨域:</p>
+  <pre><code>// 发送域:每个脉冲让 toggle 电平翻转一次
+always @(posedge clk_src or negedge rst_n)
+    if (!rst_n)      toggle &lt;= 1'b0;
+    else if (pulse)  toggle &lt;= ~toggle;
+
+// 接收域:toggle 打两拍后,与上一拍异或还原出单拍脉冲
+always @(posedge clk_dst or negedge rst_n)
+    if (!rst_n) {t_sync2, t_sync1} &lt;= 2'b00;
+    else        {t_sync2, t_sync1} &lt;= {t_sync1, toggle};
+assign pulse_dst = t_sync2 ^ t_sync3;   // t_sync3 是再打一拍的寄存器</code></pre>
+  <p>原理:电平翻转一定会被目的域采到(电平保持时间足够长);接收域比较「翻转前后的电平」重建出脉冲。局限:<b>连续两个脉冲间隔小于 2 个目的域周期会丢脉冲</b>,只适合低频事件。</p>
+
+  <h3>9.2 多 bit 数据跨域:DMUX(使能同步 + 数据静止)与异步 FIFO</h3>
+  <p>多 bit 数据的两种正统方案:</p>
+  <ul>
+    <li><b>DMUX / 数据静止法:</b>发送域先把数据放稳(至少目的域 2~3 拍内保持不变),再拉起一个<b>单 bit 使能</b>;使能打两拍到目的域,用它做门控时钟/使能来采样已静止的数据。数据多 bit 之间「根本没在跳变」,所以不存在撕裂 —— 关键是<b>数据静止窗口必须覆盖使能同步延迟</b>。DMUX 结构(数据与使能分开、解复用采样)因此得名。</li>
+    <li><b>异步 FIFO:</b>数据量大、速率高时的标准答案 —— 把「跨域」问题整体交给 7.2 的结构,两侧各看自己的时钟,像读写本地存储一样。</li>
+  </ul>
+
+  <h3>9.3 握手协议 req-ack:完整时序讲解</h3>
+  <p>握手(4-phase / 电平握手)是低速率多 bit 数据跨域最常考的方案:数据本身「放稳不动」,用两个<b>单 bit 信号(req / ack)来回打两拍</b>,完成一次「确认送达」。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 330" role="img" aria-label="req-ack握手协议时序波形:发送域时钟与接收域时钟,req在发送域拉高,经两级同步后在接收域被采样,ack拉高,ack再同步回发送域,req拉低,ack拉低,完成一次数据交接">
+      <defs>
+        <marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b98a9"/></marker>
+      </defs>
+
+      <!-- 行1:clk_src -->
+      <text x="14" y="36" font-size="11.5" fill="#58a6ff">clk_src</text>
+      <path d="M 90 40 L 110 22 L 110 40 L 130 22 L 130 40 L 150 22 L 150 40 L 170 22 L 170 40 L 190 22 L 190 40 L 210 22 L 210 40 L 230 22 L 230 40 L 250 22 L 250 40 L 270 22 L 270 40 L 290 22 L 290 40 L 310 22 L 310 40 L 330 22 L 330 40 L 350 22 L 350 40 L 370 22 L 370 40 L 390 22 L 390 40 L 410 22 L 410 40 L 430 22 L 430 40 L 450 22 L 450 40 L 470 22 L 470 40 L 490 22 L 490 40 L 510 22 L 510 40 L 530 22 L 530 40 L 550 22 L 550 40 L 570 22 L 570 40 L 590 22 L 590 40 L 610 22 L 610 40 L 630 40" fill="none" stroke="#58a6ff" stroke-width="1.6"/>
+
+      <!-- 行2:clk_dst(更慢示意:周期相同即可,标注即可) -->
+      <text x="14" y="76" font-size="11.5" fill="#22c55e">clk_dst</text>
+      <path d="M 90 80 L 114 62 L 114 80 L 138 62 L 138 80 L 162 62 L 162 80 L 186 62 L 186 80 L 210 62 L 210 80 L 234 62 L 234 80 L 258 62 L 258 80 L 282 62 L 282 80 L 306 62 L 306 80 L 330 62 L 330 80 L 354 62 L 354 80 L 378 62 L 378 80 L 402 62 L 402 80 L 426 62 L 426 80 L 450 62 L 450 80 L 474 62 L 474 80 L 498 62 L 498 80 L 522 62 L 522 80 L 546 62 L 546 80 L 570 62 L 570 80 L 594 62 L 594 80 L 618 80 L 630 80" fill="none" stroke="#22c55e" stroke-width="1.6"/>
+
+      <!-- 行3:data(静止窗口) -->
+      <text x="14" y="120" font-size="11.5" fill="#c9d1d9">data</text>
+      <polyline points="90,146 104,146 104,116 480,116 480,146 630,146" fill="none" stroke="#f59e0b" stroke-width="2"/>
+      <text x="292" y="110" text-anchor="middle" font-size="10.5" fill="#f59e0b">数据放稳(静止窗口,覆盖对方两拍同步延迟)</text>
+
+      <!-- 行4:req -->
+      <text x="14" y="184" font-size="11.5" fill="#c9d1d9">req(src 域)</text>
+      <polyline points="90,210 128,210 128,180 400,180 400,210 556,210 556,180 630,180" fill="none" stroke="#ef4444" stroke-width="2"/>
+      <text x="132" y="172" font-size="10" fill="#ef4444">① 拉高 req(数据已稳)</text>
+      <text x="404" y="202" font-size="10" fill="#ef4444">④ 收到 ack 后拉低</text>
+
+      <!-- 行5:ack -->
+      <text x="14" y="248" font-size="11.5" fill="#c9d1d9">ack(dst 域)</text>
+      <polyline points="90,274 224,274 224,244 480,244 480,274 630,274" fill="none" stroke="#58a6ff" stroke-width="2"/>
+      <text x="228" y="236" font-size="10" fill="#58a6ff">② req 两拍同步后在 dst 域拉高:此拍采样 data</text>
+      <text x="484" y="266" font-size="10" fill="#58a6ff">⑤ req 拉低被同步后 ack 拉低</text>
+
+      <!-- 采样点标注 -->
+      <line x1="210" y1="56" x2="210" y2="290" stroke="#8b98a9" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="138" y1="56" x2="138" y2="290" stroke="#8b98a9" stroke-width="1" stroke-dasharray="3 4"/>
+      <text x="150" y="306" font-size="10" fill="#8b98a9">dst 域在「同步后的 req=1」的当拍采 data,此时 data 早已静止 → 无亚稳危害</text>
+      <text x="14" y="306" font-size="10" fill="#f59e0b">③ ack 打两拍回 src 域</text>
+    </svg>
+    <div class="my-fig-cap">图 4 · req-ack 四阶段握手:① src 拉高 req(数据已放稳)→ ② dst 域两级同步 req,确认后当拍采样 data,拉高 ack → ③ ack 两拍同步回 src 域 → ④ src 撤 req → ⑤ dst 同步到 req 撤销后撤 ack,一轮结束。全程只有 req/ack 两个单 bit 在跨域。</div>
+  </div>
+  <p><b>五步时序口诀:</b>数据放稳 → req 高 → ack 高(对方采样)→ req 低 → ack 低。<b>代价:</b>每传一次数据要 4~5 个时钟拍,吞吐很低,所以只用于配置寄存器、状态回馈等低频场景;高频流式数据请用异步 FIFO。</p>
+
+  <h3>9.4 方案选型表 + 面试怎么问 + 易错点</h3>
+  <div class="table-wrap"><table>
+    <tr><th>跨域对象</th><th>推荐方案</th><th>一句话理由</th></tr>
+    <tr><td>单 bit 电平(慢变化)</td><td>两级同步器</td><td>最简单,MTBF 足够</td></tr>
+    <tr><td>单 bit 脉冲(窄/随机相位)</td><td>toggle 同步</td><td>把「难采的脉冲」变成「好采的电平」</td></tr>
+    <tr><td>多 bit 数据(低速偶发)</td><td>握手 req-ack / DMUX</td><td>数据静止 + 单 bit 控制跨域</td></tr>
+    <tr><td>多 bit 数据(高速连续流)</td><td>异步 FIFO</td><td>指针编码跨域,吞吐最高</td></tr>
+    <tr><td>多 bit 计数值(单调递增)</td><td>格雷码编码</td><td>相邻只变 1 位,天然防撕裂</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>「除了两级同步器和异步 FIFO,还知道哪些 CDC 手段?」「握手协议完整流程画一下,每一拍在做什么?」「toggle 同步为什么会丢脉冲?」「数据为什么要『静止』,静止多久才安全?」。</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 握手里 req 没等 ack 撤销就发下一笔 —— 上一笔可能还没被采样;<br>
+    2. DMUX 方案数据静止窗口不足(刚好 1 个目的域周期),边界拍照样撕裂;<br>
+    3. toggle 同步用在「背靠背连续脉冲」场景 —— 必丢;<br>
+    4. 握手把 data 也打了同步器 —— 多此一举且引入撕裂风险,数据靠「静止」保证安全。
+  </div>
+  <!-- /SEC9 -->
+
+  <h2><span class="h2-num">10</span> CDC 设计检查清单与面试高频问答</h2>
+  <h3>10.1 CDC 设计检查清单(box-ok:交付前逐条打勾)</h3>
+  <div class="box box-ok">
+    <b>✅ 每次代码 review / tapeout 前过一遍:</b>
+    <b>① 每个跨域信号是否都同步?</b>——列出所有跨域信号,逐一确认经过(至少)两级同步器,且第一级输出未被他处使用;<br>
+    <b>② 是否存在未编码直接跨域的多 bit 信号?</b>——多 bit 总线要么格雷码编码、要么握手/DMUX、要么走异步 FIFO,禁止逐位打拍;<br>
+    <b>③ 复位是否跨域安全?</b>——每个时钟域有独立的「异步复位、同步释放」复位同步器;复位释放顺序满足域间依赖;<br>
+    <b>④ 时钟门控/派生时钟是否检查?</b>——门控时钟本身是另一个「时钟域」,门控使能要同步;分频时钟与源时钟的关系要明确(同步分频可豁免,异步门控必须按 CDC 处理);<br>
+    <b>⑤ 组合逻辑输出是否直接跨域?</b>——先寄存一拍再跨;<br>
+    <b>⑥ SDC 约束是否覆盖?</b>——跨域路径 set_false_path 或 set_max_delay -datapath_only,CDC 路径不许被默认周期约束误优化;<br>
+    <b>⑦ 是否跑过 CDC 专用检查工具?</b>——SpyGlass CDC / Questa CDC / Synopsys CDC 组合拳,warning 逐条清理归档。
+  </div>
+  <pre><code>// 复位同步器:异步复位、同步释放(每个时钟域一份)
+module reset_sync (
+    input  wire clk,
+    input  wire rst_n_async,   // 外部/全局异步复位
+    output wire rst_n_sync     // 本域同步释放的复位
+);
+    reg rst_ff1, rst_ff2;
+    always @(posedge clk or negedge rst_n_async) begin
+        if (!rst_n_async) {rst_ff2, rst_ff1} &lt;= 2'b00;  // 复位立即异步生效
+        else              {rst_ff2, rst_ff1} &lt;= {rst_ff1, 1'b1}; // 释放同步打两拍
+    end
+    assign rst_n_sync = rst_ff2;
+endmodule</code></pre>
+
+  <h3>10.2 面试高频问答(背下这三题,数字前端面试稳一半)</h3>
+  <details class="faq"><summary>Q1:亚稳态怎么消除?</summary>
+    <div class="faq-a">先纠正前提:<b>不能消除,只能降低概率并隔离危害</b>。手段:① 跨域信号过两级(或三级)同步器,利用 MTBF 的指数项,给恢复时间每加一拍,MTBF 乘 e 指数因子;② 多 bit 信号禁止直采,用格雷码/握手/FIFO;③ 降频、降低异步数据翻转率;④ 同步器结构 FF 直连 FF,第一级输出不得直接使用;⑤ 用 CDC 工具静态检查 + SDC 约束。回答时主动引出 MTBF 公式各项含义,是加分点。</div>
+  </details>
+  <details class="faq"><summary>Q2:异步 FIFO 为什么用格雷码?</summary>
+    <div class="faq-a">因为指针是多 bit 信号,跨域直接采样会因各位亚稳恢复不一致而采出「旧新混合」的非法值,导致空满误判、数据覆盖。格雷码相邻码字只有 1 位不同,采样结果要么旧值要么新值、绝不会是第三种值;且「采到旧值」只会让空满标志偏保守(提前报空/报满),方向性安全、不丢不覆盖。注意补一句:格雷码不消除单 bit 亚稳,它消除的是多 bit 撕裂,所以指针仍要过两级同步器,且深度必须 2 的幂。</div>
+  </details>
+  <details class="faq"><summary>Q3:FIFO 深度怎么算?</summary>
+    <div class="faq-a">按突发模型:深度 = 突发写入量 − 突发期间读走量。即 D = B − (B/N)·M·(f_r/f_w),N/M 是读写侧每拍处理个数;向上取整,异步 FIFO 再取 2 的幂并留裕量。若读快于写,分析峰值积压而不是硬套公式。能边写公式边说「这是把蓄水池的进水排水差最大化」的直觉,是标准加分回答。</div>
+  </details>
+  <details class="faq"><summary>Q4(加餐):空满标志为什么「空在读域、满在写域」?两边都算不行吗?</summary>
+    <div class="faq-a">判断空需要「最新读指针 vs(同步来的)写指针」,读指针只有读域自己有最新值,所以 empty 在读域产生;同理 wfull 在写域产生。若把空满都放到一个域算,另一个指针永远同步值,标志只会更保守;而错误域产生的标志会引入双向风险。</div>
+  </details>
+  <!-- /SEC10 -->
+
+  <!-- ================= 本节自测 ================= -->
+  <h2><span class="h2-num">11</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 写时钟 100MHz 连续写入 200 个数据,读时钟 80MHz 每拍读 1 个,同步 FIFO 最小深度是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 200</button>
+      <button data-v="B">B. 160</button>
+      <button data-v="C">C. 40</button>
+      <button data-v="D">D. 80</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 突发时间 = 200/100MHz = 2μs;期间读走 = 2μs × 80MHz = 160 个;深度 = 200 − 160 = 40。核心永远是「写入减读走」。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 异步 FIFO 的读写指针用格雷码编码的根本原因是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 格雷码能彻底消除触发器的亚稳态</button>
+      <button data-v="B">B. 相邻计数只有 1 位变化,跨域采样要么旧值要么新值,避免多 bit 撕裂出的非法值</button>
+      <button data-v="C">C. 格雷码译码电路比二进制简单,省面积</button>
+      <button data-v="D">D. 格雷码指针能让 FIFO 深度不必是 2 的幂</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 格雷码不消除亚稳态(选项 A),它消除的是「多位同时翻转被采成第三种值」的撕裂问题;且采到旧值只会保守地提前报空/报满,方向性安全。格雷码方案反而要求深度为 2 的幂(选项 D)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 关于两级同步器,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 加了两级同步器,跨域信号就一定不会出现亚稳态</button>
+      <button data-v="B">B. 两级同步器的第一级输出可以直接给后级逻辑使用</button>
+      <button data-v="C">C. 32 位数据总线逐位打两拍就能安全跨域</button>
+      <button data-v="D">D. 它不能消除亚稳态,但让亚稳态有一整拍恢复时间,MTBF 按指数级提升</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 亚稳态只能降概率不能消除(A 错);第一级输出可能仍亚稳,绝不可直接使用(B 错);多 bit 总线逐位同步会撕裂(C 错)。两级同步器的价值是 MTBF 公式里 t_MET 多了一个时钟周期,故障概率指数下降。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 同步 FIFO「指针最高位拓展法」中,满标志的判断条件是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 读写指针最高位相异,且其余位全部相同</button>
+      <button data-v="B">B. 读写指针完全相等</button>
+      <button data-v="C">C. 读写指针所有位全部相反</button>
+      <button data-v="D">D. 读写指针最高位相同,其余位相反</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 完全相等是空(B);写指针恰好多绕一圈时最高位相反、其余位相同,这就是满(A)。最高位是「圈数奇偶性」,把空和满两种「低位相等」状态区分开。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 把一个 16 位配置字从 100MHz 域传到 33MHz 域,每秒仅更新几次,最合适的方案是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 16 根信号各自打两拍直接同步</button>
+      <button data-v="B">B. 用格雷码编码后打两拍</button>
+      <button data-v="C">C. 数据放稳后拉高 req,握手 ack 确认后再更新(或 DMUX 数据静止法)</button>
+      <button data-v="D">D. 把数据接到异步 FIFO,批量搬运</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 低速偶发的多 bit 数据,握手/DMUX 最合适:数据静止 + 单 bit 控制信号跨域。A 会撕裂;B 的格雷码适合「单调递增的计数指针」,随机更新的配置字没有相邻 +1 关系,无意义;D 的 FIFO 适合高速连续数据流,杀鸡用牛刀。</div>
+  </div>
+  <!-- /QUIZ -->
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>FIFO 用「写指针 / 读指针 / 存储阵列」解决速率匹配、突发吸收与跨时钟域传数据,全部难点在空满判断:同步 FIFO 用计数器法或「指针最高位拓展法」;异步 FIFO 把指针转成格雷码、过两级同步器送到对端,空 = 格雷码相等、满 = 最高两位相反其余相同,方向性保守安全。亚稳态不能消除只能降概率 —— MTBF 的指数项解释了为什么「打两拍」是行业默认;多 bit 数据绝不逐位同步,低速用握手/DMUX、高速用异步 FIFO。深度 = 突发写入 − 突发期间读走,异步场景再取 2 的幂留裕量。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 若异步 FIFO 深度取 12(非 2 的幂),格雷码指针在哪个瞬间会「多位同变」?会出什么事故?<br>
+    2. req-ack 握手中,若发送域在收到 ack 之前就想撤销 req,时序上会发生什么?<br>
+    3. NPU 卷积 line buffer 深度为 K−1 行,若 stride 变化,深度该怎么重新推?<br>
+    4. 两级同步器的两支 FF 之间走线很长,综合工具插了 buffer,这对 MTBF 有什么影响?
+  </div>
+  <!-- /SUMMARY -->
+
+  <!-- ================= 参考来源与延伸资源 ================= -->
+  <h2><span class="h2-num">12</span> 参考来源与延伸资源</h2>
+  <p>以下资源均经人工访问核实(2026-09),⭐ 为强烈推荐。</p>
+
+  <a class="my-res-card" href="https://www.paradigm-works.com/papers/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Paradigm Works 技术图书馆 —— Cummings 论文官方收藏 ⭐</div>
+      <div class="my-res-desc">Cummings 经典论文页 www.sunburst-design.com/papers/ 现已 301 重定向至此,论文清单完整保留:《Simulation and Synthesis Techniques for Asynchronous FIFO Design》(SNUG2002,异步 FIFO 鼻祖论文,本页 7.2 代码的原型)与《Clock Domain Crossing (CDC) Design &amp; Verification Techniques Using SystemVerilog》(SNUG2008 最佳论文)均在列;PDF 需免费注册账号后下载。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-paper">英文论文</span><span class="my-tag my-tag-official">官方·已核实</span><span class="my-tag my-tag-recommend">强烈推荐</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zipcpu.com/blog/2017/08/21/rules-for-newbies.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">✍️</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ZipCPU 博客 · Rules for new FPGA designers ⭐</div>
+      <div class="my-res-desc">数字设计新人守则:单时钟原则、外部输入先过两级 DFF 同步、禁止用分沿/按键当时钟等,本站第 4~5 节观点的工程版。站内还有系列 CDC 与正式验证(asyncfifo 形式验证)文章,是理解 CDC 工程思维的一流免费读物。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-paper">英文博客</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-recommend">强烈推荐</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://hdlbits.01xz.net/wiki/Main_Page" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🧩</div>
+    <div class="my-res-info">
+      <div class="my-res-title">HDLBits —— Verilog 在线刷题</div>
+      <div class="my-res-desc">浏览器内写 Verilog、即时判题。把本页 2.2 的同步 FIFO 默写一遍再去做它的时序题组合(计数器 / 移位 / FSM),手感提升极快;配合 03 页状态机题食用更佳。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">在线练习</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-diff-2">入门-进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/648999419" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏 · 异步 FIFO,跨时钟域</div>
+      <div class="my-res-desc">中文科普向梳理:亚稳态 → 两级同步 → 格雷码 → 异步 FIFO 空满判断一条线,配图清楚,适合先建立全景再回头精读 Cummings 论文。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-plain">中文</span><span class="my-tag my-tag-diff-1">入门</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/344652580" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎 · FPGA 逻辑设计回顾(6):多比特信号的 CDC 处理方式之异步 FIFO</div>
+      <div class="my-res-desc">从「多 bit 为什么不能直接同步」讲到异步 FIFO 的格雷码转换与空满比较实现,与第 6~7 节内容互为印证,细节推导完整。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-plain">中文</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/qq_32100199/article/details/124108002" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN · IC 学习笔记 3 —— 异步 FIFO</div>
+      <div class="my-res-desc">以「写两次读两次」的波形实例演示读写指针比较与空满判断,附完整代码与仿真,适合对照本页 7.2 逐段复现。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-csdn">CSDN</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/Times_poem/article/details/52023063" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN · Verilog 基础知识 11:异步 FIFO 为什么使用格雷码</div>
+      <div class="my-res-desc">专攻「为什么」:从多位采样错位的具体波形,推演格雷码如何让错误保持保守,还记录了作者调试时踩过的坑,是把 Q2 面试题答深的素材。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-csdn">CSDN</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-diff-3">深究</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1hgeEeUEfH/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站 ·【数字IC/FPGA 秋招八股】异步 FIFO 设计原理</div>
+      <div class="my-res-desc">秋招八股系列人气集(收藏近 500):从 FIFO 用途讲到格雷码指针与空满判断,节奏紧凑,适合面试前突击刷新记忆。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-recommend">强烈推荐</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1JepZeLEnp/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站 ·【数字IC/FPGA 秋招八股】异步 FIFO 手撕代码 + 仿真测试</div>
+      <div class="my-res-desc">同系列的「手撕」篇:现场从零写出异步 FIFO 并跑仿真、分析 bug,与本页 7.2 代码框架同源,看完自己默写一遍效果最好。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-plain">配套实战</span><span class="my-tag my-tag-diff-3">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1YYDLYPEuM/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站 ·【数字IC】跨时钟域专题 01:概念、亚稳态(全芯科教)</div>
+      <div class="my-res-desc">CDC 系列开篇:时钟域分类、亚稳态成因与危害,与本页第 4~5 节对应;系列后续几集覆盖电平/脉冲同步与握手,可成套观看。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-cdc">CDC系列</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.verificationguide.com/search/label/FIFO" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📚</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Verification Guide · FIFO 专题(SV/UVM 视角)</div>
+      <div class="my-res-desc">按 FIFO 标签聚合的 SystemVerilog/UVM 页面:transaction、testbench 结构等,适合往验证方向延伸,理解「设计好的 FIFO 还要被怎么验」。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-plain">英文教程</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.cnblogs.com/VerweileDoch/p/18033380" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">博客园 · 异步 FIFO 的笔记:深度、格雷码</div>
+      <div class="my-res-desc">短平快的个人笔记:深度计算思路与格雷码空满判断要点一条条列清,适合当复习提纲,配合本页第 3、8 节的例题自查。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-plain">中文笔记</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-diff-1">入门</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://developer.aliyun.com/article/1163323" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">阿里云开发者社区 · 异步 FIFO 的一些小事(1):空满判断与格雷码</div>
+      <div class="my-res-desc">场景推演式讲解:一步步推「同步过来的指针为什么只能保守」,把方向性安全这个最难讲清的点讲透了,推荐精读。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-plain">中文文章</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-diff-3">深究</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.21ic.com/a/1003596.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">21ic · 跨时钟域(CDC)处理:异步 FIFO 的格雷码同步与亚稳态概率控制</div>
+      <div class="my-res-desc">把 MTBF 公式与格雷码方案串成一条「概率控制」主线,补充了工程上如何评估同步器级数的定量视角,与第 4 节公式互相印证。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-plain">中文文章</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+  <!-- /RES -->
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>
