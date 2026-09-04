@@ -176,31 +176,76 @@
     return { done:done, total:total };
   };
 
-  /* ---------- 文档式目录侧边栏(DeepSeek 官方文档风) ---------- */
+  /* ---------- 文档式目录侧边栏(DeepSeek 官方文档风) ----------
+     V2.1.15 升级为两级可折叠目录树:h2=章节(可折叠分组),h3=知识点(子项),
+     解决多内容页目录「一平到底堆到死」:
+     · 页面没有任何 h3 时自动退化为旧版平铺列表(零回归)
+     · 折叠状态按 pageId 记忆于 localStorage「site-toc-expand-v1」(C4 前缀白名单)
+     · 滚动高亮自动展开高亮所在分组;标题行提供「展开/收起」一键全开全收 */
   function buildToc(){
     var P = page();
     if(!P.pageId) return;
     /* 仅对使用 site.css 的新页面生效(旧页面布局各异,不注入) */
     if(!document.querySelector('link[href*="site.css"]')) return;
-    var hs = document.querySelectorAll('.container h2');
+    var hs = document.querySelectorAll('.container h2, .container h3');
     /* 2026-08-17:由 ≥2 放宽为 ≥1——3D 拆解页/实验台/项目清单等页面只有一个 h2 时
        也应显示左侧目录(否则「控件完全空白」),内容页有目录总比没有强 */
     if(hs.length < 1) return;
-    var items = [];
-    for(var i = 0; i < hs.length; i++){
-      var h = hs[i];
-      if(!h.id){ h.id = 'sec-' + (i + 1); }
-      var t = h.textContent.replace(/^\d+\s*/, '').trim();
-      items.push({ id: h.id, t: t });
+    /* 收集两级结构:h2 → {id,t,subs:[]},h3 归入其前方最近的 h2;
+       控件容器内的 h3(FAQ 答案/自测题/表格/术语卡等)不算章节知识点 */
+    function inWidget(el){
+      return !!(el.closest && el.closest('details,.box,.quiz,.table-wrap,.term-card,.srs-card,.progress-panel,.giscus-wrap,.prevnext,.search-overlay'));
     }
+    var items = [], heads = [], cur = null, n2 = 0, n3 = 0;
+    for(var i = 0; i < hs.length; i++){
+      var h = hs[i], isH3 = (h.tagName === 'H3');
+      if(inWidget(h)) continue;
+      var t = h.textContent.replace(/^\d+(\.\d+)*\s*/, '').trim();
+      if(!t) continue;
+      if(isH3){
+        if(!h.id){ h.id = 'sec-' + n2 + '-' + (++n3); }
+        heads.push({ el:h, id:h.id });
+        if(cur){ cur.subs.push({ id:h.id, t:t }); }
+        else { items.push({ id:h.id, t:t, subs:[] }); } /* 无前导 h2 的散置 h3:自己成组 */
+        continue;
+      }
+      n2++; n3 = 0;
+      if(!h.id){ h.id = 'sec-' + n2; }
+      heads.push({ el:h, id:h.id });
+      cur = { id:h.id, t:t, subs:[] };
+      items.push(cur);
+    }
+    if(!items.length) return;
+    var nested = false;
+    for(var a = 0; a < items.length; a++){ if(items[a].subs.length){ nested = true; break; } }
     var aside = document.createElement('aside');
     aside.className = 'toc-sidebar';
     aside.id = 'tocSidebar';
-    var html = '<div class="toc-title">📑 本页目录</div><ul>';
-    items.forEach(function(it){
-      html += '<li><a href="#' + it.id + '" data-toc="' + it.id + '">' + it.t + '</a></li>';
-    });
-    html += '</ul>';
+    var html = '';
+    if(!nested){
+      /* 旧版平铺(无 h3 页面,零回归) */
+      html = '<div class="toc-title">📑 本页目录</div><ul>';
+      items.forEach(function(it){
+        html += '<li><a href="#' + it.id + '" data-toc="' + it.id + '">' + it.t + '</a></li>';
+      });
+      html += '</ul>';
+    }else{
+      html = '<div class="toc-title">📑 本页目录<span class="toc-tools"><button type="button" class="toc-tool" data-act="all">展开</button><button type="button" class="toc-tool" data-act="none">收起</button></span></div><div class="toc-tree">';
+      items.forEach(function(it){
+        html += '<div class="toc-group" data-grp="' + it.id + '"><div class="toc-head">' +
+          (it.subs.length ? '<button type="button" class="toc-caret" aria-label="展开或收起本节"></button>' : '<span class="toc-nocaret"></span>') +
+          '<a href="#' + it.id + '" data-toc="' + it.id + '">' + it.t + '</a></div>';
+        if(it.subs.length){
+          html += '<ul class="toc-sub">';
+          it.subs.forEach(function(s){
+            html += '<li><a href="#' + s.id + '" data-toc="' + s.id + '">' + s.t + '</a></li>';
+          });
+          html += '</ul>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    }
     aside.innerHTML = html;
     document.body.appendChild(aside);
     document.body.classList.add('has-toc');
@@ -210,24 +255,83 @@
     btn.title = '目录';
     btn.onclick = function(){ aside.classList.toggle('open'); };
     document.body.appendChild(btn);
-    /* 滚动高亮当前章节(用文档绝对位置,避免 offsetParent 偏移导致高亮错位) */
-    var links = aside.querySelectorAll('a');
-    var secs = [];
-    items.forEach(function(it){ secs.push(document.getElementById(it.id)); });
-    function highlightToc(){
-      var y = window.scrollY + 150, cur = null;
-      for(var j = 0; j < secs.length; j++){
-        if(secs[j]){
-          var top = secs[j].getBoundingClientRect().top + window.scrollY;
-          if(top <= y) cur = secs[j].id;
+    /* 折叠状态:按 pageId 记忆;首次访问默认首组展开、其余收起 */
+    var groups = nested ? aside.querySelectorAll('.toc-group') : [];
+    var SKEY = 'site-toc-expand-v1';
+    function loadState(){
+      try{
+        var all = JSON.parse(localStorage.getItem(SKEY) || '{}');
+        return all[P.pageId] || null;
+      }catch(e){ return null; }
+    }
+    function saveState(st){
+      try{
+        var all = {};
+        try{ all = JSON.parse(localStorage.getItem(SKEY) || '{}') || {}; }catch(e2){ all = {}; }
+        all[P.pageId] = st;
+        localStorage.setItem(SKEY, JSON.stringify(all));
+      }catch(e3){}
+    }
+    function applyState(st){
+      for(var g = 0; g < groups.length; g++){
+        var gid = groups[g].getAttribute('data-grp');
+        if(st && typeof st[gid] !== 'undefined'){ groups[g].classList.toggle('collapsed', !st[gid]); }
+        else { groups[g].classList.toggle('collapsed', g > 0); }
+      }
+    }
+    if(nested){
+      applyState(loadState());
+      aside.addEventListener('click', function(ev){
+        var t = ev.target;
+        if(!t || !t.classList){ return; }
+        if(t.classList.contains('toc-tool')){
+          /* 一键全开/全收(写入记忆) */
+          var expand = (t.getAttribute('data-act') === 'all'), st = {};
+          for(var g = 0; g < groups.length; g++){
+            groups[g].classList.toggle('collapsed', !expand);
+            st[groups[g].getAttribute('data-grp')] = expand ? 1 : 0;
+          }
+          saveState(st);
+          return;
         }
+        var caret = (t.tagName === 'BUTTON' && t.classList.contains('toc-caret')) ? t : null;
+        var grp = t.closest ? t.closest('.toc-group') : null;
+        if(!grp){ return; }
+        var collapsedNow = grp.classList.contains('collapsed');
+        if(caret || collapsedNow){
+          /* 点箭头:纯切换;点已收起的组标题:先展开再跳转 */
+          grp.classList.toggle('collapsed', caret ? collapsedNow : false);
+          var st2 = loadState() || {};
+          for(var g2 = 0; g2 < groups.length; g2++){ st2[groups[g2].getAttribute('data-grp')] = groups[g2].classList.contains('collapsed') ? 0 : 1; }
+          saveState(st2);
+        }
+      });
+    }
+    /* 滚动高亮当前章节(h2+h3 统一按文档绝对位置,避免 offsetParent 偏移导致高亮错位) */
+    var links = aside.querySelectorAll('a');
+    var ownerOf = {};
+    for(var g3 = 0; g3 < groups.length; g3++){ ownerOf[groups[g3].getAttribute('data-grp')] = groups[g3]; }
+    if(nested){
+      for(var a2 = 0; a2 < items.length; a2++){
+        for(var b2 = 0; b2 < items[a2].subs.length; b2++){ ownerOf[items[a2].subs[b2].id] = groups[a2]; }
+      }
+    }
+    function highlightToc(){
+      var y = window.scrollY + 150, curId = null;
+      for(var j = 0; j < heads.length; j++){
+        var top = heads[j].el.getBoundingClientRect().top + window.scrollY;
+        if(top <= y) curId = heads[j].id;
       }
       /* 滚动到底部时,高亮最后一个章节 */
       var docEnd = (document.documentElement.scrollHeight || document.body.scrollHeight) - window.innerHeight;
-      if(y >= docEnd && secs.length && secs[secs.length - 1]){ cur = secs[secs.length - 1].id; }
+      if(y >= docEnd && heads.length){ curId = heads[heads.length - 1].id; }
       for(var k = 0; k < links.length; k++){
-        if(links[k].getAttribute('data-toc') === cur){ links[k].classList.add('active'); }
+        if(links[k].getAttribute('data-toc') === curId){ links[k].classList.add('active'); }
         else { links[k].classList.remove('active'); }
+      }
+      /* 高亮进入折叠分组时自动展开(不写入记忆,其余分组保持手动收起) */
+      if(curId && ownerOf[curId] && ownerOf[curId].classList.contains('collapsed')){
+        ownerOf[curId].classList.remove('collapsed');
       }
     }
     window.addEventListener('scroll', highlightToc, { passive:true });

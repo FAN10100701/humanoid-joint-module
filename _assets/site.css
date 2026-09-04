@@ -688,3 +688,30 @@ html:not([data-theme-early="dark"]) .nav-prog i{color:#64748b}
 .rv-hold{animation:none;opacity:0}
 
 /* V2.1.12c:主题切换涟漪特效已按反馈移除(低端机切换卡顿),瞬时切换 */
+
+/* ============================================================
+   V2.1.15 · 目录树:h2 章节分组可折叠 + h3 知识点子项
+   (无 h3 页面仍为旧版平铺;折叠记忆 localStorage site-toc-expand-v1;
+    过渡只用 color/transform,不新增 backdrop-filter,遵守浅色性能红线)
+   ============================================================ */
+.toc-title{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.toc-tools{display:inline-flex;gap:4px}
+.toc-tool{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#9aa4b2;font-size:10px;line-height:1;padding:3px 7px;border-radius:6px;cursor:pointer;font-family:inherit}
+.toc-tool:hover{color:#fff;border-color:rgba(255,255,255,.3)}
+.toc-tree{margin:2px 0 0}
+.toc-group{margin:1px 0}
+.toc-head{display:flex;align-items:center}
+.toc-head a{flex:1;font-weight:600}
+button.toc-caret{width:18px;flex:0 0 18px;height:26px;border:none;background:none;color:#6b7280;cursor:pointer;font-size:9px;padding:0;display:flex;align-items:center;justify-content:center;transition:color .15s}
+button.toc-caret::before{content:"▾"}
+.toc-group.collapsed button.toc-caret::before{content:"▸"}
+button.toc-caret:hover{color:#58a6ff}
+.toc-nocaret{width:18px;flex:0 0 18px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#5b6472}
+.toc-nocaret::before{content:"▾";opacity:.35}
+.toc-sidebar ul.toc-sub{list-style:none;padding:0;margin:0}
+.toc-sidebar .toc-sub a{padding-left:30px;font-size:12px;line-height:1.45}
+.toc-group.collapsed .toc-sub{display:none}
+html:not([data-theme-early="dark"]) .toc-tool{background:rgba(255,255,255,.7);border-color:rgba(100,116,139,.25);color:#64748b}
+html:not([data-theme-early="dark"]) .toc-tool:hover{color:#2563eb;border-color:#2563eb}
+html:not([data-theme-early="dark"]) button.toc-caret{color:#94a3b8}
+html:not([data-theme-early="dark"]) button.toc-caret:hover{color:#2563eb}
