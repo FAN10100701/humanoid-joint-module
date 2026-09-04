@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 10-10 NPU 项目实战(上): Spec 与控制模块
+  板块: NPU与数字IC设计 · 第三阶段第 2 页
+  内容: 需求解读 / Spec 四分法 / 工作模式 / 寄存器映射 /
+        顶层架构 / 控制 FSM / 数据通路位宽 / 时钟复位 /
+        寄存器模块 RTL / 分阶段验证计划
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · NPU项目实战(上) Spec与控制模块</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名加 my- 前缀,避免与全局冲突) ===== */
+
+  /* 资源卡片(与 02-05 / 10-05 同构) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+  /* 徽章配色 */
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+  .my-badge-code{background:linear-gradient(135deg,#fff7ed,#ffedd5)}
+
+  /* 标签 */
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-zhihu{background:#e0e7ff;color:#3730a3}
+  .my-tag-blog{background:#bae6fd;color:#075985}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-1{background:#dcfce7;color:#166534}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+
+  /* SVG 图容器 */
+  .my-fig{background:rgba(13,17,23,.72);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 12px;margin:14px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:560px;width:100%;height:auto}
+  .my-fig-cap{font-size:12.5px;color:#9aa4b2;margin-top:8px;text-align:center;line-height:1.7}
+  .my-note{fill:#f59e0b;font-size:11px}
+  .my-note-b{fill:#58a6ff;font-size:11px}
+
+  /* 浅色主题适配(与 site.css 的苹果透亮玻璃风格一致) */
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+  html:not([data-theme-early="dark"]) .my-fig{background:rgba(255,255,255,.72);border-color:rgba(148,163,184,.35)}
+  html:not([data-theme-early="dark"]) .my-fig-cap{color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "10-10",
+    root: "..",
+    breadcrumb: [
+      { t: "NPU与数字IC设计", u: "../index.html#sec10" },
+      { t: "NPU项目实战(上)" }
+    ],
+    prev: { t: "芯片设计流程与AHB/AXI总线", u: "09_芯片设计流程与AHB_AXI总线.html" },
+    next: { t: "NPU项目实战(下)运算模块与联调", u: "11_NPU项目实战下_运算模块与联调.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧩 NPU 项目实战(上): 需求解读、Spec 与控制模块</h1>
+    <div class="sub">从这一页开始,我们动手设计一个真正的项目 —— LeNet-5 INT8 推理加速器(小型 NPU)。本页完成项目的"上半场": 把需求翻译成工程语言、写出一页纸 Spec、定义寄存器与接口、切分顶层架构、写出控制 FSM 与寄存器模块的 RTL。下半场(10-11)再实现运算模块并完成系统联调。</div>
+    <div class="tags">
+      <span class="tag">NPU 项目实战</span>
+      <span class="tag">Spec 分析</span>
+      <span class="tag">寄存器映射</span>
+      <span class="tag">控制 FSM</span>
+      <span class="tag">Verilog RTL</span>
+      <span class="tag">数据通路</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能把「做一个 LeNet-5 INT8 加速器」这句话拆成算子清单、性能指标、资源约束、精度四类工程需求,并识别歧义点<br>
+    2. 能用「功能 / 接口 / 性能 / 物理实现」四分法分析 Spec,由每层参数上界推导出片上 RAM 的深度与位宽<br>
+    3. 能为加速器定义完整寄存器表(≥8 个寄存器: 偏移/位域/读写属性/复位值)与工作模式时序<br>
+    4. 能画出顶层架构框图(控制通路/数据通路/存储子系统),并用三段式写出控制 FSM 与 APB 寄存器模块的完整 Verilog<br>
+    5. 能规划位宽(INT8 乘 → INT32 累加 → requant → INT8)与「模块级 TB → 系统级 TB」的分阶段验证计划<br>
+    <b>建议用时:</b>约 60 分钟(正文 40 分钟 + 自测与代码精读 20 分钟)<br>
+    <b>前置要求:</b>建议先读完 <a href="03_Verilog语法与状态机设计.html">10-03 Verilog 状态机</a>、<a href="05_APB总线协议与接口设计.html">10-05 APB 总线</a>、<a href="07_NPU体系结构与脉动阵列.html">10-07 体系结构与硬件映射</a>、<a href="08_模型量化与端侧部署.html">10-08 模型量化</a>
+  </div>
+
+  <!-- ================= 1 项目启动: 需求解读与 Spec 分析 ================= -->
+  <h2><span class="h2-num">1</span> 项目启动: 把「课程目标」翻译成工程语言</h2>
+  <p><b>贯穿项目设定:</b>我们要设计一个小型 NPU —— <b>LeNet-5 INT8 推理加速器</b>,目标平台为 FPGA(仿真优先)。它支持卷积(3×3 / 5×5, stride=1)、2×2 最大池化、全连接与 ReLU;权重与特征图由主机预先写入片上 RAM,主机写寄存器启动计算,计算完成后以中断通知。<a href="07_NPU体系结构与脉动阵列.html">10-07</a> 已经回答了「LeNet 每一层放在硬件哪里算」,本页从这一页的结论出发,回答「这块电路的边界、接口和骨架怎么定」。</p>
+  <p>真实芯片公司的项目流程是:市场/系统团队提出需求 → 架构师写 <b>Spec(规格说明书)</b> → 团队评审 → 才允许写第一行 RTL。初学者最常犯的错误就是跳过 Spec 直接写代码,结果写到一半发现 RAM 深度不够、接口对不上、控制时序自相矛盾。所以本页前两节只做一件事:<b>把一句话需求变成一份能指导写代码的 Spec</b>。</p>
+
+  <h3>知识点 1 · 需求解读: 从课程目标到工程语言</h3>
+  <p><b>是什么:</b>需求解读就是把「做一个 LeNet-5 加速器」这类自然语言目标,拆成四类可检验的工程语言 —— <b>算子清单、性能指标、资源约束、精度要求</b>,外加一条「怎么用」的使用流程。<b>为什么:</b>这四类分别决定了你的数据通路(要造哪些运算模块)、微架构选型(串行还是并行)、存储规模(RAM 深度位宽)和量化方案(requant 怎么做);使用流程决定接口与工作模式。「可检验」是关键词 —— 每条需求都要能变成一个测试用例或一个计算公式。</p>
+  <p><b>怎么做:</b>逐条写下并给出本项目的定版结论:</p>
+  <div class="table-wrap"><table>
+    <tr><th>需求类别</th><th>本项目定版结论</th><th>它决定了什么</th></tr>
+    <tr><td><b>算子清单</b></td><td>① 卷积 3×3 / 5×5,stride=1,无 padding,可选 bias;② 池化 2×2 max,stride=2;③ 全连接(按 1×1 卷积实现);④ ReLU 逐元素(每层可配使能)</td><td>需要卷积引擎、池化单元、ReLU 单元、全连接复用卷积引擎 —— 数据通路的模块清单</td></tr>
+    <tr><td><b>性能指标</b></td><td>一次 MNIST 推理(约 42 万次 MAC)周期数 ≤ 1M 周期;工作频率 50MHz(即 ≤ 20ms)</td><td>微架构:先做 1 MAC/周期串行设计即可达标,优化(多 MAC 阵列)留给 10-11</td></tr>
+    <tr><td><b>资源约束</b></td><td>片上 BRAM:权重 RAM 64KB + 特征图乒乓双缓冲 2×16KB(合计约 24 个 36Kb BRAM);运算单元 1 个 INT8 乘法器 + 1 个 INT32 加法器起步</td><td>RAM 的深度/位宽(见知识点 2),以及「先跑通再加速」的迭代策略</td></tr>
+    <tr><td><b>精度</b></td><td>权重/激活 INT8,累加 INT32,requant 回 INT8;MNIST 测试精度相对 FP32(≥98%)损失 ≤ 1 个百分点</td><td>位宽规划与 requant 参数(见本页第 4 节),量化原理见 <a href="08_模型量化与端侧部署.html">10-08</a></td></tr>
+    <tr><td><b>使用流程</b></td><td>主机经 APB 写权重/特征图 → 写层参数寄存器 → 写 CTRL 启动 → 轮询 STATUS 或等中断 → 读回结果</td><td>工作模式、寄存器映射、总线接口(本页第 2 节)</td></tr>
+  </table></div>
+
+  <div class="box box-tip"><b>🛠 工程怎么问 —— 需求歧义怎么澄清:</b>课程需求永远是含糊的,工程师的本事在于把每个模糊词变成「二选一的决定」并写入 Spec。本项目的三个典型歧义与澄清结果:<br>
+  ①「支持卷积」—— stride?padding?分组?→ 澄清为 <b>stride=1、padding=0、group=1</b>(LeNet 经典结构用不到其他配置,砍掉可省一半控制逻辑);<br>
+  ②「完成后通知」—— 中断还是轮询?→ <b>两种都留</b>:STATUS.done 供轮询,irq 引脚供中断(CTRL.ie 使能),调试期轮询更好用;<br>
+  ③「多层谁调度」—— 硬件自动连跑 8 层,还是主机逐层启动?→ <b>主机逐层启动</b>(每层写一次层参数 + start),硬件只把「一层」做扎实 —— 这是典型的时间换简单度,商业 NPU(如 NVDLA)用指令/参数表让硬件自主调度,是本项目 10-11 之后的进阶方向。</div>
+
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 需求没写 padding 就默认「有 padding」,导致地址生成器返工 —— <b>没写就是没有,但要白纸黑字记进 Spec 的「不支持列表」</b>;② 把性能指标写成「越快越好」—— 不可检验的需求等于没有需求,必须落成「≤ N 周期」;③ 忘了问「输入数据从哪来」—— 本项目数据由主机预写,所以不需要 DMA;若换成「实时取图」,接口设计完全不同。</div>
+
+  <h3>知识点 2 · Spec 分析: 四分法、参数范围表与一页纸模板</h3>
+  <p><b>是什么:</b>Spec 分析就是把需求按「<b>功能 Spec / 接口 Spec / 性能 Spec / 物理实现 Spec</b>」四层拆开,每层回答一个问题:电路<b>做什么</b>、<b>跟谁相连</b>、<b>跑多快</b>、<b>做成多大</b>。<b>为什么:</b>四分法强制你把「行为」和「实现」分开 —— 功能 Spec 是验证 golden model 的依据,接口 Spec 是别人集成你的依据,性能 Spec 决定微架构,物理 Spec 决定 RAM/布线资源。任何一层缺失,都会在联调期变成返工。</p>
+  <div class="table-wrap"><table>
+    <tr><th>Spec 层</th><th>回答的问题</th><th>本项目示例条目</th><th>评审时会被问</th></tr>
+    <tr><td>功能 Spec</td><td>输入什么、输出什么、算法定义</td><td>out = ReLU(Σ W·in + bias);INT8 语义与 requant 公式;各算子的逐位精确行为</td><td>「溢出怎么办?负数怎么处理?」</td></tr>
+    <tr><td>接口 Spec</td><td>引脚/总线/寄存器/握手信号</td><td>APB 从机接口 + 寄存器映射(第 2 节)+ pe_start/pe_done 握手</td><td>「寄存器读写属性?复位值?」</td></tr>
+    <tr><td>性能 Spec</td><td>周期数、吞吐、频率</td><td>单层卷积周期数公式 + 整网 ≤ 1M 周期 @ 50MHz</td><td>「瓶颈在算力还是访存?」</td></tr>
+    <tr><td>物理实现 Spec</td><td>面积/资源、RAM 规格、时钟域</td><td>权重 RAM 64KB、特征图 RAM 2×16KB、单时钟域、FPGA BRAM 数上限</td><td>「RAM 深度怎么推出来的?」</td></tr>
+  </table></div>
+
+  <p><b>怎么做 —— 参数范围表推出 RAM 规格:</b>这是 Spec 阶段最值钱的一步:列出<b>每一层的参数上界</b>,最大值直接决定 RAM 深度与地址位宽。推导过程(LeNet-5,输入按 32×32 计):</p>
+  <div class="table-wrap"><table>
+    <tr><th>层</th><th>输出特征图</th><th>字节数(INT8)</th><th>权重数(INT8)</th></tr>
+    <tr><td>输入图</td><td>1×32×32</td><td>1 024</td><td>—</td></tr>
+    <tr><td>C1 卷积 5×5</td><td>6×28×28</td><td>4 704</td><td>150(+bias 6×4B)</td></tr>
+    <tr><td>S2 池化 2×2</td><td>6×14×14</td><td>1 176</td><td>—</td></tr>
+    <tr><td>C3 卷积 5×5</td><td>16×10×10</td><td>1 600</td><td>2 400(+bias 16×4B)</td></tr>
+    <tr><td>S4 池化 2×2</td><td>16×5×5</td><td>400</td><td>—</td></tr>
+    <tr><td>C5 卷积 5×5(=全连接)</td><td>120×1×1</td><td>120</td><td>48 000(+bias 120×4B)</td></tr>
+    <tr><td>F6 全连接</td><td>84</td><td>84</td><td>10 080(+bias 84×4B)</td></tr>
+    <tr><td>OUTPUT 全连接</td><td>10</td><td>10</td><td>840(+bias 10×4B)</td></tr>
+    <tr><td><b>合计上界</b></td><td>最大单层 4 704 B</td><td><b>特征图缓冲取 16 KB/块</b></td><td><b>约 61.5 KB → 权重 RAM 取 64 KB</b></td></tr>
+  </table></div>
+  <p>由此得到两个存储器的「物理 Spec」:<b>权重 RAM</b> = 64K 深度 × 8bit(地址 16 位);<b>特征图 RAM</b> = 乒乓两块,每块 16K 深度 × 8bit(地址 14 位)。再顺手推出性能账:全网 MAC 总数 ≈ 11.8 万 + 24 万 + 4.8 万 + 1 万 + 0.08 万 ≈ <b>42 万次</b>,串行 1 MAC/周期 + 池化/写回开销后约 45~50 万周期,占 1M 周期预算的一半 —— 指标合理,还有优化余量。<b>这就是「性能 Spec 驱动微架构」:先算账,再决定要不要并行。</b></p>
+
+  <p><b>一页纸 Spec 模板</b>(可直接套用到你自己的项目,评审/面试/开源仓库 README 通用):</p>
+  <pre><code>================================================================
+ 项目一页纸 Spec: LeNet-5 INT8 推理加速器 (npu_top)  v1.0
+================================================================
+1. 概述   本模块为 LeNet-5 INT8 推理加速器,APB 从机形态,
+          主机预写权重/特征图,寄存器启动,中断/轮询报完成。
+2. 功能   支持 conv3x3/conv5x5(stride1,无pad,带bias)、
+          maxpool2x2(stride2)、fc(按1x1 conv 实现)、relu(可配)。
+          精度:INT8 乘、INT32 累加、requant 回 INT8(saturate)。
+          不支持:padding、stride&gt;1 卷积、分组卷积、训练/反向。
+3. 接口   APB(PADDR[7:0]/PWDATA/PRDATA);寄存器映射见寄存器表;
+          输出 irq(电平,写 STATUS 清除);层内握手 pe_start/pe_done。
+4. 性能   50MHz;单层周期数 = 输出像素数×CH_OUT×K×K + 固定开销;
+          整网 ≤ 1M 周期(≈42 万 MAC,串行 MAC 即可达标)。
+5. 物理   权重 RAM 64K×8;特征图 RAM 2×16K×8(乒乓);
+          单时钟域 clk,同步复位 rst_n;FPGA 目标:Xilinx 7 系列。
+6. 验证   模块级 TB(逐模块)→ 系统级 TB;Python/NumPy 生成
+          黄金数据逐层比对(见第 5 节验证计划)。
+7. 未决   多 MAC 并行度、DMA 直连、层参数表硬件化 —— 列入 v2。
+================================================================</code></pre>
+
+  <div class="box box-tip"><b>🛠 工程怎么问:</b>面试官问「你的 Spec 里 RAM 深度怎么定的?」标准答法是三步:<b>列每层参数上界 → 取最大单层字节数(留余量取 2 的幂)→ 反推地址位宽</b>。能现场把 4704B → 16KB → 14 位地址这笔账算清楚,比背十道八股更能证明你做过设计。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 只算最大层不算总量,漏掉权重大头(C5 一层就占 48K 参数,几乎独占权重 RAM);② bias 用 INT8 存 —— bias 必须按累加精度存(INT32),这是量化部署的常见 bug,见 <a href="08_模型量化与端侧部署.html">10-08</a>;③ 忘记「不支持列表」—— Spec 的价值一半在于明确<b>不做什么</b>,否则验证同学会按无限功能来出用例。</div>
+
+  <!-- ================= 2 工作模式与寄存器映射 ================= -->
+  <h2><span class="h2-num">2</span> 对外契约: 工作模式、接口定义与寄存器映射</h2>
+  <p>Spec 里最"硬"的两页是<b>工作模式定义</b>和<b>寄存器映射</b>: 前者回答「硬件有哪几种状态、谁在什么时候被允许做什么」,后者回答「软件怎么一步步驱动它」。这两页写清楚了,RTL、驱动、验证三拨人才能并行开工 —— 这就是接口先行的意义。</p>
+
+  <h3>知识点 3 · 工作模式定义: 配置 → 计算 → 完成</h3>
+  <p><b>是什么:</b>把加速器的生命周期划成三个模式。<b>为什么:</b>许多资源(RAM 写口、运算单元)只有一个,必须用模式来仲裁「同一时刻谁拥有它」,否则就会出现「主机在计算中途改写权重」这类灾难。<b>怎么做:</b>按下表定义,并把每条切换规则落实到寄存器位与 FSM 条件上。</p>
+  <div class="table-wrap"><table>
+    <tr><th>模式</th><th>进入条件</th><th>谁主导</th><th>允许的动作</th><th>硬件职责</th></tr>
+    <tr><td><b>配置模式</b></td><td>复位后 / STATUS.idle=1</td><td>主机(APB)</td><td>写层参数寄存器;经 RAM 写口写权重/特征图</td><td>APB 译码,写寄存器组与 RAM;start 仅在 idle 时被采样</td></tr>
+    <tr><td><b>计算模式</b></td><td>写 CTRL.start=1</td><td>控制 FSM</td><td>仅允许读 STATUS(轮询)</td><td>锁存参数快照 → 驱动数据通路完成一层 → 置 done</td></tr>
+    <tr><td><b>完成/回读</b></td><td>STATUS.done=1 或 irq 上升</td><td>主机</td><td>读 STATUS(顺带清 done)→ 读输出特征图 → 配下一层</td><td>撤下 irq 电平,回到配置模式</td></tr>
+  </table></div>
+
+  <p><b>完成通知: 轮询 vs 中断</b> —— 两种都实现,由软件选择:</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>轮询(Polling)</th><th>中断(Interrupt)</th></tr>
+    <tr><td>硬件代价</td><td>只要 STATUS.done 一位</td><td>再加 ie 使能位 + irq 输出引脚 + 电平保持逻辑</td></tr>
+    <tr><td>CPU 行为</td><td>死循环读 STATUS,占着 CPU</td><td>去干别的,irq 触发 ISR 再回来处理</td></tr>
+    <tr><td>适用场景</td><td>调试期单步观察、裸机无中断控制器</td><td>SoC 集成后、多层流水调度</td></tr>
+    <tr><td>本项目实现</td><td>读 STATUS[1](done),<b>读自动清除</b></td><td>CTRL[1](ie)=1 时,done 拉高 irq 电平;清 done 即撤 irq(电平中断,对 GIC 友好)</td></tr>
+  </table></div>
+
+  <p><b>模式切换的时序约束</b>(每一条都会写进 RTL 和断言):</p>
+  <ul>
+    <li><b>start 只在 idle 采样:</b>计算中主机误写 start=1 必须被硬件忽略 —— 实现为 start 脉冲与 idle 相与(见第 5 节寄存器代码);</li>
+    <li><b>计算期间锁存参数快照:</b>FSM 在 CONFIG 态一次性锁存全部层参数,计算中改寄存器不影响当前层,避免"边跑边变"的亚稳态语义;</li>
+    <li><b>RAM 写口互斥:</b>计算模式中,APB 对权重 RAM / 正被读取的特征图块的写访问被拒绝(pslverr 报错);进阶版用乒乓双缓冲允许写"另一块"(第 3 节);</li>
+    <li><b>done 的清除方式唯一:</b>读 STATUS 清除(也可选写 1 清除 W1C,二选一并写进 Spec);</li>
+    <li><b>复位即配置模式:</b>任何时刻同步复位,FSM 回 IDLE、CTRL 回 0 —— 防止复位残留的 start 位引发"幽灵启动"。</li>
+  </ul>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 忘了 start 的"忽略语义",验证随机激励一跑就抓到双重启动;② done 用脉冲而不是电平 —— 轮询的 CPU 会错过脉冲,<b>状态位必须是电平,事件才用脉冲</b>;③ irq 没有随 ie 门控,关了中断系统还在被打。</div>
+
+  <h3>知识点 4 · 接口定义与寄存器映射(工程级寄存器表)</h3>
+  <p><b>是什么:</b>接口 = 总线端口 + 中断 + 模块间握手;npu_top 对外只有一组 APB 端口(clk、rst_n、psel、penable、pwrite、paddr[7:0]、pwdata[31:0]、prdata[31:0]、pready、pslverr)、一根 irq 输出 —— 权重/特征图 RAM 都在片内,主机经 APB 的 RAM 写通路间接访问(所以地址寄存器里存的是<b>片上 RAM 的偏移</b>,不是系统总线地址)。<b>为什么:</b>寄存器是软硬件之间的合同,每一位都必须有:偏移、位域、读写属性、复位值。<b>怎么做:</b>下面就是本项目的完整寄存器表(11 个寄存器,可以直接当作你的第一份寄存器手册)。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>偏移</th><th>名称</th><th>位域</th><th>读写</th><th>复位值</th><th>说明</th></tr>
+    <tr><td>0x00</td><td rowspan="2"><b>CTRL</b></td><td>[0] start</td><td>RW / HW 清零</td><td>1'b0</td><td>写 1 启动一层;idle=1 才采样,被采样后硬件自动清零</td></tr>
+    <tr><td>—</td><td>[1] ie</td><td>RW</td><td>1'b0</td><td>完成中断使能(1:done 时拉高 irq)</td></tr>
+    <tr><td>0x04</td><td rowspan="2"><b>STATUS</b></td><td>[0] idle</td><td>RO</td><td>1'b1</td><td>1=FSM 处于 IDLE,可接受 start</td></tr>
+    <tr><td>—</td><td>[1] done</td><td>RO,读清除</td><td>1'b0</td><td>一层计算完成标志;读本寄存器即清除并撤 irq</td></tr>
+    <tr><td>—</td><td>—</td><td>[4:2] layer_type</td><td>RO</td><td>3'h0</td><td>回显当前/最近一层类型(000=conv,001=pool,010=fc)</td></tr>
+    <tr><td>0x08</td><td><b>INPUT_ADDR</b></td><td>[15:0]</td><td>RW</td><td>16'h0</td><td>输入特征图在特征图 RAM 中的字节偏移</td></tr>
+    <tr><td>0x0C</td><td><b>WEIGHT_ADDR</b></td><td>[15:0]</td><td>RW</td><td>16'h0</td><td>本层权重在权重 RAM 中的字节偏移</td></tr>
+    <tr><td>0x10</td><td><b>OUTPUT_ADDR</b></td><td>[15:0]</td><td>RW</td><td>16'h0</td><td>输出特征图写入的特征图 RAM 字节偏移</td></tr>
+    <tr><td>0x14</td><td><b>BIAS_ADDR</b></td><td>[15:0]</td><td>RW</td><td>16'h0</td><td>本层 bias 偏移(按 <b>INT32</b> 存,4 字节对齐)</td></tr>
+    <tr><td>0x18</td><td rowspan="2"><b>LAYER_CFG</b></td><td>[2:0] layer_type</td><td>RW</td><td>3'h0</td><td>000=conv / 001=maxpool / 010=fc</td></tr>
+    <tr><td>—</td><td>[3] relu_en / [4] k5</td><td>RW</td><td>2'b0</td><td>relu_en: 本层输出过 ReLU;k5: 0=3×3 核,1=5×5 核</td></tr>
+    <tr><td>0x1C</td><td rowspan="2"><b>CH_CFG</b></td><td>[7:0] ch_in</td><td>RW</td><td>8'h0</td><td>输入通道数 − 1(存 N−1:0 表示 1 通道)</td></tr>
+    <tr><td>—</td><td>[15:8] ch_out</td><td>RW</td><td>8'h0</td><td>输出通道数 − 1</td></tr>
+    <tr><td>0x20</td><td rowspan="2"><b>FM_CFG</b></td><td>[7:0] fm_in</td><td>RW</td><td>8'h0</td><td>输入特征图边长 − 1(按正方形处理)</td></tr>
+    <tr><td>—</td><td>[15:8] fm_out</td><td>RW</td><td>8'h0</td><td>输出特征图边长 − 1(conv: fm_in−K+1;pool: fm_in/2)</td></tr>
+    <tr><td>0x24</td><td rowspan="2"><b>REQUANT</b></td><td>[15:0] mult</td><td>RW</td><td>16'h0</td><td>requant 乘子 M₀(acc×M₀ 再右移)</td></tr>
+    <tr><td>—</td><td>[20:16] shift</td><td>RW</td><td>5'h0</td><td>右移位数 0~31(量化参数由 <a href="08_模型量化与端侧部署.html">10-08</a> 离线求得)</td></tr>
+    <tr><td>0x28</td><td><b>VERSION</b></td><td>[31:0]</td><td>RO</td><td>32'h0001_0000</td><td>版本号 v1.0,驱动探测用(顺手养成的好习惯)</td></tr>
+  </table></div>
+
+  <p><b>怎么做 —— 一次卷积层的完整主机操作序列</b>(驱动代码骨架,与寄存器表一一对应):</p>
+  <pre><code>/* C1 层示例: 输入 1×32×32,权重 5×5,输出 6×28×28,带 ReLU */
+apb_write(0x0C, 0x0000);            /* WEIGHT_ADDR = 权重偏移 0        */
+apb_write(0x14, 0x0096);            /* BIAS_ADDR   = 权重后第 150 字节  */
+apb_write(0x08, 0x0000);            /* INPUT_ADDR  = 特征图 RAM A 块   */
+apb_write(0x10, 0x4000);            /* OUTPUT_ADDR = 特征图 RAM B 块   */
+apb_write(0x1C, (6-1)&lt;&lt;8 | (1-1));  /* CH_CFG  : ch_out=6, ch_in=1     */
+apb_write(0x20, (28-1)&lt;&lt;8 | (32-1));/* FM_CFG  : 32×32 → 28×28         */
+apb_write(0x24, (8&lt;&lt;16) | 0x51AB);  /* REQUANT : shift=8, mult 举例    */
+apb_write(0x18, 0x11);              /* LAYER_CFG: conv + relu_en + k5  */
+apb_write(0x00, 0x00000001);        /* CTRL.start = 1  → 硬件接管      */
+do { s = apb_read(0x04); }          /* 轮询 STATUS ...(或等 irq)      */
+while (!(s &amp; 0x2));                 /* done=1 退出;这次读已清 done     */</code></pre>
+
+  <div class="box box-tip"><b>🛠 工程怎么问:</b>面试常问「寄存器的读写属性有哪些?」—— 至少要能说出五种:<b>RW(读写)、RO(只读)、RW1S/RW1C(写 1 置位/清位)、RC(读清除)、WO(只写)</b>,并能说出"start 为什么用 RW+HW 清零而不是 RC"这类取舍(让 CPU 能回读到 start 当前值,避免重复使能)。数字IC验证岗还会追问:每个寄存器的复位值是什么、哪些位域在计算中被硬件改变 —— 这正是 ralgen/UVM 寄存器模型自动化的输入。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① ch_in/ch_out 存绝对值而不是 N−1,导致 8 位寄存器放不下 256 通道这类边界;<b>"存 N−1"是硬件界的惯用契约</b>,必须写进寄存器表备注;② bias 地址忘了 4 字节对齐,读出的 INT32 错位;③ OUTPUT_ADDR 与 INPUT_ADDR 指向同一块又重叠,计算中边读边写 —— 下一节的乒乓双缓冲就是治它的。</div>
+
+  <!-- ================= 3 顶层架构与控制模块 ================= -->
+  <h2><span class="h2-num">3</span> 顶层架构划分与控制模块 FSM 设计</h2>
+  <p>有了模式与寄存器这两页"合同",就可以画顶层架构了。架构划分的原则只有一句话:<b>控制通路和数据通路分开,存储子系统居中服务,三者之间用最少的握手信号对话</b>。控制通路决定"什么时候做什么",数据通路决定"一个数怎么被算出来",存储子系统决定"数放在哪、谁下一拍能用"。</p>
+
+  <h3>知识点 5 · 顶层架构划分: 控制通路 / 数据通路 / 存储子系统</h3>
+  <p><b>是什么:</b>把 npu_top 切成三大块 —— <b>控制通路</b>(APB 总线接口 + 寄存器组 + 控制 FSM)、<b>数据通路</b>(卷积模块、ReLU/requant、全连接)、<b>存储子系统</b>(权重 RAM + 特征图 RAM 乒乓双缓冲)。<b>为什么:</b>这样切,每块的验证可以独立做(寄存器模块用 APB TB 测,卷积模块用 golden data 测),接口一旦冻结,三块可以并行开发 —— 这正是真实项目里架构师画第一张框图的意义。<b>怎么做:</b>看图,蓝线是数据流、橙线是控制流、红线是中断:</p>
+
+  <div class="my-fig">
+  <svg viewBox="0 0 640 460" role="img" aria-label="NPU 顶层架构框图: 总线接口、寄存器组、控制FSM构成控制通路; 特征图RAM乒乓双缓冲、卷积模块、ReLU/requant、全连接构成数据通路; 权重RAM为存储子系统; 蓝色箭头为数据流, 橙色为控制流, 红色为中断">
+    <defs>
+      <marker id="ab" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#58a6ff"/></marker>
+      <marker id="ao" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#f59e0b"/></marker>
+      <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#ef4444"/></marker>
+      <marker id="ag" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#22c55e"/></marker>
+    </defs>
+    <!-- ===== 控制通路 ===== -->
+    <text x="18" y="24" font-size="13" font-weight="bold" fill="#f59e0b">控制通路(慢速, 事件驱动)</text>
+    <line x1="18" y1="30" x2="622" y2="30" stroke="rgba(245,158,11,.35)" stroke-dasharray="4 4"/>
+    <!-- 控制FSM -->
+    <rect x="330" y="42" width="180" height="78" rx="10" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="420" y="66" text-anchor="middle" font-size="14" font-weight="bold" fill="#f59e0b">控制 FSM</text>
+    <text x="420" y="86" text-anchor="middle" font-size="11" fill="#e6edf3">IDLE→CFG→LOAD→CALC→DONE</text>
+    <text x="420" y="104" text-anchor="middle" font-size="11" fill="#9aa4b2">一次 start 跑一层</text>
+    <!-- 权重RAM -->
+    <rect x="540" y="42" width="86" height="78" rx="10" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="583" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#22c55e">权重 RAM</text>
+    <text x="583" y="92" text-anchor="middle" font-size="11" fill="#9aa4b2">64K × 8bit</text>
+    <text x="583" y="108" text-anchor="middle" font-size="10" fill="#9aa4b2">(主机预写)</text>
+    <!-- 总线接口 -->
+    <rect x="18" y="170" width="112" height="84" rx="10" fill="rgba(88,166,255,.13)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="74" y="198" text-anchor="middle" font-size="13" font-weight="bold" fill="#58a6ff">总线接口</text>
+    <text x="74" y="217" text-anchor="middle" font-size="11" fill="#e6edf3">APB / AXI-Lite</text>
+    <text x="74" y="234" text-anchor="middle" font-size="10" fill="#9aa4b2">从机 · 10-05</text>
+    <!-- 寄存器组 -->
+    <rect x="175" y="170" width="118" height="84" rx="10" fill="rgba(88,166,255,.13)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="234" y="198" text-anchor="middle" font-size="13" font-weight="bold" fill="#58a6ff">寄存器组</text>
+    <text x="234" y="217" text-anchor="middle" font-size="11" fill="#e6edf3">11 × 32bit</text>
+    <text x="234" y="234" text-anchor="middle" font-size="10" fill="#9aa4b2">CTRL/STATUS/层参数…</text>
+    <!-- 控制流箭头 -->
+    <line x1="130" y1="202" x2="175" y2="202" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#ao)"/>
+    <text x="152" y="192" text-anchor="middle" font-size="10" fill="#f59e0b">APB读写</text>
+    <line x1="285" y1="170" x2="352" y2="112" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#ao)"/>
+    <text x="332" y="146" text-anchor="middle" font-size="10" fill="#f59e0b">start/参数快照</text>
+    <line x1="372" y1="120" x2="298" y2="170" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ao)"/>
+    <text x="352" y="128" text-anchor="middle" font-size="10" fill="#f59e0b">done/清start</text>
+    <line x1="175" y1="240" x2="26" y2="240" stroke="#ef4444" stroke-width="1.8" marker-end="url(#ar)"/>
+    <text x="100" y="256" text-anchor="middle" font-size="10" fill="#ef4444">irq(完成中断)</text>
+    <!-- FSM 对数据通路的控制 -->
+    <line x1="430" y1="120" x2="255" y2="330" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ao)"/>
+    <text x="292" y="270" font-size="10" fill="#f59e0b">pe_start / 乒乓选择</text>
+    <line x1="480" y1="120" x2="398" y2="330" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ao)"/>
+    <text x="470" y="250" font-size="10" fill="#f59e0b">层类型/ReLU使能</text>
+    <!-- ===== 数据通路 ===== -->
+    <text x="18" y="310" font-size="13" font-weight="bold" fill="#58a6ff">数据通路(快速, 流水推进) ─ 存储子系统(绿)</text>
+    <!-- 特征图RAM -->
+    <rect x="18" y="330" width="132" height="96" rx="10" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="84" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#22c55e">特征图 RAM</text>
+    <text x="84" y="376" text-anchor="middle" font-size="11" fill="#e6edf3">乒乓双缓冲 A / B</text>
+    <text x="84" y="394" text-anchor="middle" font-size="10" fill="#9aa4b2">每块 16K × 8bit</text>
+    <text x="84" y="410" text-anchor="middle" font-size="10" fill="#9aa4b2">读口+写口各一套</text>
+    <!-- 卷积模块 -->
+    <rect x="188" y="330" width="118" height="96" rx="10" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="247" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#f59e0b">卷积模块</text>
+    <text x="247" y="376" text-anchor="middle" font-size="11" fill="#e6edf3">3×3 / 5×5 stride1</text>
+    <text x="247" y="394" text-anchor="middle" font-size="10" fill="#9aa4b2">行缓冲 + 串行MAC</text>
+    <text x="247" y="410" text-anchor="middle" font-size="10" fill="#9aa4b2">池化2×2 复用通路</text>
+    <!-- ReLU/requant -->
+    <rect x="344" y="330" width="104" height="96" rx="10" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="396" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#f59e0b">ReLU</text>
+    <text x="396" y="376" text-anchor="middle" font-size="11" fill="#e6edf3">requant+饱和</text>
+    <text x="396" y="394" text-anchor="middle" font-size="10" fill="#9aa4b2">INT32 → INT8</text>
+    <text x="396" y="410" text-anchor="middle" font-size="10" fill="#9aa4b2">(每层可配)</text>
+    <!-- 全连接 -->
+    <rect x="486" y="330" width="76" height="96" rx="10" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="524" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#f59e0b">全连接</text>
+    <text x="524" y="376" text-anchor="middle" font-size="11" fill="#e6edf3">展平×W</text>
+    <text x="524" y="394" text-anchor="middle" font-size="10" fill="#9aa4b2">复用MAC</text>
+    <!-- 数据流箭头(蓝) -->
+    <line x1="150" y1="360" x2="188" y2="360" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#ab)"/>
+    <text x="169" y="350" text-anchor="middle" font-size="10" fill="#58a6ff">窗口数据</text>
+    <line x1="306" y1="378" x2="344" y2="378" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#ab)"/>
+    <text x="325" y="368" text-anchor="middle" font-size="10" fill="#58a6ff">INT32</text>
+    <path d="M 396 330 C 396 292 160 292 92 330" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#ab)"/>
+    <text x="244" y="304" text-anchor="middle" font-size="10" fill="#58a6ff">INT8 写回(对侧块)</text>
+    <line x1="150" y1="412" x2="486" y2="412" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#ab)"/>
+    <text x="360" y="428" text-anchor="middle" font-size="10" fill="#58a6ff">fc 层: 特征图展平直送全连接(逐层二选一)</text>
+    <line x1="565" y1="120" x2="284" y2="330" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#ab)"/>
+    <text x="452" y="290" font-size="10" fill="#58a6ff">权重 8bit</text>
+    <line x1="600" y1="120" x2="528" y2="330" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#ab)"/>
+    <!-- 图例 -->
+    <line x1="18" y1="448" x2="46" y2="448" stroke="#58a6ff" stroke-width="2.2" marker-end="url(#ab)"/>
+    <text x="52" y="452" font-size="11" fill="#9aa4b2">数据流</text>
+    <line x1="112" y1="448" x2="140" y2="448" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="5 3" marker-end="url(#ao)"/>
+    <text x="146" y="452" font-size="11" fill="#9aa4b2">控制流</text>
+    <line x1="206" y1="448" x2="234" y2="448" stroke="#ef4444" stroke-width="2.2" marker-end="url(#ar)"/>
+    <text x="240" y="452" font-size="11" fill="#9aa4b2">中断/状态</text>
+  </svg>
+  <div class="my-fig-cap">图 1 · npu_top 顶层架构: 控制通路(寄存器组+FSM)与数据通路(卷积/ReLU/全连接)经握手信号解耦,特征图 RAM 乒乓双缓冲同时服务读(当前层输入)与写(当前层输出)</div>
+  </div>
+
+  <p><b>逐块职责与握手约定:</b>模块之间的信号只有三种语义 —— <b>请求(valid/start)、接受(ready)、完成(done/pulse)</b>,先在 Spec 里冻结它们,再各自写 RTL:</p>
+  <div class="table-wrap"><table>
+    <tr><th>模块</th><th>职责</th><th>对外信号(约定)</th><th>对应页面</th></tr>
+    <tr><td>总线接口</td><td>APB 译码、等待态、错误响应</td><td>标准 APB(psel/penable/pwrite/paddr/pwdata/prdata/pready/pslverr)</td><td><a href="05_APB总线协议与接口设计.html">10-05</a></td></tr>
+    <tr><td>寄存器组</td><td>11 个寄存器的读写、start/done 语义、irq 生成</td><td>start(脉冲)、层参数总线、done_set/读清接口</td><td>本页第 5 节代码</td></tr>
+    <tr><td>控制 FSM</td><td>五状态调度、参数快照、乒乓选择</td><td>pe_start(脉冲)/pe_ready(电平)/pe_done(脉冲)</td><td>知识点 6</td></tr>
+    <tr><td>卷积模块</td><td>K×K 窗口乘累加,行缓冲复用数据,可选池化</td><td>pe_start/pe_done, RAM 读地址请求, 累加结果流(valid+data)</td><td><a href="11_NPU项目实战下_运算模块与联调.html">10-11</a></td></tr>
+    <tr><td>ReLU/requant</td><td>acc×M₀&gt;&gt;shift → 饱和 → max(0,x)</td><td>valid+INT32 入,valid+INT8 出(纯流水,无反压)</td><td><a href="08_模型量化与端侧部署.html">10-08</a></td></tr>
+    <tr><td>全连接</td><td>展平向量×权重矩阵,复用 MAC 与 requant</td><td>同卷积接口(控制 FSM 由此可统一调度)</td><td><a href="11_NPU项目实战下_运算模块与联调.html">10-11</a></td></tr>
+    <tr><td>特征图 RAM</td><td>乒乓 A/B 双块,各带独立读写口</td><td>读口: addr+en→1 拍后数据;写口: addr+data+en</td><td><a href="04_FIFO设计与跨时钟域CDC.html">10-04</a>(存储时序)</td></tr>
+  </table></div>
+
+  <div class="box box-tip"><b>🛠 工程怎么问:</b>面试官让你"画一下你 NPU 项目的框图"时,评分点不在框多好看,而在你能否答上三个追问:①「为什么特征图要乒乓双缓冲?」—— 让上一层的写回与本层的读取并行,消除层间串行等待,同时根除"边读边写同一地址"的冲突;②「控制流和数据流为什么分开?」—— 两者的时序约束、变更频率、验证方法完全不同;③「握手为什么用 start/ready/done 三件套?」—— 请求-接受-完成闭环能自然扩展到带反压的 valid/ready 流水线。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 框图画了总线直连数据通路 —— 数据不该从 APB 直接进 MAC,主机只写 RAM,计算只读 RAM,两条路径在 RAM 处汇合;② 忘记给 APB 写 RAM 留通路(图中寄存器组→RAM 的写口),主机就"喂"不进数据;③ 握手信号没定义脉冲还是电平,联调时两个模块各说各话。</div>
+
+  <h3>知识点 6 · 控制模块 FSM 设计: 五状态主状态机与逐层子流程</h3>
+  <p><b>是什么:</b>控制 FSM 是整个 NPU 的"节拍器"。本项目采用两层结构:<b>主 FSM 五状态</b>(IDLE→CONFIG→LOAD→CALC→DONE)负责一次"一层"的调度;每个状态内部,运算引擎还有自己的<b>子流程</b>(取指→计算→写回),主 FSM 只看子流程的完成信号 pe_done,不看内部细节 —— 这就是分层控制:每层复杂度都被限制在局部。<b>为什么:</b>状态是"模式"在 RTL 里的落地形式;有了五状态,第 2 节定义的模式切换约束(start 只在 idle 采样、参数快照、done 电平)才有唯一的落点。<b>怎么做:</b>先画状态图,再列转移条件表,最后用三段式写 RTL。</p>
+
+  <div class="my-fig">
+  <svg viewBox="0 0 640 400" role="img" aria-label="控制 FSM 状态转移图: IDLE, CONFIG, LOAD, CALC, DONE 五个状态, 标注转移条件 start、参数锁存、pe_ready、pe_done、done_set, CALC 内部子流程为取指、计算、写回">
+    <defs>
+      <marker id="fb" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#58a6ff"/></marker>
+      <marker id="fo" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#f59e0b"/></marker>
+      <marker id="fg" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#22c55e"/></marker>
+    </defs>
+    <!-- 状态节点 -->
+    <rect x="48" y="160" width="120" height="66" rx="33" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="2"/>
+    <text x="108" y="188" text-anchor="middle" font-size="15" font-weight="bold" fill="#58a6ff">IDLE</text>
+    <text x="108" y="208" text-anchor="middle" font-size="10" fill="#9aa4b2">等 start(仅 idle=1)</text>
+    <rect x="220" y="42" width="130" height="66" rx="10" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="2"/>
+    <text x="285" y="68" text-anchor="middle" font-size="15" font-weight="bold" fill="#f59e0b">CONFIG</text>
+    <text x="285" y="88" text-anchor="middle" font-size="10" fill="#9aa4b2">锁存层参数快照</text>
+    <rect x="430" y="42" width="130" height="66" rx="10" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="2"/>
+    <text x="495" y="68" text-anchor="middle" font-size="15" font-weight="bold" fill="#f59e0b">LOAD</text>
+    <text x="495" y="88" text-anchor="middle" font-size="10" fill="#9aa4b2">乒乓换块/通道配置</text>
+    <rect x="470" y="170" width="130" height="72" rx="10" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="2"/>
+    <text x="535" y="196" text-anchor="middle" font-size="15" font-weight="bold" fill="#f59e0b">CALC</text>
+    <text x="535" y="216" text-anchor="middle" font-size="10" fill="#9aa4b2">等待 pe_done</text>
+    <rect x="228" y="292" width="130" height="66" rx="10" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="2"/>
+    <text x="293" y="318" text-anchor="middle" font-size="15" font-weight="bold" fill="#22c55e">DONE</text>
+    <text x="293" y="338" text-anchor="middle" font-size="10" fill="#9aa4b2">done_set 脉冲→irq</text>
+    <!-- 转移箭头 -->
+    <line x1="130" y1="160" x2="232" y2="102" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#fb)"/>
+    <text x="168" y="120" font-size="10.5" fill="#e6edf3">start=1 且 idle=1</text>
+    <line x1="350" y1="75" x2="430" y2="75" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#fo)"/>
+    <text x="390" y="64" text-anchor="middle" font-size="10.5" fill="#e6edf3">快照锁存完(1拍)</text>
+    <line x1="520" y1="108" x2="538" y2="170" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#fo)"/>
+    <text x="585" y="140" font-size="10.5" fill="#e6edf3">pe_ready=1</text>
+    <text x="585" y="153" font-size="10.5" fill="#e6edf3">发 pe_start</text>
+    <path d="M 600 192 C 634 168 634 234 600 218" fill="none" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#fo)"/>
+    <text x="612" y="206" font-size="10.5" fill="#e6edf3">pe_done=0</text>
+    <line x1="502" y1="242" x2="362" y2="300" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#fo)"/>
+    <text x="462" y="282" font-size="10.5" fill="#e6edf3">pe_done=1(整层完成)</text>
+    <line x1="228" y1="312" x2="112" y2="226" stroke="#22c55e" stroke-width="1.8" marker-end="url(#fg)"/>
+    <text x="120" y="286" font-size="10.5" fill="#e6edf3">置位后 1 拍即回</text>
+    <!-- 子流程注释 -->
+    <rect x="60" y="330" width="290" height="56" rx="8" fill="rgba(239,68,68,.08)" stroke="rgba(239,68,68,.5)" stroke-dasharray="5 3"/>
+    <text x="205" y="350" text-anchor="middle" font-size="11" font-weight="bold" fill="#ef4444">CALC 期间引擎子流程(主 FSM 不可见)</text>
+    <text x="205" y="370" text-anchor="middle" font-size="10.5" fill="#e6edf3">取指(读窗口/权重) → 计算(MAC 累加) → 写回(requant→INT8)</text>
+    <text x="380" y="30" font-size="10.5" fill="#9aa4b2">任意态 rst_n=0 → 同步回 IDLE</text>
+  </svg>
+  <div class="my-fig-cap">图 2 · 控制 FSM 状态转移图: 主状态机只调度"层"粒度,层内的取指/计算/写回子流程由运算引擎自行完成,经 pe_start / pe_ready / pe_done 三根握手线与主 FSM 对话</div>
+  </div>
+
+  <p><b>状态转移条件表</b>(写 RTL 前先填这张表,评审时逐行过一遍 —— 这就是"FSM 设计文档化"):</p>
+  <div class="table-wrap"><table>
+    <tr><th>当前态</th><th>次态</th><th>转移条件</th><th>伴随动作</th></tr>
+    <tr><td>IDLE</td><td>CONFIG</td><td>start=1(已与 idle 相与)</td><td>寄存器组清 CTRL.start 位</td></tr>
+    <tr><td>CONFIG</td><td>LOAD</td><td>无条件(1 拍)</td><td>锁存全部层参数快照(寄存器从此刻起"与我无关")</td></tr>
+    <tr><td>LOAD</td><td>LOAD</td><td>pe_ready=0</td><td>翻转 buf_sel(乒乓换块),配置引擎通道/核尺寸</td></tr>
+    <tr><td>LOAD</td><td>CALC</td><td>pe_ready=1</td><td>发 pe_start 单周期脉冲</td></tr>
+    <tr><td>CALC</td><td>CALC</td><td>pe_done=0</td><td>STATUS.idle=0;引擎内部执行取指→计算→写回</td></tr>
+    <tr><td>CALC</td><td>DONE</td><td>pe_done=1</td><td>整层输出已写回对侧特征图块</td></tr>
+    <tr><td>DONE</td><td>IDLE</td><td>无条件(1 拍)</td><td>done_set 脉冲 → 寄存器组置 STATUS.done → 视 ie 拉高 irq</td></tr>
+    <tr><td>任意</td><td>IDLE</td><td>rst_n=0(同步复位)</td><td>全部输出归零,丢弃未完成计算</td></tr>
+  </table></div>
+
+  <p><b>三段式 FSM 完整 Verilog(npu_ctrl.v,约 120 行)</b> —— 所谓三段式:段 1 状态寄存器、段 2 次态组合逻辑、段 3 输出逻辑,各司其职:</p>
+  <pre><code>//==============================================================
+// npu_ctrl.v — 小型 NPU 顶层控制状态机(三段式, 同步复位)
+// 职责: 响应 CTRL.start, 完成「锁存参数→装载通道→启动引擎→
+//       等待完成→置位中断」, 一次 start 调度一层计算
+//==============================================================
+module npu_ctrl (
+    input  wire        clk,           // 单时钟域 50MHz
+    input  wire        rst_n,         // 同步复位, 低有效
+    // ---- 寄存器组 → 控制(配置模式接口) ----
+    input  wire        start,         // 已与 idle 相与的有效启动请求
+    input  wire [2:0]  layer_type,    // 0=conv 1=pool 2=fc
+    input  wire        relu_en,       // 本层 ReLU 使能
+    input  wire        k5,            // 0=3x3, 1=5x5
+    input  wire [7:0]  ch_in,         // 输入通道-1
+    input  wire [7:0]  ch_out,        // 输出通道-1
+    input  wire [7:0]  fm_in,         // 输入特征图边长-1
+    input  wire [7:0]  fm_out,        // 输出特征图边长-1
+    input  wire [15:0] in_addr,       // INPUT_ADDR 快照值
+    input  wire [15:0] w_addr,        // WEIGHT_ADDR 快照值
+    input  wire [15:0] o_addr,        // OUTPUT_ADDR 快照值
+    input  wire [15:0] b_addr,        // BIAS_ADDR 快照值
+    input  wire [15:0] rq_mult,       // requant 乘子 M0
+    input  wire [4:0]  rq_shift,      // requant 右移位数
+    // ---- 运算引擎握手 ----
+    input  wire        pe_ready,      // 引擎空闲可接收(电平)
+    input  wire        pe_done,       // 引擎整层完成(脉冲)
+    output reg         pe_start,      // 启动引擎(单周期脉冲)
+    output reg         buf_sel,       // 乒乓选择: 0=读A写B, 1=读B写A
+    // ---- 状态回读 ----
+    output reg         done_set,      // 1 拍脉冲 → 寄存器组置 STATUS.done
+    output reg  [2:0]  st_type,       // STATUS[4:2] 层类型回显
+    output reg  [4:0]  dbg_state      // 调试口: 当前状态编码
+);
+
+  // ---------- 状态编码(独热, 便于波形观察与综合优化) ----------
+  localparam [4:0] S_IDLE = 5'b00001,
+                   S_CFG  = 5'b00010,
+                   S_LOAD = 5'b00100,
+                   S_CALC = 5'b01000,
+                   S_DONE = 5'b10000;
+
+  reg [4:0]  state, nstate;
+  // 参数快照寄存器: CONFIG 态锁存后, 计算期间与寄存器组解耦
+  reg        s_relu, s_k5;
+  reg [7:0]  s_chin, s_chout, s_fmin, s_fmout;
+  reg [15:0] s_in, s_w, s_o, s_b, s_rqm;
+  reg [4:0]  s_rqs;
+
+  //-------------------------------------------------------------
+  // 段 1: 时序逻辑 —— 状态寄存器(唯一给 state 赋值的地方)
+  //-------------------------------------------------------------
+  always @(posedge clk) begin
+    if (!rst_n)
+      state &lt;= S_IDLE;              // 同步复位: 任何态都回 IDLE
+    else
+      state &lt;= nstate;
+  end
+
+  //-------------------------------------------------------------
+  // 段 2: 组合逻辑 —— 次态译码(纯组合, 不产生任何副作用)
+  //-------------------------------------------------------------
+  always @(*) begin
+    case (state)
+      S_IDLE: nstate = start   ? S_CFG  : S_IDLE; // start 只在 idle 采样
+      S_CFG : nstate = S_LOAD;                    // 快照锁存 1 拍完成
+      S_LOAD: nstate = pe_ready ? S_CALC : S_LOAD;
+      S_CALC: nstate = pe_done  ? S_DONE : S_CALC;
+      S_DONE: nstate = S_IDLE;                    // 置位后立即回家
+      default: nstate = S_IDLE;                   // 未知态强制回家防锁死
+    endcase
+  end
+
+  //-------------------------------------------------------------
+  // 段 3: 时序逻辑 —— 数据通路控制输出与参数快照
+  //-------------------------------------------------------------
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      pe_start  &lt;= 1'b0;
+      buf_sel   &lt;= 1'b0;
+      done_set  &lt;= 1'b0;
+      st_type   &lt;= 3'd0;
+      dbg_state &lt;= S_IDLE;
+      s_relu &lt;= 1'b0;  s_k5 &lt;= 1'b0;
+      s_chin &lt;= 8'd0;  s_chout &lt;= 8'd0; s_fmin &lt;= 8'd0; s_fmout &lt;= 8'd0;
+      s_in &lt;= 16'd0;   s_w &lt;= 16'd0;    s_o &lt;= 16'd0;    s_b &lt;= 16'd0;
+      s_rqm &lt;= 16'd0;  s_rqs &lt;= 5'd0;
+    end else begin
+      pe_start &lt;= 1'b0;              // 脉冲类信号: 默认每拍清零
+      done_set &lt;= 1'b0;
+      dbg_state &lt;= state;
+      case (state)
+        S_CFG: begin                 // ① 锁存参数快照(一致性副本)
+          st_type &lt;= layer_type;
+          s_relu &lt;= relu_en;   s_k5    &lt;= k5;
+          s_chin &lt;= ch_in;     s_chout &lt;= ch_out;
+          s_fmin &lt;= fm_in;     s_fmout &lt;= fm_out;
+          s_in &lt;= in_addr;     s_w  &lt;= w_addr;
+          s_o  &lt;= o_addr;      s_b  &lt;= b_addr;
+          s_rqm &lt;= rq_mult;    s_rqs &lt;= rq_shift;
+        end
+        S_LOAD: begin                // ② 装载: 换乒乓块 + 启动引擎
+          buf_sel &lt;= ~buf_sel;       // 读上一次的输出块, 写到闲块
+          if (pe_ready)
+            pe_start &lt;= 1'b1;        // 引擎就绪, 下一拍发启动脉冲
+        end
+        S_CALC: ;                    // ③ 等待: 子流程由引擎负责
+        S_DONE: done_set &lt;= 1'b1;    // ④ 完成脉冲 → 寄存器组置 done
+        default: ;
+      endcase
+    end
+  end
+
+endmodule</code></pre>
+
+  <p><b>逐段讲解:</b></p>
+  <ul>
+    <li><b>段 1(状态寄存器):</b>全模块只有这里给 state 赋值,复位用 <code>if (!rst_n)</code> 同步风格 —— 时序全在自己时钟域内,综合器能算出确定的恢复时间,这也是 FPGA 的首选复位风格(知识点 8 展开);</li>
+    <li><b>段 2(次态译码):</b>纯组合 case,禁止在这里写寄存器赋值 —— "次态归次态、输出归输出"让每个转移条件与第 6 节那张表一一对应,review 时一眼可查;<code>default</code> 分支强制回 IDLE,是防状态机锁死的标准防御;</li>
+    <li><b>段 3(输出):</b>所有输出用时序逻辑打一拍 —— 好处是输出无毛刺、下游时序好收敛;脉冲类信号(pe_start/done_set)先默认清零、再按态置位,是"单拍脉冲"最不易出错的写法;参数快照寄存器(s_xxx)只在 CONFIG 态更新,兑现了"计算中改寄存器不影响当前层"的 Spec 承诺。</li>
+  </ul>
+
+  <div class="box box-tip"><b>🛠 工程怎么问:</b>面试必问「摩尔型还是米利型?为什么用三段式?」—— 本设计输出由状态和输入共同决定但全部打拍,属于带输出寄存器的有限状态机(Moore 为主);三段式的价值是<b>可读、可维护、时序好</b>:次态逻辑与输出逻辑解耦后,新增一个状态只改两处。追问「为什么 CALC 态不等引擎内部每个子步骤?」—— 控制粒度分层:主 FSM 管"层",引擎 FSM 管"窗口",耦合越少,两边并行开发与验证越容易。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 在段 2 里顺手给输出赋值,导致输出随组合逻辑毛刺;② start 没与 idle 相与,验证随机背靠背写 start 直接双重启动;③ DONE 态忘了 done_set 是脉冲,写成电平让中断重复触发;④ buf_sel 翻转时机放错(应在 LOAD 翻转一次,而不是每个输出像素翻一次)。</div>
+
+  <!-- ================= 4 数据通路与物理实现基础 ================= -->
+  <h2><span class="h2-num">4</span> 数据通路设计、时钟复位与低功耗初步</h2>
+  <p>控制 FSM 解决"什么时候算",数据通路解决"数怎么被算对"。数据通路设计的两个核心问题是<b>位宽规划</b>(每一级数据多宽才既不溢出又不浪费)和<b>速率匹配</b>(生产者与消费者速度不一致时缓冲开多大);而把数据通路装配进芯片,还要回答时钟与复位怎么给。</p>
+
+  <h3>知识点 7 · 数据通路设计: 位宽规划、数据流路径与 FIFO 深度初估</h3>
+  <p><b>是什么:</b>位宽规划 = 给"乘→累加→量化回写"链条上每一级定宽度。业界(从 Google TPU v1 到 NVDLA)的标准答案是 <b>INT8 乘 → INT32 累加 → requant → INT8</b>:乘法天然变宽(8×8→16),累加随项数增长必须用 32 位兜底,最后用量化参数把 INT32 压回 INT8 存储。<b>为什么:</b>位宽不够会溢出错数,位宽太宽会白白多吃面积与功耗 —— 位宽表是数据通路的"物理 Spec"。<b>怎么做:</b>先算最坏情况:单个输出像素的累加项数 = K×K×CH_IN = 5×5×16 = <b>400 项</b>,每项最大 |8bit×8bit| = 128×128 = 16384,再加 INT32 bias,总量级约 400×16384 ≈ 2<sup>23</sup> —— 远小于 2<sup>31</sup>,INT32 累加器余量充足(这也是 INT8 网络通行 INT32 累加的根本原因):</p>
+
+  <div class="my-fig">
+  <svg viewBox="0 0 640 190" role="img" aria-label="位宽数据流图: 特征图INT8 与 权重INT8 相乘得INT16, 累加进INT32累加器并加INT32偏置, 经 requant 乘M0右移shift, 再饱和并ReLU, 回到INT8写回特征图RAM">
+    <defs>
+      <marker id="gb" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#58a6ff"/></marker>
+    </defs>
+    <rect x="12" y="60" width="88" height="56" rx="9" fill="rgba(88,166,255,.13)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="56" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#58a6ff">特征图</text>
+    <text x="56" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">INT8 (8bit)</text>
+    <rect x="132" y="60" width="98" height="56" rx="9" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="181" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">乘法器 8×8</text>
+    <text x="181" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">结果 16bit</text>
+    <rect x="262" y="60" width="112" height="56" rx="9" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="318" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">累加器 32bit</text>
+    <text x="318" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">+ bias(INT32)</text>
+    <rect x="406" y="60" width="116" height="56" rx="9" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="464" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#22c55e">requant</text>
+    <text x="464" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">×M0 &gt;&gt; shift</text>
+    <rect x="544" y="60" width="92" height="56" rx="9" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="590" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">饱和+ReLU</text>
+    <text x="590" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">→ INT8</text>
+    <line x1="100" y1="88" x2="132" y2="88" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
+    <line x1="230" y1="88" x2="262" y2="88" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
+    <text x="246" y="78" text-anchor="middle" font-size="10" fill="#9aa4b2">16b</text>
+    <line x1="374" y1="88" x2="406" y2="88" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
+    <text x="390" y="78" text-anchor="middle" font-size="10" fill="#9aa4b2">32b</text>
+    <line x1="522" y1="88" x2="544" y2="88" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
+    <text x="534" y="78" text-anchor="middle" font-size="10" fill="#9aa4b2">32b</text>
+    <!-- 权重输入 -->
+    <rect x="132" y="14" width="98" height="30" rx="8" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.4"/>
+    <text x="181" y="34" text-anchor="middle" font-size="11" font-weight="bold" fill="#22c55e">权重 INT8</text>
+    <line x1="181" y1="44" x2="181" y2="60" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#gb)"/>
+    <!-- 输出 -->
+    <line x1="590" y1="116" x2="590" y2="140" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
+    <text x="590" y="156" text-anchor="middle" font-size="10.5" fill="#9aa4b2">写回对侧特征图 RAM(8bit)</text>
+    <text x="330" y="178" text-anchor="middle" font-size="11" fill="#f59e0b">最坏累加: 400 项 × 16384 ≈ 2^23 « 2^31 → INT32 足够, 与 TPU v1 / NVDLA 同款选择</text>
+  </svg>
+  <div class="my-fig-cap">图 3 · 位宽数据流: INT8 →(乘)→ INT16 →(累加+bias)→ INT32 →(requant)→ 饱和/ReLU → INT8;乘变宽、累加更宽、回写压窄</div>
+  </div>
+
+  <p><b>数据从哪来到哪去 —— 一层数据流完整路径</b>(对照图 1 的蓝线,建议能背出来):</p>
+  <ul>
+    <li><b>① 取窗口:</b>地址生成器按"行缓冲"方式读特征图 RAM —— 一次顺序读一整行,行缓冲寄存器组保留最近 K 行,滑动窗口复用数据,避免一个像素重复读 K×K 次;</li>
+    <li><b>② 取权重:</b>循环次序固定为「输出像素在外、输出通道居中、K×K×CH_IN 在内」,权重 RAM 因此可以<b>纯顺序</b>读 —— 权重流与窗口流在乘法器汇合;</li>
+    <li><b>③ 乘累加:</b>INT8×INT8 乘 → INT32 累加,一个窗口结束后加 INT32 bias;</li>
+    <li><b>④ requant:</b>acc×M₀(48 位中间结果)→ 算术右移 shift → 饱和 clamp 到 [−128,127] → 可选 ReLU(max(0,x)),M₀/shift 由 <a href="08_模型量化与端侧部署.html">10-08</a> 的量化脚本离线算出,经 REQUANT 寄存器下发;</li>
+    <li><b>⑤ 写回:</b>INT8 结果按像素序号顺序写入<b>对侧</b>乒乓块,全部写完拉 pe_done。</li>
+  </ul>
+
+  <p><b>FIFO 深度初估:</b>当生产者与消费者速率不等时,中间要垫 FIFO(原理见 <a href="04_FIFO设计与跨时钟域CDC.html">10-04</a>)。初估公式:<b>深度 ≥ (生产峰值速率 − 消费峰值速率) × 最大连续突发长度 × 裕量(≈2),再向上取 2 的幂</b>。本项目示例:卷积引擎平均 2 周期出一个结果,而特征图写口被读口分时复用、平均 4 周期才收一个写 —— 速率差 1/4 结果/周期,最长连续突发约 64 个结果,需要 64×(1−4/2)… 取保守上界 16 深,取 2 的幂定为 <b>16×8bit</b>;第一版先用 8 深仿真,以 FIFO 的"水位最高点"实测修正。记住:初估允许粗,<b>必须留仿真验证这一步</b>。</p>
+
+  <div class="box box-tip"><b>🛠 工程怎么问:</b>「为什么不用 INT16 累加器省面积?」—— 用上面的位宽账回答:400 项 × 16384 ≈ 2<sup>23</sup>,INT16 一定溢出;「为什么 requant 放在累加之后而不是每项乘完就量化?」—— 每项量化会累积舍入误差并丢掉小数部分,标准做法只在累加终点量化一次(精度账见 10-08)。「你的数据通路有没有流水线?」—— 第一版乘累加不加流水也能达标,但 requant 三级(乘/移/饱和)天然适合流水,是 10-11 提频的第一刀。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 位宽账只算乘法不算累加项数,累加器溢出是最难查的"偶发错数";② clamp 写成"超界就取反"或"直接截断高位"—— 必须<b>饱和(saturate)</b>,截断会让 200 变成 −56 这类数字混进网络;③ 有符号乘法忘了 $signed(),Verilog 默认按无符号运算,负数全错;④ FIFO 深度不留裕量,长时间仿真在水位峰值处溢出丢数。</div>
+
+  <h3>知识点 8 · 时钟复位与低功耗初步</h3>
+  <p><b>是什么/为什么:</b>时钟与复位是整个设计的"地基约束",Spec 阶段就要定死:本项目采用<b>单时钟域 + 同步复位</b>。<b>怎么做:</b>三件事 ——</p>
+  <div class="table-wrap"><table>
+    <tr><th>决策</th><th>本项目选择</th><th>理由 / 备选方案</th></tr>
+    <tr><td>时钟域</td><td>单时钟域 clk=50MHz,APB 与计算同域</td><td>仿真优先的教学项目,先消灭 CDC 一整类 bug;性能吃紧再拆"总线 50M/计算 100M"双域,届时用 10-04 的异步 FIFO 与握手</td></tr>
+    <tr><td>复位风格</td><td>同步复位、低有效 rst_n</td><td>FPGA 的寄存器本就有同步复位资源,时序确定、免恢复时间检查;ASIC 高速场景常用"异步复位、同步释放"(两级触发器同步释放沿)——面试要能画出那个 2-FF 结构</td></tr>
+    <tr><td>复位范围</td><td>控制/状态寄存器全复位;数据通路大数据寄存器可不复位(靠 pe_start 前的清零)</td><td>全复位会增加扇出与布线;哪些不复位要写进 Spec,避免"上电第一拍随机数"争议</td></tr>
+    <tr><td>低功耗初步</td><td>时钟门控概念:数据不动就不翻转 —— 用使能(ce)代替粗粒度门控,IDLE 态 MAC 输入冻结</td><td>一句话版:时钟门控 = 在时钟进模块前加锁存器/与门,模块空闲时不送时钟以省动态功耗;FPGA 上交给综合器自动推断,ASIC 上必须用工具插入标准 ICG 单元,严禁手写 gated clk 直接驱动触发器</td></tr>
+  </table></div>
+
+  <div class="box box-tip"><b>🛠 工程怎么问:</b>「同步复位和异步复位怎么选?」—— 标准答法:同步复位<b>抗毛刺、时序可分析</b>,但需要时钟活着且脉冲要够宽;异步复位<b>不依赖时钟、上电即清</b>,但释放沿可能撞上时钟造成亚稳态,所以工业界折中为<b>异步复位同步释放</b>。追问「你的项目为什么敢用单时钟域?」—— 因为性能账(0.42M 周期 @50MHz≈8.4ms)显示 50MHz 已达标,不需要为频率引入 CDC 风险 —— <b>架构决策永远用 Spec 的账来解释</b>。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 复位信号高有效低有效混用,上电行为随机;② 手写 <code>clk &amp; en</code> 当门控时钟 —— 组合逻辑门控时钟会产生毛刺,必须用带锁存器的标准 ICG 单元;③ 复位只复了 FSM 忘了乒乓指针 buf_sel,复位后第一层写错块。</div>
+
+  <!-- ================= 5 寄存器模块实现与验证计划 ================= -->
+  <h2><span class="h2-num">5</span> 寄存器模块 RTL 实现与分阶段验证计划</h2>
+  <p>架构冻结后,第一块该写的 RTL 不是卷积引擎,而是<b>寄存器模块</b> —— 它是软硬件合同的法律文本,也是后面所有模块级 TB 的"遥控器"。本节给出完整可综合的 APB 寄存器模块(复用 <a href="05_APB总线协议与接口设计.html">10-05</a> 的协议知识),并规划贯穿到 <a href="11_NPU项目实战下_运算模块与联调.html">10-11</a> 联调的验证计划。</p>
+
+  <h3>知识点 9 · 寄存器模块实现: APB 从机 + 寄存器组(npu_regfile.v)</h3>
+  <p><b>是什么:</b>寄存器模块 = APB 从机接口 + 第 2 节寄存器表的物理载体 + 与控制 FSM 的握手(start/done)。它还要负责两件容易漏掉的杂活:主机往片上 RAM 写数据的<b>写通道</b>,以及<b>中断生成</b>。<b>为什么:</b>把它单独成模块,卷积引擎再复杂也不用动总线接口;这正是"接口与功能分离"在 RTL 结构上的体现。<b>怎么做:</b>看代码,重点盯四个部位 —— 写译码里 start 的 idle 门控、STATUS.done 的读清除、读多路器、pslverr 的产生条件:</p>
+
+  <pre><code>//==============================================================
+// npu_regfile.v — APB 从机接口 + NPU 寄存器组(复用 10-05 协议)
+// 地址空间: 0x00~0x28 寄存器(见表); paddr[7]==1 为片上 RAM
+// 写窗口(特征图/权重各半区, 本页演示寄存器译码骨架)
+//==============================================================
+module npu_regfile (
+    input  wire        clk,
+    input  wire        rst_n,         // 同步复位, 低有效
+    // ---- APB 从机接口 ----
+    input  wire        psel,
+    input  wire        penable,
+    input  wire        pwrite,
+    input  wire [7:0]  paddr,         // 寄存器按 4 字节对齐
+    input  wire [31:0] pwdata,
+    output reg  [31:0] prdata,
+    output wire        pready,        // 零等待: 恒 1
+    output reg         pslverr,       // 非法地址/写被拒时置位
+    // ---- 中断输出 ----
+    output wire        irq,
+    // ---- 片上 RAM 写通道(配置模式专用) ----
+    output reg         ram_we,
+    output reg  [15:0] ram_addr,
+    output reg  [31:0] ram_wdata,     // RAM 模块按字节 lane 拆分
+    input  wire        ram_err,       // 计算模式中写 RAM 被拒
+    // ---- 控制 FSM 接口 ----
+    input  wire        busy,          // FSM 非 IDLE
+    input  wire        done_set,      // FSM 完成脉冲
+    input  wire [2:0]  lt_echo,       // FSM 层类型回显 → STATUS[4:2]
+    output reg         start,         // 启动脉冲(仅 idle 时生成)
+    output wire        ie,            // 中断使能 → irq 门控
+    output reg  [2:0]  layer_type,
+    output reg         relu_en,
+    output reg         k5,
+    output reg  [7:0]  ch_in,  ch_out, fm_in, fm_out,
+    output reg  [15:0] in_addr,w_addr,o_addr,b_addr,rq_mult,
+    output reg  [4:0]  rq_shift
+);
+  // ---- 偏移表: 与第 2 节寄存器表逐条对应 ----
+  localparam [7:0] A_CTRL=8'h00, A_STATUS=8'h04, A_IN=8'h08,
+                   A_W  =8'h0C, A_OUT  =8'h10, A_B  =8'h14,
+                   A_LC =8'h18, A_CH   =8'h1C, A_FM =8'h20,
+                   A_RQ =8'h24, A_VER  =8'h28;
+
+  reg        ctrl_ie;                // CTRL[1] 中断使能
+  reg        st_done;                // STATUS[1], 读清除
+  reg [15:0] r_rqm;                  // REQUANT[15:0]
+
+  assign pready = 1'b1;              // 本设计无等待态
+  assign ie     = ctrl_ie;
+  assign irq    = ctrl_ie &amp; st_done; // 电平中断: 清 done 即撤 irq
+  wire apb_wr = psel &amp; penable &amp;  pwrite;   // APB 写选通
+  wire apb_rd = psel &amp; penable &amp; ~pwrite;   // APB 读选通
+
+  //------------------------------------------------------------
+  // 写译码: 寄存器 + RAM 窗口; start 仅在 idle 时接受
+  //------------------------------------------------------------
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      ctrl_ie &lt;= 1'b0;   start &lt;= 1'b0;  ram_we &lt;= 1'b0;
+      layer_type &lt;= 3'd0; relu_en &lt;= 1'b0; k5 &lt;= 1'b0;
+      ch_in &lt;= 8'd0; ch_out &lt;= 8'd0; fm_in &lt;= 8'd0; fm_out &lt;= 8'd0;
+      in_addr &lt;= 16'd0; w_addr &lt;= 16'd0; o_addr &lt;= 16'd0;
+      b_addr &lt;= 16'd0; r_rqm &lt;= 16'd0; rq_shift &lt;= 5'd0;
+      ram_addr &lt;= 16'd0; ram_wdata &lt;= 32'd0;
+    end else begin
+      start  &lt;= 1'b0;                // start 是单拍脉冲, 默认自清
+      ram_we &lt;= 1'b0;
+      if (apb_wr) begin
+        if (paddr[7]) begin          // RAM 写窗口(paddr[6]=0 特征图/1 权重)
+          ram_we    &lt;= ~ram_err;     // 计算模式中 ram_err=1 → 拒绝
+          ram_addr  &lt;= {paddr[6], paddr[5:0], 8'd0}; // 窗口映射示例, 16 位全地址换算见配套仓库
+          ram_wdata &lt;= pwdata;
+        end else begin
+          case (paddr)
+            A_CTRL: begin
+              ctrl_ie &lt;= pwdata[1];
+              if (pwdata[0] &amp; ~busy) // ★ idle 门控: busy 时写 start 被忽略
+                start &lt;= 1'b1;       // 下一拍给 FSM 一个单拍脉冲
+            end
+            A_IN:   in_addr  &lt;= pwdata[15:0];
+            A_W:    w_addr   &lt;= pwdata[15:0];
+            A_OUT:  o_addr   &lt;= pwdata[15:0];
+            A_B:    b_addr   &lt;= pwdata[15:0];
+            A_LC: begin
+              layer_type &lt;= pwdata[2:0];
+              relu_en    &lt;= pwdata[3];
+              k5         &lt;= pwdata[4];
+            end
+            A_CH: begin
+              ch_in  &lt;= pwdata[7:0];   // 存 N-1 契约
+              ch_out &lt;= pwdata[15:8];
+            end
+            A_FM: begin
+              fm_in  &lt;= pwdata[7:0];
+              fm_out &lt;= pwdata[15:8];
+            end
+            A_RQ: begin
+              r_rqm     &lt;= pwdata[15:0];
+              rq_shift  &lt;= pwdata[20:16];
+            end
+            default: ;               // 只读/保留寄存器: 写被忽略
+          endcase
+        end
+      end
+    end
+  end
+  assign rq_mult = r_rqm;
+
+  //------------------------------------------------------------
+  // STATUS.done: FSM 置位, 读 STATUS 清除(读清除 RC 语义)
+  //------------------------------------------------------------
+  always @(posedge clk) begin
+    if (!rst_n)                  st_done &lt;= 1'b0;
+    else if (done_set)           st_done &lt;= 1'b1;
+    else if (apb_rd &amp;&amp; paddr==A_STATUS) st_done &lt;= 1'b0;
+  end
+
+  //------------------------------------------------------------
+  // 读多路器(组合): 寄存器表右半边的镜像
+  //------------------------------------------------------------
+  always @(*) begin
+    case (paddr)
+      A_CTRL:   prdata = {29'd0, ctrl_ie, 1'b0};
+      A_STATUS: prdata = {26'd0, lt_echo, st_done, ~busy};
+      A_IN:     prdata = {16'd0, in_addr};
+      A_W:      prdata = {16'd0, w_addr};
+      A_OUT:    prdata = {16'd0, o_addr};
+      A_B:      prdata = {16'd0, b_addr};
+      A_LC:     prdata = {26'd0, k5, relu_en, layer_type};
+      A_CH:     prdata = {16'd0, ch_out, ch_in};
+      A_FM:     prdata = {16'd0, fm_out, fm_in};
+      A_RQ:     prdata = {10'd0, rq_shift, r_rqm};
+      A_VER:    prdata = 32'h0001_0000;        // v1.0
+      default:  prdata = 32'h0;
+    endcase
+  end
+
+  //------------------------------------------------------------
+  // 错误响应: 非法寄存器地址, 或 RAM 写通道被拒
+  //------------------------------------------------------------
+  always @(posedge clk) begin
+    if (!rst_n) pslverr &lt;= 1'b0;
+    else if (apb_wr &amp;&amp; (~paddr[7] &amp;&amp; (paddr &gt; A_VER) || ram_err))
+      pslverr &lt;= 1'b1;
+    else
+      pslverr &lt;= 1'b0;
+  end
+
+endmodule</code></pre>
+
+  <p><b>逐段讲解:</b>① <b>写译码段</b>的 ★ 行是本模块的灵魂 —— <code>pwdata[0] &amp; ~busy</code> 把"start 只在 idle 采样"从一句 Spec 变成了一行电路,busy 时写 start 静默丢弃(也可改为置 pslverr,按 Spec 取舍);<code>start</code> 每拍默认清零,所以天然是单拍脉冲,FSM 侧无需再做边沿检测;② <b>done 段</b>实现读清除(RC)语义,irq 是纯组合的 <code>ie &amp; done</code> 电平 —— CPU 进 ISR 读一次 STATUS,中断即撤,不用额外 ACK 寄存器;③ <b>读多路器</b>用纯组合 case,APB 在 SETUP→ACCESS 后第一拍即可取数,与 <code>pready=1</code> 的零等待声明自洽;④ <b>pslverr 段</b>只报"真错误"(非法地址/RAM 写被拒),正常写不报 —— 错误响应的粒度也是 Spec 的一部分。</p>
+
+  <div class="box box-tip"><b>🛠 工程怎么问:</b>「APB 写寄存器是几拍完成?你的代码里写选通为什么是 psel &amp; penable &amp; pwrite?」—— 两拍(SETUP+ACCESS),且数据只在 ACCESS 相有效,所以必须与上 penable,否则 SETUP 相会误写 —— 这正是 10-05 三状态传输的直接应用。「寄存器读写会经过哪些路径的验证?」—— 复位值逐个比对、RW 位回读、RO 位写不进、RC 位读清、start 忽略语义、pslverr 触发条件,一张表就是模块级 TB 的用例清单。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 忘了 prdata 在非访问期间应清零(本页为简洁未展示,工程版要加 <code>if(!psel) prdata=0</code>),悬空数据会被总线抓走;② 读清除写成"psel 即清"而不是"ACCESS 相读才清",SETUP 相就把 done 清了;③ case 写译码漏 default,综合器推断出锁存器。</div>
+
+  <h3>知识点 10 · 分阶段验证计划: 模块级 TB → 系统级 TB → 黄金模型对照</h3>
+  <p><b>是什么:</b>验证计划 = 把"怎么证明设计符合 Spec"写成一张分阶段的作战表。<b>为什么:</b>NPU 这类数据密集型设计,手写定向用例永远追不上数据组合的空间 —— 必须靠<b>黄金模型(golden model)对照法</b>:用 Python/NumPy 按 Spec 的算法定义生成输入与期望输出,RTL 仿真逐比特比对(定点计算是确定的,容差必须为 0,这一点与 AI 模型验证"比个精度"完全不同)。<b>怎么做:</b>按下表推进,每个阶段有明确的<b>进出口条件</b>,不达标不进下一阶段:</p>
+  <div class="table-wrap"><table>
+    <tr><th>阶段</th><th>对象</th><th>核心用例</th><th>出口条件(通关标准)</th></tr>
+    <tr><td>L0 静态检查</td><td>全部 RTL</td><td>lint/编码规范(位宽匹配、锁存器、组合环)</td><td>0 error,warning 逐条归档</td></tr>
+    <tr><td>L1 模块级 TB</td><td>npu_regfile</td><td>复位值比对、每寄存器 RW/RO/RC 属性、start 忽略、pslverr</td><td>寄存器表 11 项全过</td></tr>
+    <tr><td>L1 模块级 TB</td><td>npu_ctrl</td><td>定向: idle→done 全路径;随机: 提前 start、复位打入</td><td>状态转移表 8 行全覆盖</td></tr>
+    <tr><td>L1 模块级 TB</td><td>卷积/池化/ReLU 子模块</td><td>单层小图(6×6,1 通道)黄金数据比对</td><td>输出 100% 逐比特一致</td></tr>
+    <tr><td>L2 子系统 TB</td><td>ctrl+引擎+RAM</td><td>真实 LeNet 每层单独跑,乒乓切换 2 次以上</td><td>8 层各自逐比特一致</td></tr>
+    <tr><td>L3 系统级 TB</td><td>npu_top 整网</td><td>整网推理 + 中断路径 + 计算中乱写寄存器/RAM 的负向用例</td><td>MNIST 图集端到端一致 + 周期数 ≤ 1M</td></tr>
+  </table></div>
+
+  <p><b>黄金数据生成脚本骨架</b>(Python 侧,几行就能搭起对照体系,完整版在 10-11 展开):</p>
+  <pre><code>import numpy as np
+rng = np.random.default_rng(0)                      # 固定种子: 结果可复现
+x = rng.integers(-128, 128, (1, 32, 32), dtype=np.int16)   # C1 输入
+W = rng.integers(-128, 128, (6, 1, 5, 5),  dtype=np.int16) # C1 权重
+M0, SH = np.load('m0.npy'), int(np.load('sh.npy'))  # 10-08 量化参数
+acc  = conv2d_int8(x, W) + bias                     # INT32 参考(NumPy 天生 int32)
+out  = np.clip(acc * int(M0) >> SH, -128, 127).astype(np.int8)  # requant+饱和
+out.tofile('golden_c1_out.bin')                     # TB 用 $readmemh/fread 读入比对</code></pre>
+
+  <p>覆盖率的三个抓手:<b>寄存器位域全覆盖</b>(每个 bit 写 0/1 各一次)、<b>配置空间抽样</b>(层类型×核尺寸×relu_en×乒乓状态的正交组合)、<b>场景覆盖</b>(轮询与中断两条完成路径、计算中写 RAM 被拒、复位打入 CALC 态)。功能覆盖率数字(如"层类型×核尺寸组合 100%")是 L3 出口条件的一部分。</p>
+
+  <div class="box box-tip"><b>🛠 工程怎么问:</b>「你的 NPU 项目怎么验证?」—— 30 秒版本:模块级 TB 先各自证清白(寄存器对表、FSM 对转移表、算子对黄金数据),子系统级按层逐个对照 Python 黄金模型,系统级跑整网加负向用例;定点计算确定性要求逐比特一致,不一致先二分定位到第一个 mismatch 像素,再回溯地址生成与累加顺序。「黄金模型为什么用 Python 而不是 C?」—— NumPy 的向量化表达与 Spec 公式一一对应,不易引入第二份实现错误;追求速度才换 C/位精确模型。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>① 黄金模型自己写错(比如忘了 requant 的饱和),RTL"错得和黄金一样"也过不了系统联调 —— 黄金模型要用 <a href="06_深度学习基础与LeNet实战.html">10-06</a> 训练出的真实模型数值交叉校验;② TB 里用延迟 #10 打拍而非事件驱动,换了综合后网表全崩;③ 只验证 happy path,漏了"计算中写 RAM/背靠背 start"这类负向用例 —— 恰恰是这些用例养活了第 2 节那些时序约束。</div>
+
+  <!-- ================= 6 项目资源 ================= -->
+  <h2><span class="h2-num">6</span> 项目资源: 官方工程、开源代码与社区讨论</h2>
+  <p>以下 12 条资源全部经过人工核实可达。使用建议:<b>写本页 RTL 前</b>看 7/8(别人怎么踩坑),<b>定义寄存器/接口时</b>翻 NVDLA 官网文档(工业级寄存器手册长什么样),<b>想看别人怎么切顶层架构时</b>读 9/10/11 的仓库 README 与顶层模块,<b>想系统成长时</b>报名一生一芯。</p>
+
+  <a class="my-res-card" href="http://nvdla.org/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ NVDLA 官网(NVIDIA 开源深度学习加速器)</div>
+      <div class="my-res-desc">工业级开源 NPU 的官方文档站:架构入门(Primer)、完整项目文档、软硬件分解。它的寄存器手册与"可配置性"设计思想,是本页寄存器映射与 Spec 写法的最佳对照样本 —— 看看真实 NPU 的 Spec 复杂到什么程度。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-recommend">⭐ 寄存器手册范本</span><span class="my-tag my-tag-diff-3">高级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/nvdla/hw" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧱</div>
+    <div class="my-res-info">
+      <div class="my-res-title">NVIDIA nvdla/hw —— NVDLA 硬件仓库(约 2.1k stars)</div>
+      <div class="my-res-desc">vmod/ 目录下是完整 Verilog RTL,cmod/ 是 C 模型(相当于工业版"黄金模型"),verif/ 提供测试平台与 traces。学完本页后去读它的顶层划分与寄存器模块,感受"教学 NPU → 工业级 NPU"的差距在哪。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-official">NVIDIA 官方</span><span class="my-tag my-tag-diff-3">高级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/ucb-bar/gemmini" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧱</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Gemmini(UC Berkeley)—— 可配置脉动阵列加速器生成器(约 1.4k stars)</div>
+      <div class="my-res-desc">Berkeley 的空间阵列生成器(Chisel 编写,Chipyard 生态),含 scratchpad、DMA、ReLU 等激活电路。与 10-07 的脉动阵列理论直接对应,也是"架构参数化生成"这一现代 NPU 开发范式的活教材。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-recommend">⭐ 体系结构进阶</span><span class="my-tag my-tag-diff-3">高级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://ysyx.oscc.cc/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">🎓</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ 一生一芯(ySyvx)公益芯片设计项目官网</div>
+      <div class="my-res-desc">中科院计算所发起的公益项目:从零教会你设计一款 RISC-V 处理器并真实流片。它"从需求到 RTL 到验证到流片"的完整工程流程训练,与本页"Spec 先行"的工作方式完全同源 —— 做完本站 NPU 项目后冲一生的优秀练手跳板。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方公益项目</span><span class="my-tag my-tag-recommend">⭐ 强烈推荐</span><span class="my-tag my-tag-diff-2">中级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://space.bilibili.com/2107852263/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">一生一芯 B 站官方空间(全部公开课合集)</div>
+      <div class="my-res-desc">"一生一芯-视频号"官方账号,历届公开课全在这里:预学习阶段的状态机/NEMU/调试技巧,进阶的流水线、总线、体系结构。配合本板块自学数字IC设计流程的最佳免费视频体系。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-official">官方账号</span><span class="my-tag my-tag-diff-1">入门友好</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1wP4y1q7fF/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">一生一芯公开课《总线选讲》(第五期 P17, 65 分钟)</div>
+      <div class="my-res-desc">把 10-05/10-09 的 APB/AHB/AXI 知识从"协议"讲到" SoC 里怎么用"——本页寄存器模块挂上总线的上游视角就是这一讲。适合在写 npu_regfile 前后各看一遍。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-blog">总线专题</span><span class="my-tag my-tag-diff-2">中级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.zhihu.com/question/606480901" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎:想用 Verilog 写一个 NPU,需要什么学习路线?</div>
+      <div class="my-res-desc">高赞问题,回答里有开源 FPGA 卷积加速器作者(部署 YOLOv8、板上 60ms)的亲历路线,也有从数电→Verilog→架构的系统路径 —— 和本站第 10 板块三阶段路线互相印证,看看工业界怎么评"手写 NPU"。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎讨论</span><span class="my-tag my-tag-recommend">⭐ 实战经验</span><span class="my-tag my-tag-diff-1">入门友好</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.zhihu.com/question/840918079" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎:如何用 Verilog 设计一款 NPU?</div>
+      <div class="my-res-desc">围绕"设计 NPU 的真正难点"展开:不止写 RTL,还要权衡不同网络的带宽与访存峰值、性能功耗 tradeoff。读完后回头看本页第 1 节的"性能账",会明白为什么 Spec 阶段就要算 MAC 数与 RAM 规格。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎讨论</span><span class="my-tag my-tag-blog">架构权衡</span><span class="my-tag my-tag-diff-2">中级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/QShen3/CNN-FPGA" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧱</div>
+    <div class="my-res-info">
+      <div class="my-res-title">QShen3/CNN-FPGA —— Verilog CNN 模块库(约 590 stars)</div>
+      <div class="my-res-desc">中文作者开源的 Verilog CNN 模块(Conv2d、Max_pool 等),定位"可方便地放进 FPGA 项目使用、只推理不训练"。模块切分思路与本项目数据通路高度相似,适合 10-11 写运算模块前参考。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-recommend">⭐ 代码参考</span><span class="my-tag my-tag-diff-2">中级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/jofrfu/tinyTPU" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧱</div>
+    <div class="my-res-info">
+      <div class="my-res-title">jofrfu/tinyTPU —— 面向嵌入式/IoT 的 TPU 实现(约 580 stars)</div>
+      <div class="my-res-desc">参照 Google TPU 架构的小型张量处理单元,模块划分清晰(脉动阵列、激活、权重加载)。想理解"为什么本项目的控制/数据/存储三分法在真实项目里也成立",它是最合适的对照物。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-blog">TPU 架构</span><span class="my-tag my-tag-diff-3">高级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/cameronshinn/tiny-tpu" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧱</div>
+    <div class="my-res-info">
+      <div class="my-res-title">cameronshinn/tiny-tpu —— 学生 FPGA 小型 TPU(约 230 stars)</div>
+      <div class="my-res-desc">一位学生为学"端到端硬件设计"做的 FPGA 小 TPU,规模与本页教学项目同量级,文档坦白记录了踩坑过程。最适合建立信心:"他学生阶段能做完,你也可以"。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-diff-1">入门友好</span><span class="my-tag my-tag-diff-2">中级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://cloud.tencent.com/developer/article/2016187" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">腾讯云社区:优秀的 Verilog/FPGA 开源项目介绍(廿一)—— 卷积神经网络 CNN</div>
+      <div class="my-res-desc">汇总十余个 CNN 硬件加速开源项目(含 LeNet 加速器、NPU_on_FPGA、NTHU-ICLAB 课程设计等)并点评各自的设计文档质量。想做"第二个、第三个 NPU 项目"时,这是一张现成的选品清单。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-csdn">技术文章</span><span class="my-tag my-tag-blog">项目汇总</span><span class="my-tag my-tag-diff-2">中级</span></div>
+    </div>
+  </a>
+
+  <!-- ================= 7 本节自测 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 本项目的最坏累加场景是 5×5 卷积、输入通道 16:单个输出像素要累加 400 个 INT8×INT8 乘积。为什么累加器必须选 INT32?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. INT32 与 APB 总线位宽一致,方便读写</button>
+      <button data-v="B">B. 乘法器输出是 32 位,累加器只能同宽</button>
+      <button data-v="C">C. 乘法结果 16 位、累加 400 项会持续变宽,最坏约 2^23 量级,还要容纳 INT32 bias;INT16 必溢出,INT32 有充足裕量</button>
+      <button data-v="D">D. INT32 是业界惯例,没有为什么</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:选 C。位宽规划必须"算账":8bit×8bit 最大 16384(15 位),累加项数 K×K×CH_IN=400 使结果上限达约 2^23,叠加 INT32 bias 后 INT32 是既不溢出也不浪费的选择 —— 与 TPU v1/NVDLA 的选择一致。B 错在乘法器输出只有 16 位;D 把"惯例"当理由,面试会被追问"那你算给我看"。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. FSM 正处于 CALC 态时,主机又写了一次 CTRL.start=1。按本页设计,正确的硬件行为是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. start 请求进入等待队列,当前层结束后自动启动新的一层</button>
+      <button data-v="B">start 请求被寄存器模块的 idle 门控静默忽略,当前层继续计算,不受影响</button>
+      <button data-v="C">当前层立即终止,FSM 跳回 CONFIG 重新配置</button>
+      <button data-v="D">硬件产生总线错误,PSLVERR 置位并复位 FSM</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:选 B。写译码中 <code>if (pwdata[0] &amp; ~busy)</code> 保证只有 idle 时 start 请求才生成脉冲(见知识点 9 代码 ★ 行);"计算中写 start 被忽略"是第 2 节模式切换约束的白纸黑字。C/D 都会让一次误操作演变成数据损坏 —— 防御性设计的原则是"非法请求不生效、可观测、可恢复"。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 特征图 RAM 采用乒乓双缓冲(A/B 两块)的根本原因是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 单块 RAM 容量不够,拆两块凑数</button>
+      <button data-v="B">B. 让特征图和权重各占一块,避免冲突</button>
+      <button data-v="C">C. 两块轮流使用可以延长器件寿命</button>
+      <button data-v="D">D. 上一层写回与下一层读取可以同时进行(读旧块、写闲块),消除层间串行等待,并根除同地址边读边写冲突</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:选 D。乒乓双缓冲的本质是用面积(两倍缓冲)换并行(读写同时进行):LOAD 态翻转 buf_sel 后,引擎读的是上一次的输出块,新结果写进闲块。B 混淆了两类 RAM(权重 RAM 与特征图 RAM 本来就分开);A/C 与设计动机无关。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 STATUS.done 的设计,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. done 是电平信号、读 STATUS 自动清除,irq 由 ie&amp;done 组合生成 —— 轮询与中断两种完成通知都支持</button>
+      <button data-v="B">B. done 是单周期脉冲,错过就丢失,所以必须用中断</button>
+      <button data-v="C">C. done 置位后硬件自动清零所有寄存器,回到初始状态</button>
+      <button data-v="D">D. done 只能被写 1 清除,读操作无效</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:选 A。第 2 节明确"状态位必须是电平,事件才用脉冲":电平 done 让轮询的 CPU 永不错过完成事件;读清除(RC)语义让 CPU 读 STATUS 的同时自然撤掉 irq,无需额外 ACK 寄存器。B 把"事件脉冲"和"状态电平"搞反了;D 是 W1C 风格,与本页 Spec 不符(两者都合法,但必须二选一并写进 Spec)。</div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>① 需求解读产出"算子/性能/资源/精度+使用流程"五类可检验结论,歧义必须逐条澄清并写入 Spec;② Spec 四分法(功能/接口/性能/物理)中,参数范围表把每层上界变成 RAM 深度位宽与性能账;③ 工作模式三段制(配置/计算/完成)配 11 个寄存器构成软硬件合同,start 的 idle 门控与 done 的读清除是合同的关键条款;④ 顶层按控制通路/数据通路/存储子系统切分,握手约定 start/ready/done 三件套;⑤ 三段式五状态 FSM(IDLE→CONFIG→LOAD→CALC→DONE)只调度层粒度,子流程(取指/计算/写回)下放给引擎;⑥ 位宽走 INT8→INT32→requant→INT8 标准链路;⑦ 单时钟域+同步复位起步;⑧ 验证按 L0→L3 分阶段推进,黄金模型对照要求逐比特一致。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 若把性能指标收紧到"整网 ≤ 200K 周期",本页的架构哪些地方必须重做?哪些只需改参数?(提示:串行 MAC 周期账 vs 乒乓/位宽)<br>
+    2. 寄存器表若新增一个"层参数表基地址"寄存器实现硬件多层连跑,FSM 与验证计划分别要怎么改?CONFIG 态锁存的"参数快照"语义还成立吗?<br>
+    3. done 若改用 W1C(写 1 清除)语义,irq 逻辑、驱动代码和模块级 TB 用例分别要动哪几处?比较 RC 与 W1C 的取舍。
+  </div>
+
+  <!-- ================= 参考来源 ================= -->
+  <h2><span class="h2-num">8</span> 参考来源</h2>
+  <ul>
+    <li><a href="http://nvdla.org/" target="_blank" rel="noopener">NVDLA 官方文档站(NVIDIA Deep Learning Accelerator)</a> —— 开源 NPU 的架构与寄存器手册范本</li>
+    <li><a href="https://github.com/nvdla/hw" target="_blank" rel="noopener">GitHub · nvdla/hw</a> —— NVDLA RTL/C 模型/测试平台官方仓库(约 2.1k stars)</li>
+    <li><a href="https://github.com/ucb-bar/gemmini" target="_blank" rel="noopener">GitHub · ucb-bar/gemmini</a> —— UC Berkeley 可配置脉动阵列加速器生成器(约 1.4k stars)</li>
+    <li><a href="https://ysyx.oscc.cc/" target="_blank" rel="noopener">一生一芯(ySyvx)官方网站</a> —— 公益处理器芯片设计项目(含真实流片)</li>
+    <li><a href="https://space.bilibili.com/2107852263/" target="_blank" rel="noopener">B站 · 一生一芯-视频号(官方公开课空间)</a></li>
+    <li><a href="https://www.bilibili.com/video/BV1wP4y1q7fF/" target="_blank" rel="noopener">B站 · 一生一芯公开课《总线选讲》(第五期 P17)</a></li>
+    <li><a href="https://www.zhihu.com/question/606480901" target="_blank" rel="noopener">知乎 · 想用 Verilog 写一个 NPU 需要什么学习路线?</a></li>
+    <li><a href="https://www.zhihu.com/question/840918079" target="_blank" rel="noopener">知乎 · 如何用 Verilog 设计一款 NPU?</a></li>
+    <li><a href="https://github.com/QShen3/CNN-FPGA" target="_blank" rel="noopener">GitHub · QShen3/CNN-FPGA</a> —— Verilog CNN 模块开源库(约 590 stars)</li>
+    <li><a href="https://github.com/jofrfu/tinyTPU" target="_blank" rel="noopener">GitHub · jofrfu/tinyTPU</a> —— 嵌入式/IoT 向小型 TPU 实现(约 580 stars)</li>
+    <li><a href="https://github.com/cameronshinn/tiny-tpu" target="_blank" rel="noopener">GitHub · cameronshinn/tiny-tpu</a> —— 学生自制 FPGA 小型 TPU(约 230 stars)</li>
+    <li><a href="https://cloud.tencent.com/developer/article/2016187" target="_blank" rel="noopener">腾讯云开发者社区 · 优秀的 Verilog/FPGA 开源项目介绍(廿一)—— 卷积神经网络 CNN</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

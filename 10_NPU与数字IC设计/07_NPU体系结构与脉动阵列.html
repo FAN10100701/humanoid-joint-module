@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 10-07 NPU 体系结构与脉动阵列
+  板块: NPU与数字IC设计 · 第二阶段第 2 页
+  内容: NPU 行业全景 / CPU·GPU·NPU 架构差异 / 神经网络计算数学本质 /
+        脉动阵列原理与三种数据流 / 加速结构对比 / 存储层级与 Roofline /
+        NPU 指令集 / LeNet 硬件映射实战 / 稀疏化 / NVDLA 与 Gemmini
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · NPU体系结构与脉动阵列</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名加 my- 前缀,避免与全局冲突) ===== */
+
+  /* 资源卡片(与 02-05 / 10-05 参考来源同构) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+  /* 徽章配色 */
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+  .my-badge-code{background:linear-gradient(135deg,#fff7ed,#ffedd5)}
+  .my-badge-course{background:linear-gradient(135deg,#ecfeff,#cffafe)}
+
+  /* 标签 */
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-blog{background:#bae6fd;color:#075985}
+  .my-tag-course{background:#a5f3fc;color:#155e75}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-1{background:#dcfce7;color:#166534}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+
+  /* 结构图容器(SVG) */
+  .my-fig{background:rgba(13,17,23,.72);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 12px;margin:14px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:560px;width:100%;height:auto}
+  .my-fig text{font-family:Consolas,"Courier New",monospace}
+  .my-fig-cap{font-size:12.5px;color:#9aa4b2;margin-top:8px;text-align:center;line-height:1.7}
+
+  /* 浅色主题适配(与 site.css 的苹果透亮玻璃风格一致) */
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+  html:not([data-theme-early="dark"]) .my-fig{background:rgba(255,255,255,.72);border-color:rgba(148,163,184,.35)}
+  html:not([data-theme-early="dark"]) .my-fig-cap{color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "10-07",
+    root: "..",
+    breadcrumb: [
+      { t: "NPU与数字IC设计", u: "../index.html#sec10" },
+      { t: "NPU体系结构与脉动阵列" }
+    ],
+    prev: { t: "深度学习基础与LeNet实战", u: "06_深度学习基础与LeNet实战.html" },
+    next: { t: "模型量化与端侧部署", u: "08_模型量化与端侧部署.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧠 NPU 体系结构与脉动阵列</h1>
+    <div class="sub">从"为什么需要 NPU"到"卷积如何流过 8×8 PE 阵列" —— 一条主线讲透:数学本质 → 脉动阵列 → 存储层级 → 指令集 → LeNet 硬件映射,最后落到你 10-10/10-11 页 RTL 项目的 Spec。</div>
+    <div class="tags">
+      <span class="tag">NPU 架构</span>
+      <span class="tag">脉动阵列</span>
+      <span class="tag">存储层级</span>
+      <span class="tag">Roofline</span>
+      <span class="tag">NVDLA / Gemmini</span>
+      <span class="tag">RTL 项目前置</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出 CPU / GPU / NPU 的微架构示意,并用"延迟-吞吐-能效"三角说清三者定位差异<br>
+    2. 能把卷积拆成 im2col + GEMM,手推 LeNet C1 层的计算量(MAC 数)<br>
+    3. 能画出 4×4 脉动阵列的数据流,说清 weight/output/row-stationary 三种数据流的区别与"为什么省访存"<br>
+    4. 能画出存储金字塔,用 Roofline 模型判断一个算子是算力受限还是带宽受限<br>
+    5. 能把 LeNet 逐层映射到 8×8 PE 阵列,给出逐层映射表与总周期数粗估 —— 直接当 10-10/10-11 RTL 项目的 Spec<br>
+    <b>建议用时:</b>约 100 分钟(概念 40 分钟 + 映射推演 40 分钟 + 自测 20 分钟)
+  </div>
+
+  <!-- ================= 第 1 节 · 行业全景与架构差异(知识点 1~2) ================= -->
+  <h2><span class="h2-num">1</span> NPU 行业全景与 CPU/GPU/NPU 架构差异</h2>
+
+  <h3>1.1 NPU 行业应用全景:四种落地形态与 2017 爆发的原因</h3>
+  <p><b>是什么:</b>NPU(Neural Processing Unit,神经网络处理器)是专门为神经网络计算(以推理为主、部分兼顾训练)设计的领域专用处理器(Domain-Specific Architecture,DSA)。它不是一种固定电路,而是一类架构思想:用大量规则重复的乘累加(MAC)单元 + 紧贴计算的片上存储 + 极简的指令/控制,换取对神经网络负载远超通用处理器的能效。落地上主要有四种形态:<b>手机 SoC 里的 NPU</b>(华为麒麟 970 首次以"NPU"命名、苹果 A11 仿生的 Neural Engine、高通 Hexagon NPU)、<b>自动驾驶域控</b>(NVIDIA Xavier/Orin 内置推理引擎、特斯拉 FSD 芯片、地平线征程系列)、<b>数据中心推理/训练卡</b>(Google TPU、AWS Inferentia、寒武纪 MLU)、<b>机器人与边缘端模组</b>(NVIDIA Jetson、瑞芯微 RK3588 内置 6 TOPS NPU、各类 AI 视觉芯片)。</p>
+  <p><b>为什么 2017 年之后 NPU 爆发:</b>四个条件在同一段时间凑齐 —— ①<b>负载变了:</b>2012 年 AlexNet 证明深度学习有效,2016 年 AlphaGo 出圈,2017 年 Transformer 问世,神经网络推理从实验室走向亿级设备,矩阵乘加(MAC)成为最主要的计算形态;②<b>工艺红利变了:</b>摩尔定律放缓、Dennard 缩放(晶体管变小时功耗同比缩小)在 2005 年前后失效,"堆晶体管不再自动省电",必须靠架构层面的专用化换能效 —— 这正是 2018 年 Hennessy 与 Patterson 图灵奖演讲《A New Golden Age for Computer Architecture》的核心论点;③<b>通用芯片的账算不过来:</b>在手机 mW~W 级功耗预算下,CPU/GPU 跑 CNN 的每瓦性能(OPS/W)差专用架构一两个数量级;④<b>生态成熟:</b>量化、编译器、模型压缩等技术让"把模型塞进专用加速器"成为工程上可复制的流水线。</p>
+  <p><b>怎么做(建立行业地图):</b>把四种场景按"算力-功耗-延迟-成本"四个约束放进一张表,面试聊到任何一家公司的 NPU 都能对号入座:</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>落地形态</th><th>代表芯片/平台</th><th>典型算力量级</th><th>功耗预算</th><th>第一约束</th><th>架构取向</th></tr>
+    <tr><td>手机 SoC NPU</td><td>麒麟 970/9000、A11~A17 Neural Engine、高通 Hexagon NPU</td><td>~1~几十 TOPS(INT8)</td><td>1~5 W(共享整机)</td><td>能效(OPS/W)、面积成本</td><td>小阵列 + 权重常驻 + 强量化</td></tr>
+    <tr><td>自动驾驶域控</td><td>NVIDIA Orin/Xavier、特斯拉 FSD、地平线征程 5</td><td>几十~几百 TOPS</td><td>15~100 W</td><td>时延确定性 + 功能安全</td><td>多核阵列 + 固定流水线融合 + 冗余</td></tr>
+    <tr><td>数据中心推理卡</td><td>Google TPU(v1~v5)、AWS Inferentia、寒武纪 MLU</td><td>上百~上千 TOPS</td><td>75~500 W</td><td>吞吐(OPS/$)+ 可伸缩</td><td>大脉动阵列 + HBM 高带宽</td></tr>
+    <tr><td>机器人/边缘模组</td><td>Jetson Orin Nano、RK3588(6 TOPS NPU)、AI 视觉芯片</td><td>0.5~100 TOPS</td><td>5~60 W(模组)</td><td>功耗/成本/长时运行散热</td><td>CPU+NPU 异构、量化优先、常驻权重</td></tr>
+  </table></div>
+
+  <div class="box box-tip"><b>💡 与本站主线的关系:</b>人形机器人正是第四类 —— 关节控制跑在 MCU/实时核上,而感知(视觉/VLA)跑在机载算力模组的 NPU 上。10-08 页讲模型量化部署,10-10/10-11 页让你亲手写一个小 NPU 的 RTL;本页先建立"整机视角"。</div>
+
+  <p><b>面试怎么问:</b>①"为什么 2017 年前后各家芯片厂都开始做 NPU?"(答负载变化 + 摩尔定律失效 + 能效账 + 生态,四点);②"手机厂商为什么坚持自研 NPU 而不只用 GPU?"(能效、成本、与 ISP/相机算法的端到端定制、供应链自主);③"TOPS 越高性能一定越强吗?"(不一定,真实吞吐 = 峰值 × 利用率,利用率被带宽、tiling、算子适配限制)。</p>
+  <p><b>易错点:</b>① NPU ≠ 只能推理,训练型加速器(TPU 训练、MLU)同样是 NPU 范畴,只是端侧 NPU 基本只做推理;② 把"NPU 爆发"归因于"AI 火了"只答对四分之一,架构层面必须说出 DSA/能效逻辑;③ TOPS 是 INT8 口径还是 FP16 口径要先问清,不同精度差 2~4 倍。</p>
+
+  <h3>1.2 CPU / GPU / NPU:控制流、数据流与延迟-吞吐-能效三角</h3>
+  <p><b>是什么:</b>三者是同一颗晶体管预算的三种花法。<b>CPU</b>:少数几个大核,每个核把大量晶体管花在控制与预测上(乱序执行、分支预测、多级大缓存),目标是"把一个线程尽快跑完"——<b>延迟优先</b>。<b>GPU</b>:成千上万小核按 SIMT 成组跑同样代码,控制逻辑被大量线程摊薄,缓存较小,目标是"把海量线程的总吞吐拉满"——<b>吞吐优先</b>。<b>NPU</b>:干脆承认"负载是规则的数据流":用空间上排布的 MAC 阵列让数据在相邻单元间流动,控制退化为"装载-计算-存出"的固定节拍,目标是"每焦耳能量做出最多的乘加"——<b>能效优先</b>。</p>
+  <p><b>为什么:</b>神经网络计算的三个特点决定了 NPU 的形态 —— ①<b>控制简单:</b>没有复杂分支和指针追逐,分支预测、乱序窗口都用不上;②<b>并行规则:</b>输出元素之间天然独立,大规模空间并行没有依赖冒险;③<b>数据复用高:</b>同一个权重要对成千上万个位置重复使用,只要把它"钉"在计算单元旁边,就能把访存摊薄到接近于零。CPU/GPU 的晶体管大量花在与这三条无关的地方,能效自然吃亏。</p>
+  <p><b>怎么做(画图记忆):</b>记住下面这张结构对比图,再配大表 —— 三块芯片内部"哪里晶体管最多"就是它们各自的哲学。</p>
+
+  <div class="my-fig">
+  <svg viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CPU、GPU、NPU 微架构对比:CPU 大核加大缓存控制,GPU 大量小核 SIMT,NPU 脉动 PE 阵列加片上 SRAM">
+    <defs>
+      <marker id="mA1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#58a6ff"/></marker>
+      <marker id="mA2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#f59e0b"/></marker>
+      <marker id="mA3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#22c55e"/></marker>
+    </defs>
+    <text x="112" y="24" fill="#58a6ff" font-size="13" font-weight="bold">CPU · 延迟优先</text>
+    <text x="320" y="24" fill="#f59e0b" font-size="13" font-weight="bold">GPU · 吞吐优先</text>
+    <text x="528" y="24" fill="#22c55e" font-size="13" font-weight="bold">NPU · 能效优先</text>
+
+    <!-- CPU -->
+    <rect x="16" y="36" width="192" height="212" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.5"/>
+    <rect x="32" y="76" width="76" height="46" rx="6" fill="rgba(88,166,255,.18)" stroke="#58a6ff"/>
+    <text x="70" y="103" fill="#e6edf3" font-size="12" text-anchor="middle">核 0</text>
+    <rect x="118" y="76" width="76" height="46" rx="6" fill="rgba(88,166,255,.18)" stroke="#58a6ff"/>
+    <text x="156" y="103" fill="#e6edf3" font-size="12" text-anchor="middle">核 1</text>
+    <rect x="32" y="132" width="76" height="46" rx="6" fill="rgba(88,166,255,.18)" stroke="#58a6ff"/>
+    <text x="70" y="159" fill="#e6edf3" font-size="12" text-anchor="middle">核 2</text>
+    <rect x="118" y="132" width="76" height="46" rx="6" fill="rgba(88,166,255,.18)" stroke="#58a6ff"/>
+    <text x="156" y="159" fill="#e6edf3" font-size="12" text-anchor="middle">核 3</text>
+    <text x="112" y="64" fill="#8b949e" font-size="11" text-anchor="middle">少量大核(乱序/多发射)</text>
+    <rect x="32" y="190" width="160" height="42" rx="6" fill="rgba(139,148,158,.15)" stroke="#8b949e" stroke-dasharray="4 3"/>
+    <text x="112" y="207" fill="#8b949e" font-size="10.5" text-anchor="middle">分支预测 · 乱序窗口</text>
+    <text x="112" y="223" fill="#8b949e" font-size="10.5" text-anchor="middle">多级大 Cache(晶体管大头)</text>
+
+    <!-- GPU -->
+    <rect x="224" y="36" width="192" height="212" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="320" y="60" fill="#8b949e" font-size="11" text-anchor="middle">数千小核 · SIMT 成组调度</text>
+    <g fill="rgba(245,158,11,.2)" stroke="#f59e0b" stroke-width=".8">
+      <rect x="240" y="72" width="16" height="12"/><rect x="258" y="72" width="16" height="12"/><rect x="276" y="72" width="16" height="12"/><rect x="294" y="72" width="16" height="12"/><rect x="312" y="72" width="16" height="12"/><rect x="330" y="72" width="16" height="12"/><rect x="348" y="72" width="16" height="12"/><rect x="366" y="72" width="16" height="12"/><rect x="384" y="72" width="16" height="12"/>
+      <rect x="240" y="88" width="16" height="12"/><rect x="258" y="88" width="16" height="12"/><rect x="276" y="88" width="16" height="12"/><rect x="294" y="88" width="16" height="12"/><rect x="312" y="88" width="16" height="12"/><rect x="330" y="88" width="16" height="12"/><rect x="348" y="88" width="16" height="12"/><rect x="366" y="88" width="16" height="12"/><rect x="384" y="88" width="16" height="12"/>
+      <rect x="240" y="104" width="16" height="12"/><rect x="258" y="104" width="16" height="12"/><rect x="276" y="104" width="16" height="12"/><rect x="294" y="104" width="16" height="12"/><rect x="312" y="104" width="16" height="12"/><rect x="330" y="104" width="16" height="12"/><rect x="348" y="104" width="16" height="12"/><rect x="366" y="104" width="16" height="12"/><rect x="384" y="104" width="16" height="12"/>
+      <rect x="240" y="120" width="16" height="12"/><rect x="258" y="120" width="16" height="12"/><rect x="276" y="120" width="16" height="12"/><rect x="294" y="120" width="16" height="12"/><rect x="312" y="120" width="16" height="12"/><rect x="330" y="120" width="16" height="12"/><rect x="348" y="120" width="16" height="12"/><rect x="366" y="120" width="16" height="12"/><rect x="384" y="120" width="16" height="12"/>
+      <rect x="240" y="136" width="16" height="12"/><rect x="258" y="136" width="16" height="12"/><rect x="276" y="136" width="16" height="12"/><rect x="294" y="136" width="16" height="12"/><rect x="312" y="136" width="16" height="12"/><rect x="330" y="136" width="16" height="12"/><rect x="348" y="136" width="16" height="12"/><rect x="366" y="136" width="16" height="12"/><rect x="384" y="136" width="16" height="12"/>
+    </g>
+    <rect x="240" y="162" width="160" height="36" rx="6" fill="rgba(139,148,158,.15)" stroke="#8b949e" stroke-dasharray="4 3"/>
+    <text x="320" y="179" fill="#8b949e" font-size="10.5" text-anchor="middle">简化控制 · 小缓存 · 共享存储</text>
+    <text x="320" y="192" fill="#8b949e" font-size="10.5" text-anchor="middle">(大量线程互相摊薄控制开销)</text>
+
+    <!-- NPU -->
+    <rect x="432" y="36" width="192" height="212" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="528" y="60" fill="#8b949e" font-size="11" text-anchor="middle">脉动 PE 阵列(空间并行)</text>
+    <g fill="rgba(34,197,94,.18)" stroke="#22c55e" stroke-width=".9">
+      <rect x="470" y="72" width="25" height="20" rx="3"/><rect x="501" y="72" width="25" height="20" rx="3"/><rect x="532" y="72" width="25" height="20" rx="3"/><rect x="563" y="72" width="25" height="20" rx="3"/>
+      <rect x="470" y="98" width="25" height="20" rx="3"/><rect x="501" y="98" width="25" height="20" rx="3"/><rect x="532" y="98" width="25" height="20" rx="3"/><rect x="563" y="98" width="25" height="20" rx="3"/>
+      <rect x="470" y="124" width="25" height="20" rx="3"/><rect x="501" y="124" width="25" height="20" rx="3"/><rect x="532" y="124" width="25" height="20" rx="3"/><rect x="563" y="124" width="25" height="20" rx="3"/>
+      <rect x="470" y="150" width="25" height="20" rx="3"/><rect x="501" y="150" width="25" height="20" rx="3"/><rect x="532" y="150" width="25" height="20" rx="3"/><rect x="563" y="150" width="25" height="20" rx="3"/>
+    </g>
+    <text x="482" y="86" fill="#58a6ff" font-size="9" text-anchor="middle">W</text>
+    <text x="513" y="86" fill="#58a6ff" font-size="9" text-anchor="middle">W</text>
+    <text x="544" y="86" fill="#58a6ff" font-size="9" text-anchor="middle">W</text>
+    <text x="575" y="86" fill="#58a6ff" font-size="9" text-anchor="middle">W</text>
+    <text x="482" y="112" fill="#58a6ff" font-size="9" text-anchor="middle">W</text>
+    <text x="513" y="112" fill="#58a6ff" font-size="9" text-anchor="middle">W</text>
+    <text x="544" y="112" fill="#58a6ff" font-size="9" text-anchor="middle">W</text>
+    <text x="575" y="112" fill="#58a6ff" font-size="9" text-anchor="middle">W</text>
+    <rect x="448" y="182" width="160" height="34" rx="6" fill="rgba(139,148,158,.15)" stroke="#8b949e" stroke-dasharray="4 3"/>
+    <text x="528" y="199" fill="#8b949e" font-size="10.5" text-anchor="middle">片上 SRAM / 累加器紧贴计算</text>
+    <text x="528" y="211" fill="#8b949e" font-size="10.5" text-anchor="middle">权重常驻 · 数据就近流动</text>
+
+    <!-- bottom arrows -->
+    <line x1="112" y1="288" x2="112" y2="262" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#mA1)"/>
+    <line x1="320" y1="288" x2="320" y2="262" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#mA2)"/>
+    <line x1="528" y1="288" x2="528" y2="262" stroke="#22c55e" stroke-width="1.6" marker-end="url(#mA3)"/>
+    <text x="112" y="304" fill="#9aa4b2" font-size="11" text-anchor="middle">控制流:把不确定性做到硬件里</text>
+    <text x="320" y="304" fill="#9aa4b2" font-size="11" text-anchor="middle">时间复用:同一 ALU 轮转万千线程</text>
+    <text x="528" y="304" fill="#9aa4b2" font-size="11" text-anchor="middle">数据流:计算被拍成规则的节拍</text>
+  </svg>
+  <div class="my-fig-cap">图① CPU / GPU / NPU 微架构对比:晶体管预算分别投向"控制与缓存"、"海量小核"、"MAC 阵列 + 紧贴存储";三种取向对应延迟、吞吐、能效三种优化目标</div>
+  </div>
+
+  <p>再配一张逐项对比大表,面试前背熟"架构取向"与"关键指标"两行即可:</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>CPU</th><th>GPU</th><th>NPU</th></tr>
+    <tr><td>核心组织</td><td>少量大核(4~64)</td><td>数千~上万小核,SM/SIMT 分组</td><td>MAC 阵列(脉动/空间)+ 固定功能算子</td></tr>
+    <tr><td>执行方式</td><td>乱序执行,逐指令控制流</td><td>SIMT:单指令多线程,时间复用</td><td>数据流:指令只管装载/触发,计算是空间并行的节拍</td></tr>
+    <tr><td>晶体管大头</td><td>控制逻辑 + 多级大缓存</td><td>ALU 与寄存器,控制被摊薄</td><td>MAC 单元 + 片上 SRAM/累加器</td></tr>
+    <tr><td>缓存策略</td><td>硬件 cache,透明自动</td><td>cache + 共享存储(shared memory)</td><td>scratchpad/累加器,软件显式管理</td></tr>
+    <tr><td>访存模式</td><td>不规则、随机访问多</td><td>规则但海量,靠高带宽 GDDR/HBM</td><td>批量 DMA + 阵列内复用,访存次数被压到最少</td></tr>
+    <tr><td>优化目标</td><td>单线程延迟</td><td>总吞吐(FLOPS)</td><td>能效(OPS/W)与单位面积吞吐</td></tr>
+    <tr><td>典型精度</td><td>FP64/FP32</td><td>FP32/FP16/TF32</td><td>INT8/INT4/二值为主</td></tr>
+    <tr><td>灵活性</td><td>任意代码,最强</td><td>任意并行代码,强</td><td>限定的算子集,动态控制流差</td></tr>
+    <tr><td>代表</td><td>ARM Cortex-A、x86</td><td>NVIDIA GPU、AMD GPU</td><td>TPU、NVDLA、Gemmini、麒麟 NPU</td></tr>
+    <tr><td>一句话哲学</td><td>"快跑完这一件事"</td><td>"同时跑完一万件事"</td><td>"用最少焦耳跑完规定好的事"</td></tr>
+  </table></div>
+
+  <div class="box box-warn"><b>⚠️ 延迟-吞吐-能效三角:</b>三者不可兼得 —— 想要低延迟就要大缓存和乱序逻辑(费电费面积),想要高能效就要放弃对任意负载的灵活响应(专用化)。任何"某芯片三项全能"的宣传,都要追问:在什么负载、什么精度、什么 batch 下?</div>
+
+  <p><b>面试怎么问:</b>①"同样是并行,GPU 和 NPU 的并行有什么本质区别?"(GPU 是时间复用:同一个 ALU 在万千线程间轮转;NPU 是空间复用:每个数据走位固定在物理上排开的计算单元里);②"1 TOPS 的 NPU 和 1 TOPS 的 GPU 跑 CNN 差别在哪?"(利用率与每次计算的能耗:NPU 的 MAC 直接从寄存器取驻留数据,GPU 每次乘加都要经过寄存器文件/共享存储的读写);③"什么任务 NPU 反而不如 CPU?"(动态控制流、稀疏不规则访存、算子未覆盖时回退 CPU,常见于 beam search、自定义算子)。</p>
+  <p><b>易错点:</b>① "NPU = 很多核的 CPU"是错的,NPU 没有"取指-译码-执行"逐指令模型,指令只调度数据搬运与矩阵运算的触发;② "GPU 有 CUDA 做神经网络,NPU 是多余的"忽略了端侧功耗墙 —— 手机/机器人给 AI 的预算常在瓦级以下,GPU 落地不了;③ 把 cache 和 scratchpad 混为一谈:cache 硬件自动管理、行为不确定;scratchpad 由编译器静态分配、延迟确定,这正是 NPU 可预测性的来源之一。</p>
+
+  <!-- SEC-1-END -->
+
+  <!-- ================= 第 2 节 · 数学本质(知识点 3) ================= -->
+  <h2><span class="h2-num">2</span> 神经网络计算的数学本质:GEMM 与 MAC</h2>
+
+  <h3>2.1 一切归到 GEMM:全连接、卷积如何变成矩阵乘</h3>
+  <p><b>是什么:</b>剥掉"层"的外衣,神经网络推理 90% 以上的计算量是同一种运算:<b>通用矩阵乘 GEMM</b>(GEneral Matrix Multiplication)。全连接层本身就是向量-矩阵乘;卷积层则通过 <b>im2col</b>(image-to-column)把每个卷积窗口展开成矩阵的一列(或一行),卷积就变成了矩阵乘。<b>MAC(multiply-accumulate,乘累加)</b>是这一切的最小硬件单元:一次乘法 + 一次加法,输出部分和(partial sum,psum)。</p>
+
+  <div class="formula">C_{M\times N} = \sum_{k=1}^{K} A_{M\times K} \times B_{K\times N}\qquad \Rightarrow\qquad \text{计算量} = M\times N\times K \ \text{次 MAC}</div>
+
+  <p>卷积输出尺寸与计算量的通用公式(务必默写):</p>
+
+  <div class="formula">O_{out}=\dfrac{H+2P-K}{S}+1,\qquad \text{MACs} = O_{out}\times O_{out}\times C_{out}\times (K\times K\times C_{in})</div>
+
+  <p><b>为什么:</b>①GEMM 的循环结构规整(NESTED-FOR 三重循环),没有数据依赖分支,天然适合硬件并行 —— M×N 个输出互相独立,可以同时算;K 方向是累加链,可以流水;②把所有层都统一到 GEMM 后,硬件只需要做好"矩阵乘引擎"这一件事,编译器负责把各种算子规约成 GEMM,软硬件各自最简。</p>
+  <p><b>怎么做(im2col 手推一遍):</b>以 3×3 卷积、输入 4×4、单通道为例:输出位置共 (4−3+1)² = 4 个;把每个 3×3 窗口拉直成 9 维列向量 → 得到 9×4 的输入矩阵 A;把 3×3 卷积核拉直成 9 维向量 → 权重矩阵 B 为 9×1;一次 9×4 乘 4×1(按 A[9×4]×B[4×1] 的布局即 4 输出 × K=9)等价于原卷积。代价是输入被复制了 K×K 倍 —— <b>空间换时间</b>,这也是为什么 NPU 必须配大片上 SRAM 来装这些复制品。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>算子</th><th>规约成 GEMM 的方式</th><th>GEMM 形状(M×K×N)</th><th>备注</th></tr>
+    <tr><td>全连接 FC</td><td>直接就是矩阵乘</td><td>batch×(in特征)×(out特征)</td><td>batch=1 时退化为向量×矩阵</td></tr>
+    <tr><td>标准卷积 Conv</td><td>im2col 展开窗口</td><td>(输出位置数)×(K·K·Cin)×(Cout)</td><td>内存膨胀 K·K 倍,片上完成才划算</td></tr>
+    <tr><td>1×1 卷积</td><td>无需 im2col</td><td>(H·W)×Cin×Cout</td><td>天生 GEMM,逐通道混排的"矩阵乘"</td></tr>
+    <tr><td>深度可分离卷积</td><td>逐通道独立累加</td><td>GEMM 退化为一组独立的点积</td><td>数据复用差,阵列利用率低,是 NPU 的"差生"</td></tr>
+    <tr><td>池化 / 激活</td><td>不是 MAC</td><td>—</td><td>用加法器树/比较器/查表,单独的数据通路(SDP 类模块)</td></tr>
+  </table></div>
+
+  <p><b>面试怎么问:</b>①"卷积为什么能转 GEMM?转的代价是什么?"(窗口规整、参数共享;代价是 im2col 内存膨胀 K² 倍与搬运开销,所以要 tiling 在片上完成);②"一个 7×7 卷积、输入输出 256 通道、输出 56×56,多少 MAC?"(56×56×256×(7×7×256) ≈ 10.1 亿 MAC,当堂心算);③"为什么很多 NPU 对 depthwise 卷积特别慢?"(没有跨通道的 K 维共享,阵列只能一列干活,利用率掉一个数量级)。</p>
+  <p><b>易错点:</b>① MAC 数与 FLOPs 差 2 倍(1 MAC = 1 乘 1 加 = 2 FLOPs),报表时要先统一口径;② 忘了 bias 与 padding 的影响(bias 是加法不进 MAC 统计,但 padding 改变输出尺寸);③ "输出位置数 × 输出通道数 × 每窗口 K²Cin"这个三因子乘法,最常见错误是把输出位置算成输入尺寸 H×W。</p>
+
+  <!-- SEC-2-END -->
+
+  <!-- ================= 第 3 节 · 脉动阵列与数据流(知识点 4~5) ================= -->
+  <h2><span class="h2-num">3</span> 脉动阵列:数据流与加速结构选型</h2>
+
+  <h3>3.1 脉动阵列原理:让数据像脉搏一样流过 PE</h3>
+  <p><b>是什么:</b>脉动阵列(Systolic Array)由 CMU 的孔祥重(H.T. Kung)与 Leiserson 于 1978 年提出。"systole"本意是心脏收缩泵血 —— 数据像血液一样<b>有节律地在相邻计算单元(PE)之间流动</b>:每个 PE 只与上下左右邻居相连,每个周期从上游收一个数、用驻留在本地的权重乘一下、把部分和往下游推一格。没有总线、没有广播,数据一旦从存储读入阵列,就沿着固定方向"脉动"前进,沿途被逐个 PE 复用。Google TPU v1 的 MXU(256×256 INT8 脉动阵列)是它最著名的工业级落地。</p>
+  <p><b>为什么(省访存的账):</b>访存是能耗与带宽的双重瓶颈 —— 在 45nm 量级下,从 DDR 读 32bit 的能耗(~640pJ)是从寄存器取数的成百上千倍,更远超一次 INT8 乘加本身。朴素做法算 C=A×B(M×N×K)要把 B 读 N 次以上;脉动阵列把权重(或部分和)驻留在 PE 里,让激活流过阵列:<b>每个权重只需从存储装载一次,就在 K 维累加的过程中被复用 N(或 M)次</b>;同理每个激活数在流过一列 PE 时被逐行复用。访存量从 O(M·N·K) 级被压到 O(K·N + M·K) 级,这就是"一次装载,多次复用"。</p>
+
+  <div class="formula">E_{\text{DRAM 32bit}} \approx 640\,\text{pJ}\ \gg\ E_{\text{SRAM 32bit}} \approx 5\sim100\,\text{pJ}\ \gg\ E_{\text{INT8 MAC}} \approx 0.2\sim3.2\,\text{pJ}\quad(45\text{nm 量级, Horowitz ISSCC 2014})</div>
+
+  <p><b>怎么做(看懂数据流):</b>下图是权重固定(weight-stationary)风格的 4×4 阵列:权重 w0~w3 先沿列装载并<b>驻留</b>在各 PE(蓝色,不动);激活 a0~a3 每拍从左向右脉动推进一行(橙色);部分和 psum 沿列向下逐拍累加(绿色)。第 t 拍时,PE(i,j) 计算的是 <code>psum ← psum + w(i,j) × a(过路激活)</code> —— 注意没有任何一根导线跨越整个阵列,数据只走一步,这正是走线短、可扩展、频率高的原因。</p>
+
+  <div class="my-fig">
+  <svg viewBox="0 0 640 384" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="权重固定式 4 乘 4 脉动阵列:权重蓝色驻留在 PE 内,激活橙色自左向右脉动,部分和绿色向下累加">
+    <defs>
+      <marker id="mB1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#58a6ff"/></marker>
+      <marker id="mB2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#f59e0b"/></marker>
+      <marker id="mB3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#22c55e"/></marker>
+    </defs>
+    <!-- weight load arrows (top, dashed blue) -->
+    <text x="330" y="16" fill="#58a6ff" font-size="11" text-anchor="middle">权重装载(装载后驻留 stationary,不再动)</text>
+    <line x1="214" y1="22" x2="214" y2="42" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#mB1)"/>
+    <line x1="292" y1="22" x2="292" y2="42" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#mB1)"/>
+    <line x1="370" y1="22" x2="370" y2="42" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#mB1)"/>
+    <line x1="448" y1="22" x2="448" y2="42" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#mB1)"/>
+    <text x="198" y="34" fill="#58a6ff" font-size="11" text-anchor="end">w0</text>
+    <text x="276" y="34" fill="#58a6ff" font-size="11" text-anchor="end">w1</text>
+    <text x="354" y="34" fill="#58a6ff" font-size="11" text-anchor="end">w2</text>
+    <text x="432" y="34" fill="#58a6ff" font-size="11" text-anchor="end">w3</text>
+
+    <!-- PE grid 4x4: x0=180 y0=46 cell 68x54 gap 10 -->
+    <g>
+      <rect x="180" y="46" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="258" y="46" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="336" y="46" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="414" y="46" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="180" y="110" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="258" y="110" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="336" y="110" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="414" y="110" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="180" y="174" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="258" y="174" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="336" y="174" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="414" y="174" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="180" y="238" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="258" y="238" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="336" y="238" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+      <rect x="414" y="238" width="68" height="54" rx="6" fill="rgba(34,197,94,.07)" stroke="#8b949e"/>
+    </g>
+    <!-- weight slots inside PEs (blue) -->
+    <g>
+      <rect x="192" y="54" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="270" y="54" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="348" y="54" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="426" y="54" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="192" y="118" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="270" y="118" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="348" y="118" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="426" y="118" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="192" y="182" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="270" y="182" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="348" y="182" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="426" y="182" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="192" y="246" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="270" y="246" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="348" y="246" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+      <rect x="426" y="246" width="44" height="18" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+    </g>
+    <g fill="#58a6ff" font-size="11" text-anchor="middle">
+      <text x="214" y="67">Wij</text><text x="292" y="67">Wij</text><text x="370" y="67">Wij</text><text x="448" y="67">Wij</text>
+      <text x="214" y="131">Wij</text><text x="292" y="131">Wij</text><text x="370" y="131">Wij</text><text x="448" y="131">Wij</text>
+      <text x="214" y="195">Wij</text><text x="292" y="195">Wij</text><text x="370" y="195">Wij</text><text x="448" y="195">Wij</text>
+      <text x="214" y="259">Wij</text><text x="292" y="259">Wij</text><text x="370" y="259">Wij</text><text x="448" y="259">Wij</text>
+    </g>
+    <g fill="#9aa4b2" font-size="9.5" text-anchor="middle">
+      <text x="214" y="93">PE(i,j)+MAC</text><text x="292" y="93">PE(i,j)+MAC</text><text x="370" y="93">PE(i,j)+MAC</text><text x="448" y="93">PE(i,j)+MAC</text>
+      <text x="214" y="157">PE(i,j)+MAC</text><text x="292" y="157">PE(i,j)+MAC</text><text x="370" y="157">PE(i,j)+MAC</text><text x="448" y="157">PE(i,j)+MAC</text>
+      <text x="214" y="221">PE(i,j)+MAC</text><text x="292" y="221">PE(i,j)+MAC</text><text x="370" y="221">PE(i,j)+MAC</text><text x="448" y="221">PE(i,j)+MAC</text>
+      <text x="214" y="285">PE(i,j)+MAC</text><text x="292" y="285">PE(i,j)+MAC</text><text x="370" y="285">PE(i,j)+MAC</text><text x="448" y="285">PE(i,j)+MAC</text>
+    </g>
+
+    <!-- activation arrows (orange, left -> right per row) -->
+    <line x1="118" y1="73" x2="174" y2="73" stroke="#f59e0b" stroke-width="2" marker-end="url(#mB2)"/>
+    <line x1="118" y1="137" x2="174" y2="137" stroke="#f59e0b" stroke-width="2" marker-end="url(#mB2)"/>
+    <line x1="118" y1="201" x2="174" y2="201" stroke="#f59e0b" stroke-width="2" marker-end="url(#mB2)"/>
+    <line x1="118" y1="265" x2="174" y2="265" stroke="#f59e0b" stroke-width="2" marker-end="url(#mB2)"/>
+    <line x1="486" y1="73" x2="540" y2="73" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#mB2)"/>
+    <text x="112" y="63" fill="#f59e0b" font-size="11" text-anchor="end">a0(t)</text>
+    <text x="112" y="127" fill="#f59e0b" font-size="11" text-anchor="end">a1(t)</text>
+    <text x="112" y="191" fill="#f59e0b" font-size="11" text-anchor="end">a2(t)</text>
+    <text x="112" y="255" fill="#f59e0b" font-size="11" text-anchor="end">a3(t)</text>
+    <text x="548" y="77" fill="#f59e0b" font-size="11">流向邻居 →</text>
+
+    <!-- psum arrows (green, bottom of each column) -->
+    <line x1="214" y1="296" x2="214" y2="322" stroke="#22c55e" stroke-width="2" marker-end="url(#mB3)"/>
+    <line x1="292" y1="296" x2="292" y2="322" stroke="#22c55e" stroke-width="2" marker-end="url(#mB3)"/>
+    <line x1="370" y1="296" x2="370" y2="322" stroke="#22c55e" stroke-width="2" marker-end="url(#mB3)"/>
+    <line x1="448" y1="296" x2="448" y2="322" stroke="#22c55e" stroke-width="2" marker-end="url(#mB3)"/>
+    <text x="470" y="316" fill="#22c55e" font-size="11">psum ↓ 逐拍累加</text>
+    <text x="140" y="314" fill="#9aa4b2" font-size="11">每一拍:</text>
+    <text x="140" y="330" fill="#9aa4b2" font-size="11">psum += W×a</text>
+
+    <!-- legend -->
+    <rect x="118" y="348" width="14" height="14" rx="3" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/>
+    <text x="138" y="359" fill="#9aa4b2" font-size="11">权重驻留(蓝,不动)</text>
+    <line x1="268" y1="355" x2="304" y2="355" stroke="#f59e0b" stroke-width="2" marker-end="url(#mB2)"/>
+    <text x="312" y="359" fill="#9aa4b2" font-size="11">激活脉动(橙,自左向右)</text>
+    <line x1="452" y1="355" x2="488" y2="355" stroke="#22c55e" stroke-width="2" marker-end="url(#mB3)"/>
+    <text x="496" y="359" fill="#9aa4b2" font-size="11">部分和(绿,向下)</text>
+  </svg>
+  <div class="my-fig-cap">图② 权重固定(weight-stationary)4×4 脉动阵列:权重一次装载后驻留 PE 内被流过的激活反复使用;数据只传给直接邻居,没有全局总线 —— 走线短、节拍统一、可扩展到 256×256(TPU v1)</div>
+  </div>
+
+  <p><b>三种数据流(dataflow)对比:</b>"数据流"回答的问题是 —— 在一次乘累加的三类数据(权重 W、激活 A、部分和 psum)中,<b>让谁驻留(stay)在 PE 里不动,让谁流动</b>。驻留对象的能耗最省,因为它从存储读一次就被复用;流动对象要承担传递能耗。三种经典选择:</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>数据流</th><th>驻留者</th><th>流动者</th><th>代表硬件</th><th>优势</th><th>代价 / 适用</th></tr>
+    <tr><td>Weight-Stationary(WS,权重固定)</td><td>权重</td><td>激活入、psum 出</td><td>Google TPU v1 MXU、Gemmini(可选)</td><td>权重复用最大化,大 batch/大 feature map 效率高</td><td>换层/换 tile 要重载权重;batch 小且层多时权重装载开销占比大</td></tr>
+    <tr><td>Output-Stationary(OS,输出固定)</td><td>部分和</td><td>权重、激活流动</td><td>Gemmini(可选)、多数 OS 阵列</td><td>psum 不用搬动,K 维累加零搬运,长累加链友好</td><td>权重/激活复用靠重复发送;多通道累加完成后才写回</td></tr>
+    <tr><td>Row-Stationary(RS,行固定)</td><td>一行权重 / 一行激活 / psum 各驻留于不同 PE</td><td>对角/边缘数据流动</td><td>MIT Eyeriss(168 PE + 多播 NoC)</td><td>三类数据同时最大化片上复用,端侧能耗冠军级</td><td>映射与编译复杂,NoC 控制复杂,通用性一般</td></tr>
+  </table></div>
+
+  <p><b>面试怎么问:</b>①"TPU 为什么用脉动阵列?"(答三点:一次取数多次复用省带宽省能耗、只连邻居走线短易扩规模、节拍规整设计简单);②"weight-stationary 什么时候吃亏?"(batch 小、层薄、逐层推理时,权重重载频次高,权重装载打满带宽 —— 这也是端侧 NPU 常配"权重常驻 SRAM + 多层融合"的原因);③"row-stationary 好在哪又为什么没成为主流?"(能耗最优但编译器与 NoC 复杂度极高,工程上 WS+大 SRAM 更简单可复制)。</p>
+  <p><b>易错点:</b>① 脉动阵列是"邻居间点对点传递",不是总线广播 —— 画图时箭头必须是逐格推进;② 驻留不等于永远不动:WS 阵列在 tile 间仍要重载权重,估算周期必须把装载时间摊进去;③ 脉动阵列不只算矩阵乘,卷积(im2col 或原生窗口映射)同样是它的主业;④ "数据流动 = 数据在多个 PE 里算多遍"是误解,每个数沿一条路径流过,每个 PE 只用经过它的那一份。</p>
+
+  <h3>3.2 脉动阵列 vs 向量 SIMD vs 可重构流水线:三条技术路线</h3>
+  <p><b>是什么:</b>业界 NPU/加速器的算力引擎大体分三派 —— ①<b>脉动/空间阵列</b>:TPU MXU、Berkeley Gemmini、MIT Eyeriss,计算在空间上铺开,数据就近流动;②<b>向量 SIMD/SIMT 扩展</b>:不给神经网络专门造大阵列,而是在处理器里加向量单元(ARM NEON/SVE、RISC-V Vector、高通 Hexagon 的 HVX),靠软件循环驱动向量乘累加;③<b>可重构固定功能流水线</b>:把 CNN 各算子做成流水线级(卷积核 → SDP 激活 → PDP 池化 → CDP 归一化),逐级串联,配置参数决定每级做什么,NVIDIA NVDLA 是开源代表。注意:Eyeriss 虽与脉动阵列同属"空间阵列"家族,但用多播 NoC 供数、RS 数据流,是"空间阵列 ≠ 经典脉动"的最好例子。</p>
+  <p><b>为什么(取舍):</b>本质是<b>能效、灵活性、工程复杂度</b>三选二的博弈:固定流水线能效最高(算子直通、无指令开销)但模型一换代就要改 RTL;SIMD 最灵活(就是软件)但每次乘加都要从向量寄存器/缓存取数,能耗与带宽吃亏;脉动阵列在中间 —— 用规整的 GEMM 假设换高能效,保留对不同网络形状的可编程性。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>脉动/空间阵列(TPU / Gemmini)</th><th>向量 SIMD(ARM NEON / Hexagon HVX)</th><th>可重构流水线(NVDLA)</th></tr>
+    <tr><td>并行度来源</td><td>空间:PE 网格同时计算</td><td>时间:向量寄存器一拍多 lane,循环驱动</td><td>空间:算子级流水线各段并行</td></tr>
+    <tr><td>数据复用</td><td>极强(驻留 + 邻居传递)</td><td>弱~中(寄存器级,靠缓存)</td><td>强(层内专用 buffer + 融合模式)</td></tr>
+    <tr><td>灵活性</td><td>中:限 GEMM 类负载</td><td>最强:任意可向量化代码</td><td>弱:算子集固定,新算子难支持</td></tr>
+    <tr><td>能效</td><td>高</td><td>中(比 GPU 好一截,逊于阵列)</td><td>最高(目标算子内无指令开销)</td></tr>
+    <tr><td>指令开销</td><td>一条指令驱动一大块 tile</td><td>每拍都在取指译码</td><td>几乎无指令,寄存器配置一次(APB 配置,呼应 10-05)</td></tr>
+    <tr><td>编译器难度</td><td>高(tiling + 数据流调度)</td><td>低(编译器自动向量化)</td><td>高(层图 → 流水线配置 + 融合决策)</td></tr>
+    <tr><td>典型落地</td><td>TPU、Gemmini、寒武纪</td><td>手机 CPU/DSP 上的 NN 加速、预处理</td><td>Xavier/Orin 里的 DLA、监控类视觉芯片</td></tr>
+    <tr><td>一句话</td><td>"把 GEMM 做成一座城的管道网"</td><td>"给通用 CPU 装上算术宽体机"</td><td>"为 CNN 造一条专用流水线"</td></tr>
+  </table></div>
+
+  <div class="box box-tip"><b>💡 选型口诀(面试可直接用):</b>看负载占比 —— 若 90% 计算在 GEMM,选脉动阵列;若算子繁杂、网络多变、量小频低,选 SIMD/DSP 兜底;若产品型号收敛、算子封闭(如固定几类视觉模型),选固定流水线把能效压到极限。真实 SoC 往往三者共存:CPU(NEON)做长尾、NPU 阵列做主力、GPU 补图形单。</div>
+
+  <p><b>面试怎么问:</b>①"低功耗端侧摄像头芯片,你选哪种结构?"(先问算子集合是否封闭:封闭选固定流水线/NVDLA 风格,开放选脉动阵列 + SIMD 兜底,并给出能效估计);②"NVDLA 里也有 MAC 阵列,它为什么算固定流水线而不是脉动阵列?"(其 64×32 MAC 阵列服务于卷积专用数据通路,层间靠 SDP/PDP/CDP 流水串联、寄存器配置,而非通用 GEMM 指令驱动);③"Eyeriss 和 TPU 都是空间阵列,差异在哪?"(NoC 多播 vs 邻居直连、RS vs WS、能耗最优 vs 工程简单)。</p>
+  <p><b>易错点:</b>① 把"NVDLA = 没有阵列"说错 —— 它有 2048 个 INT8 MAC(可配 1024 个 16bit),只是组织方式是卷积专用通路;② 认为 SIMD"没做优化" —— NEON/HVX 的寄存器复用同样是一种 stationary,只是粒度小;③ 忽视混合趋势:现代 NPU 常是"脉动阵列 + 固定功能激活/池化单元"的混合体,纯血脉动或纯血流水线都不常见。</p>
+
+  <!-- SEC-3-END -->
+
+  <!-- ================= 第 4 节 · 存储层级(知识点 6) ================= -->
+  <h2><span class="h2-num">4</span> 存储层级与 Roofline:带宽才是命门</h2>
+
+  <h3>4.1 存储金字塔:寄存器 → 片上 SRAM → NoC → DDR</h3>
+  <p><b>是什么:</b>NPU 的存储层级从内到外四层:<b>PE 内寄存器/权重锁存器</b>(容量最小,几十 B~KB 级,零延迟,能耗最低)、<b>片上 SRAM / scratchpad / 累加器</b>(百 KB~几十 MB,TPU v1 配了 24MiB 统一缓冲,数十拍延迟)、<b>NoC/片上互连</b>(把数据送到阵列各处,按跳数计能耗)、<b>DDR/HBM 片外存储</b>(GB 级容量,但延迟百 ns 级、每次访问能耗高两三个数量级)。金字塔的规律铁律一般:越往上(靠近计算)<b>越快、越省能、越贵、越小</b>;越往下容量越大但每字节的延迟和能耗都急剧变差。</p>
+  <p><b>为什么:</b>神经网络的算子有极强的数据复用潜力(权重被每个输出位置复用、每个激活被感受野重叠的窗口复用、psum 要累加 K 次),而 DRAM 每字节能耗是寄存器的成百上千倍 —— 所以 NPU 设计的第一性原理是:<b>能不碰 DRAM 就不碰 DRAM,能不碰 SRAM 就不碰 SRAM</b>。金字塔不是"装饰",而是"能耗预算表"。</p>
+
+  <div class="my-fig">
+  <svg viewBox="0 0 640 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NPU 存储金字塔:PE 寄存器、片上 SRAM、NoC 互连、DDR 四层,标注容量带宽与能耗,越往上越快越省能">
+    <defs>
+      <marker id="mC1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#22c55e"/></marker>
+      <marker id="mC2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#ef4444"/></marker>
+    </defs>
+    <!-- left vertical arrows -->
+    <line x1="52" y1="268" x2="52" y2="52" stroke="#22c55e" stroke-width="2" marker-end="url(#mC1)"/>
+    <text x="42" y="150" fill="#22c55e" font-size="11" transform="rotate(-90 42 150)" text-anchor="middle">越往上:越快 · 越省能 · 越贵</text>
+    <line x1="588" y1="62" x2="588" y2="278" stroke="#ef4444" stroke-width="2" marker-end="url(#mC2)"/>
+    <text x="600" y="150" fill="#ef4444" font-size="11" transform="rotate(90 600 150)" text-anchor="middle">越往下:容量越大 · 越慢 · 越耗能</text>
+
+    <!-- L1 registers -->
+    <polygon points="270,34 370,34 392,74 248,74" fill="rgba(34,197,94,.18)" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="320" y="50" fill="#e6edf3" font-size="12" text-anchor="middle" font-weight="bold">PE 寄存器 / 权重锁存</text>
+    <text x="320" y="66" fill="#9aa4b2" font-size="10" text-anchor="middle">B~KB 级 · 0 拍 · 能耗最低</text>
+
+    <!-- L2 SRAM -->
+    <polygon points="216,86 424,86 448,132 192,132" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.5"/>
+    <text x="320" y="104" fill="#e6edf3" font-size="12" text-anchor="middle" font-weight="bold">片上 SRAM / scratchpad / 累加器</text>
+    <text x="320" y="121" fill="#9aa4b2" font-size="10" text-anchor="middle">百 KB~几十 MB(TPU v1 24MiB)· 数十拍</text>
+
+    <!-- L3 NoC -->
+    <polygon points="162,144 478,144 504,192 136,192" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="320" y="162" fill="#e6edf3" font-size="12" text-anchor="middle" font-weight="bold">NoC / 片上互连</text>
+    <text x="320" y="179" fill="#9aa4b2" font-size="10" text-anchor="middle">按跳数计能耗(每跳 ~0.1-1pJ/bit 级)· 决定供数节奏</text>
+
+    <!-- L4 DDR -->
+    <polygon points="106,204 534,204 562,258 78,258" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="320" y="224" fill="#e6edf3" font-size="12" text-anchor="middle" font-weight="bold">DDR / HBM(片外)</text>
+    <text x="320" y="242" fill="#9aa4b2" font-size="10" text-anchor="middle">GB 级 · ~百 ns · 32bit 读 ~640pJ(量级示意)</text>
+
+    <text x="320" y="286" fill="#9aa4b2" font-size="11" text-anchor="middle">能耗量级参考 Horowitz, ISSCC 2014(45nm):DRAM 640pJ ≫ SRAM 5~100pJ ≫ 寄存器/乘加 0.2~3.2pJ(每 32bit)</text>
+    <text x="320" y="306" fill="#f59e0b" font-size="11" text-anchor="middle">设计铁律:能不碰 DRAM 就不碰,能不碰 SRAM 就不碰</text>
+  </svg>
+  <div class="my-fig-cap">图③ NPU 存储金字塔:四层容量-带宽-能耗对照。数值为 45nm 工艺量级示意,结论(差 2~3 个数量级)比具体数字更重要</div>
+  </div>
+
+  <p><b>怎么做(数据复用策略):</b>把"少访存"拆成三种可操作的复用 —— ①<b>层内复用(intra-layer):</b>tiling 分块后,权重块装载一次遍历所有输入块,激活块重叠窗口共享;②<b>层间复用(inter-layer / fusion 融合):</b>上一层输出直接作为下一层输入留在片上,不写回 DDR(NVDLA 的融合模式、常见"卷积+激活+池化"三合一);③<b>权重常驻(weight resident):</b>小模型整网权重住进 SRAM,推理期间零权重搬运(端侧 NPU 的杀手锏)。三种策略对应存储层级的三个"高度",编译器的工作就是把调度尽量抬到金字塔上层。</p>
+
+  <h3>4.2 算术强度与 Roofline:算力受限还是带宽受限?</h3>
+  <p><b>是什么:</b><b>算术强度</b>(Arithmetic Intensity, AI)= 总运算量 / 总访存量(单位 OP/Byte),衡量"每搬运一字节能做多少运算"。<b>Roofline 模型</b>一句话:<b>可达性能 = min(峰值算力, 算术强度 × 存储带宽)</b> —— 画在图上就是一条先斜后平的"屋顶线",转折点(脊点)在 AI* = 峰值算力 / 带宽。</p>
+
+  <div class="formula">P_{attainable}=\min\big(P_{peak},\ AI\times BW\big),\qquad AI^{*}=\dfrac{P_{peak}}{BW}</div>
+
+  <p><b>为什么:</b>它是 NPU 项目立项时<b>第一个要算的公式</b>:如果目标算子群的 AI 低于脊点,堆 MAC 数毫无意义 —— 性能被带宽锁死;反之才值得加阵列规模。例如 8 TOPS(INT8)芯片配 0.5 TB/s 带宽,脊点 AI* = 8/0.5 = 16 OP/B;而一个 batch=1 的 FC 层(权重为主访存)AI 常只有 2~4,这种层在图上落在<b>带宽受限区</b>,实际只能跑到 1~2 TOPS。</p>
+
+  <div class="my-fig">
+  <svg viewBox="0 0 640 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Roofline 模型:横轴算术强度,纵轴可达性能,屋脊左侧为带宽受限区右侧为算力受限区,标注卷积与逐点算子位置">
+    <defs>
+      <marker id="mD1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b949e"/></marker>
+    </defs>
+    <!-- axes -->
+    <line x1="90" y1="264" x2="600" y2="264" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mD1)"/>
+    <line x1="90" y1="264" x2="90" y2="34" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mD1)"/>
+    <text x="360" y="292" fill="#9aa4b2" font-size="11.5" text-anchor="middle">算术强度 AI = 运算量/访存量(OP/Byte,对数轴)</text>
+    <text x="60" y="150" fill="#9aa4b2" font-size="11.5" text-anchor="middle" transform="rotate(-90 60 150)">可达性能(OP/s,对数轴)</text>
+    <!-- roofline -->
+    <polyline points="90,244 300,66 570,66" fill="none" stroke="#58a6ff" stroke-width="2.4"/>
+    <text x="176" y="120" fill="#f59e0b" font-size="11.5">带宽受限区 P = AI × BW(斜率=带宽)</text>
+    <text x="392" y="54" fill="#22c55e" font-size="11.5">算力受限区 P = 峰值算力(平顶)</text>
+    <!-- ridge point -->
+    <line x1="300" y1="66" x2="300" y2="264" stroke="#8b949e" stroke-width="1" stroke-dasharray="5 4"/>
+    <text x="300" y="282" fill="#e6edf3" font-size="11" text-anchor="middle">脊点 AI*=16(例:8TOPS÷0.5TB/s)</text>
+    <!-- example ops -->
+    <circle cx="470" cy="66" r="6" fill="#22c55e"/>
+    <text x="470" y="92" fill="#22c55e" font-size="10.5" text-anchor="middle">大 GEMM/卷积分块 AI≈40(吃满)</text>
+    <circle cx="238" cy="130" r="6" fill="#f59e0b"/>
+    <text x="238" y="116" fill="#f59e0b" font-size="10.5" text-anchor="middle">FC batch=1 AI≈4(被带宽卡死)</text>
+    <circle cx="140" cy="240" r="6" fill="#ef4444"/>
+    <text x="140" y="226" fill="#ef4444" font-size="10.5" text-anchor="middle">逐点激活/池化 AI≈1(纯搬运)</text>
+    <text x="360" y="150" fill="#8b949e" font-size="10.5">挪到屋脊右侧的两条路:分块提 AI / 剪枝量化降访存</text>
+    <line x1="250" y1="137" x2="452" y2="74" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mD1)"/>
+  </svg>
+  <div class="my-fig-cap">图④ Roofline 模型入门:例取 8 TOPS(INT8)算力、0.5 TB/s 带宽 → 脊点 AI*=16 OP/B。卷积分块后可越过脊点,FC/逐点算子常困在带宽受限区 —— 优化方向:tiling 提高复用、量化/稀疏降低访存</div>
+  </div>
+
+  <p><b>面试怎么问:</b>①"NPU 为什么用 scratchpad 而不用 CPU 式 cache?"(确定性:编译器静态调度 DMA 与计算节拍,不需要 cache 一致性硬件,面积功耗更低、延迟可预测,代价是软件复杂);②"给 4 TOPS 算力和 0.2TB/s,能跑到 4 TOPS 吗?"(先算脊点 AI*=20,再看目标网络逐层 AI,多数层到不了 → 不能,答出"逐层算 AI"即是亮点);③"权重常驻为什么对端侧特别重要?"(端侧带宽最弱、模型小,权重能整网住进 SRAM 时 DRAM 流量只剩激活,能效翻倍级提升)。</p>
+  <p><b>易错点:</b>① "TOPS 高 = 快"不看带宽 —— 卖点是 TOPS,命门是带宽,面试一定要把 Roofline 画出来;② AI 的分母是"真实搬运的字节数"(含 padding、中间结果写回),不是理论权重大小,tiling 差的实际 AI 远低于手算值;③ 层间融合有时反而不划算(要大 buffer 兜住激活),融合决策也要用容量算账,不是无脑合。</p>
+
+  <!-- SEC-4-END -->
+
+  <!-- ================= 第 5 节 · 指令集与 LeNet 硬件映射(知识点 7~8) ================= -->
+  <h2><span class="h2-num">5</span> NPU 指令集设计 与 LeNet 硬件映射实战</h2>
+
+  <h3>5.1 NPU 指令集:加载 / 存储 / 计算 / 配置四类指令</h3>
+  <p><b>是什么:</b>NPU 的指令集和 CPU 完全不同 —— 粒度大得多。主流设计把指令压成四类:<b>配置(config)</b>:设定数据流模式、量化参数、阵列形状等"一个批次不变一次"的状态;<b>加载(load/mvin)</b>:DMA 把权重/激活 tile 从 SRAM/DDR 搬进阵列或累加器;<b>计算(compute/matmul)</b>:触发脉动阵列做一块矩阵乘;<b>存储(store/mvout)</b>:把累加结果搬出、做量化并写回。Gemmini 的真实指令就是这四类的教科书实现(<code>config_ex / config_mvin / mvin / matmul.preload / matmul.compute / mvout / loop</code>);而 NVDLA 走另一极:没有显式指令,靠 APB/AHB 总线写几百个配置寄存器来"编程"固定功能流水线(正好呼应 10-05 页的总线知识)。</p>
+  <p><b>为什么(两种风格):</b><b>CISC 风格 layer 指令</b>(TPU v1、Gemmini 的 loop 指令):一条 <code>gemmini_loop_conv_ws</code> 把"多层循环 + tiling + 权重重载"全部交给硬件状态机,指令 cache 压力小、总线占用少,但灵活性交给了硬件复杂度;<b>RISC 风格细粒度指令</b>:软件编译器展开循环、逐条发 mvin/matmul,调度完全由编译器掌控,容易做双缓冲、流水、多 tile 并行,但指令吞吐成为设计点。选哪种,本质是"把循环控制器放硬件还是放软件"。</p>
+  <p><b>怎么做(写出 C1 层的指令序列):</b>下面用 Gemmini 风格伪码演示"配置→加载→计算→存储"如何跑 LeNet C1(576×25×6 的 GEMM,详见下一节推导):</p>
+
+  <pre><code>// ============ LeNet C1: 输入 28×28, 6 个 5×5 卷积核, 输出 6@24×24 ============
+// im2col 后 GEMM: A[784×25](激活) × B[25×6](权重) → C[784×6](输出)
+// 8×8 PE 阵列 → M 方向切 98 块, K 方向切 4 块(8+8+8+1), N 方向 1 块(6 列用 8)
+
+// —— ① 配置类:一次推理只需执行一次 ——
+config_ex( MODE_WS, ACC_32BIT )        // 数据流 = weight-stationary, 累加器 32bit
+config_mvin( SCALE, SRAM_BASE )        // 搬运配置: 权重来自片上 SRAM, 定点缩放
+
+// —— ② 加载类:6 个卷积核拉直成 B[25×6],K 方向分 4 个 tile 装载驻留 ——
+mvin( W_tile0, B_0 )                   // 权重 tile0(8 行)装入, 驻留 PE 阵列
+mvin( W_tile1, B_1 )                   // ... 共 4 拍 × 6 列
+mvin( W_tile2, B_2 )
+mvin( W_tile3, B_3 )
+
+// —— ③ 计算类:对 98 个 M 方向块循环(im2col 已在片上完成) ——
+for m in 0..97:
+    matmul.preload( C_addr[m], D_flag )   // 预置本块输出地址(写入累加器)
+    matmul.compute( A_tile[m], K_0 )      // 激活块流入, 与驻留权重乘累加
+    matmul.compute( A_tile[m], K_1 )      // K 方向 4 块, 部分和在累加器接续累加
+    matmul.compute( A_tile[m], K_2 )
+    matmul.compute( A_tile[m], K_3 )
+
+// —— ④ 存储类:累加器 → 量化 INT8 → 写回 ——
+mvout( C1_OUT, ACC_SCALE_RELU )        // 搬出时做 32bit→INT8 量化 + ReLU
+
+// CISC 风格(Gemmini loop 指令)可把 ③④ 整段压成:
+// gemmini_loop_conv_ws( A, W, C, 24, 24, 6, 5, ... )  // 循环控制交给硬件</code></pre>
+
+  <p><b>面试怎么问:</b>①"NPU 指令为什么一条顶 CPU 几万条?"(粒度:一条 matmul 指令调度一整个 tile 的空间并行计算,循环与控制被压进硬件或编译器);②"双缓冲(ping-pong)在指令层面怎么体现?"(加载下一块与计算当前块用不同 buffer 并行发指令,靠显式同步/屏障指令或 FIFO 深度约束对齐);③"为什么 NVDLA 不用指令?"(它是协处理器形态,配置即编程:CPU 通过总线写任务描述符与寄存器,代价是任务切换粒度粗、依赖 CPU)。</p>
+  <p><b>易错点:</b>① 忘了配置类指令的"批次不变"性质,把量化参数每层重配浪费周期;② 加载/计算没做流水(DMA 等计算完才动)会让阵列一半时间空转;③ CISC loop 指令不是万能 —— 层间动态分支(如早退网络)硬件循环管不了,仍需软件拆开。</p>
+
+  <h3>5.2 LeNet 硬件映射实战:把整网铺到 8×8 PE 阵列上</h3>
+  <p><b>是什么:</b>现在把第 10-06 页跑过的 LeNet(输入 28×28,补边到 32×32 口径的经典 C1 输出 28×28,此处按 28×28 输入 + padding=2)逐层映射到<b> 8×8 = 64 个 INT8 MAC 的脉动阵列</b>(就是 10-10/10-11 页要写的 RTL Spec)。方法固定三步:<b>① im2col 变 GEMM</b> → <b>② tiling 分块适配 8×8</b>(M/N/K 三个方向切块,K 块间部分和累加)→ <b>③ 排指令序</b>(权重装载 → 激活流入 → 累加器搬出)。</p>
+  <p><b>C1 层完整走位(拿面试讲 3 分钟的那段):</b>C1 = 6 个 5×5 核作用于 28×28 输入,padding=2、stride=1(等价于经典 LeNet-5 把 MNIST 贴进 32×32 画布)→ 输出 6@28×28,与原论文逐层链 C1(28)→S2(14)→C3(10)→S4(5)→C5(1) 完全一致。im2col 后:A 矩阵 784×25(784=28×28 个输出位置,25=5×5 窗口),B 矩阵 25×6(6 个核各拉直成一列),输出 C 784×6。映射到 8×8 阵列:<b>M 方向</b>784 切成 98 个 8 行块;<b>N 方向</b>6 列直接放入 8 列阵列(余 2 列空闲,利用率 6/8);<b>K 方向</b>25 切成 4 块(8+8+8+1,最后一块补零到 8)。执行时:4 个权重 tile 依次 mvin 驻留 → 逐个激活块(8×8)从左侧流入 → 部分和在累加器按 K 块累加 → 全部 K 块算完 mvout。理想周期 = 117,600 MAC ÷ 64 MAC/拍 ≈ 1,838 拍。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>层</th><th>算子</th><th>输出尺寸</th><th>权重数(含 bias)</th><th>MAC 数</th><th>GEMM 形状 M×K×N</th><th>映射方式(8×8 阵列)</th><th>理想周期(÷64)</th></tr>
+    <tr><td>C1</td><td>Conv 5×5, s=1, p=2</td><td>6@28×28</td><td>156</td><td>117,600</td><td>784×25×6</td><td>M 切 98 块,K 切 4 块,WS 权重驻留</td><td>1,838</td></tr>
+    <tr><td>S2</td><td>AvgPool 2×2, s=2</td><td>6@14×14</td><td>0</td><td>0(MAC)</td><td>—</td><td>加法树/移位,非 MAC,单独数据通路</td><td>~(小)</td></tr>
+    <tr><td>C3</td><td>Conv 5×5, s=1(6→16 简化全连接)</td><td>16@10×10</td><td>2,416</td><td>240,000</td><td>100×150×16</td><td>K=150 切 19 块,N=16 恰好 2 个列块</td><td>3,750</td></tr>
+    <tr><td>S4</td><td>AvgPool 2×2, s=2</td><td>16@5×5</td><td>0</td><td>0(MAC)</td><td>—</td><td>同 S2</td><td>~(小)</td></tr>
+    <tr><td>C5</td><td>Conv 5×5 ≡ FC(16→120)</td><td>120@1×1</td><td>48,120</td><td>48,000</td><td>1×400×120</td><td>M=1:N 切 15 块,权重按 K=400 分 50 块驻留</td><td>750</td></tr>
+    <tr><td>F6</td><td>FC 120→84</td><td>84</td><td>10,164</td><td>10,080</td><td>1×120×84</td><td>M=1,N 切 11 块,K 切 15 块</td><td>158</td></tr>
+    <tr><td>OUT</td><td>FC 84→10</td><td>10</td><td>850</td><td>840</td><td>1×84×10</td><td>利用率最低(仅 10 列工作)</td><td>14</td></tr>
+    <tr><td><b>合计</b></td><td>—</td><td>—</td><td><b>≈ 61,706</b></td><td><b>≈ 416,520</b></td><td>—</td><td>—</td><td><b>≈ 6,510 + 池化/装载开销</b></td></tr>
+  </table></div>
+  <div class="my-fig-cap">表·LeNet 逐层硬件映射与周期粗估(输入 28×28、p=2 等价经典 LeNet-5 的 32×32 口径,逐层链 28→14→10→5→1 与原论文一致。C3 采用"全连接简化版"便于映射;原始 LeNet-5 的 C3 是部分连接(1,516 参数),需按连接表逐通道稀疏映射,MAC 数约为表中一半)</div>
+
+  <p><b>怎么做(周期账怎么算才像内行):</b>三步走 —— ①逐层 MAC 数 ÷ 阵列规模(64)得理想拍数;②乘上<b>利用率折扣</b>:tiling 边角(N=6 占 8 列、M=1 的 FC 层只有 1 行工作)使实际利用率常在 60%~85%,全阵列平均取 ~0.75;③加上<b>权重装载与池化开销</b>(WS 数据流每个 M 块重用驻留权重,装载可被双缓冲隐藏;池化层走单独数据通路约几百拍)。最终量级:<b>约 6K~9K 拍跑完一张 28×28 手写数字</b> —— 200 MHz 下约 30~45 µs,单帧千帧级吞吐,证明 8×8 阵列对这个模型绰绰有余;瓶颈不在算力而在"逐层搬运与同步"。这个结论直接写进 10-10 页 Spec:8×8 阵列 + 4KB 权重 SRAM + 8KB 激活 SRAM + 32bit 累加器,资源绰绰有余。</p>
+
+  <div class="box box-tip"><b>💡 给 10-10/10-11 RTL 项目的 Spec 摘要(本节推演的落地):</b>① 阵列 8×8 INT8 MAC(权重驻留 + 激活左入 + psum 下行);② 片上 SRAM:权重 4KB(整网 61.7KB 放不下,按 tile 常驻)+ 激活 8KB;③ 累加器 32bit,输出前做 ReLU+量化;④ 指令最小集:CONFIG / LOAD_W / LOAD_A / COMPUTE / STORE 五条;⑤ 验收用例:单层 C1 的 MAC 结果与 numpy 对齐,再跑整网 MNIST 准确率 ≥ 99%(量化后 ≥ 98.5%)。</div>
+
+  <p><b>面试怎么问:</b>①"让你把一个卷积层映射到脉动阵列,流程?"(im2col → GEMM → 三向 tiling → 数据流选型 → 指令序 + 双缓冲 → 周期与带宽复核,Roofline 检查是否带宽受限);②"你的 8×8 阵列跑 FC 层为什么利用率暴跌?"(M=1 时阵列只有一行工作 → 解法:多 batch 打包、或 FC 改写成 1×1 卷积跨样本批处理);③"权重 61.7KB 放不进 4KB SRAM 怎么办?"(按 K/N tile 分时驻留,把权重装载流水进计算,用双缓冲隐藏 DMA)。</p>
+  <p><b>易错点:</b>① 池化不是 MAC,别把它塞进阵列周期;② 周期估算只除 64 不打折 —— 边角块(N 余 2 列、K 补零、M=1 的 FC)会让纸面数字过于乐观;③ im2col 在片上做也占周期与 SRAM(复制 K² 倍),估算时别当免费;④ 忘记输出写回与层间同步的拍数,端到端时间会比粗估长 10%~30%。</p>
+
+  <!-- SEC-5-END -->
+
+  <!-- ================= 第 6 节 · 稀疏化与开源参照(知识点 9~10) ================= -->
+  <h2><span class="h2-num">6</span> 稀疏化加速 与 开源 NPU 两大参照系</h2>
+
+  <h3>6.1 稀疏化与硬件跳零:让"零"不消耗算力</h3>
+  <p><b>是什么:</b>神经网络训练后大量权重接近零,可以"剪枝"(pruning)后置零。<b>非结构化剪枝</b>逐个置零任意位置的权重,压缩率高但对硬件极不规律;<b>结构化剪枝</b>按 channel/filter/块整块剪,张量直接变小、硬件天然受益。两者的硬件友好折中是 <b>NVIDIA Ampere 起的 2:4 结构化稀疏</b>:每 4 个权重最多 2 个非零(50% 稀疏率),硬件以固定格式记录两个非零值的索引,MAC 直接跳过零值 → 理论 2× 吞吐。配套的硬件机制叫<b>跳零(zero-skip / data gating)</b>:压缩编码(bitmap 或索引+值)解码后,为零的数据不进入乘法器甚至直接关断其时钟(Eyeriss 的 data gating 即此思路)。</p>
+  <p><b>为什么:</b>稀疏化的收益必须在硬件端兑现才成立 —— 软件上把权重置零,GPU 仍会老老实实做乘法(乘 0 也是一拍);只有硬件"跳过",省下的才是真实算力与能耗。而稀疏与<b>量化</b>(10-08 页)是天生搭档:INT8 判断一个数是否为零只要 8 位比较器,FP32 判断还要先解码,所以商用稀疏加速器都工作在低精度定点上。</p>
+  <p><b>怎么做(机制分两派):</b>①<b>zero-skip 跳零:</b>权重以 (索引, 非零值) 流水送入,乘法器每拍只接非零对 —— NVDLA 的 sparse weight compression 就属于这类:剪枝后的权重以压缩格式存入 DDR,DMA 解压后只向 MAC 阵列喂非零权重(其 Primer 明确列出"支持稀疏权重压缩"作为可配置特性);②<b>zero-gating 门控:</b>不改变数据流,仅当输入为零时关断该 MAC 的翻转(data gating),省动态功耗但不省周期。两派常混合使用。</p>
+  <p><b>面试怎么问:</b>①"非结构化稀疏 90% 为什么在 GPU 上常常不快,甚至更慢?"(不规则的索引与访存 > 省下的乘法,需要专用格式与内核;这引出"结构化换硬件效率"的工程结论);②"2:4 的'2'和'4'分别是什么?"(每 4 个连续权重至多 2 个非零,索引只有 C(4,2)=6 种组合,可用 3bit 编码);③"稀疏化和量化能叠加吗?"(能,先剪枝再量化再蒸馏恢复是常见流水线,注意精度联合校准)。</p>
+  <p><b>易错点:</b>① 端到端加速比 ≠ 稀疏率:50% 稀疏率常只换来 1.2~1.6× 实测加速(解码、索引、访存不打折);② 稀疏省的是计算和权重访存,激活访存与 psum 不一定省,Roofline 上算术强度可能不升反降要看格式;③ 剪枝后必须 fine-tune 恢复精度,"剪完直接用"精度会崩。</p>
+
+  <h3>6.2 NVDLA 与 Gemmini:两个必读的开源参照系</h3>
+  <p><b>是什么:</b>学 NPU 不必从零发明 —— 两个开源项目正好对应第 3.2 节的两条路线,且都真实可跑。<b>NVDLA</b>(NVIDIA Deep Learning Accelerator,2017 开源):可配置的<b>固定功能流水线</b>架构 —— 卷积核心(CSC/CMAC/CACC,2048 个 INT8 MAC)+ SDP(激活)+ PDP(池化)+ CDP(归一化)+ BDMA/Rubik(数据搬运重排),模块间可"融合模式"直通,配有完整软件栈(编译器/驱动);GitHub <code>nvdla/hw</code> 约 2.1k star,v1 分支固定为"2048 个 8bit MAC(或 1024 个 16bit)"并只接受 bug 修复。<b>Gemmini</b>(UC Berkeley,Chipyard 生态):用 Chisel 写的<b>脉动阵列生成器</b> —— 默认 16×16、可在 elaboration 时改阵列规模/scratchpad 容量/bank 数,支持 weight-stationary 与 output-stationary 两种数据流<b>运行时可选</b>;以 RoCC 加速器形态挂在 RISC-V 核旁,用 mvin/matmul/mvout/loop 自定义指令驱动,约 1.4k star。</p>
+  <p><b>怎么做(阅读路线):</b>NVDLA 线:官网 Primer(免费入门神文,讲清"为什么 CNN 四类算子适合专用硬件")→ 在线架构文档(模块图+融合模式)→ <code>hw</code> 仓库 <code>vmod/nvdla/</code> 逐模块读 RTL(<code>NV_NVDLA_CMAC</code> 阵列、<code>CACC</code> 累加器最值得精读)→ <code>cmod/</code> C 模型对照验证。Gemmini 线:README(架构总览)→ <code>src/main/scala/gemmini/</code>(MeshWithDelays 阵列、DMA、ROB)→ ISA 文档(指令语义)→ <code>software/gemmini-rocc-tests</code> 跑通第一个矩阵乘 → <code>modeling/timeloop</code> 玩性能建模。两条线各花 2~3 周,面试时"我读过两个开源 NPU 的源码"就是硬通货。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>NVDLA</th><th>Gemmini</th></tr>
+    <tr><td>出品 / 开源时间</td><td>NVIDIA,2017</td><td>UC Berkeley(Chipyard 生态),2020 前后成型</td></tr>
+    <tr><td>架构路线</td><td>可配置固定功能流水线(CNN 专用)</td><td>可配置脉动阵列生成器(GEMM 通用)</td></tr>
+    <tr><td>核心算力单元</td><td>卷积核心 2048 个 INT8 MAC(可配 1024×16bit)</td><td>默认 16×16 = 256 MAC,规模可参数化生成</td></tr>
+    <tr><td>数据流</td><td>层内专用通路 + 融合模式(模块间 FIFO 直通)</td><td>WS / OS 双数据流,运行时可选</td></tr>
+    <tr><td>编程方式</td><td>寄存器配置(无指令,APB/AHB 写配置,呼应 10-05)</td><td>RISC-V 自定义指令(mvin/matmul/mvout/loop)</td></tr>
+    <tr><td>语言 / 工具链</td><td>Verilog;tmake 构建仿真;配套编译器与驱动</td><td>Chisel;Chipyard/Verilator;配 C 库与 ONNX-Runtime</td></tr>
+    <tr><td>仓库入口</td><td>github.com/nvdla/hw(vmod/nvdla 放 RTL,cmod 放 C 模型,verif 放 trace 回放)</td><td>github.com/ucb-bar/gemmini(src 放 Scala RTL,software 放测试与库)</td></tr>
+    <tr><td>稀疏支持</td><td>稀疏权重压缩(sparse weight compression)</td><td>核心不含稀疏,靠研究分支/扩展探索</td></tr>
+    <tr><td>适合学什么</td><td>工业级模块划分、层融合、寄存器编程接口、工程完整性</td><td>脉动阵列微架构、指令集设计、参数化生成器思想</td></tr>
+    <tr><td>阅读门槛</td><td>中:Verilog 直接可读,文档全</td><td>中高:需会 Chisel/Scala 与 Chipyard 工具链</td></tr>
+  </table></div>
+
+  <p><b>面试怎么问 —— "让你设计一个 NPU,你怎么开始?"(本页压轴,给出标准七步框架):</b></p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>定负载</b><br>跑什么网络?逐层统计算子占比与 MAC 数(如 CNN 类卷积占 90%+)</div>
+    <div class="step-item"><span class="n">2</span><b>定指标</b><br>功耗/面积/时延约束 → 推算力峰值与带宽预算,画 Roofline 定脊点</div>
+    <div class="step-item"><span class="n">3</span><b>选数据流</b><br>WS/OS/RS 与结构形态(脉动/流水线/SIMD),对着负载占比选</div>
+    <div class="step-item"><span class="n">4</span><b>定存储</b><br>scratchpad 容量与分块策略、权重常驻还是 tile 轮换、融合哪些层</div>
+    <div class="step-item"><span class="n">5</span><b>定指令集</b><br>配置/加载/计算/存储四类 + 双缓冲同步,和编译器对齐接口</div>
+    <div class="step-item"><span class="n">6</span><b>微架构</b><br>PE/累加器/DMA/NoC 逐块设计,先写 C 模型当黄金参考</div>
+    <div class="step-item"><span class="n">7</span><b>验证与评估</b><br>UVM 对照 C 模型(呼应 10-10),量化 TOPS/W 与阵列利用率收尾</div>
+  </div>
+
+  <p><b>易错点:</b>① 面试答"先写 RTL"直接出局 —— 第一步永远是负载分析与指标分解;② NVDLA v1 分支已定格(只修 bug),学架构思想可以,追新功能没有;③ Gemmini 的学习成本大头在 Chipyard 工具链而非 RTL 本身,先跑通仿真再读源码事半功倍;④ 两个项目是"参照系"不是"模板":抄 NVDLA 的模块划分 + 抄 Gemmini 的生成器思想,组合出你自己的 8×8 小 NPU(10-10 页)才是正确姿势。</p>
+
+  <!-- SEC-6-END -->
+
+  <!-- ================= 本节自测 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. Google TPU v1 的 256×256 MXU 乘法单元属于哪种数据流(dataflow)?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. Output-Stationary(部分和驻留)</button>
+      <button data-v="B">B. Weight-Stationary(权重驻留)</button>
+      <button data-v="C">C. Row-Stationary(行驻留)</button>
+      <button data-v="D">D. SIMD 时间复用,没有"驻留"概念</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 TPU v1 的 MXU 采用权重固定(weight-stationary)式脉动阵列:权重装入 PE 后驻留不动,激活自上而下脉动流入,部分和沿对角/向下游累加流出。Row-stationary 是 MIT Eyeriss 的方案;Gemmini 才是 WS/OS 运行时可选。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 脉动阵列"省访存"的根本原因是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 它用了比 DDR 更快的 HBM 高带宽内存</button>
+      <button data-v="B">B. 它把计算精度降到 INT8,访存位数变少</button>
+      <button data-v="C">C. 数据只读入一次就在相邻 PE 间流动复用,每个权重装载后被复用 N 次</button>
+      <button data-v="D">D. 它不写回结果,直接省掉一半访存</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 脉动阵列的核心是"一次装载、多次复用":数据从存储读入阵列后沿邻居间点对点链路逐拍传递,沿途被逐个 PE 使用,访存量从 O(M·N·K) 级压到 O(K·N + M·K) 级。它没有换更快的存储(HBM 是 TPU 后代配的),也没有降精度。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 本页的 8×8 PE 阵列(64 个 INT8 MAC)跑 LeNet C1 层(117,600 MAC),理想情况下约需多少拍?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 约 1,176 拍</button>
+      <button data-v="B">B. 约 64 拍</button>
+      <button data-v="C">C. 约 117,600 拍</button>
+      <button data-v="D">D. 约 1,838 拍</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 理想周期 = MAC 总数 ÷ 阵列每拍 MAC 数 = 117,600 ÷ 64 ≈ 1,838 拍。注意这是 100% 利用率的上限;实际要乘 0.6~0.85 的利用率折扣(边角块、K 补零、N=6 只占 8 列中的 6 列),并加上权重装载与池化开销。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 某 NPU 峰值算力 8 TOPS(INT8)、带宽 0.5 TB/s。跑一个算术强度 AI = 4 OP/Byte 的算子(batch=1 全连接),实际可达性能约为?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 8 TOPS,算力打满</button>
+      <button data-v="B">B. 2 TOPS,带宽受限</button>
+      <button data-v="C">C. 4 TOPS,算力受限</button>
+      <button data-v="D">D. 无法判断,与 Roofline 无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 Roofline:P = min(峰值, AI × 带宽) = min(8, 4 × 0.5) = 2 TOPS。脊点 AI* = 8 ÷ 0.5 = 16 OP/B,AI=4 落在带宽受限区 —— 此时加 MAC 数毫无意义,优化方向是 tiling 提复用、量化/稀疏降访存。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 2:4 结构化稀疏,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 每层剪掉 2/4 的整个卷积核</button>
+      <button data-v="B">B. 每 2 个权重里有 4 个非零值</button>
+      <button data-v="C">C. 每 4 个连续权重至多 2 个非零,硬件按固定索引格式跳零,理论 2× 加速</button>
+      <button data-v="D">D. 它只是一种压缩存储格式,计算时仍然全部相乘</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 2:4 稀疏 = 每 4 个连续权重最多 2 个非零(C(4,2)=6 种组合,索引可用 3bit 编码),硬件解码后让 MAC 直接跳过零值,理论吞吐 ×2。它是"固定格式换硬件效率"的典型折中 —— 纯非结构化稀疏虽然压缩率高,但索引/访存开销常吃掉收益,实测加速比远低于稀疏率。</div>
+  </div>
+
+  <!-- SEC-7-END -->
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>
+    NPU 是摩尔定律失效时代"用专用化换能效"的产物,四种落地形态(手机/车载/数据中心/边缘机器人)共享同一套数学底座 —— 一切归约到 im2col + GEMM,最小单元是 MAC。脉动阵列用"数据在相邻 PE 间脉动、驻留数据被反复复用"把访存压到最低,weight/output/row-stationary 三种数据流只回答一个问题:让谁驻留。存储金字塔(寄存器→SRAM→NoC→DDR)给出能耗预算表,Roofline 的一个 min() 判定你是算力受限还是带宽受限。指令集收敛为配置/加载/计算/存储四类,CISC loop 与 RISC 细粒度是"循环控制器放硬件还是软件"之争。LeNet 逐层映射表 + 周期粗估(~6.5K 拍@8×8 阵列)就是 10-10/10-11 页 RTL 项目的 Spec;稀疏化与量化是能效的两根杠杆,NVDLA 与 Gemmini 则是两条架构路线的免费教材。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果把本页 8×8 阵列换成 16×16,LeNet 各层周期减半吗?哪些层不会(提示:M=1 的 FC 层、N=6 的 C1 层利用率),这告诉你"阵列越大越好"错在哪?<br>
+    2. WS 数据流在 batch=1 的逐层推理里权重重载开销显著,你能设计一个"多层权重一次装载"的调度吗(提示:层间融合 + 权重常驻 SRAM + 逐层流水)?<br>
+    3. 用本页方法估算:RK3588 的 6 TOPS NPU 跑 MobileNet(depthwise 卷积占比高)为什么实测常常只有 1~2 TOPS?从 depthwise 的 GEMM 退化和 Roofline 两个角度分析。<br>
+    4. 若要给 10-10 页的小 NPU 加"跳零"支持,压缩格式、解码器、MAC 阵列接口各要怎么改?先画出数据通路再动手写 RTL。
+  </div>
+
+  <!-- ================= 参考来源 ================= -->
+  <h2><span class="h2-num">8</span> 参考来源</h2>
+  <p>本页架构观点与数据以下列一手资料为准:NVDLA / Gemmini 官方仓库与文档(两大参照系原典)、Eyeriss 项目页(数据流经典)、MIT 6.5930 课程(体系结构理论框架)、TPU 官方资料与中文解读(脉动阵列工业落地)。</p>
+
+  <a class="my-res-card" href="https://nvdla.org/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📗</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ NVDLA 官方文档站(NVIDIA Deep Learning Accelerator)</div>
+      <div class="my-res-desc">NVDLA 的唯一权威入口:开放、可配置、可扩展的深度学习推理加速器架构,含 Primer 入门、硬件架构文档、集成手册与路线图,基于 Xavier 处理器架构开放,配完整验证套件。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">NVIDIA 官方</span><span class="my-tag my-tag-recommend">⭐ 必读</span><span class="my-tag my-tag-diff-2">难度:中</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://nvdla.org/primer.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ NVDLA Primer:为什么 CNN 适合专用硬件(免费入门神文)</div>
+      <div class="my-res-desc">从"卷积/激活/池化/归一化四类算子 + 可预测的访存模式"讲起,推 MAC 数量与内存带宽的估算方法,给出 ResNet-50 不同配置的面积功耗性能对照表 —— 本页 6.2 节阅读路线的第一站。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">NVIDIA 官方</span><span class="my-tag my-tag-recommend">⭐ 强推</span><span class="my-tag my-tag-diff-1">难度:入门~中</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/nvdla/hw" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">💻</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ GitHub: nvdla/hw —— NVDLA 硬件仓库(RTL / C 模型 / 测试平台,约 2.1k star)</div>
+      <div class="my-res-desc">v1 分支固定为 2048 个 INT8 MAC(或 1024 个 16bit)的稳定版:<code>vmod/nvdla/</code> 放 RTL、<code>cmod/</code> 放 C 模型、<code>verif/</code> 放 trace 回放测试平台,配 <code>bin/tmake</code> 一键仿真 —— 10-10 页写完 RTL 后对照的第一范本。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub 开源</span><span class="my-tag my-tag-recommend">⭐ 源码必读</span><span class="my-tag my-tag-diff-3">难度:硬核</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/ucb-bar/gemmini" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">💻</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ GitHub: ucb-bar/gemmini —— Berkeley 脉动阵列生成器(Chisel,约 1.4k star)</div>
+      <div class="my-res-desc">默认 16×16、规模可参数化的空间阵列生成器:WS/OS 双数据流运行时可选,解耦访问/执行架构(Load/Store/Execute 三控制器),mvin/matmul/mvout/loop 指令集是本页 5.1 节示例的原型,附 timeloop 性能建模。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub 开源</span><span class="my-tag my-tag-recommend">⭐ 源码必读</span><span class="my-tag my-tag-diff-3">难度:硬核</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://eyeriss.mit.edu/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📗</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ MIT Eyeriss 项目页:Row-Stationary 数据流加速器(ISSCC 2016)</div>
+      <div class="my-res-desc">168 个 PE 的空间阵列 + 可重构多播 NoC,靠数据复用与 data gating 把 AlexNet 推理做到 278mW、能效约移动 GPU 十倍 —— 三种数据流对比与本页图②进阶版的出处,页面附全部论文与幻灯片下载。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">MIT 官方</span><span class="my-tag my-tag-recommend">⭐ 经典</span><span class="my-tag my-tag-diff-2">难度:中~硬核</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://csg.csail.mit.edu/6.5930/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-course">🎓</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ MIT 6.5930/6.5931:Hardware Architectures for Deep Learning(Emer & Sze 主讲)</div>
+      <div class="my-res-desc">本领域最权威的公开课程,讲义覆盖算术强度/Roofline/数据流/加速器设计方法论,与 Eyeriss 团队同源;本页 4.2 节 Roofline 框架即出自该课程体系,免费讲义可系统自学。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-course">MIT 课程</span><span class="my-tag my-tag-recommend">⭐ 体系化首选</span><span class="my-tag my-tag-diff-3">难度:硬核</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://ysyx.osdc.cc/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-course">🎓</div>
+    <div class="my-res-info">
+      <div class="my-res-title">一生一芯计划:从数字电路到流片你自己的 RISC-V 芯片</div>
+      <div class="my-res-desc">中科院背景的开源芯片人才培养项目:数字设计 → 体系结构 → 手写 RISC-V 处理器 → 上板/流片。10-02~10-05 的数字基本功在这里能找到体系化课程与社区,是本板块第二阶段的"学历升级"路线。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-course">公开课程</span><span class="my-tag my-tag-diff-2">难度:中~硬核</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/5696668225" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ 知乎专栏:谷歌 TPU v1 — 脉动阵列详解(AI 系统系列)</div>
+      <div class="my-res-desc">逐模块拆 TPU v1:256×256×8bit 的 MXU 脉动阵列每拍输出 256 个 16bit 部分和、统一缓冲与量化单元的配合,配架构框图 —— 中文材料里把"权重不动、数据脉动"讲得最清楚的一篇。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-blog">知乎专栏</span><span class="my-tag my-tag-recommend">⭐ 推荐</span><span class="my-tag my-tag-diff-1">难度:入门~中</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/421737378" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:Google AI 芯片 TPU 核心架构 — 脉动阵列 Systolic Array</div>
+      <div class="my-res-desc">从 H.T. Kung 的原始思想讲到 TPU 工程实现:一次取数、阵列内脉动传输实现 Reuse,解释为什么能同时压低功耗与面积;适合先读这篇建立直觉,再回本页图②对照 4×4 走位。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-blog">知乎专栏</span><span class="my-tag my-tag-diff-1">难度:入门</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://cloud.google.com/tpu/docs/system-architecture-tpu-vm" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Google Cloud 官方文档:TPU 系统架构</div>
+      <div class="my-res-desc">TPU 官方口径的第一手说明:数千个乘累加器互连成大型物理矩阵(脉动阵列架构),主要任务是矩阵处理 —— 用工业界的原话印证本页 1.2 与 3.1 节的架构描述。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">Google 官方</span><span class="my-tag my-tag-diff-1">难度:入门</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV12P411W7YC/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ B站:Google TPU v1 脉动阵列原理【AI 芯片】TPU 系列 02</div>
+      <div class="my-res-desc">视频版脉动阵列入门:从 2014 年 TPU 项目缘起讲到矩阵乘加如何流过阵列,画面演示"数据脉动"比文字更直观 —— 和本页图②搭配,先看视频再手推一遍 4×4 走位。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-recommend">⭐ 推荐</span><span class="my-tag my-tag-diff-1">难度:入门</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://search.bilibili.com/all?keyword=NPU%E6%9E%B6%E6%9E%84" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站搜索:NPU 架构 / 计算机体系结构课程(含"一生一芯"官方号录播)</div>
+      <div class="my-res-desc">按关键词聚合的视频入口:NPU 架构解析、脉动阵列动画、体系结构公开课与一生一芯官方课程录播都在其中 —— 视频找感觉、本页抠细节,两种媒介各司其职。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站搜索</span><span class="my-tag my-tag-diff-1">难度:入门</span></div>
+    </div>
+  </a>
+
+  <h3>本页直接引用</h3>
+  <ul>
+    <li><a href="https://nvdla.org/primer.html" target="_blank" rel="noopener">NVDLA Primer</a>(CNN 四类算子专用化论证、MAC 数量与带宽估算方法、稀疏权重压缩特性)</li>
+    <li><a href="https://github.com/nvdla/hw" target="_blank" rel="noopener">GitHub · nvdla/hw</a>(v1 分支 2048 个 8bit MAC 规格、vmod/cmod/verif 目录结构)</li>
+    <li><a href="https://github.com/ucb-bar/gemmini" target="_blank" rel="noopener">GitHub · ucb-bar/gemmini</a>(16×16 默认阵列、WS/OS 可选数据流、config/mvin/matmul/mvout 指令集)</li>
+    <li><a href="https://eyeriss.mit.edu/" target="_blank" rel="noopener">MIT Eyeriss 项目页</a>(168 PE 空间阵列、多播 NoC、278mW@AlexNet 35fps 能效数据)</li>
+    <li><a href="https://csg.csail.mit.edu/6.5930/" target="_blank" rel="noopener">MIT 6.5930 课程主页</a>(算术强度/Roofline/数据流设计方法论框架)</li>
+    <li><a href="https://zhuanlan.zhihu.com/p/5696668225" target="_blank" rel="noopener">知乎 · 谷歌 TPU v1 脉动阵列</a>(256×256 MXU 每拍 256 个 16bit 部分和等规格细节)</li>
+    <li><a href="https://cloud.google.com/tpu/docs/system-architecture-tpu-vm" target="_blank" rel="noopener">Google Cloud · TPU 系统架构</a>(脉动阵列官方定义)</li>
+    <li>H.T. Kung &amp; C.E. Leiserson, "Systolic Arrays (for VLSI)", 1978(脉动阵列原始思想;能耗量级数据另参考 Horowitz, ISSCC 2014 "Computing's Energy Problem")</li>
+    <li>D. Patterson &amp; J. Hennessy, 图灵奖演讲 "A New Golden Age for Computer Architecture", 2018(领域专用架构 DSA 的时代背景)</li>
+  </ul>
+
+  <!-- SEC-8-END -->
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>
