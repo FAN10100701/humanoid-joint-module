@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 10-12 SystemVerilog 语法与 UVM 全套架构
+  板块:NPU与数字IC设计 · 第四阶段 第 1 页
+  内容: SV 与 Verilog 关系 / 新增类型 / OOP / 约束随机 / interface /
+        线程通信 / UVM 方法学 / 工厂 / 组件树 / seq-sqr-drv 三角 /
+        TLM / config_db / RAL / phase / 报告机制 + 最小可跑环境
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · SystemVerilog与UVM架构</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名加 my- 前缀,避免与全局冲突) ===== */
+
+  /* SVG 图形容器 */
+  .my-fig{margin:18px 0;padding:14px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(13,17,23,.72);text-align:center;overflow-x:auto}
+  .my-fig svg{max-width:100%;height:auto}
+  .my-fig figcaption{font-size:12.5px;color:#8b98a9;margin-top:8px;line-height:1.6}
+
+  /* 资源卡片(复制自 02_硬件基础/05_参考资料汇总) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-desc a{color:#58a6ff}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+  /* 徽章配色 */
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+  .my-badge-code{background:linear-gradient(135deg,#fff7ed,#ffedd5)}
+  .my-badge-book{background:linear-gradient(135deg,#fdf4ff,#fae8ff)}
+
+  /* 标签 */
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-zhihu{background:#dbeafe;color:#1e40af}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-1{background:#dcfce7;color:#166534}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+  .my-tag-plain{background:#e2e8f0;color:#475569}
+
+  /* 浅色主题适配(与 site.css 玻璃风格一致) */
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "10-12",
+    root: "..",
+    breadcrumb: [
+      { t: "NPU与数字IC设计", u: "../index.html#sec10" },
+      { t: "SystemVerilog与UVM架构" }
+    ],
+    prev: { t: "NPU项目实战(下)运算模块与联调", u: "11_NPU项目实战下_运算模块与联调.html" },
+    next: { t: "NPU验证项目:环境与覆盖率", u: "13_NPU验证项目_环境搭建与覆盖率.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧩 SystemVerilog 语法与 UVM 全套架构</h1>
+    <div class="sub">IC 验证岗的"母语 + 框架" —— 15 个知识点:从 SV 新增类型、面向对象、约束随机,到 UVM 工厂 / 组件树 / sequence 三角 / TLM / config_db / RAL / phase 全套架构,最后附一个能跑的最小 UVM 环境。</div>
+    <div class="tags">
+      <span class="tag">SystemVerilog</span>
+      <span class="tag">UVM</span>
+      <span class="tag">IEEE 1800.2</span>
+      <span class="tag">约束随机</span>
+      <span class="tag">验证方法学</span>
+      <span class="tag">IC 验证岗</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说清 SystemVerilog 与 Verilog 的关系(IEEE 1364 → 1800),以及验证岗为什么"必学 SV"<br>
+    2. 能用 class、随机约束、interface、fork-join/mailbox 写出一个纯 SV 的功能 testbench<br>
+    3. 能默画 UVM 组件树并说出每个组件的一句话职责,讲清 factory / config_db / TLM / phase 四大机制<br>
+    4. 能照着本页"最小 UVM 环境"骨架,亲手搭出一个能跑起来的总线类验证平台<br>
+    <b>建议用时:</b>约 90 分钟(通读 60 分钟 + 代码与自测 30 分钟;前置:10-03 Verilog 语法)
+  </div>
+
+  <!-- ================= 1. 走进 SystemVerilog ================= -->
+  <h2><span class="h2-num">1</span> 走进 SystemVerilog:语言定位与新增类型</h2>
+  <h3>1.1 SystemVerilog 与 Verilog 的关系:同一个标准的两次进化</h3>
+  <p><b>是什么:</b>Verilog 是 IEEE <b>1364</b> 标准(1995 年首次标准化,常用 Verilog-2001/2005);SystemVerilog 是 IEEE <b>1800</b> 标准(2005 年首版)。从 <b>1800-2009</b> 开始,Verilog 1364 的全部内容被并入 1800,两者合并为单一标准 —— 也就是说,<b>Verilog 是 SystemVerilog 的子集</b>,任何合法 Verilog-2005 代码都是合法 SystemVerilog。最新的语言标准是 IEEE 1800-2023;而 UVM 类库的标准是 IEEE 1800.2(详见第 4 节)。</p>
+  <p><b>为什么验证岗必学 SV:</b>因为 SV 不是"更好的 Verilog",而是给语言补上了<b>验证的半边天</b>。写 RTL 需要的是"描述电路";做验证需要的却是"写软件去折磨电路"——用面向对象组织 testbench、用约束随机生成海量激励、用功能覆盖率量化验证进度、用断言检查时序协议。这四件事纯 Verilog 一件都做不了。所以 IC 验证岗的招聘要求里,"SystemVerilog + UVM"是和"Verilog + RTL"并列的标配。</p>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>Verilog(IEEE 1364)</th><th>SystemVerilog(IEEE 1800)</th></tr>
+    <tr><td>定位</td><td>硬件描述语言(建模电路)</td><td>设计 + 验证<b>双用途</b>语言</td></tr>
+    <tr><td>抽象层级</td><td>开关级 / 门级 / RTL</td><td>门级 / RTL / 事务级、类级 testbench</td></tr>
+    <tr><td>数据类型</td><td>wire / reg,4 态</td><td>+ logic、enum、struct、动态数组/队列/关联数组</td></tr>
+    <tr><td>过程块</td><td>always / initial</td><td>+ always_ff / always_comb / always_latch(意图明确)</td></tr>
+    <tr><td>验证设施</td><td>只有 initial 手写定向激励</td><td>+ class/OOP、约束随机、功能覆盖率、SVA 断言、DPI-C</td></tr>
+    <tr><td>与另一者的关系</td><td>子集</td><td>超集,完全兼容 Verilog</td></tr>
+  </table></div>
+  <p><b>怎么做:</b>学习路线分三步 —— ①先会用 Verilog 写可综合 RTL(本站 10-03);②补 SV 的验证扩展:新类型 → 类与 OOP → 约束随机 → interface 与线程(本页第 1~3 节);③进 UVM 方法学(本页第 4~8 节)。写 RTL 时也可以直接用 SV 子集(always_ff/always_comb/logic),意图更清晰、综合器检查更严。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「SystemVerilog 和 Verilog 什么关系?」标准答案三句话:1364 并入 1800,Verilog 是 SV 子集;SV = 设计增强(always_ff/always_comb/interface)+ 验证扩展(class/随机/覆盖率/断言);验证岗用 SV 是因为约束随机 + 面向对象 + 覆盖率收敛必须靠语言级支持。若追问"1800 和 1800.2 区别"——1800.2 是 1800 中关于 UVM 类库的独立分册(见 4.1)。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①以为 SV 是"另一门语言"、和 Verilog 不能混用——同一文件混写完全合法;②把 SV 全部特性当可综合——class、随机、队列只能写在验证代码里,RTL 子集以外的部分综合器不认;③简历写"精通 SystemVerilog"却说不清 logic 和 reg 的区别,是面试减分项。</div>
+  <h3>1.2 新增数据类型:logic 一统天下与三个"容器"</h3>
+  <p><b>是什么:</b>SV 在 wire/reg 之上补了一组类型,目标是两件事:①终结 <code>reg 还是 wire</code> 的无谓之争;②给验证代码提供灵活的"数据容器"(类似软件语言的数组/哈希表)。</p>
+  <ul>
+    <li><b>logic</b> —— 4 态(0/1/x/z)变量,<b>既可以在 always 块中过程赋值,也可以被一条 assign 连续赋值</b>。因为它"什么都能干",新代码统一用 logic 声明单驱动信号即可,不再纠结 reg/wire;<b>唯一例外</b>:多驱动总线(如三态总线)仍必须用 wire 类网络,logic 只允许单一驱动源。</li>
+    <li><b>enum</b> —— 枚举类型,给一组相关常量起名字(<code>enum {IDLE, RUN} state;</code>),状态机首选:编译器/仿真器能检查非法赋值,比 localparam 更安全。</li>
+    <li><b>typedef</b> —— 给任意类型起别名(<code>typedef logic [31:0] word_t;</code>),大工程里让信号位宽语义化、可维护。</li>
+    <li><b>struct(packed)</b> —— 把一组字段打包成一个向量(<code>typedef struct packed {logic [31:0] addr; logic [7:0] len;} req_t;</code>),描述协议帧、总线请求非常直观,且 packed struct 可综合。</li>
+    <li><b>动态数组</b> —— 运行时定长的数组:<code>int da[]; da = new[16]; da.delete();</code>,适合"大小要到运行时才知道"的数据(如一帧图像)。</li>
+    <li><b>队列 [$]</b> —— 头尾增删 O(1) 的队列:<code>int q[$]; q.push_back(x); x = q.pop_front();</code>,scoreboard 的比对缓存、参考模型 FIFO 的首选。</li>
+    <li><b>关联数组</b> —— 任意索引类型的哈希表:<code>bit [31:0] mem[bit [31:0]];</code>,建模稀疏存储器(只为被写过的地址存数据)、按 addr 快速查账。</li>
+  </ul>
+  <pre><code>// 验证代码里的典型类型组合
+typedef enum logic [2:0] {OP_WRITE, OP_READ, OP_BURST} op_e;   // 枚举:操作码
+
+typedef struct packed {                  // 打包结构体:一条总线请求
+    logic [31:0] addr;
+    logic [7:0]  len;
+    op_e         op;
+} req_t;
+
+class pkt;
+    req_t          fixed_req;            // struct 当普通成员
+    int            frame[];              // 动态数组:整帧数据
+    int            q[$];                 // 队列:等待比对的响应
+    bit [31:0]     model [bit [31:0]];   // 关联数组:稀疏参考存储器
+endclass</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>类型</th><th>一句话记忆</th><th>典型用例</th></tr>
+    <tr><td>logic</td><td>单驱动信号万能写法</td><td>端口、内部信号、testbench 信号(默认选它)</td></tr>
+    <tr><td>enum</td><td>带名字、带检查的常量集</td><td>状态机 state、操作码、phase 名</td></tr>
+    <tr><td>typedef</td><td>类型别名</td><td>word_t、req_t,让位宽语义化</td></tr>
+    <tr><td>struct packed</td><td>字段打包成一根总线</td><td>协议帧描述、事务字段打包(可综合)</td></tr>
+    <tr><td>动态数组 []</td><td>运行时定长、可重建</td><td>按需分配的帧缓冲</td></tr>
+    <tr><td>队列 [$]</td><td>头尾进出、自动伸缩</td><td>scoreboard 期望队列、参考 FIFO</td></tr>
+    <tr><td>关联数组 [k]</td><td>稀疏哈希表</td><td>稀疏存储器模型、按地址索引的比对</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「为什么用 logic 替代 reg/wire?」—— 答:reg/wire 的区分本意是"过程赋值 vs 连续赋值",但综合器真正关心的是"谁驱动它";logic 4 态、允许过程/连续两种赋值,单驱动场景统一用它,把注意力还给设计本身;多驱动(三态)仍用 wire。「队列和关联数组分别什么时候用?」—— 保序用队列,按 key 查找/稀疏用关联数组。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①logic 被两个驱动源同时驱动(如两组 always 或一条 assign 外加一个 always)——仿真报多驱动错,这时才换 wire;②2 态类型(int/bit)与 4 态类型(logic)混用导致 x/z 被"洗成"0,可能掩盖未复位的 bug——验证代码里期待检查 x 的信号务必保持 4 态;③关联数组忘了 <code>if (aa.exists(k))</code> 直接读不存在的 key,得到默认 0 却不自知。</div>
+
+
+  <!-- ================= 2. 面向对象与约束随机 ================= -->
+  <h2><span class="h2-num">2</span> 面向对象与约束随机:验证语言的核心武器</h2>
+  <h3>2.1 类与面向对象:把"数据 + 行为"捆在一起</h3>
+  <p><b>是什么:</b>SV 的 class 是纯软件概念(只在验证代码中存在,不可综合):字段描述数据、方法(function/task)描述行为,通过 <code>new()</code> 在堆上创建对象,变量里存的其实是<b>句柄(handle,类似 C 的指针)</b>。三大特性:封装(字段+方法打包)、继承(extends)、多态(virtual 方法)。</p>
+  <p><b>为什么验证需要 OOP:</b>验证的本质是"生成事务 → 驱动 DUT → 比对响应"。事务(transaction)、比对器、驱动器都是"有数据有行为"的实体,用类封装后才能:一个类多处复用、派生新类扩展字段而不改老代码、用父类句柄统一管理不同子类对象——这正是 UVM 全部组件都是类的根本原因。</p>
+  <p><b>怎么做——先记住四个关键机制:</b></p>
+  <ul>
+    <li><b>new 构造:</b><code>function new(string name="t"); super.new(name); endfunction</code>,分配内存 + 初始化;有父类必先调 <code>super.new()</code>。</li>
+    <li><b>extends 继承:</b>子类自动获得父类全部字段/方法,再增字段或覆盖方法。</li>
+    <li><b>virtual 与多态:</b>父类方法加 <code>virtual</code> 后,子类同名方法会覆盖它;<b>通过父类句柄调用时,执行的是对象实际类型(子类)的版本</b>——不加 virtual 则按句柄类型(父类)静态绑定,多态失效。</li>
+    <li><b>句柄赋值与对象比较:</b><code>t2 = t1;</code> 复制的是句柄(两个名字指向同一个对象),不是拷贝对象;拷贝要用 <code>copy()/clone()</code>。<code>==</code> 和 <code>===</code> 对类句柄比较的都是"是否指向同一对象"(身份比较):区别在于一侧为 null 时 <code>==</code> 结果是 x,而 <code>===</code> 恒为 0/1;<b>比较对象内容要用 compare() 方法</b>。</li>
+  </ul>
+  <pre><code>// 一个完整的数据事务类:激励的"最小单元"
+class my_txn;
+    // —— 字段 ——
+    rand  bit [31:0] addr;          // rand:参与随机化的字段
+    rand  bit [31:0] wdata;
+    rand  bit [3:0]  len;
+    bit [31:0]       rdata;         // 响应数据(DUT 返回,不随机)
+    bit              err;
+
+    constraint c_legal {
+        addr[1:0] == 2'b00;         // 4 字节对齐
+        len inside {[1:8]};
+    }
+
+    // —— 构造:new() 分配内存并初始化 ——
+    function new(bit [31:0] addr = 0);
+        this.addr = addr;           // this 区分成员与参数
+    endfunction
+
+    // —— 行为:virtual 让子类可覆盖,实现多态 ——
+    virtual function string show();
+        return $sformatf("addr=%h wdata=%h len=%0d err=%0d", addr, wdata, len, err);
+    endfunction
+
+    virtual function bit compare(my_txn rhs);   // 内容比较(== 只比句柄)
+        return (addr == rhs.addr) &amp;&amp; (wdata == rhs.wdata) &amp;&amp; (len == rhs.len);
+    endfunction
+endclass
+
+// 继承:突发事务 = 通用事务 + 突发字段
+class my_burst_txn extends my_txn;
+    rand bit [2:0] burst;                       // 新增字段
+    function new(bit [31:0] addr = 0);
+        super.new(addr);                        // 先完成父类初始化
+    endfunction
+    function string show();                     // 覆盖(override)父类方法
+        return {super.show(), $sformatf(" burst=%0d", burst)};
+    endfunction
+endclass
+
+// 多态:父类句柄指向子类对象,调用的是子类版本
+my_txn       t;                                 // 父类句柄
+my_burst_txn b = new(32'h1000);                 // 子类对象
+t = b;                                          // 句柄赋值:复制句柄,不复制对象
+$display("%s", t.show());   // → 调 my_burst_txn::show()(show 是 virtual)
+$display("%0d", (t == b));  // → 1:同一个对象;内容比较请用 t.compare(b)</code></pre>
+  <figure class="my-fig">
+  <svg viewBox="0 0 640 260" role="img" aria-label="SystemVerilog 继承示意图:基类 my_txn 拥有 addr wdata len 字段和 virtual 方法 show 与 compare,子类 my_burst_txn 和 my_crc_txn 分别通过 extends 继承并各自新增字段覆盖 show 方法,父类句柄指向子类对象时调用子类版本实现多态" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <defs>
+      <marker id="arwI3B" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#58a6ff"/></marker>
+      <marker id="arwI3O" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#f59e0b"/></marker>
+      <marker id="arwI3G" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#22c55e"/></marker>
+    </defs>
+    <!-- 基类 -->
+    <rect x="190" y="18" width="260" height="84" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="320" y="40" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="bold">class my_txn(基类)</text>
+    <text x="320" y="60" text-anchor="middle" fill="#c9d1d9" font-size="10.5">rand bit[31:0] addr, wdata; rand bit[3:0] len</text>
+    <text x="320" y="77" text-anchor="middle" fill="#c9d1d9" font-size="10.5">function new() / constraint c_legal</text>
+    <text x="320" y="94" text-anchor="middle" fill="#9aa4b2" font-size="10.5">virtual show() · virtual compare()</text>
+    <!-- 子类左 -->
+    <rect x="40" y="168" width="250" height="66" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="165" y="190" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">class my_burst_txn extends my_txn</text>
+    <text x="165" y="208" text-anchor="middle" fill="#c9d1d9" font-size="10.5">+ rand bit[2:0] burst</text>
+    <text x="165" y="224" text-anchor="middle" fill="#9aa4b2" font-size="10.5">show() 覆盖:追加 burst 显示</text>
+    <!-- 子类右 -->
+    <rect x="350" y="168" width="250" height="66" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="475" y="190" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">class my_crc_txn extends my_txn</text>
+    <text x="475" y="208" text-anchor="middle" fill="#c9d1d9" font-size="10.5">+ bit[15:0] crc</text>
+    <text x="475" y="224" text-anchor="middle" fill="#9aa4b2" font-size="10.5">show() 覆盖:追加 crc 显示</text>
+    <!-- extends 箭头 -->
+    <line x1="165" y1="166" x2="290" y2="106" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwI3O)"/>
+    <text x="196" y="130" fill="#f59e0b" font-size="10">extends</text>
+    <line x1="475" y1="166" x2="350" y2="106" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwI3G)"/>
+    <text x="428" y="130" fill="#22c55e" font-size="10">extends</text>
+    <!-- 多态注解 -->
+    <text x="320" y="126" text-anchor="middle" fill="#8b98a9" font-size="9.5">virtual 方法</text>
+    <text x="320" y="252" text-anchor="middle" fill="#c9d1d9" font-size="10.5">多态:my_txn t; t = b; t.show() → 走子类版本(show 是 virtual,运行期绑定)</text>
+  </svg>
+  <figcaption>图① SV OOP 继承与多态:子类 extends 基类后新增字段、覆盖 virtual 方法;父类句柄 + virtual = "一套代码,多种事务"。</figcaption>
+  </figure>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>高频三连:①「句柄赋值和 copy 的区别?」——句柄赋值只复制"遥控器",copy 才复制"电视机";②「virtual 不加会怎样?」——父类句柄调用时走父类版本,多态失效,UVM 中 phase/write 等回调全靠 virtual;③「== 和 === 对对象比较什么?」——都比句柄身份,=== 在含 null 时更安全;内容比较用 compare()。手写一个带约束的 transaction 类是验证岗笔试保留题。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①忘记 super.new(),父类字段未初始化;②该加 virtual 的方法没加,多态静默失效(编译不报错,结果不对,最难查);③对句柄做 == 以为在比内容;④对象声明后没 new 就使用(句柄为 null,访问成员直接崩溃)——UVM 里表现为报 null handle 错。</div>
+  <h3>2.2 随机化与约束:让机器替你想用例</h3>
+  <p><b>是什么:</b>把对象字段标成 <code>rand</code>(每次随机)或 <code>randc</code>(循环遍历,不重复),再用 <code>constraint</code> 块描述合法值域与字段间关系,调用 <code>obj.randomize()</code> 时,求解器自动找一个满足所有约束的值。这是"约束随机验证(CRV)"的语言基础:定向用例只能测工程师想到的场景,约束随机能批量撞出想不到的角落。</p>
+  <p><b>怎么做——掌握五个常用写法:</b></p>
+  <pre><code>class txn;
+    rand  bit [31:0] addr;
+    randc bit [2:0]  mode;              // randc:8 个值轮着来,不重复取完再循环
+    rand  bit [7:0]  len;
+    bit [31:0]       rdata;             // 非 rand:人工/响应赋值
+
+    constraint c_len   { len inside {[1:16]}; }                     // inside:集合/范围
+    constraint c_dist  { addr dist { 32'h0 := 10,                   // dist:加权随机
+                                     [32'h1000:32'h1FFF] := 5,
+                                     32'hFFFF_FFFF :/ 40 }; }       // :/ 权重被区间均分
+    constraint c_align { len &lt; 8 -&gt; addr[2:0] == 3'd0; }            // -&gt; 蕴含:len 小则强制对齐
+    constraint c_solve { solve mode before addr; }                  // 指定求解顺序
+endclass
+
+txn t = new();
+assert(t.randomize())                                  // ★ 必须检查返回值!
+    else $fatal(1, "randomize failed");                // 求解失败返回 0
+assert(t.randomize() with { addr == 32'h1234; })       // inline:临时追加约束
+    else $fatal(1, "inline randomize failed");</code></pre>
+  <ul>
+    <li><b>约束求解直觉:</b>求解器把所有约束当成"联立方程"找任意一组解(不是唯一解、也不保证最优);约束越复杂求解越慢,<code>randc</code> 位宽过大、约束互相矛盾都会让求解时间爆炸甚至失败。</li>
+    <li><b>随机化失败排查四步:</b>①看返回值与报错定位冲突的约束名;②注释二分:逐个 <code>c.constraint_mode(0)</code> 关闭约束缩小范围;③<code>rand_mode(0)</code> 冻结可疑变量看是否可行;④常见根因清单:约束互相矛盾、约束引用了 null 句柄成员、给非 rand 变量加了约束、出现"x 值参与求解"(字段未初始化为 4 态 x)。</li>
+  </ul>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「rand 和 randc 区别?」——rand 独立随机可重复,randc 循环不重复(典型用途:让 channel/opcode 先遍历完一轮)。「randomize 返回值为什么必须检查?」——失败时不报错只返回 0,对象保持旧值,激励会静默错误,后续比对全部失真。「inside 和 dist 区别?」——inside 均匀取值,dist 可加权,热点地址用 dist。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①if 里调用 randomize 却不检查返回值——90% 的"诡异激励"由此而来;②inline <code>with</code> 写成覆盖而非追加约束(它是与类内约束求交集,交集为空就失败);③约束里用了 4 态未初始化信号,求解器把 x 当约束的一部分,行为不可移植;④soft constraint(软约束)与普通约束的取舍没搞清——冲突时软约束让位,硬约束冲突直接失败。</div>
+
+
+  <!-- ================= 3. interface 与线程通信 ================= -->
+  <h2><span class="h2-num">3</span> 搭平台的"钢筋":interface 与线程通信</h2>
+  <h3>3.1 接口 interface:信号打包 + modport 视角 + clocking block</h3>
+  <p><b>是什么:</b>interface 是一组信号的<b>具名打包</b>:把一条总线的 valid/ready/data 等信号在接口里声明一次,DUT 和 testbench 都引用同一个接口实例。它还能带两类"附件"——<b>modport</b>(给不同角色提供不同方向的视图)和 <b>clocking block</b>(定义"在时钟沿之前多久采样、之后多久驱动")。</p>
+  <p><b>为什么比 Verilog 端口列表强:</b>①Verilog 里改一个信号名要同时改 DUT、TB、多层例化的端口连接;interface 只改一处。②modport 让方向错误在编译期暴露(DUT 侧想驱动 input 会直接报错)。③clocking block 解决 TB 与 DUT 的<b>采样竞争</b>:testbench 是零延时的软件环境,直接在时钟沿驱动/采样会产生竞态;clocking 规定"沿前 1step 采样、沿后 #1 驱动",激励和采样都发生在"安全的时刻"。④类(class)是动态的、不能直接引用静态层次信号,<b>必须通过 virtual interface 才能摸到接口</b>——这是 7.1 config_db 的核心用途。</p>
+  <pre><code>// Verilog 写法:每个模块重复声明一整套端口,改一个信号要动 N 处
+module dut (input clk, input valid, input [31:0] data, output ready, /*...*/);
+module tb  (output reg valid, output reg [31:0] data, input ready, /*...*/);
+
+// SV 接口:信号打包一次,所有模块共享同一个实例
+interface bus_if (input logic clk, rst_n);
+    logic        valid;
+    logic [31:0] addr;
+    logic [31:0] wdata;
+    logic        ready;
+
+    clocking drv_cb @(posedge clk);      // clocking block:driver 用它驱动
+        default input #1step output #1ns; // 采样:沿前 1 个 time step;驱动:沿后 1ns
+        output valid, addr, wdata;        // driver 的驱动方向
+        input  ready;                     // driver 的采样方向
+    endclocking
+
+    modport dut (input clk, rst_n, valid, addr, wdata, output ready); // DUT 视角
+    modport tb  (output valid, addr, wdata, input clk, rst_n, ready); // TB 视角
+endinterface
+
+// 例化与连接:一根接口"线缆"接到两端
+// bus_if u_if (clk, rst_n);   →   dut u_dut (u_if.dut);  testbench 用 u_if / u_if.drv_cb</code></pre>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「interface 相比 Verilog 端口的好处?」按"打包复用 / modport 方向检查 / clocking 消竞争 / 类可经 virtual interface 访问"四点作答。「clocking block 为什么能避免竞争?」——它把采样提前到时钟沿前 1step、驱动推迟到沿后,数据变化避开建立窗口,杜绝 TB 零延时驱动的竞态。「virtual interface 是什么?」——接口实例的"句柄类型",类通过它访问静态接口,由 config_db 在运行期传入。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①driver 里直接 <code>vif.valid &lt;= 1;</code> 不经 clocking block——高概率采样竞争,波形"看起来对"但偶发错拍;②modport 方向写反,DUT 把 ready 当输出;③virtual interface 未通过 config_db 传入就访问,null 句柄崩溃;④接口在 TB 里例化了两个实例却想让 DUT/TB 共享——接口必须同名同例化才互通。</div>
+  <h3>3.2 线程与进程间通信:fork-join、mailbox、semaphore、event</h3>
+  <p><b>是什么:</b>testbench 天生是"多线程程序":同时发激励、收响应、记覆盖率、掐超时。SV 提供四件套:<b>fork-join</b>(线程并行/汇合)、<b>mailbox</b>(线程间传数据的队列)、<b>semaphore</b>(互斥钥匙)、<b>event</b>(同步触发)。UVM 里的 sequencer/analysis 本质上就是这些原语的封装升级。</p>
+  <div class="table-wrap"><table>
+    <tr><th>写法</th><th>父线程行为</th><th>典型场景</th></tr>
+    <tr><td>fork … join</td><td>等<b>全部</b>子线程结束才继续</td><td>多路激励并行发完,统一收尾</td></tr>
+    <tr><td>fork … join_any</td><td><b>任一</b>子线程结束就继续</td><td>激励线程 + 超时看门狗,谁先完成谁触发下一步</td></tr>
+    <tr><td>fork … join_none</td><td><b>不等</b>,立即继续(子线程在首个阻塞点才真正启动)</td><td>testbench 顶部同时拉起 driver/monitor/coverage 线程</td></tr>
+    <tr><td>disable fork / wait fork</td><td>杀掉未完成子线程 / 等所有子线程结束</td><td>join_any 后清场;退出前确保子线程跑完</td></tr>
+  </table></div>
+  <pre><code>// fork-join_any + disable fork:经典"看门狗"结构
+initial begin
+    fork
+        send_all_pkts();          // 线程 1:发激励
+        begin : watchdog          // 线程 2:超时报警
+            #10us;
+            $display("ERROR: timeout!");
+        end
+    join_any                      // 任一结束就往下走
+    disable fork;                 // 关掉剩下的线程(超时后停发激励 / 发完后关看门狗)
+end
+
+// mailbox:generator 与 driver 之间的"传送带"(纯 SV TB 的经典用法)
+mailbox #(my_txn) mb = new();
+// generator 线程:  mb.put(t);        // 传事务;容量设上限后,满则阻塞
+// driver 线程:     mb.get(t);        // 空则阻塞等待;try_get 空则立即返回 0(非阻塞)
+
+// semaphore:多线程互斥共享一个资源(如存储器端口)
+semaphore mem_key = new(1);       // 1 把钥匙
+task mem_access();
+    mem_key.get();                // 拿钥匙,没有就等(互斥进入)
+    ... 访问共享存储 ...
+    mem_key.put();                // 还钥匙
+endtask
+
+// event:阶段同步("复位完成"通知所有线程)
+event rst_done;
+initial begin ... 执行复位序列 ... -&gt;rst_done; end      // -&gt; 触发
+initial begin @rst_done; ... end                        // 等触发(错过则一直等)
+initial begin wait(rst_done.triggered); ... end         // triggered 状态可查询,不怕错过</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>机制</th><th>本质</th><th>选型口诀</th></tr>
+    <tr><td>mailbox #(T)</td><td>参数化消息队列(put/get 阻塞,try_* 非阻塞)</td><td><b>传数据</b>:生产者→消费者</td></tr>
+    <tr><td>semaphore</td><td>计数钥匙,get/put</td><td><b>抢资源</b>:互斥、限流</td></tr>
+    <tr><td>event</td><td>一次性触发/等待</td><td><b>等事件</b>:阶段同步、条件通知</td></tr>
+    <tr><td>fork-join 族</td><td>并行与汇合控制</td><td><b>排线程</b>:并行、看门狗、清场</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「fork-join 三种语义?」照上表背。「mailbox 和 semaphore 的区别?」——mailbox 传"数据"本身,semaphore 只传"使用权";两者可组合:mailbox 排队 + semaphore 控并发数。「join_none 的子线程什么时候真正开始跑?」——父线程遇到第一个阻塞语句(或时间推进)时。「wait(e.triggered) 和 @e 区别?」——@ 是边沿敏感,先触发后等待会错过;triggered 是状态保持,不怕错过(unset 前)。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①join_any 后忘记 disable fork,看门狗线程和激励线程互相干扰;②mailbox 传的是句柄——put 进去后 generator 又改了对象内容,driver 拿到的已"变味"(每包 new 新对象或用 clone);③semaphore get 了忘记 put,死锁;④fork 内变量捕获:子线程引用的循环变量在启动后才读取,值可能已变(join_none 场景尤其常见)。</div>
+
+
+  <!-- ================= 4. UVM 与验证方法学 ================= -->
+  <h2><span class="h2-num">4</span> UVM 与验证方法学:为什么需要"套路"</h2>
+  <h3>4.1 UVM 是什么:类库 + 运行框架 + 方法学思想</h3>
+  <p><b>是什么:</b>UVM(Universal Verification Methodology,通用验证方法学)是一套用 SystemVerilog 写成的<b>开源类库 + 运行框架</b>:它提供 uvm_component/uvm_sequence 等基类(类库)、phase 调度与 factory/config_db 等机制(框架),并约定了一套组织 testbench 的标准结构(方法学)。它由 Accellera 维护,已标准化为 <b>IEEE 1800.2-2020</b>(1800 语言标准中抽出 UVM 部分单独成册),官方参考实现 UVM 2020-3.2 可从 Accellera 或 GitHub(accelera-official/uvm-core)下载。</p>
+  <p><b>为什么需要方法学——没有 UVM 的世界:</b>每人手搓一套 testbench 结构,换个项目重写一遍;激励全靠定向写,覆盖率全凭感觉;A 公司的经验到 B 公司归零。现代验证的三大支柱正对应 UVM 的三个设计目标:</p>
+  <ul>
+    <li><b>可复用(Reuse):</b>组件分层(agent/env)、配置与实现分离(config_db + factory),同一个 agent 换个项目、换个 block 复用,只改配置不改代码。</li>
+    <li><b>可约束随机(CRV):</b>sequence + 约束 + factory override,同一套环境跑海量随机场景,再靠定向用例补死角。</li>
+    <li><b>覆盖率驱动(CDV):</b>功能覆盖率量化"测了什么",覆盖率报告决定"还差什么",收敛即验证完成——验证从"艺术"变成"可度量的工程"。</li>
+  </ul>
+  <p><b>怎么做——建立两个正确认知:</b>①UVM 不是新语言,<b>它就是一堆 SV 类</b>,看懂类的继承层次(uvm_object 与 uvm_component 两大家族)比背宏更重要;②不要一上来背 API,先理解 8.2 节"最小环境"的骨架,再逐个机制(工厂/组件树/三角/TLM/config_db/RAL/phase)往里加。血统上 UVM 继承自 OVM 与 VMM 两代方法学,2011 年由 Accellera 推出 1.0,如今 1800.2 时代版本号形如 2020-3.2。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「为什么用 UVM 而不是裸 SV 搭 testbench?」——答三层:方法学层面(可复用/约束随机/覆盖率驱动)、工程层面(结构统一,人人能看懂、组件可搬)、机制层面(factory/config_db/TLM/phase 现成且成熟)。「UVM 与 SV 的关系?」——UVM 是 SV 类库与框架,IEEE 1800.2 标准,跑在 SV 仿真器上;不会 SV 的 OOP/随机,学 UVM 就是空中楼阁。「1800.2 是什么?」——把 UVM 类库从 1800 语言标准中独立出来的分册标准,Accellera 免费提供参考实现。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①把 UVM 当"背宏考试":宏是糖,树结构和机制才是本体;②以为 UVM 能提高仿真速度——它只是组织方式的工程化,环境复杂度反而更高,小 IP 用裸 SV 也完全合理;③分不清 uvm_object 家族(sequence/transaction,生命周期短、不在树上)与 uvm_component 家族(driver/monitor 等,构成组件树、有 phase)——后面 5.2/6.1 节是理解这条分界的关键。</div>
+
+
+  <!-- ================= 5. 工厂与组件树 ================= -->
+  <h2><span class="h2-num">5</span> UVM 的两大地基:工厂机制与组件树</h2>
+  <h3>5.1 工厂机制与注册:为什么用 type_id::create 而不是 new</h3>
+  <p><b>是什么:</b>工厂(factory)是 UVM 的"对象制造局":每个类用注册宏(<code>`uvm_component_utils</code> / <code>`uvm_object_utils</code>)在工厂登记"类型名 ↔ 类型"的对照表;之后所有组件/对象都通过 <code>Type::type_id::create(...)</code> 创建。创建时工厂先查表:有没有 override(替换类型)?有就造替换者,没有才造原类型。</p>
+  <p><b>为什么必须走工厂:</b>①<b>override 是核心价值</b>——测试需要换掉环境里的某个组件(如注入错误的 driver、扩展版 scoreboard)时,用 <code>set_type_override</code> 一行替换,env/test 代码零修改;若用 new,类型在编译期写死,override 无从谈起。②create 时把 parent 句柄传入,UVM 才能把对象挂进组件树、纳入 phase 调度。③按字符串创建也让"用例脚本化配置"成为可能。</p>
+  <pre><code>class my_driver extends uvm_driver #(my_txn);
+    `uvm_component_utils(my_driver)          // 注册:component 家族用这个宏
+    ...
+endclass
+class my_txn extends uvm_sequence_item;
+    `uvm_object_utils(my_txn)                // 注册:object 家族(transaction/sequence)用这个
+    ...
+endclass
+
+// 创建:一律走工厂(create),不要 new
+drv = my_driver::type_id::create("drv", this);   // 参数:实例名 + 父组件句柄
+req = my_txn   ::type_id::create("req");
+
+// override:工厂的杀手锏 —— test 里一行替换全局类型
+my_driver::type_id::set_type_override(my_driver_v2::get_type());  // 类型替换
+// 也可只替换某个实例:factory.set_inst_override(...);(实例级 override)</code></pre>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「为什么用 type_id::create 而不用 new?」——标准答案:new 在编译期绑定类型,工厂在运行期按注册表查类型,只有走工厂 override 才生效;同时 create 传入 parent 让组件自动挂树。「component_utils 和 object_utils 的区别?」——前者用于挂在组件树上有 phase 的类,后者用于瞬态对象(transaction/sequence/配置对象);新版本还区分有无 field 宏的版本(utils 与 _utils_param 等),答出"component vs object"即核心。「override 的两种粒度?」——type override 全局替换,inst override 只替换指定路径的实例。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①某类忘了注册宏就 type_id::create——编译期直接报错(type_id 不存在);②override 了基类但子类没注册/构造函数签名不一致,替换后 create 崩溃;③在工厂 override 后,配置字段名变了却没同步(用 `_begin/_end` 的 field 机制可缓解);④对 sequence/item 也用 new——导致 field 宏( copy/print/compare)失效。</div>
+  <h3>5.2 UVM 组件树:每个组件一句话职责 + active/passive</h3>
+  <p><b>是什么:</b>UVM testbench 是一棵<b>组件树</b>:uvm_component 派生的组件按 parent-child 关系挂树,顶层是 <code>uvm_test_top</code>(run_test 创建),下面依次 env → agent → driver/sequencer/monitor,scoreboard/coverage 挂在 env。树有两个用途:①<b>phase 按树调度</b>(7.3 节);②<b>config_db 按"路径"寻址</b>(7.1 节)——每个组件的全名就是它在这棵树上的路径。</p>
+  <div class="table-wrap"><table>
+    <tr><th>组件(基类)</th><th>一句话职责</th></tr>
+    <tr><td>my_test(uvm_test)</td><td>顶层用例:决定配置(is_active、override、默认 sequence)与验证目标</td></tr>
+    <tr><td>my_env(uvm_env)</td><td>容器:把 agent + scoreboard + coverage 组装成可整体复用的环境</td></tr>
+    <tr><td>my_agent(uvm_agent)</td><td>一路接口的打包:active 含 driver+sequencer+monitor;passive 仅 monitor</td></tr>
+    <tr><td>my_sequencer(uvm_sequencer)</td><td>激励仲裁器:多条 sequence 的事务流排队、仲裁后发给 driver</td></tr>
+    <tr><td>my_driver(uvm_driver)</td><td>翻译官:把事务(transaction)翻译成引脚级时序波形打进接口</td></tr>
+    <tr><td>my_monitor(uvm_monitor)</td><td>旁路观察者:被动采样引脚,还原成事务,经 analysis_port 广播</td></tr>
+    <tr><td>my_scoreboard(uvm_scoreboard)</td><td>裁判:参考模型 + 数据比对,发现不一致立刻报错</td></tr>
+    <tr><td>my_seq / my_txn(uvm_sequence / uvm_sequence_item)</td><td>激励剧本 / 数据包 —— 属于 object 家族,不在组件树上</td></tr>
+  </table></div>
+  <figure class="my-fig">
+  <svg viewBox="0 0 640 356" role="img" aria-label="UVM 组件树框图:uvm_test_top 下挂 my_env,my_env 下挂 my_agent 与 my_scoreboard,my_agent 下挂 my_driver、my_sequencer、my_monitor,monitor 通过 analysis_port 把事务广播给 scoreboard,driver 与 sequencer 之间是 seq_item 握手" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <defs>
+      <marker id="arwT4B" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#58a6ff"/></marker>
+      <marker id="arwT4G" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#22c55e"/></marker>
+    </defs>
+    <!-- test -->
+    <rect x="220" y="14" width="200" height="42" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.7"/>
+    <text x="320" y="32" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">my_test(uvm_test_top)</text>
+    <text x="320" y="48" text-anchor="middle" fill="#9aa4b2" font-size="9.5">配置与用例选择</text>
+    <!-- env -->
+    <rect x="238" y="92" width="164" height="42" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="320" y="110" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">my_env(uvm_env)</text>
+    <text x="320" y="126" text-anchor="middle" fill="#9aa4b2" font-size="9.5">容器:组装 agent + scoreboard</text>
+    <line x1="320" y1="56" x2="320" y2="90" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwT4B)"/>
+    <text x="330" y="78" fill="#8b98a9" font-size="9">build 时 create 子组件</text>
+    <!-- agent -->
+    <rect x="238" y="170" width="164" height="42" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="320" y="188" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">my_agent(uvm_agent)</text>
+    <text x="320" y="204" text-anchor="middle" fill="#9aa4b2" font-size="9.5">active:driver+sqr+mon / passive:仅 mon</text>
+    <line x1="320" y1="134" x2="320" y2="168" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwT4B)"/>
+    <!-- scoreboard -->
+    <rect x="474" y="170" width="146" height="42" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="547" y="188" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">my_scoreboard</text>
+    <text x="547" y="204" text-anchor="middle" fill="#9aa4b2" font-size="9.5">参考模型 + 比对</text>
+    <path d="M402,113 L547,113 L547,168" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwT4G)"/>
+    <!-- agent 三个孩子 -->
+    <rect x="24" y="274" width="132" height="48" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="90" y="294" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">my_driver</text>
+    <text x="90" y="310" text-anchor="middle" fill="#9aa4b2" font-size="9">事务 → 引脚波形</text>
+    <rect x="186" y="274" width="132" height="48" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="252" y="294" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">my_sequencer</text>
+    <text x="252" y="310" text-anchor="middle" fill="#9aa4b2" font-size="9">仲裁多条 sequence</text>
+    <rect x="348" y="274" width="132" height="48" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="414" y="294" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">my_monitor</text>
+    <text x="414" y="310" text-anchor="middle" fill="#9aa4b2" font-size="9">引脚波形 → 事务广播</text>
+    <!-- 树线 -->
+    <line x1="320" y1="212" x2="320" y2="242" stroke="#58a6ff" stroke-width="1.6"/>
+    <line x1="90" y1="242" x2="414" y2="242" stroke="#58a6ff" stroke-width="1.6"/>
+    <line x1="90" y1="242" x2="90" y2="272" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwT4B)"/>
+    <line x1="252" y1="242" x2="252" y2="272" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwT4B)"/>
+    <line x1="414" y1="242" x2="414" y2="272" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwT4B)"/>
+    <!-- monitor → scoreboard TLM -->
+    <path d="M480,298 L560,298 L560,214" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arwT4G)"/>
+    <text x="566" y="258" fill="#22c55e" font-size="9.5">analysis_port</text>
+    <text x="566" y="271" fill="#22c55e" font-size="9.5">write() 广播</text>
+    <!-- driver↔sqr -->
+    <line x1="158" y1="298" x2="184" y2="298" stroke="#8b98a9" stroke-width="1.4" stroke-dasharray="3,3"/>
+    <text x="171" y="332" text-anchor="middle" fill="#8b98a9" font-size="9">seq_item 握手(第 6 节)</text>
+    <text x="440" y="346" text-anchor="middle" fill="#c9d1d9" font-size="10">蓝色实线:父子挂树(build/create) 绿色:数据流(TLM) 灰色:激励握手</text>
+  </svg>
+  <figcaption>图② UVM 组件树:test → env → agent →(driver / sequencer / monitor)+ scoreboard;monitor 经 analysis_port 把事务广播给 scoreboard。</figcaption>
+  </figure>
+  <p><b>active 与 passive 两种模式:</b>agent 用 <code>uvm_active_passive_enum is_active</code> 配置。<b>active</b> 模式创建 driver+sequencer+monitor,完整地"发激励 + 采样";<b>passive</b> 模式只例化 monitor,用于:只读不写的观测通道(如性能统计)、chip 级环境里复用 block 级 monitor 做检查、多个 agent 共享一路激励等。复用的意义在于:monitor 永远都在,scoreboard/coverage 在任何模式下都能接上它。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「画一下 UVM 组件树,说每个组件干嘛的?」——按上表从上往下背,主动补一句"sequence/transaction 是 object 家族,不挂树"。「agent 为什么要分 active/passive?」——复用与场景需要:passive 让同一个 monitor 在 chip 级继续做检查/覆盖,同时避免多份激励源打架。「scoreboard 为什么挂在 env 而不是 agent?」——scoreboard 常要收多个 agent 的数据做端到端比对,属于"跨接口"视角,粒度在 env。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①create 忘传 this(parent),组件挂不上树、路径错误、config_db 取不到;②passive 模式下代码还访问 drv/sqr(null 崩溃);③driver 和 monitor 同时驱动同一接口信号(monitor 必须纯被动);④树上的全名记错导致 config_db 路径对不上——用 uvm_top.print_topology() 打印树核对。</div>
+
+
+  <!-- ================= 6. 激励流与数据流 ================= -->
+  <h2><span class="h2-num">6</span> 激励流与数据流:sequence 三角与 TLM</h2>
+  <h3>6.1 sequence / sequencer / driver 三角:激励是如何"流"到引脚的</h3>
+  <p><b>是什么:</b>这是 UVM 最核心的协作结构。<b>sequence</b>(uvm_sequence 派生,object)是"激励剧本":它 create 一件件事务,按剧情随机并交给 sequencer;<b>sequencer</b>(uvm_sequencer,component)是"剧场调度":缓存并仲裁多条剧本的事务流;<b>driver</b>(uvm_driver,component)是"演员":从 sequencer 领事务,演成引脚波形。三者通过 seq_item_port / seq_item_export 握手。</p>
+  <p><b>怎么做——背下六步握手:</b>sequence 侧 <code>start_item(req)</code> 申请发送权(阻塞直到被授权)→ <code>req.randomize()</code> 随机 → <code>finish_item(req)</code> 交付(阻塞直到 driver 完成);driver 侧 <code>get_next_item(req)</code> 领事务(没有就阻塞等)→ 驱动引脚 → <code>item_done()</code> 报告完成。注意:driver 里不需要 new 事务,<code>req</code> 是 uvm_driver 自带的成员。</p>
+  <pre><code>// —— sequence:只管"生成什么激励",不管"怎么打到引脚" ——
+class my_seq extends uvm_sequence #(my_txn);
+    `uvm_object_utils(my_seq)
+    task body();
+        repeat (10) begin
+            req = my_txn::type_id::create("req");
+            start_item(req);                            // ① 申请发送权(等仲裁)
+            assert(req.randomize() with { len inside {[1:16]}; });  // ② 随机
+            finish_item(req);                           // ③ 交付(等 driver item_done)
+        end
+    endtask
+endclass
+
+// —— driver:只管"把事务演成波形",不管"激励是什么剧情" ——
+class my_driver extends uvm_driver #(my_txn);
+    `uvm_component_utils(my_driver)
+    task run_phase(uvm_phase phase);
+        forever begin
+            seq_item_port.get_next_item(req);   // ④ 领事务(空则阻塞)
+            drive_pins(req);                    // ⑤ 按协议驱动引脚(若干拍)
+            seq_item_port.item_done();          // ⑥ 报告完成,sequencer 放行下一个
+        end
+    endtask
+endclass
+
+// —— sequence 挂到 sequencer 的两种方式 ——
+// 方式一:test 的 run_phase 里直接 start(时序可控,常配合 objection)
+task my_test::run_phase(uvm_phase phase);
+    my_seq seq;
+    phase.raise_objection(this);
+    seq = my_seq::type_id::create("seq");
+    seq.start(env.agt.sqr);                     // 参数:挂到哪个 sequencer
+    phase.drop_objection(this);
+endtask
+// 方式二:config_db 挂"默认 sequence"(由 main_phase 自动启动,回归批跑常用)
+uvm_config_db #(uvm_object_wrapper)::set(this, "env.agt.sqr.main_phase",
+                                         "default_sequence", my_seq::type_id::get());</code></pre>
+  <figure class="my-fig">
+  <svg viewBox="0 0 640 336" role="img" aria-label="sequence、sequencer、driver 三角握手图:sequence 依次执行 start_item 与 finish_item 把事务交给 sequencer,中间进行 randomize;driver 调用 get_next_item 从 sequencer 取事务,驱动完调用 item_done 归还,形成闭环" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <defs>
+      <marker id="arwS5B" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#58a6ff"/></marker>
+      <marker id="arwS5O" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#f59e0b"/></marker>
+      <marker id="arwS5G" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#22c55e"/></marker>
+      <marker id="arwS5R" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ef4444"/></marker>
+    </defs>
+    <!-- sequence -->
+    <rect x="230" y="18" width="190" height="54" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.7"/>
+    <text x="325" y="40" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">my_sequence</text>
+    <text x="325" y="58" text-anchor="middle" fill="#9aa4b2" font-size="9.5">uvm_sequence #(my_txn) · 激励剧本</text>
+    <!-- sequencer -->
+    <rect x="60" y="240" width="180" height="54" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="150" y="262" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">my_sequencer</text>
+    <text x="150" y="280" text-anchor="middle" fill="#9aa4b2" font-size="9.5">缓存 + 仲裁多条 sequence</text>
+    <!-- driver -->
+    <rect x="400" y="240" width="180" height="54" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="490" y="262" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">my_driver</text>
+    <text x="490" y="280" text-anchor="middle" fill="#9aa4b2" font-size="9.5">事务 → 引脚波形</text>
+    <!-- ① start_item -->
+    <line x1="252" y1="72" x2="165" y2="236" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#arwS5B)"/>
+    <text x="128" y="150" fill="#58a6ff" font-size="10.5">① start_item(req)</text>
+    <!-- ③ finish_item -->
+    <line x1="398" y1="72" x2="232" y2="236" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#arwS5O)"/>
+    <text x="404" y="150" fill="#f59e0b" font-size="10.5">③ finish_item(req)</text>
+    <!-- ② randomize -->
+    <text x="325" y="140" text-anchor="middle" fill="#c9d1d9" font-size="10">② req.randomize()</text>
+    <text x="325" y="156" text-anchor="middle" fill="#8b98a9" font-size="9.5">(start 与 finish 之间随机)</text>
+    <!-- ④ get_next_item -->
+    <line x1="244" y1="258" x2="396" y2="258" stroke="#22c55e" stroke-width="1.8" marker-end="url(#arwS5G)"/>
+    <text x="320" y="248" text-anchor="middle" fill="#22c55e" font-size="10.5">④ get_next_item(req)</text>
+    <!-- item_done -->
+    <line x1="396" y1="280" x2="244" y2="280" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="5,4" marker-end="url(#arwS5R)"/>
+    <text x="320" y="298" text-anchor="middle" fill="#ef4444" font-size="10.5">item_done()(⑥ 报告完成)</text>
+    <!-- 驱动注解 -->
+    <text x="490" y="314" text-anchor="middle" fill="#9aa4b2" font-size="9.5">⑤ 驱动引脚若干拍(经 virtual interface)</text>
+    <!-- 底注 -->
+    <text x="320" y="332" text-anchor="middle" fill="#8b98a9" font-size="9.5">多条 sequence 同时挂载时,由 sequencer 的仲裁算法(如 SEQ_ARB_FIFO / SEQ_ARB_STRICT)决定先后</text>
+  </svg>
+  <figcaption>图③ seq–sqr–drv 三角握手:左侧"剧本"两步交付(start_item / finish_item),右侧"演员"两步领取与归还(get_next_item / item_done),② randomize 发生在两步之间。</figcaption>
+  </figure>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「描述一下 sequence 到 driver 的完整流程」——按六步握手答,并强调 start_item/finish_item 都会阻塞,保证一个事务被 driver 完整处理后才开始下一个。「sequence 为什么要和 driver 解耦?」——激励语义(发什么)与时序细节(怎么发)分离:同一 driver 可跑任意 sequence,同一 sequence 换个 driver 也能用,复用性由此而来。「默认 sequence 和直接 start 怎么选?」——需要精确控制时序/多 sequence 协同用 start;回归批量跑用 default_sequence。「driver 里为什么不 new 事务?」——req 由 sequence 生成并经 port 递入,driver 只消费;响应可用 response port(put_response / get_response)。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①driver 忘了 item_done()——sequencer 永远等不到归还,激励"卡死",表现为仿真 hang;②item_done() 带参数返回响应时与 get_response 次序不配对;③start_item 之后才 create 事务(应先 create);④方式二挂默认 sequence 时没有 objection,激励还没发完仿真就退出了(default_sequence 内部要 raise/drop objection 或配置 phase 的 timeout)。</div>
+  <h3>6.2 TLM 通信:组件之间的"松耦合数据管道"</h3>
+  <p><b>是什么:</b>TLM(Transaction Level Modeling)是 UVM 组件间传事务的标准接口,核心是三件套:<b>port</b>(发起方/生产者持有)、<b>export</b>(中转方)、<b>imp</b>(终点,真正实现 write()/put() 等回调)。验证平台里用得最多的是<b>analysis 族广播</b>:monitor 持有 analysis_port,每次采到一个事务就 <code>ap.write(t)</code>,所有连接上来的订阅者(scoreboard、coverage collector)同时收到——生产者完全不知道也不关心有几个订阅者。</p>
+  <pre><code>// —— 生产者:monitor 声明 analysis_port 并广播 ——
+class my_monitor extends uvm_monitor;
+    uvm_analysis_port #(my_txn) ap;            // 广播口:可连多个订阅者
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+        ap = new("ap", this);
+    endfunction
+    // ... run_phase 里采样后:
+    // my_txn t = my_txn::type_id::create("t");
+    // t.addr = vif.addr; t.wdata = vif.wdata;
+    // ap.write(t);                             // 一次广播,所有订阅者同时收到
+endclass
+
+// —— 消费者:scoreboard 用 analysis_imp 作为终点,自己实现 write() ——
+class my_scoreboard extends uvm_scoreboard;
+    uvm_analysis_imp #(my_txn, my_scoreboard) item_imp;   // imp 回指本组件
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+        item_imp = new("item_imp", this);      // 第二参数告诉 imp:write 由我实现
+    endfunction
+    function void write(my_txn t);             // imp 的回调(必须是 function)
+        `uvm_info("SCB", $sformatf("recv addr=%h data=%h", t.addr, t.wdata), UVM_LOW)
+    endfunction
+endclass
+
+// —— 装配:env 的 connect_phase 里连接(port 连 imp),一个 port 可连多个 imp ——
+function void my_env::connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    agt.mon.ap.connect(scb.item_imp);          // port → imp
+    agt.mon.ap.connect(cov.item_imp);          // 同一 port 再连 coverage,天然广播
+endfunction</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>端口类型</th><th>角色</th><th>可以 connect 到</th><th>典型例子</th></tr>
+    <tr><td>port</td><td>发起方(生产者)</td><td>同层兄弟组件的 export / imp;本组件或父组件的 port(把子接口向上穿透)</td><td>mon.ap、drv.seq_item_port</td></tr>
+    <tr><td>export</td><td>中转/汇合</td><td>imp;子组件或本组件的 export(穿透)</td><td>sqr.seq_item_export、sb.analysis_export</td></tr>
+    <tr><td>imp</td><td>终点(实现回调)</td><td>不可再 connect</td><td>sb 的 write()、cov 的 write()</td></tr>
+  </table></div>
+  <ul>
+    <li><b>方向规则:</b>数据永远从 port 流向 export/imp;connect() 一律写在 <b>connect_phase</b>,由两个端点的<b>共同父级</b>调用。</li>
+    <li><b>广播语义:</b>analysis_port.write() 会对每个已连接订阅者调用 write();同一事务对象被多个订阅者共享,<b>订阅者不要原地改它</b>(要改先 clone)。</li>
+    <li><b>端口族谱:</b>put 族(推,生产者阻塞)、get 族(拉,消费者阻塞)、analysis 族(广播不阻塞);seq_item 握手(6.1)就是 put/get 族的特化封装。</li>
+  </ul>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「analysis_port 和 uvm_analysis_imp 怎么连、write 谁实现?」——port 由生产者持有,imp 由消费者持有并在消费者里实现 write(),在共同父级 connect_phase 里 port.connect(imp)。「port/export/imp 的方向规则?」——按上表:port 发起、export 中转、imp 终点。「monitor 为什么要广播而不是直接调 scoreboard?」——松耦合:monitor 不 import scoreboard,加 coverage/checker 只需多 connect 一条,复用到 chip 级不用改 monitor。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①connect 写在 build_phase 或组件自己的 connect 里对子组件连线(必须在 connect_phase、由共同父级连);②imp 的 write() 写成 task(必须 function,不耗仿真时间);③多个订阅者共享同一事务对象却被其中一个改写,污染其他订阅者;④向上穿透时方向写反:生产侧永远在 connect 左边(如 env 里写 <code>mon.ap.connect(this.ap)</code> 把 monitor 的接口暴露给上层)。</div>
+
+
+  <!-- ================= 7. config_db / RAL / phase ================= -->
+  <h2><span class="h2-num">7</span> 环境装配三件套:config_db、RAL、phase</h2>
+  <h3>7.1 配置机制 config_db:环境与实现解耦的"总线"</h3>
+  <p><b>是什么:</b><code>uvm_config_db #(T)</code> 是一个全局"键值配置数据库":高层组件(test)在 build_phase 里 <code>set</code>(写入),低层组件在 build_phase 里 <code>get</code>(读取)。参数四元组是 <b>(context 上下文, inst_name 实例路径, field 字段名, value 值)</b>——最终寻址键 = context 的全名 + inst_name + field。</p>
+  <p><b>为什么需要它:</b>把"配置什么"(用例视角)和"怎么用配置"(组件实现)分开:同一个 agent 不改一行代码,靠 set 就能切成 active/passive;虚接口(virtual interface)从静态层次"递进"动态类世界的唯一正道就是 config_db;不同 test 复用同一 env,各自注入不同激励/覆盖开关。</p>
+  <pre><code>// —— set:写在 test(或上层组件)的 build_phase ——
+function void my_test::build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    uvm_config_db #(virtual bus_if)::set(this, "env.agt.drv", "vif", u_if);      // 虚接口
+    uvm_config_db #(uvm_active_passive_enum)::set(this, "env.agt", "is_active", UVM_ACTIVE);
+    uvm_config_db #(int)::set(this, "env", "num_masters", 2);
+endfunction
+
+// —— get:写在组件自己的 build_phase(此时上层已 set 完:build 自顶向下) ——
+function void my_driver::build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    if (!uvm_config_db #(virtual bus_if)::get(this, "", "vif", vif))   // inst_name 空串 = 自己
+        `uvm_fatal("NOVIF", "vif 没拿到:set 的路径与组件全名对得上吗?")
+endfunction</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>场景</th><th>set 写法(set 的 context=this,即 test)</th><th>get 写法(组件内)</th></tr>
+    <tr><td>虚接口传入 driver</td><td>set(this, "env.agt.drv", "vif", u_if)</td><td>get(this, "", "vif", vif)</td></tr>
+    <tr><td>agent 切 active/passive</td><td>set(this, "env.agt", "is_active", UVM_PASSIVE)</td><td>get(this, "", "is_active", is_active)</td></tr>
+    <tr><td>env 级参数(通道数等)</td><td>set(this, "env", "num_masters", 2)</td><td>get(this, "", "num_masters", n)</td></tr>
+    <tr><td>通配符批量配置</td><td>set(this, "env.agt*", "en_cov", 1)</td><td>各组件照常 get</td></tr>
+    <tr><td>挂在某个 phase 的默认 sequence</td><td>set(this, "env.agt.sqr.main_phase", "default_sequence", my_seq::type_id::get())</td><td>由框架在 main_phase 自动 get</td></tr>
+  </table></div>
+  <ul>
+    <li><b>路径规则:</b>set 的 inst_name 写<b>相对 context 的组件路径</b>(如 "env.agt.drv");get 时组件就用 <code>get(this, "", field, val)</code>——"" 表示"取发给我自己全名的那个配置"。</li>
+    <li><b>优先级规则:</b>同一 (inst, field) 多次 set 时,<b>优先级高的胜出(默认都是 1000);优先级相同则"后 set 的覆盖先 set 的"</b>。结合 build 自顶向下的顺序:更深层的组件 set 得更晚,可以覆盖 test 的设置,反之不行——这保证了"局部配置可覆盖全局默认"。</li>
+    <li><b>资源型配置:</b>uvm_resource_db 面向"按类型匹配"的资源,uvm_config_db 本质是它的路径匹配封装;日常验证 99% 用 config_db。</li>
+  </ul>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「config_db 的 set/get 参数怎么写?virtual interface 怎么传进 class?」——按四元组答 + driver build_phase get(this,"","vif",vif) 模板。「set 和 get 的路径对不上会怎样?」——get 返回 0(拿不到),必须判空/fatal;排查思路:用 uvm_top 打印全名、检查 set 的 context 与 inst_name 拼出的路径。「多次 set 同一个键谁赢?」——优先级相同后到者赢,所以深层组件可覆盖 test 的默认配置。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①set 写在 env 的 build_phase 却想给"更早 build"的兄弟用——build 自顶向下,子组件 build 时父的 set 已完成,但<b>晚于自己 build 的组件拿不到</b>;②set 的 inst_name 写成绝对全名而 context 又是 this,路径拼接重复;③get 忘了检查返回值,接口为 null 时随机崩溃;④把 config_db 当运行时可改的变量:build 之外的 phase 改动不会自动通知组件(要自己同步)。</div>
+  <h3>7.2 寄存器模型 RAL:寄存器验证的"标准答案"</h3>
+  <p><b>是什么:</b>RAL(Register Abstraction Layer,寄存器抽象层)是 UVM 里对 DUT 寄存器的<b>软件镜像模型</b>:寄存器 → uvm_reg,位域 → uvm_reg_field,一批寄存器 → uvm_reg_block,访问入口/地址映射 → uvm_reg_map。模型建成后,验证代码用 <code>rm.ctrl.write/read/mirror/update</code> 等高层操作访问寄存器,RAL 负责翻译成总线事务(经 adapter 交给 sequencer)。</p>
+  <p><b>为什么寄存器验证要用 RAL:</b>①<b>复用</b>:写一次"使能→读状态"的序列,任何 block/chip 上都能跑;地址、位域、复位值都在模型里,换地址不改测试;②<b>自动化</b>:mirror/predict 内建"期望值账本",读写后自动比对,位冲(bit-bash)、复位值检查等经典序列可直接套用;③<b>前后门统一</b>:同一行代码换个参数就在前门(真实总线)与后门(直插内部)之间切换;④寄存器模型通常由 Excel/IP-XACT 脚本生成,与 spec 天然一致。</p>
+  <pre><code>// —— 建模:一个 32 位控制寄存器 ——
+class my_ctrl_reg extends uvm_reg;
+    rand uvm_reg_field enable;          // bit 0
+    rand uvm_reg_field mode;            // bit [2:1]
+    `uvm_object_utils(my_ctrl_reg)
+    function new(string name = "my_ctrl_reg");
+        super.new(name, 32, UVM_NO_COVERAGE);      // 32 位寄存器
+    endfunction
+    function void build();
+        enable = new("enable");
+        enable.configure(this, 1, 0, "RW", 0, 1'b0, 1, 1, 1); // 父,位宽,低位,属性,易失?,复位值,...
+        mode   = new("mode");
+        mode.configure(this, 2, 1, "RW", 0, 2'b00, 1, 1, 1);
+    endfunction
+endclass
+
+// —— 组块 + 地址映射 + 接上 sequencer 与 adapter ——
+class my_reg_block extends uvm_reg_block;
+    my_ctrl_reg ctrl;
+    function new(string name = "my_reg_block");
+        super.new(name, UVM_NO_COVERAGE);
+    endfunction
+    function void build();
+        ctrl = my_ctrl_reg::type_id::create("ctrl");
+        ctrl.build(); ctrl.configure(this);
+        default_map = create_map("map", 'h0000, 4, UVM_LITTLE_ENDIAN); // 基址,总线宽 4B
+        default_map.add_reg(ctrl, 'h00, "RW");                         // 偏移与读写属性
+        lock_model();                                                  // 锁定模型
+    endfunction
+endclass
+
+// —— 使用:env 里接总线,test 里当"账本"用 ——
+rm.build(); rm.lock_model();
+rm.default_map.set_sequencer(env.agt.sqr, reg2bus_adapter);   // 前门通路:map→sequencer
+rm.default_map.set_auto_predict(1);                            // 自动镜像预测
+rm.ctrl.write(status, 32'h0000_0007);                          // 前门写:走真实总线
+rm.ctrl.read(status, rdata);                                   // 前门读:自动与镜像比对
+rm.ctrl.poke(status, 32'h0000_0001);                           // 后门写:直插内部状态
+rm.ctrl.mirror(status, UVM_CHECK);                             // 读回 DUT 与模型核对</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>访问方式</th><th>路径</th><th>特点</th><th>典型用途</th></tr>
+    <tr><td>前门 frontdoor</td><td>map 翻译地址 → adapter 变总线事务 → sequencer/driver 真实读写</td><td>慢,但真实走协议,顺带验证总线与译码</td><td>绝大多数功能验证</td></tr>
+    <tr><td>后门 backdoor</td><td>peek/poke 按层次路径(或 DPI)直接改 DUT 内部</td><td>零时间完成,绕过总线逻辑</td><td>快速预置状态、大容量表项初始化、与前门结果对照排查</td></tr>
+  </table></div>
+  <ul>
+    <li><b>mirror(镜像):</b>把 DUT 寄存器的实际值同步进模型的镜像值(mirrored);带 UVM_CHECK 时读回并自动比对——"模型是账本,DUT 是仓库"。</li>
+    <li><b>predict(预测):</b>显式 predict() 手动记账;set_auto_predict(1) 则读写后自动记账;正规做法是用 <b>uvm_reg_predictor</b> 订阅 monitor 的总线事务,旁路自动更新镜像——账本永远和真实总线一致,不依赖"读"这个动作。</li>
+    <li><b>update(回写):</b>期望值(desired)改了但没落盘的,update() 批量写回 DUT。</li>
+  </ul>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「前门和后门的区别?什么时候用后门?」——照上表答,补一句"后门写完建议 mirror(UVM_CHECK) 或前门回读确认模型一致"。「为什么用 RAL 而不是直接总线读写?」——复用、自动化比对、前后门统一、模型可从 spec 生成。「predict 有几种?」——auto predict(读写后自动)与显式 predictor(订阅 monitor 旁路预测,最可靠)。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①adapter 的 reg2bus/bus2reg 没写对称,前门读写数据错位;②用了 poke(后门)却期望状态寄存器按硬件行为变化(后门绕过硬件逻辑);③忘 lock_model 就 add_reg/访问;④auto_predict 与 uvm_reg_predictor 叠加,镜像被记两次账。</div>
+  <h3>7.3 phase 机制:整棵树的"施工顺序"</h3>
+  <p><b>是什么:</b>UVM 把仿真生命周期切成一系列 phase(阶段),框架按固定顺序在整棵组件树上调度:先所有组件依次完成 build,再依次 connect……组件只需覆写自己关心的 phase(<code>function void build_phase(uvm_phase phase);</code> / <code>task run_phase(...)</code>)。</p>
+  <div class="table-wrap"><table>
+    <tr><th>phase</th><th>类型</th><th>方向</th><th>干什么</th></tr>
+    <tr><td>build</td><td>function</td><td><b>自顶向下</b></td><td>create 子组件、set/get config_db</td></tr>
+    <tr><td>connect</td><td>function</td><td><b>自底向上</b></td><td>连接 TLM port/export、挂 sequencer 与 adapter</td></tr>
+    <tr><td>end_of_elaboration</td><td>function</td><td>自底向上</td><td>树已完整:检查连接、print_topology 打印拓扑</td></tr>
+    <tr><td>start_of_simulation</td><td>function</td><td>自底向上</td><td>仿真前最后准备(打印配置、加载存储)</td></tr>
+    <tr><td>run / main 等任务 phase</td><td>task</td><td><b>整棵树并行</b></td><td>激励与采样;objection 控制结束时间</td></tr>
+    <tr><td>extract → check → report</td><td>function</td><td>自底向上</td><td>收集结果 → 检查断言/计数 → 打印报告</td></tr>
+    <tr><td>final</td><td>function</td><td>—</td><td>收尾(关文件等)</td></tr>
+  </table></div>
+  <p><b>为什么 build 自顶向下、connect 自底向上?</b>①build 先父后子:子组件是父组件在 build 里 create 出来的(不先有父就没有人 create 子),且父在 build 里 set 的 config_db,恰好能在子 build 里 get 到——顺序保证了"配置先于使用者存在"。②connect 先子后内再外:connect 要引用子组件的端口(此时都已建好),且父级"向外暴露"的穿透连接必须等内部先连好才有意义。③run 类任务 phase 在全树<b>并行</b>执行(driver/monitor/sequence 同时跑),用 raise_objection/drop_objection 告诉框架"还有活没干完",最后一个 objection 放下仿真才结束。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「按顺序说出主要 phase 和方向」——build(顶→底)/ connect(底→顶)/ end_of_elaboration / start_of_simulation / run(main、reset、configure、shutdown 等任务 phase 并行)/ extract / check / report / final。「为什么 build 顶向下、connect 底向上?」——按上面两条"顺序保证"作答。「仿真什么时候结束?」——所有 run 类 phase 的 objection 都放下后;死等不退出八成是哪个组件 raise 了忘了 drop。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①在 build_phase 里访问子组件的句柄/端口(还没 create/connect);②忘记 super.build_phase(phase)(config_db 自动字段等机制失效);③objection 在 fork 的子线程里 drop 而主线程先退出;④把 init 代码写在 run_phase 开头却没 raise objection,时间零推进时被框架误判"无事可做"直接结束。</div>
+
+
+  <!-- ================= 8. 报告机制与最小 UVM 环境 ================= -->
+  <h2><span class="h2-num">8</span> 报告机制与最小 UVM 环境</h2>
+  <h3>8.1 报告机制:uvm_info 与 verbosity(冗余度)</h3>
+  <p><b>是什么:</b>UVM 统一了打印:所有消息经 report server 管控,统一格式(时间 / 组件全名 / 消息 ID / 内容)、统一计数与开关。四条宏对应四级严重度:<code>`uvm_info(ID, msg, verbosity)</code>、<code>`uvm_warning</code>、<code>`uvm_error</code>(计数不停表)、<code>`uvm_fatal</code>(立即终止)。</p>
+  <p><b>verbosity(冗余度)怎么工作:</b>info 消息自带一个"重要度"标签;仿真时全局设一个冗余度阈值(默认 UVM_MEDIUM),<b>消息重要度数值 ≤ 阈值才打印</b>。于是同一份代码:日常回归静默跑,排查问题把阈值调到 HIGH/FULL,海量细节日志就涌出来——<b>不用改代码、不用重编译</b>,命令行 <code>+UVM_VERBOSITY=UVM_HIGH</code> 即可。消息 ID 是过滤钥匙:可对特定组件/ID 单独提高或降低冗余度(如 set_report_id_verbosity),或用 report catcher 拦截改写特定消息。</p>
+  <pre><code>// 用法:ID 大写短名(方便过滤),内容可用 $sformatf 拼变量,最后一个参数是冗余度
+`uvm_info("DRV",  $sformatf("drive addr=%h wdata=%h", t.addr, t.wdata), UVM_MEDIUM)
+`uvm_info("SCB",  "tx/rx matched",                                      UVM_LOW)
+`uvm_warning("DRV", "ready 拉高超过 100 拍")
+`uvm_error("SCB",  $sformatf("数据不匹配 exp=%h act=%h", exp, act))      // 计数,不停止
+`uvm_fatal("ENV",  "vif 为 null,环境无法继续")                          // 立即结束仿真
+
+// 命令行:不改代码调日志量
+//   ./simv +UVM_TESTNAME=my_test +UVM_VERBOSITY=UVM_HIGH</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>冗余度</th><th>含义</th><th>典型用途</th></tr>
+    <tr><td>UVM_NONE</td><td>永远打印(等同关闭 verbosity 过滤)</td><td>致命/关键结果</td></tr>
+    <tr><td>UVM_LOW</td><td>默认阈值下也打印</td><td>每个事务一条的结果级日志</td></tr>
+    <tr><td>UVM_MEDIUM</td><td>默认阈值,打印边界在此</td><td>常规过程信息</td></tr>
+    <tr><td>UVM_HIGH</td><td>调高阈值才打印</td><td>握手、字段级细节</td></tr>
+    <tr><td>UVM_FULL / UVM_DEBUG</td><td>全量/调试</td><td>深挖协议逐拍行为</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「uvm_info 的三个参数?verbosity 机制怎么用?」——ID/内容/冗余度;阈值默认 MEDIUM,消息 ≤ 阈值打印,命令行 +UVM_VERBOSITY 调节。「uvm_error 和 uvm_fatal 区别?」——error 计入错误计数继续跑(回归要收集所有错),fatal 立即停止。「怎么让回归结束自动判成败?」——report server 统计 error/warning 数,UVM_REPORT_SUMMARY 打总结,脚本据此判 pass/fail。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①用 $display 代替 uvm 宏——绕过统一管控,回归日志没法过滤统计;②每个事务用 UVM_LOW 打印超长内容,回归日志爆炸(细节给 MEDIUM/HIGH);③ID 随手乱写,想按 ID 过滤时无从下手;④fatal 里资源(文件/接口)没清理,问题现场丢失——能收集完错误就别用 fatal。</div>
+  <h3>8.2 能跑的最小 UVM testbench:完整骨架(收藏级)</h3>
+  <p><b>怎么做:</b>把前面 11 个知识点装配成一个可运行整体——interface + transaction + sequence + driver + monitor + scoreboard + agent + env + test + top,共 10 块拼图。它验证一个"发事务→驱动接口→采样还原→打印核对"的闭环;<b>换掉接口信号与 drive_pins(),它就是任何协议验证平台的起点</b>(下一页 13 将在这副骨架上补全 APB、覆盖率与 RAL)。建议亲手在 EDA Playground 或仿真器上跑通一次。</p>
+  <pre><code>`include "uvm_macros.svh"
+import uvm_pkg::*;
+
+// ========== 1. 接口:DUT 与 TB 的握手信号 ==========
+interface bus_if (input logic clk, rst_n);
+    logic        valid;
+    logic [31:0] addr;
+    logic [31:0] wdata;
+    logic        ready;
+    clocking drv_cb @(posedge clk);
+        default input #1step output #1ns;
+        output valid, addr, wdata;      // driver 驱动
+        input  ready;                   // driver 采样
+    endclocking
+endinterface
+
+// ========== 2. transaction:数据包(object 家族) ==========
+class my_txn extends uvm_sequence_item;
+    rand bit [31:0] addr;
+    rand bit [31:0] wdata;
+    `uvm_object_utils_begin(my_txn)
+        `uvm_field_int(addr,  UVM_ALL_ON)      // field 宏:免费获得 copy/print/compare
+        `uvm_field_int(wdata, UVM_ALL_ON)
+    `uvm_object_utils_end
+    function new(string name = "my_txn"); super.new(name); endfunction
+endclass
+
+// ========== 3. sequence:激励剧本 ==========
+class my_seq extends uvm_sequence #(my_txn);
+    `uvm_object_utils(my_seq)
+    function new(string name = "my_seq"); super.new(name); endfunction
+    task body();
+        repeat (10) begin
+            req = my_txn::type_id::create("req");
+            start_item(req);
+            assert(req.randomize() with { addr &lt; 32'h1000; });
+            finish_item(req);
+        end
+    endtask
+endclass
+
+// ========== 4. driver:事务 → 引脚波形 ==========
+class my_driver extends uvm_driver #(my_txn);
+    `uvm_component_utils(my_driver)
+    virtual bus_if vif;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        if (!uvm_config_db #(virtual bus_if)::get(this, "", "vif", vif))
+            `uvm_fatal("NOVIF", "bus_if 未通过 config_db 传入")
+    endfunction
+    task run_phase(uvm_phase phase);
+        forever begin
+            seq_item_port.get_next_item(req);   // 领事务
+            drive_one(req);                     // 演成波形
+            seq_item_port.item_done();          // 归还
+        end
+    endtask
+    task drive_one(my_txn t);
+        vif.drv_cb.valid &lt;= 1'b1;
+        vif.drv_cb.addr  &lt;= t.addr;
+        vif.drv_cb.wdata &lt;= t.wdata;
+        do @(vif.drv_cb); while (!vif.drv_cb.ready);   // 等待 DUT 握手
+        vif.drv_cb.valid &lt;= 1'b0;
+    endtask
+endclass
+
+// ========== 5. monitor:被动采样,还原事务并广播 ==========
+class my_monitor extends uvm_monitor;
+    `uvm_component_utils(my_monitor)
+    virtual bus_if vif;
+    uvm_analysis_port #(my_txn) ap;             // TLM 广播口
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+        ap = new("ap", this);
+    endfunction
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        if (!uvm_config_db #(virtual bus_if)::get(this, "", "vif", vif))
+            `uvm_fatal("NOVIF", "bus_if 未通过 config_db 传入")
+    endfunction
+    task run_phase(uvm_phase phase);
+        my_txn t;
+        forever begin
+            @(vif.drv_cb);
+            if (vif.valid === 1'b1) begin
+                t = my_txn::type_id::create("t");
+                t.addr  = vif.addr;
+                t.wdata = vif.wdata;
+                `uvm_info("MON", $sformatf("saw addr=%h data=%h", t.addr, t.wdata), UVM_HIGH)
+                ap.write(t);                     // 广播:scoreboard/coverage 同时收到
+            end
+        end
+    endtask
+endclass
+
+// ========== 6. scoreboard:订阅比对(imp 终点) ==========
+class my_scoreboard extends uvm_scoreboard;
+    `uvm_component_utils(my_scoreboard)
+    uvm_analysis_imp #(my_txn, my_scoreboard) item_imp;
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+        item_imp = new("item_imp", this);
+    endfunction
+    function void write(my_txn t);
+        `uvm_info("SCB", $sformatf("recv addr=%h data=%h", t.addr, t.wdata), UVM_LOW)
+        // 真实环境:这里查关联数组参考模型,不匹配就 `uvm_error
+    endfunction
+endclass
+
+// ========== 7. agent:active/passive 一路接口的打包 ==========
+typedef uvm_sequencer #(my_txn) my_sequencer;    // 参数化 sequencer 起个名
+
+class my_agent extends uvm_agent;
+    `uvm_component_utils(my_agent)
+    my_driver    drv;
+    my_sequencer sqr;
+    my_monitor   mon;
+    uvm_active_passive_enum is_active = UVM_ACTIVE;   // 可被 config_db 覆盖
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        mon = my_monitor::type_id::create("mon", this);
+        if (is_active == UVM_ACTIVE) begin
+            drv = my_driver   ::type_id::create("drv", this);
+            sqr = my_sequencer::type_id::create("sqr", this);
+        end
+    endfunction
+    function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
+        if (is_active == UVM_ACTIVE)
+            drv.seq_item_port.connect(sqr.seq_item_export);   // port → export
+    endfunction
+endclass
+
+// ========== 8. env:容器与装配 ==========
+class my_env extends uvm_env;
+    `uvm_component_utils(my_env)
+    my_agent      agt;
+    my_scoreboard scb;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        agt = my_agent     ::type_id::create("agt", this);
+        scb = my_scoreboard::type_id::create("scb", this);
+    endfunction
+    function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
+        agt.mon.ap.connect(scb.item_imp);        // port → imp(广播)
+    endfunction
+endclass
+
+// ========== 9. test:配置 + 启动激励 ==========
+class my_test extends uvm_test;
+    `uvm_component_utils(my_test)
+    my_env env;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        env = my_env::type_id::create("env", this);
+    endfunction
+    task run_phase(uvm_phase phase);
+        my_seq seq;
+        phase.raise_objection(this);             // 告诉框架:还有活没干完
+        seq = my_seq::type_id::create("seq");
+        seq.start(env.agt.sqr);                  // sequence 挂上 sequencer
+        #200;                                    // 留出尾部排水时间
+        phase.drop_objection(this);              // 放手,允许仿真结束
+    endtask
+endclass
+
+// ========== 10. top:例化接口与 DUT,启动框架 ==========
+module tb_top;
+    logic clk = 0, rst_n = 0;
+    always #5 clk = ~clk;                        // 100MHz
+    bus_if u_if (clk, rst_n);
+    // dut u_dut (.clk(clk), .rst_n(rst_n), .valid(u_if.valid), ...);  // 本例省略 DUT
+    initial begin
+        rst_n = 0; #23 rst_n = 1;                // 复位
+    end
+    initial begin
+        uvm_config_db #(virtual bus_if)::set(null, "*", "vif", u_if);  // 虚接口注入
+        run_test("my_test");                     // 启动 UVM,也可 run_test() + +UVM_TESTNAME
+    end
+endmodule</code></pre>
+  <p><b>运行方式(VCS 示意,Xcelium/Questa 参数名不同):</b></p>
+  <pre><code>vcs -sverilog -ntb_opts uvm-1.2 tb_top.sv -o simv
+./simv +UVM_TESTNAME=my_test +UVM_VERBOSITY=UVM_MEDIUM</code></pre>
+  <ul>
+    <li><b>读骨架的顺序:</b>顺着"数据流"读:txn(是什么数据)→ seq(怎么生成)→ sqr(怎么排队)→ drv(怎么打波形)→ mon(怎么还原)→ scb(怎么核对);再顺着"结构流"读:agent → env → test → top(谁 create 谁、谁 connect 谁)。</li>
+    <li><b>向上加功能:</b>覆盖率 collector = 再写一个 analysis_imp 订阅者,connect 一行;RAL = rm.default_map.set_sequencer(agt.sqr, adapter)(见 7.2);多条序列/虚拟序列 = env 里建 virtual sequencer。</li>
+    <li><b>换协议:</b>只动 bus_if 的信号与 driver 的 drive_one()、monitor 的采样条件,其余组件原样复用——这就是方法学说的"结构可复用"。</li>
+  </ul>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「白板手搭一个最小 UVM 环境」是验证岗面试终极题。评分点:①组件树对(test/env/agent/drv/sqr/mon/scb);②三处关键连接(seq_item_port↔export、ap↔imp、config_db 传 vif);③build 里 create、connect 里连线、run 里 objection;④driver 的 get_next_item/item_done 循环。本节骨架逐行背熟,白板 10 分钟可默写。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①top 里忘记例化接口/忘 config_db set,driver fatal NOVIF;②run_phase 忘 raise objection,激励零拍就退出;③monitor 用 @(posedge vif.valid) 会在 valid 常住时漏采,应跟随时钟块逐拍采样;④typedef sequencer 忘了参数化(uvm_sequencer 不带 #(...) 会与 txn 类型失配)。</div>
+
+
+  <!-- ================= 9. 本节自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 关于 SystemVerilog 的 <b>logic</b> 类型,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. logic 是 2 态类型,只能取 0 和 1</button>
+      <button data-v="B">B. logic 是 4 态类型,单驱动场景下可统一替代 reg/wire,但多驱动总线仍须用 wire</button>
+      <button data-v="C">C. logic 可以被任意多个 always 块和 assign 同时驱动</button>
+      <button data-v="D">D. logic 只能用于验证代码,不能出现在可综合 RTL 中</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 logic 是 4 态(0/1/x/z)类型,既支持过程赋值也支持连续赋值,单驱动时统一用它终结 reg/wire 之争;但它只允许单一驱动源,三态等多驱动总线仍需 wire。logic 是 RTL 可综合子集的一员,A/C/D 均错。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. UVM 组件必须用 <code>Type::type_id::create</code> 而不是 new 创建,最主要的原因是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. new 创建对象更慢,影响仿真速度</button>
+      <button data-v="B">B. new 不能带构造参数</button>
+      <button data-v="C">C. 走工厂创建,运行期才能被 override 类型替换,且自动挂入组件树</button>
+      <button data-v="D">D. new 创建的对象不参与垃圾回收</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 new 在编译期绑死类型;工厂在运行期按注册表查类型,只有走 type_id::create,set_type_override 的类型替换才会生效,同时 create 传入 parent 使组件挂树、纳入 phase 与 config_db 路径体系。速度与 GC 都不是理由。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. driver 从 sequencer 领取事务的正确握手序列是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. get_next_item(req) → 驱动引脚 → item_done()</button>
+      <button data-v="B">B. start_item(req) → finish_item(req)</button>
+      <button data-v="C">C. put(t) → get(t)</button>
+      <button data-v="D">D. write(t) → item_done()</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 start_item/finish_item 是 sequence 侧的交付动作(B);put/get 是 mailbox(TLM put 族)的原始原语(C);write 是 analysis 广播(D)。driver 侧标准循环:get_next_item 领事务(空则阻塞)→ 驱动引脚 → item_done 归还。若 driver 忘记 item_done,sequencer 会永久等待,激励"卡死"。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. UVM 的 build_phase 为什么<b>自顶向下</b>执行?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 为了让叶子组件先创建,缩短仿真时间</button>
+      <button data-v="B">B. 随机顺序,框架内部掷硬币决定</button>
+      <button data-v="C">C. 因为 connect 需要父组件先连接好</button>
+      <button data-v="D">D. 父组件要先于子组件存在(子由父 create),且父在 build 里 set 的 config_db 能被子在 build 里 get 到</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 子组件是父组件在 build_phase 里 create 出来的,必须先有父;同时 build 自顶向下保证了"配置先于使用者存在":test 先 set、子组件后 get。connect_phase 则相反(自底向上),因为它引用的子组件端口此时都已建好,内部连好之后父级的向外穿透连接才有意义。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 下列哪种场景最适合用 <b>randc</b> 而不是 rand?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 随机生成 32 位地址,允许大量重复</button>
+      <button data-v="B">B. 随机生成 3 位 channel 编号,希望 8 个通道先各遍历一轮再重复</button>
+      <button data-v="C">C. 随机生成数据负载内容</button>
+      <button data-v="D">D. 生成 DUT 返回的响应数据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 randc 是"循环随机":取值空间内不重复遍历,一轮取完再开始下一轮,适合 channel/opcode 这类希望"雨露均沾"的小空间枚举值;地址、数据这类大空间值用 rand 即可(randc 空间太大会导致求解爆炸)。D 是 DUT 的响应,不该随机。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①SV(IEEE 1800)= Verilog(1364 已并入)+ 设计增强 + 验证扩展:logic/enum/struct/队列是写平台的地基,类与约束随机是核心武器;②interface 把信号打包,modport 分视角、clocking block 消竞争,类经 virtual interface 访问信号;fork-join 三种汇合 + mailbox/semaphore/event 覆盖线程通信;③UVM(IEEE 1800.2)= SV 类库 + 运行框架,三支柱是可复用、约束随机、覆盖率驱动;④五大机制:工厂注册与 override、组件树(active/passive)、seq–sqr–drv 六步握手、TLM 广播(port→imp)、config_db 路径寻址、phase 自顶向下 build 自底向上 connect;⑤RAL 用"软件账本"管理寄存器,前门真实走总线、后门直插内部;报告机制靠 uvm_info + verbosity 一键调日志量;⑥8.2 节的 10 块拼图最小环境,是所有 UVM 平台的通用骨架,值得默写。</div>
+
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果把 8.2 节最小环境的 driver 改成"永远忘记 item_done()",仿真会出现什么现象?如何用一个 30 秒的实验证明?<br>
+    2. 同一个 monitor 的 analysis_port 同时接了 scoreboard 和 coverage collector,两者收到的 t 是同一个对象——如果 scoreboard 里改写了 t.addr,coverage 会受影响吗?正确的做法是什么?<br>
+    3. 一个 agent 在 chip 级环境中应配 active 还是 passive?如果把 block 级的 driver 也原样搬进 chip 级,会发生什么?<br>
+    4. 你的 RAL 前门读写全部正确,但 mirror(UVM_CHECK) 偶尔报错——结合 7.2 节的 predict 机制,列出三种可能的原因。
+  </div>
+
+
+  <!-- ================= 10. 参考来源与延伸资源 ================= -->
+  <h2><span class="h2-num">10</span> 参考来源与延伸资源</h2>
+  <p>以下资源均经人工核实可访问(2026-09);链接按"官方 → 教程 → 开源代码 → 视频 → 中文社区 → 书籍"排序,建议配合本页第 1~8 节对照使用。</p>
+
+  <a class="my-res-card" href="https://www.verificationacademy.com/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ Verification Academy(Siemens EDA)—— 免费 UVM 课程与 UVM Cookbook</div>
+      <div class="my-res-desc">免费注册即可学习 Introduction to UVM / UVM Basics / Advanced UVM 等引导式课程,附业界标准的《UVM Cookbook》(组件、factory、phasing、sequence、scoreboard、RAL 全覆盖),UVM 学习第一站。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">官方·免费注册</span>
+        <span class="my-tag my-tag-recommend">⭐ 首推</span>
+        <span class="my-tag my-tag-diff-1">入门~高级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://accellera.org/downloads/standards/uvm" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Accellera UVM 官方标准与参考实现下载页</div>
+      <div class="my-res-desc">UVM 的官方大本营:IEEE 1800.2 参考实现(UVM 2020-3.2 等)、UVM 1.2 类参考手册与用户指南均可下载,核实 UVM 版本演进的标准来源。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">官方标准</span>
+        <span class="my-tag my-tag-plain">IEEE 1800.2</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/accellera-official/uvm-core" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">GitHub:accellera-official/uvm-core(UVM 类库源码)</div>
+      <div class="my-res-desc">UVM 官方开源仓库(IEEE 1800.2-2020 对应的 SystemVerilog 类库)。想搞清 factory/f注册宏/sequencer 仲裁到底怎么实现,直接读源码;配套 compat 包可跨版本兼容 API。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-github">GitHub 官方</span>
+        <span class="my-tag my-tag-diff-3">进阶</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.chipverify.com/uvm/uvm-tutorial" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ ChipVerify:UVM Tutorial(英文图文系列)</div>
+      <div class="my-res-desc">从 OVM→UVM 演进讲起,testbench 组件、factory、TLM、sequence、RAL 逐节展开,每篇配示例代码与面试题,结构清晰,适合与本页各节一一对照。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-recommend">⭐ 结构清晰</span>
+        <span class="my-tag my-tag-plain">英文教程</span>
+        <span class="my-tag my-tag-diff-1">入门~中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.verificationguide.com/p/uvm-tutorial.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Verification Guide:UVM Tutorial(英文·按组件索引)</div>
+      <div class="my-res-desc">按 sequence item / sequencer / driver / monitor / agent / scoreboard / config_db / phases / TLM / RAL 逐组件组织的教程,每节都有可直接运行的最小示例,查语法特别快。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">英文教程</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+        <span class="my-tag my-tag-plain">随用随查</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/10x-Engineers/verilator-uvm-apbuart" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">GitHub:verilator-uvm-apbuart(开源 UVM 完整示例)</div>
+      <div class="my-res-desc">APB UART 的完整 UVM 验证环境,亮点是用开源仿真器 Verilator 即可运行——没有商用 EDA license 也能把一个真实 UVM 平台跑通、改通,本页 8.2 骨架的进阶参照。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-github">GitHub 开源</span>
+        <span class="my-tag my-tag-recommend">⭐ 免费可跑</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.edaplayground.com/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🛠️</div>
+    <div class="my-res-info">
+      <div class="my-res-title">EDA Playground(浏览器里跑 SV/UVM)</div>
+      <div class="my-res-desc">在线选择仿真器(Questa/VCS/Icarus/Verilator)、勾选 UVM 库版本即可运行 testbench,把本页 8.2 节骨架贴进去 30 秒见结果,零环境搭建。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">免费在线</span>
+        <span class="my-tag my-tag-diff-1">入门必备</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1yo4y1j735/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站:【IC验证】零基础入门教程系列 | SystemVerilog | UVM入门(陈帅铭-AI验证)</div>
+      <div class="my-res-desc">零基础向视频系列:验证环境概念 → SystemVerilog 语法 → UVM 方法学入门,约 4 万播放,适合先看视频建立画面感再回头读本页文字。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-bili">B站视频</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1DJ411P78w/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站:UVM 经典视频教程(58 集 · UP:硬件光阴)</div>
+      <div class="my-res-desc">从 Verilog testbench → SV 特性(OOP/随机/覆盖率/断言)→ UVM 组件/sequence/TLM/RAL,再到 I2C、SPI 等协议验证项目,58 集系统课,适合按阶段跟学。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-bili">B站视频</span>
+        <span class="my-tag my-tag-recommend">⭐ 系统课</span>
+        <span class="my-tag my-tag-diff-2">入门~中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.zhihu.com/question/478218522" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎:如何在一周内快速入门 UVM 验证平台?(高赞问答)</div>
+      <div class="my-res-desc">高赞回答集中推荐《UVM Primer》《UVM 实战》的入门路径,并给出一周速成的可行边界:先把 SV 的 OOP 与随机搞扎实,再按"最小环境 → 逐机制"推进,与本页结构一致。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎问答</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/404777602" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:SystemVerilog | 鸟瞰 UVM 通用验证方法学</div>
+      <div class="my-res-desc">一篇把 UVM 放回验证体系全局的文章:UVM 是"使用 SV 进行功能验证的方法 + SV 类库",讲清它为什么长成组件树这个样子,适合读完本页第 4 节后延伸阅读。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎专栏</span>
+        <span class="my-tag my-tag-diff-1">入门~中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/zhanghaijun2013/article/details/136346956" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN:UVM 手把手教程系列(一)UVM 基础</div>
+      <div class="my-res-desc">中文手把手系列开篇:sequencer 的组织管理、driver 如何申请数据并向 DUT 施加激励,图文 + 代码,适合配合本页 6.1 节"三角"部分食用。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-csdn">CSDN 教程</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/qq_36955425/article/details/130666399" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN:UVM 基础 — Seq-Sqr-Driver 交互详解</div>
+      <div class="my-res-desc">专讲本页 6.1 节的"三角"机制:uvm_object(sequence,有生命周期)与 uvm_component(sequencer/driver,常驻树上)如何协作,把 start_item/finish_item 的阻塞语义讲透。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-csdn">CSDN 文章</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <div class="my-res-card">
+    <div class="my-res-badge my-badge-book">📖</div>
+    <div class="my-res-info">
+      <div class="my-res-title">书籍:《UVM 实战》(张强 著)</div>
+      <div class="my-res-desc">中文 UVM 入门经典:按 factory、sequence、callback、寄存器模型等机制逐章讲解,并以一个完整的验证平台实例贯穿全书,代码量大、可照抄跑通。(纯文字条目,购书请自行搜索书名)</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">书籍</span>
+        <span class="my-tag my-tag-diff-1">入门~中级</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="my-res-card">
+    <div class="my-res-badge my-badge-book">📖</div>
+    <div class="my-res-info">
+      <div class="my-res-title">书籍:《芯片验证漫游指南——从系统理论到 UVM 的验证全视界》(刘斌/路桑 著)</div>
+      <div class="my-res-desc">业内称作"验证红皮书":从验证思想与系统理论讲到 SV、UVM 方法学与验证项目管理,适合建立"为什么这么验"的顶层认知,与本页"机制怎么用"互补。(纯文字条目,购书请自行搜索书名)</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">书籍</span>
+        <span class="my-tag my-tag-diff-3">高级</span>
+      </div>
+    </div>
+  </div>
+
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>
