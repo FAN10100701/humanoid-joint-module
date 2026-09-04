@@ -91,6 +91,7 @@ window.SITE_SEARCH_INDEX = [
   { t:"关节执行器内部原理 3D 实验室", u:"00_3D解剖/关节执行器内部原理3D实验室.html", s:"3D解剖", d:"程序化 3D 原理动画:无刷电机旋转磁场与负载角/失步、光电码盘明暗脉冲计数、欠驱动手指顺序弯曲自适应抓握——可调速/暂停", k:"3D 原理 旋转磁场 负载角 失步 FOC 光电编码器 码盘 脉冲 欠驱动 手指 自适应抓握 实验室" },
   { t:"保研复试面试题库(17 学科 150 题)", u:"08_学习工具/11_保研复试面试题库.html", s:"学习工具", d:"自控原理/PID/ADRC/运控/现控/信号处理/硬件电路防反接运放/无人机电调/ROS多机编队/C语言/C++/嵌入式/FreeRTOS+综合素质/英语口语/数学基础/科研素养通用面,图文解析+自评进度", k:"保研 复试 面试 题库 自控原理 PID ADRC 自抗扰 运动控制 FOC 现代控制 现控 信号处理 采样定理 FFT 运放 防反接 LDO 硬件电路 无人机电调 DShot ROS 编队 跟随 leader follower C语言 C++ 嵌入式 FreeRTOS 优先级反转 挥发 volatile 中断 综合素质 自我介绍 英语 口语 数学 科研素养 考研" },
   { t:"保研英语面试(口语训练台)", u:"08_学习工具/16_保研英语面试.html", s:"学习工具", d:"英语口语专项:2 版自我介绍/20 题高频问答/8 条救场金句/91 个专业名词中英对照,点词查词+TTS 逐句跟读+背诵模式+生词本与卡片速记", k:"保研 英语 面试 口语 自我介绍 高频问答 救场金句 专业词汇 生词本 卡片 速记 跟读 朗读 TTS 发音 音色 语速 背诵 复试 推免 interview spoken english" },
+  { t:"AI Agent 介绍(写给高校教师)", u:"08_学习工具/17_AI_Agent介绍.html", s:"学习工具", d:"面向高校教师破除 AI 偏见:2023~2024 刻板印象清单、教师八大痛点逐条对账、GPT-6 与 Fable 5.1 进展综述、工程师培养与备课/命题/批改落地工作流、教学体制结构性成因、网页教科书与知识策展人愿景,关键数据标注来源", k:"AI Agent 智能体 高校教师 教学 偏见 刻板印象 痛点 对账 幻觉 考核失效 代写 隐私 GPT-6 Astra Fable 5.1 Claude 基准 FrontierMath OSWorld GDPval 办公自动化 前端 审计 合同 绘图 工程师培养 备课 命题 批改 教育改革 教育体制 网页教科书 知识策展人 结构性成因 未来愿景" },
   { t:"闯关学习(5 大陆 21 关卡)", u:"08_学习工具/12_闯关学习.html", s:"学习工具", d:"游戏化闯关:理论/硬件/控制/软件/复试冲刺五大陆,星级评价、经验值、7 枚徽章、BOSS 综合关与全真模拟关", k:"闯关 关卡 挑战 星级 徽章 经验 BOSS 游戏 复试冲刺 模拟 综合测验 地图 学习路线 巩固" },
   { t:"AI 答疑助手(DeepSeek / 豆包)", u:"08_学习工具/13_AI答疑助手.html", s:"学习工具", d:"接入 DeepSeek/豆包大模型:复试考官模拟面试、课程助教讲解、代码答疑;API Key 仅本机浏览器保存,流式输出+公式渲染", k:"AI 答疑 助手 聊天 问答 deepseek 豆包 doubao 大模型 API key 人工智能 智能问答 考官 模拟面试 密钥" },
   { t:"个人作品台 · 时间切片蝶群(three.js 实时演示)", u:"08_学习工具/14_个人作品台.html", s:"学习工具", d:"全屏 three.js 程序化建模作品:260 只蝴蝶绕场飞行,一键冻结时间全群凝固成灰白切片,相机继续漫游;拖动旋转/滚轮缩放", k:"作品台 作品集 vibecoding three.js 时间切片 蝶群 蝴蝶 粒子 程序化建模 instanced 实时渲染 创意编程 视觉 demo" },
@@ -100,4 +101,25 @@ window.SITE_SEARCH_INDEX = [
   { t:"强化学习与后训练", u:"09_大模型与具身智能/03_强化学习与后训练.html", s:"大模型与具身智能", d:"后训练四级火箭:SFT→RLHF/DPO→推理RL→Agent RL;PPO vs GRPO 三差异、PRM vs ORM、reward hacking", k:"RLHF DPO PPO GRPO PRM ORM 过程奖励 reward hacking agent RL 后训练 大模型 具身智能 LLM" },
   { t:"基座选型与开源生态", u:"09_大模型与具身智能/04_基座选型与开源生态.html", s:"大模型与具身智能", d:"2025-2026 开源底座版图:许可口径(MIT/Apache/开放权重)、选型决策树、具身 VLM 底座谱系", k:"基座 选型 开源 生态 MIT Apache Llama Qwen Kimi GLM 许可 开放权重 VLA 底座 大模型 具身智能 LLM" },
   { t:"代码实战:部署微调与 Agent", u:"09_大模型与具身智能/05_代码实战_部署微调与Agent.html", s:"大模型与具身智能", d:"Ollama 部署/transformers 生成/LoRA 微调/GRPO 训练循环/function calling 最小 Agent/显存估算表", k:"Ollama transformers LoRA peft QLoRA GRPO function calling agent 显存 量化 实战 大模型 具身智能 LLM" },
+  /* ---- 10 · NPU与数字IC设计 ---- */
+  { t:"NPU与数字IC设计 · 板块总览与学习路线", u:"10_NPU与数字IC设计/01_板块总览与学习路线.html", s:"NPU与数字IC设计", d:"四阶段课程总览:数字设计基础→AI通识→NPU RTL项目→验证UVM,13页目录树与资源导航、通关标准", k:"NPU 数字IC 芯片设计 学习路线 四阶段 Verilog UVM 入门 总览" },
+  { t:"数字设计环境与工具链", u:"10_NPU与数字IC设计/02_数字设计环境与工具链.html", s:"NPU与数字IC设计", d:"Linux/Vim/SVN·Git/Makefile/EDA环境/VCS编译仿真/Verdi波形调试全流程与开源替代对比", k:"Linux Vim SVN Git Makefile VCS Verdi EDA 仿真 波形 iverilog Verilator GTKWave 工具链" },
+  { t:"Verilog语法与状态机设计", u:"10_NPU与数字IC设计/03_Verilog语法与状态机设计.html", s:"NPU与数字IC设计", d:"数据类型/阻塞非阻塞/任务函数/模块例化generate/三段式状态机模板/1011序列检测实战/常见坑", k:"Verilog 状态机 三段式 阻塞 非阻塞 FSM 序列检测 可综合 generate task function" },
+  { t:"FIFO设计与跨时钟域CDC", u:"10_NPU与数字IC设计/04_FIFO设计与跨时钟域CDC.html", s:"NPU与数字IC设计", d:"同步/异步FIFO、深度计算、亚稳态与MTBF、格雷码、两级同步器、握手协议与CDC检查清单", k:"FIFO 异步FIFO 格雷码 亚稳态 CDC 跨时钟域 深度计算 同步器 握手 MTBF" },
+  { t:"APB总线协议与接口设计", u:"10_NPU与数字IC设计/05_APB总线协议与接口设计.html", s:"NPU与数字IC设计", d:"APB信号清单/SETUP-ACCESS三状态/读写逐拍波形/PREADY等待/PSLVERR/从机寄存器与主控FSM实战", k:"APB AMBA 总线 PREADY PSLVERR SETUP ACCESS 时序 从机 主控 FSM 寄存器 桥" },
+  { t:"深度学习基础与LeNet实战", u:"10_NPU与数字IC设计/06_深度学习基础与LeNet实战.html", s:"NPU与数字IC设计", d:"AI通识:卷积/池化/全连接原理、LeNet逐层拆解、前向反向传播、PyTorch训练实战与NPU算子统计", k:"深度学习 LeNet CNN 卷积 池化 反向传播 MNIST PyTorch 交叉熵 Adam 激活函数 损失" },
+  { t:"NPU体系结构与脉动阵列", u:"10_NPU与数字IC设计/07_NPU体系结构与脉动阵列.html", s:"NPU与数字IC设计", d:"CPU/GPU/NPU差异、GEMM本质、脉动阵列三种数据流、存储层级与Roofline、LeNet硬件映射、NVDLA/Gemmini", k:"NPU 脉动阵列 systolic TPU 存储层级 Roofline 指令集 NVDLA Gemmini 稀疏化 数据流 im2col" },
+  { t:"模型量化与端侧部署", u:"10_NPU与数字IC设计/08_模型量化与端侧部署.html", s:"NPU与数字IC设计", d:"INT8量化原理、PTQ/QAT双流水线、2:4稀疏化、推理引擎图优化与端侧部署实战", k:"量化 INT8 PTQ QAT 校准 推理引擎 ncnn MNN ONNX 端侧 稀疏化 剪枝 tensor arena CMSIS-NN" },
+  { t:"芯片设计流程与AHB/AXI总线", u:"10_NPU与数字IC设计/09_芯片设计流程与AHB_AXI总线.html", s:"NPU与数字IC设计", d:"数字芯片14站全流程、CDC进阶方案决策、AHB流水线与AXI五通道握手、三总线对比选型", k:"芯片设计流程 CDC AHB AXI 五通道 VALID READY outstanding 总线选型 综合 STA ASIC FPGA" },
+  { t:"NPU项目实战(上):Spec与控制模块", u:"10_NPU与数字IC设计/10_NPU项目实战上_Spec与控制模块.html", s:"NPU与数字IC设计", d:"LeNet-5 INT8加速器:需求拆解、Spec四分法、寄存器映射、顶层架构与三段式控制FSM", k:"NPU 项目 Spec 寄存器映射 控制FSM 顶层架构 数据通路 位宽 乒乓双缓冲 中断 黄金模型" },
+  { t:"NPU项目实战(下):运算模块与联调", u:"10_NPU与数字IC设计/11_NPU项目实战下_运算模块与联调.html", s:"NPU与数字IC设计", d:"行缓冲卷积引擎/MAC阵列/requant/ReLU/池化/全连接/权重存储与黄金数据联调,仿真跑通MNIST识别", k:"卷积加速器 行缓冲 line buffer MAC requant ReLU 池化 全连接 联调 黄金数据 MNIST 有符号乘" },
+  { t:"SystemVerilog与UVM架构", u:"10_NPU与数字IC设计/12_SystemVerilog与UVM架构.html", s:"NPU与数字IC设计", d:"SV类型/OOP/约束随机/interface/线程通信 + UVM工厂/组件树/sequence三角/TLM/RAL/phase最小环境", k:"SystemVerilog UVM 验证 类 继承 随机约束 factory sequencer driver monitor scoreboard RAL phase config_db" },
+  { t:"NPU验证项目:环境与覆盖率", u:"10_NPU与数字IC设计/13_NPU验证项目_环境搭建与覆盖率.html", s:"NPU与数字IC设计", d:"验证点拆解/UVM环境搭建/refmodel与scoreboard/定向+随机用例/功能与代码覆盖率收敛签核", k:"验证 UVM 覆盖率 covergroup 回归 scoreboard refmodel 定向 随机 签核 调试 验证计划" },
+
+  /* ---- 06 · 软件算法(控制理论深化5页) ---- */
+  { t:"现代控制理论:状态空间到MPC", u:"06_软件与算法/16_现代控制理论_状态空间到MPC.html", s:"软件算法与升级进阶", d:"状态空间建模/能控能观/极点配置/LQR/卡尔曼/分离原理/MPC入门,关节电机单轴模型贯穿", k:"现代控制 状态空间 能控 能观 极点配置 Ackermann LQR Riccati 卡尔曼 MPC 分离原理 离散化" },
+  { t:"状态观测器全解:龙伯格/EKF/SMO", u:"06_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html", s:"软件算法与升级进阶", d:"龙伯格/KF/EKF/SMO+PLL/MRAS/HFI全解、无感速段切换策略、C实现与失效排查", k:"观测器 龙伯格 卡尔曼 EKF SMO 滑模 MRAS HFI 高频注入 无感 FOC PLL 凸极 切换" },
+  { t:"ADRC自抗扰控制与嵌入式实现", u:"06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html", s:"软件算法与升级进阶", d:"TD/ESO/LADRC带宽法完整推导、b0整定、STM32 C实现、抗扰对比与失效排查、宇树等业界应用", k:"ADRC 自抗扰 TD 跟踪微分器 ESO 扩张状态观测器 LADRC 带宽法 b0 韩京清 STM32 NLSEF" },
+  { t:"FOC算法完全图解:流程与运行图", u:"06_软件与算法/19_FOC算法完全图解_流程与运行图.html", s:"软件算法与升级进阶", d:"ISR级FOC总流程图/硬件结构图/启动校准运行保护状态机/中断时序/电流采样三方案/死区补偿/弱磁", k:"FOC 流程图 ISR Clark Park SVPWM 电流环 死区 编码器 校准 弱磁 MTPA 状态机 中断时序 采样" },
+  { t:"工程电机控制框架对比与选型", u:"06_软件与算法/20_工程电机控制框架对比_流程与选型.html", s:"软件算法与升级进阶", d:"SimpleFOC/ODrive/VESC/ST MCSDK/InstaSPIN/MIT MiniCheetah代码流程对比、13维大表与选型决策树", k:"SimpleFOC ODrive VESC MCSDK InstaSPIN Mini Cheetah 电机控制框架 流程对比 选型 中断结构 电流环" },
 ];

@@ -296,6 +296,22 @@ $phPages = if($phM.Success){ [int]$phM.Groups[1].Value } else { -2 }
 $c5ok = ($ogPages -eq $phPages) -and ($phPages -eq ($secIds.Count + 1))
 Check "C5 og pages count sync" $c5ok ("og=" + $ogPages + " placeholder=" + $phPages + " sections+1=" + ($secIds.Count + 1))
 
+# ---- 14) C6: 3D engine local lib path guard (V2.1.17, AUDIT A-35) ----
+# dynamic import() resolves relative to the MODULE url (js/app.module.js), so LOC must be '../lib/'
+# ('./lib/' would request js/lib/ -> 404, silently masked by the CDN fallback chain)
+$d3dir3 = '00_3D' + [string]::Join('', [char]0x89E3, [char]0x5256)
+$c6file = Join-Path $root (Join-Path $d3dir3 ("js" + [char]92 + "app.module.js"))
+$c6ok = $false; $c6detail = "file missing"
+if(Test-Path $c6file){
+  $c6content = [IO.File]::ReadAllText($c6file, [Text.Encoding]::UTF8)
+  $c6m = [regex]::Match($c6content, "var LOC='([^']+)'")
+  if($c6m.Success){
+    $c6ok = ($c6m.Groups[1].Value -eq '../lib/')
+    $c6detail = "LOC='" + $c6m.Groups[1].Value + "' (expect ../lib)"
+  } else { $c6detail = "LOC declaration not found" }
+}
+Check "C6 3D engine lib path" $c6ok $c6detail
+
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }
 Write-Host ("CHECKS FAILED: " + $fail)

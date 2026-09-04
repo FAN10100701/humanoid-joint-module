@@ -1,0 +1,5 @@
+﻿_assets/quiz-bank.js	题数q:60	解析数:60	解析均长:87	分组:60	lv分布:
+_assets/quest-data.js	题数q:74	解析数:0	解析均长:0	分组:0	lv分布:
+_assets/ib-data-a.js	题数q:54	解析数:0	解析均长:0	分组:0	lv分布:3星=9,4星=25,5星=20
+_assets/ib-data-b.js	题数q:63	解析数:0	解析均长:0	分组:0	lv分布:3星=12,4星=29,5星=22
+_assets/ib-data-c.js	题数q:33	解析数:0	解析均长:0	分组:0	lv分布:3星=8,4星=15,5星=10

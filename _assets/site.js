@@ -12,22 +12,25 @@
   var STORE = "humanoid-site-progress-v1";
 
   /* 全站导航(相对站点根目录) */
+  /* V2.1.15:板块条目改为首页对应板块锚点(此前「学习工具」等直达某子页,
+     用户预期是回到首页对应板块;锚点在二级目录页拼接为 ../index.html#secN) */
   S.NAV = [
     { t:"首页",     u:"index.html" },
-    { t:"3D解剖",   u:"00_3D解剖/人形机器人解剖式知识可视化.html" },
-    { t:"理论入门", u:"01_理论入门/01_整体知识框架_思维导图.html" },
-    { t:"硬件基础", u:"02_硬件基础/04_硬件设计通用要点_避坑指南.html" },
-    { t:"项目实操", u:"03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html" },
-    { t:"软件算法", u:"06_软件与算法/01_软件学习路线图.html" },
-    { t:"前沿知识", u:"07_前沿知识库/01_全球人形机器人机型全景.html" },
-    { t:"学习工具", u:"08_学习工具/01_术语词典.html" },
-    { t:"大模型", u:"09_大模型与具身智能/01_大模型基础与MoE架构图解.html" }
+    { t:"3D解剖",   u:"index.html#sec0" },
+    { t:"理论入门", u:"index.html#sec1" },
+    { t:"硬件基础", u:"index.html#sec2" },
+    { t:"项目实操", u:"index.html#sec3" },
+    { t:"软件算法", u:"index.html#sec6" },
+    { t:"前沿知识", u:"index.html#sec7" },
+    { t:"学习工具", u:"index.html#sec8" },
+    { t:"大模型",   u:"index.html#sec9" },
+    { t:"NPU·IC",   u:"index.html#sec10" }
   ];
 
   /* 全站统计单源(V2.1.7):pages = site-sections.js 全部 pageId + 首页;
      ibSubjects/ibItems 必须与 ib-data-a/b/c 实际计数一致(一键自检.ps1 C3 校验)。
      改题库或增删页面时同步这里;新文案引用这里,别再写死数字 */
-  S.STATS = { pages: 76, ibSubjects: 17, ibItems: 150, quizItems: 60 };
+  S.STATS = { pages: 95, ibSubjects: 17, ibItems: 162, quizItems: 60 };
 
   function page(){ return window.PAGE || {}; }
 
@@ -299,8 +302,10 @@
         if(!grp){ return; }
         var collapsedNow = grp.classList.contains('collapsed');
         if(caret || collapsedNow){
-          /* 点箭头:纯切换;点已收起的组标题:先展开再跳转 */
-          grp.classList.toggle('collapsed', caret ? collapsedNow : false);
+          /* 点箭头:纯切换(收起⇄展开;V2.1.15b 修复——原写法 toggle(collapsedNow)
+             在已收起时传 true、已展开时传 false,箭头永远不改变状态);
+             点已收起的组标题:先展开再跳转 */
+          grp.classList.toggle('collapsed', caret ? !collapsedNow : false);
           var st2 = loadState() || {};
           for(var g2 = 0; g2 < groups.length; g2++){ st2[groups[g2].getAttribute('data-grp')] = groups[g2].classList.contains('collapsed') ? 0 : 1; }
           saveState(st2);
@@ -368,6 +373,20 @@
     link.rel = "manifest";
     link.href = (root ? root + "/" : "") + "manifest.json";
     document.head.appendChild(link);
+  }
+
+  /* ---------- 全站图标链接:内容页 head 未写 favicon,按站点根统一注入 ----------
+     顺序 ico→svg:支持 SVG 的现代浏览器取 svg(矢量清晰),老浏览器落回 ico;
+     页面已静态声明图标(如首页)则跳过 */
+  function initFavicon(){
+    if(document.querySelector('link[rel~="icon"]')) return;
+    var base = (page().root ? page().root + "/" : "");
+    var ico = document.createElement("link");
+    ico.rel = "icon"; ico.sizes = "48x48"; ico.href = base + "favicon.ico";
+    document.head.appendChild(ico);
+    var svg = document.createElement("link");
+    svg.rel = "icon"; svg.type = "image/svg+xml"; svg.href = base + "favicon.svg";
+    document.head.appendChild(svg);
   }
 
   /* ---------- 术语悬浮提示(选中术语即出解释,数据来自 _assets/glossary-tip.js) ---------- */
@@ -856,7 +875,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.14(2026-09-03)";
+  S.VERSION = "V2.1.16(2026-09-05)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -915,7 +934,7 @@
     if(seen) return;
     /* V2.1.12:页数从 SITE_SECTIONS 单源计算(与首页统计/C5 同口径);
        原先读异步的 search-index,未就绪时长期落到 fallback 35 */
-    var nPages = 76;
+    var nPages = 95;
     try{
       if(window.SITE_SECTIONS){
         var tk2 = 0;
@@ -1112,7 +1131,7 @@
   /* V2.1.14:初始化链逐项 try-catch 隔离——此前串行裸调用,任一上游抛错
      (第三方脚本污染/未来改动引入)会连带丢失 SW 注册/自动保存/自检挂件等全部下游 */
   var INIT_CHAIN = [
-    applyTheme, injectChrome, buildToc, initBackTop, S.initQuiz,
+    initFavicon, applyTheme, injectChrome, buildToc, initBackTop, S.initQuiz,
     injectLearningGoals, injectPageStamp, initPrintBtn, initGlass, initAiFab,
     initOnboarding, initSW, initAutoSave, initTermTip, initComments,
     initKaTeX, injectJsonLd, initScrollProgress, initReveal, initMagnet

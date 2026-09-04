@@ -678,6 +678,8 @@ function boot(THREE){
         var minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9,minZ=1e9,maxZ=-1e9;
         pts.forEach(function(p){
           var g = p.mesh.geometry;
+          /* V2.1.17: 程序化几何(Box/Cylinder)构造后 boundingBox 为 null,不补算会让探针输出 1e9 空边界、诊断失真(AUDIT A-39) */
+          if(g && !g.boundingBox) g.computeBoundingBox();
           if(g && g.boundingBox){ var bb=g.boundingBox; minX=Math.min(minX,bb.min.x+p.mesh.position.x); maxX=Math.max(maxX,bb.max.x+p.mesh.position.x); minY=Math.min(minY,bb.min.y+p.mesh.position.y); maxY=Math.max(maxY,bb.max.y+p.mesh.position.y); minZ=Math.min(minZ,bb.min.z+p.mesh.position.z); maxZ=Math.max(maxZ,bb.max.z+p.mesh.position.z); }
         });
         dlog('『' + prods[pi] + '』' + pts.length + ' 件 包围盒 x[' + minX.toFixed(2) + ',' + maxX.toFixed(2) + '] y[' + minY.toFixed(2) + ',' + maxY.toFixed(2) + '] z[' + minZ.toFixed(2) + ',' + maxZ.toFixed(2) + ']', (maxX-minX)>0.1 && (maxY-minY)>0.1 && (maxX-minX)<50);
@@ -707,13 +709,22 @@ function boot(THREE){
         v.tx += (g.tx - v.tx) * ease;
         v.ty += (g.ty - v.ty) * ease;
         v.tz += (g.tz - v.tz) * ease;
-        if(Math.abs(g.yaw-v.yaw) < 0.01 && Math.abs(g.dist-v.dist) < 0.02 && Math.abs(g.ty-v.ty) < 0.02){ LAB.camGoal = null; }
+        /* V2.1.17: 到达判定追加「爆炸度已收敛」——否则取景跟随期间 v 追上 g 的瞬间 camGoal 被提前置 null,
+           爆炸后半程 dist 停在半路(实测卡 14.74/10.42,终值应为 18),复位时同理回不到装配取景 */
+        if(Math.abs(g.yaw-v.yaw) < 0.01 && Math.abs(g.dist-v.dist) < 0.02 && Math.abs(g.ty-v.ty) < 0.02 && Math.abs(LAB.explode-LAB.explodeTarget) < 0.002){ LAB.camGoal = null; }
       }
       camPos();
       if(LAB.spin){ LAB.groups.forEach(function(g,i){ if(g.visible) g.rotation.y = LAB.animT * 0.35; }); }
       var k = Math.min(1, dt*4);
       LAB.explode += (LAB.explodeTarget - LAB.explode)*k;
       if(Math.abs(LAB.explode - LAB.explodeTarget) < 0.002){ LAB.explode = LAB.explodeTarget; }
+      /* V2.1.17: 一键拆解/装回动画期间,取景距离跟随【当前】爆炸度(而非目标值)——
+         camGoal 的 ease(6/s) 比 explode 阻尼(4/s)快一倍,原实现相机先到位、零件还在半路,
+         复位瞬间顶盖出画观感突兀(AUDIT A-41);滑杆手动拖动(无 camGoal)不受影响 */
+      if(LAB.prodFocus && LAB.camGoal && Math.abs(LAB.explode - LAB.explodeTarget) >= 0.002){
+        var ff = LAB.prodFocus;
+        LAB.camGoal.dist = Math.max(2.5, Math.min(18, ff.r * 2.6 * (1 + 1.15 * LAB.explode) + 0.5));
+      }
       updateParts();
       renderer.render(scene, cam);
       /* 渲染探针:第 3 帧后检查画布是否真的画了东西(中心像素),结果写入诊断 */

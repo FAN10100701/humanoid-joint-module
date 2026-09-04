@@ -8,7 +8,7 @@
   "theme_color": "#0d1117",
   "lang": "zh-CN",
   "icons": [
-    { "src": "00_3D解剖/_网站资源/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "00_3D解剖/_网站资源/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "_assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "_assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }

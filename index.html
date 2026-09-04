@@ -7,11 +7,14 @@
 <title>人形机器人学习站 · 从关节模组到具身智能</title>
 <meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具,软件+硬件全覆盖。">
 <meta property="og:title" content="人形机器人学习站 · 从关节模组到具身智能">
-<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,76 个学习页面,零基础可学。">
+<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,95 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <meta name="baidu-site-verification" content="codeva-83ZAbuLmz6">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="_assets/favicon-180.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -219,7 +222,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
     <span class="sub-meta">零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</span></div>
     <div class="stats">
-      <div class="stat"><div class="v" id="statPages">76</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v" id="statPages">95</div><div class="k">学习页面</div></div>
       <div class="stat"><div class="v" id="statTracked">75</div><div class="k">可打卡页面</div></div>
       <div class="stat"><div class="v">9</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
@@ -333,6 +336,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     <a href="08_学习工具/11_保研复试面试题库.html">🎓 复试题库</a>
     <a href="08_学习工具/16_保研英语面试.html">🗣️ 英语面试</a>
     <a href="08_学习工具/13_AI答疑助手.html">🤖 AI答疑</a>
+    <a href="08_学习工具/17_AI_Agent介绍.html">🧭 Agent 介绍</a>
     <a href="#progress-sec">✓ 我的进度</a>
   </nav>
 
@@ -633,6 +637,36 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
         <div class="t">浏览器内强化学习实验室 · Q-Learning 倒立摆</div>
         <div class="d">一键训练看奖励曲线爬升、策略热图成形,与 PD 控制同台对比,可"推一把"测抗扰。</div>
       </a>
+      <a class="card" href="06_软件与算法/16_现代控制理论_状态空间到MPC.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🎛️</div>
+        <div class="t">现代控制理论:状态空间到 MPC</div>
+        <div class="d">状态空间建模/能控能观/极点配置/LQR/卡尔曼/分离原理/MPC 入门,关节电机单轴模型贯穿,附思维导图。</div>
+      </a>
+      <a class="card" href="06_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html">
+        <span class="go">进入 →</span>
+        <div class="ic">👁️</div>
+        <div class="t">状态观测器全解:龙伯格 / EKF / SMO</div>
+        <div class="d">龙伯格/卡尔曼/EKF/SMO+PLL/MRAS/HFI 全家桶,无感速段切换策略,含 C 实现与失效排查。</div>
+      </a>
+      <a class="card" href="06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🛡️</div>
+        <div class="t">ADRC 自抗扰控制与嵌入式实现</div>
+        <div class="d">TD/ESO/LADRC 带宽法完整推导,b0 整定口诀,STM32 C 代码,抗扰对比与失效排查,宇树等业界应用。</div>
+      </a>
+      <a class="card" href="06_软件与算法/19_FOC算法完全图解_流程与运行图.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🗺️</div>
+        <div class="t">FOC 算法完全图解:流程与运行图</div>
+        <div class="d">ISR 级总流程大图、硬件结构图、启动-校准-运行-保护状态机、中断时序、思维导图,9 张图看懂 FOC。</div>
+      </a>
+      <a class="card" href="06_软件与算法/20_工程电机控制框架对比_流程与选型.html">
+        <span class="go">进入 →</span>
+        <div class="ic">⚖️</div>
+        <div class="t">工程电机控制框架对比与选型</div>
+        <div class="d">SimpleFOC/ODrive/VESC/ST MCSDK/InstaSPIN/MIT MiniCheetah 六大框架代码流程对比、13 维大表与选型决策树。</div>
+      </a>
     </div>
   </div>
 
@@ -786,6 +820,12 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
         <div class="t">全站体检(浏览器内审计)</div>
         <div class="d">一键 fetch 审计:全站链接/索引一致性/题库同步/版本单源/页面结构,✓✗ 明细。</div>
       </a>
+      <a class="card" href="08_学习工具/17_AI_Agent介绍.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🧭</div>
+        <div class="t">AI Agent 介绍 · 写给高校教师(全新)</div>
+        <div class="d">用数据破除偏见:近期 AI 突破盘点、工程师能力边界、高校体制滞后的结构性成因,与「网页教科书+知识策展人」的教学新愿景。</div>
+      </a>
     </div>
   </div>
 
@@ -834,7 +874,86 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   <!-- ================= 10 · NPU与数字IC设计(V2.1.15 新板块,卡片随页面登记逐步填充) ================= -->
   <div class="sec" id="sec10">
     <div class="sec-title"><span class="num">10</span>第十部分 · NPU 与数字 IC 设计 <span class="en">NPU · RTL · UVM · V2.1.15 新板块</span><span class="bar"></span></div>
-    <div class="grid" id="sec10-grid"></div>
+    <div class="grid" id="sec10-grid">
+      <a class="card featured" href="10_NPU与数字IC设计/01_板块总览与学习路线.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🧭</div>
+        <div class="t">NPU 与数字 IC 设计 · 板块总览与学习路线</div>
+        <div class="d">四阶段课程体系:数字设计基础 → AI 通识 → NPU RTL 项目 → 验证 UVM;13 页目录树、分阶段资源导航与通关标准。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/02_数字设计环境与工具链.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🛠️</div>
+        <div class="t">数字设计环境与工具链</div>
+        <div class="d">Linux/Vim/SVN·Git/Makefile/EDA 环境配置/VCS 编译仿真/Verdi 波形调试闭环,开源替代对照。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/03_Verilog语法与状态机设计.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🧾</div>
+        <div class="t">Verilog 语法与状态机设计</div>
+        <div class="d">阻塞 vs 非阻塞、任务函数、generate 阵列例化,三段式状态机模板与 1011 序列检测实战。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/04_FIFO设计与跨时钟域CDC.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🚦</div>
+        <div class="t">FIFO 设计与跨时钟域 CDC</div>
+        <div class="d">同步/异步 FIFO、深度计算、亚稳态与 MTBF、格雷码、握手协议与 CDC 检查清单。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/05_APB总线协议与接口设计.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🔌</div>
+        <div class="t">APB 总线协议与接口设计</div>
+        <div class="d">APB 十信号、SETUP/ACCESS 三状态、读写逐拍波形图,从机寄存器与主控 FSM 双实战。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/06_深度学习基础与LeNet实战.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🧠</div>
+        <div class="t">深度学习基础与 LeNet 实战</div>
+        <div class="d">卷积/池化/全连接原理、LeNet 逐层拆解、前向反向传播、PyTorch 训练实战与 NPU 算子统计视角。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/07_NPU体系结构与脉动阵列.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🏛️</div>
+        <div class="t">NPU 体系结构与脉动阵列</div>
+        <div class="d">CPU/GPU/NPU 差异、脉动阵列三种数据流、存储层级与 Roofline、LeNet 硬件映射,NVDLA/Gemmini 双参照。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/08_模型量化与端侧部署.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🗜️</div>
+        <div class="t">模型量化与端侧部署</div>
+        <div class="d">INT8 量化数学、PTQ/QAT 双流水线、2:4 稀疏化、推理引擎与端侧部署全链路。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/09_芯片设计流程与AHB_AXI总线.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🛰️</div>
+        <div class="t">芯片设计流程与 AHB/AXI 总线</div>
+        <div class="d">数字芯片 14 站全流程、CDC 进阶方案、AHB 流水线与 AXI 五通道握手、总线选型。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/10_NPU项目实战上_Spec与控制模块.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🧱</div>
+        <div class="t">NPU 项目实战(上):Spec 与控制模块</div>
+        <div class="d">LeNet-5 INT8 加速器:需求拆解、Spec 四分法、寄存器映射、顶层架构与三段式控制 FSM。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/11_NPU项目实战下_运算模块与联调.html">
+        <span class="go">进入 →</span>
+        <div class="ic">⚙️</div>
+        <div class="t">NPU 项目实战(下):运算模块与联调</div>
+        <div class="d">行缓冲卷积引擎/MAC 阵列/requant/全连接/权重存储,黄金数据联调仿真跑通 MNIST 手写识别。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/12_SystemVerilog与UVM架构.html">
+        <span class="go">进入 →</span>
+        <div class="ic">🧪</div>
+        <div class="t">SystemVerilog 与 UVM 架构</div>
+        <div class="d">SV 面向对象/约束随机/interface,UVM 工厂/组件树/sequence 三角/TLM/RAL/phase 与最小环境。</div>
+      </a>
+      <a class="card" href="10_NPU与数字IC设计/13_NPU验证项目_环境搭建与覆盖率.html">
+        <span class="go">进入 →</span>
+        <div class="ic">✅</div>
+        <div class="t">NPU 验证项目:环境与覆盖率</div>
+        <div class="d">验证点拆解、UVM 环境与 scoreboard、定向+随机用例、功能/代码覆盖率收敛与签核。</div>
+      </a>
+    </div>
   </div>
 
   <!-- ================= 学习进度 ================= -->
@@ -875,10 +994,17 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.14</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-03 · 「丝般顺滑」滚动性能修版 + 顶栏板块统一</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.16</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-05 · 新增「NPU 与数字 IC 设计」板块(13 页)与控制理论 5 专题页,题库扩至 162 题</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
-      <details class="faq" open>
+            <details class="faq" open>
+        <summary>🧭 V2.1.16 · 2026-09-05 · 新板块「NPU 与数字 IC 设计」+ 控制理论 5 专题 + 目录树 + 题库 162 题</summary>
+        <div class="faq-a">🏛 <b>新板块 10「NPU 与数字 IC 设计」一次上线 13 页</b>(对应 NPU 数字设计四阶段课程):板块总览与学习路线(四阶段卡+全板块目录树)→ 第一阶段数字设计基础(环境与工具链 / Verilog 语法与状态机 / FIFO 与跨时钟域 CDC / APB 总线)→ 第二阶段 AI 通识(深度学习与 LeNet 实战 / NPU 体系结构与脉动阵列 / 模型量化与端侧部署)→ 第三阶段 NPU RTL 项目(设计流程与 AHB/AXI / 项目实战上·Spec 与控制模块 / 下·运算模块与联调,贯穿 LeNet-5 INT8 加速器,仿真跑通 MNIST 识别)→ 第四阶段验证(SystemVerilog 与 UVM 架构 / NPU 验证项目·环境与覆盖率);🎛 <b>06 板块新增 5 个控制理论工程专题页</b>:现代控制理论(状态空间到 MPC)、状态观测器全解(龙伯格/EKF/SMO/MRAS/HFI+无感切换)、ADRC 自抗扰与嵌入式实现、FOC 算法完全图解(ISR 级流程图/状态机/中断时序/思维导图 9 图)、工程电机控制框架对比(SimpleFOC/ODrive/VESC/MCSDK/InstaSPIN/MiniCheetah 六框架流程图与选型决策树);🎓 <b>保研题库扩至 17 学科 162 题</b>:新增 12 道工程实践题(电流采样/死区/弱磁 MTPA/编码器校准/电流环带宽、LADRC 整定/离散实现、离散化/LQR 权重/EKF 调参/MPC 滚动),学科关联链接指向新专题页;📑 <b>全站目录升级两级可折叠树</b>(h2 章节/h3 知识点,滚动高亮自动展开、折叠状态记忆、一键展开收起,无 h3 页面零回归);🗂 <b>登记五件套</b>:site-sections(key 10)/search-index/page-meta/sitemap/学习地图(新增「10」分组),页数口径 76→95;所有新页配已核实外链资源卡(知乎/CSDN/B站/GitHub/官方文档)与手绘 SVG 图解。</div>
+      </details>
+<details class="faq" open>
+        <summary>V2.1.15 · 2026-09-05 · 新增「AI Agent 介绍 · 写给高校教师」专页</summary>
+        <div class="faq-a">🧭 <b>新页面 08-17 AI Agent 介绍</b>(第八部分·学习工具):面向高校教师破除对 AI 的偏见与刻板印象。四大支柱:①<b>进展综述</b>——GPT-6 Astra 与 Claude Fable 5.1 发布数据(ARC-AGI-3 99.9%、FrontierMath Tier 4 约 98%、OSWorld 2.0 72.6%/单任务约 40 分钟、AutomationBench 18.1%→41.4%、Terminal-Bench-Science 翻倍至 52.6%、GDPval 44 职业盲测近半数持平人类专家、GPT Image 2 领先 241 分、商汤 U1 Pro 原生 8K),含「另一面的清醒」防万能论;②<b>工程师培养</b>——知识体系五层 × AI 全栈能力矩阵,替代/辅助/杠杆三边界;③<b>制度剖析</b>——四个可观察滞后事实 + 结构性成因表,明确非个人过错;④<b>未来愿景</b>——传统出版 vs 网页教科书对比、新知识上线五步流程演示、教师新角色「知识策展人」。quiz×8 认知校准自测;关键数据句尾标注来源,参考来源 10 条(含官方发布页)。含「前两年刻板印象清单」「教师八大痛点逐条对账」「备课·命题·批改三工作流」。登记:首页卡片/搜索索引/page-meta/sitemap/学习地图 + 翻页链重接(16→17→12);页数口径 76→77。另:顶栏板块条目改跳首页对应板块(S.NAV 全站单源,新增 NPU·IC),目录树箭头热区 18→26px。</div>
+      </details><details class="faq">
         <summary>V2.1.14 · 2026-09-03 · 「丝般顺滑」滚动性能修版 + 顶栏板块统一 + 全站健壮性加固</summary>
         <div class="faq-a">⚡ <b>首页滚动卡顿根治(实测驱动)</b>:浅色主题下约 136 个卡片/折叠项同时挂 backdrop-filter 毛玻璃,滚动时每帧全部重新模糊——同机对照实测:浅色稳态 p95 24.8ms vs 深色(卡片无滤镜)12.3ms,滚入版本板块单帧冻结 363ms vs 深色 16.6ms;现浅色卡片族移除 backdrop-filter 改近实底(背景不透明度 .62→.87 保留通透感,顶栏/下拉面板/快速导航胶囊等小面积毛玻璃不动),顶栏模糊 22px→14px。🎚 <b>content-visibility 估值校准</b>:旧 640px 一刀切 vs 版本板块实际 3500px,首滚进板块页面总高突增约 2900px 致滚动条跳动+单帧长任务,现按实测校准(#version 3500px)。🌌 <b>hero 光晕离屏暂停</b>(与极光统一挂 .hero 的 IO);🖱 星尘 pointermove 布局读缓存;↩️ 回顶按钮 rAF 节流 + passive;🎠 学习路径横滑步宽/圆点缓存(消除滑行期读写交错的强制布局);🃏 入场动画 0.5s→0.4s、错峰 70→40ms。📏 <b>顶栏统一</b>:导航链接与按钮族同高 30px(此前链接被 line-height:1.7 撑到约 36px,顶栏左右不齐);「板块 ▾」下拉/移动端抽屉/内容页下拉三处清单归一——补 学习路径/3D解剖/版本历史,「软件算法·进阶」「软件与算法」「前沿知识库」「大模型与具身」命名统一,内容页下拉重复两次的「大模型」删除。🛡 <b>健壮性</b>:浅色主题规则全站改挂 html[data-theme-early](head 内联脚本渲染前写入,深色用户首帧零浅色规则命中,顺带根治孤立 body:not([data-theme]) 误套 body 自身的首帧全屏模糊);site.js 初始化链逐项 try-catch 隔离(单项异常不再连坐吞掉后续功能);打印样式补齐(AI 球/横滑箭头圆点/循环克隆卡不再印出);根目录新增 favicon.ico(全站消 404);导出进度 URL 用后即 revoke;若干可空链守卫与死引用清理。</div>
       </details><details class="faq"><summary>V2.1.13 · 2026-09-02 · 「万物归墟 · SINGULARITY」黑洞·白洞实验品上线</summary>
@@ -1064,7 +1190,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.14(2026-09-03) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.16(2026-09-05) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

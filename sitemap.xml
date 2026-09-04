@@ -77,4 +77,23 @@
   <url><loc>https://cyco.top/09_大模型与具身智能/04_基座选型与开源生态.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/09_大模型与具身智能/05_代码实战_部署微调与Agent.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/16_保研英语面试.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/08_学习工具/17_AI_Agent介绍.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/01_板块总览与学习路线.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/02_数字设计环境与工具链.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/03_Verilog语法与状态机设计.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/04_FIFO设计与跨时钟域CDC.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/05_APB总线协议与接口设计.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/06_深度学习基础与LeNet实战.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/07_NPU体系结构与脉动阵列.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/08_模型量化与端侧部署.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/09_芯片设计流程与AHB_AXI总线.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/10_NPU项目实战上_Spec与控制模块.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/11_NPU项目实战下_运算模块与联调.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/12_SystemVerilog与UVM架构.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/10_NPU与数字IC设计/13_NPU验证项目_环境搭建与覆盖率.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/16_现代控制理论_状态空间到MPC.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/19_FOC算法完全图解_流程与运行图.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/20_工程电机控制框架对比_流程与选型.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>

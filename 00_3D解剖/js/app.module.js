@@ -129,7 +129,7 @@ function loadDeps(cb){
   var mark=null;try{mark=sessionStorage.getItem('__three_cdn__');}catch(e){}
   var isFile=location.protocol==='file:';
   var cdnMode=isFile||mark==='1'||mark==='3'||mark==='4';
-  var LOC='./lib/';
+  var LOC='../lib/';   /* V2.1.17: 动态 import 的相对路径基于本模块(js/)而非页面,须用 ../lib/ 才能命中 00_3D解剖/lib/ ——原 ./lib/ 解析成 js/lib/ 恒 404,一直被 CDN 回退掩盖(AUDIT A-35) */
   var LOCS=['three.module.js','addons/controls/OrbitControls.js','addons/loaders/STLLoader.js','addons/environments/RoomEnvironment.js','addons/loaders/DRACOLoader.js'];
   var BARE=['three','three/addons/controls/OrbitControls.js','three/addons/loaders/STLLoader.js','three/addons/environments/RoomEnvironment.js','three/addons/loaders/DRACOLoader.js'];
   probe('开始加载 three 依赖 · 协议='+location.protocol+' · 模式='+(cdnMode?('CDN('+(mark||'file')+')'):'本地'));
@@ -328,8 +328,14 @@ function createPartLabel(text, position){
 function resetView(){
   if(!camera||!controls)return;
   if(tdActive){
+    /* V2.1.17: 复位同时退出自动爆炸/自动演示/顺序拆解状态机——否则主循环下一帧
+       就把爆炸度推回目标值,"复位视角"形同虚设(AUDIT A-42,实测复位后滑杆仍 100) */
+    tdAutoOn=false;tdExplodeTarget=null;tdSeqOn=false;tdSeqT=0;
+    var bbEx=document.getElementById('bbExplode');if(bbEx)bbEx.classList.remove('on');
+    var bbSq=document.getElementById('bbSeq');if(bbSq)bbSq.classList.remove('on');
+    var bbDm=document.getElementById('bbDemo');if(bbDm)bbDm.classList.remove('on');
     /* 拆解场景重置：重置爆炸度、旋转 */
-    tdExplodeT=0;tdExplodeDir=1;tdSpinOn=false;
+    tdExplodeT=0;tdAutoDir=1;tdSpinOn=false;   /* V2.1.17: 原 tdExplodeDir 从未声明(正确名为 tdAutoDir,L2067),严格模式赋值抛 ReferenceError——拆解场景复位在爆炸度重置前中断,"复位视角"自 V2.0.7 起从未生效(AUDIT A-42 根因) */
     var exauto=document.getElementById('exauto');if(exauto)exauto.classList.remove('on');
     var exspin=document.getElementById('exspin');if(exspin)exspin.classList.remove('on');
     var exrng=document.getElementById('exrng');if(exrng){exrng.value=0;}
@@ -1988,6 +1994,7 @@ function applyJointAngle(map,jointName,angleRad){
    对比模式下连另一机型一起复位，避免退出对比时残留动画角度 */
 function resetAllJoints(){
   animDemo=false;
+  animTime=0;   /* V2.1.17: 复位步态相位源——否则复位后再开动画,腿从半空相位起步,与「复位=回到初始状态」预期不符(AUDIT A-36) */
   var btn=document.getElementById('btnAnim2');
   if(btn)btn.classList.remove('active');
   resetJointMap(urdfJoints);                        /* 当前查询机型 */

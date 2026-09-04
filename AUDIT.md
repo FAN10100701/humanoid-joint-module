@@ -19,6 +19,7 @@
 | A-02 | 已修(V2.1.7) | 依赖 | 原 `_assets/ai-assistant.js:275-285`、`11_保研复试面试题库.html:592-601`、`12_闯关学习.html:588-595`、`site.js:314-331` | KaTeX 加载器**四处各自实现且漂移**:AI 面板与闯关页只剩 npmmirror 单源无回退;四处 CSS 全部单源 | 复制粘贴无单源;**防回归:自检 C2(KaTeX CDN 只许出现在 site.js,且 JS/CSS 各≥4 源)**。现统一走 `site.js` 的 `window.KatexLoader.ensure()`(JS+CSS 四级回退,全挂保持 LaTeX 原文) |
 | A-03 | 已修(V2.1.7) | 健壮性 | `11_保研复试面试题库.html:273` | 三个题库数据文件全部加载失败时 `SUB[0].id` 抛 TypeError,页面永远停留"加载中"无提示 | 无空数据兜底;已加错误空态 + 重试入口。selftest 覆盖有限,靠人工断网场景 |
 | A-04 | 已修(V2.1.7) | 移动端 | `site.js injectChrome()`、`site.css:264` | `<900px` 隐藏 `.nav-links`(含「板块 ▾」)但内容页不生成汉堡按钮 → **全部内容页移动端无板块导航** | 汉堡样式先于实现存在(site.css 一直有 .nav-ham);已补汉堡 + 复用 `.drawer` 抽屉 |
+| A-35 | 已修(V2.1.17) | 3D/路径 | `00_3D解剖/js/app.module.js:132` | **3D 主页引擎本地加载路径错误**:模块内 `import('./lib/three.module.js')` 相对 js/ 目录解析成 `js/lib/`(404),CDN 回退状态机掩盖了它(访客实为每次走 CDN),离线/PWA/CDN 全挂时 3D 主页死;"本地库优先"失效 | ES module 动态 import 相对路径基于模块 URL 而非页面 URL(V2.0.7 起);修:改 `'../lib/'` 一行;**防回归:自检 C6(app.module.js LOC 必须为 '../lib/')**;实测本地模式 THREE_LOADED=true/CDNMODE=false;详见 docs/维护/排查报告-2026-09-05.md |
 
 ## P1(体验/一致性,1~3 轮内消化)
 
@@ -38,6 +39,8 @@
 | A-16 | 已修(V2.1.7) | 规范 | `12_闯关学习.html:220-229` | `logActivity()` 整函数复制,`humanoid-site-activity-v1` 字面量两处 | 已收敛:`site.js` 暴露 `S.logActivity`,闯关页删副本 |
 | A-33 | 已修(V2.1.7) | 工具脚本 | `_本地工具/发版.ps1` | `$enc.ReadFile/WriteFile` 不是 UTF8Encoding 的方法,**发版脚本从未跑通过**(版本一直手工同步) | 已改 `[IO.File]::ReadAllText/WriteAllText`,V2.1.7 发版实测走通;教训:新脚本必须实跑一次再入库 |
 | A-34 | 已修(V2.1.8) | 缓存 | `sw.js` SWR 后台更新 | SWR 的后台 revalidate `fetch(e.request)` 走 HTTP 缓存(max-age 3600),**不在 PRECACHE 清单的 `_assets` 文件(site-selftest.js / ai-fab-chat.js / glass.css 等)部署后 1 小时内访客拿不到新版**,且自检/C2 类检查无法发现 | 后台更新改 `fetch(req, { cache:"reload" })` 强制回源(资源与页面两分支);教训:SW 策略改动必须用双次刷新实测缓存链路 |
+| A-36 | 已修(V2.1.17) | 3D/一致性 | `app.module.js:1989`(resetAllJoints)、`:224`(animTime) | 整机复位不清步态相位源 animTime:复位后再开步态,腿部从半空相位起步,与「复位=回到初始状态」预期不符 | animTime 仅在 L1865 累加、全文件无清零路径;修:resetAllJoints 内补 animTime=0;实测复位后再开步态从直立起步;防回归:逐页测试清单 3D 项补「复位后开步态从直立起步」 |
+| A-42 | 已修(V2.1.17) | 3D/致命 | `app.module.js:338`(resetView 拆解分支) | **拆解场景「复位视角」自 V2.0.7 起从未生效**:①`tdExplodeDir` 从未声明(正确名为 L2067 `tdAutoDir`),ES module 严格模式赋值抛 ReferenceError,resetView 在重置爆炸度前中断,后面 exrng/applyTdExplode/fitCamera 从未执行;②且未清 tdAutoOn/tdExplodeTarget/tdSeqOn 状态机,主循环会把爆炸度推回 | 修:变量名对齐 tdAutoDir + resetView 拆解分支开头清状态机与三按钮 on 态;实测爆炸 100→复位→exrng=0/按钮态清/回装配态;**教训:模块内新变量必须集中声明,静态语法检查查不出未声明赋值**;发现于 A-35 修复的浏览器实测中 |
 
 ## P2(有价值,排队消化)
 
@@ -54,6 +57,9 @@
 | A-25 | 开放 | 自检 | 体检页/自检挂件 | 生产环境对访客常驻运行自检挂件(性能/噪音),无环境开关 | 可加 `?selftest=0` 或 hostname 判断;挂件是站点特色,改动需用户拍板 |
 | A-26 | 开放 | 自检 | 体检页 `15_全站体检.html`、自检挂件 | 检查逻辑硬编码在页面内联脚本,与 ps1 三处各一套口径 | 长期:抽公共检查清单配置(纯静态站的"配置即检查") |
 | A-27 | 开放 | 数据 | `11_保研复试面试题库.html:474-538` | 页内选择题 `QUIZ/QUIZ_ADV` 内联,与 ib-data 并存于同一功能 | 迁入独立数据文件,题库页彻底"零题目" |
+| A-39 | 已修(V2.1.17) | 3D/诊断 | `电机编码器与灵巧手3D拆解.html:678-681` | 装配探针对程序化几何(编码器 6 件)显示 1e9 空包围盒——探针只在 `g.boundingBox` 存在时累计,Box/CylinderGeometry 从未 computeBoundingBox | 诊断显示失真,非渲染缺陷;修:探针累计前补 computeBoundingBox;实测编码器包围盒输出真实几何边界 |
+| A-40 | 开放 | 自检 | `_本地工具/校验RL实验室.js` | Q-learning 训练未固定随机种子,断言④(±0.2 起摆)统计非确定,实测 4 跑 1 FAIL(0/5)后连跑 3 次全过——CI 语境偶发误报会造成"狼来了" | 加可种子 LCG 固定随机;断言放宽 4/5 保留鲁棒性含义 |
+| A-41 | 已修(V2.1.17) | 3D/体验 | `电机编码器与灵巧手3D拆解.html:1061-1065`(toggleExplode)、`:710`(camGoal 到达判定) | 一键拆解/复位时相机 dist 按目标爆炸度一次取景,与 explode 阻尼插值不同步——复位瞬间零件还在装回、相机已拉近,顶盖出画观感突兀 | 修:主循环取景跟随(camGoal 存在且爆炸度未收敛时每帧按 LAB.explode 重算 camGoal.dist)+到达判定追加爆炸度收敛条件(否则 camGoal 半路提前置 null,dist 卡中途——首版修复实测卡 10.42/14.74 即此因);实测正向 dist→18.00/复位→10.08 双向到位 |
 
 ## P3(记录在案)
 
