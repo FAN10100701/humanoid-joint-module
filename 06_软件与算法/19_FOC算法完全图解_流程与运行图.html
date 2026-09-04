@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 06-19 FOC 算法完全图解:流程与运行图
+  内容: ISR 级总流程大图 / 硬件结构图 / 思维导图 / 采样窗口 / 坐标变换 /
+        三环设计 / SVPWM / 死区 / 编码器校准 / 运行状态机 / 中断时序 /
+        保护机制 / 高级话题 / 完整 ISR 参考代码 / 自测与资源
+  定位: 「一张图看懂 FOC」核心页,图是主角;深度互补不重复——
+        每节给「总图」并链接到对应深入页
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · FOC 算法完全图解:流程与运行图</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名一律 my- 前缀,避免与 site.css 冲突) ===== */
+  /* 图形容器 */
+  .my-fig{background:rgba(15,23,42,.45);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:14px 12px 8px;margin:16px 0;overflow-x:auto}
+  .my-fig svg{max-width:100%;height:auto;display:block;margin:0 auto}
+  .my-fig-cap{font-size:12.5px;color:#94a3b8;text-align:center;padding:8px 6px 6px;line-height:1.7}
+  html:not([data-theme-early="dark"]) .my-fig{background:rgba(255,255,255,.65);border-color:rgba(60,80,120,.14)}
+
+  /* 思维导图(参照 01-01 写法,页面级重写) */
+  .my-mindmap{background:rgba(22,27,34,.7);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:22px 18px;overflow-x:auto;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  html:not([data-theme-early="dark"]) .my-mindmap{background:rgba(255,255,255,.6);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  .my-root{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:13px 30px;border-radius:12px;font-size:18px;font-weight:700;text-align:center;margin:0 auto 20px;display:block;width:fit-content;box-shadow:0 6px 20px rgba(37,99,235,.35)}
+  .my-branches{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:14px}
+  .my-branch{background:rgba(13,17,23,.5);border-radius:12px;border:1px solid rgba(255,255,255,.08);overflow:hidden;transition:transform .22s,box-shadow .22s,border-color .22s}
+  html:not([data-theme-early="dark"]) .my-branch{background:rgba(255,255,255,.55)}
+  .my-branch:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.4)}
+  .my-branch-header{padding:11px 14px;font-size:14.5px;font-weight:700;color:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+  html:not([data-theme-early="dark"]) .my-branch-header{color:#1a2332}
+  .my-toggle{font-size:14px;transition:transform .3s;opacity:.85}
+  .my-branch.my-collapsed .my-toggle{transform:rotate(-90deg)}
+  .my-branch-body{padding:10px 14px 12px}
+  .my-branch.my-collapsed .my-branch-body{display:none}
+  .my-leaf-list{padding-left:6px}
+  .my-leaf{font-size:12.8px;color:#9aa4b2;padding:3.5px 0 3.5px 15px;line-height:1.6;position:relative}
+  html:not([data-theme-early="dark"]) .my-leaf{color:#5a6a85}
+  .my-leaf::before{content:"●";position:absolute;left:0;font-size:8px;color:#475569;top:8px}
+  .my-leaf.my-key::before{color:#f59e0b}
+  .my-leaf.my-important{font-weight:600;color:#e6edf3}
+  html:not([data-theme-early="dark"]) .my-leaf.my-important{color:#1a2332}
+  /* 分支配色(蓝橙红绿+补充色) */
+  .my-b1 .my-branch-header{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+  .my-b2 .my-branch-header{background:linear-gradient(135deg,#d97706,#b45309)}
+  .my-b3 .my-branch-header{background:linear-gradient(135deg,#dc2626,#b91c1c)}
+  .my-b4 .my-branch-header{background:linear-gradient(135deg,#059669,#047857)}
+  .my-b5 .my-branch-header{background:linear-gradient(135deg,#7c3aed,#6d28d9)}
+  .my-b6 .my-branch-header{background:linear-gradient(135deg,#0891b2,#0e7490)}
+  .my-b7 .my-branch-header{background:linear-gradient(135deg,#db2777,#be185d)}
+  .my-b8 .my-branch-header{background:linear-gradient(135deg,#4f46e5,#4338ca)}
+  .my-b1{border-color:rgba(88,166,255,.4)} .my-b2{border-color:rgba(245,158,11,.4)}
+  .my-b3{border-color:rgba(239,68,68,.4)} .my-b4{border-color:rgba(34,197,94,.4)}
+  .my-b5{border-color:rgba(124,58,237,.4)} .my-b6{border-color:rgba(6,182,212,.4)}
+  .my-b7{border-color:rgba(236,72,153,.4)} .my-b8{border-color:rgba(99,102,241,.4)}
+  html:not([data-theme-early="dark"]) .my-b1 .my-branch-header{background:linear-gradient(135deg,#bfdbfe,#93c5fd)}
+  html:not([data-theme-early="dark"]) .my-b2 .my-branch-header{background:linear-gradient(135deg,#fde68a,#fcd34d)}
+  html:not([data-theme-early="dark"]) .my-b3 .my-branch-header{background:linear-gradient(135deg,#fecaca,#fca5a5)}
+  html:not([data-theme-early="dark"]) .my-b4 .my-branch-header{background:linear-gradient(135deg,#a7f3d0,#6ee7b7)}
+  html:not([data-theme-early="dark"]) .my-b5 .my-branch-header{background:linear-gradient(135deg,#ddd6fe,#c4b5fd)}
+  html:not([data-theme-early="dark"]) .my-b6 .my-branch-header{background:linear-gradient(135deg,#a5f3fc,#67e8f9)}
+  html:not([data-theme-early="dark"]) .my-b7 .my-branch-header{background:linear-gradient(135deg,#fbcfe8,#f9a8d4)}
+  html:not([data-theme-early="dark"]) .my-b8 .my-branch-header{background:linear-gradient(135deg,#c7d2fe,#a5b4fc)}
+
+  /* 资源卡片(复制自 02-05 结构) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-doc{background:#e2e8f0;color:#475569}
+  .my-tag-zhihu{background:#bae6fd;color:#075985}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-19",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec6" },
+      { t: "FOC算法完全图解:流程与运行图" }
+    ],
+    prev: { t: "ADRC自抗扰控制与嵌入式实现", u: "18_ADRC自抗扰控制与嵌入式实现.html" },
+    next: { t: "工程电机控制框架对比与选型", u: "20_工程电机控制框架对比_流程与选型.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container wide">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🗺️ FOC 算法完全图解:流程与运行图</h1>
+    <div class="sub">把 FOC 一次画全:ISR 级完整流程大图、启动-运行-保护状态机、PWM 中断时序、硬件信号链、SVPWM 扇区、知识思维导图——每张图都配逐框讲解与代码,看完这一页,FOC 在你脑中应该"有图"。</div>
+    <div class="tags">
+      <span class="tag">FOC 全景</span>
+      <span class="tag">ISR 流程图</span>
+      <span class="tag">状态机</span>
+      <span class="tag">SVPWM</span>
+      <span class="tag">思维导图</span>
+      <span class="tag">时序图</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能沿着总流程图,从「ADC 注入组采样完成中断」一口气讲到「写比较寄存器」,说清①~⑧每一步做了什么、对应哪行代码<br>
+    2. 能解释电流采样为什么必须落在 PWM 中心,以及单电阻采样的窗口约束<br>
+    3. 能默写 Clark / Park / 反 Park 公式(恒幅值系数 2/3),并说出电流环 Kp、Ki 与带宽 ωc 的换算关系<br>
+    4. 能画出上电→校准→运行→保护的状态机,说出每个状态的转换条件与故障恢复策略<br>
+    5. 能按执行时间预算表判断一个 ISR 会不会超时,并说清软硬件两级保护如何配合<br>
+    <b>建议用时:</b>约 55 分钟(先通读图,再逐节精读,配合自测)
+  </div>
+
+  <!-- ================= 1 一张图看懂 FOC ================= -->
+  <h2><span class="h2-num">1</span> 一张图看懂 FOC:硬件信号链 + ISR 总流程</h2>
+  <p>FOC(Field Oriented Control,磁场定向控制)在数学上只有一句话:<strong>把三相电流搬到与转子同步旋转的 d/q 坐标系里,当成两个直流量用 PI 稳稳拉住</strong>。但落到嵌入式上,它是一个<strong>以 PWM 周期为节拍、由 ADC 中断驱动的实时循环</strong>。本节先看两张大图:第一张是<strong>硬件信号链</strong>(电流从哪来、PWM 到哪去),第二张是<strong>ISR 级总流程</strong>(每个中断周期 CPU 依次做的 8 件事)。理论动画版的直观演示见 <a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">本站 01-02 · 核心原理动画演示</a>;代码级逐步实现见 <a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">本站 06-02 · 固件与电机控制</a>。</p>
+
+  <h3>1.1 两张大图:硬件信号链 + ISR 总流程(全页主角)</h3>
+  <p><strong>第一张是硬件信号链</strong>——FOC 的「物理舞台」:<strong>下行链路</strong>是 MCU 算出的占空比经栅极驱动变成三相桥的开关动作;<strong>上行链路</strong>是相电流经采样电阻与运放调理回到 ADC,编码器角度回到 MCU——一去一回,闭环才成立。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 300" role="img" aria-label="FOC 硬件信号链结构图:采样电阻与运放调理、ADC、MCU、栅极驱动、三相逆变桥、PMSM 与编码器闭环" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="hwArrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        <marker id="hwArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- 母线 -->
+      <text x="14" y="24" fill="#ef4444" font-size="12" font-weight="bold">母线 Udc(12~48V)</text>
+      <line x1="14" y1="92" x2="576" y2="92" stroke="#ef4444" stroke-width="3"/>
+      <line x1="14" y1="242" x2="576" y2="242" stroke="#64748b" stroke-width="3"/>
+      <text x="14" y="258" fill="#94a3b8" font-size="11">DC− / GND</text>
+      <!-- 采样电阻+运放 -->
+      <rect x="14" y="122" width="96" height="60" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="62" y="147" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">采样电阻</text>
+      <text x="62" y="164" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">+ 运放调理</text>
+      <!-- ADC -->
+      <rect x="136" y="122" width="76" height="60" rx="9" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="174" y="147" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">ADC</text>
+      <text x="174" y="164" text-anchor="middle" fill="#58a6ff" font-size="11">注入组·同步</text>
+      <!-- MCU -->
+      <rect x="238" y="76" width="132" height="152" rx="11" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff" stroke-width="2"/>
+      <text x="304" y="97" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="bold">MCU</text>
+      <text x="304" y="113" text-anchor="middle" fill="#7cb8ff" font-size="10">Cortex-M4F @170MHz</text>
+      <g font-size="10.5" fill="#9aa4b8">
+        <text x="250" y="131">① 电流采样换算</text>
+        <text x="250" y="147">② Clark ③ Park</text>
+        <text x="250" y="163">④ PI 电流环(×2)</text>
+        <text x="250" y="179">⑤ 限幅圆 ⑥ 反Park</text>
+        <text x="250" y="195">⑦ SVPWM</text>
+        <text x="250" y="211">⑧ 写 CCRx + 保护</text>
+      </g>
+      <!-- 栅极驱动 -->
+      <rect x="394" y="122" width="82" height="60" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="435" y="147" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">栅极驱动</text>
+      <text x="435" y="164" text-anchor="middle" fill="#f59e0b" font-size="10.5">死区/自举/保护</text>
+      <!-- 逆变桥:六管 -->
+      <g stroke="#ef4444" stroke-width="1.4" fill="#ef4444" fill-opacity=".08">
+        <rect x="502" y="98" width="20" height="22" rx="3"/>
+        <rect x="542" y="98" width="20" height="22" rx="3"/>
+        <rect x="582" y="98" width="20" height="22" rx="3"/>
+      </g>
+      <g stroke="#64748b" stroke-width="1.4" fill="#64748b" fill-opacity=".08">
+        <rect x="502" y="212" width="20" height="22" rx="3"/>
+        <rect x="542" y="212" width="20" height="22" rx="3"/>
+        <rect x="582" y="212" width="20" height="22" rx="3"/>
+      </g>
+      <g stroke="#94a3b8" stroke-width="1.3">
+        <line x1="512" y1="92" x2="512" y2="98"/><line x1="552" y1="92" x2="552" y2="98"/><line x1="592" y1="92" x2="592" y2="98"/>
+        <line x1="512" y1="120" x2="512" y2="212"/><line x1="552" y1="120" x2="552" y2="212"/><line x1="592" y1="120" x2="592" y2="212"/>
+        <line x1="512" y1="234" x2="512" y2="242"/><line x1="552" y1="234" x2="552" y2="242"/><line x1="592" y1="234" x2="592" y2="242"/>
+      </g>
+      <text x="497" y="86" fill="#94a3b8" font-size="10.5">三相逆变桥(6×MOSFET)</text>
+      <!-- 相线到电机 -->
+      <g stroke="#f59e0b" stroke-width="2" fill="none">
+        <path d="M512 166 C 520 166 518 176 528 176 L 546 176"/>
+        <path d="M552 166 L 546 176" />
+        <path d="M592 166 C 600 166 598 186 590 186 L 546 186"/>
+      </g>
+      <text x="520" y="172" fill="#f59e0b" font-size="10">U</text>
+      <text x="520" y="200" fill="#f59e0b" font-size="10">V</text>
+      <text x="596" y="182" fill="#f59e0b" font-size="10">W</text>
+      <g stroke="#f59e0b" stroke-width="2" fill="none">
+        <path d="M512 166 L 512 166"/>
+      </g>
+      <!-- 电机本体 -->
+      <circle cx="508" cy="181" r="0" fill="none"/>
+      <circle cx="470" cy="181" r="0" fill="none"/>
+      <circle cx="440" cy="181" r="26" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="2"/>
+      <text x="440" y="178" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">PMSM</text>
+      <text x="440" y="192" text-anchor="middle" fill="#22c55e" font-size="10">三相永磁同步</text>
+      <line x1="466" y1="181" x2="492" y2="181" stroke="#f59e0b" stroke-width="2"/>
+      <!-- 编码器 -->
+      <rect x="404" y="252" width="110" height="30" rx="8" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
+      <text x="459" y="271" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">编码器(θ/ω)</text>
+      <line x1="440" y1="207" x2="440" y2="252" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
+      <!-- 反馈虚线 -->
+      <path d="M404 267 C 360 267 330 250 316 228" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#hwArrG)"/>
+      <path d="M62 182 C 62 226 130 252 238 210" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#hwArrG)"/>
+      <text x="66" y="246" fill="#22c55e" font-size="10.5">Ia/Ib 电压信号(上行反馈)</text>
+      <!-- 正向箭头 -->
+      <line x1="110" y1="152" x2="136" y2="152" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
+      <line x1="212" y1="152" x2="238" y2="152" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
+      <line x1="286" y1="228" x2="286" y2="278" stroke="none"/>
+      <path d="M316 228 C 340 240 366 152 394 152" fill="none" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
+      <line x1="476" y1="152" x2="500" y2="140" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
+      <text x="330" y="240" fill="#58a6ff" font-size="10.5">六路互补 PWM(下行)</text>
+      <!-- Udc 检测 -->
+      <path d="M540 92 C 500 60 260 52 208 122" fill="none" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#hwArrG)"/>
+      <text x="330" y="56" fill="#94a3b8" font-size="10.5">Udc 分压检测(限幅圆用)</text>
+    </svg>
+    <div class="my-fig-cap">图① FOC 硬件信号链:蓝色为运算与数据流,橙色为功率/模拟链路,绿色虚线为反馈。母线电压、相电流、转子角度三路信号齐备,FOC 才有"眼睛"。</div>
+  </div>
+
+  <p><strong>第二张是 ISR 级总流程大图</strong>——全页的<strong>主角图</strong>。每个 PWM 周期(10~40kHz 对应 100~25μs),ADC 注入组转换完成都会触发一次中断,CPU 在中断里按①~⑧的固定顺序跑一遍。两个菱形分支尤其要记住:<strong>入口的状态检查</strong>和<strong>限幅圆判断</strong>——它们是"程序逻辑"与"物理约束"两道闸门。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 690" role="img" aria-label="FOC ISR 级总流程图:ADC 注入组采样完成中断,经读相电流、Clark、Park、PI 电流环、电压限幅圆、反 Park、SVPWM、写比较寄存器、清中断,共八步,含状态检查与限幅两个分支判断" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="flArrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        <marker id="flArrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+        <marker id="flArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+        <marker id="flArrO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+      </defs>
+      <!-- 触发 -->
+      <rect x="140" y="8" width="360" height="32" rx="9" fill="#22c55e" fill-opacity=".12" stroke="#22c55e" stroke-width="1.8"/>
+      <text x="320" y="29" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="bold">⚡ ADC 注入组采样完成中断(JEOC)</text>
+      <line x1="320" y1="40" x2="320" y2="56" stroke="#22c55e" stroke-width="2" marker-end="url(#flArrG)"/>
+      <!-- 分支1: 状态检查 -->
+      <polygon points="320,58 462,86 320,114 178,86" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="320" y="82" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">状态机 = RUN</text>
+      <text x="320" y="99" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">且无 FAULT ?</text>
+      <!-- 否 → 封波 -->
+      <line x1="462" y1="86" x2="496" y2="86" stroke="#ef4444" stroke-width="2" marker-end="url(#flArrR)"/>
+      <text x="474" y="78" fill="#ef4444" font-size="11" font-weight="bold">否</text>
+      <rect x="498" y="64" width="134" height="44" rx="9" fill="#ef4444" fill-opacity=".1" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="565" y="82" text-anchor="middle" fill="#ef4444" font-size="11.5" font-weight="bold">置 FAULT / 封波</text>
+      <text x="565" y="98" text-anchor="middle" fill="#ef4444" font-size="10.5">(MOE=0,六管全关)</text>
+      <line x1="320" y1="114" x2="320" y2="126" stroke="#22c55e" stroke-width="2" marker-end="url(#flArrG)"/>
+      <text x="332" y="124" fill="#22c55e" font-size="11" font-weight="bold">是</text>
+      <!-- ① -->
+      <rect x="150" y="128" width="340" height="34" rx="8" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="320" y="150" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">① 读相电流 Ia、Ib(ADC 注入组,Ic=−Ia−Ib)</text>
+      <line x1="320" y1="162" x2="320" y2="172" stroke="#58a6ff" stroke-width="2" marker-end="url(#flArrB)"/>
+      <!-- ② -->
+      <rect x="150" y="174" width="340" height="34" rx="8" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="320" y="196" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">② Clark 变换:Ia,Ib → Iα,Iβ(三相→两相静止)</text>
+      <line x1="320" y1="208" x2="320" y2="218" stroke="#58a6ff" stroke-width="2" marker-end="url(#flArrB)"/>
+      <!-- ③ -->
+      <rect x="150" y="220" width="340" height="34" rx="8" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="320" y="242" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">③ Park 变换(θ 来自编码器)→ Id,Iq(旋转直流量)</text>
+      <line x1="320" y1="254" x2="320" y2="264" stroke="#58a6ff" stroke-width="2" marker-end="url(#flArrB)"/>
+      <!-- ④ -->
+      <rect x="150" y="266" width="340" height="34" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="320" y="288" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">④ d/q 轴 PI 电流环(积分抗饱和 + 输出限幅)</text>
+      <line x1="320" y1="300" x2="320" y2="310" stroke="#f59e0b" stroke-width="2" marker-end="url(#flArrO)"/>
+      <!-- ⑤ -->
+      <rect x="150" y="312" width="340" height="34" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="320" y="334" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">⑤ 电压限幅圆:|Us| ≤ Usmax = Udc/√3</text>
+      <line x1="320" y1="346" x2="320" y2="356" stroke="#f59e0b" stroke-width="2" marker-end="url(#flArrO)"/>
+      <!-- 分支2: 限幅判断 -->
+      <polygon points="320,358 468,386 320,414 172,386" fill="#ef4444" fill-opacity=".07" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="320" y="391" text-anchor="middle" fill="#ef4444" font-size="12" font-weight="bold">|Us| &gt; Usmax ?</text>
+      <line x1="468" y1="386" x2="496" y2="386" stroke="#ef4444" stroke-width="2" marker-end="url(#flArrR)"/>
+      <text x="474" y="378" fill="#ef4444" font-size="11" font-weight="bold">是</text>
+      <rect x="498" y="364" width="134" height="44" rx="9" fill="#ef4444" fill-opacity=".1" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="565" y="382" text-anchor="middle" fill="#ef4444" font-size="11.5" font-weight="bold">等比缩小 Ud、Uq</text>
+      <text x="565" y="398" text-anchor="middle" fill="#ef4444" font-size="10.5">(方向不变,模长压回圆内)</text>
+      <path d="M565 408 L 565 438 L 322 438" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#flArrR)"/>
+      <line x1="320" y1="414" x2="320" y2="444" stroke="#22c55e" stroke-width="2" marker-end="url(#flArrG)"/>
+      <text x="330" y="434" fill="#22c55e" font-size="11" font-weight="bold">否</text>
+      <!-- ⑥ -->
+      <rect x="150" y="446" width="340" height="34" rx="8" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="320" y="468" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">⑥ 反 Park 变换:Vd,Vq → Vα,Vβ(旋转→静止)</text>
+      <line x1="320" y1="480" x2="320" y2="490" stroke="#58a6ff" stroke-width="2" marker-end="url(#flArrB)"/>
+      <!-- ⑦ -->
+      <rect x="150" y="492" width="340" height="34" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="320" y="514" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">⑦ SVPWM:扇区 N → T1,T2,T0 → 三相 CCRx</text>
+      <line x1="320" y1="526" x2="320" y2="536" stroke="#f59e0b" stroke-width="2" marker-end="url(#flArrO)"/>
+      <!-- ⑧ -->
+      <rect x="150" y="538" width="340" height="34" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="320" y="560" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">⑧ 写定时器比较寄存器 CCRx(影子寄存器)</text>
+      <line x1="320" y1="572" x2="320" y2="582" stroke="#f59e0b" stroke-width="2" marker-end="url(#flArrO)"/>
+      <!-- 清中断 -->
+      <rect x="150" y="584" width="340" height="32" rx="9" fill="#22c55e" fill-opacity=".12" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="320" y="605" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">清 ADC/JEOC 标志 → 中断返回(等下一个 PWM 周期)</text>
+      <!-- 侧路:θ 与 Udc -->
+      <rect x="6" y="216" width="132" height="42" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="5 3"/>
+      <text x="72" y="233" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">编码器 θe</text>
+      <text x="72" y="249" text-anchor="middle" fill="#22c55e" font-size="10">(电角度,第 7 节)</text>
+      <line x1="138" y1="237" x2="148" y2="237" stroke="#22c55e" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#flArrG)"/>
+      <rect x="6" y="308" width="132" height="42" rx="9" fill="#94a3b8" fill-opacity=".12" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 3"/>
+      <text x="72" y="325" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="bold">Udc 母线电压</text>
+      <text x="72" y="341" text-anchor="middle" fill="#94a3b8" font-size="10">(分压采样,周期更新)</text>
+      <line x1="138" y1="329" x2="148" y2="329" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#flArrG)"/>
+      <!-- 底注 -->
+      <rect x="60" y="634" width="520" height="44" rx="9" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-width="1.2" stroke-dasharray="5 3"/>
+      <text x="320" y="652" text-anchor="middle" fill="#7cb8ff" font-size="11.5">整个循环以 PWM 频率逐拍执行:20kHz → 每拍 50μs,①~⑧ 全部计算</text>
+      <text x="320" y="670" text-anchor="middle" fill="#7cb8ff" font-size="11.5">必须在下一拍到来前完成(见第 9 节执行时间预算)</text>
+    </svg>
+    <div class="my-fig-cap">图② FOC ISR 总流程(全页主图):绿色=中断边界,蓝色=坐标变换,橙色=控制器与调制,红色=分支与保护动作。编号①~⑧与第 12 节参考代码逐行对应。</div>
+  </div>
+
+  <h3>1.2 逐框讲解:①~⑧ 每一步在做什么</h3>
+  <div class="table-wrap"><table>
+    <tr><th>编号</th><th>框名</th><th>输入 → 输出</th><th>一句话要点</th></tr>
+    <tr><td><b>①</b></td><td>读相电流</td><td>ADC 原始码值 → Ia、Ib(A)</td><td>注入组自动采两相;Ic = −Ia − Ib(基尔霍夫);先减零点偏置再乘增益换算</td></tr>
+    <tr><td><b>②</b></td><td>Clark 变换</td><td>Ia、Ib → Iα、Iβ</td><td>三相 120° 系 → 两相正交静止系,变量从 3 个降到 2 个,公式见第 3 节</td></tr>
+    <tr><td><b>③</b></td><td>Park 变换</td><td>Iα、Iβ + θe → Id、Iq</td><td>静止系 → 旋转系,正弦量变直流量,PI 才能无静差;θe 是整个系统的"基准"</td></tr>
+    <tr><td><b>④</b></td><td>PI 电流环 ×2</td><td>Id*/Iq* 与 Id/Iq 误差 → Vd、Vq</td><td>d 轴目标通常为 0;q 轴目标来自速度环;必须带积分抗饱和与输出限幅</td></tr>
+    <tr><td><b>⑤</b></td><td>电压限幅圆</td><td>(Vd,Vq) → 限幅后 (Vd,Vq)</td><td>逆变器物理上给不出超出 Usmax=Udc/√3 的矢量,先把模长压回圆内再继续</td></tr>
+    <tr><td><b>⑥</b></td><td>反 Park</td><td>Vd、Vq + θe → Vα、Vβ</td><td>把"该施加的电压矢量"变回静止系,是 Park 的转置(负角度旋转)</td></tr>
+    <tr><td><b>⑦</b></td><td>SVPWM</td><td>Vα、Vβ → 扇区 N、T1/T2/T0、CCRx</td><td>用相邻两个基本矢量 + 零矢量合成任意矢量;先判扇区再算作用时间</td></tr>
+    <tr><td><b>⑧</b></td><td>写比较寄存器</td><td>CCRx → 硬件 PWM</td><td>写影子寄存器,下一个更新事件原子生效——绝不中途改波形</td></tr>
+  </table></div>
+  <p>关键框对应的代码骨架如下(完整 80 行 ISR 见<a href="#sec12-code">第 12 节</a>):</p>
+  <pre><code>/* ① 读相电流:先减零偏,再按运放增益换算成安培 */
+float ia = ((float)ADC-&gt;JDR1 - i_offset_a) * ADC_TO_AMP;
+float ib = ((float)ADC-&gt;JDR2 - i_offset_b) * ADC_TO_AMP;
+float ic = -(ia + ib);                       /* 基尔霍夫: Ia+Ib+Ic=0 */
+
+/* ②③ 变换(等幅值,系数 2/3 见第 3 节) */
+float ialpha = ia;
+float ibeta  = (ia + 2.0f*ib) * ONE_OVER_SQRT3;
+float id =  ialpha*cos_t + ibeta*sin_t;      /* cos_t/sin_t 由查表得到 */
+float iq = -ialpha*sin_t + ibeta*cos_t;
+
+/* ④⑤ PI + 限幅(抗饱和细节见第 4 节) */
+vd = pi_update(&amp;pi_d, id_ref - id);
+vq = pi_update(&amp;pi_q, iq_ref - iq);
+limit_circle(&amp;vd, &amp;vq, usmax);               /* |Us| ≤ Udc/√3 */
+
+/* ⑥⑦⑧ 反 Park + SVPWM + 写寄存器 */
+valpha = vd*cos_t - vq*sin_t;
+vbeta  = vd*sin_t + vq*cos_t;
+svpwm_update(valpha, vbeta, udc);            /* 内部写 TIM1-&gt;CCR1/2/3 */</code></pre>
+
+  <h3>1.3 FOC 知识思维导图:八大分支一张网</h3>
+  <p>把 FOC 的知识点挂成一棵树,点分支标题可折叠/展开。每一支在本站都有对应的深入页:坐标变换与三环见 <a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">06-02 固件与电机控制</a>,SVPWM 动手实验见 <a href="../02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html">02-13 功率级拓扑与 SVPWM 交互实验室</a>,调参见 <a href="../02_硬件基础/11_FOC调参整定实战手册.html">02-11 FOC 调参整定实战手册</a>,无感观测器见 <a href="17_状态观测器全解_龙伯格_EKF_SMO.html">06-17 状态观测器全解</a>。</p>
+  <div class="my-mindmap">
+    <div class="my-root">FOC 磁场定向控制</div>
+    <div class="my-branches">
+      <div class="my-branch my-b1">
+        <div class="my-branch-header" onclick="toggleMyBranch(this)"><span>📐 坐标变换</span><span class="my-toggle">▼</span></div>
+        <div class="my-branch-body"><div class="my-leaf-list">
+          <div class="my-leaf my-important">Clark / 反 Clark(三相 ↔ αβ)</div>
+          <div class="my-leaf my-important">Park / 反 Park(αβ ↔ dq)</div>
+          <div class="my-leaf">恒幅值系数 2/3 与等功率对比</div>
+          <div class="my-leaf">θe 电角度:旋转坐标系的基准</div>
+        </div></div>
+      </div>
+      <div class="my-branch my-b2">
+        <div class="my-branch-header" onclick="toggleMyBranch(this)"><span>🔬 电流采样</span><span class="my-toggle">▼</span></div>
+        <div class="my-branch-body"><div class="my-leaf-list">
+          <div class="my-leaf my-important">低边电阻 + 运放调理(主流)</div>
+          <div class="my-leaf my-important">PWM 中心触发,避开开关噪声</div>
+          <div class="my-leaf">单电阻采样:窗口约束与移相</div>
+          <div class="my-leaf">双采样 / 三电阻 / 相线霍尔</div>
+          <div class="my-leaf">零点偏置标定(上电采平均)</div>
+        </div></div>
+      </div>
+      <div class="my-branch my-b3">
+        <div class="my-branch-header" onclick="toggleMyBranch(this)"><span>⚡ SVPWM 与功率级</span><span class="my-toggle">▼</span></div>
+        <div class="my-branch-body"><div class="my-leaf-list">
+          <div class="my-leaf my-important">扇区判断 N 与作用时间 T1/T2</div>
+          <div class="my-leaf my-important">七段式中心对齐波形</div>
+          <div class="my-leaf">母线利用率 √3/2(比 SPWM 高 15%)</div>
+          <div class="my-leaf">死区效应与补偿(ΔV=4Td·fs·Udc/π)</div>
+          <div class="my-leaf">互锁/自举/过流比较器封波</div>
+        </div></div>
+      </div>
+      <div class="my-branch my-b4">
+        <div class="my-branch-header" onclick="toggleMyBranch(this)"><span>🎯 三环控制</span><span class="my-toggle">▼</span></div>
+        <div class="my-branch-body"><div class="my-leaf-list">
+          <div class="my-leaf my-important">电流环:零点对消 Kp=Lωc、Ki=Rωc</div>
+          <div class="my-leaf my-important">速度环:PI + 编码器测速(M/T/M-T)</div>
+          <div class="my-leaf">位置环:P 或 PP,输出端反馈</div>
+          <div class="my-leaf">带宽分离原则:内环是外环 5~10 倍</div>
+          <div class="my-leaf">抗饱和 clamping / 反算式</div>
+        </div></div>
+      </div>
+      <div class="my-branch my-b5">
+        <div class="my-branch-header" onclick="toggleMyBranch(this)"><span>📡 编码器与角度</span><span class="my-toggle">▼</span></div>
+        <div class="my-branch-body"><div class="my-leaf-list">
+          <div class="my-leaf my-important">增量 ABZ / 绝对值 SPI(AS5047 等)</div>
+          <div class="my-leaf my-important">电角度 = 机械角 × 极对数 p</div>
+          <div class="my-leaf">零点校准:d 轴对齐法</div>
+          <div class="my-leaf">非线性误差 / 延迟补偿(ω·Δt)</div>
+        </div></div>
+      </div>
+      <div class="my-branch my-b6">
+        <div class="my-branch-header" onclick="toggleMyBranch(this)"><span>🛡️ 保护机制</span><span class="my-toggle">▼</span></div>
+        <div class="my-branch-body"><div class="my-leaf-list">
+          <div class="my-leaf my-important">硬件级:比较器 + DAO 直接封波</div>
+          <div class="my-leaf my-important">软件级:过流/过压/欠压/超温/堵转</div>
+          <div class="my-leaf">阈值 + 去抖计数(防毛刺误触发)</div>
+          <div class="my-leaf">FAULT 恢复条件与重试策略</div>
+        </div></div>
+      </div>
+      <div class="my-branch my-b7">
+        <div class="my-branch-header" onclick="toggleMyBranch(this)"><span>🌀 观测器与无感</span><span class="my-toggle">▼</span></div>
+        <div class="my-branch-body"><div class="my-leaf-list">
+          <div class="my-leaf my-important">滑模观测器 SMO(反电动势法)</div>
+          <div class="my-leaf my-important">龙伯格 / EKF(见 06-17)</div>
+          <div class="my-leaf">高频注入 HFI(零速无感)</div>
+          <div class="my-leaf">磁链观测与 PLL 提取角度</div>
+        </div></div>
+      </div>
+      <div class="my-branch my-b8">
+        <div class="my-branch-header" onclick="toggleMyBranch(this)"><span>🧪 参数辨识与高级</span><span class="my-toggle">▼</span></div>
+        <div class="my-branch-body"><div class="my-leaf-list">
+          <div class="my-leaf my-important">Rs:直流注入压降法</div>
+          <div class="my-leaf my-important">L:电压脉冲 / 短路电流斜率</div>
+          <div class="my-leaf">磁链:空载反电动势反推</div>
+          <div class="my-leaf">弱磁(id&lt;0)与 MTPA 一句话</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+  <div class="box box-tip"><b>💡 本页与深入页的分工:</b>本页负责「把流程/结构/时序画全」——先在这里建立完整的地图,再按需跳转:想动手跑代码看 <a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">06-02</a>,想看动画直觉看 <a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">01-02</a>,想玩 SVPWM 波形看 <a href="../02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html">02-13</a>,想调参看 <a href="../02_硬件基础/11_FOC调参整定实战手册.html">02-11</a>。面试前的查漏补缺见 <a href="../08_学习工具/11_保研复试面试题库.html">08-11 保研复试面试题库</a>。</div>
+
+  <!-- ================= 2 为什么电流采样点在 PWM 中心 ================= -->
+  <h2><span class="h2-num">2</span> 为什么电流采样点必须落在 PWM 中心</h2>
+  <p>总流程图第①框"读相电流"看起来只是读两个寄存器,真正讲究的是<strong>什么时候读</strong>。采样时刻选错,采到的不是电流而是开关噪声;窗口不够,采到的是未稳定的过渡过程。这一节把"时机"讲透。</p>
+
+  <h3>2.1 ADC 触发时机:中心对齐 PWM 的下桥臂采样窗口</h3>
+  <p>工程上最常用<strong>低边采样电阻</strong>(shunt 串在下桥臂与地之间):只有当<strong>下桥臂导通</strong>时,相电流才流过采样电阻,R 上的电压才等于相电流。而中心对齐 PWM 有个天然的好性质:<strong>每个周期的正中央,三相的下管都处于导通状态</strong>(占空比越接近 50%,窗口越宽)。于是标准做法是——<strong>用定时器更新/谷底事件触发 ADC,让采样点正对周期中心</strong>,既保证下管导通,又离两个开关沿最远,信噪比最好。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 300" role="img" aria-label="PWM 中心对齐采样窗口示意图:相电压波形在周期中心为低电平即下桥臂导通,ADC 触发位于中心,开关沿附近为噪声禁区" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="swArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- 噪声禁区 -->
+      <rect x="145" y="56" width="20" height="196" fill="#ef4444" fill-opacity=".14"/>
+      <rect x="235" y="56" width="20" height="196" fill="#ef4444" fill-opacity=".14"/>
+      <rect x="395" y="56" width="20" height="196" fill="#ef4444" fill-opacity=".14"/>
+      <rect x="485" y="56" width="20" height="196" fill="#ef4444" fill-opacity=".14"/>
+      <text x="155" y="50" fill="#ef4444" font-size="10.5">开关沿 = 噪声禁区</text>
+      <!-- 采样窗口 -->
+      <rect x="176" y="56" width="38" height="196" fill="#22c55e" fill-opacity=".12"/>
+      <rect x="426" y="56" width="38" height="196" fill="#22c55e" fill-opacity=".12"/>
+      <text x="195" y="290" text-anchor="middle" fill="#22c55e" font-size="10.5">安全采样窗口</text>
+      <text x="445" y="290" text-anchor="middle" fill="#22c55e" font-size="10.5">安全采样窗口</text>
+      <!-- 波形: 中心对齐相电压 -->
+      <path d="M70 70 H145 L155 190 H235 L245 70 H320 H395 L405 190 H485 L495 70 H600" fill="none" stroke="#f59e0b" stroke-width="2.6"/>
+      <text x="66" y="66" text-anchor="end" fill="#f59e0b" font-size="11">高=上管导通</text>
+      <text x="66" y="194" text-anchor="end" fill="#f59e0b" font-size="11">低=下管导通</text>
+      <!-- ADC 触发 -->
+      <line x1="195" y1="40" x2="195" y2="262" stroke="#22c55e" stroke-width="2" stroke-dasharray="6 3"/>
+      <line x1="445" y1="40" x2="445" y2="262" stroke="#22c55e" stroke-width="2" stroke-dasharray="6 3"/>
+      <circle cx="195" cy="190" r="4.5" fill="#22c55e"/>
+      <circle cx="445" cy="190" r="4.5" fill="#22c55e"/>
+      <text x="320" y="34" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">ADC 触发(定时器 TRGO / 更新事件)= 周期正中心</text>
+      <!-- ISR 窗口 -->
+      <rect x="200" y="212" width="120" height="26" rx="6" fill="#58a6ff" fill-opacity=".15" stroke="#58a6ff" stroke-width="1.2"/>
+      <text x="260" y="229" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold">ISR:①~⑧ 计算</text>
+      <rect x="450" y="212" width="120" height="26" rx="6" fill="#58a6ff" fill-opacity=".15" stroke="#58a6ff" stroke-width="1.2"/>
+      <text x="510" y="229" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold">ISR:①~⑧ 计算</text>
+      <!-- 时间轴 -->
+      <line x1="60" y1="262" x2="608" y2="262" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#swArrG)"/>
+      <line x1="70" y1="268" x2="320" y2="268" stroke="#94a3b8" stroke-width="1.2"/>
+      <line x1="70" y1="263" x2="70" y2="273" stroke="#94a3b8" stroke-width="1.2"/>
+      <line x1="320" y1="263" x2="320" y2="273" stroke="#94a3b8" stroke-width="1.2"/>
+      <text x="195" y="282" text-anchor="middle" fill="#94a3b8" font-size="10.5">1 × Tpwm(如 50μs @20kHz)</text>
+      <text x="60" y="46" fill="#94a3b8" font-size="11">相端电压</text>
+    </svg>
+    <div class="my-fig-cap">图③ 采样窗口示意:中心对齐 PWM 每周期正中心三相下管同时导通,此处采样 = 电流稳定 + 远离开关沿。触发后立刻进 ISR 完成①~⑧,波形写入影子寄存器、下个周期生效。</div>
+  </div>
+  <ul>
+    <li><strong>触发链</strong>:定时器计数到谷底(中心)→ TRGO 输出 → ADC 注入组同步触发 → 全部通道转换完 → JEOC 中断。整条链路不占用 CPU,抖动为一个时钟周期以内。</li>
+    <li><strong>窗口宽度</strong>:安全窗口 ≈ 占空比决定的下管导通时间中,扣除 ADC 采样保持时间(约 0.5~1μs)与运放建立时间后的余量。占空比越小(相电压长期为高),窗口越窄——这正是小占空比时采样失真的根源。</li>
+    <li><strong>占空比下限</strong>:工程上会限制最小占空比(如 5%)或对窄脉冲区间做采样补偿/置信任旧值处理,保证每个周期都能采到有效电流。</li>
+  </ul>
+
+  <h3>2.2 单电阻采样的窗口约束与双采样</h3>
+  <p>为了省成本/体积,不少驱动板只在母线上放<strong>一颗采样电阻</strong>(单电阻采样):它测的是母线电流,在一个 PWM 周期内,不同的开关状态下母线电流分别等于不同的相电流——于是<strong>一个周期内要在两个不同时刻各采一次</strong>,才能重建 Ia、Ib 两相。这带来著名的<strong>窗口约束</strong>:</p>
+  <ul>
+    <li><strong>窗口位置随矢量移动</strong>:两次采样时刻由当前扇区与占空比实时计算,并要用"移相"(把触发点往稳定平台挪)避开开关沿。</li>
+    <li><strong>最小脉宽约束</strong>:当某相占空比接近 0% 或 100% 时,对应窗口被压到消失,采不到——所以单电阻方案必须配合<strong>最小脉宽限制 / 占空比钳位 / 相位平移补偿</strong>,否则高速大调制比时电流重建出错,力矩抖动。</li>
+    <li><strong>双采样(注入组两段转换)</strong>:STM32 的注入组天然支持 4 个通道排队,单电阻方案常用"同一周期两次注入转换",两次间隔由定时器比较通道精确控制。</li>
+  </ul>
+  <div class="table-wrap"><table>
+    <tr><th>方案</th><th>采样电阻数</th><th>优点</th><th>代价与约束</th><th>典型场景</th></tr>
+    <tr><td>三电阻低边</td><td>3(可省为 2)</td><td>窗口最宽、最稳健;三相直读互为校验</td><td>运放 ×3,布线对称要求高</td><td>服务器风扇、云台、大多数学习板</td></tr>
+    <tr><td>双电阻低边</td><td>2</td><td>两相直读,Ic 由 KCL 算出;窗口宽</td><td>两路运放;精度一致性要求</td><td>主流关节驱动器(ODrive 等)</td></tr>
+    <tr><td>单电阻(母线)</td><td>1</td><td>成本最低、体积最小、无共模问题</td><td>窗口随矢量移动、需移相与最小脉宽补偿、算法复杂</td><td>低成本家电、风机、紧凑模组</td></tr>
+    <tr><td>在线式/相线</td><td>磁霍尔/集成</td><td>与开关状态解耦,任意时刻可采</td><td>带宽/温漂/成本;小电流精度差</td><td>大功率或对隔离有要求的场合</td></tr>
+  </table></div>
+  <div class="box box-warn"><b>⚠️ 实践提醒:</b>调参时发现"电流波形一半是好的一半是花的",八成是占空比进入窄脉冲区后采样窗口塌了,而不是 PI 没调好——先检查采样方案在极端占空比下的行为,再怀疑控制器。</div>
+
+  <!-- ================= 3 坐标变换四件套 ================= -->
+  <h2><span class="h2-num">3</span> 坐标变换四件套:Clark / 反 Clark / Park / 反 Park</h2>
+  <p>总流程图的②③⑥三框其实是"一套数学、四个方向"。它们不创造能量,只做<strong>换视角</strong>:同一个物理电流,在三相静止系、两相静止系、旋转系里有三套坐标——FOC 全部魔法的前提,是选对了"那个让它看起来像直流"的视角。</p>
+
+  <h3>3.1 四个公式(恒幅值变换,系数 2/3)</h3>
+  <p><strong>Clark 变换</strong>:三相静止(abc)→ 两相静止(αβ)。等幅值形式下,α 轴对齐 A 相绕组:</p>
+  <div class="formula">Iα = (2/3)·[ Ia − (1/2)Ib − (1/2)Ic ] ,　Iβ = (2/3)·(√3/2)·[ Ib − Ic ] = (Ib − Ic)/√3</div>
+  <p>把 Ic = −Ia − Ib 代入化简,就得到代码里最常见的两行:</p>
+  <div class="formula">Iα = Ia ,　Iβ = ( Ia + 2·Ib ) / √3</div>
+  <p><strong>Park 变换</strong>:静止(αβ)→ 旋转(dq),θe 为转子电角度:</p>
+  <div class="formula">Id = 　Iα·cos θe + Iβ·sin θe ,　Iq = −Iα·sin θe + Iβ·cos θe</div>
+  <p><strong>反 Park 变换</strong>:旋转(dq)→ 静止(αβ),把 PI 算出的电压矢量转回静止系(角度取负,矩阵即 Park 的转置):</p>
+  <div class="formula">Vα = Vd·cos θe − Vq·sin θe ,　Vβ = Vd·sin θe + Vq·cos θe</div>
+  <p><strong>反 Clark 变换</strong>:静止(αβ)→ 三相(abc),SVPWM 之外若直接用正弦调制会用到它:</p>
+  <div class="formula">Va = Vα ,　Vb = −Vα/2 + (√3/2)·Vβ ,　Vc = −Vα/2 − (√3/2)·Vβ</div>
+  <pre><code>/* 工程实现要点:两次乘法搞定 Park/反Park —— cos_t、sin_t 用查表+插值,不用 libm */
+float cos_t = cos_lut(theta), sin_t = sin_lut(theta);   /* 查表 ~几十个周期 */
+/* Park */
+float id =  ialpha*cos_t + ibeta*sin_t;
+float iq = -ialpha*sin_t + ibeta*cos_t;
+/* 反 Park(只换符号) */
+float valpha = vd*cos_t - vq*sin_t;
+float vbeta  = vd*sin_t + vq*cos_t;</code></pre>
+
+  <h3>3.2 等幅值 vs 等功率,以及 θ 从哪里来</h3>
+  <ul>
+    <li><strong>恒幅值变换(系数 2/3)</strong>:变换前后<strong>相电流幅值不变</strong>——abc 里幅值 I 的正弦,到 αβ 里还是幅值 I。电机控制界的事实标准,好处是 Iq 直接就是" torque 电流",物理量对得上。CLARK 后功率口径变了,但控制器只关心幅值,无所谓。</li>
+    <li><strong>恒功率变换(系数 √(2/3))</strong>:变换前后<strong>功率不变</strong>,多用于学术推导与电力系统分析。一句话记住差别:<b>等幅值好懂好用(工程),等功率守恒严谨(理论),两者只差一个常数因子 √(3/2)</b>。</li>
+    <li><strong>θe 从哪来</strong>:θe = 编码器机械角 × 极对数 p + 电角度零点偏移。它是<strong>转子磁极的位置</strong>而不是转子几何位置——差 p 倍这个概念错误会直接让 Park 转错坐标系,电机嗡嗡叫不出力(详见第 7 节)。</li>
+    <li><strong>延迟补偿</strong>:从"采样那一刻"到"PWM 实际输出"有约 1.5 个周期的延迟,高速时θ已经转过去了。工程做法:用 θe' = θe + ω·1.5Tpwm 做反 Park,相当于把电压矢量往前转半拍——这就是很多库里的"角度前馈/一阶延迟补偿"。</li>
+  </ul>
+  <div class="box box-tip"><b>💡 为什么必须变换?</b>不变换,三相电流是三个互相耦合的 120° 正弦量,PID 对正弦量的稳态误差不为零(增益无穷大才无静差);变换到 dq 后是两个独立直流量,普通 PI 就能零稳态误差——<b>坐标变换的本质是把交流控制问题变成直流控制问题</b>。直觉动画见 <a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">01-02 核心原理动画演示</a>。</div>
+
+  <!-- ================= 4 三环:电流环/速度环/位置环 ================= -->
+  <h2><span class="h2-num">4</span> 三环设计:电流环的 PI 与带宽,速度环/位置环的级联</h2>
+  <p>总流程图第④框里的两个 PI 是最内环;<strong>速度环、位置环跑在更慢的节拍上(主循环或低速中断),它们的输出就是电流环的 Iq 目标</strong>。三环是典型的级联结构,这一节先讲最内环的"数学设计",再看整个级联塔。</p>
+
+  <h3>4.1 PI 参数物理意义、积分抗饱和、输出限幅与解耦补偿</h3>
+  <p>电流环被控对象近似一阶 RL 负载 <b>G(s) = 1/(Ls + R)</b>。PI 控制器的 Kp 决定"响应多快"(比例把误差立刻顶上去),Ki 决定"稳态误差多快被消掉"(积分慢慢把静差清零)。但积分是把双刃剑:<strong>输出已经饱和限幅时,误差还在被积分,积分器会攒下一大坨"用不上的控制量"</strong>(windup),退饱和后造成超时超调甚至振荡。两种主流抗饱和:</p>
+  <ul>
+    <li><strong>Clamping(钳位法)</strong>:当输出已饱和、且误差与饱和同号(还在往饱和方向推)时,<b>本轮停止积分</b>。实现最简单、最常用:</li>
+  </ul>
+  <pre><code>float err = iq_ref - iq;
+float u_unsat = kp*err + integ;          /* 试算未限幅输出 */
+if ((u_unsat &gt; VMAX &amp;&amp; err &gt; 0) ||       /* 饱和且还在同向推 */
+    (u_unsat &lt; VMIN &amp;&amp; err &lt; 0)) {
+    /* 停止积分,只保留比例项 */
+} else {
+    integ += ki * err * dt;              /* 正常积分 */
+}
+float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
+  <ul>
+    <li><strong>反算式(Back-calculation)</strong>:积分器始终更新,但额外喂入 <b>(u_sat − u_unsat)/Tt</b>,把积分值"往饱和边界拉回",Tt 为回差时间常数(取 1/ωc 量级)。退饱和更平滑,参数多一个。</li>
+  </ul>
+
+  <p>抗饱和之外,还要处理<strong>输出限幅</strong>与<strong>交叉耦合</strong>。永磁同步电机在 dq 系的电压方程里有两个<strong>旋转电动势/交叉耦合项</strong>:</p>
+  <div class="formula">vd = R·id + L·did/dt − ωe·L·iq　　vq = R·iq + L·diq/dt + ωe·(L·id + ψf)</div>
+  <p>d 轴电流会"窜"进 q 轴方程(−ωe·L·iq),反之亦然。解决办法是在 PI 输出后<strong>叠加前馈解耦项</strong>:</p>
+  <div class="formula">vd* = PI_d(id*) − ωe·L·iq　　vq* = PI_q(iq*) + ωe·L·id(磁链项 ψf·ωe 已含在反电动势里)</div>
+  <p><strong>要不要加?</strong>经验法则:<b>ωe·L·i 相对 R·i 或母线余量很小时(低速、小电感),可以不加,PI 自己能兜住;高速或 L 大时必须加</b>,否则两个轴互相拖拽、动态时 iq 超调。加错 L 参数反而引入扰动——所以先跑干净 PI,再按需补解耦,一次只动一样(见 <a href="../02_硬件基础/11_FOC调参整定实战手册.html">02-11 FOC 调参整定实战手册</a>)。输出侧还要保证 <b>vd² + vq² ≤ Usmax²</b>(即总流程图第⑤框的限幅圆)。</p>
+
+  <h3>4.2 电流环带宽设计:零点对消法与 Kp/Ki 换算</h3>
+  <p>最实用的整定思路是<strong>零点对消</strong>:让 PI 的零点正好抵消被控对象的极点 R/L,开环就变成纯积分器,闭环是一阶系统,带宽由你说了算:</p>
+  <div class="formula">PI 零点 = Ki/Kp,令 Ki/Kp = R/L(零点对消极点)⇒ 闭环传函 = 1/(s/ωc + 1),ωc = Kp/L</div>
+  <div class="formula">⇒ <b>Kp = L·ωc ,Ki = R·ωc</b>(先定带宽,再算参数,两行搞定电流环)</div>
+  <ul>
+    <li><strong>带宽上限</strong>:受采样/计算延迟约束,工程取 <b>ωc ≤ 2π·fsw/10 ~ fsw/20</b>(20kHz PWM → 电流环带宽 1~2kHz 再高无益,延迟相位损失会把系统推向不稳)。</li>
+    <li><strong>自检方法</strong>:给 Iq 一个阶跃,看响应——上升时间 tr ≈ 2.2/ωc、无超调或 &lt;10% 即对消良好;若有振铃,先怀疑 L/R 参数不准或延迟补偿缺失,而不是盲目降 Kp。</li>
+    <li><strong>数字实现口径</strong>:上式按连续域给出;离散实现里 dt = Tpwm,Ki 一项写成 Ki·dt 累加即可,量纲别搞混。</li>
+  </ul>
+
+  <h3>4.3 速度环与位置环:级联结构、带宽分离与编码器测速</h3>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 220" role="img" aria-label="三环级联结构图:位置环输出速度目标,速度环输出电流目标,电流环输出电压给 SVPWM 与逆变器,PMSM 与编码器反馈角度、速度与电流" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="csArrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        <marker id="csArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+      </defs>
+      <text x="16" y="74" fill="#e6edf3" font-size="12">θ*</text>
+      <line x1="34" y1="70" x2="76" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
+      <rect x="80" y="50" width="86" height="40" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="123" y="67" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">位置环</text>
+      <text x="123" y="82" text-anchor="middle" fill="#22c55e" font-size="10">P(输出端反馈)</text>
+      <text x="123" y="106" text-anchor="middle" fill="#94a3b8" font-size="10">≈10~100Hz</text>
+      <line x1="166" y1="70" x2="222" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
+      <text x="194" y="62" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">ω*</text>
+      <rect x="226" y="50" width="86" height="40" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="269" y="67" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">速度环</text>
+      <text x="269" y="82" text-anchor="middle" fill="#f59e0b" font-size="10">PI + 前馈</text>
+      <text x="269" y="106" text-anchor="middle" fill="#94a3b8" font-size="10">≈100~500Hz</text>
+      <line x1="312" y1="70" x2="368" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
+      <text x="340" y="62" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">Iq*</text>
+      <rect x="372" y="50" width="86" height="40" rx="9" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="415" y="67" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">电流环 ×2</text>
+      <text x="415" y="82" text-anchor="middle" fill="#58a6ff" font-size="10">PI(d/q)+限幅圆</text>
+      <text x="415" y="106" text-anchor="middle" fill="#94a3b8" font-size="10">≈0.5~2kHz</text>
+      <line x1="458" y1="70" x2="514" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
+      <text x="486" y="62" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold">Vd,Vq</text>
+      <rect x="518" y="50" width="86" height="40" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="561" y="67" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">SVPWM+逆变</text>
+      <text x="561" y="82" text-anchor="middle" fill="#f59e0b" font-size="10">10~40kHz</text>
+      <line x1="561" y1="90" x2="561" y2="126" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
+      <rect x="518" y="130" width="86" height="34" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="561" y="151" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">PMSM+编码器</text>
+      <!-- 反馈总线 -->
+      <path d="M561 164 L561 186 L123 186" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
+      <line x1="123" y1="186" x2="123" y2="96" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#csArrG)"/>
+      <line x1="269" y1="186" x2="269" y2="96" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#csArrG)"/>
+      <line x1="415" y1="186" x2="415" y2="96" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#csArrG)"/>
+      <text x="130" y="180" fill="#22c55e" font-size="10">θ 反馈</text>
+      <text x="276" y="180" fill="#22c55e" font-size="10">ω 反馈</text>
+      <text x="422" y="180" fill="#22c55e" font-size="10">Id,Iq 反馈</text>
+      <text x="320" y="210" text-anchor="middle" fill="#7cb8ff" font-size="11">带宽分离原则:内环带宽取外环的 5~10 倍,外环才敢把内环当成"听话的执行器"</text>
+    </svg>
+    <div class="my-fig-cap">图④ 三环级联:电流环每 PWM 周期执行(总流程图④框),速度环 1~5kHz,位置环 ~1kHz 或在主循环。关节机器人位置环常用输出端编码器反馈以消传动误差。</div>
+  </div>
+  <ul>
+    <li><strong>带宽分离原则</strong>:内环带宽 = 外环 5~10 倍。道理:级联设计时外环把内环近似为"理想执行器"(一阶小惯性),内环太慢,外环的假设破产,整塔都晃。</li>
+    <li><strong>编码器测速三法</strong>:
+      <div class="table-wrap"><table>
+        <tr><th>方法</th><th>原理</th><th>优点</th><th>缺点/噪声</th></tr>
+        <tr><td><b>M 法(测频)</b></td><td>固定时间窗 T 内数脉冲数 N,ω = N/(C·T)</td><td>高速准、实现简单</td><td>低速时 N 小,量化误差被放大,速度估出来"一格一格跳"</td></tr>
+        <tr><td><b>T 法(测周)</b></td><td>测相邻脉冲间隔的高频时钟数,ω = fclk/(ΔN·C)</td><td>低速准</td><td>高速时 ΔN 太小,抖动大;对编码器抖动敏感</td></tr>
+        <tr><td><b>M-T 法(混合)</b></td><td>同时测"窗口内脉冲数"与"不满窗的余量",等效平均周期</td><td>全速段量化误差均匀,主流选择</td><td>实现稍复杂,需硬件捕获</td></tr>
+      </table></div>
+      测速噪声治理:一阶低通(代价是相位滞后)、或直接用观测器估计速度(见 <a href="17_状态观测器全解_龙伯格_EKF_SMO.html">06-17 状态观测器全解</a>)。绝对值 SPI 编码器(如 AS5047)本身输出角度,速度用差分+滤波得到。</li>
+    <li><strong>速度环整定起点</strong>:先保证电流环阶跃干净,再给速度环小 Kp(积分次之),惯量越大 Kp 越往小取;速度环输出再叠加 Iq 前馈(由动力学模型给出)可以大幅降低跟踪滞后——关节机器人标配。</li>
+    <li><strong>位置环</strong>:通常纯 P(积分交给速度环),输入用输出端角度;带宽给到几十 Hz 足够,重点是轨迹规划给出平滑的 θ* 而不是阶跃。</li>
+  </ul>
+
+  <!-- ================= 5 SVPWM 七段式 ================= -->
+  <h2><span class="h2-num">5</span> SVPWM 七段式:扇区判断、矢量时间与母线利用率</h2>
+  <p>总流程图第⑦框把 (Vα,Vβ) 变成三路占空比。SVPWM 的思路:<strong>三相桥只有 8 种开关状态</strong>——6 个非零基本矢量把 αβ 平面均分成 6 个扇区,加 2 个零矢量;任何目标矢量都用"扇区相邻两个基本矢量 + 零矢量"按时间加权合成。想边转边看的交互实验见 <a href="../02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html">02-13 功率级拓扑与 SVPWM 交互实验室</a>。</p>
+
+  <h3>5.1 扇区判断 N 与矢量作用时间 T1、T2</h3>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 310" role="img" aria-label="SVPWM 矢量扇区图:六个基本矢量把 αβ 平面分成六个扇区,内切圆为线性调制区边界,目标矢量由相邻矢量按 T1 T2 合成" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="svArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+        <marker id="svArrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+      </defs>
+      <!-- 坐标轴 -->
+      <line x1="90" y1="170" x2="560" y2="170" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>
+      <line x1="320" y1="290" x2="320" y2="46" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="552" y="162" fill="#64748b" font-size="11">α</text>
+      <text x="328" y="56" fill="#64748b" font-size="11">β</text>
+      <!-- 六边形 -->
+      <polygon points="425,170 372,79 268,79 215,170 268,261 372,261" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-width="1.6"/>
+      <!-- 内切圆 = 线性区 -->
+      <circle cx="320" cy="170" r="91" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 3"/>
+      <text x="320" y="86" text-anchor="middle" fill="#f59e0b" font-size="10.5">内切圆 = Usmax = Udc/√3(线性区)</text>
+      <!-- 基本矢量 -->
+      <g stroke="#ef4444" stroke-width="2.2" marker-end="url(#svArrG)">
+        <line x1="320" y1="170" x2="418" y2="170"/>
+        <line x1="320" y1="170" x2="367" y2="87"/>
+        <line x1="320" y1="170" x2="273" y2="87"/>
+        <line x1="320" y1="170" x2="222" y2="170"/>
+        <line x1="320" y1="170" x2="273" y2="253"/>
+        <line x1="320" y1="170" x2="367" y2="253"/>
+      </g>
+      <g font-size="11" font-weight="bold" fill="#ef4444">
+        <text x="428" y="164">V4(100)</text>
+        <text x="376" y="80">V6(110)</text>
+        <text x="232" y="80">V2(010)</text>
+        <text x="148" y="164">V3(011)</text>
+        <text x="232" y="272">V1(001)</text>
+        <text x="376" y="272">V5(101)</text>
+      </g>
+      <text x="308" y="182" fill="#64748b" font-size="10">V0/V7=零矢量</text>
+      <!-- 扇区号 -->
+      <g font-size="12" font-weight="bold" fill="#7cb8ff">
+        <text x="400" y="128">Ⅰ</text>
+        <text x="330" y="92">Ⅱ</text>
+        <text x="248" y="100">Ⅲ</text>
+        <text x="216" y="132">Ⅳ</text>
+        <text x="248" y="248">Ⅴ</text>
+        <text x="340" y="248">Ⅵ</text>
+      </g>
+      <!-- Vref 示例 -->
+      <line x1="320" y1="170" x2="392" y2="136" stroke="#22c55e" stroke-width="2.6" marker-end="url(#svArrG)"/>
+      <text x="398" y="142" fill="#22c55e" font-size="11.5" font-weight="bold">Vref(落在扇区Ⅰ)</text>
+      <line x1="320" y1="170" x2="396" y2="170" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="4 2" marker-end="url(#svArrB)"/>
+      <line x1="396" y1="170" x2="392" y2="136" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="4 2" marker-end="url(#svArrB)"/>
+      <text x="352" y="184" fill="#58a6ff" font-size="10.5" font-weight="bold">T1·V4</text>
+      <text x="408" y="158" fill="#58a6ff" font-size="10.5" font-weight="bold">T2·V6</text>
+      <text x="320" y="302" text-anchor="middle" fill="#94a3b8" font-size="11">γ = Vref 相对扇区起始边的夹角;Vref 由 V4 作用 T1、V6 作用 T2、零矢量作用 T0 合成</text>
+    </svg>
+    <div class="my-fig-cap">图⑤ SVPWM 矢量扇区图:括号内是三相开关状态(S=上管导通)。Vref 矢量角 γ 决定相邻矢量各自分担多少时间;超出内切圆即过调制,电流环失控。</div>
+  </div>
+  <p><strong>扇区判断</strong>不需要 atan2,用三个符号函数拼出判据 N,一次判断落在哪个扇区:</p>
+  <div class="formula">B0 = sign(Vβ),　B1 = sign(√3·Vα − Vβ),　B2 = sign(−√3·Vα − Vβ),　N = B0 + 2·B1 + 4·B2</div>
+  <div class="table-wrap"><table>
+    <tr><th>N</th><th>3</th><th>1</th><th>5</th><th>4</th><th>6</th><th>2</th></tr>
+    <tr><td>扇区</td><td>Ⅰ(0~60°)</td><td>Ⅱ(60~120°)</td><td>Ⅲ(120~180°)</td><td>Ⅳ(180~240°)</td><td>Ⅴ(240~300°)</td><td>Ⅵ(300~360°)</td></tr>
+  </table></div>
+  <p>确定扇区后,设 γ 为 Vref 在扇区内相对起始边的角度,作用时间(Ⅰ 扇区为例):</p>
+  <div class="formula">T1 = √3·Ts·|Vref|/Udc · sin(60° − γ)　　T2 = √3·Ts·|Vref|/Udc · sin(γ)　　T0 = Ts − T1 − T2</div>
+  <pre><code>/* 扇区Ⅰ的完整数值示例: Udc=24V, Ts=50μs(20kHz), Vref=8V, γ=25° */
+/* T1 = 1.732*50e-6*8/24*sin(35°) = 16.6μs */
+/* T2 = 1.732*50e-6*8/24*sin(25°) = 12.2μs */
+/* T0 = 50 - 16.6 - 12.2 = 21.2μs  → 两端各分 10.6μs(七段式) */</code></pre>
+
+  <h3>5.2 七段式波形与马鞍波:母线利用率提升 15.5%</h3>
+  <p>把 T0 拆成两半放两端、T1/T2 各拆两半对称放中间,得到<strong>中心对称的七段序列</strong>(以扇区Ⅰ为例:V0→V4→V6→V7→V6→V4→V0)。中心对齐让每次切换只动一个开关管——开关损耗最小,谐波也最友好。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 200" role="img" aria-label="七段式波形图:扇区一内 U V W 三相上管导通时间段,中心对称,两端为零矢量" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <!-- 段边界 -->
+      <g stroke="#64748b" stroke-width="0.8" stroke-dasharray="3 3">
+        <line x1="110" y1="30" x2="110" y2="172"/><line x1="170" y1="30" x2="170" y2="172"/>
+        <line x1="230" y1="30" x2="230" y2="172"/><line x1="290" y1="30" x2="290" y2="172"/>
+        <line x1="350" y1="30" x2="350" y2="172"/><line x1="410" y1="30" x2="410" y2="172"/>
+        <line x1="470" y1="30" x2="470" y2="172"/><line x1="530" y1="30" x2="530" y2="172"/>
+      </g>
+      <g font-size="10.5" fill="#94a3b8" text-anchor="middle">
+        <text x="140" y="24">V0</text><text x="200" y="24">V4</text><text x="260" y="24">V6</text>
+        <text x="320" y="24">V7</text><text x="380" y="24">V6</text><text x="440" y="24">V4</text><text x="500" y="24">V0</text>
+      </g>
+      <g font-size="10" fill="#64748b" text-anchor="middle">
+        <text x="140" y="186">T0/2</text><text x="200" y="186">T1/2</text><text x="260" y="186">T2/2</text>
+        <text x="320" y="186">T0/2</text><text x="380" y="186">T2/2</text><text x="440" y="186">T1/2</text><text x="500" y="186">T0/2</text>
+      </g>
+      <!-- U 相 -->
+      <path d="M110 130 H170 V52 H410 V130 H530" fill="none" stroke="#58a6ff" stroke-width="2.4"/>
+      <text x="94" y="96" text-anchor="end" fill="#58a6ff" font-size="11" font-weight="bold">U</text>
+      <!-- V 相 -->
+      <path d="M110 130 H230 V88 H350 V130 H530" fill="none" stroke="#f59e0b" stroke-width="2.4"/>
+      <text x="94" y="114" text-anchor="end" fill="#f59e0b" font-size="11" font-weight="bold">V</text>
+      <!-- W 相 -->
+      <path d="M110 130 H290 V124 H350 V130 H530" fill="none" stroke="#22c55e" stroke-width="2.4"/>
+      <text x="94" y="132" text-anchor="end" fill="#22c55e" font-size="11" font-weight="bold">W</text>
+      <text x="560" y="90" fill="#94a3b8" font-size="10">上管导通=高</text>
+      <text x="560" y="140" fill="#94a3b8" font-size="10">每段只切一相</text>
+    </svg>
+    <div class="my-fig-cap">图⑥ 七段式开关序列(扇区Ⅰ,U 相占空比最大):形状中心对称、两端各留半个零矢量。序列随扇区轮换,三相占空比随之滚动。</div>
+  </div>
+  <p><strong>马鞍波与母线利用率</strong>:七段式的本质是往三相调制波里注入了<strong>零序共模分量</strong> u<sub>cm</sub> = −(max+min)/2,波形从正弦变成"马鞍"。收益:纯正弦 SPWM 相电压幅值上限是 <b>Udc/2</b>,马鞍波把上限抬到 <b>Udc/√3 ≈ 0.577·Udc</b>,等效基波幅值提升 <b>√3/2 ≈ 1.155 倍(约 15.5%)</b>——同样的电池,多榨出 15% 的转速/力矩余量。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 205" role="img" aria-label="马鞍波与正弦调制波对比:注入零序分量后波形顶部被压平,基波可用幅值提升约百分之十五点五" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <line x1="50" y1="100" x2="560" y2="100" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>
+      <line x1="50" y1="19" x2="560" y2="19" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="6 3"/>
+      <text x="356" y="15" fill="#22c55e" font-size="10.5">SVPWM 基波可用幅值 = 1.155(SPWM 为 1.0)</text>
+      <polyline points="60,100 80,81.9 100,65 120,50.5 140,39.4 160,32.4 180,30 200,32.4 220,39.4 240,50.5 260,65 280,81.9 300,100 320,118.1 340,135 360,149.5 380,160.6 400,167.6 420,170 440,167.6 460,160.6 480,149.5 500,135 520,118.1 540,100" fill="none" stroke="#58a6ff" stroke-width="1.8" stroke-dasharray="6 3"/>
+      <polyline points="60,100 80,72.8 100,60.3 120,41.5 140,34.7 160,41.4 180,47.5 200,41.4 220,39.4 240,41.5 260,47.5 280,72.8 300,100 320,127.2 340,139.7 360,158.5 380,165.3 400,158.6 420,152.5 440,158.6 460,160.6 480,158.5 500,152.5 520,127.2 540,100" fill="none" stroke="#f59e0b" stroke-width="2.4"/>
+      <text x="546" y="34" fill="#f59e0b" font-size="11" font-weight="bold">马鞍波</text>
+      <text x="546" y="104" fill="#58a6ff" font-size="11">正弦 SPWM</text>
+      <text x="300" y="196" text-anchor="middle" fill="#94a3b8" font-size="11">注入 u_cm = −(max+min)/2 后:包络被"压平抬高",同样的母线电压可输出更大的基波</text>
+    </svg>
+    <div class="my-fig-cap">图⑦ 马鞍波 vs 正弦调制:顶部平、谷底也平,单相峰值反而更低;绿色虚线是等母线下 SVPWM 能给出的基波幅值,即 √3/2 增益的来源。</div>
+  </div>
+
+  <!-- ================= 6 死区效应与补偿 ================= -->
+  <h2><span class="h2-num">6</span> 死区效应与补偿:被吃掉的电压与低速嘶嘶声</h2>
+  <p>第⑦框算出的占空比交给硬件后,还要被<strong>死区</strong>"打劫"一次。死区是防止上下管直通的保命机制,但它在每个开关沿都会让输出电压偏离指令值——这是 FOC 低速性能的"天生宿敌"。</p>
+
+  <h3>6.1 死区:物理原因、电压损失定量与补偿方法</h3>
+  <ul>
+    <li><strong>为什么必须有死区</strong>:MOSFET 关断有拖尾(米勒平台、关断延迟),同一半桥"一管未关、另一管先开"就是母线直通短路,毫秒级炸管。所以栅极驱动强制插入 <b>Td(0.2~2μs)</b> 的双关断间隙,期间电流经续流二极管走。</li>
+    <li><strong>电压去哪了</strong>:死区期间输出由<strong>电流方向</strong>决定(哪管电流就往哪管的二极管续流),与指令无关。于是每个开关沿产生一个 ±Udc·Td 的伏秒误差,符号取决于电流极性——等效为一个与基波同频的方波扰动,取基波后:</li>
+  </ul>
+  <div class="formula">ΔV₁ ≈ (4/π)·Udc·Td·fs = 4·Td·fs·Udc/π　　(例: Udc=24V, Td=500ns, fs=20kHz → ΔV₁≈0.76V)</div>
+  <ul>
+    <li><strong>危害长什么样</strong>:相电流过零附近发生 6 次/电周期的"过零钳位"(zero clamping),表现为低速时嘶嘶噪声、力矩抖动、电流波形平顶畸变。fs 越高、Udc 越大、Td 越大,ΔV 越大——<b>高速化小型化设计里死区补偿越来越不可省</b>。</li>
+  </ul>
+
+  <p><strong>补回来</strong>有三种主流方法:</p>
+  <div class="table-wrap"><table>
+    <tr><th>方法</th><th>原理</th><th>优点</th><th>代价/风险</th></tr>
+    <tr><td><b>按电流方向移相(前馈补偿)</b></td><td>按各相电流符号,把该相占空比直接补上 Δd = ±Td·fs(即 ±Td/Ts 的伏秒)</td><td>实现两条 if;响应即时</td><td>依赖电流符号判断;过零附近符号抖动会补错,常配滞环/小电流区冻结补偿</td></tr>
+    <tr><td><b>闭环扰动观测补偿</b></td><td>把"指令电压 − 实际基波电压"的差当作扰动,用积分器/观测器在线估出 ΔV 并回注(死区效应被自动吸收,含管压降)</td><td>不依赖精确 Td,连器件压降一起补</td><td>带宽要远低于电流环;参数不当易振荡</td></tr>
+    <tr><td><b>过零钳位检测补偿</b></td><td>检测相电流被钳在 0 的区段,只在该相钳位时补偿</td><td>针对性强,不影响非钳位区</td><td>检测阈值难定,零速小电流仍困难</td></tr>
+  </table></div>
+  <pre><code>/* 前馈死区补偿(每相一条): 符号判断加滞环,小电流区保持上次补偿方向 */
+float ia_comp = 0;
+if (ia &gt;  I_HYST)      ia_comp = +TD_FS;      /* Td*fs = 0.01(占空比) */
+else if (ia &lt; -I_HYST) ia_comp = -TD_FS;
+else                   ia_comp = ia_comp;     /* 过零区: 冻结,防止抖动 */
+duty_a += ia_comp;  duty_b += 0;  duty_c += 0;   /* 三相各算各的,再统一限幅 */</code></pre>
+  <div class="box box-tip"><b>💡 判断要不要补:</b>算一下 ΔV₁ 占 Usmax 的比例——&lt;1% 可不补;3% 以上或电机有低速力控需求(关节机器人正是),前馈补偿必做。硬件侧则尽量选<strong>支持自适应死区的栅极驱动</strong>,把 Td 本身压小,比任何算法都干净。</div>
+
+  <!-- ================= 7 编码器与电角度校准 ================= -->
+  <h2><span class="h2-num">7</span> 编码器与电角度校准:θ 的来龙去脉</h2>
+  <p>总流程图③⑥两框都依赖 θe——它错了,坐标系就转错,力矩方向全错。这一节讲 θe 的物理含义、两种主流编码器、以及上电后的"找北"流程。</p>
+
+  <h3>7.1 增量 ABZ / 绝对值 SPI 编码器;电角度 ≠ 机械角度</h3>
+  <ul>
+    <li><strong>增量式 ABZ</strong>:A/B 相 90° 正交脉冲判向,Z 脉冲每圈一次找零。便宜、高频响;但<strong>上电不知道绝对位置</strong>,必须先做索引/对齐校准。ABI 接口经定时器正交解码硬件计数,CPU 零负担。</li>
+    <li><strong>绝对值编码器(SPI/SSI)</strong>:AS5047/MT6835 等磁编码器或光电绝对编码器,上电即知 0~360° 绝对角,关节类产品标配。注意 SPI 读数有传输时间,高速时要按 ω 补延迟。</li>
+    <li><strong>电角度 vs 机械角度</strong>:电机转一圈(机械 360°),电角度转 <b>p 圈(360°×p)</b>,p 为极对数(关节电机常见 7~14)。FOC 用的全是电角度:</li>
+  </ul>
+  <div class="formula">θe = ( θmech × p + θe_offset ) mod 360°　　例: p=14,机械角转 1°,电角度走 14°</div>
+
+  <h3>7.2 零点校准流程与编码器的非理想性</h3>
+  <p><strong>d 轴对齐法</strong>——上电校准的标准操作,本质是"用 FOC 自己给转子定位":</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>给定 id</b><br>强制 Vd 为正、Vq=0(开环电压或电流闭环),产生指向 d 轴的定子磁场</div>
+    <div class="step-item"><span class="n">2</span><b>转子对齐</b><br>永磁转子被吸到 d 轴方向并锁住(能听到"咔"的锁定感)</div>
+    <div class="step-item"><span class="n">3</span><b>记录编码器</b><br>读下此刻编码器原始角,记为零点偏移 θe_offset(编码器读数此刻 = 电角度 0)</div>
+    <div class="step-item"><span class="n">4</span><b>验证</b><br>开环慢转一圈,检查电角度连续无跳变、方向与相序定义一致</div>
+    <div class="step-item"><span class="n">5</span><b>存参数</b><br>把 offset、极对数、方向写进非易失存储,下次上电直接用</div>
+  </div>
+  <div class="box box-warn"><b>⚠️ 非理想因素:</b>① <b>编码器非线性</b>——磁编码器受安装偏心/芯片线性度影响,有几角分到零点几度的周期误差,径向/切向力矩纹波的元凶之一,可按机械角查表校正;② <b>延迟</b>——采样到生效隔 1.5 拍,高速时用 θe' = θe + ωe·1.5·Tpwm 补;③ <b>方向/相序</b>——装配差异导致"正电压指令反转",校准时务必确认方向标志;④ Z 脉冲丢失或 SPI CRC 错,按第 10 节进 FAULT 而不是带病运行。</div>
+  <p>校准后的 θe 质量,直接决定总流程图③⑥两框的坐标系质量——所谓"FOC 调不好",相当一部分是"θe 就不准"。这一步的实操细节同样见 <a href="../02_硬件基础/15_传感器与关节标定专题.html">02-15 传感器与关节标定专题</a>。</p>
+
+  <!-- ================= 8 代码运行图:状态机 ================= -->
+  <h2><span class="h2-num">8</span> 代码运行图:上电 → 校准 → 运行 → 保护的状态机</h2>
+  <p>总流程图是"一拍之内"的微观流程;把它撑起来的是"整个生命周期"的宏观骨架——<strong>状态机</strong>。任何一份正经的 FOC 固件(SimpleFOC 的 initFOC、ODrive 的 state machine、ST MC-SDK 的 State machine)都能归约到下面这张图。面试时能白板画出它,基本等于"真写过驱动器"。</p>
+
+  <h3>8.1 状态机总图:七个状态与全部转换条件</h3>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 520" role="img" aria-label="FOC 固件状态机:上电自检到编码器校准,可选参数辨识,再到对齐、就绪、运行与故障状态,含各转换条件与故障恢复路径" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="stArrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        <marker id="stArrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+        <marker id="stArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- 状态框 -->
+      <rect x="20" y="24" width="180" height="54" rx="12" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.8"/>
+      <text x="110" y="46" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">POWER_ON_SELFTEST</text>
+      <text x="110" y="64" text-anchor="middle" fill="#22c55e" font-size="10">RAM/外设自检·ADC 零偏标定</text>
+      <rect x="250" y="24" width="170" height="54" rx="12" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.8"/>
+      <text x="335" y="46" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">ENCODER_CALIB</text>
+      <text x="335" y="64" text-anchor="middle" fill="#58a6ff" font-size="10">编码器通信/方向判定</text>
+      <rect x="470" y="24" width="150" height="54" rx="12" fill="#7c3aed" fill-opacity=".08" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="6 3"/>
+      <text x="545" y="46" text-anchor="middle" fill="#a78bfa" font-size="12.5" font-weight="bold">PARAM_IDENTIFY</text>
+      <text x="545" y="64" text-anchor="middle" fill="#a78bfa" font-size="10">可选:辨识 Rs/L/ψf</text>
+      <rect x="250" y="150" width="170" height="50" rx="12" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.8"/>
+      <text x="335" y="171" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">ALIGN</text>
+      <text x="335" y="189" text-anchor="middle" fill="#58a6ff" font-size="10">d 轴对齐,记 θe_offset</text>
+      <rect x="250" y="270" width="170" height="50" rx="12" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.8"/>
+      <text x="335" y="291" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">READY</text>
+      <text x="335" y="309" text-anchor="middle" fill="#22c55e" font-size="10">待机封波,等待使能</text>
+      <rect x="250" y="385" width="170" height="64" rx="12" fill="#f59e0b" fill-opacity=".12" stroke="#f59e0b" stroke-width="2.2"/>
+      <text x="335" y="407" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="bold">RUN</text>
+      <text x="335" y="424" text-anchor="middle" fill="#f59e0b" font-size="10">ISR:总流程①~⑧ 逐拍执行</text>
+      <text x="335" y="440" text-anchor="middle" fill="#f59e0b" font-size="10">主循环:速度/位置环+指令解析</text>
+      <rect x="490" y="385" width="130" height="64" rx="12" fill="#ef4444" fill-opacity=".12" stroke="#ef4444" stroke-width="2"/>
+      <text x="555" y="407" text-anchor="middle" fill="#ef4444" font-size="13" font-weight="bold">FAULT</text>
+      <text x="555" y="424" text-anchor="middle" fill="#ef4444" font-size="10">封波 MOE=0</text>
+      <text x="555" y="440" text-anchor="middle" fill="#ef4444" font-size="10">记录故障码/时间戳</text>
+      <rect x="490" y="474" width="130" height="36" rx="9" fill="#ef4444" fill-opacity=".07" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="5 3"/>
+      <text x="555" y="489" text-anchor="middle" fill="#ef4444" font-size="10">严重故障:锁定</text>
+      <text x="555" y="503" text-anchor="middle" fill="#ef4444" font-size="10">需重新上电清零</text>
+      <!-- 转换箭头 -->
+      <line x1="200" y1="51" x2="250" y2="51" stroke="#22c55e" stroke-width="1.8" marker-end="url(#stArrG)"/>
+      <text x="225" y="43" text-anchor="middle" fill="#94a3b8" font-size="9.5">自检通过</text>
+      <line x1="420" y1="51" x2="470" y2="51" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#stArrB)"/>
+      <text x="445" y="43" text-anchor="middle" fill="#a78bfa" font-size="9.5">可选</text>
+      <line x1="335" y1="78" x2="335" y2="150" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#stArrB)"/>
+      <text x="343" y="118" fill="#94a3b8" font-size="9.5">校准通过/跳过辨识</text>
+      <path d="M545 78 C545 120 460 160 420 170" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#stArrB)"/>
+      <text x="490" y="140" fill="#a78bfa" font-size="9.5">参数写入</text>
+      <line x1="335" y1="200" x2="335" y2="270" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#stArrB)"/>
+      <text x="343" y="240" fill="#94a3b8" font-size="9.5">offset 存入 NVS</text>
+      <line x1="320" y1="320" x2="320" y2="385" stroke="#22c55e" stroke-width="1.8" marker-end="url(#stArrG)"/>
+      <text x="312" y="356" text-anchor="end" fill="#94a3b8" font-size="9.5">收到使能(CAN/上位机)</text>
+      <line x1="362" y1="385" x2="362" y2="320" stroke="#22c55e" stroke-width="1.8" marker-end="url(#stArrG)"/>
+      <text x="370" y="356" fill="#94a3b8" font-size="9.5">去使能/正常停机</text>
+      <path d="M420 175 C505 185 555 250 555 385" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#stArrR)"/>
+      <text x="560" y="300" fill="#ef4444" font-size="9.5">对齐超时/失锁</text>
+      <line x1="420" y1="417" x2="490" y2="417" stroke="#ef4444" stroke-width="2" marker-end="url(#stArrR)"/>
+      <text x="455" y="408" text-anchor="middle" fill="#ef4444" font-size="9.5">过流/超温/堵转/丢编码器</text>
+      <path d="M500 400 C445 385 432 340 424 322" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#stArrG)"/>
+      <text x="438" y="360" fill="#22c55e" font-size="9.5">故障已消失+重试&lt;N 次</text>
+      <line x1="555" y1="449" x2="555" y2="474" stroke="#ef4444" stroke-width="1.6" marker-end="url(#stArrR)"/>
+      <text x="563" y="466" fill="#ef4444" font-size="9.5">重复故障×M</text>
+    </svg>
+    <div class="my-fig-cap">图⑧ FOC 固件生命周期状态机:绿=安全态,蓝=校准链路,紫虚线=可选辨识,橙=正常运行(唯一允许输出转矩的状态),红=故障与锁定。任何状态任何异常,终点都是 FAULT——先安全,再谈性能。</div>
+  </div>
+
+  <h3>8.2 各状态做什么:任务、耗时与失败去向</h3>
+  <div class="table-wrap"><table>
+    <tr><th>状态</th><th>典型耗时</th><th>做哪些事</th><th>进入下一状态的条件</th><th>失败去向</th></tr>
+    <tr><td>POWER_ON_SELFTEST</td><td>10~100ms</td><td>时钟/外设/存储校验;ADC 采样零偏标定(所有开关关断,采均值);比较器自检</td><td>全部通过</td><td>FAULT(自检失败码)</td></tr>
+    <tr><td>ENCODER_CALIB</td><td>&lt;10ms(绝对式)</td><td>SPI 读数 CRC 校验;缓慢转动判方向;增量式在此做 Z 搜索</td><td>读数稳定且方向确定</td><td>FAULT(编码器丢失)</td></tr>
+    <tr><td>PARAM_IDENTIFY(可选)</td><td>0.5~3s</td><td>Rs 直流注入、L 电感脉冲、磁链反推(见第 11 节)</td><td>辨识收敛、残差小</td><td>跳过,用上次/默认参数</td></tr>
+    <tr><td>ALIGN</td><td>0.3~1s</td><td>给定 d 轴电流对齐转子,记录 θe_offset,写入 NVS</td><td>对齐稳定且角度单调</td><td>FAULT(超时/失锁)</td></tr>
+    <tr><td>READY</td><td>常驻待机</td><td>PWM 封波;监听 CAN 指令;持续自检(母线电压/温度)</td><td>收到使能且无故障</td><td>—</td></tr>
+    <tr><td>RUN</td><td>持续</td><td>ISR 跑①~⑧;主循环跑速度/位置环、轨迹插补、指令解析</td><td>—</td><td>任何保护触发 → FAULT</td></tr>
+    <tr><td>FAULT</td><td>持续至恢复</td><td>六管全关(MOE=0);锁存故障码;按策略尝试恢复</td><td>故障消失 + 重试未超限</td><td>重复故障 → 锁定</td></tr>
+  </table></div>
+  <ul>
+    <li><strong>故障恢复策略(分级)</strong>:可自愈类(欠压瞬态、短时过流)→ 条件满足后自动回 READY,重试计数 +1;<strong>超限类</strong>(同帧内重试 ≥ N 次仍故障)→ 锁定,只接受重新上电/专用清障指令;<strong>危险类</strong>(驱动器级过流、比较器封波)→ 不允许软件恢复,必须断电排查。</li>
+    <li><strong>设计铁律</strong>:① 任何状态下 FAULT 都要能被"最短路径"触发(硬件比较器不经 CPU);② 状态迁移全部走统一入口,杜绝散落的 PWM 使能代码;③ 每次进入 RUN 前重新校验参数 CRC——上次的调试参数可能被改坏了。</li>
+  </ul>
+
+  <!-- ================= 9 中断时序与执行时间预算 ================= -->
+  <h2><span class="h2-num">9</span> 中断时序图与执行时间预算:ISR 晚一拍会发生什么</h2>
+  <p>FOC 是<strong>硬实时</strong>任务:每一拍都有"采样时刻"和"输出截止时刻"。这一节把 PWM 周期、ADC 触发、ISR 执行画在同一条时间轴上,并给出各步骤的周期数预算——学会用它判断"我的 ISR 来不来得及"。</p>
+
+  <h3>9.1 PWM 中断时序图与执行时间预算表:触发、转换、执行、截止</h3>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 268" role="img" aria-label="PWM 中断时序图:时间轴上一百微秒两个周期,ADC 中心触发后约两微秒完成转换,ISR 正常在截止前完成,异常时 ISR 拖过下一拍截止线导致超时" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="tsArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+        <marker id="tsArrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+      </defs>
+      <!-- 触发线 -->
+      <line x1="195" y1="40" x2="195" y2="228" stroke="#22c55e" stroke-width="1.8" stroke-dasharray="6 3"/>
+      <line x1="445" y1="40" x2="445" y2="228" stroke="#22c55e" stroke-width="1.8" stroke-dasharray="6 3"/>
+      <polygon points="195,40 189,50 201,50" fill="#22c55e"/>
+      <polygon points="445,40 439,50 451,50" fill="#22c55e"/>
+      <text x="195" y="34" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">ADC 触发(周期中心)</text>
+      <text x="445" y="34" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">ADC 触发</text>
+      <!-- 截止线 -->
+      <line x1="445" y1="150" x2="445" y2="228" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3 3"/>
+      <line x1="570" y1="150" x2="570" y2="228" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="6 3"/>
+      <text x="570" y="160" text-anchor="middle" fill="#ef4444" font-size="10.5" font-weight="bold">下一拍截止</text>
+      <!-- 行1: ADC 转换 -->
+      <text x="60" y="70" text-anchor="end" fill="#58a6ff" font-size="11">ADC 转换</text>
+      <rect x="195" y="56" width="12" height="20" rx="3" fill="#58a6ff" fill-opacity=".5" stroke="#58a6ff" stroke-width="1.4"/>
+      <rect x="445" y="56" width="12" height="20" rx="3" fill="#58a6ff" fill-opacity=".5" stroke="#58a6ff" stroke-width="1.4"/>
+      <text x="212" y="70" fill="#58a6ff" font-size="10">≈2μs(注入组流水)</text>
+      <!-- 行2: ISR 正常 -->
+      <text x="60" y="112" text-anchor="end" fill="#f59e0b" font-size="11">ISR 正常</text>
+      <rect x="207" y="96" width="90" height="20" rx="4" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b" stroke-width="1.4"/>
+      <text x="303" y="110" fill="#f59e0b" font-size="10">①~⑧ ≈15μs ✓ 远早于 445 处下一拍</text>
+      <!-- 行3: ISR 超时 -->
+      <text x="60" y="152" text-anchor="end" fill="#ef4444" font-size="11">ISR 超时</text>
+      <rect x="457" y="136" width="88" height="20" rx="4" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b" stroke-width="1.4"/>
+      <rect x="545" y="136" width="40" height="20" rx="4" fill="#ef4444" fill-opacity=".55" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="452" y="186" text-anchor="middle" fill="#ef4444" font-size="10.5">被更高优先级中断抢占/计算超支 → 跨过 570 处截止线</text>
+      <!-- 波纹: 后果 -->
+      <path d="M585 156 L585 196 L360 196" fill="none" stroke="#ef4444" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#tsArrR)"/>
+      <text x="352" y="200" text-anchor="end" fill="#ef4444" font-size="10.5">错过下一拍采样 → 电流重建错拍、θ 补偿失配 → 电流环啸叫/振荡</text>
+      <!-- 时间轴 -->
+      <line x1="66" y1="228" x2="600" y2="228" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#tsArrG)"/>
+      <g stroke="#94a3b8" stroke-width="1.2">
+        <line x1="70" y1="224" x2="70" y2="232"/><line x1="195" y1="224" x2="195" y2="232"/>
+        <line x1="320" y1="224" x2="320" y2="232"/><line x1="445" y1="224" x2="445" y2="232"/>
+        <line x1="570" y1="224" x2="570" y2="232"/>
+      </g>
+      <g font-size="10" fill="#94a3b8" text-anchor="middle">
+        <text x="70" y="244">0</text><text x="195" y="244">25μs</text><text x="320" y="244">50μs</text>
+        <text x="445" y="244">75μs</text><text x="570" y="244">100μs</text>
+      </g>
+      <text x="620" y="248" text-anchor="end" fill="#64748b" font-size="10">例: 20kHz, Tpwm=50μs</text>
+    </svg>
+    <div class="my-fig-cap">图⑨ PWM 中断时序:绿色=触发点,蓝=ADC 转换,橙=ISR 执行,红=越界部分。健康判据:ISR 结束时刻距下一拍触发仍有大段余量(至少留 40~50% 空闲给通信与其他中断)。</div>
+  </div>
+  <div class="box box-warn"><b>⚠️ ISR 超时的连锁反应:</b>① 错过下一次 ADC 触发,采样被推迟一拍,<strong>电流值与 θ 失配</strong>,等效在电流环里插入额外纯延迟——延迟超过 T/4 左右相位裕度就崩,表现为"一给速度就啸叫";② 用旧数据算 SVPWM,输出矢量方向错误;③ 抖动污染速度环测速,位置环跟着抖;④ 长期超支触发看门狗复位,关节在运动中突然失力——比不振更危险。</div>
+
+  <p>以 <strong>Cortex-M4F @170MHz</strong>(关节驱动主流)、单精度浮点、sin/cos 查表为基准的典型预算(20kHz 节拍,周期 50μs ≈ 8500 周期):</p>
+  <div class="table-wrap"><table>
+    <tr><th>步骤</th><th>对应总图框</th><th>典型耗时</th><th>约折合周期</th><th>提速手段</th></tr>
+    <tr><td>中断进入/退出(压栈出栈)</td><td>—</td><td>~0.3μs</td><td>~50</td><td>—</td></tr>
+    <tr><td>读相电流+零偏/增益换算</td><td>①</td><td>~0.4μs</td><td>~70</td><td>定点 Q15 或硬件 ADC 增益</td></tr>
+    <tr><td>取编码器角度+延迟补偿</td><td>③输入</td><td>~0.2μs</td><td>~35</td><td>SPI+DMA 预取,ISR 只取数</td></tr>
+    <tr><td>Clark 变换</td><td>②</td><td>~0.1μs</td><td>~17</td><td>乘加重排,FPU 单周期 FMLA</td></tr>
+    <tr><td>Park 变换(含 sin/cos 查表)</td><td>③</td><td>~0.4μs</td><td>~70</td><td>CORDIC 硬件(G4/H7)或 256 点表</td></tr>
+    <tr><td>d/q 两路 PI+抗饱和+前馈</td><td>④</td><td>~0.4μs</td><td>~70</td><td>合并为 2×(2 FMLA)</td></tr>
+    <tr><td>限幅圆判断与缩放</td><td>⑤</td><td>~0.1μs</td><td>~17</td><td>避免除法:用倒数乘法</td></tr>
+    <tr><td>反 Park 变换</td><td>⑥</td><td>~0.3μs</td><td>~50</td><td>复用 sin/cos 缓存</td></tr>
+    <tr><td>SVPWM(扇区+T1/T2+占空比)</td><td>⑦</td><td>~0.6μs</td><td>~100</td><td>查表化/最小-最大法求零序</td></tr>
+    <tr><td>写 CCRx+时基诊断(测量 ISR 用时)</td><td>⑧</td><td>~0.2μs</td><td>~35</td><td>影子寄存器原子写</td></tr>
+    <tr><td><b>合计(典型)</b></td><td>—</td><td><b>~3.0μs</b></td><td><b>~510</b></td><td>占周期 <b>6%</b>,健康</td></tr>
+    <tr><td>合计(未优化 float 库调用)</td><td>—</td><td>~25μs</td><td>~4200</td><td>占 50%——上线前必须优化</td></tr>
+  </table></div>
+  <ul>
+    <li><strong>预算纪律</strong>:ISR 用时(含最坏路径)&lt; 周期的 50%;优先级上电流环 ISR 全站最高,通信(1ms 级)与主循环(速度/位置环)都要为它让路。</li>
+    <li><strong>怎么测</strong>:进入 ISR 翻一个 GPIO、退出翻回来,示波器看高电平宽度;或用 DWT->CYCCNT 记周期数,每秒打印最大值——"最大值"而不是平均值才是验收指标。</li>
+    <li><strong>现代加速器</strong>:STM32G4/H7 带 CORDIC(硬件三角函数)与 FMAC,把③⑥两步压到十几个周期;TI C2000 的 CLA 让控制环在独立协处理器上跑,CPU 只管通信。</li>
+  </ul>
+
+  <!-- ================= 10 保护机制 ================= -->
+  <h2><span class="h2-num">10</span> 保护机制:硬件级封波与软件级阈值</h2>
+  <p>状态机的 FAULT 从哪来?答案是<strong>两条独立的保护链</strong>:硬件链"快但糙",软件链"细但慢"。两者缺一不可——只靠软件保护,CPU 哪怕忙 10μs 都可能来不及救硬件。</p>
+
+  <h3>10.1 两级保护与 FAULT 恢复条件:比较器封波 + 软件阈值去抖</h3>
+  <ul>
+    <li><strong>硬件级(微秒级响应,不经过 CPU)</strong>:采样电阻电压 → 内部/外部<strong>比较器</strong>与基准比较 → 触发定时器<strong>刹车输入(BRK)</strong>或 DAO(数字-模拟转换器比较事件)→ 硬件自动清 PWM 输出(MOE=0,六管全关)。全程 ~100ns~1μs,CPU 死机也照样封波。这是炸管事故的唯一可靠防线。</li>
+    <li><strong>软件级(毫秒级响应,可控可分级)</strong>:在电流 ISR 或低速任务里,把各路信号与阈值比较,<strong>连续 N 次超限才触发</strong>(去抖计数,防单点毛刺误动作),再走状态机进 FAULT。可分级:先降额(限流限矩)、再停机、最后锁死。</li>
+  </ul>
+  <div class="table-wrap"><table>
+    <tr><th>保护项</th><th>检测来源</th><th>典型阈值(关节驱动)</th><th>去抖策略</th><th>动作</th></tr>
+    <tr><td>过流(相)</td><td>shunt+比较器 / ADC</td><td>峰值 ≥ 1.5~2×额定电流</td><td>硬件瞬时;软件连续 2~3 拍</td><td>封波 → FAULT</td></tr>
+    <tr><td>过压(母线)</td><td>Udc 分压 ADC</td><td>&gt;1.2×额定母线(如 60V@48V)</td><td>连续 5~10ms</td><td>封波(禁止续流回馈)/ 卸放</td></tr>
+    <tr><td>欠压(母线)</td><td>Udc 分压 ADC</td><td>&lt;0.8×额定</td><td>连续 10~100ms</td><td>降额 → 停机(可自愈)</td></tr>
+    <tr><td>堵转</td><td>编码器 + 指令</td><td>速度≈0 且 |Iq|&gt;阈值 持续 &gt;200ms</td><td>时间窗判定</td><td>限流 → FAULT</td></tr>
+    <tr><td>超温</td><td>NTC/驱动器 TSD</td><td>&gt;85~100℃(降额)/ &gt;110℃(停机)</td><td>慢速滑动平均</td><td>先降额,后 FAULT</td></tr>
+    <tr><td>编码器失效</td><td>SPI CRC / Z 脉冲超时</td><td>连续帧错误或角度跳变 &gt;90°/拍</td><td>连续 3 帧</td><td>立即 FAULT(θ 失效=力矩失控)</td></tr>
+    <tr><td>通信丢失</td><td>CAN 心跳超时</td><td>&gt;5~10 个周期无指令</td><td>超时计数</td><td>进入安全停机(关节阻尼模式)</td></tr>
+  </table></div>
+
+  <p><strong>FAULT 之后什么时候允许"复活"?恢复条件表:</strong></p>
+  <div class="table-wrap"><table>
+    <tr><th>故障类型</th><th>恢复条件</th><th>恢复方式</th><th>限制</th></tr>
+    <tr><td>欠压</td><td>母线电压回到阈值上方并稳定</td><td>自动回 READY</td><td>重试计数 +1,超 N 次锁定</td></tr>
+    <tr><td>堵转</td><td>负载移除/速度恢复</td><td>自动或指令恢复</td><td>累计堵转次数记录,频繁堵转要报警</td></tr>
+    <tr><td>超温</td><td>温度回落 &gt;滞回带(如 &lt;70℃)</td><td>自动回 READY</td><td>滞回防"开机-过热"振荡</td></tr>
+    <tr><td>过流(软件级)</td><td>指令归零后重使能</td><td>需指令恢复</td><td>同帧重复触发 → 升级为硬件级处理</td></tr>
+    <tr><td>过流(硬件比较器)</td><td>不允许软件恢复</td><td>锁定,须断电排查</td><td>说明可能已发生短路/炸管前兆</td></tr>
+    <tr><td>编码器失效</td><td>通信恢复且重新校验 offset</td><td>重新走 ALIGN 链路</td><td>不允许跳过校准直接 RUN</td></tr>
+  </table></div>
+  <div class="box box-ok"><b>✅ 一句话总结两级保护:</b>硬件保护保"炸不炸",软件保护保"好不好"、并给出<strong>可解释的故障码</strong>。人形机器人整机还会在这之上叠第三层——整机控制器收到关节 FAULT 码后决定"单关节停机"还是"全身坐下",这属于机器人软件栈的职责。</div>
+
+  <!-- ================= 11 高级话题一览 ================= -->
+  <h2><span class="h2-num">11</span> 高级话题一览:弱磁、MTPA、参数辨识与无感</h2>
+  <p>到上一节为止,本页已经把"教科书 FOC"画全了。真实关节驱动器还会在这副骨架上加四个高频词——这里各给"一段话版本",深入内容按链接跳转。</p>
+
+  <h3>11.1 弱磁(id&lt;0)、MTPA、参数辨识与无感一览</h3>
+  <ul>
+    <li><strong>弱磁(Field Weakening)</strong>:反电动势 ωe·ψf 随转速上升,逼近 Usmax=Udc/√3 时电压圆"装不下"了。此时给 <b>id &lt; 0</b>,用 d 轴电流去抵消部分永磁磁链(等效"削弱磁场"),把电压矢量拉回圆内——代价是 d 轴电流不做功只发热,效率下降。电池电压被电池电流双向约束:加速与回馈都要在圆内,高速区本质是"电压圆与电流圆的双圆博弈"。</li>
+    <li><strong>MTPA 一句话</strong>:对内置式永磁电机(IPM,磁阻转矩不为零),存在一条使"单位电流力矩最大"的 id/iq 轨迹(≠id=0);表贴式电机(SPM)磁阻转矩≈0,<b>id*=0 就是 MTPA</b>——这就是为什么很多驱动器默认 id=0 而你几乎感觉不到差别。</li>
+  </ul>
+
+  <p><strong>参数辨识三件套与无感</strong>(互链观测器页)——这些参数正是第 4.2 节 Kp=L·ωc、Ki=R·ωc 的输入:</p>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>辨识方法</th><th>原理一句话</th></tr>
+    <tr><td>定子电阻 Rs</td><td>直流注入</td><td>锁住转子,注入已知直流电流 I,测相端压降 V → Rs=(V/2−压降误差)/I(考虑半桥压降)</td></tr>
+    <tr><td>电感 Ld/Lq</td><td>电压脉冲 / 短路电流斜率</td><td>加阶跃电压,电流按指数上升 di/dt=(V−Ri)/L,拟合斜率得 L;或用高频注入测阻抗</td></tr>
+    <tr><td>磁链 ψf</td><td>空载/恒速反电动势反推</td><td>开环拖动到匀速 ωe,测线反电动势 V → ψf = V/(√3·ωe)(线电压口径时除 √3)</td></tr>
+  </table></div>
+  <p>这些参数(第 8 节 PARAM_IDENTIFY 状态)正是第 4 节 Kp=L·ωc、Ki=R·ωc 的输入,也是第 11.1 节弱磁调度的依据——<strong>参数辨识是"自适应/高性能 FOC"的地基</strong>。ST MC-SDK 的 Motor Profiler、TI InstaSPIN 都是自动化这套流程的工具(见文末资源卡)。</p>
+  <p><strong>无感(Sensorless)</strong>:用估计器替代编码器,从中高压调制过程反推转子位置——中高速用反电动势类观测器(SMO/龙伯格/EKF+PLL),零低速用高频注入(HFI)。工程化细节、收敛性与本站统一的观测器框架见 <a href="17_状态观测器全解_龙伯格_EKF_SMO.html">06-17 状态观测器全解(龙伯格/EKF/SMO)</a>;无感 FOC 的官方实现范本见文末 TI/Microchip 应用笔记。</p>
+  <div class="box box-tip"><b>💡 人形机器人用哪个?</b>关节驱动几乎全部用<strong>双编码器有感方案</strong>——力控要求低速大力矩、零速稳定,这正是无感的死区。无感主要出现在风扇/泵/高速空心杯等辅助执行器上。面试时能说清"为什么这里不上无感"比背无感公式更加分(更多面试题见 <a href="../08_学习工具/11_保研复试面试题库.html">08-11 保研复试面试题库</a>)。</div>
+
+  <!-- ================= 12 完整 ISR 参考代码 ================= -->
+  <h2 id="sec12-code"><span class="h2-num">12</span> 完整 ISR 参考代码:与总流程图逐框对应</h2>
+  <p>下面这份约 80 行的参考实现把本页所有图"落成代码":每个注释块的编号 ①~⑧ 与图②总流程图完全一致,可直接对照阅读。代码为教学向的清晰版本(平台无关 C,面向 STM32 风格外设),生产版还需加临界区保护与参数合法性校验。</p>
+  <pre><code>/* =====================================================================
+   foc_current_loop_isr.c —— FOC 电流环 ISR 参考实现(对应图② 总流程①~⑧)
+   平台: 任意 Cortex-M(示例按 STM32 风格), PWM 20kHz, 中心对齐, 低边双电阻
+   编译: 单精度硬件浮点; sin/cos 用查表, 全程禁止调用通用 libm
+   ===================================================================== */
+#include &lt;stdint.h&gt;
+
+/* ---------- 控制器与系统状态(由状态机初始化, ISR 只读/自更新) ---------- */
+typedef struct { float kp, ki, integ, out_min, out_max; } pi_t;   /* PI + 抗饱和限幅 */
+static pi_t pi_d = { .kp=0.35f, .ki=180.0f, .out_min=-22.0f, .out_max=22.0f };
+static pi_t pi_q = { .kp=0.40f, .ki=200.0f, .out_min=-22.0f, .out_max=22.0f };
+
+static volatile float iq_ref = 0.0f;      /* 速度环输出, 主循环 1kHz 更新 */
+static volatile float id_ref = 0.0f;      /* SPM 默认 0; 弱磁时 &lt;0 */
+static volatile uint8_t run_flag = 0;     /* 状态机 = RUN 时置 1 */
+
+static float i_off_a, i_off_b;            /* ① 电流零偏(自检阶段标定) */
+static float theta_e = 0.0f;              /* 电角度(编码器任务预取+延迟补偿) */
+static float udc = 24.0f;                 /* 母线电压(低速任务周期刷新)   */
+static float sincos_cos, sincos_sin;      /* 每拍一份, Park/反Park 共用   */
+
+extern float sin_lut(float th); extern float cos_lut(float th);  /* 查表+线性插值 */
+extern float adc_to_amp(uint16_t raw, float off);                /* 码值→安培    */
+#define PWM_PERIOD_CNT 4250u               /* 例: 170MHz/40kHz 上下计数     */
+
+/* ---------- 单步 PI(含 clamping 抗饱和, 对应总图④) ---------- */
+static inline float pi_step(pi_t *p, float err)
+{
+    float unsat = p-&gt;kp * err + p-&gt;integ;                     /* 先试算未限幅输出 */
+    if ((unsat &gt;  p-&gt;out_max &amp;&amp; err &gt; 0.0f) ||
+        (unsat &lt;  p-&gt;out_min &amp;&amp; err &lt; 0.0f)) {
+        return (unsat &gt; 0) ? p-&gt;out_max : p-&gt;out_min;         /* 饱和且同向: 停积分 */
+    }
+    p-&gt;integ += p-&gt;ki * err * (1.0f / 20000.0f);              /* 正常积分, dt=1/20kHz */
+    unsat = p-&gt;kp * err + p-&gt;integ;
+    if (unsat &gt;  p-&gt;out_max) return p-&gt;out_max;               /* 输出限幅 */
+    if (unsat &lt;  p-&gt;out_min) return p-&gt;out_min;
+    return unsat;
+}
+
+/* ---------- SVPWM: 扇区+作用时间+占空比(对应总图⑦, 详见第 5 节) ---------- */
+static void svpwm(float valpha, float vbeta, float udc_bus, uint16_t ccr[3])
+{
+    float ts = 1.0f / 20000.0f;                               /* 开关周期        */
+    float k  = SQRT3 * ts / udc_bus;                          /* 公共系数        */
+    /* 判扇区 N: 三个符号函数拼出 1..6(避免 atan2) */
+    float b0 = (vbeta &gt; 0) ? 1.0f : -1.0f;
+    float b1 = (SQRT3*valpha - vbeta &gt; 0) ? 1.0f : -1.0f;
+    float b2 = (-SQRT3*valpha - vbeta &gt; 0) ? 1.0f : -1.0f;
+    int n = (int)(b0 + 2.0f*b1 + 4.0f*b2);
+    /* 作用时间(以扇区Ⅰ为例, 其余扇区按表轮换 Vx 组合, 此处仅示意) */
+    float t1 = k * ( SQRT3*valpha - vbeta) * 0.5f;            /* V4 时间(已数值化) */
+    float t2 = k * vbeta;                                     /* V6 时间           */
+    if (t1 + t2 &gt; ts) { float s = ts/(t1+t2); t1*=s; t2*=s; } /* 过调制保护: 等比压缩 */
+    float ta = ts - t1 - t2;                                  /* 零矢量总时间      */
+    /* 七段式中心对齐 → 三相比较值(零矢量对半分, 中心对称) */
+    ccr[0] = (uint16_t)((0.5f*(ta*0.5f + t1 + t2) / ts) * PWM_PERIOD_CNT);
+    ccr[1] = (uint16_t)((0.5f*(ta*0.5f + t2)       / ts) * PWM_PERIOD_CNT);
+    ccr[2] = (uint16_t)((0.5f*(ta*0.5f)            / ts) * PWM_PERIOD_CNT);
+}
+
+/* ========================= 主 ISR: 每 50μs 一次 ========================= */
+void ADC1_2_IRQHandler(void)                                  /* JEOC 触发进入 */
+{
+    GPIO_DIAG-&gt;BSRR = DIAG_PIN;                               /* 时基测量: 置高 */
+    /* 【入口分支】状态检查: 非 RUN 直接清标志返回(总图左侧"否"支路) */
+    if (!run_flag) { ADC1-&gt;ISR = ADC_FLAG_JEOC; GPIO_DIAG-&gt;BSRR = DIAG_PIN&lt;&lt;16; return; }
+
+    /* ① 读相电流: 注入组 JDR1/JDR2 已是同一时刻的 Ia/Ib */
+    float ia = adc_to_amp(ADC1-&gt;JDR1, i_off_a);
+    float ib = adc_to_amp(ADC1-&gt;JDR2, i_off_b);
+    float ic = -(ia + ib);                                    /* 基尔霍夫补第三相 */
+
+    /* ② Clark 变换(等幅值): 三相 → αβ */
+    float ialpha = ia;
+    float ibeta  = (ia + 2.0f*ib) * ONE_OVER_SQRT3;
+
+    /* ③ Park 变换: θe 由编码器任务预取并做了 ω·1.5T 延迟补偿 */
+    sincos_cos = cos_lut(theta_e);  sincos_sin = sin_lut(theta_e);
+    float id =  ialpha*sincos_cos + ibeta*sincos_sin;
+    float iq = -ialpha*sincos_sin + ibeta*sincos_cos;
+
+    /* ④ d/q 双 PI(clamping 抗饱和内置) + 解耦前馈(高速建议开) */
+    float vd = pi_step(&amp;pi_d, id_ref - id) - we_est * LQ * iq; /* we_est/LQ 见 06-02 */
+    float vq = pi_step(&amp;pi_q, iq_ref - iq) + we_est * (LD*id + PSI_F);
+
+    /* ⑤ 电压限幅圆: Usmax = Udc/√3, 等比缩放(方向不变) */
+    float us = vd*vd + vq*vq, usmax = udc * ONE_OVER_SQRT3;
+    if (us &gt; usmax*usmax) { float s = usmax / sqrtf_approx(us); vd*=s; vq*=s; }
+
+    /* ⑥ 反 Park: 旋转 dq → 静止 αβ(同一组 sin/cos, 只换符号) */
+    float valpha = vd*sincos_cos - vq*sincos_sin;
+    float vbeta  = vd*sincos_sin + vq*sincos_cos;
+
+    /* ⑦ SVPWM: 扇区→T1/T2→占空比(内部含过调制压缩) */
+    uint16_t ccr[3];
+    svpwm(valpha, vbeta, udc, ccr);
+
+    /* ⑧ 写比较寄存器: 影子寄存器, 下个更新事件原子生效 */
+    TIM1-&gt;CCR1 = ccr[0];  TIM1-&gt;CCR2 = ccr[1];  TIM1-&gt;CCR3 = ccr[2];
+
+    /* 收尾: 软件看门狗喂狗 + 清中断标志(否则会立刻重进) */
+    ADC1-&gt;ISR = ADC_FLAG_JEOC;
+    GPIO_DIAG-&gt;BSRR = DIAG_PIN&lt;&lt;16;                           /* 时基测量: 拉低 */
+}</code></pre>
+  <div class="box box-tip"><b>💡 对照读法:</b>先看入口分支(非 RUN 直接退)→ ①→⑧ 顺序与图②完全一致;③ 的 θe 不在 ISR 里现读 SPI,而是由低速任务"预取+延迟补偿"后发布——把慢操作挪出硬实时路径,是 ISR 编写的第一原则。如果把这段代码与 <a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">06-02</a> 的 SimpleFOC <code>loopFOC()</code> 并排看,你会发现库只是把①~⑧拆进了对象方法里。</div>
+
+  <!-- ================= 本节自测 ================= -->
+  <h2><span class="h2-num">13</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 中心对齐 PWM + 低边采样电阻方案中,把 ADC 触发点放在 PWM 周期正中央,最主要的原因是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 中央触发可以让 ADC 转换得更快</button>
+      <button data-v="B">B. 此处三相下管均导通,且离两个开关沿最远,电流稳定、信噪比最好</button>
+      <button data-v="C">C. 中央是编码器 Z 脉冲到达的时刻</button>
+      <button data-v="D">D. 为了与 CAN 中断错开,避免中断嵌套</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 低边电阻只有在下管导通时才流过相电流;中心对齐 PWM 的周期正中央恰好三相下管全导通,又离开关沿最远(噪声禁区在开关沿附近),所以是唯一的"甜点"采样点。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 用"零点对消法"整定电流环:先选定闭环带宽 ωc,则 PI 参数应取?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. Kp = R·ωc,Ki = L·ωc</button>
+      <button data-v="B">B. Kp = ωc/L,Ki = ωc/R</button>
+      <button data-v="C">C. Kp = L·ωc,Ki = R·ωc</button>
+      <button data-v="D">D. Kp 与 Ki 都取 ωc 的平方</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 令 PI 零点 Ki/Kp 等于被控对象极点 R/L 即"零点对消",闭环化为带宽 ωc 的一阶系统,解得 Kp=L·ωc、Ki=R·ωc。例:L=50μH、R=50mΩ、ωc=2π×1kHz → Kp≈0.31、Ki≈314。注意 ωc 别超过 fs/10~20。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 关于 SVPWM 的电压利用率,正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 相电压幅值上限 Udc/2,与 SPWM 相同</button>
+      <button data-v="B">B. 相电压幅值上限 Udc/√3,基波利用率比 SPWM 高约 15.5%</button>
+      <button data-v="C">C. 相电压幅值上限 Udc,比 SPWM 高一倍</button>
+      <button data-v="D">D. 利用率只取决于载波频率</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 注入零序共模分量后调制波变马鞍,线性区相电压幅值上限从 Udc/2 提升到 Udc/√3≈0.577Udc,等效基波幅值提升 √3/2≈1.155 倍(约 15.5%)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 运行中硬件比较器检测到过流、已由硬件自动封波(六管全关)。正确的处理方式是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 软件清一下故障标志,立即重新使能 PWM 继续 run</button>
+      <button data-v="B">B. 把过流阈值调高 20%,避免再次触发</button>
+      <button data-v="C">C. 锁定故障、记录故障码,断电排查;不允许软件直接恢复</button>
+      <button data-v="D">D. 切换到开环模式继续输出转矩</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 硬件级过流意味着可能已发生短路/退饱和等危险前兆,属于"不允许软件恢复"的故障:必须锁定并断电排查(见第 10 节恢复条件表)。调高阈值或带病运行是炸管的标准剧本。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 电流环 ISR 的执行时间偶然超过一个 PWM 周期,最先出现的后果是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 错过下一次 ADC 采样,电流值与 θ 失配,电流环啸叫甚至振荡</button>
+      <button data-v="B">B. 只是这一次输出晚一点,没有任何影响</button>
+      <button data-v="C">C. 编码器会自动补采一拍数据</button>
+      <button data-v="D">D. SVPWM 会自动降频保护</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 FOC 是硬实时任务:超时意味着错过下一拍采样(等效引入额外纯延迟),电流与角度失配让 Park 坐标系"转错位",轻则啸叫重则失稳。所以预算纪律是 ISR 用时 < 周期 50%,并用示波器/DWT 测"最大值"验收。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>① FOC 的每个 PWM 周期 = 一次"采样完成中断"驱动的①~⑧流水线:读电流→Clark→Park→双 PI→限幅圆→反 Park→SVPWM→写比较寄存器;② 采样点必须落在 PWM 中心(下管全导通+远离开关沿),单电阻方案还要过"窗口约束"这一关;③ 坐标变换四件套只是换视角,恒幅值系数 2/3,θe=机械角×p+offset;④ 电流环两行整定 Kp=L·ωc、Ki=R·ωc,三环遵守"内环是外环 5~10 倍"的带宽分离;⑤ 生命周期状态机 SELFTEST→CALIB→ALIGN→READY→RUN→FAULT 是一切 FOC 固件的骨架,硬件比较器封波是不可逾越的安全底线。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>
+    1. 把 PWM 频率从 20kHz 提到 40kHz,电流环带宽理论上可以翻倍,但死区电压损失 ΔV₁ 也翻倍——关节驱动器该怎么权衡?(提示:ΔV₁/Usmax 比例、MOSFET 开关损耗、低速力控纹波三方面)<br>
+    2. 状态机里 PARAM_IDENTIFY 辨识出的 L 偏大 20%,电流环会发生什么?(提示:零点对消被破坏,Ki/Kp ≠ R/L,阶跃响应出现什么形状?是否需要在线辨识+自适应 PI?)
+  </div>
+
+  <!-- ================= 参考来源与延伸资源 ================= -->
+  <h2><span class="h2-num">14</span> 参考来源与延伸资源</h2>
+  <p>以下资源均经人工访问核实(2026-09),官方文档负责"权威口径",中文专栏与视频负责"直觉入门"。建议配合本站深入页按需取用。</p>
+
+  <a class="my-res-card" href="https://docs.simplefoc.com/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📖</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ SimpleFOC 官方文档(Arduino-FOC)</div>
+      <div class="my-res-desc">开源 FOC 库的官方文档:控制模式、电流采样、编码器接入、PID 调参一应俱全,Theory corner 有简明的变换推导。入门把闭环跑通的第一站。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-recommend">⭐ 必收</span><span class="my-tag my-tag-doc">入门/实现</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.st.com/en/embedded-software/x-cube-mcsdk.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ST X-CUBE-MCSDK(Motor Control SDK 6.x)官方页</div>
+      <div class="my-res-desc">ST 官方电机控制 SDK:PMSM FOC 固件库 + MC Workbench 图形化配置 + Motor Profiler 参数辨识,工业级工程范本,状态机与保护实现值得精读。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-doc">工程范本</span><span class="my-tag my-tag-doc">参数辨识</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://wiki.st.com/stm32mcu/wiki/STM32MotorControl:Getting_started_SDK_6.0.0" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📗</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ST Wiki:MC SDK 6.x 入门指南</div>
+      <div class="my-res-desc">从 Workbench 建工程到生成代码、观测变量的完整上手路径,配合本页第 8 节状态机理解其 six-step/state-machine 设计。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-doc">上手教程</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.ti.com/lit/pdf/SPRABZ2" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">TI 应用报告 SPRABZ2:Sensorless FOC of 3-Phase PMSM</div>
+      <div class="my-res-desc">TI 经典无感 FOC 应用报告(C2000/F2803x):坐标变换、观测器、工程实现的完整公式与代码框架,把本页第 11 节"一段话版"展开成 60 页细节。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-recommend">⭐ 深度</span><span class="my-tag my-tag-doc">无感 FOC</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.ti.com/lit/ug/spruhj1/spruhj1.pdf" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">TI 用户指南 SPRUHJ1:InstaSPIN-FOC</div>
+      <div class="my-res-desc">TI 自动参数辨识 + 无感控制的完整用户指南:Rs/L/磁链辨识流程(对应本页第 11 节)、FAST 观测器与电机启动策略。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-doc">参数辨识</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.microchip.com/en-us/application-notes/an1299" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Microchip AN1299:PMSM 无传感器 FOC(PLL 估计器)</div>
+      <div class="my-res-desc">dsPIC33 上的无感 FOC 完整应用笔记:单电阻电流重建(对应本页 2.2 的窗口约束实战)与 PLL 角度提取,代码全开源。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-doc">单电阻采样</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.microchip.com/en-us/application-notes/an1078" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Microchip AN1078:基于滑模观测器(SMO)的无感 FOC</div>
+      <div class="my-res-desc">SMO 无感 FOC 的鼻祖级应用笔记,与 <a href="17_状态观测器全解_龙伯格_EKF_SMO.html" target="_blank" rel="noopener">本站 06-17 状态观测器全解</a> 对照阅读效果最佳。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-doc">滑模观测器</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://docs.odriverobotics.com/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ODrive 官方文档</div>
+      <div class="my-res-desc">机器人圈最流行的开源大功率 FOC 驱动:编码器校准(对应本页第 7 节)、状态机与错误码(对应第 8、10 节)都有可直接对照的工程实现。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-recommend">⭐ 必收</span><span class="my-tag my-tag-doc">工程实现</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://docs.odriverobotics.com/v/latest/manual/control.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📗</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ODrive Control 手册(三环控制与调参)</div>
+      <div class="my-res-desc">ODrive 的电流环/速度环/位置环参数说明与整定建议,是本页第 4 节三环设计在真实产品上的落地参照。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-doc">三环调参</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/466883185" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:FOC 中的 SVPWM 原理细讲</div>
+      <div class="my-res-desc">中文社区对扇区判断、T1/T2 推导讲得极细的高赞文章,配本页第 5 节图⑤对照阅读,公式恐惧症也能看懂。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-recommend">⭐ 推荐</span><span class="my-tag my-tag-doc">SVPWM</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/696386652" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:FOC 和 SVPWM 技术常识综述</div>
+      <div class="my-res-desc">把 FOC 的常见概念(为什么变换、零矢量作用、母线利用率)串成一篇综述,适合当"预习/复习"材料。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-doc">综述</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/653313547" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:从理论到硬件,SVPWM 和 FOC 上手教程</div>
+      <div class="my-res-desc">从 BLDC 基本原理到硬件选型再到 FOC 实现的完整路线,与本站「理论→硬件→软件」三站结构互相印证。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-doc">入门路线</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://blog.csdn.net/loop222/article/details/117468766" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">💻</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN:SimpleFOC(八)——理论+实践深度分析 SVPWM</div>
+      <div class="my-res-desc">SimpleFOC 源码级的 SVPWM 实现剖析(含七段式与代码),把本页第 12 节参考代码里的 svpwm() 讲得更透。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-csdn">CSDN</span><span class="my-tag my-tag-doc">源码剖析</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1yh4y1J7Xx/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B 站:灯哥开源「手把手教写FOC算法」系列</div>
+      <div class="my-res-desc">从无刷电机概念到闭环位置控制的高播放量实战系列,逐集把代码敲出来——看别人怎么把本页的图变成会转的电机。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B 站视频</span><span class="my-tag my-tag-recommend">⭐ 实战</span><span class="my-tag my-tag-doc">代码向</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1yPg36vEhi/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B 站:「手把手带你学FOC」系列(含最通俗的 SVPWM)</div>
+      <div class="my-res-desc">动画+实验结合的 FOC 系列课程,SVPWM 一讲用最直观的几何方式讲扇区与作用时间,配合本页第 5 节食用。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B 站视频</span><span class="my-tag my-tag-doc">动画直观</span></div>
+    </div>
+  </a>
+
+  <div class="box box-tip"><b>🔗 站内配套页面:</b><a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">06-02 固件与电机控制(代码级流水线)</a> · <a href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">01-02 核心原理动画演示</a> · <a href="../02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html">02-13 功率级拓扑与 SVPWM 交互实验室</a> · <a href="../02_硬件基础/11_FOC调参整定实战手册.html">02-11 FOC 调参整定实战手册</a> · <a href="17_状态观测器全解_龙伯格_EKF_SMO.html">06-17 状态观测器全解</a> · <a href="../08_学习工具/11_保研复试面试题库.html">08-11 保研复试面试题库</a></div>
+
+</div><!-- /container -->
+
+<!-- 折叠交互:思维导图分支 -->
+<script>
+function toggleMyBranch(header) {
+  header.parentElement.classList.toggle('my-collapsed');
+}
+</script>
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>
