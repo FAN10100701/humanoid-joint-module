@@ -60,7 +60,7 @@
   <div class="key-point">
     <div class="kp-title">🎯 本页学习目标</div>
     1. 能说出 Hdrive 融合方案的核心逻辑(外置 MOS 功率架构 + SimpleFOC 软件 + CAT-FOC INA240 采样),并解释为何 SimpleFOCMini/CAT-FOC 功率不够只能当学习板<br>
-    2. 能对比 DRV8323RS 与 FD6288T 两种栅极预驱方案,并说明第一版推荐 DRV8323RS 的理由<br>
+    2. 能对比 DRV8323R 与 FD6288T 两种栅极预驱方案,并说明第一版推荐 DRV8323R 的理由<br>
     3. 能按 8 页原理图结构讲清「电源 / 主控 / 驱动 / 电流采样 / 编码器 / 通信 / 抱闸 / 测试点」各页设计要点,并记住 Hdrive 的 3 个已知硬件 bug 及修复方法<br>
     4. 能说出 25A 大电流 PCB 布局的三大铁律(功率环路面积、栅极走线、Kelvin 采样)与 2oz 铜厚下的线宽规则<br>
     5. 能按分阶段验证流程完成原理图检查、PCB 检查与第一次上电调试,并读懂 BOM 核心元件表(单台成本约 ¥90)<br>
@@ -69,6 +69,13 @@
 
   <!-- ================= 1 方案核心逻辑确认 ================= -->
   <h2><span class="h2-num">1</span> 方案核心逻辑确认</h2>
+  <div class="box box-ok">
+    <b>✅ 勘误已应用(2026-09-05,依据 10 号《交叉认证与芯片选型报告》datasheet 级核对):</b><br>
+    ① PWM 引脚映射整表已更正——正确映射:U相=PA8/PB13(CH1/CH1N)、V相=PA9/PB14(CH2/CH2N)、W相=PA10/PB15(CH3/CH3N);<br>
+    ② DRV8323 自举电路描述已更正——DRV8323 为<b>集成电荷泵</b>拓扑(VCP-VM 1μF),无 BOOT/SH 自举电容;<br>
+    ③ VDRAIN 接法已更正——接 VM(母线),不是相输出;<br>
+    ④ 器件料号已更正——「DRV8323RS」是 TI 评估板名,标准料号为 <b>DRV8323R</b>;MOS 由 30V 更换为 40V 等级。
+  </div>
   <div class="box box-ok">
     <b>✅ 你的融合思路完全正确:</b><br>
     1. HdriveV1.1外置MOS功率架构是唯一能满足GIM电机23-25A堵转电流的方案,SimpleFOCMini/CAT-FOC功率不够只能当学习板<br>
@@ -82,7 +89,7 @@
   <h2><span class="h2-num">2</span> 核心芯片最终选型</h2>
   <p>主控选STM32G431CBU6完全够用,SimpleFOC跑三环绰绰有余,不用换G474省成本。<br>唯一需要决策的是栅极预驱,两个选项明确对比:</p>
   <div class="table-wrap"><table class="my-cmp">
-    <tr><th>对比项</th><th>方案A:FD6288T(原Hdrive方案)</th><th>方案B:DRV8323RS <span class="my-tag my-tag-recommend">第一版推荐</span></th></tr>
+    <tr><th>对比项</th><th>方案A:FD6288T(原Hdrive方案)</th><th>方案B:DRV8323R <span class="my-tag my-tag-recommend">第一版推荐</span></th></tr>
     <tr><td>单价</td><td>~¥5,成本低</td><td>~¥35,贵7倍</td></tr>
     <tr><td>电流能力</td><td>外置MOS决定,支持25A</td><td>外置MOS决定,支持25A</td></tr>
     <tr><td>内置功能</td><td>纯预驱,无附加功能</td><td>内置3路电流运放+5V Buck+全套保护+SPI配置</td></tr>
@@ -91,7 +98,7 @@
     <tr><td>Hdrive bug影响</td><td>必须自己修复所有问题</td><td>从根源避免电源和驱动bug</td></tr>
   </table></div>
   <div class="box box-tip">
-    <b>💡 建议:第一版用DRV8323RS,多花30块钱买省心;第二版验证完功能再换FD6288压成本。</b>
+    <b>💡 建议:第一版用DRV8323R,多花30块钱买省心;第二版验证完功能再换FD6288压成本。</b>
   </div>
 
   <!-- ================= 3 现有4页原理图绘制指南 ================= -->
@@ -133,9 +140,9 @@
   <h4>SimpleFOC引脚分配表(不要冲突):</h4>
   <div class="table-wrap"><table>
     <tr><th>功能</th><th>引脚</th><th>说明</th></tr>
-    <tr><td>PWM_UH/UL</td><td>PA8/PA9</td><td>TIM1_CH1/CH1N</td></tr>
-    <tr><td>PWM_VH/VL</td><td>PB13/PB14</td><td>TIM1_CH2/CH2N(避开CAN引脚)</td></tr>
-    <tr><td>PWM_WH/WL</td><td>PB15/PA11</td><td>TIM1_CH3/CH3N(PB15如果空闲可用)</td></tr>
+    <tr><td>PWM_UH/UL</td><td>PA8/PB13</td><td>TIM1_CH1/CH1N</td></tr>
+    <tr><td>PWM_VH/VL</td><td>PA9/PB14</td><td>TIM1_CH2/CH2N(避开CAN引脚)</td></tr>
+    <tr><td>PWM_WH/WL</td><td>PA10/PB15</td><td>TIM1_CH3/CH3N(PA10 是 CH3;PA11 是 CH4,不作 PWM)</td></tr>
     <tr><td>电流采样U/V/W</td><td>PA0/PA1/PA2</td><td>ADC1_IN0/IN1/IN2</td></tr>
     <tr><td>编码器SPI</td><td>PA5(SCK)/PA6(MISO)/PA7(MOSI)/PA4(NSS)</td><td>SPI1</td></tr>
     <tr><td>CAN_TX/RX</td><td>PA12/PB8</td><td>CAN1(避开PWM引脚)</td></tr>
@@ -144,28 +151,30 @@
   </table></div>
 
   <h3><span class="my-tag my-tag-modify">第3页:驱动</span> 三相半桥+预驱(核心!)</h3>
-  <h4>DRV8323RS电路:</h4>
+  <h4>DRV8323R电路:</h4>
   <div class="my-code">DRV8323关键引脚连接:
 - VM:接24V母线,加100nF去耦紧贴引脚
 - VCC:接内置Buck输出5V,加10μF+100nF电容
-- VDRAIN:接相输出U(用于MOS漏极电压检测)
+- VDRAIN:接<b>VM(母线,即高侧MOS公共漏极)</b>,用于VDS过流监测——<b>不接相输出!</b>
 - GHx/GLx:经10Ω栅极电阻接MOS G极,<b>栅极电阻必须在PCB上紧贴MOS焊盘</b>
 - SHx:接半桥中点(相输出)
 - SNx/SPx:接电流采样电阻两端(Kelvin连接)
 - nFAULT:接MCU GPIO(加10k上拉),故障时拉低
 - SCLK/SDI/SDO/nSCS:接MCU SPI(和编码器共用总线,独立片选)
 
-自举电路(每相):
-BOOTx和SHx之间接0.1μF X7R 0805电容,<b>紧贴DRV8323引脚,走线&lt;5mm</b>
-自举二极管用DRV8323内置,不用外接
+电荷泵电源(DRV8323专有,替代自举):
+- VCP与VM之间接1μF X7R 25V电容,<b>紧贴DRV8323引脚,走线&lt;5mm</b>
+- CPH/CPL为泵电容,容值按TI数据手册Typical Application
+<b>注意:DRV8323是集成电荷泵拓扑,不存在每相BOOT/SH自举电容,也没有自举二极管——那是DRV8301/FD6288的做法!</b>
 
 MOS选型(24V/25A堵转):
-IRLR7843TRPBF(DPAK,立创C103380,¥2.5/颗),30V/160A/2.6mΩ,手焊友好散热好
+40V等级DPAK/PQFN(如AOD4185等40V型号,立创编号按下单时库存核对),40V/低Rds(on)
+⚠️勘误:原方案IRLR7843(30V)对24V母线仅1.25倍余量,低于「≥1.5倍(24V→选40V)」规则;且GIM8108-8标称48V绕组,30V MOS会直接击穿。48V系统请选80V以上MOS。
 共6颗(每相上下桥各1颗)</div>
   <div class="box box-danger">
     <b>⚠️ 绝对不能犯的错误:</b><br>
     1. 栅极回路只串10Ω电阻,不要加任何二极管或电容<br>
-    2. 自举电容固定0.1μF,不要随意改容值<br>
+    2. 电荷泵电容(VCP-VM 1μF)与CPH/CPL泵电容按数据手册典型值,不要随意改容值<br>
     3. DPAK MOS的引脚定义:散热焊盘是D(漏极),中间脚是S(源极),左脚是G(栅极),不要接反!
   </div>
 
@@ -315,7 +324,7 @@ LED状态灯:
   <h3>原理图检查(投板前)</h3>
   <ol>
     <li>电源:所有VCC都有去耦电容,5V/3.3V没有和24V短路</li>
-    <li>驱动:栅极电阻都是10Ω,自举电容0.1μF,MOS引脚没有接反</li>
+    <li>驱动:栅极电阻都是10Ω,电荷泵电容(VCP-VM 1μF)紧贴引脚,MOS引脚没有接反</li>
     <li>采样:INA240 IN+/IN-接对,REF接1.65V,增益选A1(20倍)</li>
     <li>引脚:PWM接TIM1互补通道,SPI和CAN引脚没有冲突,SWD引脚保留</li>
     <li>运行DRC,确保没有未连接引脚、没有电源地短路、位号不重复</li>
@@ -376,8 +385,8 @@ LED状态灯:
   <div class="table-wrap"><table>
     <tr><th>元件</th><th>型号</th><th>立创编号</th><th>数量</th><th>单价</th></tr>
     <tr><td>主控MCU</td><td>STM32G431CBU6</td><td>C2992219</td><td>1</td><td>¥12</td></tr>
-    <tr><td>栅极预驱</td><td>DRV8323RSRGZT</td><td>C2653553</td><td>1</td><td>¥35</td></tr>
-    <tr><td>MOS管</td><td>IRLR7843TRPBF</td><td>C103380</td><td>6</td><td>¥2.5</td></tr>
+    <tr><td>栅极预驱</td><td>DRV8323R(VQFN-48 7×7mm)</td><td>立创编号需按料号重新核对(原C2653553对应评估板名)</td><td>1</td><td>¥35</td></tr>
+    <tr><td>MOS管</td><td>40V 等级 DPAK(如 AOD4185,按库存核对)</td><td>按选型核对</td><td>6</td><td>≈¥3</td></tr>
     <tr><td>电流运放</td><td>INA240A1PWR</td><td>C204379</td><td>3</td><td>¥6</td></tr>
     <tr><td>磁编码器</td><td>MT6816CT-STD</td><td>C5262912</td><td>1</td><td>¥8</td></tr>
     <tr><td>CAN收发器</td><td>TJA1042T/3</td><td>C111364</td><td>1</td><td>¥3</td></tr>
@@ -412,12 +421,12 @@ LED状态灯:
     <div class="quiz-q">2. 第一版推荐的栅极预驱方案是?</div>
     <div class="quiz-options" data-answer="B">
       <button data-v="A">A. FD6288T(纯预驱)</button>
-      <button data-v="B">B. DRV8323RS(内置运放+Buck+保护)</button>
+      <button data-v="B">B. DRV8323R(内置运放+Buck+保护)</button>
       <button data-v="C">C. 直接用 MCU GPIO 驱动 MOS</button>
       <button data-v="D">D. IR2104 半桥驱动</button>
     </div>
     <div class="quiz-feedback"></div>
-    <div class="quiz-explain">💡 解析:第一版推荐 DRV8323RS,内置 3 路电流运放 + 5V Buck + 全套保护 + SPI 配置,多花 30 元买省心;第二版验证完功能再换 FD6288 压成本。选 B。</div>
+    <div class="quiz-explain">💡 解析:第一版推荐 DRV8323R,内置 3 路电流运放 + 5V Buck + 全套保护 + SPI 配置,多花 30 元买省心;第二版验证完功能再换 FD6288 压成本。选 B。</div>
   </div>
   <div class="quiz">
     <div class="quiz-q">3. 关于 Hdrive 已知硬件 bug 的修复,下列说法正确的是?</div>
@@ -478,12 +487,12 @@ LED状态灯:
   <!-- ================= 10 小结与思考 ================= -->
   <h2><span class="h2-num">10</span> 小结与思考</h2>
   <div class="box box-tip">
-    <b>📌 本节小结:</b>本页给出 Hdrive 关节驱动板融合方案的完整设计指南——以 HdriveV1.1 外置 MOS 功率架构为底,软件跑 SimpleFOC,电流采样移植 CAT-FOC 的 3 颗 INA240,并修复 R49 阻值、地分割、驱动走线 3 个已知 bug;第一版推荐 DRV8323RS 预驱;8 页原理图覆盖「电源 / 主控 / 驱动 / 采样 / 编码器 / 通信 / 抱闸 / 测试点」;PCB 布局严守「功率环路面积、栅极走线、Kelvin 采样」三大铁律并选 2oz 铜厚;最后按分阶段验证流程逐步上电,单台 BOM 约 ¥90、第一版打样总成本约 ¥140。
+    <b>📌 本节小结:</b>本页给出 Hdrive 关节驱动板融合方案的完整设计指南——以 HdriveV1.1 外置 MOS 功率架构为底,软件跑 SimpleFOC,电流采样移植 CAT-FOC 的 3 颗 INA240,并修复 R49 阻值、地分割、驱动走线 3 个已知 bug;第一版推荐 DRV8323R 预驱;8 页原理图覆盖「电源 / 主控 / 驱动 / 采样 / 编码器 / 通信 / 抱闸 / 测试点」;PCB 布局严守「功率环路面积、栅极走线、Kelvin 采样」三大铁律并选 2oz 铜厚;最后按分阶段验证流程逐步上电,单台 BOM 约 ¥90、第一版打样总成本约 ¥140。
   </div>
   <div class="box box-warn">
     <b>🤔 思考题:</b>
     1. 如果把 INA240 换成 A2(50 倍)增益版本,25A 堵转时采样输出电压会变成多少?会造成什么问题?(提示:125mV × 50 = 6.25V)<br>
-    2. 第一版用 DRV8323RS、第二版换 FD6288T 压成本,两者在电源拓扑上的最大区别是什么?换回 FD6288 需要补哪些电路(栅极电源 / 自举)?<br>
+    2. 第一版用 DRV8323R、第二版换 FD6288T 压成本,两者在电源拓扑上的最大区别是什么?换回 FD6288 需要补哪些电路(栅极电源 / 自举)?<br>
     3. 25A 电流路径上,为什么采样电阻必须 Kelvin 连接?如果和功率铜皮共用焊盘,会引入什么误差?
   </div>
 

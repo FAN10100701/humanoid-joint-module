@@ -5,9 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>人形机器人学习站 · 从关节模组到具身智能</title>
-<meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具,软件+硬件全覆盖。">
+<meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,软件+硬件+芯片全覆盖。">
 <meta property="og:title" content="人形机器人学习站 · 从关节模组到具身智能">
-<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、代码实验室,95 个学习页面,零基础可学。">
+<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,95 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <meta name="baidu-site-verification" content="codeva-83ZAbuLmz6">
@@ -22,7 +22,7 @@
   "name": "人形机器人学习站",
   "alternateName": "Humanoid Robot Learning Hub",
   "url": "https://cyco.top/",
-  "description": "免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、软件与算法、前沿知识库、代码实验室,零基础可学。",
+  "description": "免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,零基础可学。",
   "inLanguage": "zh-CN",
   "potentialAction": {
     "@type": "SearchAction",
@@ -152,13 +152,10 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 <script>
   /* 板块清单已单源化至 _assets/site-sections.js(与学习数据分析页共用) */
   window.SITE_SECTIONS = window.SITE_SECTIONS || [];
-  /* 学习页面/可打卡页面统计：由 SITE_SECTIONS 自动计算（新增页面只需更新上面的 ids，无需手改数字） */
-  (function(){
-    var tracked=0;
-    window.SITE_SECTIONS.forEach(function(sec){tracked+=sec.ids.length;});
-    var el1=document.getElementById("statPages");if(el1)el1.textContent=tracked+1;  /* +1 = 3D 解剖主页面(无 pageId) */
-    var el2=document.getElementById("statTracked");if(el2)el2.textContent=tracked;
-  })();
+  /* V2.1.17 修复:Hero 统计数字不再由 head 脚本填充——head 阶段 body 尚未解析,
+     getElementById 永远为 null,这段"动态统计"过去是永不执行的死代码,
+     页面显示的其实一直是硬编码占位数(可打卡 75 即陈旧残留)。
+     现改由 body 的 renderProgress()(DOMContentLoaded)按 SITE_SECTIONS 实时填充。 */
 </script>
 </head>
 <body>
@@ -223,8 +220,8 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     <span class="sub-meta">零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</span></div>
     <div class="stats">
       <div class="stat"><div class="v" id="statPages">95</div><div class="k">学习页面</div></div>
-      <div class="stat"><div class="v" id="statTracked">75</div><div class="k">可打卡页面</div></div>
-      <div class="stat"><div class="v">9</div><div class="k">学习板块</div></div>
+      <div class="stat"><div class="v" id="statTracked">94</div><div class="k">可打卡页面</div></div>
+      <div class="stat"><div class="v" id="statSecs">9</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
       <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
     </div>
@@ -246,6 +243,8 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <span class="tag">SimpleFOC / ODrive / MotorOS</span>
       <span class="tag">ROS2 / MuJoCo / Isaac Lab</span>
       <span class="tag">VLA 与具身智能</span>
+      <span class="tag">NPU 与数字 IC 设计</span>
+      <span class="tag">现代控制 / ADRC / 观测器</span>
     </div>
   </div>
 
@@ -304,12 +303,23 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <div class="rm-step">
         <span class="rm-num">5</span>
         <h4>🎯 复试冲刺</h4>
-        <p>17 学科 150 道复试题(专业 13 科 + 综合/英语/数学/科研素养 4 科通用)刷题 → 闯关检验掌握度 → AI 考官模拟面试,一条龙备战保研复试</p>
+        <p>17 学科 162 道复试题(专业 13 科 + 综合/英语/数学/科研素养 4 科通用)刷题 → 闯关检验掌握度 → AI 考官模拟面试,一条龙备战保研复试</p>
         <p style="color:#6b7280">考前 2~4 周 · 查漏补缺</p>
         <div class="rm-links">
           <a href="08_学习工具/11_保研复试面试题库.html">复试题库</a>
           <a href="08_学习工具/12_闯关学习.html">闯关学习</a>
           <a href="08_学习工具/13_AI答疑助手.html?persona=interviewer">AI 考官</a>
+        </div>
+      </div>
+      <div class="rm-step">
+        <span class="rm-num">6</span>
+        <h4>🔬 数字 IC 与控制深化</h4>
+        <p>NPU 四阶段:Verilog/FIFO/APB → LeNet 与脉动阵列 → RTL 项目 → UVM 验证;控制深化:现代控制 / 观测器 / ADRC / FOC 完全图解</p>
+        <p style="color:#6b7280">进阶选修 · 与关节驱动互补</p>
+        <div class="rm-links">
+          <a href="10_NPU与数字IC设计/01_板块总览与学习路线.html">NPU 板块总览</a>
+          <a href="06_软件与算法/16_现代控制理论_状态空间到MPC.html">现代控制理论</a>
+          <a href="06_软件与算法/19_FOC算法完全图解_流程与运行图.html">FOC 完全图解</a>
         </div>
       </div>
       </div><!-- /roadmap -->
@@ -787,7 +797,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <a class="card featured" href="08_学习工具/11_保研复试面试题库.html">
         <span class="go">进入 →</span>
         <div class="ic">🎓</div>
-        <div class="t">保研复试面试题库 · 17 学科 150 题(新增通用面)</div>
+        <div class="t">保研复试面试题库 · 17 学科 162 题(含工程实践题)</div>
         <div class="d">自控原理 / PID / ADRC / 运控 / 现控 / 信号处理 / 硬件电路(防反接·运放) / 无人机电调 / ROS 多机编队 / C / C++ / 嵌入式 / FreeRTOS——图文解析、延伸追问、掌握度自评,配套闯关与 AI 考官。</div>
       </a>
       <a class="card featured" href="08_学习工具/16_保研英语面试.html">
@@ -994,10 +1004,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.16</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-05 · 新增「NPU 与数字 IC 设计」板块(13 页)与控制理论 5 专题页,题库扩至 162 题</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.17</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-05 · 首页统计竞态修复 + 学习地图补 09 分组 + 题库 162 题口径统一</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
-            <details class="faq" open>
+                  <details class="faq" open>
+        <summary>🐛 V2.1.17 · 2026-09-05 · 首页统计竞态修复 + 学习地图补 09 分组 + 题库 162 题口径</summary>
+        <div class="faq-a">🐛 <b>「可打卡页面 75」陈旧数字根治</b>:head 统计脚本在 body 解析前运行属永不执行的死代码,页面显示的一直是硬编码占位数;Hero 数字滚动动画又在解析期抓走占位值,把正确统计覆写回旧值。现删除死代码、动画目标改为触发时实时读取,学习页面(95)/可打卡页面(94)/学习板块(9)全部由 SITE_SECTIONS 单源实时填充;🗺 <b>学习地图补「09 大模型与具身智能」分组</b>(此前 5 个页面在地图不可见);🎓 <b>题库口径 150→162 五处统一</b>(学习路径/首页卡片/闯关页/README/核实印章);🧭 <b>新手学习路径新增第 6 步「数字 IC 与控制深化」</b>;📝 meta/og/JSON-LD 板块列表补全「大模型与具身智能、NPU 与数字 IC 设计」,Hero 标签新增两枚;🔍 搜索拼音别名扩充 npu/uvm/verilog/fifo/apb。</div>
+      </details>
+<details class="faq" open>
         <summary>🧭 V2.1.16 · 2026-09-05 · 新板块「NPU 与数字 IC 设计」+ 控制理论 5 专题 + 目录树 + 题库 162 题</summary>
         <div class="faq-a">🏛 <b>新板块 10「NPU 与数字 IC 设计」一次上线 13 页</b>(对应 NPU 数字设计四阶段课程):板块总览与学习路线(四阶段卡+全板块目录树)→ 第一阶段数字设计基础(环境与工具链 / Verilog 语法与状态机 / FIFO 与跨时钟域 CDC / APB 总线)→ 第二阶段 AI 通识(深度学习与 LeNet 实战 / NPU 体系结构与脉动阵列 / 模型量化与端侧部署)→ 第三阶段 NPU RTL 项目(设计流程与 AHB/AXI / 项目实战上·Spec 与控制模块 / 下·运算模块与联调,贯穿 LeNet-5 INT8 加速器,仿真跑通 MNIST 识别)→ 第四阶段验证(SystemVerilog 与 UVM 架构 / NPU 验证项目·环境与覆盖率);🎛 <b>06 板块新增 5 个控制理论工程专题页</b>:现代控制理论(状态空间到 MPC)、状态观测器全解(龙伯格/EKF/SMO/MRAS/HFI+无感切换)、ADRC 自抗扰与嵌入式实现、FOC 算法完全图解(ISR 级流程图/状态机/中断时序/思维导图 9 图)、工程电机控制框架对比(SimpleFOC/ODrive/VESC/MCSDK/InstaSPIN/MiniCheetah 六框架流程图与选型决策树);🎓 <b>保研题库扩至 17 学科 162 题</b>:新增 12 道工程实践题(电流采样/死区/弱磁 MTPA/编码器校准/电流环带宽、LADRC 整定/离散实现、离散化/LQR 权重/EKF 调参/MPC 滚动),学科关联链接指向新专题页;📑 <b>全站目录升级两级可折叠树</b>(h2 章节/h3 知识点,滚动高亮自动展开、折叠状态记忆、一键展开收起,无 h3 页面零回归);🗂 <b>登记五件套</b>:site-sections(key 10)/search-index/page-meta/sitemap/学习地图(新增「10」分组),页数口径 76→95;所有新页配已核实外链资源卡(知乎/CSDN/B站/GitHub/官方文档)与手绘 SVG 图解。</div>
       </details>
@@ -1190,7 +1204,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.16(2026-09-05) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.17(2026-09-05) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1262,11 +1276,13 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     rows.innerHTML = html;
     renderRing(totalDone, totalAll);
     renderHeatmap();
-    /* 统计数字:可打卡页数 + 学习页数(搜索索引加载后更新) */
+    /* 统计数字:可打卡页数 + 学习页数 + 板块数(V2.1.17 全部由 SITE_SECTIONS 单源实时填充) */
     var elT = document.getElementById("statTracked");
     if(elT) elT.textContent = totalAll;
     var elP = document.getElementById("statPages");
-    if(elP && window.SITE_SEARCH_INDEX){ elP.textContent = Math.max(window.SITE_SEARCH_INDEX.length - 1, 0); }
+    if(elP && window.SITE_SECTIONS){ elP.textContent = totalAll + 1; }  /* +1 = 3D 解剖主页面 */
+    var elS = document.getElementById("statSecs");
+    if(elS && window.SITE_SECTIONS){ elS.textContent = window.SITE_SECTIONS.length; }
   }
   function updateStatPages(){
     var elP = document.getElementById("statPages");
@@ -1440,28 +1456,28 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 })();
 
 /* Hero 统计数字滚动(V2.1.11):进入视口从 0 计数到目标值(目标取 DOM 现值,
-   statPages/statTracked 由 head 脚本动态填充后此处再读);∞ 等非数字直显;
+   目标值由动画触发时实时读取,V2.1.17 起不会再覆写 renderProgress 的正确统计);∞ 等非数字直显;
    prefers-reduced-motion 或无 IO 时直接显示 */
 (function(){
   var vals = document.querySelectorAll(".hero .stats .v");
   if(!vals.length) return;
-  var targets = [];
-  for(var i = 0; i < vals.length; i++){
-    var n = parseInt(vals[i].textContent, 10);
-    targets.push(isNaN(n) ? null : n);
-  }
   var reduce = false;
   try{ reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
   if(reduce || !("IntersectionObserver" in window)) return;
-  var hasNum = false;
-  for(var j = 0; j < vals.length; j++){
-    if(targets[j] !== null){ vals[j].textContent = "0"; hasNum = true; }
-  }
-  if(!hasNum) return;
   var done = false;
   var io = new IntersectionObserver(function(es){
     if(done || !es[0].isIntersecting) return;
     done = true; io.disconnect();
+    /* V2.1.17 修复竞态:目标值改在动画触发时读取——此前在 body 解析期抓占位值,
+       会把 DOMContentLoaded 后 renderProgress 写入的正确统计覆写回旧值 */
+    var targets = [];
+    var hasNum = false;
+    for(var j = 0; j < vals.length; j++){
+      var num = parseInt(vals[j].textContent, 10);
+      targets.push(isNaN(num) ? null : num);
+      if(!isNaN(num)){ vals[j].textContent = "0"; hasNum = true; }
+    }
+    if(!hasNum) return;
     var t0 = null;
     function step(t){
       if(t0 === null) t0 = t;

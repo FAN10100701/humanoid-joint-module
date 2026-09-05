@@ -770,6 +770,7 @@
     "slam":"SLAM","vla":"VLA","wbc":"全身控制","mpc":"模型预测控制","imu":"IMU","ik":"逆运动学","fk":"正运动学",
     "urdf":"URDF","s2r":"sim2real","stl":"3D模型","dof":"自由度",
     "mianshi":"面试","fushi":"复试","baoyan":"保研","chuangguan":"闯关","freertos":"FreeRTOS","adrc":"ADRC",
+    "npu":"NPU","uvm":"UVM","verilog":"Verilog","fifo":"FIFO","apb":"APB","shizhou":"时序","maichongzhenlie":"脉动阵列",
     "dianceng":"电调","biandui":"编队","zikong":"自控","xiankong":"现控","yunsuanfangda":"运放"
   };
   function expandQuery(q){
@@ -875,7 +876,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.16(2026-09-05)";
+  S.VERSION = "V2.1.17(2026-09-05)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){

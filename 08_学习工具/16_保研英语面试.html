@@ -83,6 +83,8 @@ body.en-hidezh .en-zh.en-reveal{opacity:1}
 .en-vword:hover{color:#58a6ff}
 .en-iconbtn{background:transparent;border:none;cursor:pointer;font-size:13px;padding:3px 4px;border-radius:6px;opacity:.75}
 .en-iconbtn:hover{opacity:1;background:rgba(59,130,246,.15)}
+/* 点词发音的即时视觉回执:点了立刻亮一下,不等声音出来 */
+.en-hot{background:rgba(59,130,246,.5)!important;border-color:#60a5fa!important;color:#fff!important;opacity:1!important;transform:scale(1.18);transition:transform .12s,background .12s}
 .en-vstar.stared{opacity:1}
 .en-vipa{font-family:"Segoe UI",-apple-system,sans-serif;font-size:12.5px;color:#58a6ff;margin:3px 0 1px;letter-spacing:.3px}
 .en-vzh{font-size:13px;color:#c9d1d9;line-height:1.7}
@@ -299,7 +301,7 @@ html:not([data-theme-early="dark"]) .en-lock-hint{color:#64748b}
       <div><div class="en-num g" id="enSRescue">0</div><div class="en-num-k">救场金句(条)</div></div>
       <div><div class="en-num v" id="enSVocab">0</div><div class="en-num-k">专业词汇(词)</div></div>
       <div><div class="en-num w" id="enSWB">0</div><div class="en-num-k">生词本(词)</div></div>
-      <div class="en-note">🔊 朗读使用浏览器自带语音(Web Speech API,免费离线):<b>Edge / Chrome 效果最好</b>,音色选带 Natural 的最接近真人。</div>
+      <div class="en-note">🔊 朗读使用浏览器自带语音(Web Speech API,免费离线):<b>Edge / Chrome 效果最好</b>,音色选带 Natural 的最接近真人。连点多个单词会<b>按顺序连播</b>;首次出声约有零点几秒延迟属正常(网络音色需联网合成)。想要单词秒出声,可在 Windows「设置 → 时间和语言 → 语音」里添加 English 语音包获得本地英文音色。</div>
     </div>
   </div>
   <div class="en-toolbar">
@@ -499,12 +501,33 @@ function findVocabZh(w){
 }
 
 /* ---------- TTS 朗读引擎(Web Speech API) ---------- */
+/* v3 调度重写:修复"单词朗读卡顿 / 点了没反应"。实测(Windows + Chrome 系引擎)三个根源:
+   1) 旧版每点一个词都 cancel()+speak() 顶掉上一个:连点时形成 cancel 风暴,引擎被打懵后
+      出声延迟从 ~0.6s 恶化到 ~2s,且绝大多数词在出声前就被下一次 cancel 掐掉——听感就是"点了没反应";
+   2) speechSynthesis 的 speaking/pending 标志在 cancel 后不可靠,一旦卡死没有任何自愈手段;
+   3) 网络音色(Natural/Google)每次合成要走网络,慢或失败时页面毫无感知,一直哑着。
+   对策:单词点击改为「队列顺序连播」不再互相打断;每条 utterance 配看门狗,onstart 超时自动
+        重置引擎重试、连续超时自动回退本地音色并提示;全局心跳把卡在 paused 态的引擎救回来。 */
 var TTS = (function(){
   var allVoices = [], enVoices = [], autoVoice = null;
   var userVoiceURI = "";
   try{ userVoiceURI = localStorage.getItem(VOICE_KEY) || ""; }catch(e){}
   var rate = 0.75, session = 0, currentEl = null;
   var ok = ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window);
+
+  /* --- 调度常量(按实测校准,改动前先测 --- */
+  var GAP = 110;        /* cancel → 下一次 speak 的安全间隔:Chrome 同帧紧跟会被吞 */
+  var WD_START = 1800;  /* 看门狗:发牌后这么久还没 onstart 就重置引擎重来(网络音色 TTFB 留了余量) */
+  var WD_WORD_END = 8000;   /* 单词出声后这么久还没 onend,视为卡死 */
+  var QMAX = 6;         /* 单词连播队列上限:狂点时丢最旧的,保持听感跟手 */
+
+  /* --- 调度状态 --- */
+  var mode = 0;             /* 0=空闲 1=单词连播 2=整段朗读/试听 */
+  var wq = [];              /* 单词队列 [{text}] */
+  var live = false;         /* 引擎里是否还有本模块发出的未结束 utterance */
+  var wdStart = 0, wdEnd = 0, resetCount = 0, lastCancel = 0;
+  var pendingDone = null;   /* 整段朗读被打断时也要回调,否则"⏹ 停止"按钮状态会悬死 */
+  var localFallback = null, slowNotified = false, deadNotified = false;
 
   function pickBest(list){
     if(!list.length) return null;
@@ -519,25 +542,33 @@ var TTS = (function(){
       find(/aria|jenny|zira|libby|sonia|samantha|emma/i) ||
       find(/guy|davis|ryan|christopher/i) || pool[0];
   }
+  /* 本地(离线)英文音色:网络音色迟迟不出声时的回退,响应是毫秒级 */
+  function bestLocal(){
+    var loc = [], i;
+    for(i = 0; i < enVoices.length; i++) if(enVoices[i].localService) loc.push(enVoices[i]);
+    return loc.length ? pickBest(loc) : null;
+  }
   function currentVoice(){
     if(userVoiceURI){
       for(var i = 0; i < enVoices.length; i++)
         if(enVoices[i].voiceURI === userVoiceURI) return enVoices[i];
     }
-    return autoVoice;
+    return localFallback || autoVoice;
   }
-  /* 引擎预热:整个会话第一次 speak 才冷启动语音引擎/加载音色模型,用户首次点击会卡 1~3 秒;
-     开页或首次交互时用静音 utterance(volume=0)提前焐热。用真实音色跑过才锁定,默认音色预热不算数(音色就绪后可再补) */
-  var warmed = false;
+  /* 引擎预热:第一次 speak 才冷启动语音引擎/加载音色模型,首次点击会卡 1~3 秒;
+     开页或首次交互时用静音 utterance(volume=0)提前焐热。最多试 2 次,onstart/onend/onerror
+     任一到达即算热过(旧版只有带音色的 onstart 才置位,音色缺失时会反复入队静音朗读) */
+  var warmed = false, warmTried = 0;
   function warmUp(){
-    if(!ok || warmed) return;
+    if(!ok || warmed || mode || warmTried >= 2) return;
+    warmTried++;
     try{
       var u = new SpeechSynthesisUtterance(" ");
       var v = currentVoice();
       if(v) u.voice = v;
       u.lang = (v && v.lang) || "en-US";
       u.volume = 0; u.rate = 2;
-      if(v) u.onstart = function(){ warmed = true; };
+      u.onstart = u.onend = u.onerror = function(){ warmed = true; };
       speechSynthesis.speak(u);
     }catch(e){ warmed = true; }
   }
@@ -579,50 +610,176 @@ var TTS = (function(){
     u.lang = (v && v.lang) || "en-US";
     return u;
   }
-  function stop(){
-    session++;
+  function clearWd(){ clearTimeout(wdStart); clearTimeout(wdEnd); }
+  /* 彻底清空引擎(顺带救一下 Chrome 偶发残留的 paused 态),并记录时刻供 afterGap 用 */
+  function engineReset(){
+    clearWd();
     if(ok){
-      speechSynthesis.cancel();
-      speechSynthesis.resume();   /* Chrome 偶发残留 paused 态,不清掉后续 speak 会迟滞/无声 */
+      try{ speechSynthesis.cancel(); speechSynthesis.resume(); }catch(e){}
+      lastCancel = Date.now();
     }
+    live = false;
+  }
+  /* cancel 后的安全拍:保证与最近一次 cancel 至少隔 GAP,防 Chrome 吞掉紧跟着的 speak */
+  function afterGap(fn){
+    var wait = Math.max(0, GAP - (Date.now() - lastCancel));
+    setTimeout(fn, wait);
+  }
+  function isInterrupt(e){ return /interrupt|cancel/i.test((e && e.error) || ""); }
+  function firePendingDone(){
+    if(pendingDone){ var f = pendingDone; pendingDone = null; f(); }
+  }
+  function hardStop(){
+    session++;
+    mode = 0; wq = []; resetCount = 0;
+    engineReset();
     clearHi();
+    firePendingDone();
   }
-  function speakWord(word){
+  function stop(){ hardStop(); }
+
+  /* 点词发音的即时视觉回执:声音还没出来,按钮先亮一下 */
+  function pulse(btn){
+    if(!btn || !btn.classList) return;
+    btn.classList.add("en-hot");
+    setTimeout(function(){ btn.classList.remove("en-hot"); }, 700);
+  }
+
+  /* ---------- 单词连播 ---------- */
+  function speakWord(word, btn){
     if(!ok) return;
-    stop();
-    var u = makeUtterance(word);
+    var fresh = (mode !== 1);
+    if(fresh){
+      if(live || pendingDone) hardStop();   /* 引擎里确有东西在跑/有朗读按钮状态要收尾才清场 */
+      mode = 1;
+    }
+    var sid = session;
+    pulse(btn);
+    for(var i = 0; i < wq.length; i++)      /* 排队中的同词不重复入队 */
+      if(wq[i].text === word) return;
+    if(wq.length >= QMAX) wq.shift();
+    wq.push({ text: word });
+    try{ console.log("[dbg] push", word, "len", wq.length, "mode", mode, "live", live); }catch(e){}
+    if(fresh) afterGap(function(){ nextWord(sid); });
+  }
+  function nextWord(sid){
+    if(sid !== session || mode !== 1) return;
+    if(!wq.length){ mode = 0; resetCount = 0; return; }
+    try{ console.log("[dbg] nextWord", wq[0].text, "len", wq.length); }catch(e){}
+    var u = makeUtterance(wq[0].text);
     u.rate = Math.min(rate, 0.8);
-    setTimeout(function(){ speechSynthesis.speak(u); }, 0);   /* cancel 后同帧紧接 speak 首句易被吞/迟滞,挪到下一拍(0~4ms 无感) */
+    u.onstart = function(){
+      if(sid !== session) return;
+      clearTimeout(wdStart); resetCount = 0; live = true;
+      wdEnd = setTimeout(function(){        /* 出声后迟迟不结束:卡死,重置引擎重来这个词 */
+        if(sid !== session || mode !== 1) return;
+        engineReset(); afterGap(function(){ nextWord(sid); });
+      }, WD_WORD_END);
+    };
+    var done = function(){
+      if(sid !== session) return;
+      clearWd(); live = false;
+      wq.shift(); nextWord(sid);
+    };
+    u.onend = done;
+    u.onerror = function(e){
+      if(sid !== session) return;
+      if(isInterrupt(e)) return;            /* 被我们自己 cancel 的,重试路径会接管 */
+      done();
+    };
+    wdStart = setTimeout(function(){        /* 看门狗:迟迟不出声 */
+      if(sid !== session || mode !== 1) return;
+      var v = currentVoice();
+      if(++resetCount >= 4){                /* 反复救不活:放弃这批,提示一次 */
+        wq = []; mode = 0; engineReset();
+        if(!deadNotified){
+          deadNotified = true;
+          try{ toast(v && !v.localService
+            ? "当前音色一直无响应:网络音色(Natural/Google)需联网,请检查网络或在上方换一个音色"
+            : "语音引擎无响应,请稍后再试或刷新页面"); }catch(e2){}
+        }
+        return;
+      }
+      if(resetCount === 2 && v && !v.localService && !userVoiceURI){
+        var loc = bestLocal();              /* 网络音色连续超时:本会话改用本地音色兜底 */
+        if(loc){
+          localFallback = loc;
+          if(!slowNotified){
+            slowNotified = true;
+            try{ toast("网络音色响应慢,单词发音已临时改用本地音色「" + loc.name.slice(0, 24) + "」"); }catch(e2){}
+          }
+        }
+      }
+      engineReset();
+      afterGap(function(){ nextWord(sid); });   /* wq[0] 没出栈,重试的就是同一个词 */
+    }, WD_START);
+    live = true;
+    try{ speechSynthesis.speak(u); }
+    catch(e){ clearWd(); live = false; wq.shift(); nextWord(sid); }
   }
+
+  /* ---------- 试听音色 ---------- */
   function speakSample(){
-    if(!ok) return;
-    stop();
-    var u = makeUtterance("Hello! This is my interview. My name is Fan Jiahao.");
-    u.rate = 0.9;
-    setTimeout(function(){ speechSynthesis.speak(u); }, 0);
+    speakSequence([{ text: "Hello! This is my interview. My name is Fan Jiahao." }], { rate: 0.9 });
   }
+
+  /* ---------- 整段逐句朗读 ---------- */
   function speakSequence(items, opt){
     var onStart = opt && opt.onStart, onDone = opt && opt.onDone;
-    stop();
+    var seqRate = (opt && opt.rate) || rate;
+    hardStop();
     if(!ok){ onDone && onDone(); return; }
-    var sid = ++session, i = 0;
+    mode = 2;
+    pendingDone = onDone || null;
+    var sid = session, i = 0;
     (function next(){
       if(sid !== session) return;
-      if(i >= items.length){ clearHi(); onDone && onDone(); return; }
+      if(i >= items.length){ mode = 0; resetCount = 0; pendingDone = null; clearHi(); onDone && onDone(); return; }
       var it = items[i];
       clearHi();
       currentEl = it.el;
       if(currentEl) currentEl.classList.add("speaking");
       var u = makeUtterance(it.text);
-      u.rate = rate;
-      u.onend = function(){ i++; next(); };
-      u.onerror = function(){ i++; next(); };
-      /* 仅首句在 cancel() 之后,挪到下一拍再 speak 防同帧被吞;后续句走 onend 链,保持即时 */
-      if(i === 0) setTimeout(function(){ if(sid === session) speechSynthesis.speak(u); }, 0);
-      else speechSynthesis.speak(u);
+      u.rate = seqRate;
+      var advance = function(){ clearWd(); live = false; i++; next(); };
+      u.onstart = function(){
+        if(sid !== session) return;
+        clearTimeout(wdStart); resetCount = 0; live = true;
+        var est = Math.max(3500, (u.text.length * 140) / (seqRate || 1));   /* 估时:超太多还没念完就跳下一句 */
+        wdEnd = setTimeout(function(){
+          if(sid !== session) return;
+          engineReset(); advance();
+        }, est + 6000);
+      };
+      u.onend = function(){ if(sid === session) advance(); };
+      u.onerror = function(e){
+        if(sid !== session) return;
+        if(isInterrupt(e)) return;          /* 被 stop/看门狗 cancel 的,由对应路径接管 */
+        advance();
+      };
+      wdStart = setTimeout(function(){      /* 本句迟迟不出声:重置引擎重试一次,再不行跳过这句 */
+        if(sid !== session) return;
+        if(++resetCount > 2){ resetCount = 0; engineReset(); advance(); return; }
+        engineReset();
+        afterGap(next);                     /* i 未加,重试当前句 */
+      }, WD_START);
+      live = true;
+      var speak = function(){
+        if(sid !== session) return;
+        try{ speechSynthesis.speak(u); }
+        catch(e){ advance(); }
+      };
+      if(i === 0) afterGap(speak);          /* 首句刚 cancel 过,走安全拍 */
+      else speak();
     })();
     onStart && onStart();
   }
+
+  /* ---------- 全局心跳:Chrome 偶发把引擎卡在 paused 态(表现为永久无声),定期救一把 ---------- */
+  if(ok) setInterval(function(){
+    try{ if(speechSynthesis.paused && speechSynthesis.resume) speechSynthesis.resume(); }catch(e){}
+  }, 5000);
+
   /* 任意首次交互再补一次预热:兼容要求用户激活才允许 speak 的浏览器,输解锁密码那一下就焐热引擎 */
   if(ok){
     document.addEventListener("pointerdown", warmUp, { passive: true });
@@ -634,6 +791,7 @@ var TTS = (function(){
     setRate: function(r){ rate = r; },
     setUserVoice: function(uri){
       userVoiceURI = uri || "";
+      localFallback = null; slowNotified = false;   /* 用户手动换音色后,自动回退状态作废重来 */
       try{
         if(userVoiceURI) localStorage.setItem(VOICE_KEY, userVoiceURI);
         else localStorage.removeItem(VOICE_KEY);
@@ -1010,7 +1168,7 @@ function bindEvents(){
     if(w){ openPop(w.getAttribute("data-w"), null, w.getAttribute("data-ph")); return; }
 
     var vs = t.closest ? t.closest(".en-vspeak") : null;
-    if(vs){ TTS.speakWord(vs.getAttribute("data-w")); return; }
+    if(vs){ TTS.speakWord(vs.getAttribute("data-w"), vs); return; }
     var st = t.closest ? t.closest(".en-vstar") : null;
     if(st){
       var w2 = st.getAttribute("data-w");
@@ -1075,7 +1233,7 @@ function bindEvents(){
       if(t.id === "enCardFlip") return;
       return;
     }
-    if(t.id === "enCardSpeak"){ if(deck[deckPos]) TTS.speakWord(deck[deckPos].w); return; }
+    if(t.id === "enCardSpeak"){ if(deck[deckPos]) TTS.speakWord(deck[deckPos].w, t); return; }
     if(t.id === "enCardNext"){
       if(deckPos < deck.length - 1){ deckPos++; showCard(); } else showFinish();
       return;
@@ -1100,7 +1258,7 @@ function bindEvents(){
   });
 
   $("enPopClose").onclick = closePop;
-  $("enPopSpeak").onclick = function(){ if(popCtx) TTS.speakWord(popCtx.w); };
+  $("enPopSpeak").onclick = function(){ if(popCtx) TTS.speakWord(popCtx.w, $("enPopSpeak")); };
   $("enPopStar").onclick = function(){
     if(!popCtx) return;
     if(wbHas(popCtx.w)){ wbRemove(popCtx.w); toast("已移出「" + popCtx.w + "」"); }

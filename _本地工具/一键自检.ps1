@@ -45,7 +45,7 @@ foreach($f in $pages){
   }
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 }
-Check "JS syntax (pages=" + $pages.Count + ")" ($synFail -eq 0) ($synFail.ToString() + " failed blocks")
+Check ("JS syntax (pages=" + $pages.Count + ")") ($synFail -eq 0) ($synFail.ToString() + " failed blocks")  # V2.1.17: 首参加括号——此前 PowerShell 参数解析使 OK 条件变成 $pages.Count(恒真),语法检查形同虚设
 
 # ---- 1b) external JS files syntax (site.js etc.) ----
 # 按 ES module 检查(复制到临时 .mjs,兼容 import 语法的 .js 文件)
@@ -311,6 +311,19 @@ if(Test-Path $c6file){
   } else { $c6detail = "LOC declaration not found" }
 }
 Check "C6 3D engine lib path" $c6ok $c6detail
+
+# ---- 15) C7: privacy scan before deploy (V2.1.18) ----
+# delegates to node script (cross-env reliable): API-key shapes / win user paths / private IPs / unknown emails / mobiles
+# (path built from char codes: "_本地工具/检查隐私.js" — ASCII-safe for PS5.1 GBK)
+$c7dir = Join-Path $root ("_" + [string]::Join('', [char]0x672C, [char]0x5730, [char]0x5DE5, [char]0x5177))
+$c7js = Join-Path $c7dir ([string]::Join('', [char]0x68C0, [char]0x67E5, [char]0x9690, [char]0x79C1) + '.js')
+$c7ok = $false; $c7detail = "script missing"
+if(Test-Path $c7js){
+  $c7out = & node $c7js 2>&1
+  $c7ok = ($LASTEXITCODE -eq 0)
+  $c7detail = ([string]($c7out | Select-Object -Last 1))
+}
+Check "C7 privacy scan" $c7ok $c7detail
 
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }

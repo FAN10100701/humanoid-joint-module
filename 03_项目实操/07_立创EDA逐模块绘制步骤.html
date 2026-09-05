@@ -77,8 +77,11 @@
     <li>打开克隆后的工程,进入原理图编辑器</li>
   </ol>
   <div class="box box-ok">
+    <b>✅ 勘误已应用(2026-09-05,依据 10 号《交叉认证与芯片选型报告》):</b>DRV8323 自举电容表述已更正为电荷泵拓扑(VCP-VM 1μF);功率线宽统一为 ≥150mil(2oz);主控统一为 STM32G431CBU6;MOS 更换为 40V 等级;母线电解提升至 50V;料号「DRV8323RS」更正为标准料号 DRV8323R。
+  </div>
+  <div class="box box-ok">
     <b>✅ 这个项目已经帮你做好了 80% 核心电路:</b><br>
-    STM32G4 最小系统 / DRV8323RS 预驱 / 6 颗 MOS 三相桥 / 电流采样 / Buck 电源<br>
+    STM32G4 最小系统 / DRV8323R 预驱 / 6 颗 MOS 三相桥 / 电流采样 / Buck 电源<br>
     1.9 万浏览、多人复刻成功、有 B 站视频、有开源代码,踩坑少
   </div>
 
@@ -87,7 +90,7 @@
   <div class="table-wrap"><table>
     <tr><th>模块</th><th>是否保留</th><th>注意事项</th></tr>
     <tr><td>STM32G4 最小系统</td><td><span class="my-tag my-tag-keep">保留</span></td><td>可升级为 G474RET6(Pin 对 Pin 兼容),不换也够用</td></tr>
-    <tr><td>DRV8323RS 核心电路</td><td><span class="my-tag my-tag-keep">保留</span></td><td>自举电容 100nF 必须紧贴芯片,不要改</td></tr>
+    <tr><td>DRV8323R 核心电路</td><td><span class="my-tag my-tag-keep">保留</span></td><td>电荷泵电容(VCP-VM 1μF)必须紧贴芯片,不要改——DRV8323 为电荷泵拓扑,无 BOOT/SH 自举电容(勘误依据:10 号交叉认证报告)</td></tr>
     <tr><td>6 颗 MOS 半桥电路</td><td><span class="my-tag my-tag-keep">保留</span></td><td>栅极电阻 10Ω 要放在 MOS 端,不要放预驱端</td></tr>
     <tr><td>DRV8323 内置 Buck 电路</td><td><span class="my-tag my-tag-keep">保留</span></td><td>直接输出 5V/3.3V,省掉外置 DCDC</td></tr>
   </table></div>
@@ -106,8 +109,8 @@
   <h3><span class="my-tag my-tag-modify">修改 2</span> MOS 管选型</h3>
   <div class="table-wrap"><table>
     <tr><th>电压等级</th><th>型号</th><th>封装</th><th>立创编号</th><th>参数</th></tr>
-    <tr><td>24V 系统(推荐首版)</td><td><b>IRLR7843TRPBF</b></td><td>DPAK</td><td>C103380</td><td>30V/160A/2.6mΩ,好焊散热好</td></tr>
-    <tr><td>48V 系统</td><td>BSC010N04LS</td><td>TDSON-8</td><td>C141676</td><td>40V/100A/1mΩ</td></tr>
+    <tr><td>24V 系统(推荐首版)</td><td><b>40V 等级 DPAK(如 AOD4185,按库存核对)</b></td><td>DPAK</td><td>按选型核对</td><td>40V/低 Rds(on)——勘误:原 IRLR7843(30V) 对 24V 母线仅 1.25 倍余量,不满足「≥1.5 倍」规则</td></tr>
+    <tr><td>48V 系统</td><td>80V 及以上等级 MOS</td><td>按预驱方案配套</td><td>按选型核对</td><td>勘误:原 BSC010N04LS(40V) 对 48V 母线余量不足</td></tr>
   </table></div>
   <p>栅极电阻 Rg = 10Ω(0603),<b>必须紧贴 MOS 栅极焊盘放置</b></p>
 
@@ -231,7 +234,7 @@ NMOS 栅极 → 1kΩ → MCU PB0
   <ul>
     <li><b>层数:</b>4 层板(Top 信号 / GND 完整地 / Power 电源 / Bottom 功率铺铜),不要省这几十块钱</li>
     <li><b>铜厚:</b>2oz(70μm),MOS 散热好,线路压降小</li>
-    <li><b>线宽:</b>功率路径 ≥40mil(1mm),信号线 8-10mil,采样线 6-8mil</li>
+    <li><b>线宽:</b>功率路径 ≥150mil(3.8mm,25A 峰值,2oz 铜厚,与 06 号页线宽表统一),信号线 8-10mil,采样线 6-8mil</li>
     <li><b>过孔:</b>MOS 漏极焊盘打 9 个以上 0.3mm 过孔阵列到底层散热</li>
   </ul>
 
@@ -239,15 +242,15 @@ NMOS 栅极 → 1kΩ → MCU PB0
   <h2><span class="h2-num">6</span> BOM 表(直接搜立创编号下单)</h2>
   <div class="table-wrap"><table>
     <tr><th>元件</th><th>型号</th><th>立创编号</th><th>数量</th><th>单价</th></tr>
-    <tr><td>主控 MCU</td><td>STM32G474RET6 (LQFP64)</td><td>C204268</td><td>1</td><td>¥25</td></tr>
-    <tr><td>栅极预驱</td><td>DRV8323RSRGZT (VQFN40)</td><td>C2653553</td><td>1</td><td>¥35</td></tr>
-    <tr><td>MOS 管(24V)</td><td>IRLR7843TRPBF (DPAK)</td><td>C103380</td><td>6</td><td>¥2.5</td></tr>
+    <tr><td>主控 MCU</td><td>STM32G431CBU6 (QFN48,与 06/10 号页统一;可升级 G474RET6,Pin 对 Pin 兼容)</td><td>按料号核对</td><td>1</td><td>¥15~25</td></tr>
+    <tr><td>栅极预驱</td><td>DRV8323R (VQFN-48 7×7mm;「DRV8323R」为 TI 评估板名,非标准料号)</td><td>按料号核对</td><td>1</td><td>¥35</td></tr>
+    <tr><td>MOS 管(24V)</td><td>40V 等级 DPAK(如 AOD4185,按库存核对)</td><td>按选型核对</td><td>6</td><td>≈¥3</td></tr>
     <tr><td>磁编码器</td><td>MT6816CT-STD (QFN20)</td><td>C5262912</td><td>1</td><td>¥8</td></tr>
     <tr><td>CAN 收发器</td><td>TJA1042T/3 (SOIC8)</td><td>C111364</td><td>1</td><td>¥3</td></tr>
     <tr><td>采样电阻</td><td>2512 5mΩ 1W 1%</td><td>搜「2512 5毫欧」</td><td>3</td><td>¥0.5</td></tr>
     <tr><td>栅极电阻</td><td>0603 10Ω</td><td>通用</td><td>6</td><td>¥0.01</td></tr>
-    <tr><td>自举电容</td><td>0805 100nF X7R</td><td>通用</td><td>3</td><td>¥0.01</td></tr>
-    <tr><td>母线电解</td><td>25V 220μF 10×10mm</td><td>通用</td><td>2</td><td>¥1</td></tr>
+    <tr><td>电荷泵电容</td><td>0805 1μF X7R 25V(VCP-VM)</td><td>通用</td><td>1</td><td>¥0.02</td></tr>
+    <tr><td>母线电解</td><td>50V 220μF 10×10mm(勘误:原 25V 对 24V 母线裕量不足)</td><td>通用</td><td>2</td><td>¥1</td></tr>
     <tr><td>续流二极管</td><td>SS34 (SMA)</td><td>C13882</td><td>1</td><td>¥0.2</td></tr>
     <tr><td>抱闸 NMOS</td><td>AO3400 (SOT-23)</td><td>C20918</td><td>1</td><td>¥0.3</td></tr>
     <tr><td>晶振</td><td>16MHz 3225 贴片</td><td>C164044</td><td>1</td><td>¥0.5</td></tr>
@@ -358,7 +361,7 @@ NMOS 栅极 → 1kΩ → MCU PB0
   <!-- ================= 10 小结与思考 ================= -->
   <h2><span class="h2-num">10</span> 小结与思考</h2>
   <div class="box box-tip">
-    <b>📌 本节小结:</b>本页给出立创 EDA 逐模块绘制步骤——以克隆 foc_open 开源项目为起点,保留 80% 核心电路(STM32G4 / DRV8323RS / 6 颗 MOS / Buck 电源),修改电流采样电阻、MOS 选型、地分割三项,新增磁编码器、CAN、NTC、母线电压采样、抱闸、LED、测试点、SWD 共 8 个关节专用模块;PCB 严守「功率环路面积最小化 / 栅极电阻紧贴 MOS / Kelvin 采样」三大铁律并选 4 层板、2oz 铜厚;最后按第一次上电 8 步顺序安全调试,整套 BOM 约 ¥80、含 PCB 打样总计约 ¥130。
+    <b>📌 本节小结:</b>本页给出立创 EDA 逐模块绘制步骤——以克隆 foc_open 开源项目为起点,保留 80% 核心电路(STM32G4 / DRV8323R / 6 颗 MOS / Buck 电源),修改电流采样电阻、MOS 选型、地分割三项,新增磁编码器、CAN、NTC、母线电压采样、抱闸、LED、测试点、SWD 共 8 个关节专用模块;PCB 严守「功率环路面积最小化 / 栅极电阻紧贴 MOS / Kelvin 采样」三大铁律并选 4 层板、2oz 铜厚;最后按第一次上电 8 步顺序安全调试,整套 BOM 约 ¥80、含 PCB 打样总计约 ¥130。
   </div>
   <div class="box box-warn">
     <b>🤔 思考题:</b>

@@ -1461,7 +1461,7 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 <script>
 /* 诊断面板:入口=桌面底部栏「🔧 诊断」/ 移动端底部标签栏「🔧 诊断」;引擎失败时自动弹出;✕ 关闭 */
 /* ★ 诊断代码版本:每次修改 3D 页代码时同步更新,用于区分"部署是否已同步" */
-var DIAG_VER='v7.4';  /* 2026-08-17 · 抽屉按钮上下文显隐(整机/拆解)+删除错乱姿态预设(举手礼/大字/半蹲) */
+var DIAG_VER='v7.5';  /* 2026-09-05 · 本地服务器僵死诊断指引(资源错误+本地访问→提示重启启动脚本);配合 V2.1.17 引擎路径/复位状态机修复 */
 (function(){
   var panel=document.getElementById('diagPanel'),bodyEl=document.getElementById('diagBody'),copyBtn=document.getElementById('diagCopy');
   if(!panel||!bodyEl)return;
@@ -1515,6 +1515,12 @@ var DIAG_VER='v7.4';  /* 2026-08-17 · 抽屉按钮上下文显隐(整机/拆解
         +window.__3D_LOAD_LOG__.slice(-4).map(function(s){return '· '+String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'<br>';}).join('');
     }
     if(errs.length){ h+='<span class="dp-bad">运行期错误 ×'+errs.length+'</span><br>'+errs.slice(-3).join('<br>')+'<br>'; }
+    /* V2.1.17: 本地访问出现资源错误 → 大概率启动服务器僵死/未启动(实测案例:进程活着但响应空,页面靠 SW 缓存打开、资源全挂),给出可执行指引 */
+    var isLocal=(location.protocol==='http:')&&/^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+    var hasResErr=errs.some(function(s){return s.indexOf('资源错误:')===0;});
+    if(isLocal&&hasResErr){
+      h+='<span class="dp-bad">🔌 本地服务器未正常响应——请<b>关闭旧的启动窗口</b>,双击「_本地工具/启动教学页面.bat」重启服务器,然后刷新本页</span><br>';
+    }
     bodyEl.innerHTML=h;
   }
   function openDiag(){panel.style.display='block';refresh();}

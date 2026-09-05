@@ -593,7 +593,7 @@
 
   <div class="my-warn">
     <strong>预驱周边关键设计：</strong><br>
-    • <strong>自举电容</strong>（BOOT引脚）：0.1~1μF陶瓷电容（X5R/X7R），耐压≥25V，必须尽量靠近芯片BOOT和SW引脚<br>
+    • <strong>自举电容</strong>（BOOT引脚）：0.1~1μF陶瓷电容（X5R/X7R），耐压≥25V，必须尽量靠近芯片BOOT和SW引脚——<strong>注意：仅适用于 FD6288/DRV8301 等自举拓扑预驱；DRV8323 为集成电荷泵拓扑（VCP-VM 接 1μF），无 BOOT/SH 自举电容</strong><br>
     • <strong>栅极电阻Rg</strong>：串联在驱动输出到MOS栅极之间，通常10~33Ω，控制MOS开关速度——电阻越大开关越慢、损耗越大但振铃越小；电阻越小开关越快但振铃/EMI越严重<br>
     • <strong>nFAULT引脚</strong>：必须接MCU，用于检测过流/过温/欠压故障，故障时立即关断PWM<br>
     • <strong>死区时间</strong>：设置200~500ns，防止上下桥直通
@@ -616,7 +616,7 @@
 
   <p><strong>常用MOSFET型号：</strong></p>
   <ul>
-    <li>24V小功率：AOD4184、IRLR7843</li>
+    <li>24V小功率：AOD4184、AOD4185 等 40V 等级（IRLR7843 为 30V，仅 1.25 倍余量，不建议用于 24V 母线）</li>
     <li>48V中功率：IPD080N20N5、IRFS7530</li>
     <li>大功率：IPT007N06N（60V/300A/0.7mΩ）</li>
   </ul>
