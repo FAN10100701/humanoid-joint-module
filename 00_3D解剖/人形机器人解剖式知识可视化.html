@@ -466,6 +466,7 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
     <button class="vb" id="btnIndex" title="返回学习首页（主界面）"><span class="ic">📚</span>学习首页</button>
     <a class="vb" id="verChip" href="../index.html#version" title="版本与更新历史" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">🏷 v…</a>
     <button class="vb home" id="btnHome" title="返回整机总览"><span class="ic">🏠</span>整机总览</button>
+    <button class="vb" id="btnDone" title="标记本页已完成(与学习地图 00-03 节点进度同源)">✓ 完成</button>
     <button class="vb theme" id="btnTheme"><span class="ic">🌗</span>主题</button>
   </div>
   <button class="ham" id="btnHam" title="导航菜单">☰</button>
@@ -1784,6 +1785,31 @@ var DIAG_VER='v7.5';  /* 2026-09-05 · 本地服务器僵死诊断指引(资源�
     /* 引擎失败:自动弹出诊断面板(桌面/移动端一致,便于反馈排障) */
     if(window.__3D_FAILED__&&panel.style.display!=='block')openDiag();
   },3000);
+})();
+</script>
+<script>
+/* 本页打卡:3D 页无 site.js,内联实现与 Site.toggleDone 同格式的轻量打卡。
+   写键 humanoid-site-progress-v1["00-03"](时间戳/0 切换),与学习地图 00-03 节点、
+   学习路径进度同源;本页不注册 pageId(00-03 为地图专属节点,登记口径不变)。 */
+(function(){
+  "use strict";
+  var KEY="humanoid-site-progress-v1", ID="00-03";
+  var btn=document.getElementById("btnDone");
+  if(!btn)return;
+  function readAll(){ try{ return JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ return {}; } }
+  function sync(){
+    var on=!!readAll()[ID];
+    btn.classList.toggle("on",on);
+    btn.innerHTML=on?"✓ 已完成":"✓ 完成";
+    btn.title=on?"已完成(点击撤销)":"标记本页已完成(与学习地图 00-03 节点进度同源)";
+  }
+  btn.addEventListener("click",function(){
+    var p=readAll(), was=!!p[ID];
+    p[ID]=was?0:Date.now();
+    try{ localStorage.setItem(KEY,JSON.stringify(p)); }catch(e){}
+    sync();
+  });
+  sync();
 })();
 </script>
 </body></html>

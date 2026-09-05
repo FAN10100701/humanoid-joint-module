@@ -19,6 +19,12 @@
   .my-kv-i{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.4)}
   .my-kv-d{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.4)}
   .my-step{display:inline-block;min-width:30px;text-align:center;padding:2px 8px;background:linear-gradient(135deg,#2563eb,#3b82f6);border-radius:7px;color:#fff;font-weight:800;font-size:12.5px;margin-right:6px}
+  /* SVG 双主题文字类(与全站钦定口径一致) */
+  .my-lg{fill:#26303b}html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-sub-b{fill:#1d4ed8}html[data-theme-early='dark'] .my-sub-b{fill:#9ecbff}
+  .my-sub-o{fill:#b45309}html[data-theme-early='dark'] .my-sub-o{fill:#fcd34d}
+  .my-grn{fill:#15803d}html[data-theme-early='dark'] .my-grn{fill:#86efac}
+  .my-bwd{fill:#991b1b}html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
 </style>
 <script>
   window.PAGE = {
@@ -370,6 +376,94 @@ for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
   <!-- ================= 5 故障排查流程 ================= -->
   <h2><span class="h2-num">5</span> 故障排查流程:六类故障决策树</h2>
   <p>调试中出问题,最忌「东试一下西试一下」。正确做法是按<b>决策树</b>从「最常见、最易测」的原因开始逐层排查。下表把六类高频故障的排查顺序压缩成树:</p>
+
+  <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 430" role="img" aria-label="六类高频故障排查决策树:从整机异常分出到六类现象,每类两三步定位到根因" font-family="Microsoft YaHei,sans-serif">
+    <defs>
+      <marker id="dtA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+      <marker id="dtO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+    </defs>
+    <rect x="16" y="26" width="104" height="44" rx="9" fill="#2563eb" fill-opacity=".15" stroke="#2563eb"/>
+    <text x="68" y="53" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">整机异常</text>
+    <text x="68" y="88" font-size="9.5" fill="#64748b" text-anchor="middle">六类高频故障</text>
+    <path d="M120,48 H136 V340" fill="none" stroke="#58a6ff" stroke-width="1.4"/>
+    <line x1="136" y1="105" x2="148" y2="105" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <line x1="136" y1="152" x2="148" y2="152" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <line x1="136" y1="199" x2="148" y2="199" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <line x1="136" y1="246" x2="148" y2="246" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <line x1="136" y1="293" x2="148" y2="293" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <line x1="136" y1="340" x2="148" y2="340" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="150" y="88" width="96" height="34" rx="7" fill="#2563eb" fill-opacity=".12" stroke="#2563eb"/>
+    <text x="198" y="109" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">电机不转</text>
+    <line x1="246" y1="105" x2="268" y2="105" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="270" y="88" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="345" y="109" font-size="10.5" fill="#64748b" text-anchor="middle">测母线电压/欠压</text>
+    <line x1="420" y1="105" x2="442" y2="105" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="444" y="88" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="519" y="109" font-size="10.5" fill="#64748b" text-anchor="middle">查使能·抱闸·指令与反馈</text>
+    <line x1="594" y1="105" x2="616" y2="105" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
+    <rect x="618" y="88" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
+    <text x="683" y="109" font-size="10.5" class="my-sub-o" text-anchor="middle">供电/抱闸/编码器</text>
+    <rect x="150" y="135" width="96" height="34" rx="7" fill="#2563eb" fill-opacity=".12" stroke="#2563eb"/>
+    <text x="198" y="156" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">抖动·啸叫</text>
+    <line x1="246" y1="152" x2="268" y2="152" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="270" y="135" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="345" y="156" font-size="10.5" fill="#64748b" text-anchor="middle">先降电流环 Kp</text>
+    <line x1="420" y1="152" x2="442" y2="152" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="444" y="135" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="519" y="156" font-size="10.5" fill="#64748b" text-anchor="middle">扫频查谐振与编码器噪声</text>
+    <line x1="594" y1="152" x2="616" y2="152" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
+    <rect x="618" y="135" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
+    <text x="683" y="156" font-size="10.5" class="my-sub-o" text-anchor="middle">增益/谐振/噪声</text>
+    <rect x="150" y="182" width="96" height="34" rx="7" fill="#2563eb" fill-opacity=".12" stroke="#2563eb"/>
+    <text x="198" y="203" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">关节过热</text>
+    <line x1="246" y1="199" x2="268" y2="199" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="270" y="182" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="345" y="203" font-size="10.5" fill="#64748b" text-anchor="middle">测持续电流是否超限</text>
+    <line x1="420" y1="199" x2="442" y2="199" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="444" y="182" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="519" y="203" font-size="10.5" fill="#64748b" text-anchor="middle">查堵转卡死与散热</text>
+    <line x1="594" y1="199" x2="616" y2="199" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
+    <rect x="618" y="182" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
+    <text x="683" y="203" font-size="10.5" class="my-sub-o" text-anchor="middle">超限/堵转/散热不足</text>
+    <rect x="150" y="229" width="96" height="34" rx="7" fill="#2563eb" fill-opacity=".12" stroke="#2563eb"/>
+    <text x="198" y="250" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">位置漂移</text>
+    <line x1="246" y1="246" x2="268" y2="246" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="270" y="229" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="345" y="250" font-size="10.5" fill="#64748b" text-anchor="middle">查编码器磁环/连接</text>
+    <line x1="420" y1="246" x2="442" y2="246" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="444" y="229" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="519" y="250" font-size="10.5" fill="#64748b" text-anchor="middle">查传动打滑与背隙</text>
+    <line x1="594" y1="246" x2="616" y2="246" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
+    <rect x="618" y="229" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
+    <text x="683" y="250" font-size="10.5" class="my-sub-o" text-anchor="middle">松动/打滑/背隙/零位</text>
+    <rect x="150" y="276" width="96" height="34" rx="7" fill="#2563eb" fill-opacity=".12" stroke="#2563eb"/>
+    <text x="198" y="297" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">通信中断</text>
+    <line x1="246" y1="293" x2="268" y2="293" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="270" y="276" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="345" y="297" font-size="10.5" fill="#64748b" text-anchor="middle">查 120Ω 终端电阻</text>
+    <line x1="420" y1="293" x2="442" y2="293" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="444" y="276" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="519" y="297" font-size="10.5" fill="#64748b" text-anchor="middle">查拓扑·ID·波特率</text>
+    <line x1="594" y1="293" x2="616" y2="293" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
+    <rect x="618" y="276" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
+    <text x="683" y="297" font-size="10.5" class="my-sub-o" text-anchor="middle">电阻/断线/ID 冲突</text>
+    <rect x="150" y="323" width="96" height="34" rx="7" fill="#2563eb" fill-opacity=".12" stroke="#2563eb"/>
+    <text x="198" y="344" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">掉电坠落</text>
+    <line x1="246" y1="340" x2="268" y2="340" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="270" y="323" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="345" y="344" font-size="10.5" fill="#64748b" text-anchor="middle">查抱闸时序</text>
+    <line x1="420" y1="340" x2="442" y2="340" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
+    <rect x="444" y="323" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
+    <text x="519" y="344" font-size="10.5" fill="#64748b" text-anchor="middle">查电容维持与保持力矩</text>
+    <line x1="594" y1="340" x2="616" y2="340" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
+    <rect x="618" y="323" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
+    <text x="683" y="344" font-size="10.5" class="my-sub-o" text-anchor="middle">时序/电容/力矩不足</text>
+    <rect x="150" y="382" width="12" height="12" rx="2" fill="#58a6ff" fill-opacity=".3" stroke="#58a6ff"/>
+    <text x="168" y="392" font-size="10" fill="#64748b">排查步骤(从最常见、最易测开始)</text>
+    <rect x="420" y="382" width="12" height="12" rx="2" fill="#f59e0b" fill-opacity=".3" stroke="#f59e0b"/>
+    <text x="438" y="392" font-size="10" fill="#64748b">高频根因</text>
+  </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:六类高频故障排查决策树——每类从「最常见、最易测」的第 1 步开始,两三步内收敛到右侧高频根因;完整三步排查详表见下</div></div>
+
   <div class="table-wrap"><table>
     <tr><th>故障现象</th><th>排查第 1 步</th><th>排查第 2 步</th><th>排查第 3 步</th><th>常见根因</th></tr>
     <tr>

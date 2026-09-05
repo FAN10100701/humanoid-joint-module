@@ -19,6 +19,12 @@
   .my-proj .my-chip a:hover{color:#fff;border-bottom-style:solid}
   html:not([data-theme-early="dark"]) .my-proj .my-chip a:hover{color:#1d4ed8}
   .my-proj a{color:#60a5fa}
+  /* SVG 双主题文字类(与全站钦定口径一致) */
+  .my-lg{fill:#26303b}html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-sub-b{fill:#1d4ed8}html[data-theme-early='dark'] .my-sub-b{fill:#9ecbff}
+  .my-sub-o{fill:#b45309}html[data-theme-early='dark'] .my-sub-o{fill:#fcd34d}
+  .my-grn{fill:#15803d}html[data-theme-early='dark'] .my-grn{fill:#86efac}
+  .my-bwd{fill:#991b1b}html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
 </style>
 <script>
   window.PAGE = {
@@ -122,7 +128,71 @@
 
   <div class="box box-tip"><b>📌 三条军规:</b>①<strong>预算按级升</strong>——L3 之前不要买贵的,L5 之前先吊挂;②<strong>每个项目都留档</strong>——参数、曲线、失败照片,这就是你自己的"工程手册"(本站 03-03 学习手册就是这么来的);③<strong>遇到故障先走决策树</strong>(<a href="../02_硬件基础/12_故障诊断决策树.html">02-12</a>),再动手换硬件。</div>
 
-  <h2><span class="h2-num">N</span> 本节自测</h2>
+  <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 340" role="img" aria-label="动手项目 L1 到 L5 难度阶梯图:层级、周期、预算与项目编号" font-family="Microsoft YaHei,sans-serif">
+    <rect x="30" y="238" width="128" height="60" rx="8" fill="#22c55e" fill-opacity=".1" stroke="#22c55e"/>
+    <text x="94" y="262" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L1 · 点亮读取</text>
+    <text x="94" y="282" font-size="10" fill="#64748b" text-anchor="middle">半天~1天 · P1~P2</text>
+    <rect x="174" y="198" width="128" height="100" rx="8" fill="#22c55e" fill-opacity=".14" stroke="#22c55e"/>
+    <text x="238" y="226" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L2 · 闭环入门</text>
+    <text x="238" y="248" font-size="10" fill="#64748b" text-anchor="middle">1~2 周 · P3~P4</text>
+    <text x="238" y="268" font-size="10" fill="#64748b" text-anchor="middle">第一次「电机变刚性」</text>
+    <rect x="318" y="158" width="128" height="140" rx="8" fill="#f59e0b" fill-opacity=".12" stroke="#f59e0b"/>
+    <text x="382" y="186" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L3 · 关节模组</text>
+    <text x="382" y="208" font-size="10" fill="#64748b" text-anchor="middle">2~4 周 · P5~P7</text>
+    <text x="382" y="228" font-size="10" fill="#64748b" text-anchor="middle">标定 + 总线 + RL</text>
+    <rect x="462" y="118" width="128" height="180" rx="8" fill="#f59e0b" fill-opacity=".18" stroke="#f59e0b"/>
+    <text x="526" y="146" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L4 · 系统集成</text>
+    <text x="526" y="168" font-size="10" fill="#64748b" text-anchor="middle">1~2 月 · P8~P10</text>
+    <text x="526" y="188" font-size="10" fill="#64748b" text-anchor="middle">力控 + ROS2 + 仿真</text>
+    <rect x="606" y="78" width="128" height="220" rx="8" fill="#ef4444" fill-opacity=".1" stroke="#ef4444"/>
+    <text x="670" y="106" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L5 · 整机级</text>
+    <text x="670" y="128" font-size="10" fill="#64748b" text-anchor="middle">季度级 · P11~P12</text>
+    <text x="670" y="148" font-size="10" fill="#64748b" text-anchor="middle">腿组摆动/跳跃</text>
+    <text x="670" y="166" font-size="10" fill="#64748b" text-anchor="middle">MoveIt 上真机</text>
+    <text x="94" y="228" font-size="10" class="my-sub-o" text-anchor="middle">¥100~200</text>
+    <text x="238" y="188" font-size="10" class="my-sub-o" text-anchor="middle">+电流采样驱动 ¥300 级</text>
+    <text x="382" y="148" font-size="10" class="my-sub-o" text-anchor="middle">¥800~2000</text>
+    <text x="526" y="108" font-size="10" class="my-sub-o" text-anchor="middle">+主控/传感 千元级</text>
+    <text x="670" y="68" font-size="10" class="my-sub-o" text-anchor="middle">¥5000+,先吊挂!</text>
+    <line x1="30" y1="306" x2="734" y2="306" stroke="#64748b" stroke-opacity=".2"/>
+    <text x="30" y="326" font-size="10" fill="#64748b">阶梯只能逐级爬:每级的「验收标准」是下一级的入场券——P5 全套标定不过关,P8 力控的手感地图全是噪声。预算路线见第 3 节。</text>
+  </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:动手项目难度阶梯——L1~L5 五级台阶对应周期、预算与项目编号;台阶高度即门槛,逐级验收、逐级进阶,配色与本页各难度块的绿/橙/红一致</div></div>
+
+  <h2><span class="h2-num">1</span> 项目记录规范:每个项目都该留下这六样东西</h2>
+  <p>判断一个项目"做完没有"的标准不是"电机转了",而是"<b>换一个人拿着你的记录能不能复现</b>"。建议每个项目固定留六样东西,做成一个文件夹归档:</p>
+  <div class="table-wrap"><table>
+    <tr><th>留档项</th><th>内容要求</th><th>为什么重要</th></tr>
+    <tr><td><b>目标与验收</b></td><td>动手前写下本项目的验收标准(直接抄本页各项目的"验收"栏)</td><td>防止做着做着降低标准、自我感觉良好</td></tr>
+    <tr><td><b>接线与配置快照</b></td><td>引脚映射、CAN ID、驱动器配置文件的截图/导出</td><td>一个月后你一定不记得;排查"以前能跑现在不能跑"全靠它</td></tr>
+    <tr><td><b>参数迭代表</b></td><td>每次调参:日期、参数值、现象、结论(一行一条)</td><td>调参记录就是整定手册(02-08)的个人版;复试被问"你怎么调的"直接拿出来</td></tr>
+    <tr><td><b>关键曲线截图</b></td><td>阶跃响应、电流波形、跟踪误差,标好纵轴单位与工况</td><td>没有单位的曲线等于没有曲线;这是最硬的"我真做过"证据</td></tr>
+    <tr><td><b>失败记录</b></td><td>炸管、疯转、丢帧的时刻与最终根因</td><td>面试官最爱问"你踩过什么坑"——有根因的失败比顺利更加分</td></tr>
+    <tr><td><b>下一步清单</b></td><td>本项目没做/没调好的点,以及对应本站哪一页</td><td>项目之间是接力关系(见 L1~L5 依赖链),断档就接不上</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💡 省力做法:</b>直接在本页每个项目的"验收"栏下面补两行「日期/结果/曲线链接」即可,不必另写长文档。工程记录的价值在<b>持续</b>与<b>可检索</b>,不在篇幅。</div>
+
+  <h2><span class="h2-num">2</span> 从项目到简历:怎么写才有说服力</h2>
+  <p>同样是做过 P3(电流环+速度环闭环),简历上写"熟悉 FOC 与电机控制"和写出量化结果,在面试官眼里是完全不同的两种人。写项目经历遵循一个固定句式:<b>平台约束 + 你做了什么 + 量化验收 + 一句根因分析</b>。对照:</p>
+  <pre>反例:「熟悉 SimpleFOC,做过电机闭环控制。」
+  ——没有平台、没有指标、没有思考,无法追问,也无法采信。
+
+正例:「在 ESP32 + SimpleFOC mini + 2804 云台电机上完成电流/速度双环整定:
+  用带宽法整定电流环 PI,速度阶跃超调从 38% 降到 12%(目标 &lt;15%);
+  定位到编码器线缆未屏蔽引入的噪声毛刺,改双绞+磁环后静止噪声 0.08°。
+  遗留:低速爬行现象,怀疑摩擦补偿缺失(下一步对照 02-08 第 4 节)。」</pre>
+  <p>正例的四个要素分别对应:平台(可复现)、方法(懂原理)、指标(会验收)、根因(有工程思维)。写完以后自查一遍:<b>每个数字都能被追问两层</b>吗(怎么测的?为什么是这个目标值?)——答不上来的数字删掉,那就是面试坑。更多写法与追问套路见 <a href="07_大厂面试专题.html">08-07 大厂面试专题</a> 的 STAR 法则一节。</p>
+
+  <h2><span class="h2-num">3</span> 三条预算路线:按目标反选项目</h2>
+  <p>不必从 L1 做到 L5 全做完。先定目标,再按预算反选项目组合:</p>
+  <div class="table-wrap"><table>
+    <tr><th>路线</th><th>预算</th><th>项目组合</th><th>适合目标</th></tr>
+    <tr><td><b>软件仿真路线</b></td><td>≈ ¥0(PC 即可)</td><td>P7 → P10 → P12(建模部分)</td><td>算法/RL 岗位;先验证兴趣再投入硬件</td></tr>
+    <tr><td><b>标准嵌入式路线</b></td><td>¥1500~2500</td><td>P1 → P2 → P3 → P5 → P6 → P8</td><td>电机驱动/硬件岗;完整走一遍"电机→关节→力控"</td></tr>
+    <tr><td><b>整机冲刺路线</b></td><td>¥5000+</td><td>标准路线 → P9 → P11 → P12</td><td>系统集成/整机岗;复试前有整机级演示非常加分</td></tr>
+  </table></div>
+  <p class="my-note" style="font-size:12.5px;color:#6b7280;margin-top:6px">注:预算为单件估算(云台电机 ¥60~150、磁编码器 ¥15~40、带电流采样的驱动板 ¥200~600、无框电机+谐波 ¥800~1500),以实际采购为准。跳过的项目不是"不用会",而是"用仿真或阅读替代动手",对应前置页仍要读。</p>
+
+  <h2><span class="h2-num">4</span> 本节自测</h2>
   <div class="quiz">
     <div class="quiz-q">1. 做 P3(电流环+速度环)之前必须先完成什么?为什么?</div>
     <div class="quiz-options" data-answer="C">

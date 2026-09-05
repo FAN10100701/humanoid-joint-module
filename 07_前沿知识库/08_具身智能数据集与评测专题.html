@@ -33,6 +33,12 @@
   .my-sensor{color:#93c5fd;border-color:rgba(59,130,246,.45);background:rgba(59,130,246,.08)}
   .my-lic{color:#fcd34d;border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.08)}
   .my-note{font-size:12.5px;color:#8b949e;line-height:1.7}
+  /* SVG 双主题文字类(与全站钦定口径一致) */
+  .my-lg{fill:#26303b}html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-sub-b{fill:#1d4ed8}html[data-theme-early='dark'] .my-sub-b{fill:#9ecbff}
+  .my-sub-o{fill:#b45309}html[data-theme-early='dark'] .my-sub-o{fill:#fcd34d}
+  .my-grn{fill:#15803d}html[data-theme-early='dark'] .my-grn{fill:#86efac}
+  .my-bwd{fill:#991b1b}html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
 </style>
 <script>
   /* ============================================================
@@ -199,6 +205,50 @@
   <div class="box box-tip">
     <b>💡 操作数据集选型速记:</b>想做「跨本体通用 VLA」→ 先 OXE;想要「真实家庭/办公场景」→ DROID;想做「长程家务+灵巧」且能接受非商用 → AgiBot World;做「低成本桌面操作」→ BridgeData V2;纯「算法对比、无真机预算」→ RoboMimic / RLBench 起步。
   </div>
+
+  <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 330" role="img" aria-label="六大操作数据集轨迹规模与模态对比图" font-family="Microsoft YaHei,sans-serif">
+    <text x="8" y="22" font-size="10.5" fill="#64748b">数据集</text>
+    <text x="170" y="22" font-size="10.5" fill="#64748b">轨迹规模(线性刻度)</text>
+    <text x="600" y="22" font-size="10.5" fill="#64748b">模态与形态</text>
+    <line x1="158" y1="30" x2="158" y2="252" stroke="#64748b" stroke-opacity=".18"/>
+    <rect x="170" y="53" width="360" height="18" rx="3" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b"/>
+    <text x="8" y="67" font-size="11.5" class="my-lg">Open X-Embodiment</text>
+    <text x="538" y="67" font-size="10.5" fill="#64748b">100 万+</text>
+    <text x="600" y="63" font-size="9.5" fill="#64748b">22 形态 · 60+ 子集 · 527 技能</text>
+    <text x="600" y="77" font-size="9.5" fill="#64748b">RGB(-D)+关节状态</text>
+    <rect x="170" y="89" width="360" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
+    <text x="8" y="103" font-size="11.5" class="my-lg">AgiBot World</text>
+    <text x="538" y="103" font-size="10.5" fill="#64748b">100 万+</text>
+    <text x="600" y="99" font-size="9.5" fill="#64748b">100+ 台真机 · 217+ 任务</text>
+    <text x="600" y="113" font-size="9.5" fill="#64748b">RGB-D+触觉+本体感受</text>
+    <rect x="170" y="125" width="27" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
+    <text x="8" y="139" font-size="11.5" class="my-lg">DROID</text>
+    <text x="205" y="139" font-size="10.5" fill="#64748b">约 7.6 万</text>
+    <text x="600" y="135" font-size="9.5" fill="#64748b">564 场景 · 86 任务 · 约 350 h</text>
+    <text x="600" y="149" font-size="9.5" fill="#64748b">RGB×2~3+关节+夹爪</text>
+    <rect x="170" y="161" width="22" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
+    <text x="8" y="175" font-size="11.5" class="my-lg">BridgeData V2</text>
+    <text x="200" y="175" font-size="10.5" fill="#64748b">约 6.0 万</text>
+    <text x="600" y="171" font-size="9.5" fill="#64748b">24 环境 · 73 物体 · WidowX</text>
+    <text x="600" y="185" font-size="9.5" fill="#64748b">RGB+关节+夹爪</text>
+    <rect x="170" y="197" width="5" height="18" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
+    <text x="8" y="211" font-size="11.5" class="my-lg">RoboMimic</text>
+    <text x="183" y="211" font-size="10.5" fill="#64748b">数千条示教</text>
+    <text x="600" y="207" font-size="9.5" fill="#64748b">5 任务 · 3 机器人</text>
+    <text x="600" y="221" font-size="9.5" fill="#64748b">仿真 RGB+关节</text>
+    <rect x="170" y="233" width="5" height="18" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
+    <text x="8" y="247" font-size="11.5" class="my-lg">RLBench</text>
+    <text x="183" y="247" font-size="10.5" fill="#64748b">以任务数计:100 任务</text>
+    <text x="600" y="243" font-size="9.5" fill="#64748b">CoppeliaSim+Franka</text>
+    <text x="600" y="257" font-size="9.5" fill="#64748b">仿真相机+关节</text>
+    <rect x="170" y="282" width="12" height="12" rx="2" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
+    <text x="188" y="292" font-size="10" fill="#64748b">真机遥操作</text>
+    <rect x="286" y="282" width="12" height="12" rx="2" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b"/>
+    <text x="304" y="292" font-size="10" fill="#64748b">汇聚已有数据集</text>
+    <rect x="424" y="282" width="12" height="12" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
+    <text x="442" y="292" font-size="10" fill="#64748b">仿真基准</text>
+    <text x="170" y="316" font-size="9.5" fill="#64748b">条形按轨迹数线性刻度;宇树 G1-Dex1 规模官方未统一公布,未入图;仿真基准不以轨迹规模计。</text>
+  </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:六大操作数据集规模与模态对比——条形为轨迹规模(线性刻度),颜色区分采集方式;OXE 靠「汇聚」做到百万级,AgiBot World 为真机新采同量级,DROID / BridgeData 是中小规模真机遥操作,仿真基准不以轨迹数计</div></div>
 
   <!-- ================= 3 运动与仿真数据集 ================= -->
   <h2><span class="h2-num">3</span> 运动 / 仿真数据集:人体运动与连续控制基准</h2>

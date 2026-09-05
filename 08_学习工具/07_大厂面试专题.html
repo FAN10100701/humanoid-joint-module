@@ -13,6 +13,12 @@
   .my-sub{font-size:13.5px;color:#9aa4b2;margin:6px 0 10px}
   .my-check li{margin:5px 0}
   .my-en{color:#93c5fd;font-size:13.5px;line-height:1.9;margin:6px 0 4px}
+  /* SVG 双主题文字类(与全站钦定口径一致) */
+  .my-lg{fill:#26303b}html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-sub-b{fill:#1d4ed8}html[data-theme-early='dark'] .my-sub-b{fill:#9ecbff}
+  .my-sub-o{fill:#b45309}html[data-theme-early='dark'] .my-sub-o{fill:#fcd34d}
+  .my-grn{fill:#15803d}html[data-theme-early='dark'] .my-grn{fill:#86efac}
+  .my-bwd{fill:#991b1b}html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
 </style>
 <script>
   window.PAGE = {
@@ -84,6 +90,45 @@
   </table></div>
 
   <div class="box box-tip"><b>💡 通用轮次规律:</b>大厂技术岗常见 3~5 轮。<b>电话面</b>一般 20~40 分钟,考基础与简历真实性;<b>技术面</b>考原理 + 手撕;<b>项目深挖(交叉面)</b>围绕简历项目问「为什么这么做、踩了什么坑、数据如何」;<b>HR 面</b>考动机、稳定性、薪酬。电机驱动与控制岗最看重<b>公式能不能现场推</b>,具身智能岗最看重<b>项目有没有真跑通</b>。</div>
+
+  <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 316" role="img" aria-label="校招技术岗面试轮次流程图:电话面、技术面、项目深挖、HR 面四轮考察重点" font-family="Microsoft YaHei,sans-serif">
+    <defs>
+      <marker id="ivB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+    </defs>
+    <rect x="20" y="40" width="160" height="180" rx="10" fill="#2563eb" fill-opacity=".08" stroke="#2563eb"/>
+    <text x="100" y="66" font-size="12.5" class="my-lg" text-anchor="middle" font-weight="bold">① 电话面 · 20~40min</text>
+    <text x="34" y="96" font-size="10.5" fill="#64748b">· 基础概念快问快答</text>
+    <text x="34" y="118" font-size="10.5" fill="#64748b">· 核验简历真实性</text>
+    <text x="34" y="140" font-size="10.5" fill="#64748b">· 岗位匹配初筛</text>
+    <text x="34" y="176" font-size="10" class="my-sub-b">备考:高频题第 2 节</text>
+    <text x="34" y="196" font-size="10" class="my-sub-b">口述稿:第 6.1 节 STAR</text>
+    <line x1="180" y1="130" x2="206" y2="130" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#ivB)"/>
+    <rect x="210" y="40" width="160" height="180" rx="10" fill="#2563eb" fill-opacity=".12" stroke="#2563eb"/>
+    <text x="290" y="66" font-size="12.5" class="my-lg" text-anchor="middle" font-weight="bold">② 技术面 · 原理+手撕</text>
+    <text x="224" y="96" font-size="10.5" fill="#64748b">· 公式现场推导(三环/FOC)</text>
+    <text x="224" y="118" font-size="10.5" fill="#64748b">· 手撕代码 / 数据结构</text>
+    <text x="224" y="140" font-size="10.5" fill="#64748b">· 追问到底层原理</text>
+    <text x="224" y="176" font-size="10" class="my-sub-b">备考:第 9 节手撕 10 题</text>
+    <text x="224" y="196" font-size="10" class="my-sub-b">第 5 节现场提示</text>
+    <line x1="370" y1="130" x2="396" y2="130" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#ivB)"/>
+    <rect x="400" y="40" width="160" height="180" rx="10" fill="#2563eb" fill-opacity=".16" stroke="#2563eb"/>
+    <text x="480" y="66" font-size="12.5" class="my-lg" text-anchor="middle" font-weight="bold">③ 项目深挖 · 交叉面</text>
+    <text x="414" y="96" font-size="10.5" fill="#64748b">· 为什么这么做(选型依据)</text>
+    <text x="414" y="118" font-size="10.5" fill="#64748b">· 踩过什么坑(根因)</text>
+    <text x="414" y="140" font-size="10.5" fill="#64748b">· 数据如何(量化验收)</text>
+    <text x="414" y="176" font-size="10" class="my-sub-b">备考:第 3 节深挖框架</text>
+    <text x="414" y="196" font-size="10" class="my-sub-b">第 4 节场景题</text>
+    <line x1="560" y1="130" x2="586" y2="130" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#ivB)"/>
+    <rect x="590" y="40" width="150" height="180" rx="10" fill="#22c55e" fill-opacity=".1" stroke="#22c55e"/>
+    <text x="665" y="66" font-size="12.5" class="my-lg" text-anchor="middle" font-weight="bold">④ HR / 综合面</text>
+    <text x="604" y="96" font-size="10.5" fill="#64748b">· 动机与稳定性</text>
+    <text x="604" y="118" font-size="10.5" fill="#64748b">· 抗压与团队协作</text>
+    <text x="604" y="140" font-size="10.5" fill="#64748b">· 薪酬与反问环节</text>
+    <text x="604" y="176" font-size="10" class="my-grn">备考:第 7 节 HR 10 题</text>
+    <text x="604" y="196" font-size="10" class="my-grn">反问:第 6.3 节</text>
+    <text x="20" y="256" font-size="10.5" fill="#64748b">结果无论好坏,24 小时内按第 12.1 节「五问复盘法」写复盘——答错的题回填到第 2 节对应专题,追问最深处就是岗位的真实需求。</text>
+    <text x="20" y="292" font-size="10" fill="#64748b">时间紧张时按第 11 节「七天冲刺计划」做定向复习:每天一个主题、每天产出一份可复用材料。</text>
+  </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:校招技术岗面试轮次流程——四轮考察重点逐轮变化,每轮备考指向本页对应章节;电机驱动岗主战场在第②轮,具身智能岗主战场在第③轮</div></div>
 
   <!-- ================= 2. 高频问答题 ================= -->
   <h2><span class="h2-num">2</span> 高频问答题(六大专题 · 每题带参考回答要点)</h2>
@@ -946,8 +991,38 @@ def levelOrder(root):
     <li>C++ 与数据结构 / 算法</li>
   </ul>
 
-  <!-- ================= 11. 本节自测 ================= -->
-  <h2><span class="h2-num">11</span> 本节自测</h2>
+  <!-- ================= 11. 七天冲刺计划 ================= -->
+  <h2><span class="h2-num">11</span> 面试七天冲刺计划(拿到面试邀约后怎么准备)</h2>
+  <p>大多数校招/保研面试的窗口期只有 3~10 天。与其把本页 60+ 道题全部重背,不如按下面的节奏做"定向复习"——每天一个主题,每天产出一份可复用的材料:</p>
+  <div class="table-wrap"><table>
+    <tr><th>天</th><th>主题</th><th>要做的事</th><th>产出物</th></tr>
+    <tr><td><b>D1</b></td><td>项目定稿</td><td>用第 6.1 节 STAR 法则把 1~2 个核心项目各写成 200 字口述稿,对着计时器练到 90 秒内讲完</td><td>项目口述稿 + 追问预演清单(每项目 5 个可能追问)</td></tr>
+    <tr><td><b>D2</b></td><td>基础盘:电机与控制</td><td>过 2.1 / 2.3 两节高频题;手推 FOC 电流环框图与三环级联结构,能白板画出</td><td>一页"电机控制速查卡"</td></tr>
+    <tr><td><b>D3</b></td><td>基础盘:硬件与传动</td><td>过 2.2 节 + 减速器三问(减速比/背隙/柔轮疲劳),对照机型全景页准备"关节方案选型"观点题</td><td>谐波 vs 行星丝杠 vs QDD 的 90 秒陈述</td></tr>
+    <tr><td><b>D4</b></td><td>软件与系统</td><td>过 2.4 / 2.5 节;ROS2 六概念 + QoS 组合表过一遍;准备一个"分层定位故障"的实战故事</td><td>ROS2 速查卡 + 一个故障排查 STAR 故事</td></tr>
+    <tr><td><b>D5</b></td><td>手撕与场景</td><td>第 9 节 10 题至少动手写 6 题(别只看);第 4 节场景题口述 3 道</td><td>可运行的代码片段 + 场景题分析框架</td></tr>
+    <tr><td><b>D6</b></td><td>公司定向</td><td>按面试公司查第 10 节对应条目,准备 2 个"为什么选我们"的具体理由(提到对方的具体产品线)</td><td>公司专项一页纸 + 3 个反问问题</td></tr>
+    <tr><td><b>D7</b></td><td>全真模拟</td><td>找同学或录像做 30 分钟模拟面试(英文岗按第 8 节题库);复盘录音,标记所有"卡壳点"</td><td>卡壳点清单 → 回填到 D1~D6 对应卡片</td></tr>
+  </table></div>
+  <div class="box box-warn"><b>⚠️ 冲刺期三条纪律:</b>①每天产出物必须落纸,不看产出只看时长的复习都是伪努力;②手撕题必须真写代码,看会 ≠ 写得出;③最后一天不做新题,只复盘错题与卡壳点——临场记忆需要留白巩固。</div>
+
+  <!-- ================= 12. 复盘与决策 ================= -->
+  <h2><span class="h2-num">12</span> 面试复盘模板与 Offer 决策(面试之后做什么)</h2>
+  <p>面试结束不是终点。24 小时内做复盘,记忆最完整;收获的不只是这一场的经验,而是一套可持续迭代的面试系统:</p>
+  <h3>12.1 五问复盘法(每场面试后当天写)</h3>
+  <ul>
+    <li><b>哪道题答错了 / 答浅了?</b>——写出正确答案与自己的知识缺口,回填到本站对应页面(形成你自己的"错题-页面"映射);</li>
+    <li><b>哪个问题完全没预料到?</b>——这类题最值钱,说明你的准备框架有盲区,补进第 2 节对应专题;</li>
+    <li><b>哪道题答得比预期好?</b>——固化下来,这就是你的"主场题",后续自我介绍可以主动往这上面引;</li>
+    <li><b>面试官在哪个点上追问最深?</b>——追问方向就是岗位的真实需求,下次面试优先准备这个方向;</li>
+    <li><b>如果重来一次,90 秒自我介绍会怎么改?</b>——每场迭代一版,三轮之后你的自我介绍会非常锋利。</li>
+  </ul>
+  <h3>12.2 多个 Offer 怎么比</h3>
+  <p>比较 Offer 不只比薪资。建议给四个维度定权重:<b>业务赛道</b>(人形机器人整机 vs 零部件 vs 仿真工具,决定你三年后的技能画像)、<b>导师/团队</b>(直属 leader 的技术背景与带人记录,校招阶段权重应高于公司名气)、<b>技术栈匹配</b>(你简历上的项目在对方是否还有成长空间)、<b>地理与成本</b>。保研复试场景下还要比较课题组:方向匹配度 &gt; 组内毕业生去向 &gt; 导师头衔——去官网查近三年毕业生的一作论文与就业去向,比听任何宣讲都可靠。</p>
+  <div class="box box-tip"><b>💡 记住:</b>面试是双向选择,复盘时也请记录"这家公司/课题组给你的感受"。你在面试中观察到的工程师状态、提问质量与办公氛围,往往比宣传稿更接近真相。</div>
+
+  <!-- ================= 13. 本节自测 ================= -->
+  <h2><span class="h2-num">13</span> 本节自测</h2>
 
   <div class="quiz">
     <div class="quiz-q">1. FOC 三环从内到外的正确顺序是?</div>
@@ -1143,7 +1218,7 @@ def levelOrder(root):
   </div>
 
   <!-- ================= 参考来源 ================= -->
-  <h2><span class="h2-num">12</span> 参考资料</h2>
+  <h2><span class="h2-num">14</span> 参考资料</h2>
   <p class="my-sub">本页高频题与趋势经 web_search 核实(2025~2026 常见面经 / 题库 / 招聘 JD);涉及型号参数以官网为准。资料整理更新至 2026-08。</p>
   <ul>
     <li><a href="https://github.com/WinstonJQ/embodied-interview-qa" target="_blank" rel="noopener">具身智能高频面试题库(embodied-interview-qa,GitHub)</a>——VLA / 世界模型 / 工程落地 / 开放题高频题来源</li>
