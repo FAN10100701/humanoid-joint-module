@@ -47,7 +47,7 @@
   <text x="300" y="72">Qwen3 系(Apache)</text>
   <text x="300" y="88">DeepSeek / GLM-4.5 / K2 Thinking(MIT)</text>
 </g>
-<text x="20" y="118" font-size="10.5" fill="#64748b">口径提醒:同厂不同版本许可会变(如 Kimi K2 Modified MIT → K2 Thinking MIT),投产锁版本</text></svg></div>
+<text x="20" y="118" font-size="10.5" fill="#64748b">口径提醒:同厂不同版本许可会变(如 Kimi K2 Modified MIT → K2 Thinking MIT),投产锁版本</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图 1:开源许可光谱——从闭源 API 到宽松开源(MIT/Apache)的约束梯度</div></div>
   <h2><span class="h2-num">2</span> 选型决策树</h2>
   <div class="my-svg"><svg viewBox="0 0 560 250" role="img" aria-label="基座选型决策树"><defs><marker id="d1" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="currentColor"/></marker></defs>
   <rect x="210" y="10" width="140" height="38" rx="9" fill="#1f3a5f" stroke="#58a6ff"/><text x="280" y="34" font-size="12.5" fill="currentColor" text-anchor="middle">任务:推理/Agent/多模态?</text>
@@ -57,7 +57,7 @@
   <path d="M115,154 L115,178 M445,154 L445,178" stroke="currentColor" marker-end="url(#d1)"/>
   <rect x="20" y="180" width="200" height="52" rx="9" fill="#232b3b" stroke="#6b7280"/><text x="120" y="200" font-size="11" fill="#9aa4b2" text-anchor="middle">资源:7B~32B 单卡/工作站</text><text x="120" y="218" font-size="10.5" fill="#9aa4b2" text-anchor="middle">Qwen3 小系 / GLM 小杯(Apache/MIT)</text>
   <rect x="340" y="180" width="200" height="52" rx="9" fill="#232b3b" stroke="#6b7280"/><text x="440" y="200" font-size="11" fill="#9aa4b2" text-anchor="middle">资源:多卡大显存集群</text><text x="440" y="218" font-size="10.5" fill="#9aa4b2" text-anchor="middle">DeepSeek-V3 MoE / K2 Thinking(MIT)</text>
-  <text x="280" y="246" font-size="11" fill="#f59e0b" text-anchor="middle">许可红线筛查:商用条款/月活限制/版本锁定 —— 永远以官方仓库 LICENSE 为准</text></svg></div>
+  <text x="280" y="246" font-size="11" fill="#f59e0b" text-anchor="middle">许可红线筛查:商用条款/月活限制/版本锁定 —— 永远以官方仓库 LICENSE 为准</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图 2:基座选型决策树——按部署资源、许可约束与任务需求分流</div></div>
 
   <h2><span class="h2-num">3</span> 具身 VLM 底座的实证谱系</h2>
   <p>呼应 07-04/06-08:主流 VLA 都站在 LLM/VLM 底座上——<b>OpenVLA 基于 Llama-2 7B + 视觉编码器</b>(开源可复现的标杆)、<b>π0 基于 PaLI-X/Gemma 系</b>(流匹配动作头)、<b>GR00T N1 用 NVIDIA 自研底座</b>、<b>Helix 用 Homebrew 双系统</b>(VLM 慢思考 + S1 快策略)。规律:底座负责「看懂+理解指令」,动作头负责「出连续控制量」——底座的推理与多模态能力直接决定 VLA 天花板。</p>

@@ -40,9 +40,9 @@
 <rect x="10" y="94" width="150" height="26" rx="6" fill="#143524" stroke="#22c55e"/>
 <text x="20" y="112" font-size="11" fill="currentColor">缓存 = 隐维 × 词数(≈1/10)</text>
 <path d="M160,107 L240,107" stroke="#22c55e" stroke-dasharray="4 3" marker-end="url(#g1)"/>
-<text x="250" y="111" font-size="10.5" fill="#9aa4b2">用时经上投影「升维重建」K/V,效果对齐全注意力</text>
+<text x="250" y="111" font-size="10.5" fill="#64748b">用时经上投影「升维重建」K/V,效果对齐全注意力</text>
 <defs><marker id="g1" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="#22c55e"/></marker></defs>
-<text x="10" y="150" font-size="10.5" fill="#9aa4b2">类比:以前每层每头都存完整笔记;现在只存一份压缩摘要,要用时再展开</text></svg></div>
+<text x="10" y="150" font-size="10.5" fill="#64748b">类比:以前每层每头都存完整笔记;现在只存一份压缩摘要,要用时再展开</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图 1:MHA 与 MLA 的 KV Cache 占用对比——MLA 只缓存低秩投影,显存显著瘦身</div></div>
 
   <h2><span class="h2-num">2</span> MLA 低秩投影数学:KV Cache 怎么瘦下来的</h2>
   <p>MLA 的全部魔法一句话:<b>别再逐头缓存 K 和 V,缓存它们低秩压缩后的「摘要」c_kv,用时再上投影重建</b>。</p>
@@ -57,7 +57,7 @@
   <rect x="250" y="40" width="96" height="52" rx="9" fill="#3d2c10" stroke="#f59e0b"/><text x="298" y="62" font-size="11.5" fill="currentColor" text-anchor="middle">③ 拒绝采样 SFT</text><text x="298" y="79" font-size="10" fill="#9aa4b2" text-anchor="middle">全场景数据重冷启</text>
   <rect x="368" y="40" width="96" height="52" rx="9" fill="#2e1d47" stroke="#a78bfa"/><text x="416" y="62" font-size="11.5" fill="currentColor" text-anchor="middle">④ 全场景 RL</text><text x="416" y="79" font-size="10" fill="#9aa4b2" text-anchor="middle">推理+有用+无害</text>
   <path d="M110,66 L132,66 M228,66 L250,66 M346,66 L368,66" stroke="currentColor" marker-end="url(#a2)"/>
-  <text x="280" y="128" font-size="11.5" fill="#f59e0b" text-anchor="middle">输出:R1(对齐 o1)+ 6 个蒸馏小模型开源 · 登 Nature</text></svg></div>
+  <text x="280" y="128" font-size="11.5" fill="#f59e0b" text-anchor="middle">输出:R1(对齐 o1)+ 6 个蒸馏小模型开源 · 登 Nature</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图 2:DeepSeek-R1 推理管线——思考/非思考双模式按需切换</div></div>
 
   <h2><span class="h2-num">4</span> V3.1 / V3.2 / V4:三条进化线</h2>
   <ul>

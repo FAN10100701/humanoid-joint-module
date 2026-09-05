@@ -79,10 +79,12 @@ const QUEST_LINK_U = [...qstSrc.matchAll(/link:\s*\{[^}]*u:\s*'([^']+)'/g)].map(
 const QUEST_REFS = [...qstSrc.matchAll(/'ref:([a-z]+-\d+)'/g)].map((m) => m[1]);
 const QB_LINK_U = [...qbSrc.matchAll(/link:\s*\{[^}]*u:\s*'([^']+)'/g)].map((m) => m[1]);
 
-/* u 字段(相对 08_学习工具/ 解析)→ 站内相对路径 */
+/* u 字段(相对 08_学习工具/ 解析)→ 站内相对路径;目录链接解析到 index.html */
 function toSiteRel(u) {
-  const clean = u.split("?")[0].split("#")[0];
-  return clean.replace(/^\.\.\//, "").replace(/^\.\//, "");
+  let clean = u.split("?")[0].split("#")[0];
+  clean = clean.replace(/^\.\.\//, "").replace(/^\.\//, "");
+  if (clean.endsWith("/")) clean += "index.html";
+  return clean;
 }
 
 /* ---------- 页面扫描 ---------- */
@@ -118,7 +120,7 @@ function analyze(html, rel, key) {
   const explainAvg = explain.length ? Math.round(explain.reduce((a, b) => a + b, 0) / explain.length) : 0;
 
   /* 图片准确率:SVG 逐块(g fill 继承 + 最近深色矩形底上下文,过滤合法深底浅字) */
-  let lightFill = 0, overflow = 0;
+  let lightFill = 0, overflow = 0, cappedSvg = 0;
   const svgs = [...html.matchAll(/<svg\b[^>]*>/gi)];
   const lum = (hex) => {
     let h = hex.toLowerCase();
@@ -149,8 +151,12 @@ function analyze(html, rel, key) {
     const svg = end > 0 ? html.slice(sm.index, end) : "";
     const tokenRe = /<g\b([^>]*)>|<\/g>|<rect\b([^>]*)>|<(text|tspan)\b([^>]*)>([\s\S]*?)<\/\3>/gi;
     let gFill = [null], lastRect = null, figDarkBg = false, m2;
+    const darkRects = [];   // 全部深色 rect(几何包含判定用,兼容先画盒后画字)
     const inDarkCard = figCssDark && /class="[^"]*my-(fig|svg)[^"]*"/.test(html.slice(Math.max(0, sm.index - 250), sm.index));
     const svgOnDark = figDarkBg || inDarkCard;
+    /* 前置标题式图注:svg 前 300 字符内出现「示意图 N / 图 N:」标题或 my-lc 图注容器 */
+    const hasLeadCap = /my-lc|(示意图|图)\s*\d+\s*[:：]/.test(html.slice(Math.max(0, sm.index - 300), sm.index));
+    if (hasLeadCap) cappedSvg++;
     /* 图级背景:面积最大的矩形若铺满图幅(≥70%宽×≥60%高)且为深色,整图视为深底卡(浅字合法) */
     if (vbW > 0) {
       const vbH = parseFloat(vb[2]);
@@ -184,6 +190,7 @@ function analyze(html, rel, key) {
         const hm = rf.match(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/);
         if (hm) dark = lum(hm[1]) < 0.35;
         lastRect = (isFinite(rx) && isFinite(rw)) ? { x: rx, y: ry, w: rw, h: rh, dark, at: m2.index } : null;
+        if (lastRect && dark && isFinite(ry) && isFinite(rh)) darkRects.push(lastRect);
       } else {
         const attrs = m2[4] || "";
         const gTop = gFill[gFill.length - 1] || {};
@@ -192,12 +199,15 @@ function analyze(html, rel, key) {
         const content = (m2[5] || "").replace(/<[^>]+>/g, "");
         if (!content.trim()) continue;
         const hexM = (fill || "").match(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/);
-        const onDark = lastRect && lastRect.dark &&
-          (!(isFinite(parseFloat(attrs.match(/\bx="([\d.-]+)"/) || [])[1])) ||
-            (parseFloat(attrs.match(/\bx="([\d.-]+)"/)[1]) >= lastRect.x - 2 &&
-             parseFloat(attrs.match(/\bx="([\d.-]+)"/)[1]) <= lastRect.x + lastRect.w + 2 &&
-             parseFloat((attrs.match(/\by="([\d.-]+)"/) || [])[1] || lastRect.y) >= lastRect.y - 16 &&
-             parseFloat((attrs.match(/\by="([\d.-]+)"/) || [])[1] || lastRect.y) <= lastRect.y + lastRect.h + 6));
+        /* onDark: 文字落在任一深色 rect 内即合法(兼容"先画所有盒再画所有字"的画法);
+           无坐标的 tspan 退回"最近 rect"近似 */
+        const txM = attrs.match(/\bx="([\d.-]+)"/);
+        const tyM = attrs.match(/\by="([\d.-]+)"/);
+        const tx = txM ? parseFloat(txM[1]) : NaN;
+        const ty = tyM ? parseFloat(tyM[1]) : NaN;
+        const onDark = (isFinite(tx) && isFinite(ty))
+          ? darkRects.some((r) => tx >= r.x - 2 && tx <= r.x + r.w + 2 && ty >= r.y - 16 && ty <= r.y + r.h + 6)
+          : !!(lastRect && lastRect.dark);
         if (hexM && hexM[1].toLowerCase() !== "ffffff" && !/class=/.test(attrs) && lum(hexM[1]) > 0.62 && !onDark && !svgOnDark) {
           const hh = hexM[1].toLowerCase().length === 3 ? hexM[1].split("").map((c) => c + c).join("") : hexM[1];
           const rgb = [0, 2, 4].map((i) => parseInt(hh.slice(i, i + 2), 16));
@@ -253,7 +263,7 @@ function analyze(html, rel, key) {
     extLinks: (body.match(/https?:\/\//g) || []).length,
     quiz: cnt(/data-answer=/gi), explainN: explain.length, explainAvg,
     svg: svgs.length,
-    caps: (body.match(/class="[^"]*cap[^"]*"/gi) || []).length + cnt(/<figcaption/gi),
+    caps: Math.max((body.match(/class="[^"]*cap[^"]*"/gi) || []).length + cnt(/<figcaption/gi), cappedSvg),
     lightFill, overflow,
     imgAll, imgOK,
     formulaOK: !hasFormula || usesSiteJs,

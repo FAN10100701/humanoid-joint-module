@@ -158,7 +158,7 @@ items: [
   q:'LDO 与 DCDC(Buck/Boost)的原理与选型?',
   a:'<div class="table-wrap"><table><tr><th></th><th>LDO(线性)</th><th>DCDC(开关)</th></tr><tr><td>原理</td><td>调整管工作在线性区,当"可变电阻"分压</td><td>MOS 高频开关+电感储能,占空比调压</td></tr><tr><td>效率</td><td>η≈V<sub>out</sub>/V<sub>in</sub>(5V→3.3V 仅 66%)</td><td>85~97%</td></tr><tr><td>纹波/噪声</td><td><b>极低(μV 级),无 EMI</b></td><td>数十 mV 纹波+开关噪声,需滤波与布局功夫</td></tr><tr><td>成本/面积</td><td>低、简单</td><td>高(电感+续流管+补偿)</td></tr><tr><td>发热</td><td>(V<sub>in</sub>−V<sub>out</sub>)·I 全变热</td><td>小</td></tr><tr><td>选型</td><td>压差小、电流小、给 ADC/射频等敏感负载供电</td><td>大压差、大电流、电池续航敏感</td></tr></table></div><p><b>系统级答案(加分):</b>混合架构——DCDC 先高效降压(如 24V→5V),LDO 二级"净噪"(5V→3.3V 供 VDDA/晶振/射频),兼顾效率与纯净。关键参数:LDO 看压差(Dropout)、PSRR、静态电流;DCDC 看拓扑、开关频率(高→电感小但开关损耗/EMI 大)、轻载效率。</p>',
   follow:['LDO 的 PSRR 为什么对 ADC 供电重要?','Buck 的续流二极管换同步整流为什么效率更高?'],
-  links:[{t:'电源管理功率链路分析',u:'../03_项目实操/11_电源管理功率链路分析/'}] },
+  links:[{t:'电源管理功率链路分析',u:'../03_项目实操/11_电源管理功率链路分析/'},{t:'电池与能源系统专题',u:'../07_前沿知识库/05_电池与能源系统专题.html'}] },
 
 { id:'hw-06', s:'hw', lv:4, tags:['TVS','ESD','退耦'],
   q:'TVS、ESD 管、压敏电阻的区别?退耦电容为什么必须贴近芯片?',
@@ -175,13 +175,14 @@ items: [
 { id:'hw-08', s:'hw', lv:4, tags:['上下拉','OCOD'],
   q:'上拉/下拉电阻的作用?什么是开漏(OC/OD)输出,怎么用?',
   a:'<p><b>上下拉:</b>给悬空输入一个确定电平(CMOS 悬空=天线,易受扰、双管导通直通功耗);确定总线空闲态(I2C 上拉到高=空闲);推挽输出冲突时开漏+上拉实现"线与"。取值权衡:阻值小→边沿快、抗扰强,但功耗大、输出低电平抬升(OD 灌电流限制);典型 4.7k~10k(I2C)、100k 级(高阻上拉省电)。</p><p><b>开漏(OD)/集电极开路(OC):</b>输出级只有下管,只能"拉低"与"释放",高电平靠外部上拉。<b>三大用途:</b>①电平转换(上拉到任意电压,如 3.3V↔5V);②多设备线与共享线(I2C/INT 共享,任一拉低即低);③line-OR 电源好(如 PG 信号)。速度受限:上升沿靠 RC(上拉电阻×线缆电容),I2C 快速模式 400kHz 需按负载电容算上拉。STM32 的"复用开漏+内部上拉/外部上拉"是配置高频考点。</p>',
-  follow:['I2C 上拉电阻 4.7k 怎么来的(按上升时间与总线电容算)?','线与逻辑在 I2C 仲裁里怎么用?'] },
+  follow:['I2C 上拉电阻 4.7k 怎么来的(按上升时间与总线电容算)?','线与逻辑在 I2C 仲裁里怎么用?'] ,
+  links:[{t:'PCB Layout 检查清单',u:'../02_硬件基础/16_PCB_Layout检查清单.html'}]},
 
 { id:'hw-09', s:'hw', lv:4, tags:['电流采样'],
   q:'低边电流采样电路怎么设计?开尔文连接为什么重要?',
   a:'<p><b>典型链路:</b>采样电阻(mΩ 级,低温漂如 2512 封装 1W)→ RC 前滤波(截止数百 kHz,抑开关振铃)→ 差分/仪表运放放大(增益按满量程匹配 ADC)→ ADC 同步采样(PWM 中心点触发)。</p><p><b>电阻选型:</b>压降与发热折中——1mΩ@30A 仅 30mV 但信号小;常用 1~5mΩ 精密电阻,四线制 Kelvin 焊盘。<b>开尔文连接:</b>主回路几十安培流过焊盘与铜箔产生毫伏级铜损压降,若采样线与功率线共用焊盘,这些压降会被当成"电流信号"叠加误差;Kelvin 从电阻焊盘<b>内侧</b>单独引两根细线到运放输入,只测电阻本体压降,消除铜箔与焊点误差。</p><p>低边采样优点:共模接近地、运放便宜;缺点:负载不接地(地弹)。高边采样共模=母线电压,需高共模差放(如 INA240)。FOC 三电阻下桥采样即三路低边采样+PWM 同步时序。</p>',
   follow:['采样电阻的温漂为什么会引入误差(自热)?','高边采样为什么要选高共模差分放大器?'],
-  links:[{t:'FOC 驱动器硬件深挖',u:'../02_硬件基础/09_FOC驱动器硬件深挖.html'}] },
+  links:[{t:'FOC 驱动器硬件深挖',u:'../02_硬件基础/09_FOC驱动器硬件深挖.html'},{t:'Hdrive融合方案完整指南',u:'../03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html'}] },
 
 { id:'hw-10', s:'hw', lv:3, tags:['电机驱动拓扑'],
   q:'三相逆变桥的直通(击穿)是什么?怎么防?',
@@ -237,7 +238,7 @@ items: [
   q:'ROS 的话题、服务、动作三种通信机制分别适合什么场景?',
   a:'<div class="table-wrap"><table><tr><th></th><th>话题 Topic</th><th>服务 Service</th><th>动作 Action</th></tr><tr><td>模型</td><td>发布/订阅(异步,单向流)</td><td>请求/应答(同步,一问一答)</td><td>目标/反馈/结果(异步长任务)</td></tr><tr><td>典型带宽</td><td>高频连续流</td><td>低频调用</td><td>持续数秒~分钟</td></tr><tr><td>支持</td><td>一对多、多对一</td><td>一对一(ROS2 可服务端多)</td><td>可取消、可抢占</td></tr><tr><td>例子</td><td>/cmd_vel、/scan、/imu</td><td>spawn、clear_costmap、设置模式</td><td>navigate_to_pose、move_base</td></tr></table></div><p><b>答题要点:</b>传感器流和控制流用 Topic(解耦、低延迟);偶发的"问一下/设置一下"用 Service;导航/抓取这类"启动-监控-完成/取消"用 Action。ROS2 中三者皆基于 DDS,Action 实现为"服务(目标/结果/取消)+话题(feedback/status)"组合。</p>',
   follow:['为什么 cmd_vel 不用服务(同步)而用话题?','Action 为什么必须支持取消?'] ,
-  links:[{t:'软件学习路线图 · ROS2',u:'../06_软件与算法/01_软件学习路线图.html'}]},
+  links:[{t:'软件学习路线图 · ROS2',u:'../06_软件与算法/01_软件学习路线图.html'},{t:'ROS2与机器人软件栈',u:'../06_软件与算法/03_ROS2与机器人软件栈.html'}]},
 
 { id:'ros-02', s:'ros', lv:5, tags:['TF'],
   q:'ROS 的 TF(坐标变换)系统是什么?查一个变换的正确姿势?',
@@ -249,7 +250,7 @@ items: [
   a:'<p><b>思想:</b>队形以 leader 为锚,follower 维持与 leader 的<b>期望相对几何关系</b>(距离+方向),而不是各自独立走全局路径——leader 机动,follower 控制律自然保持队形。</p><ul><li><b>l-ψ(距离+方位角):</b>follower 维持期望距离 l 与相对 leader 航向的方位角 ψ——距离+方位两个极坐标量,一个距离误差+一个角度误差,分别映射到 follower 线速度/角速度控制。结构简单;缺点:不直接限制 follower 朝向(可能"横着蹭")。</li><li><b>l-α(距离+两条方位角):</b>约束 l、leader 方位 ψ<sub>L</sub> 与 follower 自身航向 α,可同时锁定相对位置与相对航向(队形更"刚"),代价是控制律复杂些。</li></ul><p><b>实现链路(仿真项目标准答案):</b>编队控制器节点订阅 leader 的 odom,按期望几何算出 follower 的目标点→发 follower 的 /cmd_vel(或 move_base 目标);Gazebo 多机模型+namespace 隔离;队形变换=在线改期望 (l,ψ) 参数。常追问稳定性:l-ψ 可化为级联误差动力学,用 Lyapunov 证明误差收敛。</p>',
   svg:'<svg viewBox="0 0 560 200" role="img" aria-label="leader-follower 编队几何"><defs><marker id="ar3" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><path d="M60,170 C120,60 220,40 300,60" fill="none" stroke="#6b7280" stroke-width="1.2" stroke-dasharray="5 4"/><text x="90" y="90" font-size="10" fill="#9aa4b2">leader 轨迹</text><rect x="292" y="46" width="26" height="16" rx="3" fill="rgba(59,130,246,.25)" stroke="#58a6ff"/><line x1="318" y1="54" x2="352" y2="54" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#ar3)"/><text x="330" y="44" font-size="10" fill="#58a6ff">航向θ_L</text><text x="296" y="80" font-size="11" fill="#58a6ff">Leader</text><path d="M258,120 C240,104 246,92 262,92 C276,92 280,104 268,120" fill="none" stroke="#22c55e" stroke-width="0"/><circle cx="240" cy="128" r="9" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><line x1="244" y1="124" x2="270" y2="104" stroke="#f59e0b" stroke-width="2"/><text x="250" y="112" font-size="11" fill="#f59e0b">l(期望距离)</text><path d="M262,112 A16 16 0 0 1 276,102" fill="none" stroke="#ef4444" stroke-width="1.6"/><text x="262" y="98" font-size="11" fill="#ef4444">ψ(方位角)</text><text x="212" y="150" font-size="11" fill="#22c55e">Follower</text><circle cx="180" cy="158" r="9" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><text x="152" y="182" font-size="11" fill="#22c55e">Follower2</text><text x="360" y="120" font-size="11" fill="currentColor">误差: Δl→线速度, Δψ→角速度</text><text x="360" y="140" font-size="11" fill="currentColor">多follower=(l,ψ)参数表=队形库</text><text x="360" y="160" font-size="11" fill="currentColor">队形切换=改参数,轨迹无需重规划</text></svg>',
   follow:['队形中 follower 避障怎么加入(人工势场/避障层)?','l-ψ 编队的稳态误差在 leader 转弯时为什么变大?'] ,
-  links:[{t:'仿真中心',u:'../08_学习工具/08_仿真中心.html'}]},
+  links:[{t:'仿真中心',u:'../08_学习工具/08_仿真中心.html'},{t:'仿真与强化学习 MuJoCo/Isaac',u:'../06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html'}]},
 
 { id:'ros-04', s:'ros', lv:4, tags:['多机仿真'],
   q:'Gazebo/ROS 里怎么做多机器人仿真?命名空间怎么用?',
@@ -260,12 +261,13 @@ items: [
   q:'ROS2 Nav2 导航栈的组成与工作流程?',
   a:'<p><b>四大服务器:</b>①Planner(全局规划,A*/Theta*/Smac,走全局代价地图);②Controller(局部跟踪控制,DWB/TEB/MPPI,走局部代价地图);③Recovery(清理代价地图/后退/旋转等恢复行为);④BT Navigator(行为树编排整流程)。加 Lifecycle 管理节点启停。</p><p><b>定位:</b>AMCL(自适应蒙特卡洛,粒子滤波)在已知栅格地图上融合激光+里程计估计位姿;地图由 SLAM Toolbox(在线建图)产出。</p><p><b>代价地图四层(常考):</b>静态地图层+障碍层(激光/超声实时)+膨胀层(障碍外扩代价梯度,膨胀半径=安全距离)+自定义层(如禁区)。</p><p><b>流程:</b>RViz 下发目标→BT 启动→AMCL 供位姿→Planner 全局路径→Controller 局部跟踪下发 cmd_vel→撞死则 Recovery→到达。对比 ROS1 move_base:Nav2 模块化为独立服务器+行为树,可组合、可实时替换控制器。</p>',
   follow:['膨胀半径怎么定(相对机器人半径+安全裕度)?','AMCL 粒子数与重采样策略的影响?'] ,
-  links:[{t:'软件学习路线图',u:'../06_软件与算法/01_软件学习路线图.html'}]},
+  links:[{t:'软件学习路线图',u:'../06_软件与算法/01_软件学习路线图.html'},{t:'ROS2导航 Navigation2实战',u:'../06_软件与算法/11_ROS2导航_Navigation2实战.html'}]},
 
 { id:'ros-06', s:'ros', lv:4, tags:['DDS','ROS1vs2'],
   q:'ROS2 相比 ROS1 的关键改进?DDS 带来了什么?',
   a:'<div class="table-wrap"><table><tr><th></th><th>ROS1</th><th>ROS2</th></tr><tr><td>通信</td><td>自研 TCPROS/UDPROS,依赖 roscore(master)</td><td>DDS(数据分发服务),<b>去中心化自动发现</b></td></tr><tr><td>实时性</td><td>无保障</td><td>可配 QoS+内存预分配,可做硬实时节点</td></tr><tr><td>QoS</td><td>基本无</td><td>可靠性/历史深度/期限(deadline)/寿命等</td></tr><tr><td>多机</td><td>麻烦(URI/时间同步)</td><td>同一 DDS 域即互通,天然分布式</td></tr><tr><td>生命周期</td><td>无标准</td><td>Lifecycle 节点标准化的状态机管理</td></tr><tr><td>平台</td><td>Linux 为主</td><td>Linux/Win/mac/RTOS(嵌入式 micro-ROS)</td></tr></table></div><p><b>DDS 带来:</b>发布订阅自动发现(无 master 单点)、传输层可插拔(UDP 组播/共享内存 Iceoryx)、QoS 协商(传感器 best-effort vs 控制 reliable)。代价:默认组播在某些 WiFi/容器环境发现失败(常见坑:ROS_DOMAIN_ID 隔离、RMW 实现切换 FastDDS/CycloneDDS)。</p>',
-  follow:['QoS 的 best_effort 与 reliable 各适合什么话题?','ROS_DOMAIN_ID 的作用?'] },
+  follow:['QoS 的 best_effort 与 reliable 各适合什么话题?','ROS_DOMAIN_ID 的作用?'] ,
+  links:[{t:'ROS2入门实战·第一个节点',u:'../06_软件与算法/09_ROS2入门实战_第一个节点.html'}]},
 
 { id:'ros-07', s:'ros', lv:4, tags:['URDF','仿真'],
   q:'URDF 描述机器人的什么信息?Gazebo 仿真一个机器人还需要什么?',
@@ -275,19 +277,22 @@ items: [
 { id:'ros-08', s:'ros', lv:3, tags:['SLAM'],
   q:'简述激光 SLAM 的基本原理(以 Cartographer/SLAM Toolbox 为例)。',
   a:'<p><b>前端-后端框架:</b></p><ul><li><b>前端(里程计+匹配):</b>帧间匹配(scan-to-scan 或 scan-to-map,用相关性匹配/高斯牛顿优化),加上 IMU/轮式里程计预测,得到短时一致的位姿增量——不积累不行,只靠它也不行(漂移);</li><li><b>回环检测:</b>识别"回到走过的地方"(分支定界搜索候选匹配/特征指纹),建立新约束;</li><li><b>后端(图优化):</b>位姿图优化(Pose Graph),节点=关键帧位姿,边=约束(相邻+回环),回环边的强约束"拉直"历史漂移,g2o/Ceres 求解;子图(submap)概念用于海量激光管理;</li><li><b>建图:</b>优化后轨迹+激光投影出栅格占据地图(对数几率更新)。</li></ul><p>加回答疑:与视觉 SLAM(ORB-SLAM,特征点/直接法)对应关系一致(前端-回环-后端);2D 栅格 vs 3D 点云(LOAM 系)。</p>',
-  follow:['回环检测为什么重要(不加会怎样)?','占据栅格的概率更新怎么做的?'] },
+  follow:['回环检测为什么重要(不加会怎样)?','占据栅格的概率更新怎么做的?'] ,
+  links:[{t:'视觉SLAM与状态估计',u:'../06_软件与算法/06_视觉SLAM与状态估计.html'}]},
 
 { id:'ros-09', s:'ros', lv:3, tags:['工程组织'],
   q:'一个 ROS 多机编队跟随仿真项目,你如何组织工程结构?',
   a:'<p><b>标准答案(体现工程素养):</b></p><ul><li><b>工作空间:</b>colcon 工作空间,包按功能拆:robot_description(xacro URDF)、robot_bringup(launch 集合)、formation_controller(编队算法)、formation_sim(gazebo world+多机 spawn)、formation_msgs(自定义消息 FormationConfig);</li><li><b>launch 分层:</b>gazebo.launch→robots.launch(xacro 循环 ns spawn N 机)→formation.launch(编队节点+RViz);一键 make launch;</li><li><b>参数化:</b>队形参数(每机 l,ψ,v_max)放 YAML/ROS param,运行时服务切换队形;</li><li><b>质量:</b>单元测试(编队几何计算 cpp test)、CI 构建、README 复现三步(clone→colcon build→ros2 launch)。</li></ul><p>复试价值点:能画出节点图(rqt_graph 口头版):leader odom→formation_controller(定时器)→N×cmd_vel,以及话题/TF 命名规范。被问"难点"标准素材:多机 TF 命名空间、Gazebo 性能、转弯时队形稳态误差。</p>',
-  follow:['自定义消息为什么要单独成包?','编队节点内部用 ROS timer 还是订阅触发?为什么?'] },
+  follow:['自定义消息为什么要单独成包?','编队节点内部用 ROS timer 还是订阅触发?为什么?'] ,
+  links:[{t:'开源整机与仓库深度解析',u:'../07_前沿知识库/07_开源整机与仓库深度解析.html'}]},
 
 /* ================= C 语言 c ================= */
 { id:'c-01', s:'c', lv:5, tags:['指针','数组'],
   q:'指针和数组是什么关系?"数组名"什么时候不等于指针?',
   a:'<p><b>常规关系:</b>表达式里数组名<b>退化为指向首元素的指针</b>:a[i] ≡ *(a+i),传参 `int a[]` 等价 `int *a`(函数内 sizeof 得到指针大小 4/8)。数组是"一块连续内存+编译期长度",指针是"一个地址变量",<b>本质不同</b>。</p><p><b>三个不退化例外(高频考点):</b></p><ul><li><b>sizeof(arr):</b>得到整个数组字节数,不是指针大小;</li><li><b>&arr:</b>得到"指向整个数组的指针"(int(*)[N]),数值同首地址但类型不同,+1 跳整个数组;</li><li><b>字符串字面量初始化数组</b> char s[]="abc"(可修改副本) vs char *p="abc"(只读常量区,改它段错误)。</li></ul><p><b>指针数组 vs 数组指针:</b>int *p[10](10 个指针) vs int (*p)[10](指向数组的指针)——看运算符优先级,[] 优先于 *。答题时给"右左法则"读法,加分。</p>',
   code:'int a[5] = {1,2,3,4,5};\nint (*p)[5] = &a;        /* 指向整个数组 */\nprintf("%zu %zu\\n", sizeof(a), sizeof(&a)); /* 20 8(64位) */\nprintf("%d %d\\n", *a, (*p)[2]);             /* 1 3 */',
-  follow:['char s[]="abc" 与 char *p="abc" 修改时的区别?','二维数组传参为什么必须给列数?'] },
+  follow:['char s[]="abc" 与 char *p="abc" 修改时的区别?','二维数组传参为什么必须给列数?'] ,
+  links:[{t:'代码规范 C/Python/Verilog',u:'../06_软件与算法/21_代码规范_C_Python_Verilog.html'}]},
 
 { id:'c-02', s:'c', lv:5, tags:['内存布局'],
   q:'C 程序的内存是怎么分区的?各放什么?',
@@ -347,7 +352,8 @@ items: [
   q:'面向对象三大特性是什么?多态在 C++ 里怎么实现?',
   a:'<p><b>封装:</b>public/protected/private 控制访问,数据与操作绑定,隐藏实现细节(不变式保护);<b>继承:</b>is-a 关系,代码复用+抽象层次(接口基类);<b>多态:</b>同一接口、不同行为——"父类指针调用,实际执行子类实现"。</p><p><b>C++ 多态三形态:</b>①编译期:函数重载、模板;②运行期:<b>虚函数</b>。实现机制:基类声明 virtual → 每个类有一张<b>虚函数表(vtable)</b>,每个对象带一个 vptr 指向所属类的 vtable;调用 obj->f() 编译为"经 vptr 找表,按槽位取函数指针跳转"——两次间接寻址,运行期按<b>实际对象类型</b>分发。</p><p><b>必要条件:</b>虚函数+指针/引用调用。对象切片(值传递/值拷贝会把子类切成基类,vptr 变基类表,多态失效)是经典陷阱。</p>',
   svg:'<svg viewBox="0 0 560 190" role="img" aria-label="虚函数表与多态调用"><defs><marker id="ar4" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><rect x="20" y="60" width="150" height="64" rx="8" fill="rgba(59,130,246,.14)" stroke="#58a6ff"/><text x="40" y="80" font-size="12" fill="#58a6ff">Derived d 对象</text><text x="40" y="98" font-size="11" fill="currentColor">vptr ──→ Derived::vtable</text><text x="40" y="114" font-size="10" fill="#9aa4b2">成员数据…</text><rect x="230" y="20" width="150" height="58" rx="8" fill="rgba(34,197,94,.12)" stroke="#22c55e"/><text x="250" y="40" font-size="12" fill="#22c55e">Base::vtable</text><text x="250" y="58" font-size="10" fill="currentColor">slot0: Base::draw()</text><rect x="230" y="108" width="150" height="58" rx="8" fill="rgba(245,158,11,.12)" stroke="#f59e0b"/><text x="250" y="128" font-size="12" fill="#f59e0b">Derived::vtable</text><text x="250" y="146" font-size="10" fill="currentColor">slot0: Derived::draw()</text><path d="M170,90 C200,90 200,140 230,137" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ar4)"/><text x="400" y="40" font-size="11" fill="currentColor">Base *p = &d; p->draw();</text><text x="400" y="60" font-size="11" fill="currentColor">编译成: (*(p->vptr)[0])(p)</text><text x="400" y="80" font-size="11" fill="#22c55e">→ 走 Derived 表,调 Derived::draw ✅</text><text x="400" y="104" font-size="11" fill="#9aa4b2">若对象按值拷贝给 Base b=d</text><text x="400" y="122" font-size="11" fill="#ef4444">→ 切片!vptr 变 Base 表 ❌</text></svg>',
-  follow:['虚函数调用比普通函数慢多少,慢在哪?','构造函数可以是虚函数吗?为什么?'] },
+  follow:['虚函数调用比普通函数慢多少,慢在哪?','构造函数可以是虚函数吗?为什么?'] ,
+  links:[{t:'代码规范 C/Python/Verilog',u:'../06_软件与算法/21_代码规范_C_Python_Verilog.html'}]},
 
 { id:'cpp-02', s:'cpp', lv:5, tags:['构造析构','顺序'],
   q:'C++ 构造与析构的顺序规则?为什么基类析构函数要声明 virtual?',
@@ -403,13 +409,13 @@ items: [
   q:'编写中断服务函数(ISR)有哪些原则?为什么?',
   a:'<p><b>原则:"快进快出,只做标记"。</b></p><ul><li><b>短小:</b>ISR 执行期间同级/低级中断被阻塞,主循环也被打断——长 ISR 造成丢中断、控制周期抖动。耗时操作(打印、浮点重计算、协议解析)移到主循环/任务,ISR 只置标志/写缓冲/给信号量。</li><li><b>可重入安全:</b>与主程序共享的变量加 volatile;读-改-写要么关中断保护,要么用原子操作;访问外设寄存器经 volatile 指针。</li><li><b>不调用阻塞/不可重入库:</b>printf(malloc 锁、阻塞发送)、delay;RTOS 环境必须用 FromISR 系列 API。</li><li><b>清标志与返回:</b>入口清中断标志(或按硬件要求)、现场保护交给编译器但避免在 ISR 里调用复杂 C++(异常);ARM 上 ISR 尾用 portYIELD_FROM_ISR 触发调度。</li><li><b>向量与优先级:</b>NVIC 抢占优先级/子优先级分组;RTOS 的 syscall 中断优先级有约束(FreeRTOS configMAX_SYSCALL_INTERRUPT_PRIORITY 之上的中断不能调 FromISR API)。</li></ul>',
   follow:['为什么 printf 不能放 ISR 里(两层原因)?','FreeRTOS 里 FromISR API 的优先级限制?'],
-  links:[{t:'软件学习路线图',u:'../06_软件与算法/01_软件学习路线图.html'}] },
+  links:[{t:'软件学习路线图',u:'../06_软件与算法/01_软件学习路线图.html'},{t:'STM32外设基础·时钟中断DMA/ADC',u:'../02_硬件基础/17_STM32外设基础_时钟中断DMA_ADC.html'}] },
 
 { id:'emb-02', s:'emb', lv:5, tags:['总线对比'],
   q:'UART、SPI、I2C、CAN 四种总线的特点与适用场景?',
   a:'<div class="table-wrap"><table><tr><th></th><th>UART</th><th>SPI</th><th>I2C</th><th>CAN</th></tr><tr><td>线数</td><td>2(TX/RX)</td><td>4(MOSI/MISO/SCK/CS)</td><td>2(SDA/SCL)</td><td>2(CANH/CANL 差分)</td></tr><tr><td>拓扑</td><td>点对点</td><td>一主多从(每从一根CS)</td><td>多主多从(地址寻址)</td><td>多主总线(报文ID仲裁)</td></tr><tr><td>速率</td><td>≤1~5Mbps</td><td>几~几十 Mbps</td><td>100k/400k/3.4M</td><td>≤1Mbps(经典CAN)</td></tr><tr><td>距离</td><td>短(PCB/模块)</td><td>极短(PCB 内)</td><td>短</td><td><b>长(百米级,抗扰强)</b></td></tr><tr><td>硬件细节</td><td>异步,双方波特率一致</td><td>同步,4种CPOL/CPHA模式</td><td>开漏+上拉,线与</td><td>差分,120Ω双端端接</td></tr><tr><td>典型用途</td><td>调试口、GPS、模组</td><td>Flash、屏幕、ADC、IMU</td><td>低速传感器、配置寄存器</td><td>汽车/机器人节点互联</td></tr></table></div><p>加分点:选型逻辑——板上高速外设 SPI(要吞吐)、多低速传感器挂总线 I2C(省引脚)、板间/车规可靠性 CAN(差分抗扰+仲裁+错误处理强);机器人关节级联常用 CAN(可长期位速率与错误受限恢复)。</p>',
   follow:['I2C 为什么要开漏+上拉,能不能推挽?','CAN 的显性/隐性电平与线与仲裁的关系?'],
-  links:[{t:'通信与控制算法升级路线',u:'../04_升级进阶/09_通信与控制算法升级路线.html'}] },
+  links:[{t:'通信与控制算法升级路线',u:'../04_升级进阶/09_通信与控制算法升级路线.html'},{t:'STM32外设基础·时钟中断DMA/ADC',u:'../02_硬件基础/17_STM32外设基础_时钟中断DMA_ADC.html'}] },
 
 { id:'emb-03', s:'emb', lv:4, tags:['I2C时序','仲裁'],
   q:'I2C 的时序要点?多主仲裁怎么工作?',
@@ -453,7 +459,8 @@ items: [
   q:'FreeRTOS 任务有哪几种状态?调度器怎么工作?',
   a:'<p><b>四状态:</b>运行(Running)、就绪(Ready)、阻塞(Blocked,等待事件/延时,让出 CPU)、挂起(Suspended,vTaskSuspend 挂起,任何事件唤不醒只有 Resume)。就绪→运行由调度器选;运行→阻塞靠等事件(vTaskDelay/队列/信号量);阻塞→就绪靠事件到来。</p><p><b>调度规则:</b>①<b>抢占式优先级调度</b>:永远运行最高优先级的就绪任务——高优任务一就绪立即抢占低优(需 configUSE_PREEMPTION=1);②<b>同优先级时间片轮转</b>(configUSE_TIME_SLICING):tick 中断轮流;③空闲任务(Idle)优先级 0 兜底,可挂钩子做低优先级后台活与内存回收。调度点:tick 中断、API 阻塞/释放、中断退出(portYIELD_FROM_ISR)。延时的正确姿势:vTaskDelay/vTaskDelayUntil(绝对延时,控制周期不累积漂移——做 1kHz 控制环必用 until)。</p>',
   svg:'<svg viewBox="0 0 560 180" role="img" aria-label="FreeRTOS 任务状态机"><defs><marker id="ar5" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><circle cx="130" cy="40" r="26" fill="rgba(34,197,94,.16)" stroke="#22c55e"/><text x="130" y="44" font-size="11" fill="#22c55e" text-anchor="middle">运行</text><circle cx="390" cy="40" r="26" fill="rgba(59,130,246,.16)" stroke="#58a6ff"/><text x="390" y="44" font-size="11" fill="#58a6ff" text-anchor="middle">就绪</text><circle cx="390" cy="130" r="26" fill="rgba(245,158,11,.16)" stroke="#f59e0b"/><text x="390" y="134" font-size="11" fill="#f59e0b" text-anchor="middle">阻塞</text><circle cx="130" cy="130" r="26" fill="rgba(239,68,68,.14)" stroke="#ef4444"/><text x="130" y="134" font-size="11" fill="#ef4444" text-anchor="middle">挂起</text><line x1="156" y1="40" x2="364" y2="40" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/><line x1="364" y1="32" x2="156" y2="32" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/><text x="248" y="26" font-size="9.5" fill="currentColor" text-anchor="middle">被高优先级抢占 / 恢复</text><text x="252" y="56" font-size="9.5" fill="currentColor" text-anchor="middle">调度器选中(最高优先级就绪)</text><line x1="402" y1="66" x2="402" y2="104" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/><text x="414" y="88" font-size="9.5" fill="currentColor">等事件/延时</text><line x1="366" y1="122" x2="336" y2="60" stroke="currentColor" stroke-width="0" /><path d="M378,106 C300,90 200,80 158,58" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/><text x="240" y="82" font-size="9.5" fill="currentColor">事件到来/超时到</text><line x1="156" y1="118" x2="256,86" x2="256" y2="86" stroke="#ef4444" stroke-width="0"/><path d="M158,116 C220,100 280,70 366,48" fill="none" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar5)"/><text x="230" y="112" font-size="9.5" fill="#ef4444">vTaskResume</text><text x="12" y="170" font-size="10" fill="#9aa4b2">阻塞任务不占CPU——这就是RTOS相对裸机大循环的价值:多个"看似并行"的周期任务互不阻塞</text></svg>',
-  follow:['vTaskDelay 与 vTaskDelayUntil 的区别(周期任务用哪个)?','空闲任务做什么,钩子里不能干什么?'] },
+  follow:['vTaskDelay 与 vTaskDelayUntil 的区别(周期任务用哪个)?','空闲任务做什么,钩子里不能干什么?'] ,
+  links:[{t:'FreeRTOS任务调度与实时性',u:'../06_软件与算法/20_FreeRTOS任务调度与实时性.html'}]},
 
 { id:'frt-02', s:'frt', lv:5, tags:['通信','IPC'],
   q:'FreeRTOS 的队列、信号量、互斥量、事件组、任务通知分别适合什么场景?',
@@ -464,7 +471,8 @@ items: [
   q:'什么是优先级反转?火星探路者事故怎么发生的?FreeRTOS 怎么解决?',
   a:'<p><b>经典三角色:</b>高优 H、中优 M、低优 L,H 与 L 共享一把锁。</p><ol><li>L 拿锁访问共享资源;</li><li>H 就绪抢占 L,访问资源需锁→阻塞等 L 释放;</li><li>M 就绪(M 不需要锁)抢占 L——<b>L 被压着跑不了,H 实际等待优先级比自己低的 M</b>,等效"高优被中优反转压制",严重时看门狗超时。</li></ol><p><b>1997 火星探路者:</b>高优先气象任务与低优先总线任务共享信息,中优先通信任务长时间插队→高优任务饿死→看门狗复位,反复重启。NASA 远程打开优先级继承修复。</p><p><b>FreeRTOS 解决:</b>①互斥量(xSemaphoreCreateMutex)内置<b>优先级继承</b>:H 阻塞在锁上时,持锁的 L 临时被抬升到 H 的优先级,压过 M 尽快跑完临界区放锁,反转窗口压到最小;②注意:继承只在互斥量上,二值信号量(binary semaphore)没有继承——所以"保护共享资源必须用 Mutex,信号量只做同步";③优先级继承不能解决的极端:嵌套锁的死锁(层次化上锁顺序+超时)。VxWorks 当时还提供了优先级天花板,面试提一句加分。</p>',
   svg:'<svg viewBox="0 0 560 180" role="img" aria-label="优先级反转时序"><line x1="60" y1="20" x2="60" y2="160" stroke="currentColor"/><line x1="250" y1="20" x2="250" y2="160" stroke="currentColor"/><line x1="340" y1="20" x2="340" y2="160" stroke="currentColor"/><line x1="470" y1="20" x2="470" y2="160" stroke="currentColor"/><text x="46" y="16" font-size="10" fill="#9aa4b2">t0</text><text x="236" y="16" font-size="10" fill="#9aa4b2">t1</text><text x="326" y="16" font-size="10" fill="#9aa4b2">t2</text><text x="456" y="16" font-size="10" fill="#9aa4b2">t3</text><rect x="60" y="30" width="410" height="16" fill="rgba(239,68,68,.25)" stroke="#ef4444" stroke-width="0.8"/><text x="8" y="42" font-size="10" fill="#ef4444">高H</text><rect x="250" y="52" width="90" height="16" fill="rgba(245,158,11,.3)" stroke="#f59e0b" stroke-width="0.8"/><rect x="400" y="52" width="70" height="16" fill="rgba(245,158,11,.3)" stroke="#f59e0b" stroke-width="0.8"/><text x="8" y="64" font-size="10" fill="#f59e0b">中M</text><rect x="60" y="74" width="190" height="16" fill="rgba(34,197,94,.22)" stroke="#22c55e" stroke-width="0.8"/><rect x="340" y="74" width="60" height="16" fill="rgba(34,197,94,.22)" stroke="#22c55e" stroke-width="0.8"/><text x="8" y="86" font-size="10" fill="#22c55e">低L</text><path d="M190,60 C220,60 220,100 250,100" fill="none" stroke="#22c55e" stroke-width="1.2" marker-end="url(#ar5)"/><text x="120" y="106" font-size="9.5" fill="#9aa4b2">t1: L持锁被H抢,H等锁阻塞</text><path d="M250,116 C280,116 280,80 340,80" fill="none" stroke="#ef4444" stroke-width="1.2" marker-end="url(#ar5)"/><text x="230" y="132" font-size="9.5" fill="#ef4444">t2~t3: M两次插队,L跑不完,H被"反转"饿等</text><text x="60" y="152" font-size="9.5" fill="#22c55e">互斥量优先级继承:持锁L临时升到H级,M插不了队,锁尽快释放</text><text x="60" y="168" font-size="9.5" fill="#9aa4b2">信号量无继承→保护共享资源必须用互斥量(Mutex)</text></svg>',
-  follow:['优先级继承和优先级天花板区别?','嵌套持锁为什么会死锁,怎么防?'] },
+  follow:['优先级继承和优先级天花板区别?','嵌套持锁为什么会死锁,怎么防?'] ,
+  links:[{t:'FreeRTOS任务调度与实时性',u:'../06_软件与算法/20_FreeRTOS任务调度与实时性.html'}]},
 
 { id:'frt-04', s:'frt', lv:4, tags:['内存管理','heap'],
   q:'FreeRTOS 的 heap_1~heap_5 各是什么?怎么选?',
@@ -599,13 +607,13 @@ items: [
   q:'VLA(视觉-语言-动作)模型是怎么把「看和说」变成机器人动作的?',
   a:'<p><b>三段结构:</b>①视觉编码器(ViT/ResNet)把图像转 token;②预训练 LLM 做主干,融合语言指令与视觉 token 做推理(继承世界知识与泛化能力);③动作头把 LLM 输出映射为机器人可控动作——两条主流路线:离散动作 token(把连续动作离散成词表,如 RT-2 的 256 bins,动作生成变成「下一词预测」)与扩散/流动作头(连续轨迹生成,精细但慢)。代表:RT-2、OpenVLA、π0。</p><p><b>为什么用 LLM 主干(必追问):</b>免费获得语义理解、任务分解与零样本泛化——「把杯子放到红色方块左边」无需逐任务训练;这是 VLA 相比传统端到端模仿学习的本质增益。</p><p><b>落地难点:</b>推理延迟(LLM 前向几十~几百 ms,控制回路要求高频率)、数据贵(真机遥操作,Open X-Embodiment 就是共享数据集的尝试)、动作精度与安全性(幻觉动作要靠底层安全层兜底)、sim2real 差距。</p>',
   follow:['动作 token 的离散化粒度怎么权衡(过粗/过细)?','VLA 控制频率上不去时,工程上怎么补偿(分层:慢思考+快反射)?'],
-  links:[{t:'VLA与世界模型详解',u:'../06_软件与算法/08_视觉语言动作模型VLA与世界模型详解.html'},{t:'感知与具身智能VLA与世界模型',u:'../06_软件与算法/05_感知与具身智能_VLA与世界模型.html'}] },
+  links:[{t:'VLA与世界模型详解',u:'../06_软件与算法/08_视觉语言动作模型VLA与世界模型详解.html'},{t:'感知与具身智能VLA与世界模型',u:'../06_软件与算法/05_感知与具身智能_VLA与世界模型.html'},{t:'灵巧手专题',u:'../07_前沿知识库/04_灵巧手专题.html'}] },
 
 { id:'llm-07', s:'llm', lv:3, tags:['世界模型','数据'],
   q:'具身智能为什么需要世界模型?它和「直接端到端学策略」比优势在哪?',
   a:'<p><b>世界模型定义:</b>学一个环境的动力学「下一个状态会怎样」(状态转移+奖励预测),让智能体能在「脑内想象」中 rollout 未来——预测 hence 规划。</p><p><b>对比端到端策略学习(直接观测→动作):</b>①样本效率:真实机器人交互极贵(每小时数据采集/磨损成本高),世界模型可在想象中做 model-based RL(Dreamer 系列把真实交互需求降一个数量级);②可规划:显式预测未来才能做长视野任务分解与反事实推理;③可解释与安全评估:先「脑内试错」,危险动作不过真机;④数据角度:视频/仿真海量无动作标注数据可用于训世界模型,而策略学习必须要有动作标签——这是当前具身智能「数据瓶颈」下世界模型被寄予厚望的根本原因。</p><p><b>难点:</b>长时域预测漂移(误差累积)、物理一致性(接触/摩擦建模)、与策略怎么耦合(世界模型只是模拟器,还要 RL/ MPC 在里面规划)。</p>',
   follow:['Dreamer 系列的「想象中训练」是怎么回传梯度的?','视频生成模型(Sora 类)算世界模型吗?'],
-  links:[{t:'感知与具身智能VLA与世界模型',u:'../06_软件与算法/05_感知与具身智能_VLA与世界模型.html'},{t:'具身智能数据集与评测专题',u:'../07_前沿知识库/08_具身智能数据集与评测专题.html'}] },
+  links:[{t:'感知与具身智能VLA与世界模型',u:'../06_软件与算法/05_感知与具身智能_VLA与世界模型.html'},{t:'具身智能数据集与评测专题',u:'../07_前沿知识库/08_具身智能数据集与评测专题.html'},{t:'仿真与强化学习 MuJoCo/Isaac',u:'../06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html'},{t:'全球人形机器人机型全景',u:'../07_前沿知识库/01_全球人形机器人机型全景.html'}] },
 
 { id:'llm-08', s:'llm', lv:4, tags:['Agent','工具调用'],
   q:'大模型 Agent 的基本架构是什么?工具调用的完整闭环是怎么跑通的?',

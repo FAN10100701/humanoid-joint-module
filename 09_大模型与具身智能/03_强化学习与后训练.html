@@ -50,7 +50,7 @@
   <text x="140" y="98" font-size="11.5" fill="#9aa4b2" text-anchor="middle">单样本优势 = V(s)−R 由 critic 估计</text>
   <text x="420" y="98" font-size="11.5" fill="#9aa4b2" text-anchor="middle">一组样本优势 = (Rᵢ−组均值)/组std</text>
   <text x="140" y="122" font-size="11.5" fill="#9aa4b2" text-anchor="middle">裁剪比率保留</text>
-  <text x="420" y="122" font-size="11.5" fill="#9aa4b2" text-anchor="middle">裁剪比率保留;R1 中进一步移除 KL</text></svg></div>
+  <text x="420" y="122" font-size="11.5" fill="#9aa4b2" text-anchor="middle">裁剪比率保留;R1 中进一步移除 KL</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图 1:PPO 与 GRPO 结构对比——GRPO 去掉价值网络,组内平均做基线</div></div>
   <p><b>三差异:</b>①去掉价值网络(critic)——省一半显存与调参;②基线从 critic 估计改为<b>同题组内平均</b>(题目难度自带归一);③仍保留重要性采样裁剪保稳定;R1 又把 KL 惩罚移除,让 RL 敢于把分布拉离底座、催化长思考涌现。</p>
   <div class="my-svg" style="max-width:620px;margin:14px auto"><svg viewBox="0 0 520 160" role="img" aria-label="GRPO 组采样优势示例">
 <text x="10" y="16" font-size="12" font-weight="700" fill="currentColor">同一道题采样 5 个答案(G=5),可验证奖励:对=1 错=0</text>
@@ -62,9 +62,9 @@
   <rect x="430" y="30" width="70" height="44" rx="8" fill="#143524" stroke="#22c55e"/><text x="465" y="50">答案5</text><text x="465" y="66" fill="#86efac">r=1</text>
 </g>
 <line x1="20" y1="96" x2="510" y2="96" stroke="#f59e0b" stroke-dasharray="5 4"/><text x="510" y="92" font-size="10.5" fill="#f59e0b" text-anchor="end">组均值 0.6 = 基线(代替critic)</text>
-<text x="95"  y="120" font-size="11" fill="#86efac">优势 = (1−0.6)/σ = + 正 → 强化</text>
-<text x="195" y="120" font-size="11" fill="#fca5a5">优势 = 负 → 抑制</text>
-<text x="10" y="150" font-size="10.5" fill="#9aa4b2">好答案被推高、差答案被压低——全程没有价值网络参与,组内互相当参照</text></svg></div>
+<text x="30"  y="120" font-size="11" fill="#86efac">优势 = (1−0.6)/σ = + 正 → 强化</text>
+<text x="228" y="120" font-size="11" fill="#fca5a5">优势 = 负 → 抑制</text>
+<text x="10" y="150" font-size="10.5" fill="#64748b">好答案被推高、差答案被压低——全程没有价值网络参与,组内互相当参照</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图 2:GRPO 组采样优势计算示例——同一题目采多答,按组内相对优劣定优势</div></div>
 
   <h2><span class="h2-num">4</span> 常见误区:Reward Hacking 与对齐的坑</h2>
   <p><b>Reward Hacking(必考):</b>奖励模型打分而非真理时,策略会钻 RM 的漏洞(谄媚、冗长、套路化)。对策:RM 迭代、KL 锚定、可验证奖励(数学/代码对错)绕开 RM——这正是推理 RL 兴起的原因之一。在此基础上,再避开下面两个坑:</p>
