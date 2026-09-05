@@ -176,6 +176,28 @@
 
   <div class="box box-warn"><b>🤔 思考题:</b>1. 如果电机负载角超过 90°,转矩会怎样?和「堵转」什么关系?<br>2. 增量编码器断电后还能知道绝对角度吗?为什么要 Z 脉冲或上电回零?<br>3. 欠驱动手指的「弹簧刚度」设计如何影响抓握力度与速度?</div>
 
+  <h2><span class="h2-num">3</span> 延伸知识点:反驱动性——减速比越大,关节越「推不动」</h2>  <div class="key-point" id="k1Block">
+    <div class="kp-title">🖐 交互演示:拖动减速比,看「手动拧关节」的难易变化</div>
+    <p style="margin:6px 0">你在装配台上<b>用手去拧关节输出端</b>(反向驱动),力量要穿过减速器「倒着」传回电机:每经过一级减速,力矩被缩小、摩擦被放大。<b>反驱透过率 τ ≈ η / i</b>(η 正向效率,i 减速比)——它是「关节端的力有多少能传到电机端」的量级估算。τ 越大越容易反驱,越小越接近「自锁」。</p>
+    <div style="margin:10px 0 4px">
+      <label style="font-weight:700">减速比 i = <span id="k1Iv" style="font-family:monospace">10</span></label>
+      <input type="range" id="k1Slider" min="1" max="120" value="10" step="1" style="width:100%;margin-top:4px">
+    </div>
+    <div style="margin:8px 0">
+      <div style="font-size:.9em;color:var(--faint);margin-bottom:2px">反驱透过率 τ = η/i(η=0.9 典型正向效率)——条越满越容易反驱:</div>
+      <div style="background:rgba(127,127,127,.18);border-radius:8px;height:22px;position:relative;overflow:hidden">
+        <div id="k1Bar" style="height:100%;width:0%;background:linear-gradient(90deg,#22a55f,#e0a63a 40%,#d64a3a);transition:width .15s"></div>
+        <span id="k1Tau" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:monospace;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)">τ = 0.090</span>
+      </div>
+    </div>
+    <div id="k1Verdict" style="margin:10px 0;padding:10px 12px;border-radius:10px;background:rgba(224,166,58,.14);border:1px solid rgba(224,166,58,.4)"></div>
+    <div class="box box-tip" style="margin-top:10px"><b>双向视角(为什么重要):</b><br>
+      <b>正着看</b>——电机 1 N·m × i × η 到关节,减速比「放大扭矩」;<br>
+      <b>倒着看</b>——外力撞关节 1 N·m,只有 τ = η/i 传到电机端。i=50 时约 0.02,电机几乎「感觉不到」撞击:这就是<b>人形旋转关节常用大速比谐波/RV、并可以省掉关节抱闸</b>的原因(断电后外力也难以甩动关节);<br>
+      <b>反面</b>——直驱/小速比行星(i≤6,τ≥0.15)关节必须配<b>抱闸或断电 sustained 电流</b>,且碰撞冲击几乎全额砸进电机与减速器,力控传感器也会「看得很清」——这也是力控/柔顺场景偏爱小速比或直驱的根本原因(反驱好 = 交互力真实可测)。</div>
+    <div style="font-size:.85em;color:var(--faint);margin-top:8px">⚠ 量级估算:真实反向效率随速比/润滑/温度非线性变化,设计时以厂商「反向驱动效率曲线」为准。本演示给的是选型直觉,不是校核数据。</div>
+  </div>
+
 </div><!-- /container -->
 <script src="../_assets/site.js"></script>
 <script>
@@ -617,6 +639,52 @@ function syncMotorReadout(){
     tq.style.color = (ratio < 0.999 && LAB.loadAngle > Math.PI/2) ? '#f87171' : '#16a34a';
   }
 }
+</script>
+<script>
+/* =====================================================================
+   K1 延伸知识点:反驱动性交互演示(V2.1.19,AUDIT 批次3/用户选定知识点)
+   物理口径:反驱透过率 τ ≈ η/i(教学量级估算,非精确反向效率);
+   三档判定:τ≥0.18 容易反驱 / 0.05~0.18 临界 / <0.05 准自锁
+   参数集中在 CONFIG,勿散落;独立作用域,不与上方 3D 实验室互相干扰
+   ===================================================================== */
+(function(){
+  var CONFIG = {
+    ETA_FWD: 0.9,     /* 正向传动效率(典型单级齿轮副,可按减速器类型调整) */
+    TAU_EASY: 0.18,   /* 容易反驱阈值(≈i≤5 一级行星的手感) */
+    TAU_LOCK: 0.05    /* 准自锁阈值(≈i≥18 起) */
+  };
+  var $I = function(id){ return document.getElementById(id); };
+  if(!$I('k1Slider')) return;
+  function fmt(n){ return (n >= 0.01) ? n.toFixed(3) : n.toExponential(1); }
+  function update(){
+    var i = +$I('k1Slider').value;
+    var tau = CONFIG.ETA_FWD / i;
+    $I('k1Iv').textContent = i;
+    $I('k1Tau').textContent = 'τ = ' + fmt(tau);
+    /* 条宽做对数缩放:τ 跨 3 个量级(0.9→0.0075),线性条在低速比几乎全满、高速比看不见 */
+    var pct = Math.max(2, Math.min(100, Math.log(tau/0.004)/Math.log(0.9/0.004)*100));
+    $I('k1Bar').style.width = pct.toFixed(1) + '%';
+    var v = $I('k1Verdict'), bg, bd, html;
+    if(tau >= CONFIG.TAU_EASY){
+      bg='rgba(34,165,95,.14)'; bd='rgba(34,165,95,.5)';
+      html='<b style="color:#22a55f">🟢 容易反驱(τ≥0.18)</b><br>手拧关节,电机端能明显跟着转;松手关节被电机惯性/齿隙回弹。'
+         + '<b>设计含义:</b>必须配抱闸(或断电保持电流)否则关节立不住;碰撞会全额传入电机——适合力控/柔顺交互,不适合「断电自保持」。';
+    } else if(tau >= CONFIG.TAU_LOCK){
+      bg='rgba(224,166,58,.14)'; bd='rgba(224,166,58,.5)';
+      html='<b style="color:#d99a2b">🟡 临界区(0.05 ≤ τ < 0.18)</b><br>用较大力气仍能拧动,但电机端「感觉很钝」。'
+         + '<b>设计含义:</b>断电后关节能短暂保持,不足以可靠锁定——保险起见仍按需配抱闸;冲击部分传入电机,力控信号部分可信。';
+    } else {
+      bg='rgba(214,74,58,.12)'; bd='rgba(214,74,58,.45)';
+      html='<b style="color:#d64a3a">🔴 准自锁(τ<0.05)</b><br>手拧基本拧不动(力都耗在摩擦里),外力冲击几乎传不到电机。'
+         + '<b>设计含义:</b>断电姿态保持可靠,人形旋转关节(谐波 50~120、RV)常因此省掉关节抱闸减轻重量;'
+         + '代价是力控只能靠「电流估算」或关节端专属力矩传感器,交互力测量变难。';
+    }
+    v.style.background = bg; v.style.border = '1px solid ' + bd;
+    v.innerHTML = html;
+  }
+  $I('k1Slider').addEventListener('input', update);
+  update();   /* 初始 i=10 渲染一次 */
+})();
 </script>
 </body>
 </html>

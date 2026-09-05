@@ -59,6 +59,7 @@
     <label>PWM 频率 fsw (kHz) <input id="mF" value="20" oninput="calM()"></label>
     <div class="my-res" id="mOut"></div>
     <div class="my-note">结果为单个 MOSFET 损耗;三相全桥 6 管近似 ×6(占空比分布不同,工程估算够用)。再用热管理专题的结温计算器核对温升。开关损耗与 fsw 严格线性——这是高频化(低啸叫)与效率的取舍点。</div>
+    <div class="my-note">✍ <b>默认参数手算示例:</b>取 I=10 A、Rds=5 mΩ、D=0.5、V=24 V、I_pk=10 A、t<sub>r</sub>+t<sub>f</sub>=40 ns、f<sub>sw</sub>=20 kHz → 导通损耗 10²×0.005×0.5 = <b>0.25 W</b>;开关损耗 0.5×24×10×40×10⁻⁹×20000 = <b>0.096 W</b>;单管合计 ≈ <b>0.35 W</b>。</div>
   </div>
 
   <h2><span class="h2-num">2</span> 母线电容(BUCK 输入/逆变直流链)</h2>
@@ -69,6 +70,7 @@
     <label>允许纹波 ΔVpp (mV) <input id="cV" value="200" oninput="calC()"></label>
     <div class="my-res" id="cOut"></div>
     <div class="my-note">经验再加 2~3 倍余量(电容 ESR、温漂、老化)。逆变直流链还要叠加三相脉动与制动回灌,详见《FOC驱动器硬件深挖》。低 ESR 组合:大容量电解(µF 级)+ 并联 MLCC(百 nF~µF 级,滤高频)。</div>
+    <div class="my-note">✍ <b>默认参数手算示例:</b>取 I=20 A、f<sub>sw</sub>=20 kHz、ΔV<sub>pp</sub>=1 V → 最坏工况(D=0.5):C ≥ 20/(4×20000×1) = <b>250 µF</b>,工程取 2×220 µF 电解并联留裕量——与《硬件设计避坑指南》《FOC驱动器硬件深挖》两页的 250 µF 结论一致。</div>
   </div>
 
   <h2><span class="h2-num">3</span> 电流采样电阻与运放增益</h2>
@@ -81,6 +83,7 @@
     <label>电流有效值 I_rms (A) <input id="sQ" value="14" oninput="calS()"></label>
     <div class="my-res" id="sOut"></div>
     <div class="my-note">电阻取小(1~10 mΩ)以降低发热,用运放把信号放大到 ADC 满量程的 80% 左右;太接近满量程会削顶失真(电流环振荡的常见根因之一)。</div>
+    <div class="my-note">✍ <b>默认参数手算示例:</b>取 I<sub>pk</sub>=25 A、R<sub>s</sub>=5 mΩ、G=20 → V<sub>adc</sub> = 25×0.005×20 = <b>2.5 V</b>,占 3.3 V 量程约 <b>76%</b>,留 24% 裕量不削顶,OK;顺带核功耗:I<sub>rms</sub>=14 A 时 P<sub>R</sub> = 14²×0.005 ≈ 0.98 W → 选 ≥2 W 合金采样电阻。</div>
   </div>
 
   <h2><span class="h2-num">4</span> BUCK 电感设计</h2>
@@ -93,6 +96,7 @@
     <label>纹波系数 r (0.2~0.4) <input id="lR" value="0.3" oninput="calL()"></label>
     <div class="my-res" id="lOut"></div>
     <div class="my-note">算出 L 后还要校核:①饱和电流 > I_pk = I_out + ΔI<sub>L</sub>/2;②直流电阻铜损;③磁芯损耗随频率上升。12V/5V 逻辑电源常用集成 BUCK(如 TPS54xxx),此计算器用于评估 datasheet 外的定制工况。</div>
+    <div class="my-note">✍ <b>默认参数手算示例:</b>取 V<sub>in</sub>=24 V、V<sub>out</sub>=5 V、f<sub>sw</sub>=500 kHz、ΔI<sub>L</sub>=0.5 A → L = 5×(1−5/24)/(500k×0.5) = 5×0.7917/250000 ≈ <b>15.8 µH</b>(验算:5×0.7917=3.96 V,÷2.5×10⁵ = 1.58×10⁻⁵ H);饱和电流需 > 5+0.25 = 5.25 A。</div>
   </div>
 
   <h2><span class="h2-num">5</span> 电机常数 Kt ↔ Ke 换算</h2>
@@ -101,6 +105,7 @@
     <label>已知 Kt (N·m/A) <input id="kT" value="0.095" oninput="calK()"></label>
     <div class="my-res" id="kOut"></div>
     <div class="my-note">换算链:1 KRPM = 1000/60 r/s = 104.72 rad/s。SI 制下 Kt 与 Ke 数值相等(能量守恒),厂家常给 V/KRPM(无刷电机)或 N·m/A(力矩电机),本站电机选型专题的算例即用此换算。</div>
+    <div class="my-note">✍ <b>默认参数手算示例:</b>厂家只标 KV = 100 RPM/V → K<sub>t</sub> = 9.55/KV = 9.55/100 ≈ <b>0.0955 N·m/A</b>(9.55 = 60/2π,即把每分钟转数换回 rad/s 的系数);自检:0.0955×104.72 ≈ 10 V/KRPM,与 KV=100 互为倒数关系,对得上。</div>
   </div>
 
   <h2><span class="h2-num">6</span> 负载折算惯量与惯量比</h2>
@@ -111,6 +116,7 @@
     <label>减速比 i <input id="jI" value="10" oninput="calJ()"></label>
     <div class="my-res" id="jOut"></div>
     <div class="my-note">惯量比过大 → 动态"头重脚轻",带宽上不去、易振荡。对策:加大减速比(J 按平方缩小)或选大一号电机。准直驱(QDD)方案故意用小 i 换反驱透明度,此时靠高分辨率编码器+高电流环带宽补偿——设计权衡见电机选型专题。</div>
+    <div class="my-note">✍ <b>默认参数手算示例:</b>取 J<sub>load</sub>=0.002 kg·m²、i=5、J<sub>rotor</sub>=2×10⁻⁵ kg·m² → 反射惯量 J<sub>ref</sub> = 0.002/5² = 0.002/25 = <b>8×10⁻⁵ kg·m²</b>;惯量比 = 8×10⁻⁵ / 2×10⁻⁵ = <b>4 : 1</b> ≤ 5,合格——注意折算按减速比的<b>平方</b>,漏了平方会把 4:1 误算成 20:1。</div>
   </div>
 
   <h2><span class="h2-num">7</span> 本节自测</h2>

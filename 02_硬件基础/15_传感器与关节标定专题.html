@@ -60,6 +60,16 @@
   </div>
   <div class="my-clamp"><b class="t">🧰 SimpleFOC 一句话标定:</b><code>motor.initFOC()</code> 内部就是这套流程(电压对齐 + 方向检测),但它对"负载卡死/弱磁吸力"没有防护,批量产线建议改用受限电流的定制对齐程序。</div>
 
+  <h3>数值 worked example:21 对极电机算电角度零偏</h3>
+  <p>设电机 <strong>21 对极</strong>(p=21),编码器 16384 线(cpr=16384)。通电对齐 U 轴后,稳定读得编码器机械角 <strong>θ<sub>m</sub> = 3.7 rad</strong>(对应计数值 enc_count = 3.7/2π × 16384 ≈ 9648)。电角度零偏公式与代入:</p>
+  <div class="formula">\text{zero\_elec} = \left(\frac{enc\_count}{enc\_cpr} \times p\right) \bmod 2\pi = (\theta_m \times p) \bmod 2\pi</div>
+  <ul>
+    <li><b>第 1 步</b>:机械角折电角度:θ<sub>m</sub> × p = 3.7 × 21 = <strong>77.7 rad</strong>;</li>
+    <li><b>第 2 步</b>:取模 2π:77.7 / 2π ≈ <strong>12.366</strong> 圈 → 舍去整数圈,取小数部分 0.366;</li>
+    <li><b>第 3 步</b>:零偏 θ<sub>e0</sub> = 0.366 × 2π ≈ <strong>2.30 rad</strong>(约 131.9°)。</li>
+  </ul>
+  <p>用计数口径复核:9648 / 16384 × 21 = 12.366 → 小数 0.366 × 2π ≈ 2.30 rad,两种口径一致。注意零偏必须对 2π 取模——77.7 rad 直接写进参数会让 FOC 换向错 12 圈电角度,电机疯转(先标定后参数,见第 1 节)。</p>
+
   <h2><span class="h2-num">3</span> IMU 六面标定</h2>
   <p>IMU(姿态/加速度计)误差 = <b>零偏 bias + 刻度 scale + 轴间非正交 misalignment</b>。六面法:把 IMU 的 6 个面分别朝上静止采样(各 30~60 s),得到 6 组重力读数,解出 12 参数(3 轴零偏+3 轴刻度,非正交项可并入刻度矩阵):</p>
   <div class="formula">b_i = (a_{i,up} + a_{i,down})/2, \qquad s_i = (a_{i,up} - a_{i,down})/2g</div>
@@ -76,6 +86,24 @@
     <div class="step-item"><span class="n">4</span><b>复标时机</b><br>更换减速器/重装结构后;温度跨 20℃;摔机/堵转事故后立即复标。</div>
   </div>
   <div class="box box-warn"><b>⚠️ 电流反推力矩的坑:</b>τ = K<sub>t</sub>·I<sub>q</sub>·i 只在"摩擦可忽略"时成立。谐波/蜗轮等大摩擦传动的关节,空载电流可达额定的 10~20%,必须外加摩擦补偿(查表或 LuGre 模型),否则零附近力矩误差可达 30%+。这也是 QDD 准直驱方案"力控好"的本质:减速比小 → 摩擦折算小 → 电流即力矩。</div>
+
+  <h3>数值例:砝码力臂法完整算一遍</h3>
+  <p>力臂长 L = 0.25 m(精度 ±0.5 mm),三个砝码点 0.5 / 1.0 / 1.5 kg:</p>
+  <ul>
+    <li><b>第 1 步 · 力矩真值</b>:τ = m·g·L = 0.5 × 9.81 × 0.25 = <strong>1.226 N·m</strong>;三点依次为 <strong>1.226 / 2.453 / 3.679 N·m</strong>(g 取 9.81 m/s²);</li>
+    <li><b>第 2 步 · 记录读数</b>:每点稳定 2 s 取均值,记录电流反推力矩 τ<sub>read</sub>(或输出端力矩传感读数);</li>
+    <li><b>第 3 步 · 线性拟合</b>:最小二乘拟合 τ<sub>read</sub> = k·τ<sub>real</sub> + b。若关节减速比 i=10、K<sub>t</sub>=0.0955 N·m/A,则三点理论电流 I<sub>q</sub> = τ/(K<sub>t</sub>·i) ≈ 1.28 / 2.57 / 3.85 A——实测 I<sub>q</sub> 对砝码力矩拟合,斜率应 ≈ K<sub>t</sub>·i = 0.955 A⁻¹·N·m,残差 &lt;1% F.S. 即合格;</li>
+    <li><b>第 4 步 · 判读</b>:加载/卸载两趟读数不重合(迟滞)→ 减速器摩擦/背隙超差,按上方警告框加摩擦补偿后重标。</li>
+  </ul>
+
+  <h3>四类标定对比表(速查)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>标定项</th><th>标定对象</th><th>工具</th><th>精度目标</th><th>复标触发</th></tr>
+    <tr><td><b>电角度零位</b></td><td>转子 d 轴相对 U 相绕组轴线的电角度零偏 θ<sub>e0</sub></td><td>驱动板自身(定向电流)+ 编码器</td><td>重复性 &lt;0.5° 电角度(3 次取平均)</td><td>拆装编码器/减速器、温度剧变(磁编码器温漂)、闭环疯转/出力不足时</td></tr>
+    <tr><td><b>IMU 六面法</b></td><td>加速度计 3 轴零偏 + 3 轴刻度(非正交并入刻度阵)</td><td>六面标定工装(平面度是关键)+ 静置采集程序</td><td>零偏/刻度残差 &lt;1% F.S.;陀螺零偏另测(静止 1~5 min 均值)</td><td>更换 IMU、结构大修、贴片应力变化(摔机)后</td></tr>
+    <tr><td><b>关节零位</b></td><td>URDF zero pose 对应的输出端编码器读数 + 正方向 + 软限位</td><td>机械零位工装(定位销/靠块)</td><td>方向与 URDF 一致零歧义;限位内缩 2~5°</td><td>拆装关节、固件/URDF 更新后、sim2real 部署前必查</td></tr>
+    <tr><td><b>力矩(砝码)</b></td><td>τ<sub>read</sub> → τ<sub>real</sub> 的线性映射(斜率 k、零点 b,即 K<sub>t</sub>·i 与摩擦)</td><td>刚性力臂 + 标准砝码(5~7 点)</td><td>拟合残差 &lt;1% F.S.,迟滞可解释</td><td>更换减速器、温度跨 20 ℃、摔机/堵转事故后立即复标</td></tr>
+  </table></div>
 
   <h2><span class="h2-num">6</span> 本节自测</h2>
   <div class="quiz">

@@ -498,6 +498,239 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
   <aside class="det" id="det"><div class="din" id="dIn"></div>  </aside>
 <div class="rz rz-det" id="rzDet" title="拖动调整详情栏宽度"></div>
 </div>
+<!-- ===== 自测闭环（高频误区速查 + 本节自测）：浮动面板，右下角「自测」按钮呼出。
+     本页为全屏 3D 应用布局(body overflow:hidden)，静态内容插入文档流会被裁切，
+     故做成独立浮层；quiz 判分交互仿 _assets/site.js initQuiz 内联实现(本页未引入 site.js)。 ===== -->
+<style>
+#kqFab{position:fixed;right:16px;bottom:56px;z-index:1200;height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--rule2);background:var(--accent);color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:var(--sh2);display:flex;align-items:center;gap:6px;transition:.15s}
+#kqFab:hover{background:var(--accent2);transform:translateY(-1px)}
+#kqPanel{position:fixed;z-index:1300;left:50%;top:50%;transform:translate(-50%,-50%);width:min(780px,94vw);max-height:82vh;display:none;flex-direction:column;background:var(--bg3);border:1px solid var(--rule2);border-radius:14px;box-shadow:var(--sh3);overflow:hidden}
+#kqPanel.open{display:flex}
+.kq-head{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--rule);background:linear-gradient(180deg,#fff,var(--bg3))}
+.kq-head b{font-size:15px;color:var(--ink)}
+.kq-close{border:none;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;font-family:inherit}
+.kq-close:hover{background:rgba(0,0,0,.06);color:var(--ink)}
+.kq-body{overflow-y:auto;padding:16px 18px 20px}
+.kq-sec-title{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin:6px 0 12px;display:flex;align-items:center;gap:7px}
+.kq-sec-title::before{content:"";width:3px;height:13px;background:var(--accent);border-radius:2px}
+.kq-myth{padding:10px 13px;border:1px solid var(--rule);border-left:3px solid var(--bad);border-radius:9px;margin-bottom:9px;background:#fff;font-size:12.5px;line-height:1.85;color:var(--muted)}
+.kq-myth b{color:var(--ink)}
+.kq-myth .no{color:var(--bad);font-weight:700}
+.kq-myth .yes{color:var(--ok);font-weight:700}
+.kq-score{margin-top:14px;padding:10px 13px;border-radius:9px;background:var(--accent-g);border:1px solid var(--accent-g);font-size:12.5px;font-weight:700;color:var(--accent);text-align:center}
+/* 自测题（结构沿用全站 .quiz 约定，样式本页内联） */
+.quiz{border:1px solid var(--rule);border-radius:10px;padding:13px 15px;margin-bottom:12px;background:#fff}
+.quiz-q{font-weight:700;font-size:13px;margin-bottom:10px;line-height:1.7;color:var(--ink)}
+.quiz-options{display:flex;flex-direction:column;gap:7px}
+.quiz-options button{text-align:left;padding:8px 12px;border:1px solid var(--rule);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px;line-height:1.7;color:var(--ink);font-family:inherit;transition:.15s}
+.quiz-options button:hover{border-color:var(--accent);background:var(--accent-g)}
+.quiz-options button.correct{border-color:var(--ok);background:rgba(22,163,74,.1)}
+.quiz-options button.wrong{border-color:var(--bad);background:rgba(220,38,38,.08)}
+.quiz-feedback{display:none;margin-top:10px;font-weight:700;font-size:12.5px}
+.quiz-feedback.ok{display:block;color:var(--ok)}
+.quiz-feedback.no{display:block;color:var(--bad)}
+.quiz-explain{display:none;margin-top:9px;padding:10px 12px;border-radius:8px;background:rgba(0,102,204,.06);border:1px solid var(--accent-g);font-size:12.5px;color:var(--muted);line-height:1.85}
+.quiz-explain.show{display:block}
+/* 暗色主题适配（本页主题由 body[data-theme] 控制） */
+body[data-theme="dark"] #kqPanel{background:#1b2334;border-color:rgba(255,255,255,.14)}
+body[data-theme="dark"] .kq-head{background:linear-gradient(180deg,#232c40,#1b2334)}
+body[data-theme="dark"] .kq-myth,body[data-theme="dark"] .quiz{background:#232c40;border-color:rgba(255,255,255,.1)}
+body[data-theme="dark"] .quiz-options button{background:#232c40;color:var(--ink)}
+body[data-theme="dark"] .quiz-options button:hover{background:rgba(59,139,239,.15)}
+body[data-theme="dark"] .quiz-explain{background:rgba(59,139,239,.08)}
+</style>
+<button id="kqFab" type="button" title="高频误区速查 & 本节自测">📝 自测</button>
+<div id="kqPanel" role="dialog" aria-label="高频误区与自测">
+  <div class="kq-head"><b>📝 高频误区速查 &amp; 本节自测</b><button class="kq-close" id="kqClose" type="button" title="关闭 (Esc)">✕</button></div>
+  <div class="kq-body">
+    <div class="kq-sec-title">⚠️ 高频误区速查（8 条）</div>
+    <div class="kq-myth"><span class="no">❌ 误区1</span>「ESO 增益 <b>β1=3ωo 是通用公式，任何 ADRC 都能用」</b> → <span class="yes">✅ 纠正</span>：β1=3ωo、β2=3ωo²、β3=ωo³ 是带宽法对「二阶被控对象 + 三阶线性 ESO」的配置结果（特征多项式 (s+ωo)³ 展开系数）；一阶对象配二阶 ESO 应为 β1=2ωo、β2=ωo²。被控对象阶数不同，必须按 (s+ωo)ⁿ 重推，照搬会配错观测极点。</div>
+    <div class="kq-myth"><span class="no">❌ 误区2</span>「谐波减速器标注『齿差 2』，所以<b>减速比就是 2</b>」 → <span class="yes">✅ 纠正</span>：齿差 2 是刚轮与柔轮的齿数之差（结构特征），不是传动比。双波结构的减速比 = 柔轮齿数 ÷ 2：柔轮 200 齿对应减速比 100:1，两者相差几十倍。</div>
+    <div class="kq-myth"><span class="no">❌ 误区3</span>「QDD 准直驱 = <b>完全不需要减速器</b>」 → <span class="yes">✅ 纠正</span>：准直驱仍含低减速比（约 6~10:1）行星减速器，只是速比足够低，得以保留高力控带宽、低反射惯量与抗冲击（反驱）特性；完全没有减速器的是直驱（DD）方案。QDD 的「准」字正说明减速器还在。</div>
+    <div class="kq-myth"><span class="no">❌ 误区4</span>「位置环<b>一律去掉积分项</b>才更高级」 → <span class="yes">✅ 纠正</span>：去积分只适用于有重力/摩擦前馈补偿或负载恒定、可容忍小稳态误差的场合；关节存在持续力矩扰动（如重力矩）时去掉积分会留下稳态偏差。正确做法是积分分离、抗饱和（back-calculation）等条件化积分，而非一刀切删除。</div>
+    <div class="kq-myth"><span class="no">❌ 误区5</span>「双编码器装在哪都一样，<b>电机端/输出端数据可以混用</b>」 → <span class="yes">✅ 纠正</span>：电机端编码器与转子同轴、分辨率高，专供 FOC 换向与电流/速度内环；输出端编码器反映减速器后的真实关节角，位置环必须以它为准（或据此补偿背隙与柔性）。两者位置、职责不同，混用会导致换向角错误或位置环包含传动误差。</div>
+    <div class="kq-myth"><span class="no">❌ 误区6</span>「CAN 总线<b>每个节点都就近加 120Ω 终端电阻</b>更保险」 → <span class="yes">✅ 纠正</span>：终端电阻只加在总线物理两端（首末节点各 1 个 120Ω，总线等效 60Ω），用于阻抗匹配吸收反射；中间节点多加会拉低等效电阻、削弱差分信号幅度，反而导致通信不稳。</div>
+    <div class="kq-myth"><span class="no">❌ 误区7</span>「IMU 六面法标定就是<b>把设备翻六个面晃一晃</b>就行」 → <span class="yes">✅ 纠正</span>：六面法每面都必须静置找平后采集静止均值（利用重力矢量在六个方位的投影解算加速度计零偏与刻度因子），且按「面 1 静置采样 → 翻转 → 面 2 静置…」的顺序逐面完成；边动边采或静置不足会污染解算结果。</div>
+    <div class="kq-myth"><span class="no">❌ 误区8</span>「六维力传感器<b>上电读数直接当接触力用</b>」 → <span class="yes">✅ 纠正</span>：输出含末端工具重力、惯性力与装配预载，使用前必须先静止采集零偏并扣除，运动中还要按当前姿态对工具重力做投影补偿；否则空载时读数已非零，接触检测与力控阈值全部失真。</div>
+
+    <div class="kq-sec-title" style="margin-top:20px">✅ 本节自测（12 题 · 单选，点击选项即时判分）</div>
+    <div class="quiz">
+      <div class="quiz-q">1.（FOC）Clarke 变换在 FOC 控制中的作用是什么？</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 把三相电流直接变成 PWM 占空比输出</button>
+        <button data-v="B">B. 将三相静止坐标系电流变换到两相静止坐标系（α/β），配合 Park 变换实现转矩与磁通的解耦控制</button>
+        <button data-v="C">C. 提高直流母线电压的利用率</button>
+        <button data-v="D">D. 测量转子的当前位置</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：Clarke 是 3s→2s 坐标变换，把 iA/iB/iC 映射为 α/β 两个正交分量，再经 Park 变换到随转子旋转的 d/q 系，使交流量变成直流量——id 控磁通、iq 控转矩，实现类似直流电机的解耦控制。逐项点评：A 错，生成 PWM 占空比是 SVPWM 调制环节的职责，Clarke 只做坐标变换不产生开关信号；C 错，提高电压利用率是 SVPWM 注入零序分量的优点，与 Clarke 无关；D 错，转子位置由编码器/磁编码器测量，是 FOC 的输入而非 Clarke 的功能。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">2.（FOC）SVPWM 相比普通 SPWM 的核心优势是什么？</div>
+      <div class="quiz-options" data-answer="A">
+        <button data-v="A">A. 相电压幅值上限从 Udc/2 提升到 Udc/√3，母线电压利用率提高约 15.5%，且谐波更小</button>
+        <button data-v="B">B. 可以减少电流采样次数，降低控制器算力</button>
+        <button data-v="C">C. 可以省掉编码器，实现完全无感控制</button>
+        <button data-v="D">D. 能显著降低电机发热，功率器件不需散热</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：SVPWM 把三相系统等效为电压空间矢量，通过注入零序分量使合成矢量幅值上限从 SPWM 的 Udc/2 提升到 Udc/√3（约提高 15.5%），同样的母线电压能输出更大转矩，开关谐波也更低。逐项点评：B 错，电流采样频次由控制周期决定，SVPWM 不改变采样架构；C 错，FOC 必须知道转子位置才能做 Park 变换，SVPWM 不提供任何位置信息，无感方案要靠观测器估算；D 错，发热取决于电流有效值与损耗，调制方式只影响利用率与谐波，不改变物理发热规律。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">3.（三环控制）电流环的带宽为什么远高于速度环与位置环？</div>
+      <div class="quiz-options" data-answer="C">
+        <button data-v="A">A. 因为电流环参数最少，整定最简单，所以可以做快</button>
+        <button data-v="B">B. 因为电流数值小、能量低，所以响应天然就快</button>
+        <button data-v="C">C. 电流环是内环，直接决定电磁转矩的响应速度；被控对象（电感+电阻）时间常数小，可做到 kHz 级，为外环提供快速可靠的力矩执行</button>
+        <button data-v="D">D. 三个环带宽应该设计成一样，同步响应最好</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：三环由内到外带宽逐级降低（电流环＞速度环＞位置环，通常相邻相差 5~10 倍）。电流环直接控制 iq 即转矩，是力矩执行的「最后一公里」；RL 负载时间常数小、PWM 开关频率高，允许 kHz 级带宽。外环指令最终都要变成电流才能产生力矩，内环慢则外环再快也无济于事。逐项点评：A 错，电流环恰恰是最基础最重要的环，它失效则整个 FOC 失效，与「参数最少」无关；B 错，带宽取决于被控对象动态与采样/开关频率，与电流大小无关；D 错，三环带宽必须内外分离，否则内外环互相干扰、整定困难甚至振荡。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">4.（ADRC）线性 ADRC 三阶 ESO 用带宽法整定得 β1=3ωo、β2=3ωo²、β3=ωo³，这套系数成立的前提是什么？</div>
+      <div class="quiz-options" data-answer="D">
+        <button data-v="A">A. 它是 ESO 的通用公式，任何阶数的被控对象都能直接套用</button>
+        <button data-v="B">B. 只在控制周期足够短（采样率高）时才成立</button>
+        <button data-v="C">C. 由 MATLAB 参数整定工具自动生成，无物理含义</button>
+        <button data-v="D">D. 针对二阶被控对象（状态为位置、速度 + 扰动估计）的三阶线性 ESO，特征多项式配置为 (s+ωo)³ 后展开对照得到；阶数不同须按 (s+ωo)ⁿ 重推</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：带宽法的本质是把 ESO 特征多项式统一配置为 (s+ωo)ⁿ，对 n=3 展开成 s³+β1s²+β2s+β3 对照即得 β1=3ωo、β2=3ωo²、β3=ωo³。这组系数只对应「二阶被控对象 + 1 个扰动估计状态」；一阶对象配二阶 ESO 时是 β1=2ωo、β2=ωo²。ωo 越高扰动估计越快但对噪声越敏感，一般取控制带宽的 3~10 倍。逐项点评：A 错，阶数变了多项式系数全变，照搬 3ωo 会导致观测极点配置错误、收敛变慢甚至发散；B 错，采样率影响离散化实现而非增益公式本身；C 错，带宽法是解析结果，手算即可，MATLAB 只是辅助验证工具。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">5.（ADRC）TD（跟踪微分器）在 ADRC 中起什么作用？</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 放大误差信号，让系统响应更快</button>
+        <button data-v="B">B. 为阶跃指令安排过渡过程并提取微分信号，化解「超调与快速性」的矛盾，同时柔化指令降低启动冲击</button>
+        <button data-v="C">C. 替代 SVPWM 完成功率调制</button>
+        <button data-v="D">D. 监测电机温度，超温时降额运行</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：PID 的经典矛盾是想快就加大增益、加大增益就超调。TD 让输出「跟踪」指令并给出其微分（v1 跟踪、v2 微分），把阶跃变成有斜率限制的过渡曲线，系统按自身能力逐步加速，既快又无超调；微分信号还替代了误差差分计算，抑制噪声放大。逐项点评：A 错，TD 不是放大误差，而是安排过渡过程，反而限制了瞬时误差与冲击；C 错，功率调制由 SVPWM 等执行，TD 是指令预处理环节，层级完全不同；D 错，温度等状态量由传感器与保护逻辑负责，与 TD 无关。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">6.（减速器）谐波减速器标称「齿差 2」，减速比是 2 吗？</div>
+      <div class="quiz-options" data-answer="A">
+        <button data-v="A">A. 不是。双波结构减速比 = 柔轮齿数 ÷ 2（柔轮 200 齿即 100:1），齿差 2 只是刚柔轮齿数之差</button>
+        <button data-v="B">B. 是，等于刚轮齿数 ÷ 柔轮齿数</button>
+        <button data-v="C">C. 是，等于波发生器转速与输出转速之比</button>
+        <button data-v="D">D. 减速比与齿数没有关系</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：谐波传动靠柔轮在波发生器作用下产生可控弹性变形，双波时柔轮与刚轮在两处对称啮合，波发生器转一圈柔轮相对刚轮错开「齿差」个齿，故减速比 i = 柔轮齿数 ÷ 波数 = 柔轮齿数 ÷ 2。齿差 2 是「每转错 2 齿」的结构特征，不是传动比。逐项点评：B 错，刚/柔轮齿数比接近 1（只差 2 齿），按它计算速比就成了约 1:1，显然错误；C 错，波发生器正是输入端，其与输出转速之比恰是待求的减速比，不是已知条件；D 错，减速比恰由柔轮齿数与波数共同决定，关系密切。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">7.（减速器）人形机器人髋/腰等高力矩关节为什么近年更多选摆线（RV）而非谐波减速器？</div>
+      <div class="quiz-options" data-answer="C">
+        <button data-v="A">A. 因为摆线/RV 的价格比谐波更便宜</button>
+        <button data-v="B">B. 没有实质原因，主要是厂商营销导向</button>
+        <button data-v="C">C. 摆线/RV 多齿啮合分担载荷，扭转刚度大、抗冲击、疲劳寿命长，适合大负载高冲击部位；谐波紧凑零回差但柔轮易疲劳，多用于手臂/手腕等轻载部位</button>
+        <button data-v="D">D. 摆线/RV 的传动精度在任何指标下都永远更高</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：摆线/RV 通过多齿啮合分担载荷，扭转刚度与抗冲击能力显著优于谐波，额定寿命长，适合髋、腰、腿部近端等大力矩高冲击关节；谐波靠柔轮弹性变形传动，紧凑轻量、回差极小，但柔轮是疲劳薄弱件、抗冲击差，适合肩肘腕等末端轻载关节。逐项点评：A 错，摆线/RV 零件多、加工精度要求高，成本通常高于同级谐波；B 错，这是明确的工程力学差异，与营销无关；D 错，「永远更高」不成立——谐波在中轻载下回差与精度并不差，RV 的优势在刚度与寿命而非精度绝对值。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">8.（编码器）双编码器关节中，电机端与输出端编码器各司何职？</div>
+      <div class="quiz-options" data-answer="D">
+        <button data-v="A">A. 纯粹互为冗余备份，坏一个顶一个，可以互换使用</button>
+        <button data-v="B">B. 两个编码器都参与 FOC 换向，提高换向角精度</button>
+        <button data-v="C">C. 电机端编码器主要用于测量电机温度</button>
+        <button data-v="D">D. 电机端（高分辨率）供 FOC 换向与电流/速度环；输出端测减速器后的真实关节角，供位置环与背隙/柔性补偿</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：双编架构中，电机端编码器贴在转子轴上、分辨率高、与转子刚性同轴，供 FOC 换向角与电流/速度内环使用；输出端编码器装在减速器之后，反映负载真实角度。由于背隙与柔性变形，输出端角度 ≠ 电机角度 ÷ 速比，位置环以输出端为准才能保证足端定位精度，两者差值还可估计力矩与柔性形变。逐项点评：A 错，两者分辨率、安装位置、带宽需求都不同，分工不同不可互换，不是简单冗余；B 错，换向必须用与转子同轴的电机端编码器，输出端经减速器后角度已失真，无法用于换向；C 错，温度由 NTC 等专门测温元件负责。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">9.（总线）EtherCAT 与 CAN-FD 在人形机器人上的定位区别是什么？</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 两者性能完全一样，选哪个只看个人习惯</button>
+        <button data-v="B">B. EtherCAT 是百 Mbps 级实时工业以太网（分布式时钟同步达 μs 级），适合主控—多关节高同步拓扑；CAN-FD 数据段扩到 64 字节、数 Mbps，低成本抗干扰强，适合传感器与关节子网</button>
+        <button data-v="C">C. EtherCAT 已被淘汰，新设计不应再采用</button>
+        <button data-v="D">D. CAN-FD 的带宽一定高于 EtherCAT</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：EtherCAT 用「飞读飞写」的报文过站处理机制，全网刷新周期可达 100μs 级，配合分布式时钟实现关节间强同步，适合整机主控实时拓扑；CAN-FD 在经典 CAN 上把数据段从 8 字节扩到 64 字节、提升数据段速率，保留低成本、高可靠、差分抗干扰优点，常用于 IMU、六维力与关节内部子网。逐项点评：A 错，两者实时性等级、带宽、拓扑与成本差异巨大，选型必须看节点数与同步需求；C 错，EtherCAT 是人形机器人主控总线的主流方案之一；D 错，CAN-FD 数 Mbps 通常低于 EtherCAT 百 Mbps 级，带宽并不占优。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">10.（IMU/力矩）六维力传感器读数在使用前最关键的一步是什么？</div>
+      <div class="quiz-options" data-answer="C">
+        <button data-v="A">A. 把采样率调到最高，数据越多越准</button>
+        <button data-v="B">B. 直接读 Z 轴分量就是接触力，无需处理</button>
+        <button data-v="C">C. 静止采集并扣除零偏（含工具重力与装配预载），运动时按姿态做工具重力投影补偿，否则读数含系统性偏差</button>
+        <button data-v="D">D. 六维力传感器出厂已标定，使用中不需要任何处理</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：六维力/力矩传感器输出的是传感器坐标系下的总分量，包含末端工具重力、惯性力与装配预载。使用前必须静止采集零偏并在解算中扣除；机械臂运动时还要按当前姿态对工具重力做投影补偿，否则未接触时 Fx/Fy/Fz 已非零，接触检测与力控阈值全部失真。逐项点评：A 错，采样率够用即可，过高只增加处理负担，不解决系统性偏差；B 错，Z 轴读数同样含零偏与重力分量，直接读会误判接触；D 错，零偏随温度与装配状态变化，上电采零偏是力控系统的常规必备步骤。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">11.（QDD）对「准直驱（QDD）」的正确理解是？</div>
+      <div class="quiz-options" data-answer="A">
+        <button data-v="A">A. 仍采用低减速比（约 6~10:1）行星减速器 + 高转矩密度电机，保留高带宽、低摩擦、抗冲击的「接近直驱」特性，而非取消减速器</button>
+        <button data-v="B">B. 完全没有减速器，电机输出轴直接连负载</button>
+        <button data-v="C">C. 就是指无框力矩电机，与传动结构无关</button>
+        <button data-v="D">D. 追求极限转速，电机转速越高越好</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：QDD 的核心是「准」：用小速比行星级把电机转矩放大数倍，同时保留低反射惯量、高力控带宽与抗冲击（反驱性好）特性，落地时可靠关节自身阻力完成缓冲。它与纯直驱（DD，1:1）的区别是仍有减速器，与大速比（30~100:1）关节的区别是反射惯量小、无脆弱背隙环节。逐项点评：B 错，「完全没有减速器」是直驱 DD 方案，QDD 仍含一级行星，这是与 DD 的本质区别；C 错，无框电机只是 QDD 常用的电机形态，不加低减速比传动不构成 QDD；D 错，QDD 关注转矩密度与力控带宽，电机按功率需求设计，不是片面追求高转速。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">12.（QDD/BOM）对比 6 款关节模组 BOM 做选型时，最先应看哪组参数？</div>
+      <div class="quiz-options" data-answer="D">
+        <button data-v="A">A. 只看价格，谁便宜选谁，省下的预算装更多关节</button>
+        <button data-v="B">B. 只看重量，谁最轻选谁，轻量化压倒一切</button>
+        <button data-v="C">C. 只看外观做工与颜色搭配是否协调</button>
+        <button data-v="D">D. 力矩密度（峰值/额定转矩与质量之比）、减速器类型与速比、编码器配置（单/双）是否匹配该关节的负载与力控需求，再综合价格与供货</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析：关节 BOM 对比要按「部位需求 → 参数匹配」的顺序：先明确该关节所需峰值/额定转矩、转速、力控带宽与抗冲击要求，再核对电机规格、减速器类型（谐波/行星/摆线）与速比、编码器单端还是双端、散热与防护，最后综合成本与供应链。力矩密度决定等重下的能力上限，减速器类型决定刚度与寿命，双编决定位置精度与柔性力矩估计能力。逐项点评：A 错，低价常对应电机缩水或单编省配，后续力控与寿命代价更高；B 错，轻量化必须与力矩指标同时评估，只轻不强没有工程意义；C 错，外观与结构强度、散热、维护性无关，不是选型依据。</div>
+    </div>
+    <div class="kq-score" id="kqScore">已答 0 / 12 · 全部作答后对照解析复盘</div>
+  </div>
+</div>
+<script>
+/* 自测闭环交互：面板开关 + quiz 判分。
+   判分逻辑仿 _assets/site.js initQuiz（本页为 3D 应用页未引入 site.js，故内联同款行为），
+   仅作用于 #kqPanel 内的 .quiz，不影响页面其他逻辑。 */
+(function(){
+  var fab=document.getElementById('kqFab'),panel=document.getElementById('kqPanel'),close=document.getElementById('kqClose');
+  if(!fab||!panel)return;
+  function open(){panel.classList.add('open');fab.style.display='none';}
+  function shut(){panel.classList.remove('open');fab.style.display='flex';}
+  fab.addEventListener('click',open);
+  if(close)close.addEventListener('click',shut);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&panel.classList.contains('open'))shut();});
+  var qs=panel.querySelectorAll('.quiz'),total=qs.length,done=0;
+  var score=document.getElementById('kqScore');
+  function syncScore(){if(score)score.textContent='已答 '+done+' / '+total+(done>=total?' · 全部完成，建议对照解析复盘错题':' · 全部作答后对照解析复盘');}
+  for(var i=0;i<qs.length;i++){
+    (function(q){
+      var opts=q.querySelector('.quiz-options'),fb=q.querySelector('.quiz-feedback'),ex=q.querySelector('.quiz-explain');
+      var answer=(opts&&opts.getAttribute('data-answer'))||'';
+      var btns=opts?opts.querySelectorAll('button'):[];
+      var answered=false;
+      for(var j=0;j<btns.length;j++){
+        (function(btn){
+          btn.addEventListener('click',function(){
+            var picked=btn.getAttribute('data-v');
+            for(var k=0;k<btns.length;k++)btns[k].classList.remove('correct','wrong');
+            if(picked===answer){
+              btn.classList.add('correct');
+              if(fb){fb.className='quiz-feedback ok';fb.textContent='✓ 回答正确！';}
+            }else{
+              btn.classList.add('wrong');
+              if(fb){fb.className='quiz-feedback no';fb.textContent='✗ 回答错误，正确答案是 '+answer;}
+            }
+            if(ex)ex.classList.add('show');
+            if(!answered){answered=true;done++;syncScore();}
+          });
+        })(btns[j]);
+      }
+    })(qs[i]);
+  }
+})();
+</script>
 <!-- ===== 底部功能栏（桌面端，按教学任务分组：机型 → 视角 → 教学演示 → 显示 → 拆解教学） ===== -->
 <div class="bottom-bar" id="bottomBar">
   <span class="bb-grp">机型</span>

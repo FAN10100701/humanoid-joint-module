@@ -114,6 +114,61 @@
     <div class="row"><b>目标:</b>把 PyTorch 策略转成真机能跑的推理。<b>做法:</b>导出 ONNX,用 onnxruntime(CPU/GPU)或转 C++ 在机载电脑推理;固定输入/输出张量形状。<b>坑:</b>忘记把"随机动作的均值"当最终输出(推理时不要采样);数值精度(float32→float16)可能抖动。<b>验收:</b>同一输入下,ONNX 输出与 PyTorch 输出误差 &lt; 1e-3。</div>
   </div></div>
 
+  <p><b>配套代码 1 — Isaac Lab 域随机化配置(对应第 3 步,建议在训练前就配好):</b></p>
+  <pre><code># Isaac Lab:用 EventTerm 声明域随机化(ManagerBasedRLEnv 的 events 配置)
+import isaaclab.envs.mdp.events as mdp_events
+from isaaclab.envs import ManagerBasedRLEnvCfg
+from isaaclab.managers import EventTermCfg as EventTerm
+from isaaclab.utils import configclass
+
+@configclass
+class MyEnvCfg(ManagerBasedRLEnvCfg):
+    events = ManagerBasedRLEnvCfg.events  # 在原有 events 上追加以下随机化项
+
+    events.randomize_link_mass = EventTerm(
+        func=mdp_events.randomize_rigid_body_mass,       # 随机化连杆质量
+        mode="startup",                                   # 每次环境 reset 前抽样一次
+        params={
+            "asset_cfg": SceneEntityCfg("robot"),
+            "mass_distribution_params": (0.8, 1.2),       # 质量缩放区间:标称值 ±20%
+            "operation": "scale",
+        },
+    )
+    events.randomize_friction = EventTerm(
+        func=mdp_events.randomize_rigid_body_material,   # 随机化地面摩擦
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot"),
+            "static_friction_range": (0.4, 1.2),          # 静摩擦区间(覆盖瓷砖/草地/地毯)
+            "dynamic_friction_range": (0.3, 1.0),         # 动摩擦区间
+            "restitution_range": (0.0, 0.0),
+        },
+    )
+    events.randomize_push = EventTerm(
+        func=mdp_events.push_by_setting_velocity,         # 随机推力扰动(抗扰训练)
+        mode="interval",                                  # 每隔 interval_s 秒推一次
+        interval_range_s=(5.0, 10.0),
+        params={
+            "velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)},  # 推力等效速度 ±20% 量级
+        },
+    )</code></pre>
+  <p><b>配套代码 2 — ONNX 导出与数值校验(对应第 8 步的验收项):</b></p>
+  <pre><code>import torch, numpy as np, onnxruntime as ort
+
+actor.eval()  # 推理导出:确定性前向,取均值不采样
+obs = torch.randn(1, obs_dim)  # 固定形状的示例输入
+torch.onnx.export(
+    actor, obs, "policy.onnx",
+    input_names=["obs"], output_names=["action"],
+    opset_version=17, dynamo=False,
+)
+sess = ort.InferenceSession("policy.onnx", providers=["CPUExecutionProvider"])
+onnx_out = sess.run(["action"], {"obs": obs.numpy()})[0]
+pt_out = actor(obs).detach().numpy()
+diff = np.abs(pt_out - onnx_out).max()
+assert diff < 1e-3, f"ONNX 与 PyTorch 输出偏差过大: {diff}"
+print(f"max|Δ| = {diff:.2e}  ✓ 校验通过")</code></pre>
+
   <div class="my-step"><div class="my-step-num">9</div><div class="my-step-body">
     <div class="st">真机部署(接口 / 频率 / 保护)</div>
     <div class="row"><b>目标:</b>策略推理 → 关节指令 的实时闭环。<b>做法:</b>上位机 50-100Hz 推理,输出目标关节角度/力矩 → 底层 FOC 环(见 06-02)执行;对齐频率、加死区、加力矩/速度限幅。<b>坑:</b>频率不齐(推理 50Hz vs 电机 10kHz)要经插值;缺限幅会烧电机/损坏关节。<b>验收:</b>上电后先用"悬吊/支撑"模式小力矩试运行,确认动作方向、限位、急停都正确。</div>

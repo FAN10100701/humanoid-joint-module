@@ -5,9 +5,9 @@
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
-   - 版本: V2.1.17 · 2026-09-05(升级站点时改 CACHE 名以强制更新)
+   - 版本: V2.1.18 · 2026-09-05(升级站点时改 CACHE 名以强制更新)
    ============================================================ */
-var CACHE = "hrl-site-v2.1.17";
+var CACHE = "hrl-site-v2.1.18";
 var PRECACHE = [
   "./index.html",
   "./404.html",
@@ -15,6 +15,7 @@ var PRECACHE = [
   "./_assets/site.js",
   "./_assets/search-index.js",
   "./_assets/page-meta.js",
+  "./_assets/path-data.js",
   "./_assets/ib-data-a.js",
   "./_assets/ib-data-b.js",
   "./_assets/ib-data-c.js",
@@ -29,7 +30,8 @@ var PRECACHE = [
   "./08_学习工具/12_闯关学习.html",
   "./08_学习工具/13_AI答疑助手.html",
   "./08_学习工具/14_个人作品台.html",
-  "./08_学习工具/17_AI_Agent介绍.html"
+  "./08_学习工具/17_AI_Agent介绍.html",
+  "./08_学习工具/18_学习路径规划.html"
 ];
 
 self.addEventListener("install", function(e){

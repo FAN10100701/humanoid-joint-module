@@ -30,7 +30,7 @@
   /* 全站统计单源(V2.1.7):pages = site-sections.js 全部 pageId + 首页;
      ibSubjects/ibItems 必须与 ib-data-a/b/c 实际计数一致(一键自检.ps1 C3 校验)。
      改题库或增删页面时同步这里;新文案引用这里,别再写死数字 */
-  S.STATS = { pages: 95, ibSubjects: 17, ibItems: 162, quizItems: 60 };
+  S.STATS = { pages: 96, ibSubjects: 17, ibItems: 162, quizItems: 60 };
 
   function page(){ return window.PAGE || {}; }
 
@@ -110,6 +110,13 @@
   };
   /* V2.1.7:开放给闯关等页面复用,消除 humanoid-site-activity-v1 字面量副本 */
   S.logActivity = logActivity;
+  /* V2.1.18:esc/脚本加载器单源开放(AUDIT A-22)——题库页/闯关页原各持 esc×3、loadScript×2 副本,收敛至此 */
+  S.esc = esc;
+  S.loadScript = function(src, cb){
+    var s = document.createElement("script");
+    s.src = src; s.onload = cb; s.onerror = cb;   /* onerror 也回调:与题库/闯关页容错语义一致(数据全失败走各自空态) */
+    document.head.appendChild(s);
+  };
   S.toggleDone = function(){
     var id = page().pageId; if(!id) return;
     var p = getProgress();
@@ -747,11 +754,8 @@
   function ensureSearchIndex(cb){
     if(window.SITE_SEARCH_INDEX){ cb(); return; }
     var root = page().root || "";
-    var s = document.createElement("script");
-    s.src = (root ? root + "/" : "") + "_assets/search-index.js";
-    s.onload = function(){ cb(); if(S.onSearchIndexReady) S.onSearchIndexReady(); };
-    s.onerror = function(){ cb(); };
-    document.head.appendChild(s);
+    /* V2.1.18:改走 S.loadScript 单源(容错语义一致) */
+    S.loadScript((root ? root + "/" : "") + "_assets/search-index.js", function(){ cb(); if(S.onSearchIndexReady) S.onSearchIndexReady(); });
   }
   function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function highlight(html, terms){
@@ -876,7 +880,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.17(2026-09-05)";
+  S.VERSION = "V2.1.18(2026-09-05)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -935,7 +939,7 @@
     if(seen) return;
     /* V2.1.12:页数从 SITE_SECTIONS 单源计算(与首页统计/C5 同口径);
        原先读异步的 search-index,未就绪时长期落到 fallback 35 */
-    var nPages = 95;
+    var nPages = 96;
     try{
       if(window.SITE_SECTIONS){
         var tk2 = 0;

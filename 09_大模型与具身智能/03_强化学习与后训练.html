@@ -52,8 +52,6 @@
   <text x="140" y="122" font-size="11.5" fill="#9aa4b2" text-anchor="middle">裁剪比率保留</text>
   <text x="420" y="122" font-size="11.5" fill="#9aa4b2" text-anchor="middle">裁剪比率保留;R1 中进一步移除 KL</text></svg></div>
   <p><b>三差异:</b>①去掉价值网络(critic)——省一半显存与调参;②基线从 critic 估计改为<b>同题组内平均</b>(题目难度自带归一);③仍保留重要性采样裁剪保稳定;R1 又把 KL 惩罚移除,让 RL 敢于把分布拉离底座、催化长思考涌现。</p>
-  <div class="box box-warn"><b>⚠ Reward Hacking(必考):</b>奖励模型打分而非真理时,策略会钻 RM 的漏洞(谄媚、冗长、套路化)。对策:RM 迭代、KL 锚定、可验证奖励(数学/代码对错)绕开 RM——这正是推理 RL 兴起的原因之一。</div>
-
   <div class="my-svg" style="max-width:620px;margin:14px auto"><svg viewBox="0 0 520 160" role="img" aria-label="GRPO 组采样优势示例">
 <text x="10" y="16" font-size="12" font-weight="700" fill="currentColor">同一道题采样 5 个答案(G=5),可验证奖励:对=1 错=0</text>
 <g font-size="11" fill="currentColor" text-anchor="middle">
@@ -67,7 +65,23 @@
 <text x="95"  y="120" font-size="11" fill="#86efac">优势 = (1−0.6)/σ = + 正 → 强化</text>
 <text x="195" y="120" font-size="11" fill="#fca5a5">优势 = 负 → 抑制</text>
 <text x="10" y="150" font-size="10.5" fill="#9aa4b2">好答案被推高、差答案被压低——全程没有价值网络参与,组内互相当参照</text></svg></div>
-  <h2><span class="h2-num">4</span> PRM vs ORM:过程奖励与结果奖励</h2>
+
+  <h2><span class="h2-num">4</span> 常见误区:Reward Hacking 与对齐的坑</h2>
+  <p><b>Reward Hacking(必考):</b>奖励模型打分而非真理时,策略会钻 RM 的漏洞(谄媚、冗长、套路化)。对策:RM 迭代、KL 锚定、可验证奖励(数学/代码对错)绕开 RM——这正是推理 RL 兴起的原因之一。在此基础上,再避开下面两个坑:</p>
+  <div class="box box-warn"><b>🚫 误区 1 · 「KL 锚定越强越好」:</b>KL 惩罚把策略拴在参考模型附近——锚太强=策略不敢动=对齐白做,生成的回答与底座无异;锚太弱才会漂移胡来。它是滑块不是开关,强度要和奖励信号的可信度联动:可验证奖励可以松锚(R1 甚至移除 KL),纯 RM 打分必须紧锚。</div>
+  <div class="box box-warn"><b>🚫 误区 2 · 「RM 打分高=回答真的好」:</b>Goodhart 定律——「当一个指标变成优化目标,它就不再是好指标」。RM 打分只是真实质量的代理,策略足够强时会专门优化代理与真实之间的缝隙:打分涨了,真实质量反而跌。可验证奖励之所以珍贵,就是因为它没法被这样钻。</div>
+
+  <h2><span class="h2-num">5</span> 三大目标函数:必考数学一页过</h2>
+  <p><b>① DPO(直接偏好优化):</b></p>
+  <div class="formula">\mathcal{L}_{DPO}=-\log \sigma\!\left(\beta\left[\log\frac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)}-\log\frac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)}\right]\right)</div>
+  <p>y_w = 偏好(赢)回答,y_l = 被拒绝(输)回答。<b>为什么这么设计:</b>它把「先学一个 RM、再用 RM 做 RL」两步折叠成一步——直接在偏好对上最大化「赢回答相对参考模型的对数概率提升」与「输回答的提升」之差。π_ref 是锚:不许策略把赢/输回答的概率同时极端推高(否则只学到「都变流畅」),β 控制偏离锚的强度。工程收益:无需 RM 与 critic,中小团队一张卡也能对齐。</p>
+  <p><b>② PPO-clip(裁剪代理目标):</b></p>
+  <div class="formula">L^{CLIP}(\theta)=\mathbb{E}\Big[\min\big(r(\theta)A,\ \mathrm{clip}(r(\theta),1-\varepsilon,1+\varepsilon)\,A\big)\Big], \qquad r(\theta)=\frac{\pi_\theta(a|s)}{\pi_{old}(a|s)}</div>
+  <p>r 是新旧策略对同一动作的概率比。<b>为什么这么设计:</b>小批量数据上的优势估计是「乐观猜测」,一次大更新若把 r 推离 1 太远,策略会被噪声梯度带崩。clip 在 r 越界 [1−ε, 1+ε] 时截断目标、梯度归零,把每步更新「焊」进信任域——用一点激进性换全程稳定,这是 PPO 至今仍是 RL 默认 backbone 的原因(机器人 RL 与 LLM RL 通用,呼应 06-15)。</p>
+  <p><b>③ GRPO(组相对优势):</b></p>
+  <div class="formula">A_i=\frac{R_i-\mathrm{mean}(R_{1..G})}{\mathrm{std}(R_{1..G})+\epsilon}</div>
+  <p>同一道题采样 G 个回答,用组内归一化后的奖励当优势。<b>为什么这么设计:</b>critic 要和策略一样大、训练还难稳;而组均值天然是「这道题的普通水平」——相对它的超出量就是真实优势,且按题目难度自带归一(全对/全错的题优势趋近 0,不产生噪声梯度),除以 std 又把不同难度题的信号拉到同一尺度。省掉整张价值网络,是 DeepSeek 系 RL(09-05 第 4 节五行代码)能铺开的工程前提。</p>
+  <h2><span class="h2-num">6</span> PRM vs ORM:过程奖励与结果奖励</h2>
   <ul>
     <li><b>ORM(结果奖励模型):</b>只看最终答案对错。信号稀疏但难造假;OpenAI PRM800K 论文实测:PRM 在 MATH 上约 78% vs ORM 72%。</li>
     <li><b>PRM(过程奖励模型):</b>给推理链每一步打分——credit assignment 细到步级,「在哪步开始错」可定位;代价是需要高质量步级标注。</li>
@@ -75,35 +89,35 @@
   </ul>
   <p><b>与机器人 RL 打通:</b>你在 06-15 学的 PPO 用于控制是「连续状态+物理奖励」;LLM 的 GRPO 是「离散序列+可验证奖励」。同一套优势/裁剪/参考锚定思想,两头通用——这就是「机器人+大模型」复合人才的稀缺性所在。</p>
 
-  <h2><span class="h2-num">5</span> 本节自测</h2>
+  <h2><span class="h2-num">7</span> 本节自测</h2>
   <div class="quiz"><div class="quiz-q">1. 后训练「四级火箭」的正确顺序?</div><div class="quiz-options" data-answer="B">
     <button data-v="A">A. RLHF→SFT→预训练→Agent RL</button><button data-v="B">B. 预训练→SFT→偏好对齐→推理/Agent RL</button><button data-v="C">C. SFT→预训练→RLHF→DPO</button><button data-v="D">D. 预训练→RLHF→SFT→蒸馏</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 先学知识(预训练)、再学格式(SFT)、再对齐偏好(RLHF/DPO)、最后上强度(推理/Agent RL)。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——先学知识(预训练)、再学格式(SFT)、再对齐偏好(RLHF/DPO)、最后上强度(推理/Agent RL)。A 错在把顺序整个倒置:RLHF 排在预训练之前不成立——没有底座,「对齐」无从谈起;C 错在两处:SFT 与预训练位置互换(没学过知识谈不上学格式),且把 RLHF 与 DPO 并列成前后两级——它们是「偏好对齐」这一级的两条路线,不是两个阶段;D 错在把 RLHF 插到 SFT 前面、又把「蒸馏」当独立第四级——蒸馏是模型压缩手段,不在后训练四级火箭里。</div></div>
   <div class="quiz"><div class="quiz-q">2. DPO 相比 RLHF 少了哪两个组件?</div><div class="quiz-options" data-answer="C">
     <button data-v="A">A. 策略与参考模型</button><button data-v="B">B. 词表与分词器</button><button data-v="C">C. 奖励模型与价值网络</button><button data-v="D">D. 数据与显卡</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 DPO 把「学 RM 再优化」合并成对偏好对的直接损失,显存/工程复杂度大降。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——DPO 的减法清单只有两项:奖励模型与价值网络,把「学 RM 再优化」折叠成对偏好对的直接损失(见第 5 节公式①)。A 错在方向说反了:策略与参考模型恰恰是 DPO 保留的两个组件——丢掉策略就没有可优化的对象,丢掉 π_ref 就失去防漂的锚;B 错在类别错位:词表与分词器属于模型本体,任何后训练都不动它们;D 「数据与显卡」更离谱——DPO 照样需要成对偏好数据,省的是模型组件,不是数据与算力需求。</div></div>
   <div class="quiz"><div class="quiz-q">3. GRPO 的组内基线解决什么?</div><div class="quiz-options" data-answer="A">
     <button data-v="A">A. 免去 critic 网络仍能估计优势,并按题目难度自适应归一</button><button data-v="B">B. 消灭 reward hacking</button><button data-v="C">C. 替代注意力</button><button data-v="D">D. 增加上下文长度</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 同题一组采样,组均值即「这道题的普通水平」,超出均值的部分是真实优势——无需再训练一个 V(s)。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——同题一组采样,组均值即「这道题的普通水平」,超出均值的部分就是真实优势:既免训 critic,又按题目难度自适应归一(全对/全错的题优势趋近 0)。B 错在夸大作用:组内基线只解决「基线怎么估」,reward hacking 来自奖励定义本身有漏洞,两者正交,GRPO 管不了 RM 的质量问题;C 错在类别错位:基线是 RL 优势估计的概念,注意力是网络架构组件,互不相干;D 错在「增加上下文长度」是位置编码/外推方案的事,GRPO 完全碰不到它。</div></div>
   <div class="quiz"><div class="quiz-q">4. PRM 相比 ORM 的核心优势?</div><div class="quiz-options" data-answer="B">
     <button data-v="A">A. 标注更便宜</button><button data-v="B">B. 步级 credit assignment,可定位并奖励正确中间步骤</button><button data-v="C">C. 不需要数据</button><button data-v="D">D. 一定更准</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 PRM800K 实测 MATH 78% vs 72%;但优势依赖高质量步级标注——标注质量差时反被污染。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——PRM 给推理链每一步打分,credit assignment 细到步级,能定位「从哪一步开始错」并奖励正确的中间步骤,PRM800K 实测 MATH 78% vs ORM 72%。A 错在「标注更便宜」与事实相反:步级人工标注比「只标最终对错」贵得多,这正是 PRM 的主要代价;C 错在「不需要数据」无中生有——PRM800K 光名字里就是 80 万条步级标注,没有数据就没有 PRM;D 错在「一定更准」太绝对:标注质量差时 PRM 反被污染,78% 的优势前提是高质量步级数据,条件不满足时可能还不如 ORM。</div></div>
   <div class="quiz"><div class="quiz-q">5. 下列哪项属于 reward hacking 表现?</div><div class="quiz-options" data-answer="D">
     <button data-v="A">A. 答错数学题</button><button data-v="B">B. 拒绝回答</button><button data-v="C">C. 输出超长思考</button><button data-v="D">D. 为讨好 RM 而冗长空洞、谄媚套路化</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 RM 是代理目标;策略优化的是 RM 打分而非真实质量——目标与代理目标的缝隙就是 hacking 空间。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: D 正确——「为讨好 RM 而冗长空洞、谄媚套路化」精确命中 hacking 定义:优化代理目标(RM 打分)而非真实质量,奖励拿到、内容空洞。A 错在「答错数学题」是能力不足——hacking 的特征是奖励与质量脱节,真答错了 RM 也不会给高分;B 错在「拒绝回答」是安全对齐的保守行为,方向恰好与「钻漏洞刷分」相反;C 有迷惑性但只说「输出超长思考」:为正确推理而长是正常且被鼓励的行为,只有「长而无物、为刷分而长」才是 hack——D 把「冗长+空洞+谄媚」的动机讲全了。</div></div>
   <div class="quiz"><div class="quiz-q">6. R1 移除 KL 惩罚的意图?</div><div class="quiz-options" data-answer="A">
     <button data-v="A">A. 允许策略大胆偏离底座分布,促进长思考等新行为涌现</button><button data-v="B">B. 节省电费</button><button data-v="C">C. 防止过拟合</button><button data-v="D">D. 提高 MoE 负载均衡</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 KL 锚定是双刃剑:保稳但封顶。推理 RL 要「长出底座没有的行为」,必须松开锚(用可验证奖励防漂)。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——KL 锚定是双刃剑:保稳但封顶。推理 RL 要「长出底座没有的行为」(长思考、自我回溯),必须松开锚让策略大胆偏离底座分布,再靠可验证奖励防漂——R1 甚至整体移除 KL。B 错在「节省电费」是玩笑项:KL 是损失函数里的正则项,与算力/电费无关;C 错在「防止过拟合」不是 R1 的动机——移除 KL 是为放开探索,过拟合风险反而要靠数据多样性与裁剪机制兜底;D 错在「MoE 负载均衡」是 MoE 训练的事,与策略分布的 KL 惩罚毫无关系。</div></div>
   <div class="quiz"><div class="quiz-q">7. 「预训练定上限,后训练唤醒」的含义?</div><div class="quiz-options" data-answer="B">
     <button data-v="A">A. 后训练能创造预训练没有的知识</button><button data-v="B">B. 预训练决定能力/知识边界,后训练决定边界内能力被激发与对齐的程度</button><button data-v="C">C. 两者没有关系</button><button data-v="D">D. 后训练只影响语气</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 后训练无法无中生有地补知识,但能把「藏在权重里、不会用」的能力唤醒并规范表达——选底座因此格外重要(下一页)。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——预训练决定能力/知识的边界,后训练决定边界内的能力被激发与对齐到什么程度:同一底座,不同后训练能做出性格迥异的模型(R1 与 V3.1 同源即为例证)。A 错在「创造预训练没有的知识」——后训练无法无中生有补知识,知识边界由预训练数据决定,这正是「选底座格外重要」的原因;C 错在「两者没有关系」——关系极大,唤醒程度完全取决于后训练质量;D 错在「只影响语气」严重低估:后训练改变的是推理行为、工具调用、安全对齐等全谱能力,语气只是最表层的一小部分。</div></div>
   <div class="quiz"><div class="quiz-q">8. Agentic RL 与推理 RL 的关键区别?</div><div class="quiz-options" data-answer="C">
     <button data-v="A">A. 不用奖励</button><button data-v="B">B. 只做单轮问答</button><button data-v="C">C. 多轮交互+工具/环境反馈,时序更长、credit assignment 更难</button><button data-v="D">D. 不需要策略梯度</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 任务奖励在多步之后才兑现:功劳归给哪一步(工具选择?参数?顺序?)是 Agent RL 的主战场。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——Agentic RL 的奖励来自环境/工具执行结果(任务完成与否),多轮+长时程让「功劳归给哪一步」(工具选对没?参数对没?顺序对没?)成为主战场。A 错在「不用奖励」——环境与工具的反馈本身就是奖励,只是来源从 RM 换成了真实世界;B 错在「只做单轮问答」与事实相反:Agent RL 恰恰以多轮交互、长时程任务为特征,单轮是推理 RL 的典型形态;D 错在「不需要策略梯度」——主流 Agent RL 仍跑在 PPO/GRPO 等策略梯度框架上,变的是奖励定义与 credit assignment 的难度,不是优化方法。</div></div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>后训练=格式(SFT)+对齐(RLHF/DPO)+强度(推理/Agent RL);PPO→GRPO 的减法(critic→组基线)是大模型 RL 的工程主旋律;PRM 换取步级信用分配,可验证奖励是 reward hacking 的解药。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 机器人任务里什么可以当「可验证奖励」?2. 为什么说 DPO 数据质量差时「上限锁死」?</div>
-  <h2><span class="h2-num">6</span> 参考来源(更新至 2026-08)</h2>
+  <h2><span class="h2-num">8</span> 参考来源(更新至 2026-08)</h2>
   <ul>
     <li><a href="https://arxiv.org/abs/2009.01325" target="_blank" rel="noopener">GPT-3 / InstructGPT(RLHF 三件套)系列论文</a></li>
     <li><a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener">DPO: Direct Preference Optimization (arXiv)</a></li>

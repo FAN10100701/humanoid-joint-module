@@ -43,7 +43,13 @@
 <text x="250" y="111" font-size="10.5" fill="#9aa4b2">用时经上投影「升维重建」K/V,效果对齐全注意力</text>
 <defs><marker id="g1" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="#22c55e"/></marker></defs>
 <text x="10" y="150" font-size="10.5" fill="#9aa4b2">类比:以前每层每头都存完整笔记;现在只存一份压缩摘要,要用时再展开</text></svg></div>
-  <h2><span class="h2-num">2</span> R1:纯强化学习「觉醒」推理</h2>
+
+  <h2><span class="h2-num">2</span> MLA 低秩投影数学:KV Cache 怎么瘦下来的</h2>
+  <p>MLA 的全部魔法一句话:<b>别再逐头缓存 K 和 V,缓存它们低秩压缩后的「摘要」c_kv,用时再上投影重建</b>。</p>
+  <div class="formula">c_{k v}=W_{U K V}\, h_t, \qquad K,V = \text{UpProj}(c_{k v}), \qquad \mathrm{Cache}_{MLA} \approx \tfrac{1}{10}\,\mathrm{Cache}_{MHA}</div>
+  <p>逐项说人话:h_t 是第 t 个 token 的隐向量;W_UKV 是一个「压缩投影」,把每个头各自的 K/V 联合压进一个低维隐空间得到 c_kv;注意力计算时再经上投影「升维重建」出各头要用的 K 和 V。<b>推理时只需缓存 c_kv</b>——它的维度远小于「头数×每头维度×2」,所以 KV Cache 约降为 MHA 的 1/10 量级(128K 上下文场景从几十 GB 压到几 GB 级),效果对齐全注意力。<b>RoPE 解耦一句话:</b>RoPE 旋转位置编码直接作用在压缩后的 c_kv 上会破坏「压缩后仍可重建」的性质,所以 MLA 把每个 q/k 拆成两半——<b>位置分量</b>(一小维,单独走 RoPE、不参与压缩)与<b>内容分量</b>(走低秩压缩),两条通道各司其职,位置信息与压缩收益兼得。</p>
+
+  <h2><span class="h2-num">3</span> R1:纯强化学习「觉醒」推理</h2>
   <p>R1-Zero 证明了行业级震撼结论:<b>不做任何监督微调,直接用可验证奖励(数学/代码对错)做纯 RL,模型自己学会「先写长思考再给答案」</b>——中途出现顿悟时刻(aha moment):自我怀疑、回溯重验。R1 在此基础上加冷启动数据与可读性约束,推理性能对齐 OpenAI o1,论文登 Nature,并把 6 个 1.5B~70B 蒸馏小模型开源。</p>
   <div class="my-svg"><svg viewBox="0 0 560 150" role="img" aria-label="R1管线"><defs><marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="currentColor"/></marker></defs>
   <rect x="14" y="40" width="96" height="52" rx="9" fill="rgba(59,130,246,.15)" stroke="#58a6ff"/><text x="62" y="62" font-size="11.5" fill="currentColor" text-anchor="middle">① 冷启动</text><text x="62" y="79" font-size="10" fill="#9aa4b2" text-anchor="middle">少量长思考SFT</text>
@@ -53,42 +59,47 @@
   <path d="M110,66 L132,66 M228,66 L250,66 M346,66 L368,66" stroke="currentColor" marker-end="url(#a2)"/>
   <text x="280" y="128" font-size="11.5" fill="#f59e0b" text-anchor="middle">输出:R1(对齐 o1)+ 6 个蒸馏小模型开源 · 登 Nature</text></svg></div>
 
-  <h2><span class="h2-num">3</span> V3.1 / V3.2 / V4:三条进化线</h2>
+  <h2><span class="h2-num">4</span> V3.1 / V3.2 / V4:三条进化线</h2>
   <ul>
     <li><b>V3.1(混合推理):</b>同一模型「思考/非思考」双模式合一——简单问题直出,难题先思考;终止「一模型一模式」的分裂。</li>
     <li><b>V3.2(DSA 稀疏注意力):</b>「闪电索引器」只让注意力关注最相关的少量 token,长上下文推理成本大幅下降、效果对标 Dense——KL 代价换数量的典型工程胜利。</li>
     <li><b>V4:</b>下一代底座,官方口径以技术报告为准(第三方参数传闻一律标注「以官方为准」,本站不采信未经核实数字)。</li>
   </ul>
 
-  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <h2><span class="h2-num">5</span> 常见误区</h2>
+  <div class="box box-warn"><b>🚫 误区 1 · 把 MLA 等同于 MQA/GQA:</b>MQA 是所有头共享<b>一份</b>KV,GQA 是分组共享——思路都是「砍头数」,精度随共享比例下降;MLA 走的是另一条路:低秩压缩+上投影重建,所有头从同一隐向量恢复,压缩率更高且效果对齐全注意力。三者同属「省 KV Cache」,数学机制完全不同,面试别混为一谈。</div>
+  <div class="box box-warn"><b>🚫 误区 2 · 「R1 纯 RL=全程无监督」:</b>「纯 RL」指的是 R1-Zero 验证、以及正式 R1 管线中的<b>推理 RL 阶段</b>不依赖 SFT 冷启动,不是「整个训练全程无监督」——正式版 R1 恰恰有①冷启动 SFT 与③拒绝采样 SFT(见上图四阶段)。把「纯 RL 觉醒」外推成「大模型不需要 SFT」是典型以偏概全。</div>
+  <div class="box box-warn"><b>🚫 误区 3 · 「557.6 万美元=DeepSeek 总投入」:</b>该数字只覆盖<b>最终训练 run 的 GPU 时租</b>口径,不含前期研究、失败实验、infra 建设与人力;SemiAnalysis 等第三方的「×N 倍」推算走的是全周期投入口径。两个口径说的是不同的东西、不矛盾——正确答法是先问「哪个口径」,再给数字。</div>
+
+  <h2><span class="h2-num">6</span> 本节自测</h2>
   <div class="quiz"><div class="quiz-q">1. MLA 解决的核心问题是?</div><div class="quiz-options" data-answer="B">
     <button data-v="A">A. 专家负载不均</button><button data-v="B">B. KV Cache 显存开销</button><button data-v="C">C. 训练不稳定</button><button data-v="D">D. 词表过大</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 MLA 把 KV 压进低维潜空间,缓存体积降一个量级,让长上下文+高并发推理在有限显存下可行。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——MLA 把 KV 压进低维隐向量 c_kv,缓存体积降一个量级,长上下文+高并发才能在有限显存里跑起来(见第 2 节数学)。A 错在「专家负载不均」是 MoE 路由的问题(上一页的辅助损失/偏置调节管它),与注意力缓存无关;C 「训练不稳定」主要靠优化器、精度策略与超参解决,MLA 是推理期显存优化;D 「词表过大」影响 embedding 参数量,和 KV Cache 的膨胀机制完全是两码事。</div></div>
   <div class="quiz"><div class="quiz-q">2. R1-Zero 最震撼的结论是?</div><div class="quiz-options" data-answer="C">
     <button data-v="A">A. MoE 比 Dense 强</button><button data-v="B">B. FP8 可以训练</button><button data-v="C">C. 不用任何 SFT、纯可验证奖励 RL,推理行为能自发涌现</button><button data-v="D">D. 蒸馏比 RL 好</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 长思考/自我回溯等行为是 RL 奖励压力下「自发」出现的,不是教出来的——这是 2025 年最有影响力的训练结论之一。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——R1-Zero 证明:不做任何 SFT,只用可验证奖励(数学/代码对错)做纯 RL,长思考、自我回溯等推理行为会自发涌现,不是教出来的。A 错在「MoE 比 Dense 强」是架构路线对比,与 RL 催生推理的结论无关;B 错在「FP8 可以训练」是 V3 的工程贡献,属于训练成本故事;D 错在「蒸馏比 RL 好」——两者互补而非对立,R1 自己也蒸馏了 6 个小模型,蒸馏的正是 RL 训出的能力。</div></div>
   <div class="quiz"><div class="quiz-q">3. GRPO 相比 PPO 去掉了什么?</div><div class="quiz-options" data-answer="A">
     <button data-v="A">A. 价值网络(critic),用组内平均奖励做基线</button><button data-v="B">B. 策略网络</button><button data-v="C">C. 奖励模型</button><button data-v="D">D. 环境交互</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 同一题采样一组答案,以组均值当基线省掉整张 critic 网络——显存减半、实现简化,详见下一页对比。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——同一题采样一组答案,以组内平均当基线,critic(价值网络)整个省掉,显存减半、调参减半(详见下一页三大目标函数)。B 错在「策略网络」是 RL 的优化主体,去掉它就没有可训练的对象;C 错在奖励来源(奖励模型或可验证奖励)仍然必需——没有奖励信号,组内比较无从算起;D 错在「环境交互」照旧进行,GRPO 改变的只是「基线怎么估」,不是「数据怎么采」。</div></div>
   <div class="quiz"><div class="quiz-q">4. V3.1「混合推理」指的是?</div><div class="quiz-options" data-answer="B">
     <button data-v="A">A. MoE+Dense 混合</button><button data-v="B">B. 思考/非思考双模式合一,按需切换</button><button data-v="C">C. FP8+FP16 混合</button><button data-v="D">D. 文本+图像混合</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 一个模型两种回答模式:省钱时直出答案,难题先长思考——V3.1 合并了 R1 与 V3 两条产品线。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——同一模型「思考/非思考」双模式合一:简单问题直出答案省 token,难题先长思考再作答,V3.1 合并了 R1 与 V3 两条产品线。A 错在「MoE+Dense 混合」是架构拼凑的误解,V3.1 底座仍是 MoE,混合的是回答模式不是专家结构;C 错在「FP8+FP16 混合」是数值精度方案(V3 训练侧的事),与推理模式无关;D 错在「文本+图像混合」是多模态能力的范畴,V3.1 的「混合」一词指的是思考模式切换。</div></div>
   <div class="quiz"><div class="quiz-q">5. MTP(多 token 预测)的收益是?</div><div class="quiz-options" data-answer="D">
     <button data-v="A">A. 只为省显存</button><button data-v="B">B. 只为加上下文</button><button data-v="C">C. 代替 MoE</button><button data-v="D">D. 训练时增加监督信号密度,推理时可配合投机解码加速</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 每个位置多预测几个未来 token:训练信号更密;推理时主模型+MTP 头组成投机解码组合,接受率可观。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: D 正确——每个位置同时预测未来多个 token:训练时多份监督信号、学得更密;推理时主模型+MTP 头组成投机解码组合,草稿接受率可观、生成加速。A 错在「只为省显存」——MTP 不动权重与 KV Cache 的大头,省显存是 MLA 的活;B 错在「只为加上下文」——上下文长度是位置编码/外推方案的事,MTP 管的是「一次看多远」的训练信号;C 错在「代替 MoE」——MTP 与 MoE 正交:一个管预测目标与解码加速,一个管 FFN 结构,V3 两者同时用。</div></div>
   <div class="quiz"><div class="quiz-q">6. 「557.6 万美元训练成本」的正确理解?</div><div class="quiz-options" data-answer="B">
     <button data-v="A">A. DeepSeek 全部研发投入</button><button data-v="B">B. 仅正式训练阶段的 GPU 租金口径;不含研究/实验/ infra,与第三方高倍率推算口径不同、不矛盾</button><button data-v="C">C. 官方承认的全部成本</button><button data-v="D">D. 单卡价格</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 面试标准答案:两个口径说的是不同的东西——论文口径是「final run 的 GPU 时租」,SemiAnalysis 等推算是「全周期投入」,都有各自假设。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——557.6 万美元仅覆盖正式训练阶段(final run)的 GPU 时租,不含研究/实验/infra/人力;第三方高倍率推算走的是全周期投入口径,两者口径不同、并不矛盾。A 错在「全部研发投入」——把 GPU 租金当总账,忽略了无数失败实验与人力成本;C 错在「官方承认的全部成本」同样是口径拔高,论文只声明了训练 run 这一段;D 错在量级都不对,这是训练集群的总租金而非单卡价格。面试标准动作:先问「哪个口径」,再谈数字。</div></div>
   <div class="quiz"><div class="quiz-q">7. DSA(DeepSeek 稀疏注意力)的本质?</div><div class="quiz-options" data-answer="A">
     <button data-v="A">A. 用闪电索引器只对最相关 token 做注意力,降长上下文成本</button><button data-v="B">B. 减少层数</button><button data-v="C">C. 换掉 MoE</button><button data-v="D">D. 量化权重</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 注意力计算从「看全部」变「精准看少量」,成本大降且精度对标 Dense 注意力——V3.2 的主打。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——DSA 用「闪电索引器」先挑出最相关的少量 token,注意力从「看全部」变「精准看少量」,长上下文成本大降且效果对标 Dense 注意力。B 错在「减少层数」是架构深度的选择,DSA 改的是注意力计算方式,层数不动;C 错在「换掉 MoE」无中生有——DSA 只动注意力模块,MoE 底座原样保留;D 错在「量化权重」是数值压缩(INT4 之类),DSA 是计算稀疏化,一个压精度、一个省计算,手段和对象都不同。</div></div>
   <div class="quiz"><div class="quiz-q">8. 机器人团队选 DeepSeek 做具身底座的主要理由?</div><div class="quiz-options" data-answer="C">
     <button data-v="A">A. 便宜就行</button><button data-v="B">B. 参数最大</button><button data-v="C">C. 开源权重可私有部署+推理成本低(MoE/MLA)+推理能力强,便于叠加动作头微调</button><button data-v="D">D. 只支持中文</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 底座选型三角:能力×成本×可控性。DeepSeek 在三点上均衡,是当前具身团队热门选择之一(详见 09-04 选型页)。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——选底座的三角是能力×成本×可控性:开源权重可私有部署(数据不出域)、MoE/MLA 让推理成本低、推理 RL 充分训练让能力强,三点均衡才便于叠加动作头微调做具身底座。A 错在「便宜就行」太片面——能力不足时便宜没有意义,机器人任务要的是推理与指令跟随;B 错在「参数最大」恰是要避开的口径陷阱:部署成本看激活参数与量化,不看总参数纸面大小;D 错在「只支持中文」与事实相反,DeepSeek 的多语言与代码能力均属第一梯队。</div></div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>V3 用 MoE+MLA+MTP+FP8 把「大知识、低推理成本」做成工程现实;R1 证明纯 RL 能长出推理;V3.1/V3.2 持续把成本与体验往深推。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么「辅助损失免费」的均衡比强辅助损失更好?2. 如果你的机器人只有 24G 显存,蒸馏小模型与量化 V3 怎么选?</div>
-  <h2><span class="h2-num">5</span> 参考来源(更新至 2026-08)</h2>
+  <h2><span class="h2-num">7</span> 参考来源(更新至 2026-08)</h2>
   <ul>
     <li><a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener">DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via RL (arXiv/Nature)</a></li>
     <li><a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">DeepSeek-V3 Technical Report (arXiv)</a></li>

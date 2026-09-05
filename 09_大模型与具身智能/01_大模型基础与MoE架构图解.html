@@ -113,67 +113,87 @@
   <h2><span class="h2-num">7</span> KV Cache:长文本的隐形吞金兽</h2>
   <p>模型逐词生成时,新词要和<b>之前所有词</b>做注意力。为免重复计算,历史词的 K/V 向量被缓存(KV Cache)。它的体积 ≈ <b>2(K和V)× 层数 × 每头维度 × 词数 × 并发数</b>——上下文翻倍,它翻倍;并发翻倍,它再翻倍。长上下文推理时,显存大头往往不是模型权重,而是它。<b>下一页的 MLA 就是把 K/V 压进低维隐空间,让这个「吞金兽」瘦身一个量级。</b></p>
 
-  <h2><span class="h2-num">8</span> 本节自测</h2>
+  <h2><span class="h2-num">8</span> 数学补充:注意力与负载均衡</h2>
+  <p>不怕公式——本页只有两个「必考级」式子,每个符号都说人话。</p>
+  <p><b>① 缩放点积注意力(Transformer 的心脏):</b></p>
+  <div class="formula">\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\!\left(\frac{QK^{\mathsf T}}{\sqrt{d_k}}\right)V</div>
+  <ul>
+    <li><b>Q(Query 查询):</b>当前词发出的「提问」——我想在上下文里找什么信息;</li>
+    <li><b>K(Key 键):</b>每个词挂出的「标签」——我能回答这类问题,用来和 Q 做匹配打分;</li>
+    <li><b>V(Value 值):</b>每个词真正携带的「内容」,按匹配分加权后被取走的那部分;</li>
+    <li><b>√d_k(缩放因子):</b>Q·K 点积的方差随头维度 d_k 增大,维度大时 softmax 会被推进饱和区(梯度近乎为 0,「赢家通吃」);除以 √d_k 把方差拉回约 1,让 softmax 保持分布平缓、可训练。</li>
+  </ul>
+  <p><b>② MoE 辅助负载均衡损失:</b></p>
+  <div class="formula">\mathcal{L}_{aux}=\alpha \cdot N \cdot \sum_{i=1}^{N} f_i \cdot P_i</div>
+  <p>其中 fᵢ = 专家 i 实际处理的 token 比例(结果口径),Pᵢ = 路由器平均分给专家 i 的概率(意图口径),N = 专家数,α = 均衡强度。fᵢ·Pᵢ 对「越抢手」的专家乘积越大,最小化它就会把过热专家的 token 推向冷专家。<b>为什么不能强行均衡到完全均匀?</b>因为「专家专业化」本身就是 MoE 的能力来源——数学题就该挤爆数学专家。均衡的目的只是「没有专家被彻底饿死」:一旦均衡惩罚过强,路由器被迫把 token 撒胡椒面,专家不再专业化,模型质量直接受损。这正是 DeepSeek-V3 把均衡从损失函数里拿出来、改成对偏置的动态微调(「辅助损失免费」)的原因——均衡与质量不再互斥。</p>
+
+  <h2><span class="h2-num">9</span> 常见误区</h2>
+  <div class="box box-warn"><b>🚫 误区 1 · 「MoE 推理一定比稠密快」:</b>只看激活算力是 FLOPs 口径。专家权重散布在整个显存里,每换一个被选中的专家就要「远距离取权重」,瓶颈常在<b>访存带宽</b>而非计算;batch 小、显存不富余时实际速度可能不如同算力稠密模型。严谨表述:「激活算力一定小,工程速度看访存与 batch」。</div>
+  <div class="box box-warn"><b>🚫 误区 2 · 「激活 37B=模型只有 37B」的口径混淆:</b>37B 是<b>每个 token 实际流经</b>的参数量(计算量口径);671B 总参数决定知识容量与下载/显存占用。三个口径一句话:下载与显存看总参、计算量看激活参、知识容量看总参——把「模型只有 37B 知识」当结论就全错了。</div>
+  <div class="box box-warn"><b>🚫 误区 3 · KV Cache 公式里的「2」被乱解释:</b>体积公式中的 2 = <b>K 和 V 各缓存一份</b>,不是「双层网络」也不是「双向注意力」。常见错误是把 2 当成可省略的系数——真省掉其中一份,注意力就没有 V 可做加权求和了,公式本身也就不成立。</div>
+  <div class="box box-warn"><b>🚫 误区 4 · 「负载均衡损失越强越好」:</b>α 拉满 = 强迫路由均匀 = 专家失去专业化 = 质量下降(见上文公式解释)。均衡的目标是「没有专家被饿死」,不是「人人工作量相等」。DeepSeek 用辅助损失免费的偏置调节,正是为了不拿质量换均衡。</div>
+
+  <h2><span class="h2-num">10</span> 本节自测</h2>
   <div class="quiz"><div class="quiz-q">1. 一句话说清 MoE 的核心思想?</div>
     <div class="quiz-options" data-answer="B">
       <button data-v="A">A. 把模型层数加深</button>
       <button data-v="B">B. 把 FFN 拆成多个专家,路由器为每个词只选少数专家计算——知识容量大、单次算力小</button>
       <button data-v="C">C. 用多个小模型投票</button>
       <button data-v="D">D. 压缩词表</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 医院类比:雇几十位专科医生(容量大),每次只出诊几位(算力小);路由器=挂号分诊。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——MoE 的本质就是把 FFN 拆成专家团队、按词路由,「雇几十位专科医生、每次只出诊几位」。A 错在「加深层数」是稠密模型的常规加深手段,与专家路由无关——层数深不等于单次算力省,参数照样全跑;C 把 MoE 混淆成 ensemble(多模型投票):那是多个独立模型的组合推理,MoE 是同一个模型内部的分工,所有专家共享底座与路由,不是几台机器投票;D 错在压缩词表只减少 embedding/输出层的参数量,而大模型的计算大头在 FFN,词表再小也省不了主要算力。</div></div>
   <div class="quiz"><div class="quiz-q">2. 一个 token 经过 MoE 层的四步顺序是?</div>
     <div class="quiz-options" data-answer="C">
       <button data-v="A">A. 专家加工→路由打分→TopK→求和</button>
       <button data-v="B">B. TopK→打分→求和→加工</button>
       <button data-v="C">C. 路由打分→Top-8 选择→被选中专家加工→按分数加权求和</button>
       <button data-v="D">D. 加权→选择→打分→加工</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 顺序口诀:「先打分、再点名、后干活、按票加权」。共享专家不参与竞争,每个词必过。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 是四步正序「先打分、再点名、后干活、按票加权」。A 错在把「专家加工」提到最前——还没被路由选中,加工无从谈起,顺序因果就错了;B 错得更乱:没打分就先 TopK 没有依据(选谁?),而「求和→加工」是因果倒置——求和是对各专家加工结果按分数加权,加工没做求和无从谈起;D 同样把「加权」放在「选择」之前——没有打分就没有权重来源,且打分被排到最后,逻辑上闭环不了。另记一个细节:共享专家不参与 Top-8 竞争、每个词必过,四个干扰项都没体现这一点。</div></div>
   <div class="quiz"><div class="quiz-q">3. MoE 模型部署时显存按什么准备?</div>
     <div class="quiz-options" data-answer="A">
       <button data-v="A">A. 总参数(所有专家都要驻留显存)</button>
       <button data-v="B">B. 激活参数</button>
       <button data-v="C">C. 只装被选中的 8 个专家</button>
       <button data-v="D">D. 只装共享专家</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 「哪个词用哪 8 个专家」是运行时动态决定的,无法预知,所以全量驻留——这就是「显存换算力」。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——「哪个词用哪 8 个专家」是运行时随输入动态决定的,无法预知,所以全部专家必须全量驻留显存。B 错在把「激活参数」当显存口径:激活 37B 只决定每步算多少,不参与本步计算的专家权重也必须躺在显存里待命;C 错在「只装被选中的 8 个」同样不成立——选中的组合随问题变化,静态只装 8 个等于每次换题都要重新加载几十 GB 权重,不可行;D 「只装共享专家」错得更远:共享专家只是必经的常驻通道,路由专家才是知识存储的大头。这就是「显存换算力」:MoE 用显存足迹换单次计算量。</div></div>
   <div class="quiz"><div class="quiz-q">4. 训练 MoE 时的「负载均衡」要解决什么?</div>
     <div class="quiz-options" data-answer="B">
       <button data-v="A">A. 让每个词的长度一致</button>
       <button data-v="B">B. 防止路由器偏心导致少数专家过载、多数专家废弃的马太效应</button>
       <button data-v="C">C. 平衡显存与硬盘</button>
       <button data-v="D">D. 让所有专家输出相同</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 均衡机制是 MoE 成败关键;DeepSeek 用「辅助损失免费」的偏置调节法,不再拿性能换均衡。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——负载均衡要解决的就是路由偏心导致的马太效应:好专家越来越忙、训练越来越充分,冷专家得不到 token 越来越废,最终专家利用率两极分化。A 错在「让每个词长度一致」是 dataloader/padding 的事,与路由分布无关;C 「平衡显存与硬盘」是存储分层问题,负载均衡发生在训练时的 token 分配上,两者毫不相干;D 错得最隐蔽:「让所有专家输出相同」恰恰是均衡的灾难——专家输出趋同等于退化回一个稠密 FFN,专业化消失、MoE 白做。均衡追求「都有活干」,绝不是「干一样的活」。</div></div>
   <div class="quiz"><div class="quiz-q">5. 长上下文推理时显存大头通常是?</div>
     <div class="quiz-options" data-answer="A">
       <button data-v="A">A. KV Cache(随上下文长度与并发线性膨胀)</button>
       <button data-v="B">B. 模型权重</button>
       <button data-v="C">C. 路由器</button>
       <button data-v="D">D. 词表</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 权重是固定的,KV Cache 随「词数×并发」无限涨——MLA(下一页)就是冲它来的。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——KV Cache 随「词数×并发」线性膨胀:上下文翻倍它翻倍、并发翻倍再翻倍,长文本下轻松反超固定权重。B 错在权重虽大但恒定:权重在服务期是一次性占用的「房租」,不随对话变长而增长,上下文够长时反被 KV Cache 超过;C 错在路由器只是每层一个小的线性层+TopK,参数量在模型里占比微乎其微;D 词表只影响 embedding 与输出头,同样是固定开销,与序列长度、并发数都无关。记结论:权重是固定房租,KV Cache 是随住随涨的水电费——MLA(下一页)就是冲它来的。</div></div>
   <div class="quiz"><div class="quiz-q">6. 残差连接去掉会怎样?</div>
     <div class="quiz-options" data-answer="C">
       <button data-v="A">A. 更快</button>
       <button data-v="B">B. 没影响</button>
       <button data-v="C">C. 深层网络训练困难、信息逐层衰减,几十层堆不起来</button>
       <button data-v="D">D. 只影响 MoE</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 残差=信息保底通道+梯度高速公路,是深层堆叠能成立的基石。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——残差是「信息保底通道+梯度高速公路」,去掉后梯度要逐层连乘衰减,几十层的网络连收敛都困难。A 错在「更快」与事实相反:残差还额外增加一次逐元素相加的开销,它换来的是可训练性而非速度;B 「没影响」是彻头彻尾的错误,ResNet 论文的核心发现就是没有残差的深层网络会退化(degradation)——层数越深训练误差反而越高,这不是过拟合而是优化失败;D 「只影响 MoE」错在残差属于所有深层网络(Transformer/CNN/ResNet)的基础组件,稠密模型同样离不开,与 MoE 无关。</div></div>
   <div class="quiz"><div class="quiz-q">7. 「激活参数 37B」的正确理解?</div>
     <div class="quiz-options" data-answer="D">
       <button data-v="A">A. 只有 37B 参数被下载</button>
       <button data-v="B">B. 模型只有 37B 知识</button>
       <button data-v="C">C. 显存只需 37B 大小</button>
       <button data-v="D">D. 每个词的计算只流经约 37B 参数(算力口径),知识容量仍是 671B</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 三个口径分清:下载/显存看总参,计算量看激活参,知识容量看总参——一句话全概括。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: D 正确——激活参数是计算量口径:每个词每层只流经 8/256 个路由专家+共享专家+注意力,约 37B;知识容量仍是 671B。A 错在「只下载 37B」:权重文件是完整的,671B 一个专家都不少,下载与存储从不打折;B 错在把激活量当知识总量——模型「懂多少」由全部专家决定,若只有 37B 知识,MoE 就失去了大容量的存在意义;C 错在显存口径:显存要装下全部 671B(见第 3 题),37B 只是单次前向流经的量。三个口径背熟:下载/显存看总参,计算量看激活参,知识容量看总参。</div></div>
   <div class="quiz"><div class="quiz-q">8. MoE 推理一定比同激活参数的稠密模型快吗?</div>
     <div class="quiz-options" data-answer="B">
       <button data-v="A">A. 一定快</button>
       <button data-v="B">B. 计算量(FLOPs)一定更省,但实际速度还受显存带宽、batch 大小、专家分布影响,工程上会打折</button>
       <button data-v="C">C. 一定慢</button>
       <button data-v="D">D. 与硬件无关</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 严谨表述是「激活算力小」;访存不友好/小 batch 时加速打折——面试说出这层区分即加分。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确且严谨:FLOPs 上必省(只走激活路径),但实际速度还受显存带宽、batch 大小、专家分布影响,工程上会打折。A 「一定快」太绝对——访存不友好时专家权重来回搬运,带宽瓶颈能让理论加速打折甚至倒挂,见本页误区 1;C 「一定慢」与事实相反:激活算力约省 18 倍(671B→37B),正常 batch 下确实更快;D 「与硬件无关」错得离谱——MoE 的实际加速恰恰强依赖硬件:多卡大显存+高带宽时收益最大,消费级单卡反而吃亏。面试能说出「算力口径 vs 访存口径」这层区分即加分。</div></div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>大模型=猜词机;Decoder块=注意力(交流)+FFN(思考)+残差保底;MoE 把 FFN 换成「路由分诊的专家团队」——总参 671B 是知识容量、激活 37B 是计算量;KV Cache 随上下文与并发膨胀,是 MLA 的靶子。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 如果让「底盘/机械臂/导航」各养一组专家,路由会学到什么?有什么风险?2. 上下文 8K→128K,KV Cache 变多少倍?谁的架构能救(提示:下一页)。</div>
-  <h2><span class="h2-num">9</span> 参考来源(更新至 2026-08)</h2>
+  <h2><span class="h2-num">11</span> 参考来源(更新至 2026-08)</h2>
   <ul>
     <li><a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">DeepSeek-V3 Technical Report (arXiv)</a> — 256+1 专家/共享专家/辅助损失免费/激活参数口径</li>
     <li><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Attention Is All You Need (arXiv)</a> — Transformer 原始论文</li>

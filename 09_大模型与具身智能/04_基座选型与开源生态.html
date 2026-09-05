@@ -62,32 +62,37 @@
   <h2><span class="h2-num">3</span> 具身 VLM 底座的实证谱系</h2>
   <p>呼应 07-04/06-08:主流 VLA 都站在 LLM/VLM 底座上——<b>OpenVLA 基于 Llama-2 7B + 视觉编码器</b>(开源可复现的标杆)、<b>π0 基于 PaLI-X/Gemma 系</b>(流匹配动作头)、<b>GR00T N1 用 NVIDIA 自研底座</b>、<b>Helix 用 Homebrew 双系统</b>(VLM 慢思考 + S1 快策略)。规律:底座负责「看懂+理解指令」,动作头负责「出连续控制量」——底座的推理与多模态能力直接决定 VLA 天花板。</p>
 
-  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <h2><span class="h2-num">4</span> 常见误区</h2>
+  <div class="box box-warn"><b>🚫 误区 1 · 「能下载权重=开源软件」:</b>开放权重只是把「成品」给你看,训练数据、代码、训练细节未必开放,还常附加自定义条款——按 OSI 开源定义(自由使用/修改/分发)Llama、Gemma 都不算开源。只有 MIT/Apache-2.0 这类宽松许可才是真开源。答辩/采购文档里写「我们使用开源模型 Llama」在法务眼里是错的。</div>
+  <div class="box box-warn"><b>🚫 误区 2 · 「都是可商用,条款都差不多」:</b>商用条款逐家不同:Llama 有「月活超 7 亿需向 Meta 申请额外许可」的大厂天花板条款;Kimi K2 用 Modified MIT(带附加限制)、K2 Thinking 才转标准 MIT;Gemma/Mistral 大模型各有自定义条款。投产前逐家读官方仓库 LICENSE,并锁定版本——同厂不同版本许可都会变。</div>
+  <div class="box box-warn"><b>🚫 误区 3 · 「选基座只看榜单排名」:</b>榜单是实验室口径,落地要过另外两关:①许可红线(商用条款/月活限制/版本变更);②推理成本(MoE 看激活参数、KV Cache 看 MLA、显存看量化空间)——榜单第一但许可收紧或单 token 成本超预算,再强也进不了产品。正确顺序:先筛许可与成本边界,再在候选里比能力。</div>
+
+  <h2><span class="h2-num">5</span> 本节自测</h2>
   <div class="quiz"><div class="quiz-q">1. 「开放权重」与「开源」的关系?</div><div class="quiz-options" data-answer="B">
     <button data-v="A">A. 完全等价</button><button data-v="B">B. 开放权重只公开了成品权重,训练数据/代码未必开放且常附加条款,按 OSI 定义不算开源</button><button data-v="C">C. 开放权重更开源</button><button data-v="D">D. 与许可无关</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 判断标准看 LICENSE:Llama/Gemma 是自定义条款的开放权重;MIT/Apache-2.0 才是宽松开源。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——判断标准就看 LICENSE:开放权重只公开了成品权重,训练数据/代码未必开放且常附加条款,按 OSI 定义(Llama/Gemma 即此类)不算开源;MIT/Apache-2.0 才是宽松真开源。A 错在「完全等价」无视了两点:数据/代码未开放+附加条款的存在;C 错在「开放权重更开源」逻辑荒谬——连开源定义都不满足,谈不上「更开源」;D 错在「与许可无关」错得根本:是否开源的唯一判定依据就是许可条款本身,抛开 LICENSE 谈开源没有意义。</div></div>
   <div class="quiz"><div class="quiz-q">2. Llama 社区许可的特别条款是?</div><div class="quiz-options" data-answer="C">
     <button data-v="A">A. 禁止一切商用</button><button data-v="B">B. 必须开源衍生模型</button><button data-v="C">C. 月活超 7 亿需向 Meta 申请额外许可</button><button data-v="D">D. 只能用于科研</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 巨头天花板条款:对普通团队无感,对超大平台是红线——选型时先量自己的规模。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——Llama 社区许可的特别条款是「月活超 7 亿的厂商需向 Meta 申请额外许可」的巨头天花板条款:对普通团队和大多数创业公司无感,对超大平台是红线,选型时先量自己的规模上限。A 错在「禁止一切商用」与事实相反——Llama 明确允许绝大多数商用场景;B 错在「必须开源衍生模型」没有此要求,这正是它与 AGPL 类强Copyleft许可的本质区别;D 错在「只能用于科研」同样与事实相反,商用是被允许的,只是有大厂附加条件。</div></div>
   <div class="quiz"><div class="quiz-q">3. Kimi K2 → K2 Thinking 的许可变化说明什么?</div><div class="quiz-options" data-answer="A">
     <button data-v="A">A. 同系列不同版本许可可能不同,投产需锁版本并复查条款</button><button data-v="B">B. MIT 与 Modified MIT 等价</button><button data-v="C">C. 许可永远不会变</button><button data-v="D">D. 说明国产模型不可用</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 Modified MIT 有附加限制;转标准 MIT 后才是完全宽松——这是「以官方仓库为准」的活教材。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——K2 用 Modified MIT(带附加限制),K2 Thinking 转标准 MIT:同系列不同版本许可可以不同,投产必须锁定版本并定期复查条款,这是「以官方仓库为准」的活教材。B 错在「MIT 与 Modified MIT 等价」——后者带附加限制条款,法务效力完全不同,等价就是白送官司;C 错在「许可永远不会变」被本例直接证伪,许可演化(且往往越收越紧)是常态;D 错在「国产模型不可用」以偏概全,本例说明的是「要盯版本」,恰恰是国产模型许可体系逐渐规范的体现。</div></div>
   <div class="quiz"><div class="quiz-q">4. 推理/数学/代码强需求的首选开源底座?</div><div class="quiz-options" data-answer="A">
     <button data-v="A">A. DeepSeek R1 / V3.1 思考模式(MIT,推理 RL 充分)</button><button data-v="B">B. 视觉编码器</button><button data-v="C">C. 1.5B 蒸馏版</button><button data-v="D">D. 任意模型微调即可</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 底座的「被后训练强度」决定推理上限:R1 是纯推理 RL 充分训练的代表作。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——推理/数学/代码是「被后训练强度」喂出来的能力,R1/V3.1 思考模式是推理 RL 充分训练的代表作,且 MIT 许可可放心商用,底座的推理上限决定你微调后的天花板。B 错在「视觉编码器」是多模态组件,解决的是「看懂图」,不提供数学与代码推理能力;C 错在「1.5B 蒸馏版」是为端侧部署准备的压缩品,推理上限被蒸馏过程截断,拿它追推理能力是方向性错误;D 错在「任意模型微调即可」——后训练只能唤醒底座已有的能力(上一页的「预训练定上限」),底座没被推理 RL 充分训练,微调也调不出推理。</div></div>
   <div class="quiz"><div class="quiz-q">5. VLA 动作头的底座主要提供什么?</div><div class="quiz-options" data-answer="B">
     <button data-v="A">A. 电机驱动</button><button data-v="B">B. 视觉理解+指令语义+世界知识,动作头在其上输出连续控制量</button><button data-v="C">C. 电池管理</button><button data-v="D">D. 直接替代减速器</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 「底座看懂世界,动作头出手」——底座推理与多模态能力是 VLA 的天花板来源。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——VLA 的分工是「底座看懂世界,动作头出手」:底座提供视觉理解+指令语义+世界知识,动作头在其表示之上输出连续控制量,底座的推理与多模态能力直接决定 VLA 天花板(OpenVLA/π0/GR00T 均如此)。A 错在「电机驱动」是执行器/硬件层的事,与大模型底座隔着动作头与控制器好几层;C 错在「电池管理」属电源系统,与认知能力毫无关系;D 错在「直接替代减速器」更是荒谬——底座是软件认知层,减速器是机械传动件,连物理形态都不同。</div></div>
   <div class="quiz"><div class="quiz-q">6. 中小团队单卡 24G 想私有部署,较合理的选择?</div><div class="quiz-options" data-answer="A">
     <button data-v="A">A. Qwen3 小系 / GLM 小杯等宽松许可小模型(+量化),或 R1 蒸馏版</button><button data-v="B">B. 直接部署 671B 全量</button><button data-v="C">C. 只能用闭源 API</button><button data-v="D">D. 必须自研预训练</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 尺寸谱选型:先定显存边界,再在宽松许可小模型里挑任务匹配的,配合 09-05 的量化/Ollama 方案。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——先定显存边界(24G 单卡),再在宽松许可小模型里挑任务匹配的:Qwen3 小系(Apache-2.0)/GLM 小杯(MIT)配 INT4 量化,或 R1 蒸馏版,方案见 09-05 的显存速查表。B 错在「直接部署 671B 全量」——FP16 要约 1.3TB 显存,与 24G 差三个数量级,离谱到不用算;C 错在「只能用闭源 API」与开源生态事实相反,量化小模型+蒸馏版正是私有部署的常规路线;D 错在「必须自研预训练」更离谱——预训练是千亿 token 级投入,选型页存在的意义就是「用现成底座+后训练」。</div></div>
   <div class="quiz"><div class="quiz-q">7. Apache-2.0 与 MIT 的共同点?</div><div class="quiz-options" data-answer="D">
     <button data-v="A">A. 都禁止商用</button><button data-v="B">B. 都要求开源训练数据</button><button data-v="C">C. 都是自定义条款</button><button data-v="D">D. 都允许商用/修改/分发,需保留版权与许可声明</button></div>
-    <div class="quiz-feedback"></div><div class="quiz-explain">💡 两者都是 OSI 认可宽松许可;Apache-2.0 额外含专利授权与变更声明要求。</div></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: D 正确——两者都允许商用/修改/分发,条件是保留版权与许可声明;区别在 Apache-2.0 额外含专利授权与变更声明要求,MIT 更简短宽松。A 错在「都禁止商用」与事实完全相反——「允许商用」恰是宽松许可的核心特征;B 错在「都要求开源训练数据」无此条款,两者都不要求公开训练数据,这也是大模型「开源」常被质疑不彻底的原因;C 错在「都是自定义条款」——MIT/Apache-2.0 都是 OSI 认可的标准许可,「自定义条款」指的是 Llama/Gemma 那类,别混为一谈。</div></div>
 
   <div class="box box-tip"><b>📌 本节小结:</b>选型=能力×资源×许可×生态四维合议;「开放权重≠开源」与「版本许可会变」是两条法律红线;具身侧底座决定 VLA 天花板。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 你的毕设机器人 16G 显存,选哪条底座路线?2. 如果厂商把许可从 MIT 改成自定义,你的既有产品怎么办?</div>
-  <h2><span class="h2-num">5</span> 参考来源(更新至 2026-08)</h2>
+  <h2><span class="h2-num">6</span> 参考来源(更新至 2026-08)</h2>
   <ul>
     <li><a href="https://github.com/deepseek-ai/DeepSeek-V3" target="_blank" rel="noopener">DeepSeek-V3 仓库(MIT 条款原文)</a></li>
     <li><a href="https://huggingface.co/Qwen" target="_blank" rel="noopener">Qwen 官方 HF(Apache-2.0 系列)</a></li>

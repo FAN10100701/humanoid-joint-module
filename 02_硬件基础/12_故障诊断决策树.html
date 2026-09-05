@@ -224,7 +224,7 @@ var DIAG = {
 
 (function(){
   var hist = [];
-  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var esc = Site.esc;  /* V2.1.18: 引用全站单源(Site.esc),本页不再重复实现(C8) */
   function render(nodeKey){
     var node = DIAG[nodeKey];
     var body = document.getElementById('diagBody');

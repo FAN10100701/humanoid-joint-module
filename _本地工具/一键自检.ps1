@@ -325,6 +325,41 @@ if(Test-Path $c7js){
 }
 Check "C7 privacy scan" $c7ok $c7detail
 
+# ---- 16) C8: dedup guard for esc/loadScript (V2.1.18, AUDIT A-22) ----
+# quiz/quest pages must NOT re-declare function esc( / function loadScript( — they now reference Site.esc / Site.loadScript
+$c8bad = @()
+foreach($f in $pages){
+  if($f.Name -notlike '11_*' -and $f.Name -notlike '12_*'){ continue }
+  $c = [IO.File]::ReadAllText($f.FullName, [Text.Encoding]::UTF8)
+  if($c -match 'function\s+esc\s*\('){ $c8bad += ($f.Name + " re-declares esc()") }
+  if($c -match 'function\s+loadScript\s*\('){ $c8bad += ($f.Name + " re-declares loadScript()") }
+}
+Check "C8 esc/loadScript dedup" ($c8bad.Count -eq 0) ($c8bad.Count.ToString() + " re-declarations")
+$c8bad | Select-Object -First 4 | ForEach-Object { Write-Output ("   DUP: " + $_) }
+
+
+
+# ---- C9: path-data integrity (path layer) ----
+$pdRoot = (Get-Location).Path
+$pdFile = Join-Path $pdRoot "_assets\path-data.js"
+$pdOk = $false; $pdDetail = "file missing"
+if(Test-Path $pdFile){
+  $pdContent = [IO.File]::ReadAllText($pdFile, [Text.Encoding]::UTF8)
+  $pdIds = @([regex]::Matches($pdContent, 'id:\s*"(\d\d-\d\d)"') | ForEach-Object { $_.Groups[1].Value })
+  $pdSecContent = [IO.File]::ReadAllText((Join-Path $pdRoot "_assets\site-sections.js"), [Text.Encoding]::UTF8)
+  $pdSecIds = [regex]::Matches($pdSecContent, '"(\d\d-\d\d)"') | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique
+  $pdMissing = @($pdIds | Where-Object { $_ -notin $pdSecIds })
+  $pdDup = 0
+  $pdChunks = [regex]::Split($pdContent, 'id:\s*"p-[a-z]+"') | Where-Object { $_ -match 'stages' }
+  foreach($ck in $pdChunks){
+    $idsIn = @([regex]::Matches($ck, 'id:\s*"(\d\d-\d\d)"') | ForEach-Object { $_.Groups[1].Value })
+    if($idsIn.Count -ne ($idsIn | Sort-Object -Unique).Count){ $pdDup++ }
+  }
+  $pdOk = (($pdMissing.Count -eq 0) -and ($pdDup -eq 0) -and ($pdIds.Count -ge 30))
+  $pdDetail = "ids=" + $pdIds.Count + " missing=" + $pdMissing.Count + " dupInPath=" + $pdDup
+}
+Check "C9 path-data integrity" $pdOk $pdDetail
+
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }
 Write-Host ("CHECKS FAILED: " + $fail)

@@ -509,6 +509,41 @@ body[data-theme="dark"] .my-src{color:#8b949e}
 
   <div class="box box-tip"><b>📌 本节要点速查:</b>①谐波 = 波发生器(输入)+ 柔轮(输出)+ 刚轮(固定,齿数多 2),减速比 = 柔轮齿数 ÷ 齿差(200 齿 → 100:1),零背隙、扭矩密度极高,短板是柔轮疲劳;②行星内齿圈固定时 i = 1 + Z环/Z阳(20/60 → 4:1),刚性好、效率 90%+、单级比小、多级串联累积背隙,适合踝/腕/手等小关节;③摆线 RV = 偏心轴 + 摆线盘 + 针齿圈(固定)+ 曲柄销(输出),齿差 1、减速比 = 针齿数,滚动接触约半齿承载、抗冲击远超谐波、寿命长,但体积重量大、需双盘对消偏心,工业机器人大关节多用;④选型:人形大关节多用谐波、小关节用微型行星、重载大关节用 RV。</div>
 
+  <h2 style="margin-top:18px">🧭 延伸知识点:减速器选型对比器——「怎么选」一屏定</h2>
+  <div class="key-point" id="k5Block">
+    <div class="kp-title">🎯 场景选型:点一个场景,看三种减速器怎么排</div>
+    <p style="margin:6px 0">上面三张剖面图讲的是「它们是什么」;这里回答「<b>我该用哪个</b>」。先点你的场景,再看对比表里被点亮的列:</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">
+      <button id="k5Btn0" onclick="k5Pick(0)" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(127,127,127,.4);background:rgba(127,127,127,.08);cursor:pointer;font-weight:700">🦿 人形旋转大关节(髋/肩/腰)</button>
+      <button id="k5Btn1" onclick="k5Pick(1)" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(127,127,127,.4);background:rgba(127,127,127,.08);cursor:pointer;font-weight:700">🤲 灵巧手 / 腕踝小关节</button>
+      <button id="k5Btn2" onclick="k5Pick(2)" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(127,127,127,.4);background:rgba(127,127,127,.08);cursor:pointer;font-weight:700">💰 经济型 / 教育机器人</button>
+    </div>
+    <div style="overflow-x:auto">
+    <table id="k5Table" style="border-collapse:collapse;width:100%;font-size:.92em;min-width:520px">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:7px 9px;border-bottom:2px solid rgba(127,127,127,.45)">维度</th>
+          <th id="k5c0" style="padding:7px 9px;border-bottom:2px solid rgba(127,127,127,.45)">🌀 谐波</th>
+          <th id="k5c1" style="padding:7px 9px;border-bottom:2px solid rgba(127,127,127,.45)">⚙️ RV(摆线)</th>
+          <th id="k5c2" style="padding:7px 9px;border-bottom:2px solid rgba(127,127,127,.45)">🪐 行星</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:6px 9px;font-weight:700">单级减速比</td><td class="k5col" style="padding:6px 9px">50~160</td><td class="k5col" style="padding:6px 9px">30~120(常用段)</td><td class="k5col" style="padding:6px 9px">3~10(多级串联可上百)</td></tr>
+        <tr><td style="padding:6px 9px;font-weight:700">背隙(回差)</td><td class="k5col" style="padding:6px 9px">≈0(秒级~1′)</td><td class="k5col" style="padding:6px 9px">0.5~3′</td><td class="k5col" style="padding:6px 9px">3~20′(多级更大)</td></tr>
+        <tr><td style="padding:6px 9px;font-weight:700">抗冲击/扭转刚度</td><td class="k5col" style="padding:6px 9px">中——柔轮薄壁怕冲击</td><td class="k5col" style="padding:6px 9px"><b>高</b>——约半数齿同时承载</td><td class="k5col" style="padding:6px 9px">中高</td></tr>
+        <tr><td style="padding:6px 9px;font-weight:700">传动效率</td><td class="k5col" style="padding:6px 9px">65~85%</td><td class="k5col" style="padding:6px 9px">85~95%</td><td class="k5col" style="padding:6px 9px"><b>90~97%</b></td></tr>
+        <tr><td style="padding:6px 9px;font-weight:700">反驱性(接实验室页 K1)</td><td class="k5col" style="padding:6px 9px">准自锁——断电姿态保持好</td><td class="k5col" style="padding:6px 9px">临界~准自锁</td><td class="k5col" style="padding:6px 9px">容易反驱——须配抱闸</td></tr>
+        <tr><td style="padding:6px 9px;font-weight:700">体积 / 重量</td><td class="k5col" style="padding:6px 9px"><b>薄且轻</b>(中空旋转结构)</td><td class="k5col" style="padding:6px 9px">大且重(双盘+针齿壳)</td><td class="k5col" style="padding:6px 9px">紧凑、轻</td></tr>
+        <tr><td style="padding:6px 9px;font-weight:700">成本</td><td class="k5col" style="padding:6px 9px">中高</td><td class="k5col" style="padding:6px 9px">高</td><td class="k5col" style="padding:6px 9px"><b>低</b></td></tr>
+        <tr><td style="padding:6px 9px;font-weight:700">最大短板</td><td class="k5col" style="padding:6px 9px">柔轮疲劳寿命</td><td class="k5col" style="padding:6px 9px">体积、重量、价格</td><td class="k5col" style="padding:6px 9px">背隙(多级累积)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div id="k5Verdict" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(34,99,179,.10);border:1px solid rgba(34,99,179,.35)"><b>👆 点上方场景按钮,这里给出推荐与理由。</b></div>
+    <div style="font-size:.85em;color:var(--faint);margin-top:8px">⚠ 表中为行业典型量级(便于建立选型直觉),具体型号以厂商手册为准;同一类内不同厂差距不小。人形机器人常见混搭:旋转大关节谐波、线性执行器行星丝杠、灵巧手微型行星/微型谐波。</div>
+  </div>
+
   <div class="foot">注：本图为教学示意剖面，重点展示零件组成与传动关系，非等比例工程图。</div>
 </div>
 <script>
@@ -704,6 +739,47 @@ window.PAGE = { pageId:"00-02", root:"..",
     ctl.appendChild(rst);
     box.appendChild(ctl);
   });
+})();
+</script>
+<script>
+/* =====================================================================
+   K5 延伸知识点:减速器场景选型对比器(V2.1.19,批次3知识点)
+   三个典型场景 → 推荐列高亮 + 理由;数据为行业典型量级(教学直觉用)
+   独立作用域;k5Pick 挂 window 供按钮 onclick 调用
+   ===================================================================== */
+(function(){
+  var CONFIG = {
+    SCENES: [
+      {  /* 推荐顺序(1=首选列号,见 rec) */
+        rec:{ main:0, alt:1,
+          html:'<b>🦿 人形旋转大关节 → 首选 🌀 谐波,重载位(膝/踝,冲击大)考虑 ⚙️ RV。</b><br>'
+             + '为什么是谐波:<b>薄且轻</b>塞进关节壳、<b>≈0 背隙</b>让 27:1 大速比下位置环依然干净、<b>准自锁</b>省掉关节抱闸减重(反驱逻辑见实验室页 K1);短板「柔轮怕冲击」在膝/踝落地场景要留意——所以冲击主力位很多团队换 RV(抗冲击强但重 2~3 倍,摆腿惯量代价,通常只在下肢末端用)。<br>'
+             + '为什么不是行星:多级串联背隙累积,大速比下关节「空程」明显,位置精度不够。' } },
+      { rec:{ main:2, alt:0,
+          html:'<b>🤲 灵巧手 / 腕踝小关节 → 首选 🪐 微型行星,指尖高精位用微型谐波。</b><br>'
+             + '为什么是行星:空间小、要轻要便宜——灵巧手一个手指塞 3~6 个执行器,行星(尤其行星+丝杠)是唯一塞得下又买得起的方案;背隙大一点在指尖可接受(指尖本来就要柔顺)。'
+             + '若是指尖需要毫米级力控精度,换微型谐波(贵但零背隙)。<br>'
+             + '为什么不是 RV:重量体积直接出局。' } },
+      { rec:{ main:2,
+          html:'<b>💰 经济型 / 教育机器人 → 首选 🪐 行星。</b><br>'
+             + '为什么:同减速比下价格常是谐波的 1/5~1/10、效率最高(90%+,续航友好)、好买好换;背隙大在教育与原型阶段完全可接受(位置精度靠软件补偿+限位场景规避)。'
+             + '<b>注意两点</b>:断电会倒转,关节立不住要配抱闸(或永远让手臂垂在额定姿态);多级串联后背隙累积,精度别抱期望。<br>'
+             + '升级路径:哪个关节先「嫌精度不够」再单独换谐波——不必整机一步到位。' } }
+    ],
+    HL: 'rgba(34,99,179,.16)', HL_BD: 'rgba(34,99,179,.55)'   /* 高亮色(深浅主题下都可读的半透明蓝) */
+  };
+  window.k5Pick = function(idx){
+    var s = CONFIG.SCENES[idx];
+    for(var c = 0; c < 3; c++){
+      var th = document.getElementById('k5c' + c);
+      if(!th) continue;
+      var on = (c === s.rec.main || c === (s.rec.alt !== undefined ? s.rec.alt : -1));
+      th.style.background = on ? CONFIG.HL : '';
+      th.style.outline = (c === s.rec.main) ? ('2px solid ' + CONFIG.HL_BD) : '';
+      th.style.borderRadius = '6px';
+    }
+    document.getElementById('k5Verdict').innerHTML = s.rec.html;
+  };
 })();
 </script>
 </body>

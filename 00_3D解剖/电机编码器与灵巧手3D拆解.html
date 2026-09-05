@@ -330,6 +330,37 @@
   <div class="box box-tip"><b>📌 本节小结:</b>①一体伺服 = 电机本体(底座/壁/磁铁座/盖)+ 减速机构(摆线盘/轴承毂/输出法兰)+ 编码器,真实模型看分层;②光电编码器靠「码盘光栅+LED+光电管」输出脉冲计数,线数=分辨率,怕污损;③欠驱动灵巧手用「少电机+连杆/腱绳」驱动多关节,自适应抓握,减重降本;④开源模型使用必须遵守许可(本页 LEAP Hand/RVGH 均为 MIT)。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>1. 为什么工业伺服常用「电机端磁编 + 输出端光电/高精编」双编码器?各自在防什么?<br>2. 欠驱动手指抓握时,关节运动是「按顺序逐个锁死」还是「同时运动」?和弹簧刚度有什么关系?<br>3. 摆线减速的「齿差 1」是什么意思?为什么能实现大减速比?(提示:一圈差一个齿)</div>
 
+  <h2 style="margin-top:18px">🧮 延伸知识点:编码器精度 ≠ 关节精度——四级链路折算器</h2>
+  <div class="key-point" id="k4Block">
+    <div class="kp-title">📐 交互计算器:电机端编码器精度,经减速器传到关节端还剩多少?</div>
+    <p style="margin:6px 0">本页编码器装在<b>电机端</b>,关节实际角度 = 电机角 ÷ 减速比——分辨率被减速比<b>放大 i 倍</b>;但减速器的<b>回差(背隙)</b>不经过放大,直接叠在关节端。很多新手「17bit 编码器很准」的直觉,就在这里被打断。</p>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin:10px 0">
+      <label>编码器位数
+        <select id="k4Bits" style="margin-left:6px;padding:3px 6px">
+          <option value="10">10 bit(1024/圈)</option>
+          <option value="12">12 bit(4096/圈)</option>
+          <option value="14">14 bit(16384/圈)</option>
+          <option value="17" selected>17 bit(131072/圈,磁性多圈常见)</option>
+        </select>
+      </label>
+      <label>减速比 i = <span id="k4Iv" style="font-family:monospace;font-weight:700">27</span>
+        <input type="range" id="k4I" min="1" max="120" value="27" step="1" style="width:140px;vertical-align:middle">
+      </label>
+      <label>回差(arcmin) = <span id="k4Bv" style="font-family:monospace;font-weight:700">3</span>
+        <input type="range" id="k4B" min="0" max="30" value="3" step="1" style="width:140px;vertical-align:middle">
+      </label>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:10px 0">
+      <div class="box box-tip" style="margin:0"><b>① 电机端分辨率</b><br><span id="k4Step1" style="font-family:monospace;font-size:1.05em"></span><br><span style="font-size:.85em;color:var(--faint)">360° ÷ 2^n</span></div>
+      <div class="box box-tip" style="margin:0"><b>② 关节端分辨率(×i 放大)</b><br><span id="k4Step2" style="font-family:monospace;font-size:1.05em"></span><br><span style="font-size:.85em;color:var(--faint)">① ÷ i——减速比帮忙</span></div>
+      <div class="box box-warn" style="margin:0"><b>③ 回差(不放大)</b><br><span id="k4Step3" style="font-family:monospace;font-size:1.05em"></span><br><span style="font-size:.85em;color:var(--faint)">arcmin ÷ 60——原样叠在关节端</span></div>
+      <div class="box box-ok" style="margin:0"><b>④ 综合角误差(RSS)</b><br><span id="k4Step4" style="font-family:monospace;font-size:1.05em"></span><br><span style="font-size:.85em;color:var(--faint)">√(②² + ③²) 独立误差合成</span></div>
+    </div>
+    <div id="k4Bottleneck" style="padding:10px 12px;border-radius:10px;background:rgba(34,99,179,.10);border:1px solid rgba(34,99,179,.35)"></div>
+    <div class="box box-tip" style="margin-top:10px"><b>链路直觉:</b>减速比越大,② 越小(分辨率红利),但回差 ③ 是<b>物理齿隙</b>,编码器再好也测不到、控制再好也消不掉——它决定了「关节往返打死时差多少度」。所以高端关节要么用零回差谐波/RV,要么在<b>输出端再加一个编码器</b>直接闭环(本页思考题 1 的双编码器方案)。换向间隙导致的「定位死区」≈ 回差的一半。</div>
+    <div style="font-size:.85em;color:var(--faint);margin-top:8px">⚠ RSS 合成假设两项独立不相关;回差是滞回误差(系统性的),严格设计要分项对待——这里给的是选型量级。arcmin = 角分 = 1/60°。</div>
+  </div>
+
 </div><!-- /container -->
 <script src="../_assets/site.js"></script>
 <script>
@@ -1105,6 +1136,61 @@ document.addEventListener('input', function(e){
     LAB.clipPlane.constant = -parseFloat(e.target.value);
   }
 });
+</script>
+<script>
+/* =====================================================================
+   K4 延伸知识点:编码器精度→关节精度四级链路折算器(V2.1.19,批次3知识点)
+   链路:①电机端分辨率 360/2^n → ②关节端(÷i) → ③回差(arcmin/60,不放大)
+        → ④RSS 合成 √(②²+③²);瓶颈提示取②③中较大者
+   参数集中在 CONFIG;独立作用域,不影响 3D 拆解台
+   ===================================================================== */
+(function(){
+  var CONFIG = {
+    DEFAULT_BITS: 17,
+    DEFAULT_RATIO: 27,     /* 对应本页 RVGH 一体伺服 27:1 */
+    DEFAULT_BACKLASH: 3    /* arcmin,RV/摆线典型 1~3 */
+  };
+  var $I = function(id){ return document.getElementById(id); };
+  if(!$I('k4Bits')) return;
+  $I('k4Bits').value = String(CONFIG.DEFAULT_BITS);
+  function fmtDeg(d){
+    if(d >= 0.01) return d.toFixed(3) + '°';
+    /* 转成角分/角秒展示,量级更直观:1°=60′=3600″ */
+    var m = d * 60;
+    if(m >= 0.1) return m.toFixed(2) + '′';
+    return (m * 60).toFixed(2) + '″';
+  }
+  function update(){
+    var bits = +$I('k4Bits').value;
+    var i = +$I('k4I').value;
+    var bArcmin = +$I('k4B').value;
+    var motor = 360 / Math.pow(2, bits);            /* ① 电机端分辨率 */
+    var joint = motor / i;                          /* ② 关节端分辨率(放大) */
+    var backlash = bArcmin / 60;                    /* ③ 回差(°) */
+    var total = Math.sqrt(joint*joint + backlash*backlash);  /* ④ RSS */
+    $I('k4Iv').textContent = i;
+    $I('k4Bv').textContent = bArcmin;
+    $I('k4Step1').textContent = fmtDeg(motor);
+    $I('k4Step2').textContent = fmtDeg(joint);
+    $I('k4Step3').textContent = fmtDeg(backlash);
+    $I('k4Step4').textContent = fmtDeg(total);
+    /* 瓶颈提示:回差 ≥ 关节分辨率×2 时,链路瓶颈在机械不在编码器 */
+    var el = $I('k4Bottleneck');
+    if(backlash === 0){
+      el.innerHTML = '<b>理想零回差:</b>关节精度完全由编码器链路决定(' + fmtDeg(joint) + ')——现实齿轮副做不到,这是谐波/RV 追求的目标。';
+    } else if(backlash >= joint * 2){
+      el.innerHTML = '<b style="color:#d64a3a">🔴 瓶颈在回差:</b>回差(' + fmtDeg(backlash) + ')已是关节端分辨率(' + fmtDeg(joint) + ')的 ' + (backlash/joint).toFixed(0) + ' 倍——<b>再升编码器位数毫无收益</b>,该升级减速器(零回差谐波/RV)或输出端加编码器直接闭环。';
+    } else if(backlash >= joint * 0.5){
+      el.innerHTML = '<b style="color:#d99a2b">🟡 回差与分辨率同量级:</b>两者共同决定关节精度(' + fmtDeg(total) + ')——升级编码器仍有收益但边际递减,注意换向死区 ≈ 回差一半(' + fmtDeg(backlash/2) + ')。';
+    } else {
+      el.innerHTML = '<b style="color:#22a55f">🟢 分辨率主导:</b>编码器链路(' + fmtDeg(joint) + ')仍是短板,回差(' + fmtDeg(backlash) + ')暂不构成瓶颈——此时升位数/细分有直接收益。';
+    }
+  }
+  $I('k4Bits').addEventListener('change', update);
+  $I('k4I').addEventListener('input', update);
+  $I('k4B').addEventListener('input', update);
+  update();   /* 初始默认值(RVGH 27:1 场景)渲染一次 */
+})();
 </script>
 </body>
 </html>

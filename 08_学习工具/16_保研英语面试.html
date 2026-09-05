@@ -519,7 +519,7 @@ var TTS = (function(){
   var GAP = 110;        /* cancel → 下一次 speak 的安全间隔:Chrome 同帧紧跟会被吞 */
   var WD_START = 1800;  /* 看门狗:发牌后这么久还没 onstart 就重置引擎重来(网络音色 TTFB 留了余量) */
   var WD_WORD_END = 8000;   /* 单词出声后这么久还没 onend,视为卡死 */
-  var QMAX = 6;         /* 单词连播队列上限:狂点时丢最旧的,保持听感跟手 */
+  var QMAX = 16;        /* 单词连播队列上限:背词时一串点击全部保留按序连播;异常狂点才丢最旧的 */
 
   /* --- 调度状态 --- */
   var mode = 0;             /* 0=空闲 1=单词连播 2=整段朗读/试听 */
@@ -631,7 +631,7 @@ var TTS = (function(){
   }
   function hardStop(){
     session++;
-    mode = 0; wq = []; resetCount = 0;
+    mode = 0; wq = []; curWord = null; resetCount = 0;
     engineReset();
     clearHi();
     firePendingDone();
@@ -646,6 +646,9 @@ var TTS = (function(){
   }
 
   /* ---------- 单词连播 ---------- */
+  /* 队列只存「还没派发」的词;正在播/正在重试的那条放 curWord,派发时即出队。
+     这样队满挤最旧时只会挤掉没播过的词,播完出队也不会错位吃掉后面的词。 */
+  var curWord = null;
   function speakWord(word, btn){
     if(!ok) return;
     var fresh = (mode !== 1);
@@ -655,31 +658,33 @@ var TTS = (function(){
     }
     var sid = session;
     pulse(btn);
-    for(var i = 0; i < wq.length; i++)      /* 排队中的同词不重复入队 */
+    if(curWord && curWord.text === word) return;   /* 正在播的词不重复 */
+    for(var i = 0; i < wq.length; i++)             /* 排队中的同词不重复入队 */
       if(wq[i].text === word) return;
     if(wq.length >= QMAX) wq.shift();
     wq.push({ text: word });
-    try{ console.log("[dbg] push", word, "len", wq.length, "mode", mode, "live", live); }catch(e){}
-    if(fresh) afterGap(function(){ nextWord(sid); });
+    if(fresh) afterGap(function(){ dispatchWord(sid); });
   }
-  function nextWord(sid){
+  function dispatchWord(sid){
     if(sid !== session || mode !== 1) return;
-    if(!wq.length){ mode = 0; resetCount = 0; return; }
-    try{ console.log("[dbg] nextWord", wq[0].text, "len", wq.length); }catch(e){}
-    var u = makeUtterance(wq[0].text);
+    if(!curWord){                                  /* 上一条已放完:取下一条;有 curWord 则是看门狗重试 */
+      if(!wq.length){ mode = 0; resetCount = 0; return; }
+      curWord = wq.shift();
+    }
+    var u = makeUtterance(curWord.text);
     u.rate = Math.min(rate, 0.8);
     u.onstart = function(){
       if(sid !== session) return;
       clearTimeout(wdStart); resetCount = 0; live = true;
-      wdEnd = setTimeout(function(){        /* 出声后迟迟不结束:卡死,重置引擎重来这个词 */
+      wdEnd = setTimeout(function(){        /* 出声后迟迟不结束:卡死,重置引擎重试这个词 */
         if(sid !== session || mode !== 1) return;
-        engineReset(); afterGap(function(){ nextWord(sid); });
+        engineReset(); afterGap(function(){ dispatchWord(sid); });
       }, WD_WORD_END);
     };
     var done = function(){
       if(sid !== session) return;
-      clearWd(); live = false;
-      wq.shift(); nextWord(sid);
+      clearWd(); live = false; curWord = null;
+      dispatchWord(sid);
     };
     u.onend = done;
     u.onerror = function(e){
@@ -691,7 +696,7 @@ var TTS = (function(){
       if(sid !== session || mode !== 1) return;
       var v = currentVoice();
       if(++resetCount >= 4){                /* 反复救不活:放弃这批,提示一次 */
-        wq = []; mode = 0; engineReset();
+        wq = []; curWord = null; mode = 0; engineReset();
         if(!deadNotified){
           deadNotified = true;
           try{ toast(v && !v.localService
@@ -711,11 +716,11 @@ var TTS = (function(){
         }
       }
       engineReset();
-      afterGap(function(){ nextWord(sid); });   /* wq[0] 没出栈,重试的就是同一个词 */
+      afterGap(function(){ dispatchWord(sid); });   /* curWord 保留,重试的就是同一个词 */
     }, WD_START);
     live = true;
     try{ speechSynthesis.speak(u); }
-    catch(e){ clearWd(); live = false; wq.shift(); nextWord(sid); }
+    catch(e){ clearWd(); live = false; curWord = null; dispatchWord(sid); }
   }
 
   /* ---------- 试听音色 ---------- */
@@ -724,54 +729,115 @@ var TTS = (function(){
   }
 
   /* ---------- 整段逐句朗读 ---------- */
+  /* 专业 TTS 播放器的两个思路落地:
+     1) 流水线预取:当前句刚开始播就把下一句提前送进引擎队列,句间切换由引擎内部衔接——
+        旧式"上一句 onend 后才派发下一句"每句都要重付一遍引擎启动开销,句间空档就是卡顿感;
+     2) 空闲不 cancel:引擎里没有东西在跑时不调 cancel、不等安全拍,点击「朗读」后首句立即进引擎,
+        点击→出声只剩引擎本身的启动时间,没有我们自己叠加的延迟。 */
   function speakSequence(items, opt){
     var onStart = opt && opt.onStart, onDone = opt && opt.onDone;
     var seqRate = (opt && opt.rate) || rate;
-    hardStop();
     if(!ok){ onDone && onDone(); return; }
-    mode = 2;
+    var wasBusy = (live || pendingDone || mode !== 0);
+    if(wasBusy) hardStop();          /* 有东西在跑才 cancel 清场 */
+    else { session++; clearWd(); }   /* 空闲:只作废旧回调,首句零等待派发 */
+    mode = 2; resetCount = 0;
     pendingDone = onDone || null;
-    var sid = session, i = 0;
-    (function next(){
+    var sid = session, n = items.length, startedIdx = -1;   /* startedIdx:最后一句已开播的句子 */
+
+    function finish(){
       if(sid !== session) return;
-      if(i >= items.length){ mode = 0; resetCount = 0; pendingDone = null; clearHi(); onDone && onDone(); return; }
-      var it = items[i];
-      clearHi();
-      currentEl = it.el;
-      if(currentEl) currentEl.classList.add("speaking");
-      var u = makeUtterance(it.text);
+      mode = 0; resetCount = 0; pendingDone = null;
+      clearWd(); live = false; clearHi();
+      onDone && onDone();
+    }
+    function makeU(k){
+      var u = makeUtterance(items[k].text);
       u.rate = seqRate;
-      var advance = function(){ clearWd(); live = false; i++; next(); };
       u.onstart = function(){
         if(sid !== session) return;
+        startedIdx = k;
         clearTimeout(wdStart); resetCount = 0; live = true;
-        var est = Math.max(3500, (u.text.length * 140) / (seqRate || 1));   /* 估时:超太多还没念完就跳下一句 */
-        wdEnd = setTimeout(function(){
+        clearHi();
+        currentEl = items[k].el;
+        if(currentEl) currentEl.classList.add("speaking");
+        if(k + 1 < n) dispatch(k + 1);       /* 流水线:趁本句在播,下一句提前排队 */
+        var est = Math.max(3500, (u.text.length * 140) / (seqRate || 1));
+        clearTimeout(wdEnd);
+        wdEnd = setTimeout(function(){       /* 本句开播后超太久没念完:重试一次,再卡就跳下一句 */
           if(sid !== session) return;
-          engineReset(); advance();
+          if(++resetCount > 2){ resetCount = 0; recoverFrom(k + 1); return; }
+          recoverFrom(k);
         }, est + 6000);
       };
-      u.onend = function(){ if(sid === session) advance(); };
+      var ended = function(){
+        if(sid !== session) return;
+        if(k !== startedIdx) return;         /* 预排队句在开播前就夭折:忽略,由衔接看门狗重派,别误伤在播句 */
+        clearTimeout(wdEnd);
+        if(k + 1 >= n){ finish(); return; }
+        clearTimeout(wdStart);               /* 下一句已在队列,理应马上 onstart;看住衔接 */
+        wdStart = setTimeout(function(){
+          if(sid !== session) return;
+          if(++resetCount > 2){ resetCount = 0; recoverFrom(k + 2); return; }
+          recoverFrom(k + 1);
+        }, WD_START);
+      };
+      u.onend = ended;
       u.onerror = function(e){
         if(sid !== session) return;
-        if(isInterrupt(e)) return;          /* 被 stop/看门狗 cancel 的,由对应路径接管 */
-        advance();
+        if(isInterrupt(e)) return;           /* 被我们 cancel 的,recover/stop 路径接管 */
+        ended();
       };
-      wdStart = setTimeout(function(){      /* 本句迟迟不出声:重置引擎重试一次,再不行跳过这句 */
-        if(sid !== session) return;
-        if(++resetCount > 2){ resetCount = 0; engineReset(); advance(); return; }
-        engineReset();
-        afterGap(next);                     /* i 未加,重试当前句 */
-      }, WD_START);
+      return u;
+    }
+    function dispatch(k, isHead){
+      if(sid !== session || k >= n) return;
       live = true;
-      var speak = function(){
+      if(isHead){                            /* 首句/重派句:自己也要有人看住"迟迟不出声" */
+        clearTimeout(wdStart);
+        wdStart = setTimeout(function(){
+          if(sid !== session) return;
+          var v = currentVoice();
+          if(++resetCount >= 4){             /* 反复救不活:提示一次并结束本次朗读 */
+            resetCount = 0;
+            if(!deadNotified){
+              deadNotified = true;
+              try{ toast(v && !v.localService
+                ? "当前音色一直无响应:网络音色(Natural/Google)需联网,请检查网络或在上方换一个音色"
+                : "语音引擎无响应,请稍后再试或刷新页面"); }catch(e2){}
+            }
+            finish();
+            return;
+          }
+          if(resetCount === 2 && v && !v.localService && !userVoiceURI){
+            var loc = bestLocal();           /* 网络音色连续超时:本会话改用本地音色兜底 */
+            if(loc){
+              localFallback = loc;
+              if(!slowNotified){
+                slowNotified = true;
+                try{ toast("网络音色响应慢,已临时改用本地音色「" + loc.name.slice(0, 24) + "」"); }catch(e2){}
+              }
+            }
+          }
+          engineReset();
+          afterGap(function(){ if(sid === session) dispatch(k, true); });
+        }, WD_START);
+      }
+      try{ speechSynthesis.speak(makeU(k)); }
+      catch(e){ clearTimeout(wdStart); recoverFrom(k + 1); }
+    }
+    function recoverFrom(k){
+      if(sid !== session) return;
+      engineReset();                          /* 清掉引擎里所有残留(含预排队的下一句) */
+      if(k >= n){ finish(); return; }
+      afterGap(function(){
         if(sid !== session) return;
-        try{ speechSynthesis.speak(u); }
-        catch(e){ advance(); }
-      };
-      if(i === 0) afterGap(speak);          /* 首句刚 cancel 过,走安全拍 */
-      else speak();
-    })();
+        dispatch(k, true);
+      });
+    }
+    if(!n){ finish(); return; }
+    if(wasBusy) afterGap(function(){ dispatch(0, true); });
+    else dispatch(0, true);
     onStart && onStart();
   }
 

@@ -122,4 +122,5 @@ window.SITE_SEARCH_INDEX = [
   { t:"ADRC自抗扰控制与嵌入式实现", u:"06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html", s:"软件算法与升级进阶", d:"TD/ESO/LADRC带宽法完整推导、b0整定、STM32 C实现、抗扰对比与失效排查、宇树等业界应用", k:"ADRC 自抗扰 TD 跟踪微分器 ESO 扩张状态观测器 LADRC 带宽法 b0 韩京清 STM32 NLSEF" },
   { t:"FOC算法完全图解:流程与运行图", u:"06_软件与算法/19_FOC算法完全图解_流程与运行图.html", s:"软件算法与升级进阶", d:"ISR级FOC总流程图/硬件结构图/启动校准运行保护状态机/中断时序/电流采样三方案/死区补偿/弱磁", k:"FOC 流程图 ISR Clark Park SVPWM 电流环 死区 编码器 校准 弱磁 MTPA 状态机 中断时序 采样" },
   { t:"工程电机控制框架对比与选型", u:"06_软件与算法/20_工程电机控制框架对比_流程与选型.html", s:"软件算法与升级进阶", d:"SimpleFOC/ODrive/VESC/ST MCSDK/InstaSPIN/MIT MiniCheetah代码流程对比、13维大表与选型决策树", k:"SimpleFOC ODrive VESC MCSDK InstaSPIN Mini Cheetah 电机控制框架 流程对比 选型 中断结构 电流环" },
+{ t:"学习路径规划", u:"08_学习工具/18_学习路径规划.html", s:"学习工具", d:"6 条有序学习路径×阶段关卡×打卡进度联动:新手入门/关节驱动控制/数字IC与NPU/机器人软件/具身智能/保研冲刺,一页总览下一站", k:"学习路径 路径规划 新手入门 课程表 学习顺序 关卡 进度 路线 方向 选路" },
 ];

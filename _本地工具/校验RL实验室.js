@@ -6,6 +6,14 @@
    运行: node _本地工具\校验RL实验室.js   期望输出 MATH OK */
 "use strict";
 
+/* V2.1.18: 可种子 LCG 替换 Math.random(AUDIT A-40)——训练随机性曾致 ±0.2 起摆断言 4 跑 1 FAIL(CI 狼来了);
+   固定种子后结果可复现,此后该断言 FAIL 即为真回归 */
+var _seed = 20260905;
+function rand(){
+  _seed = (_seed * 1664525 + 1013904223) >>> 0;
+  return _seed / 4294967296;
+}
+
 var NTH=12, NOM=12, NA=3, TH_MAX=0.3, OM_MAX=3.0, ACTIONS=[-10,0,10];
 var ALPHA=0.15, GAMMA=0.995, EPS0=1.0, EPS_MIN=0.05, EPS_DECAY=0.995;
 var DT=0.005, T_EP=6.0, TH_FAIL=0.6, M=1.0, m=0.1, L=0.5, G=9.81;
@@ -27,12 +35,12 @@ function step(st,F){
 }
 function episode(train, policy, th0Override){
   /* 训练时初始偏角在 ±0.2 均匀随机(域随机化),演示默认 0.05 */
-  var th0 = th0Override !== undefined ? th0Override : (train ? (Math.random()*0.4-0.2) : 0.05);
+  var th0 = th0Override !== undefined ? th0Override : (train ? (rand()*0.4-0.2) : 0.05);
   var st={th:th0,dth:0,x:0,dx:0}, total=0, steps=Math.round(T_EP/DT), done=false;
   for(var k=0;k<steps;k++){
     var ij=sIdx(st.th,st.dth), a;
-    if(policy==='random') a=Math.floor(Math.random()*NA);
-    else if(train && Math.random()<eps) a=Math.floor(Math.random()*NA);
+    if(policy==='random') a=Math.floor(rand()*NA);
+    else if(train && rand()<eps) a=Math.floor(rand()*NA);
     else a=bestA(ij[0],ij[1]);
     step(st,ACTIONS[a]);
     var r=1-3*Math.abs(st.th)-0.15*Math.abs(st.dth);

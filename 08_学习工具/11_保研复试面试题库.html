@@ -280,7 +280,8 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
   /* ---- 进度存取 ---- */
   function loadProg(){ try{ return JSON.parse(localStorage.getItem(KEY) || "{}"); }catch(e){ return {}; } }
   function saveProg(p){ try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){} }
-  function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  /* V2.1.18:esc/脚本加载器收敛 site.js 单源(AUDIT A-22)——本页不再持副本;site.js 为全站壳依赖,缺失时页面本不可用 */
+  var esc = Site.esc;
   /* V2.1.7:延伸阅读链接协议白名单 + 引号转义(数据虽为一方文件,纵深防御) */
   function safeLink(u){
     u = String(u == null ? "" : u).trim();
@@ -289,12 +290,8 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
   }
   function stars(n){ var s = ""; for(var i = 0; i < 5; i++) s += (i < n ? "★" : "☆"); return s; }
 
-  /* ---- 按需加载数据文件 ---- */
-  function loadScript(src, cb){
-    var s = document.createElement("script");
-    s.src = src; s.onload = cb; s.onerror = cb;
-    document.head.appendChild(s);
-  }
+  /* ---- 按需加载数据文件（V2.1.18 改走 Site.loadScript 单源） ---- */
+  var loadScript = Site.loadScript;
   var pending = 3;
   function onReady(){ if(--pending) return; init(); }
   loadScript("../_assets/ib-data-a.js", onReady);

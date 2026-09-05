@@ -491,6 +491,58 @@ arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
     <li>本站 <a href="../04_升级进阶/09_通信与控制算法升级路线.html">04 部分 · 通信与控制算法升级路线</a>:从单关节通信升级到整机软件栈的衔接内容。</li>
   </ul>
 
+  <!-- ================= 7.5 QoS 速查 ================= -->
+  <h2><span class="h2-num" style="font-size:0.8em;">+</span> QoS 速查:reliability × durability 组合表</h2>
+  <p>ROS2 的 QoS 由多个策略组成,其中最常踩坑的是 <code>reliability</code>(可靠/尽力)与 <code>durability</code>(易失/暂存)两个维度。下表给出 4 种典型组合的适用场景与典型坑:</p>
+  <div class="table-wrap"><table>
+    <tr><th>组合</th><th>典型用途</th><th>何时用</th><th>典型坑</th></tr>
+    <tr>
+      <td><code>RELIABLE</code> + <code>VOLATILE</code><br><b>(ROS2 默认)</b></td>
+      <td>传感器数据、命令指令</td>
+      <td>大多数场景的稳妥默认:不允许丢消息,订阅者上线后才收后续消息</td>
+      <td>无线/弱网下重传堆积造成延迟;高频大消息(如点云)用默认可靠 QoS 会丢帧反而更糟</td>
+    </tr>
+    <tr>
+      <td><code>RELIABLE</code> + <code>TRANSIENT_LOCAL</code></td>
+      <td>latched 配置、地图、静态 TF</td>
+      <td>"后加入者也要拿到最新一帧"的场景:地图、代价地图、标定参数、<code>/tf_static</code></td>
+      <td>发布端历史深度(depth)默认只有 1,发布多条只保留最后几条;订阅端晚启动时拿到的是"旧值"而非"无值",调试时容易误判时序</td>
+    </tr>
+    <tr>
+      <td><code>BEST_EFFORT</code> + <code>VOLATILE</code></td>
+      <td>高频传感器流</td>
+      <td>相机、IMU、点云等高频流:丢一帧没关系,要的是低延迟不堆积</td>
+      <td>必须与订阅端 <code>best_effort</code> 匹配;若订阅端写的是默认 <code>reliable</code>,会静默断连收不到任何数据(见下方排查三步)</td>
+    </tr>
+    <tr>
+      <td><code>BEST_EFFORT</code> + <code>TRANSIENT_LOCAL</code></td>
+      <td>少用</td>
+      <td>仅在"允许丢 + 要最新值"的极特殊场景(如低频状态心跳)考虑</td>
+      <td>两头的坑都占:既可能丢消息,又只有最后一次发布可补发;语义容易让人误解,团队协作时尽量不用</td>
+    </tr>
+  </table></div>
+
+  <h3>发布与订阅 QoS 不兼容:静默断连排查三步</h3>
+  <p>QoS 不兼容的表现非常隐蔽:<b>话题在 <code>ros2 topic list</code> 里存在,但订阅端一条数据都收不到,也没有任何报错</b>(例如发布端 <code>best_effort</code>、订阅端默认 <code>reliable</code>)。排查三步:</p>
+  <ol>
+    <li><b>看双方 QoS:</b><code>ros2 topic info /your_topic -v</code>,分别核对 Publisher 与 Subscription 的 Reliability、Durability、History 与 depth;</li>
+    <li><b>对照兼容矩阵:</b>reliability 上 <code>reliable</code> 订阅端只能配 <code>reliable</code> 发布端,durability 上 <code>transient_local</code> 订阅端只能配 <code>transient_local</code> 发布端——任何一项"要求高于对方提供"即不兼容;</li>
+    <li><b>改到兼容:</b>要么改订阅端代码里的 QoS,要么改发布端;运行时可加载的节点(如 rosbridge、相机驱动)优先在 yaml 参数里改 QoS 覆盖,免去重新编译。</li>
+  </ol>
+  <pre><code># 第一步:查看话题双方 QoS 配置
+ros2 topic info /camera/image_raw -v
+# 输出重点看两段:
+#   Publisher: Reliability: BEST_EFFORT, Durability: VOLATILE
+#   Subscription: Reliability: RELIABLE   ← 与发布端不兼容,静默断连
+#
+# 第三步:用 yaml 给驱动类节点覆盖 QoS(免编译),再重启节点
+# qos_override.yaml:
+#   /camera/image_raw:
+#     data_type: "image"
+#     reliability: best_effort
+ros2 run rclcpp_components component_container_mt ...
+# 启动时追加: --params-file qos_override.yaml</code></pre>
+
   <!-- ================= 8. 常见坑与建议 ================= -->
   <h2><span class="h2-num">8</span> 常见坑与建议</h2>
 

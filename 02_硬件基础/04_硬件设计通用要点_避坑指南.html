@@ -17,6 +17,7 @@
 <style>
   /* 页面级补充样式(命名加 my- 前缀,避免与全局冲突) */
   .my-diagram{background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px 18px;margin:14px 0;overflow-x:auto;font-family:Consolas,"Courier New",monospace;font-size:12.5px;line-height:1.55;color:#a3b3c4;white-space:pre}
+  .my-code{background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px 18px;margin:14px 0;overflow-x:auto;font-family:Consolas,"Courier New",monospace;font-size:12.5px;line-height:1.6;color:#a3b3c4;white-space:pre}
   .my-checklist{list-style:none;padding:14px 18px;margin:12px 0;background:rgba(13,17,23,.5);border:1px solid rgba(255,255,255,.08);border-radius:10px}
   .my-checklist li{list-style:none;position:relative;padding-left:26px;margin:8px 0;line-height:1.8}
   .my-checklist li::before{content:"✓";position:absolute;left:0;color:#22c55e;font-weight:700}
@@ -384,6 +385,43 @@
     <br>3. 先不接电机,确认驱动波形正常再接电机
     <br>4. MOS 管栅极波形没调好之前,<b>不要接高压大电流</b>,先用低压(12V)小电流测试
   </div>
+
+  <h3>数值算例:母线电容容量估算(I = C·dv/dt 纹波法)</h3>
+  <p>以进阶板口径 <strong>48V/20A 系统</strong>(对应第 2 节 MOSFET 选型表 48V 档,持续 20~50A)为例:目标母线纹波 <strong>ΔV = 1V</strong>,开关频率 <strong>f<sub>sw</sub> = 20kHz</strong>,最坏占空比 D=0.5 时母线电容下限:</p>
+  <div class="my-diagram">C ≥ I / (4 · fsw · ΔV) = 20 / (4 × 20000 × 1) = 250 μF
+→ 选 2 × 220μF 电解并联(440μF,留约 1.76 倍裕量)+ 多颗 1~10μF MLCC 紧贴半桥
+(对照 09 页《FOC 驱动器硬件深挖》4.2 节:10A/ΔV=0.5V 口径同样算得 250μF,结论一致)</div>
+  <p>若按本页 24V/5A 起步口径代入同一公式:C ≥ 5/(4×20000×1) = <strong>62.5μF</strong>,选 1 颗 100μF 电解即可——电流减小 4 倍,电容需求同比缩小,公式与电压无关、只由 I 和 f<sub>sw</sub> 决定。</p>
+
+  <h3>两段关键伪代码:ADC 注入触发 + nFAULT 故障中断</h3>
+  <p><strong>① ADC 注入触发采样</strong>(TIM1 CC4 触发注入组、JEOS 中断读三相,对应上文「PWM 导通中段触发」铁律):</p>
+  <div class="my-code">// ---- 初始化:让硬件在每个 PWM 周期中段自动触发一次三相电流采样 ----
+TIM1->CCR4 = TIM1->ARR / 2;        // 采样点设在 PWM 周期中段,避开开关瞬态
+TIM1->CCER |= TIM_CCER_CC4E;       // 使能 CC4 通道作触发源
+ADC1->JSQR = (ch_IU << 0) | (ch_IV << 6) | (ch_IW << 12) | (3 << 20);  // 注入组 3 通道:U/V/W
+// (此后每个 PWM 周期硬件自动转换一次注入组,CPU 零干预、时刻确定)
+
+// ---- JEOS 中断:注入组转换结束,一次性读走三相 ----
+void ADC1_2_IRQHandler(void)
+{
+    if (ADC1->ISR & ADC_ISR_JEOS) {
+        ADC1->ISR = ADC_ISR_JEOS;                     // 写 1 清标志
+        iu = (int16_t)(ADC1->JDR1 - off_u) * k_gain;  // 三相电流一次读齐
+        iv = (int16_t)(ADC1->JDR2 - off_v) * k_gain;
+        iw = (int16_t)(ADC1->JDR3 - off_w) * k_gain;
+        foc_current_loop(iu, iv, iw);                 // 喂给 FOC 电流环,同周期闭环
+    }
+}</div>
+  <p><strong>② nFAULT 故障中断</strong>(预驱过流/过温/欠压时拉低 nFAULT,对应上文「nFAULT 必须接 MCU 外部中断」):</p>
+  <div class="my-code">void EXTI_nFAULT_IRQHandler(void)      // nFAULT 下降沿触发
+{
+    uint32_t st = drv8323_read_reg(REG_FAULT_STATUS); // ① 读故障寄存器,锁存原因
+    g_fault_log  = st;                                //    (VDS_OCP/GDF/UVLO/OTSD...留档)
+    tim1_pwm_shutdown();                              // ② 立即关 PWM:清 MOE,六路输出强制关断
+    g_fault_flags |= FAULT_DRIVER;                    // ③ 置全局故障标志,主循环决定复位/降级
+    // 原则:中断内只做「读状态 + 停机 + 记标志」三件事;
+    // 不做慢速 SPI 重试、不打印日志、更不在此处重启 PWM
+}</div>
 
   <!-- ================= 6 开源参考项目 ================= -->
   <h2><span class="h2-num">6</span> 立创开源参考项目(直接抄作业!)</h2>

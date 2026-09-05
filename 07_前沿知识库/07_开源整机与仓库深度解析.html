@@ -144,6 +144,22 @@
     <b>⚠️ 结论:</b>对"想学整机结构、自研关节模组"的人,宇树 G1/H1 只能提供<b>控制与算法</b>层面的参照,无法提供机械本体图纸。若要"软硬件都开源的人形整机",请转向下一节的灵犀 X1 与第 4 节的 OpenLoong(青龙)。
   </div>
 
+  <p><b>上手命令速查(unitree_sdk2 → 编译 → 跑示例):</b></p>
+  <pre><code># 1. 克隆 SDK(含 C++ 头文件/库与示例;也可用 unitree_ros2 走 ROS2 路线)
+git clone https://github.com/unitreerobotics/unitree_sdk2.git
+cd unitree_sdk2
+
+# 2. 编译(标准 CMake 流程)
+mkdir build && cd build
+cmake ..
+cmake --build .          # 或 make -j$(nproc)
+
+# 3. 跑官方示例(只读话题不需要机器人,写指令请务必先空载/架起测试!)
+#    示例二进制与参数名以仓库 README 为准,不同版本子路径可能不同
+./example/hello_world    # DDS 通信自检
+# 仿真/真机都走同一套接口:真机网口直连(网卡名如 enp3s0)
+sudo ./example/low_level # 低层关节示例(危险操作,先读 README)</code></pre>
+
   <!-- ================= 3 深度解析二 · 智元 ================= -->
   <h2><span class="h2-num">3</span> 深度解析二 · 智元(Agibot)开源</h2>
   <p>智元机器人(Agibot,创始人是人称"稚晖君"的彭志辉)在开源上的策略是"<b>数据 + 整机 + 仿真</b>"三线并进:用百万级真机数据集抢占具身智能的"数据高地",用灵犀 X1 的软硬件全套开源抢占"整机复刻"入口,再用 Genie 仿真平台降低训练数据成本。对人形学习者,最重要的是前两者。</p>
@@ -168,6 +184,20 @@
     <b>💡 宇树 vs 智元,一句话对比:</b>宇树开源的是"<b>控制与算法生态</b>"(软件多、本体闭),智元开源的是"<b>数据 + 整机</b>"(数据非商用、整机软硬件开放)。你的目标决定你该先 fork 谁——想学运控/RL 走宇树,想学整机结构/数据走智元。
   </div>
 
+  <p><b>上手命令速查(数据集下载 + 整机仓库 clone):</b></p>
+  <pre><code># 1. 安装 HuggingFace CLI(AgiBot World 托管在 HF 数据集仓)
+pip install -U "huggingface_hub[cli]"
+
+# 2. 下载 AgiBot World 数据(体量很大,建议先下子集试水;
+#    具体数据集名/版本以 OpenDriveLab/AgiBot-World 仓库 README 为准)
+huggingface-cli download agibot-world/AgiBot-World-beta \
+    --repo-type dataset --local-dir ./agibot_world
+# 只下某个分片可用 --include "observation/**" 之类过滤
+
+# 3. 克隆灵犀 X1 相关仓库(组织 AgibotTech,子仓库名/路径以组织页 README 为准)
+git clone https://github.com/AgibotTech/x1_description.git   # URDF/结构描述
+# git clone https://github.com/AgibotTech/<其他子仓库>.git   # 固件/上位机等,见组织页</code></pre>
+
   <!-- ================= 4 深度解析三 · OpenLoong ================= -->
   <h2><span class="h2-num">4</span> 深度解析三 · OpenLoong(开源人形整机公版)</h2>
   <p>OpenLoong 是<b>上海人形机器人创新中心</b>(国家地方共建人形机器人创新中心)主导、联合多所高校与企业共建的开源人形机器人公版项目,其参考整机"<b>青龙</b>"是国产首款全尺寸通用人形机器人公版机(全尺寸、数十自由度),项目已入选<b>开放原子开源基金会(OpenAtom)</b>。它的定位被社区比作"人形机器人的 ROS 时刻"——用一套统一的公版硬件与软件栈,让不同团队的算法能在同一台机器上公平对比。</p>
@@ -186,6 +216,24 @@
     <li><b>学习建议:</b>先跑通它附带的仿真示例,再对照论文/文档读"模型 → 优化问题 → 求解 → 力矩指令"这条链路,不必一开始就啃透全部数学。</li>
   </ul>
   <div class="or-note">仓库:<a class="or-link" href="https://github.com/loongOpen/OpenLoong" target="_blank" rel="noopener">github.com/loongOpen/OpenLoong →</a> · <a class="or-link" href="https://github.com/loongOpen/OpenLoong-Dyn-Control" target="_blank" rel="noopener">github.com/loongOpen/OpenLoong-Dyn-Control →</a></div>
+
+  <p><b>上手命令速查(青龙 Dyn-Control 包 clone + 编译运行):</b></p>
+  <pre><code># 1. 克隆全身动力学控制包(子目录与构建方式以仓库 README 为准)
+git clone https://github.com/loongOpen/OpenLoong-Dyn-Control.git
+cd OpenLoong-Dyn-Control
+
+# 2. 安装依赖(Eigen / Pinocchio / MuJoCo 等,版本要求见 README)
+sudo apt install libeigen3-dev
+# Pinocchio / MuJoCo 建议按官方文档用 robotpkg 或 pip 安装
+
+# 3. 编译(标准 CMake 流程)
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+
+# 4. 运行仿真示例(青龙仿真环境,具体可执行名以 README 为准)
+./simulation          # 或 ros2 launch 对应的 launch 文件
+# 提示:先在 MuJoCo 仿真里跑通"站立→行走",再考虑真机/同构平台移植</code></pre>
 
   <!-- ================= 5 其他值得关注的开源 ================= -->
   <h2><span class="h2-num">5</span> 其他值得关注的开源项目(手臂 · 四足 · 仿真 · 数据)</h2>

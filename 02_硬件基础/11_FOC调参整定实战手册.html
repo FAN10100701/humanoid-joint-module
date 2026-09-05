@@ -77,6 +77,13 @@
 
   <div class="box box-warn"><b>⚠️ 带宽上限:</b>f<sub>bw</sub> 不能超过 PWM 频率的 1/10~1/20(20 kHz PWM → 电流环 ≤ 1~2 kHz),也受电流采样噪声与执行延时限制。给 U/V/W 三相扰动阶跃,标准是:<strong>无静差、无振荡、上升时间 ≈ 0.35/f<sub>bw</sub></strong>。上电后电机应有"定住"的刚度且安静;嗡嗡声大说明带宽过高或噪声大。</div>
 
+  <h3>完整算例:给定 R/L 算三环 PI 初值(带宽法 worked example)</h3>
+  <p>已知某关节电机相电阻 <strong>R = 0.8 Ω</strong>、相电感 <strong>L = 0.2 mH</strong>,PWM 频率 <strong>f<sub>PWM</sub> = 20 kHz</strong>,求电流环 PI 初值。</p>
+  <p><strong>第 1 步 · 定目标带宽(取 PWM/20 并说清依据):</strong>带宽上限受 PWM 频率约束,须 ≤ f<sub>PWM</sub> 的 1/10~1/20——留 20 倍余量是为保证每个电流环控制周期内有足够个数的 PWM 载波完成采样与更新,且把数字延时(采样+计算+PWM 保持,约 1.5 个控制周期)带来的相位滞后压在可接受范围。取保守值:f<sub>bw</sub> = f<sub>PWM</sub>/20 = 20000/20 = <strong>1000 Hz</strong>,则 ω<sub>c</sub> = 2π·f<sub>bw</sub> = 2π×1000 ≈ <strong>6283 rad/s</strong>。</p>
+  <p><strong>第 2 步 · 代入公式(注意单位坑:0.2 mH = 0.0002 H):</strong></p>
+  <div class="formula">K_p = \omega_c \cdot L = 6283 \times 0.0002 \approx 1.26\ \text{V/A}, \qquad K_i = \omega_c \cdot R = 6283 \times 0.8 \approx 5027\ \text{V/(A·s)}</div>
+  <p><strong>第 3 步 · 验收:</strong>给 q 轴 0.5 A 电流阶跃,预期上升时间 ≈ 0.35/f<sub>bw</sub> ≈ 0.35 ms;响应无超调、无静差、电机安静有刚度即为合格。若手算和上面的电流环计算器结果对不上,先检查 L 是否忘了从 mH 换算成 H——这是本页最常见的错误(自测第 2 题即此算例,可先盖住答案自己算一遍)。</p>
+
   <h2><span class="h2-num">3</span> 速度环:从 J 出发,看曲线调参</h2>
   <p>速度环对象是<strong>积分环节(电流→加速度)+ 机械惯性 J</strong>,常用 PI 或 PD。初值同样可用带宽法:K<sub>p,v</sub> = J·ω<sub>v</sub>/K<sub>t</sub>(把转矩常数折算进去),K<sub>i,v</sub> 取 K<sub>p,v</sub> 的 1/5~1/10 积分时间。之后靠<strong>速度阶跃曲线</strong>微调:</p>
   <div class="table-wrap"><table>
