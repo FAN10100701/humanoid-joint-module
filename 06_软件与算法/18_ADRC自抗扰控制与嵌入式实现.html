@@ -62,6 +62,12 @@
   html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
   html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
   html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+  /* V2.1.16a 观感修复:SVG 图例/步骤框文字双主题 */
+  .my-lg{fill:#26303b} html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-t{fill:#b45309} html[data-theme-early='dark'] .my-t{fill:#fcd34d}
+  .my-tb{fill:#1d4ed8} html[data-theme-early='dark'] .my-tb{fill:#9ecbff}
+  .my-tg{fill:#15803d} html[data-theme-early='dark'] .my-tg{fill:#86efac}
+  .my-bwd{fill:#991b1b} html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
 </style>
 <script>
   window.PAGE = {
@@ -177,7 +183,7 @@
       <text x="538" y="146" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">u</text>
       <!-- 被控对象 -->
       <rect x="556" y="124" width="76" height="64" rx="10" fill="rgba(148,163,184,.12)" stroke="#94a3b8" stroke-width="1.6"/>
-      <text x="594" y="150" fill="#cbd5e1" font-size="12" font-weight="bold" text-anchor="middle">被控对象</text>
+      <text x="594" y="150" fill="#64748b" font-size="12" font-weight="bold" text-anchor="middle">被控对象</text>
       <text x="594" y="170" fill="#8b98a9" font-size="10.5" text-anchor="middle">ÿ=f+b₀u</text>
       <!-- u 分支下行进 ESO -->
       <circle cx="540" cy="156" r="3.5" fill="#22c55e"/>
@@ -262,9 +268,9 @@
       <line x1="70" y1="100" x2="70" y2="100" stroke="#22c55e" stroke-width="2"/>
       <!-- 图例 -->
       <rect x="420" y="52" width="158" height="70" rx="8" fill="rgba(13,17,23,.45)" stroke="rgba(255,255,255,.12)"/>
-      <line x1="432" y1="70" x2="460" y2="70" stroke="#22c55e" stroke-width="2.2"/><text x="468" y="74" fill="#8b98a9" font-size="10.5">ωₒ 小 · 慢</text>
-      <line x1="432" y1="90" x2="460" y2="90" stroke="#58a6ff" stroke-width="2.2"/><text x="468" y="94" fill="#8b98a9" font-size="10.5">ωₒ 适中 · 快且稳</text>
-      <line x1="432" y1="110" x2="460" y2="110" stroke="#ef4444" stroke-width="2"/><text x="468" y="114" fill="#8b98a9" font-size="10.5">ωₒ 过高 · 发散</text>
+      <line x1="432" y1="70" x2="460" y2="70" stroke="#22c55e" stroke-width="2.2"/><text x="468" y="74" class="my-lg" font-size="10.5">ωₒ 小 · 慢</text>
+      <line x1="432" y1="90" x2="460" y2="90" stroke="#58a6ff" stroke-width="2.2"/><text x="468" y="94" class="my-lg" font-size="10.5">ωₒ 适中 · 快且稳</text>
+      <line x1="432" y1="110" x2="460" y2="110" stroke="#ef4444" stroke-width="2"/><text x="468" y="114" class="my-lg" font-size="10.5">ωₒ 过高 · 发散</text>
     </svg>
     <div class="my-fig-cap">图② ESO 收敛性随观测器带宽 ωₒ 的变化:ωₒ 越大对扰动的「追赶」越快,但受噪声与离散化限制 —— ωₒ 超过采样率允许的上限后,显式欧拉下直接振荡发散(第 6 节给出定量关系)</div>
   </div>
@@ -350,37 +356,37 @@
       </defs>
       <!-- step1 -->
       <rect x="150" y="16" width="300" height="52" rx="10" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.5"/>
-      <text x="300" y="38" fill="#fcd34d" font-size="13" font-weight="bold" text-anchor="middle">① 辨识 b₀(空载小信号阶跃)</text>
-      <text x="300" y="57" fill="#8b98a9" font-size="11" text-anchor="middle">b₀≈Δÿ/Δu;或 1/J 惯量折算,误差 3 倍内可用</text>
+      <text x="300" y="38" class="my-t" font-size="13" font-weight="bold" text-anchor="middle">① 辨识 b₀(空载小信号阶跃)</text>
+      <text x="300" y="57" class="my-lg" font-size="11" text-anchor="middle">b₀≈Δÿ/Δu;或 1/J 惯量折算,误差 3 倍内可用</text>
       <line x1="300" y1="68" x2="300" y2="90" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
       <!-- step2 -->
       <rect x="150" y="92" width="300" height="52" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.5"/>
-      <text x="300" y="114" fill="#9ecbff" font-size="13" font-weight="bold" text-anchor="middle">② 定控制器带宽 ωc</text>
-      <text x="300" y="133" fill="#8b98a9" font-size="11" text-anchor="middle">按闭环需求从需求值的一半起(位置环 30~150 rad/s)</text>
+      <text x="300" y="114" class="my-tb" font-size="13" font-weight="bold" text-anchor="middle">② 定控制器带宽 ωc</text>
+      <text x="300" y="133" class="my-lg" font-size="11" text-anchor="middle">按闭环需求从需求值的一半起(位置环 30~150 rad/s)</text>
       <line x1="300" y1="144" x2="300" y2="166" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
       <!-- step3 -->
       <rect x="150" y="168" width="300" height="52" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.5"/>
-      <text x="300" y="190" fill="#9ecbff" font-size="13" font-weight="bold" text-anchor="middle">③ 定观测器带宽 ωₒ:从 (3~5)·ωc 起扫</text>
-      <text x="300" y="209" fill="#8b98a9" font-size="11" text-anchor="middle">只往上扫,上限 fs/10;盯 z₃ 平滑度与电流啸叫</text>
+      <text x="300" y="190" class="my-tb" font-size="13" font-weight="bold" text-anchor="middle">③ 定观测器带宽 ωₒ:从 (3~5)·ωc 起扫</text>
+      <text x="300" y="209" class="my-lg" font-size="11" text-anchor="middle">只往上扫,上限 fs/10;盯 z₃ 平滑度与电流啸叫</text>
       <line x1="300" y1="220" x2="300" y2="242" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
       <!-- step4 阶跃验证 -->
       <rect x="130" y="244" width="340" height="52" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.5"/>
-      <text x="300" y="266" fill="#86efac" font-size="13" font-weight="bold" text-anchor="middle">④ 小幅阶跃验证:超调?振荡?稳态残差?</text>
-      <text x="300" y="285" fill="#8b98a9" font-size="11" text-anchor="middle">振荡 → ωc 回退 30%;迟钝 → 查 b₀ 方向(第 4.1 节口诀)</text>
+      <text x="300" y="266" class="my-tg" font-size="13" font-weight="bold" text-anchor="middle">④ 小幅阶跃验证:超调?振荡?稳态残差?</text>
+      <text x="300" y="285" class="my-lg" font-size="11" text-anchor="middle">振荡 → ωc 回退 30%;迟钝 → 查 b₀ 方向(第 4.1 节口诀)</text>
       <line x1="300" y1="296" x2="300" y2="318" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
       <!-- 回退支路 -->
       <path d="M470 270 L500 270 L500 194 L454 194" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#fl-r)"/>
       <rect x="496" y="216" width="118" height="46" rx="8" fill="rgba(239,68,68,.10)" stroke="rgba(239,68,68,.5)" stroke-width="1.2"/>
-      <text x="555" y="235" fill="#fca5a5" font-size="10.5" text-anchor="middle">啸叫/抖动 →</text>
-      <text x="555" y="251" fill="#fca5a5" font-size="10.5" text-anchor="middle">降 ωₒ(或改滤波)</text>
+      <text x="555" y="235" class="my-bwd" font-size="10.5" text-anchor="middle">啸叫/抖动 →</text>
+      <text x="555" y="251" class="my-bwd" font-size="10.5" text-anchor="middle">降 ωₒ(或改滤波)</text>
       <!-- step5 扰动验证 -->
       <rect x="150" y="320" width="300" height="52" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.5"/>
-      <text x="300" y="342" fill="#86efac" font-size="13" font-weight="bold" text-anchor="middle">⑤ 突加负载扰动验证(对照 PI 基线)</text>
-      <text x="300" y="361" fill="#8b98a9" font-size="11" text-anchor="middle">看跌落深度与恢复时间(第 8 节读曲线四步)</text>
+      <text x="300" y="342" class="my-tg" font-size="13" font-weight="bold" text-anchor="middle">⑤ 突加负载扰动验证(对照 PI 基线)</text>
+      <text x="300" y="361" class="my-lg" font-size="11" text-anchor="middle">看跌落深度与恢复时间(第 8 节读曲线四步)</text>
       <line x1="300" y1="372" x2="300" y2="394" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
       <!-- step6 固化 -->
       <rect x="170" y="396" width="260" height="36" rx="10" fill="rgba(34,197,94,.16)" stroke="#22c55e" stroke-width="1.6"/>
-      <text x="300" y="419" fill="#86efac" font-size="13" font-weight="bold" text-anchor="middle">⑥ 固化参数 · 写入固件 · 记录版本</text>
+      <text x="300" y="419" class="my-tg" font-size="13" font-weight="bold" text-anchor="middle">⑥ 固化参数 · 写入固件 · 记录版本</text>
     </svg>
     <div class="my-fig-cap">图③ LADRC 整定流程:唯一允许「来回」的只有 ③→④ 的回退环 —— ωₒ 只增不减地扫,遇到啸叫先降 ωₒ 或加滤波,不要回头去动 ω_c</div>
   </div>
@@ -590,10 +596,10 @@ float ladrc2_calc(ladrc2_t *a, float v1, float v2, float y)
       <text x="418" y="160" fill="#9ecbff" font-size="11">ADRC: 跌落浅 Δ₂ · 恢复快</text>
       <!-- 图例 -->
       <rect x="420" y="40" width="168" height="54" rx="8" fill="rgba(13,17,23,.45)" stroke="rgba(255,255,255,.12)"/>
-      <line x1="432" y1="60" x2="460" y2="60" stroke="#f59e0b" stroke-width="2.4"/><text x="468" y="64" fill="#8b98a9" font-size="10.5">PI(整定至临界良好)</text>
-      <line x1="432" y1="80" x2="460" y2="80" stroke="#58a6ff" stroke-width="2.4"/><text x="468" y="84" fill="#8b98a9" font-size="10.5">LADRC(同对象同限幅)</text>
+      <line x1="432" y1="60" x2="460" y2="60" stroke="#f59e0b" stroke-width="2.4"/><text x="468" y="64" class="my-lg" font-size="10.5">PI(整定至临界良好)</text>
+      <line x1="432" y1="80" x2="460" y2="80" stroke="#58a6ff" stroke-width="2.4"/><text x="468" y="84" class="my-lg" font-size="10.5">LADRC(同对象同限幅)</text>
       <!-- 结论 -->
-      <text x="330" y="308" fill="#8b98a9" font-size="11" text-anchor="middle">跌落深度 Δ 主要由 ωₒ 决定 · 恢复时间 tr 主要由 ω_c 决定 · 恢复形态诊断 b₀ 方向</text>
+      <text x="330" y="308" fill="#64748b" font-size="11" text-anchor="middle">跌落深度 Δ 主要由 ωₒ 决定 · 恢复时间 tr 主要由 ω_c 决定 · 恢复形态诊断 b₀ 方向</text>
     </svg>
     <div class="my-fig-cap">图④ PI vs ADRC 突加负载对比(示意):两者阶跃跟踪差距不大,差距在扰动瞬间 —— ESO 在扰动「造成大错之前」就开始补偿,跌落更浅、恢复更快;交互版仿真见 00-01 页 ADRC 小节</div>
   </div>

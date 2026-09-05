@@ -131,27 +131,27 @@
       <!-- 写口 -->
       <rect x="18" y="40" width="120" height="120" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
       <text x="78" y="63" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#58a6ff">写口(wr 域)</text>
-      <text x="78" y="88" text-anchor="middle" font-size="11.5" fill="#c9d1d9">wr_en / wr_data</text>
-      <text x="78" y="108" text-anchor="middle" font-size="11.5" fill="#9aa4b2">满不写</text>
+      <text x="78" y="88" text-anchor="middle" font-size="11.5" fill="#64748b">wr_en / wr_data</text>
+      <text x="78" y="108" text-anchor="middle" font-size="11.5" fill="#64748b">满不写</text>
       <text x="78" y="132" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">full ←</text>
 
       <!-- 读口 -->
       <rect x="502" y="40" width="120" height="120" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.6"/>
       <text x="562" y="63" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#22c55e">读口(rd 域)</text>
-      <text x="562" y="88" text-anchor="middle" font-size="11.5" fill="#c9d1d9">rd_en / rd_data</text>
-      <text x="562" y="108" text-anchor="middle" font-size="11.5" fill="#9aa4b2">空不读</text>
+      <text x="562" y="88" text-anchor="middle" font-size="11.5" fill="#64748b">rd_en / rd_data</text>
+      <text x="562" y="108" text-anchor="middle" font-size="11.5" fill="#64748b">空不读</text>
       <text x="562" y="132" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">→ empty</text>
 
       <!-- 存储阵列 -->
       <rect x="230" y="30" width="180" height="150" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.8"/>
       <text x="320" y="55" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#f59e0b">存储阵列 mem</text>
       <rect x="252" y="68" width="136" height="16" rx="3" fill="rgba(245,158,11,.16)" stroke="#f59e0b" stroke-width="1"/>
-      <text x="320" y="80" text-anchor="middle" font-size="10.5" fill="#c9d1d9">mem[0]</text>
+      <text x="320" y="80" text-anchor="middle" font-size="10.5" fill="#64748b">mem[0]</text>
       <rect x="252" y="90" width="136" height="16" rx="3" fill="rgba(245,158,11,.16)" stroke="#f59e0b" stroke-width="1"/>
-      <text x="320" y="102" text-anchor="middle" font-size="10.5" fill="#c9d1d9">mem[1]</text>
-      <text x="320" y="124" text-anchor="middle" font-size="11" fill="#9aa4b2">……</text>
+      <text x="320" y="102" text-anchor="middle" font-size="10.5" fill="#64748b">mem[1]</text>
+      <text x="320" y="124" text-anchor="middle" font-size="11" fill="#64748b">……</text>
       <rect x="252" y="134" width="136" height="16" rx="3" fill="rgba(245,158,11,.16)" stroke="#f59e0b" stroke-width="1"/>
-      <text x="320" y="146" text-anchor="middle" font-size="10.5" fill="#c9d1d9">mem[DEPTH-1]</text>
+      <text x="320" y="146" text-anchor="middle" font-size="10.5" fill="#64748b">mem[DEPTH-1]</text>
 
       <!-- 写路径箭头 -->
       <line x1="138" y1="80" x2="226" y2="80" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#faBlue)"/>
@@ -166,8 +166,8 @@
       <!-- 空满逻辑 -->
       <rect x="120" y="228" width="400" height="76" rx="10" fill="rgba(239,68,68,.08)" stroke="#ef4444" stroke-width="1.6"/>
       <text x="320" y="252" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#ef4444">空满逻辑(同一 clk 域,纯组合比较)</text>
-      <text x="320" y="274" text-anchor="middle" font-size="11.5" fill="#c9d1d9">法一:count == 0 → empty ; count == DEPTH → full</text>
-      <text x="320" y="293" text-anchor="middle" font-size="11.5" fill="#c9d1d9">法二:wptr == rptr → empty ;wptr 与 rptr 最高位相异、其余位相同 → full</text>
+      <text x="320" y="274" text-anchor="middle" font-size="11.5" fill="#64748b">法一:count == 0 → empty ; count == DEPTH → full</text>
+      <text x="320" y="293" text-anchor="middle" font-size="11.5" fill="#64748b">法二:wptr == rptr → empty ;wptr 与 rptr 最高位相异、其余位相同 → full</text>
 
       <!-- 指针到空满逻辑 -->
       <path d="M 78 160 L 78 266 L 116 266" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#faBlue)"/>
@@ -374,20 +374,20 @@ D_min  = 1000 − 600 = 400  → 取 512</code></pre>
       </defs>
 
       <!-- 异步输入波形 -->
-      <text x="30" y="40" font-size="12" fill="#c9d1d9">异步输入</text>
-      <text x="30" y="56" font-size="10.5" fill="#9aa4b2">(另一时钟域)</text>
+      <text x="30" y="40" font-size="12" fill="#64748b">异步输入</text>
+      <text x="30" y="56" font-size="10.5" fill="#64748b">(另一时钟域)</text>
       <polyline points="30,90 90,90 90,66 168,66 168,90 240,90" fill="none" stroke="#58a6ff" stroke-width="2"/>
 
       <!-- 第一级 DFF -->
       <rect x="252" y="52" width="66" height="52" rx="6" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.8"/>
       <text x="285" y="74" text-anchor="middle" font-size="12" font-weight="bold" fill="#ef4444">FF1</text>
-      <text x="285" y="92" text-anchor="middle" font-size="10" fill="#9aa4b2">可能亚稳!</text>
+      <text x="285" y="92" text-anchor="middle" font-size="10" fill="#64748b">可能亚稳!</text>
       <line x1="240" y1="78" x2="248" y2="78" stroke="#58a6ff" stroke-width="2" marker-end="url(#fb)"/>
 
       <!-- 第二级 DFF -->
       <rect x="392" y="52" width="66" height="52" rx="6" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.8"/>
       <text x="425" y="74" text-anchor="middle" font-size="12" font-weight="bold" fill="#22c55e">FF2</text>
-      <text x="425" y="92" text-anchor="middle" font-size="10" fill="#9aa4b2">已恢复</text>
+      <text x="425" y="92" text-anchor="middle" font-size="10" fill="#64748b">已恢复</text>
       <line x1="318" y1="78" x2="388" y2="78" stroke="#8b98a9" stroke-width="2" marker-end="url(#fb)"/>
       <text x="353" y="70" text-anchor="middle" font-size="10.5" fill="#8b98a9">q1</text>
 
@@ -400,7 +400,7 @@ D_min  = 1000 − 600 = 400  → 取 512</code></pre>
       <text x="356" y="30" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b">两级同步器(打两拍)</text>
 
       <!-- 目的时钟 -->
-      <text x="356" y="136" text-anchor="middle" font-size="11" fill="#9aa4b2">两支 DFF 共用目的时钟 clk_dst</text>
+      <text x="356" y="136" text-anchor="middle" font-size="11" fill="#64748b">两支 DFF 共用目的时钟 clk_dst</text>
 
       <!-- 波形区:q1 亚稳 -->
       <text x="30" y="182" font-size="11.5" fill="#ef4444">q1(无恢复时间)</text>
@@ -528,29 +528,29 @@ endfunction</code></pre>
       <!-- 写时钟域外框 -->
       <rect x="14" y="18" width="200" height="326" rx="12" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.4"/>
       <text x="114" y="42" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#58a6ff">写时钟域(wclk)</text>
-      <text x="114" y="60" text-anchor="middle" font-size="10.5" fill="#9aa4b2">wr_en / wdata / wfull</text>
+      <text x="114" y="60" text-anchor="middle" font-size="10.5" fill="#64748b">wr_en / wdata / wfull</text>
 
       <!-- 读时钟域外框 -->
       <rect x="446" y="18" width="200" height="326" rx="12" fill="rgba(34,197,94,.06)" stroke="#22c55e" stroke-width="1.4"/>
       <text x="546" y="42" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#22c55e">读时钟域(rclk)</text>
-      <text x="546" y="60" text-anchor="middle" font-size="10.5" fill="#9aa4b2">rinc / rdata / rempty</text>
+      <text x="546" y="60" text-anchor="middle" font-size="10.5" fill="#64748b">rinc / rdata / rempty</text>
 
       <!-- 写指针 -->
       <rect x="34" y="80" width="160" height="58" rx="8" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.5"/>
       <text x="114" y="102" text-anchor="middle" font-size="12" font-weight="bold" fill="#58a6ff">写指针 wbin</text>
-      <text x="114" y="122" text-anchor="middle" font-size="10.5" fill="#c9d1d9">二进制 → wgray 格雷码</text>
+      <text x="114" y="122" text-anchor="middle" font-size="10.5" fill="#64748b">二进制 → wgray 格雷码</text>
 
       <!-- 读指针 -->
       <rect x="466" y="80" width="160" height="58" rx="8" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.5"/>
       <text x="546" y="102" text-anchor="middle" font-size="12" font-weight="bold" fill="#22c55e">读指针 rbin</text>
-      <text x="546" y="122" text-anchor="middle" font-size="10.5" fill="#c9d1d9">二进制 → rgray 格雷码</text>
+      <text x="546" y="122" text-anchor="middle" font-size="10.5" fill="#64748b">二进制 → rgray 格雷码</text>
 
       <!-- 双口RAM -->
       <rect x="248" y="150" width="164" height="96" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.8"/>
       <text x="330" y="176" text-anchor="middle" font-size="13" font-weight="bold" fill="#f59e0b">双口 RAM mem</text>
-      <text x="330" y="196" text-anchor="middle" font-size="10.5" fill="#c9d1d9">写口:wclk + wptr 寻址</text>
-      <text x="330" y="214" text-anchor="middle" font-size="10.5" fill="#c9d1d9">读口:rclk + rptr 寻址</text>
-      <text x="330" y="234" text-anchor="middle" font-size="10.5" fill="#9aa4b2">数据本身不跨时钟域!</text>
+      <text x="330" y="196" text-anchor="middle" font-size="10.5" fill="#64748b">写口:wclk + wptr 寻址</text>
+      <text x="330" y="214" text-anchor="middle" font-size="10.5" fill="#64748b">读口:rclk + rptr 寻址</text>
+      <text x="330" y="234" text-anchor="middle" font-size="10.5" fill="#64748b">数据本身不跨时钟域!</text>
 
       <!-- 写数据路径 -->
       <line x1="114" y1="138" x2="114" y2="252" stroke="#58a6ff" stroke-width="1.5"/>
@@ -576,12 +576,12 @@ endfunction</code></pre>
       <!-- 满判断 -->
       <rect x="34" y="176" width="160" height="52" rx="8" fill="rgba(239,68,68,.08)" stroke="#ef4444" stroke-width="1.4"/>
       <text x="114" y="197" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">满判断(写域)</text>
-      <text x="114" y="215" text-anchor="middle" font-size="10" fill="#c9d1d9">wgray_next vs 同步来的 rgray</text>
+      <text x="114" y="215" text-anchor="middle" font-size="10" fill="#64748b">wgray_next vs 同步来的 rgray</text>
 
       <!-- 空判断 -->
       <rect x="466" y="176" width="160" height="52" rx="8" fill="rgba(239,68,68,.08)" stroke="#ef4444" stroke-width="1.4"/>
       <text x="546" y="197" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">空判断(读域)</text>
-      <text x="546" y="215" text-anchor="middle" font-size="10" fill="#c9d1d9">rgray_next vs 同步来的 wgray</text>
+      <text x="546" y="215" text-anchor="middle" font-size="10" fill="#64748b">rgray_next vs 同步来的 wgray</text>
 
       <line x1="114" y1="138" x2="114" y2="172" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#fc)"/>
       <line x1="546" y1="138" x2="546" y2="172" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#fc)"/>
@@ -744,18 +744,18 @@ assign pulse_dst = t_sync2 ^ t_sync3;   // t_sync3 是再打一拍的寄存器</
       <path d="M 90 80 L 114 62 L 114 80 L 138 62 L 138 80 L 162 62 L 162 80 L 186 62 L 186 80 L 210 62 L 210 80 L 234 62 L 234 80 L 258 62 L 258 80 L 282 62 L 282 80 L 306 62 L 306 80 L 330 62 L 330 80 L 354 62 L 354 80 L 378 62 L 378 80 L 402 62 L 402 80 L 426 62 L 426 80 L 450 62 L 450 80 L 474 62 L 474 80 L 498 62 L 498 80 L 522 62 L 522 80 L 546 62 L 546 80 L 570 62 L 570 80 L 594 62 L 594 80 L 618 80 L 630 80" fill="none" stroke="#22c55e" stroke-width="1.6"/>
 
       <!-- 行3:data(静止窗口) -->
-      <text x="14" y="120" font-size="11.5" fill="#c9d1d9">data</text>
+      <text x="14" y="120" font-size="11.5" fill="#64748b">data</text>
       <polyline points="90,146 104,146 104,116 480,116 480,146 630,146" fill="none" stroke="#f59e0b" stroke-width="2"/>
       <text x="292" y="110" text-anchor="middle" font-size="10.5" fill="#f59e0b">数据放稳(静止窗口,覆盖对方两拍同步延迟)</text>
 
       <!-- 行4:req -->
-      <text x="14" y="184" font-size="11.5" fill="#c9d1d9">req(src 域)</text>
+      <text x="14" y="184" font-size="11.5" fill="#64748b">req(src 域)</text>
       <polyline points="90,210 128,210 128,180 400,180 400,210 556,210 556,180 630,180" fill="none" stroke="#ef4444" stroke-width="2"/>
       <text x="132" y="172" font-size="10" fill="#ef4444">① 拉高 req(数据已稳)</text>
       <text x="404" y="202" font-size="10" fill="#ef4444">④ 收到 ack 后拉低</text>
 
       <!-- 行5:ack -->
-      <text x="14" y="248" font-size="11.5" fill="#c9d1d9">ack(dst 域)</text>
+      <text x="14" y="248" font-size="11.5" fill="#64748b">ack(dst 域)</text>
       <polyline points="90,274 224,274 224,244 480,244 480,274 630,274" fill="none" stroke="#58a6ff" stroke-width="2"/>
       <text x="228" y="236" font-size="10" fill="#58a6ff">② req 两拍同步后在 dst 域拉高:此拍采样 data</text>
       <text x="484" y="266" font-size="10" fill="#58a6ff">⑤ req 拉低被同步后 ack 拉低</text>

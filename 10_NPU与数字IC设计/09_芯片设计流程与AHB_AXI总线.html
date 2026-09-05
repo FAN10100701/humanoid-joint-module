@@ -371,7 +371,7 @@ end</code></pre>
         <text x="465" y="132">高速连续流</text>
         <text x="465" y="144">(流水线数据)</text>
         <text x="585" y="132">单调计数</text>
-        <text x="585" y="144">(FIFO指针)</text>
+        <text x="568" y="144">(FIFO指针)</text>
       </g>
       <!-- 叶子 -->
       <g font-size="10.5" font-weight="bold" text-anchor="middle">
@@ -605,7 +605,7 @@ clean:
       <line x1="490" y1="292" x2="154" y2="292" stroke="#f59e0b" stroke-width="2.2" marker-end="url(#arAxO)"/>
       <text x="320" y="286" font-size="10.5" font-weight="bold" fill="#cdd9e5" text-anchor="middle">← R 读数据通道</text>
       <text x="320" y="306" font-size="9" fill="#8b98a9" text-anchor="middle" font-family="Consolas,monospace">RVALID/RREADY · RDATA/RLAST/RRESP · RID</text>
-      <text x="20" y="336" font-size="9.5" fill="#8b98a9">要点:① 每条通道独立 VALID/READY 握手;② 读写地址通道分开 → 读写可同时全双工;③ 通道间无固定先后(AW 与 W 可任意顺序握手),只受依赖规则约束(第 7 节)。</text>
+      <text x="20" y="336" font-size="9.5" fill="#8b98a9">要点:① 每通道独立 VALID/READY 握手;② 读写地址分开 → 全双工;③ 通道无固定先后,仅受依赖规则约束(第 7 节)。</text>
     </svg>
     <div class="my-fig-cap">图 4 · AXI 五通道结构:箭头即信息流向。写事务走 AW/W/B 三通道,读事务走 AR/R 两通道,互不阻塞;B 响应每笔写事务恰好一个,R 数据每拍都带响应位(RRESP)。</div>
   </div>
@@ -668,7 +668,7 @@ clean:
       <text x="440" y="222" font-size="9" fill="#ef4444">⑤B 握手→本笔写完成</text>
       <g font-size="9.5" fill="#8b98a9">
         <text x="20" y="312">蓝 = VALID(主/从发起方) · 橙 = READY(接收方) · 红点 = VALID 与 READY 同拍为高的握手时刻。</text>
-        <text x="20" y="326">注意 AWVALID 先拉、AWREADY 后到 —— 合法;若反过来 READY 先拉也合法;唯独「VALID 等 READY 才拉」在部分通道是死锁违例(第 7 节)。</text>
+        <text x="20" y="326">注意 AWVALID 先拉、AWREADY 后到合法;反之也合法;唯独「VALID 等 READY 才拉」在部分通道是死锁违例(第 7 节)。</text>
       </g>
     </svg>
     <div class="my-fig-cap">图 5 · AXI VALID-READY 握手波形(以三拍写为例):地址通道 1 次握手、数据通道逐拍 3 次握手、响应通道 1 次握手 —— 一笔写事务 = AW×1 + W×N + B×1 共 N+2 次握手。</div>

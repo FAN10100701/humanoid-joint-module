@@ -150,7 +150,7 @@
     <text x="490" y="152" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b">2×</text>
     <text x="538" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e">1×</text>
     <text x="490" y="260" text-anchor="middle" class="my-t1">③ 推理能耗(访存主导)</text>
-    <text x="490" y="277" text-anchor="middle" class="my-t2">第④本账"算力面积"同理:INT8 TOPS ≈ FP32 的 4~8×</text>
+    <text x="472" y="277" text-anchor="middle" class="my-t2">第④本账「算力面积」同理:INT8 TOPS ≈ FP32 的 4~8×</text>
     <text x="12" y="303" class="my-t2">记忆锚点:位宽减半 → 存储/带宽/能耗约减半;FP32 一步到 INT8 → 三本账同时乘 1/4。</text>
   </svg>
   </div>
@@ -219,7 +219,7 @@
     <line x1="560" y1="162" x2="560" y2="178" stroke="#22c55e" stroke-width="2"/>
     <text x="70" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">0</text>
     <text x="210" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b">z = 85 (zero_point)</text>
-    <text x="315" y="192" text-anchor="middle" font-size="11" fill="#9aa4b2">128</text>
+    <text x="315" y="192" text-anchor="middle" font-size="11" fill="#64748b">128</text>
     <text x="410" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#58a6ff">q = 155</text>
     <text x="560" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e">255</text>
     <!-- 对应关系虚线 -->
@@ -230,7 +230,7 @@
     <text x="420" y="106" class="my-t3">q = clip(round(r/s) + z)</text>
     <text x="500" y="118" class="my-t5">r_max ↔ 255</text>
     <!-- 公式注释 -->
-    <text x="60" y="218" class="my-t4">s = (2.0-(-1.0))/255 ≈ 0.0118    z = round(-(-1.0)/0.0118) ≈ 85    反量化: r̂ = s·(q - z) = 0.0118×(155-85) ≈ 0.83</text>
+    <text x="60" y="218" class="my-t4">s=(2.0−(−1.0))/255≈0.0118  z=round(1.0/0.0118)≈85  反量化: r̂=s·(q−z)=0.0118×70≈0.83</text>
   </svg>
   </div>
 
@@ -294,8 +294,8 @@
     <line x1="362" y1="200" x2="376" y2="200" stroke="#58a6ff" stroke-width="2" marker-end="url(#m2b)"/>
     <line x1="486" y1="200" x2="500" y2="200" stroke="#58a6ff" stroke-width="2" marker-end="url(#m2b)"/>
     <!-- 底注 -->
-    <text x="10" y="262" class="my-t2">两条线终点相同:INT8 模型 → 交给推理引擎。选择策略:先跑 PTQ,精度达标就收工;掉点超标(如 &gt;1%)再上 QAT。</text>
-    <text x="10" y="281" class="my-t2">经验:小模型/低比特(INT4)/Transformer 注意力层,QAT 几乎是必需品;CNN 分类/检测模型 PTQ + per-channel 常常只掉 0.5% 以内。</text>
+    <text x="10" y="262" class="my-t2">两条线终点相同:INT8 模型 → 交给推理引擎。策略:先跑 PTQ,精度达标就收工;掉点 &gt;1% 再上 QAT。</text>
+    <text x="10" y="281" class="my-t2">经验:小模型/低比特(INT4)/Transformer 注意力层 QAT 几乎必需;CNN 分类/检测用 PTQ+per-channel 常只掉 0.5% 内。</text>
   </svg>
   </div>
 

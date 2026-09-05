@@ -272,30 +272,30 @@ while (!(s &amp; 0x2));                 /* done=1 退出;这次读已清 done   
     <!-- 控制FSM -->
     <rect x="330" y="42" width="180" height="78" rx="10" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="420" y="66" text-anchor="middle" font-size="14" font-weight="bold" fill="#f59e0b">控制 FSM</text>
-    <text x="420" y="86" text-anchor="middle" font-size="11" fill="#e6edf3">IDLE→CFG→LOAD→CALC→DONE</text>
-    <text x="420" y="104" text-anchor="middle" font-size="11" fill="#9aa4b2">一次 start 跑一层</text>
+    <text x="420" y="86" text-anchor="middle" font-size="11" fill="#64748b">IDLE→CFG→LOAD→CALC→DONE</text>
+    <text x="420" y="104" text-anchor="middle" font-size="11" fill="#64748b">一次 start 跑一层</text>
     <!-- 权重RAM -->
     <rect x="540" y="42" width="86" height="78" rx="10" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="583" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#22c55e">权重 RAM</text>
-    <text x="583" y="92" text-anchor="middle" font-size="11" fill="#9aa4b2">64K × 8bit</text>
-    <text x="583" y="108" text-anchor="middle" font-size="10" fill="#9aa4b2">(主机预写)</text>
+    <text x="583" y="92" text-anchor="middle" font-size="11" fill="#64748b">64K × 8bit</text>
+    <text x="583" y="108" text-anchor="middle" font-size="10" fill="#64748b">(主机预写)</text>
     <!-- 总线接口 -->
     <rect x="18" y="170" width="112" height="84" rx="10" fill="rgba(88,166,255,.13)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="74" y="198" text-anchor="middle" font-size="13" font-weight="bold" fill="#58a6ff">总线接口</text>
-    <text x="74" y="217" text-anchor="middle" font-size="11" fill="#e6edf3">APB / AXI-Lite</text>
-    <text x="74" y="234" text-anchor="middle" font-size="10" fill="#9aa4b2">从机 · 10-05</text>
+    <text x="74" y="217" text-anchor="middle" font-size="11" fill="#64748b">APB / AXI-Lite</text>
+    <text x="74" y="234" text-anchor="middle" font-size="10" fill="#64748b">从机 · 10-05</text>
     <!-- 寄存器组 -->
     <rect x="175" y="170" width="118" height="84" rx="10" fill="rgba(88,166,255,.13)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="234" y="198" text-anchor="middle" font-size="13" font-weight="bold" fill="#58a6ff">寄存器组</text>
-    <text x="234" y="217" text-anchor="middle" font-size="11" fill="#e6edf3">11 × 32bit</text>
-    <text x="234" y="234" text-anchor="middle" font-size="10" fill="#9aa4b2">CTRL/STATUS/层参数…</text>
+    <text x="234" y="217" text-anchor="middle" font-size="11" fill="#64748b">11 × 32bit</text>
+    <text x="234" y="234" text-anchor="middle" font-size="10" fill="#64748b">CTRL/STATUS/层参数…</text>
     <!-- 控制流箭头 -->
     <line x1="130" y1="202" x2="175" y2="202" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#ao)"/>
     <text x="152" y="192" text-anchor="middle" font-size="10" fill="#f59e0b">APB读写</text>
     <line x1="285" y1="170" x2="352" y2="112" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#ao)"/>
-    <text x="332" y="146" text-anchor="middle" font-size="10" fill="#f59e0b">start/参数快照</text>
+    <text x="322" y="150" text-anchor="middle" font-size="10" fill="#f59e0b">start/参数快照</text>
     <line x1="372" y1="120" x2="298" y2="170" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ao)"/>
-    <text x="352" y="128" text-anchor="middle" font-size="10" fill="#f59e0b">done/清start</text>
+    <text x="368" y="124" text-anchor="middle" font-size="10" fill="#f59e0b">done/清start</text>
     <line x1="175" y1="240" x2="26" y2="240" stroke="#ef4444" stroke-width="1.8" marker-end="url(#ar)"/>
     <text x="100" y="256" text-anchor="middle" font-size="10" fill="#ef4444">irq(完成中断)</text>
     <!-- FSM 对数据通路的控制 -->
@@ -308,26 +308,26 @@ while (!(s &amp; 0x2));                 /* done=1 退出;这次读已清 done   
     <!-- 特征图RAM -->
     <rect x="18" y="330" width="132" height="96" rx="10" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="84" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#22c55e">特征图 RAM</text>
-    <text x="84" y="376" text-anchor="middle" font-size="11" fill="#e6edf3">乒乓双缓冲 A / B</text>
-    <text x="84" y="394" text-anchor="middle" font-size="10" fill="#9aa4b2">每块 16K × 8bit</text>
-    <text x="84" y="410" text-anchor="middle" font-size="10" fill="#9aa4b2">读口+写口各一套</text>
+    <text x="84" y="376" text-anchor="middle" font-size="11" fill="#64748b">乒乓双缓冲 A / B</text>
+    <text x="84" y="394" text-anchor="middle" font-size="10" fill="#64748b">每块 16K × 8bit</text>
+    <text x="84" y="410" text-anchor="middle" font-size="10" fill="#64748b">读口+写口各一套</text>
     <!-- 卷积模块 -->
     <rect x="188" y="330" width="118" height="96" rx="10" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="247" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#f59e0b">卷积模块</text>
-    <text x="247" y="376" text-anchor="middle" font-size="11" fill="#e6edf3">3×3 / 5×5 stride1</text>
-    <text x="247" y="394" text-anchor="middle" font-size="10" fill="#9aa4b2">行缓冲 + 串行MAC</text>
-    <text x="247" y="410" text-anchor="middle" font-size="10" fill="#9aa4b2">池化2×2 复用通路</text>
+    <text x="247" y="376" text-anchor="middle" font-size="11" fill="#64748b">3×3 / 5×5 stride1</text>
+    <text x="247" y="394" text-anchor="middle" font-size="10" fill="#64748b">行缓冲 + 串行MAC</text>
+    <text x="247" y="410" text-anchor="middle" font-size="10" fill="#64748b">池化2×2 复用通路</text>
     <!-- ReLU/requant -->
     <rect x="344" y="330" width="104" height="96" rx="10" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="396" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#f59e0b">ReLU</text>
-    <text x="396" y="376" text-anchor="middle" font-size="11" fill="#e6edf3">requant+饱和</text>
-    <text x="396" y="394" text-anchor="middle" font-size="10" fill="#9aa4b2">INT32 → INT8</text>
-    <text x="396" y="410" text-anchor="middle" font-size="10" fill="#9aa4b2">(每层可配)</text>
+    <text x="396" y="376" text-anchor="middle" font-size="11" fill="#64748b">requant+饱和</text>
+    <text x="396" y="394" text-anchor="middle" font-size="10" fill="#64748b">INT32 → INT8</text>
+    <text x="396" y="410" text-anchor="middle" font-size="10" fill="#64748b">(每层可配)</text>
     <!-- 全连接 -->
     <rect x="486" y="330" width="76" height="96" rx="10" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="524" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#f59e0b">全连接</text>
-    <text x="524" y="376" text-anchor="middle" font-size="11" fill="#e6edf3">展平×W</text>
-    <text x="524" y="394" text-anchor="middle" font-size="10" fill="#9aa4b2">复用MAC</text>
+    <text x="524" y="376" text-anchor="middle" font-size="11" fill="#64748b">展平×W</text>
+    <text x="524" y="394" text-anchor="middle" font-size="10" fill="#64748b">复用MAC</text>
     <!-- 数据流箭头(蓝) -->
     <line x1="150" y1="360" x2="188" y2="360" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#ab)"/>
     <text x="169" y="350" text-anchor="middle" font-size="10" fill="#58a6ff">窗口数据</text>
@@ -342,11 +342,11 @@ while (!(s &amp; 0x2));                 /* done=1 退出;这次读已清 done   
     <line x1="600" y1="120" x2="528" y2="330" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#ab)"/>
     <!-- 图例 -->
     <line x1="18" y1="448" x2="46" y2="448" stroke="#58a6ff" stroke-width="2.2" marker-end="url(#ab)"/>
-    <text x="52" y="452" font-size="11" fill="#9aa4b2">数据流</text>
+    <text x="52" y="452" font-size="11" fill="#64748b">数据流</text>
     <line x1="112" y1="448" x2="140" y2="448" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="5 3" marker-end="url(#ao)"/>
-    <text x="146" y="452" font-size="11" fill="#9aa4b2">控制流</text>
+    <text x="146" y="452" font-size="11" fill="#64748b">控制流</text>
     <line x1="206" y1="448" x2="234" y2="448" stroke="#ef4444" stroke-width="2.2" marker-end="url(#ar)"/>
-    <text x="240" y="452" font-size="11" fill="#9aa4b2">中断/状态</text>
+    <text x="240" y="452" font-size="11" fill="#64748b">中断/状态</text>
   </svg>
   <div class="my-fig-cap">图 1 · npu_top 顶层架构: 控制通路(寄存器组+FSM)与数据通路(卷积/ReLU/全连接)经握手信号解耦,特征图 RAM 乒乓双缓冲同时服务读(当前层输入)与写(当前层输出)</div>
   </div>
@@ -379,38 +379,38 @@ while (!(s &amp; 0x2));                 /* done=1 退出;这次读已清 done   
     <!-- 状态节点 -->
     <rect x="48" y="160" width="120" height="66" rx="33" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="2"/>
     <text x="108" y="188" text-anchor="middle" font-size="15" font-weight="bold" fill="#58a6ff">IDLE</text>
-    <text x="108" y="208" text-anchor="middle" font-size="10" fill="#9aa4b2">等 start(仅 idle=1)</text>
+    <text x="108" y="208" text-anchor="middle" font-size="10" fill="#64748b">等 start(仅 idle=1)</text>
     <rect x="220" y="42" width="130" height="66" rx="10" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="2"/>
     <text x="285" y="68" text-anchor="middle" font-size="15" font-weight="bold" fill="#f59e0b">CONFIG</text>
-    <text x="285" y="88" text-anchor="middle" font-size="10" fill="#9aa4b2">锁存层参数快照</text>
+    <text x="285" y="88" text-anchor="middle" font-size="10" fill="#64748b">锁存层参数快照</text>
     <rect x="430" y="42" width="130" height="66" rx="10" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="2"/>
     <text x="495" y="68" text-anchor="middle" font-size="15" font-weight="bold" fill="#f59e0b">LOAD</text>
-    <text x="495" y="88" text-anchor="middle" font-size="10" fill="#9aa4b2">乒乓换块/通道配置</text>
+    <text x="495" y="88" text-anchor="middle" font-size="10" fill="#64748b">乒乓换块/通道配置</text>
     <rect x="470" y="170" width="130" height="72" rx="10" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="2"/>
     <text x="535" y="196" text-anchor="middle" font-size="15" font-weight="bold" fill="#f59e0b">CALC</text>
-    <text x="535" y="216" text-anchor="middle" font-size="10" fill="#9aa4b2">等待 pe_done</text>
+    <text x="535" y="216" text-anchor="middle" font-size="10" fill="#64748b">等待 pe_done</text>
     <rect x="228" y="292" width="130" height="66" rx="10" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="2"/>
     <text x="293" y="318" text-anchor="middle" font-size="15" font-weight="bold" fill="#22c55e">DONE</text>
-    <text x="293" y="338" text-anchor="middle" font-size="10" fill="#9aa4b2">done_set 脉冲→irq</text>
+    <text x="293" y="331" text-anchor="middle" font-size="10" fill="#64748b">done_set 脉冲→irq</text>
     <!-- 转移箭头 -->
     <line x1="130" y1="160" x2="232" y2="102" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#fb)"/>
-    <text x="168" y="120" font-size="10.5" fill="#e6edf3">start=1 且 idle=1</text>
+    <text x="168" y="120" font-size="10.5" fill="#64748b">start=1 且 idle=1</text>
     <line x1="350" y1="75" x2="430" y2="75" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#fo)"/>
-    <text x="390" y="64" text-anchor="middle" font-size="10.5" fill="#e6edf3">快照锁存完(1拍)</text>
+    <text x="390" y="64" text-anchor="middle" font-size="10.5" fill="#64748b">快照锁存完(1拍)</text>
     <line x1="520" y1="108" x2="538" y2="170" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#fo)"/>
-    <text x="585" y="140" font-size="10.5" fill="#e6edf3">pe_ready=1</text>
-    <text x="585" y="153" font-size="10.5" fill="#e6edf3">发 pe_start</text>
+    <text x="576" y="140" font-size="10.5" fill="#64748b">pe_ready=1</text>
+    <text x="568" y="153" font-size="10.5" fill="#64748b">发 pe_start</text>
     <path d="M 600 192 C 634 168 634 234 600 218" fill="none" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#fo)"/>
-    <text x="612" y="206" font-size="10.5" fill="#e6edf3">pe_done=0</text>
+    <text x="582" y="206" font-size="10" fill="#64748b">pe_done=0</text>
     <line x1="502" y1="242" x2="362" y2="300" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#fo)"/>
-    <text x="462" y="282" font-size="10.5" fill="#e6edf3">pe_done=1(整层完成)</text>
+    <text x="462" y="282" font-size="10.5" fill="#64748b">pe_done=1(整层完成)</text>
     <line x1="228" y1="312" x2="112" y2="226" stroke="#22c55e" stroke-width="1.8" marker-end="url(#fg)"/>
-    <text x="120" y="286" font-size="10.5" fill="#e6edf3">置位后 1 拍即回</text>
+    <text x="120" y="286" font-size="10.5" fill="#64748b">置位后 1 拍即回</text>
     <!-- 子流程注释 -->
     <rect x="60" y="330" width="290" height="56" rx="8" fill="rgba(239,68,68,.08)" stroke="rgba(239,68,68,.5)" stroke-dasharray="5 3"/>
     <text x="205" y="350" text-anchor="middle" font-size="11" font-weight="bold" fill="#ef4444">CALC 期间引擎子流程(主 FSM 不可见)</text>
-    <text x="205" y="370" text-anchor="middle" font-size="10.5" fill="#e6edf3">取指(读窗口/权重) → 计算(MAC 累加) → 写回(requant→INT8)</text>
-    <text x="380" y="30" font-size="10.5" fill="#9aa4b2">任意态 rst_n=0 → 同步回 IDLE</text>
+    <text x="205" y="370" text-anchor="middle" font-size="10.5" fill="#64748b">取指(读窗口/权重) → 计算(MAC 累加) → 写回(requant→INT8)</text>
+    <text x="380" y="30" font-size="10.5" fill="#64748b">任意态 rst_n=0 → 同步回 IDLE</text>
   </svg>
   <div class="my-fig-cap">图 2 · 控制 FSM 状态转移图: 主状态机只调度"层"粒度,层内的取指/计算/写回子流程由运算引擎自行完成,经 pe_start / pe_ready / pe_done 三根握手线与主 FSM 对话</div>
   </div>
@@ -567,33 +567,33 @@ endmodule</code></pre>
     </defs>
     <rect x="12" y="60" width="88" height="56" rx="9" fill="rgba(88,166,255,.13)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="56" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#58a6ff">特征图</text>
-    <text x="56" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">INT8 (8bit)</text>
+    <text x="56" y="102" text-anchor="middle" font-size="11" fill="#64748b">INT8 (8bit)</text>
     <rect x="132" y="60" width="98" height="56" rx="9" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="181" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">乘法器 8×8</text>
-    <text x="181" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">结果 16bit</text>
+    <text x="181" y="102" text-anchor="middle" font-size="11" fill="#64748b">结果 16bit</text>
     <rect x="262" y="60" width="112" height="56" rx="9" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="318" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">累加器 32bit</text>
-    <text x="318" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">+ bias(INT32)</text>
+    <text x="318" y="102" text-anchor="middle" font-size="11" fill="#64748b">+ bias(INT32)</text>
     <rect x="406" y="60" width="116" height="56" rx="9" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="464" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#22c55e">requant</text>
-    <text x="464" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">×M0 &gt;&gt; shift</text>
+    <text x="464" y="102" text-anchor="middle" font-size="11" fill="#64748b">×M0 &gt;&gt; shift</text>
     <rect x="544" y="60" width="92" height="56" rx="9" fill="rgba(245,158,11,.13)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="590" y="84" text-anchor="middle" font-size="12" font-weight="bold" fill="#f59e0b">饱和+ReLU</text>
-    <text x="590" y="102" text-anchor="middle" font-size="11" fill="#e6edf3">→ INT8</text>
+    <text x="590" y="102" text-anchor="middle" font-size="11" fill="#64748b">→ INT8</text>
     <line x1="100" y1="88" x2="132" y2="88" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
     <line x1="230" y1="88" x2="262" y2="88" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
-    <text x="246" y="78" text-anchor="middle" font-size="10" fill="#9aa4b2">16b</text>
+    <text x="246" y="78" text-anchor="middle" font-size="10" fill="#64748b">16b</text>
     <line x1="374" y1="88" x2="406" y2="88" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
-    <text x="390" y="78" text-anchor="middle" font-size="10" fill="#9aa4b2">32b</text>
+    <text x="390" y="78" text-anchor="middle" font-size="10" fill="#64748b">32b</text>
     <line x1="522" y1="88" x2="544" y2="88" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
-    <text x="534" y="78" text-anchor="middle" font-size="10" fill="#9aa4b2">32b</text>
+    <text x="534" y="78" text-anchor="middle" font-size="10" fill="#64748b">32b</text>
     <!-- 权重输入 -->
     <rect x="132" y="14" width="98" height="30" rx="8" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.4"/>
     <text x="181" y="34" text-anchor="middle" font-size="11" font-weight="bold" fill="#22c55e">权重 INT8</text>
     <line x1="181" y1="44" x2="181" y2="60" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#gb)"/>
     <!-- 输出 -->
     <line x1="590" y1="116" x2="590" y2="140" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#gb)"/>
-    <text x="590" y="156" text-anchor="middle" font-size="10.5" fill="#9aa4b2">写回对侧特征图 RAM(8bit)</text>
+    <text x="568" y="156" text-anchor="middle" font-size="10.5" fill="#64748b">写回对侧特征图 RAM(8bit)</text>
     <text x="330" y="178" text-anchor="middle" font-size="11" fill="#f59e0b">最坏累加: 400 项 × 16384 ≈ 2^23 « 2^31 → INT32 足够, 与 TPU v1 / NVDLA 同款选择</text>
   </svg>
   <div class="my-fig-cap">图 3 · 位宽数据流: INT8 →(乘)→ INT16 →(累加+bias)→ INT32 →(requant)→ 饱和/ReLU → INT8;乘变宽、累加更宽、回写压窄</div>

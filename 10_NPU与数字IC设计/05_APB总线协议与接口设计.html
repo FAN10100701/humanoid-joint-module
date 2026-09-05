@@ -115,7 +115,7 @@
   <svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SoC 总线结构:CPU 经 AHB 与 APB 桥连接外设">
     <!-- CPU -->
     <rect x="50" y="24" width="120" height="42" rx="8" fill="rgba(88,166,255,.14)" stroke="#58a6ff" stroke-width="1.5"/>
-    <text x="110" y="50" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="bold">CPU / DMA</text>
+    <text x="110" y="50" text-anchor="middle" fill="#64748b" font-size="13" font-weight="bold">CPU / DMA</text>
     <line x1="110" y1="66" x2="110" y2="100" stroke="#58a6ff" stroke-width="2"/>
     <polygon points="110,100 106,92 114,92" fill="#58a6ff"/>
     <!-- AHB 总线 -->
@@ -124,12 +124,12 @@
     <!-- SRAM -->
     <line x1="480" y1="104" x2="480" y2="130" stroke="#58a6ff" stroke-width="2"/>
     <rect x="430" y="130" width="120" height="40" rx="8" fill="rgba(139,148,158,.12)" stroke="#8b949e" stroke-width="1.2"/>
-    <text x="490" y="154" text-anchor="middle" fill="#c9d1d9" font-size="12">SRAM / DDR 控制器</text>
+    <text x="490" y="154" text-anchor="middle" fill="#64748b" font-size="12">SRAM / DDR 控制器</text>
     <!-- 桥 -->
     <line x1="180" y1="104" x2="180" y2="130" stroke="#58a6ff" stroke-width="2"/>
     <rect x="110" y="130" width="150" height="44" rx="8" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.5"/>
-    <text x="185" y="150" text-anchor="middle" fill="#e6edf3" font-size="12.5" font-weight="bold">AHB→APB 桥</text>
-    <text x="185" y="166" text-anchor="middle" fill="#c9d1d9" font-size="11">(APB 域唯一主机)</text>
+    <text x="185" y="150" text-anchor="middle" fill="#64748b" font-size="12.5" font-weight="bold">AHB→APB 桥</text>
+    <text x="185" y="166" text-anchor="middle" fill="#64748b" font-size="11">(APB 域唯一主机)</text>
     <line x1="185" y1="174" x2="185" y2="210" stroke="#f59e0b" stroke-width="2"/>
     <polygon points="185,210 181,202 189,202" fill="#f59e0b"/>
     <!-- APB 总线 -->
@@ -138,18 +138,18 @@
     <!-- 外设 -->
     <line x1="90" y1="214" x2="90" y2="250" stroke="#f59e0b" stroke-width="1.6"/>
     <rect x="45" y="250" width="90" height="38" rx="7" fill="rgba(139,148,158,.12)" stroke="#8b949e" stroke-width="1.2"/>
-    <text x="90" y="273" text-anchor="middle" fill="#c9d1d9" font-size="12">UART</text>
+    <text x="90" y="273" text-anchor="middle" fill="#64748b" font-size="12">UART</text>
     <line x1="205" y1="214" x2="205" y2="250" stroke="#f59e0b" stroke-width="1.6"/>
     <rect x="160" y="250" width="90" height="38" rx="7" fill="rgba(139,148,158,.12)" stroke="#8b949e" stroke-width="1.2"/>
-    <text x="205" y="273" text-anchor="middle" fill="#c9d1d9" font-size="12">GPIO</text>
+    <text x="205" y="273" text-anchor="middle" fill="#64748b" font-size="12">GPIO</text>
     <line x1="320" y1="214" x2="320" y2="250" stroke="#f59e0b" stroke-width="1.6"/>
     <rect x="275" y="250" width="90" height="38" rx="7" fill="rgba(139,148,158,.12)" stroke="#8b949e" stroke-width="1.2"/>
-    <text x="320" y="273" text-anchor="middle" fill="#c9d1d9" font-size="12">Timer/WDT</text>
+    <text x="320" y="273" text-anchor="middle" fill="#64748b" font-size="12">Timer/WDT</text>
     <line x1="520" y1="214" x2="520" y2="250" stroke="#f59e0b" stroke-width="1.6"/>
     <rect x="450" y="250" width="140" height="38" rx="7" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="1.5"/>
-    <text x="520" y="273" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="bold">NPU 配置寄存器</text>
+    <text x="520" y="273" text-anchor="middle" fill="#64748b" font-size="12" font-weight="bold">NPU 配置寄存器</text>
     <!-- 底注 -->
-    <text x="320" y="322" text-anchor="middle" fill="#8b949e" font-size="11">CPU 配置 NPU 寄存器: AHB 写 → 桥翻译成 APB 两拍传输(SETUP→ACCESS)</text>
+    <text x="320" y="322" text-anchor="middle" fill="#64748b" font-size="11">CPU 配置 NPU 寄存器: AHB 写 → 桥翻译成 APB 两拍传输(SETUP→ACCESS)</text>
   </svg>
   <div class="my-fig-cap">图④ SoC 总线分层结构:CPU/DMA 挂 AHB,慢速外设挂 APB,桥是 APB 域唯一主机(本文实战代码的目标场景)</div>
   </div>
@@ -196,21 +196,21 @@
     </defs>
     <!-- IDLE -->
     <rect x="30" y="130" width="110" height="48" rx="10" fill="rgba(88,166,255,.14)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="85" y="159" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="bold">IDLE</text>
+    <text x="85" y="159" text-anchor="middle" fill="#64748b" font-size="15" font-weight="bold">IDLE</text>
     <!-- SETUP -->
     <rect x="255" y="60" width="120" height="48" rx="10" fill="rgba(88,166,255,.14)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="315" y="82" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="bold">SETUP</text>
-    <text x="315" y="99" text-anchor="middle" fill="#8b949e" font-size="10.5">PSEL=1 PENABLE=0</text>
+    <text x="315" y="82" text-anchor="middle" fill="#64748b" font-size="15" font-weight="bold">SETUP</text>
+    <text x="315" y="99" text-anchor="middle" fill="#64748b" font-size="10.5">PSEL=1 PENABLE=0</text>
     <!-- ACCESS -->
     <rect x="470" y="60" width="130" height="48" rx="10" fill="rgba(88,166,255,.14)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="535" y="82" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="bold">ACCESS</text>
-    <text x="535" y="99" text-anchor="middle" fill="#8b949e" font-size="10.5">PENABLE=1 等 PREADY</text>
+    <text x="535" y="82" text-anchor="middle" fill="#64748b" font-size="15" font-weight="bold">ACCESS</text>
+    <text x="535" y="99" text-anchor="middle" fill="#64748b" font-size="10.5">PENABLE=1 等 PREADY</text>
     <!-- WAIT -->
     <rect x="470" y="220" width="130" height="48" rx="10" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.8"/>
-    <text x="535" y="249" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="bold">WAIT(等待态)</text>
+    <text x="535" y="249" text-anchor="middle" fill="#64748b" font-size="15" font-weight="bold">WAIT(等待态)</text>
     <!-- IDLE -> SETUP -->
     <path d="M140,140 Q210,95 252,84" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#arw)"/>
-    <text x="188" y="98" fill="#58a6ff" font-size="11">有请求(PSEL 置位)</text>
+    <text x="158" y="98" fill="#58a6ff" font-size="11">有请求(PSEL↑)</text>
     <!-- SETUP -> ACCESS -->
     <line x1="375" y1="84" x2="467" y2="84" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#arw)"/>
     <text x="421" y="72" text-anchor="middle" fill="#58a6ff" font-size="11">下一时钟沿</text>
@@ -227,7 +227,7 @@
     <path d="M508,220 Q470,170 505,112" fill="none" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#arwo)"/>
     <text x="452" y="170" fill="#f59e0b" font-size="11">PREADY=1</text>
     <!-- 底注 -->
-    <text x="300" y="302" text-anchor="middle" fill="#8b949e" font-size="11">工程上常把 ACCESS 中 PREADY=0 的自循环单独画成 WAIT 态 —— 逻辑上是同一个 ACCESS 态</text>
+    <text x="300" y="302" text-anchor="middle" fill="#64748b" font-size="11">工程上常把 ACCESS 中 PREADY=0 的自循环单独画成 WAIT 态 —— 逻辑上是同一个 ACCESS 态</text>
   </svg>
   <div class="my-fig-cap">图③ APB 主机(桥/主控)状态机:蓝色为协议必需的三状态,橙色 WAIT 是 ACCESS 中 PREADY=0 的自循环展开</div>
   </div>
@@ -275,12 +275,12 @@
     <!-- PADDR -->
     <text x="8" y="194" class="my-sig-name">PADDR</text>
     <path d="M70,189 L74,180 H188 L192,189 L188,198 H74 Z" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.6"/>
-    <text x="131" y="193" text-anchor="middle" fill="#e6edf3" font-size="11" font-weight="bold">0x10</text>
+    <text x="131" y="193" text-anchor="middle" fill="#64748b" font-size="11" font-weight="bold">0x10</text>
     <text x="300" y="193" class="my-tick">保持稳定直到 T3(PREADY=1)</text>
     <!-- PWDATA -->
     <text x="8" y="234" class="my-sig-name">PWDATA</text>
     <path d="M70,229 L74,220 H188 L192,229 L188,238 H74 Z" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.6"/>
-    <text x="131" y="233" text-anchor="middle" fill="#e6edf3" font-size="11" font-weight="bold">0xAB</text>
+    <text x="131" y="233" text-anchor="middle" fill="#64748b" font-size="11" font-weight="bold">0xAB</text>
     <!-- PREADY -->
     <text x="8" y="274" class="my-sig-name">PREADY</text>
     <polyline points="70,278 70,260 490,260" fill="none" stroke="#2ea043" stroke-width="2"/>
@@ -295,7 +295,7 @@
     <text x="370" y="306" text-anchor="middle" class="my-tick">T6</text>
     <text x="100" y="324" text-anchor="middle" fill="#58a6ff" font-size="11">① 地址/数据上线</text>
     <text x="190" y="324" text-anchor="middle" fill="#f59e0b" font-size="11">② 使能→③ 完成采样</text>
-    <text x="290" y="324" text-anchor="middle" fill="#8b949e" font-size="11">④ 撤销 PSEL 回 IDLE</text>
+    <text x="290" y="324" text-anchor="middle" fill="#64748b" font-size="11">④ 撤销 PSEL 回 IDLE</text>
   </svg>
   <div class="my-fig-cap">图① APB 写传输波形(零等待):T1=SETUP(PSEL=1/PENABLE=0),T2=ACCESS(PENABLE=1),T3 沿 PREADY=1 完成写入,T4 起回 IDLE;PADDR/PWRITE/PWDATA 从 SETUP 起保持不变</div>
   </div>
@@ -340,12 +340,12 @@
     <!-- PADDR -->
     <text x="8" y="194" class="my-sig-name">PADDR</text>
     <path d="M70,189 L74,180 H248 L252,189 L248,198 H74 Z" fill="rgba(88,166,255,.15)" stroke="#58a6ff" stroke-width="1.6"/>
-    <text x="161" y="193" text-anchor="middle" fill="#e6edf3" font-size="11" font-weight="bold">0x14</text>
+    <text x="161" y="193" text-anchor="middle" fill="#64748b" font-size="11" font-weight="bold">0x14</text>
     <!-- PRDATA -->
     <text x="8" y="234" class="my-sig-name">PRDATA</text>
     <polyline points="70,229 190,229" fill="none" stroke="#8b949e" stroke-width="1.6" stroke-dasharray="4 3"/>
     <path d="M190,229 L196,220 H248 L252,229 L248,238 H196 Z" fill="rgba(46,160,67,.15)" stroke="#2ea043" stroke-width="1.6"/>
-    <text x="222" y="233" text-anchor="middle" fill="#e6edf3" font-size="11" font-weight="bold">0x5A</text>
+    <text x="222" y="233" text-anchor="middle" fill="#64748b" font-size="11" font-weight="bold">0x5A</text>
     <text x="300" y="233" class="my-tick">仅需在最后一个 ACCESS 拍有效</text>
     <!-- PREADY -->
     <text x="8" y="274" class="my-sig-name">PREADY</text>
@@ -361,7 +361,7 @@
     <text x="310" y="306" text-anchor="middle" class="my-tick">T5</text>
     <text x="100" y="324" text-anchor="middle" fill="#58a6ff" font-size="11">① 地址上线(PWRITE=0)</text>
     <text x="205" y="324" text-anchor="middle" fill="#f59e0b" font-size="11">② ACCESS+等待 ③ 数据有效</text>
-    <text x="330" y="324" text-anchor="middle" fill="#8b949e" font-size="11">④ 完成采样回 IDLE</text>
+    <text x="330" y="324" text-anchor="middle" fill="#64748b" font-size="11">④ 完成采样回 IDLE</text>
   </svg>
   <div class="my-fig-cap">图② APB 读传输波形(含 1 个等待状态):T2 进 ACCESS 后 PREADY 先低 1 拍,T3 起从机给出 PREADY=1 与 PRDATA=0x5A,T4 沿主机完成采样 —— 等待期间全部控制信号保持不变</div>
   </div>

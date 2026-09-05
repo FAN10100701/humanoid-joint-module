@@ -352,7 +352,7 @@
       <!-- 电气回路 -->
       <rect x="100" y="66" width="118" height="60" rx="9" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
       <text x="159" y="86" text-anchor="middle" class="my-t1">电气回路</text>
-      <text x="159" y="103" text-anchor="middle" fill="#9aa4b2" font-size="9.5">L·di/dt = u − Ri − Ke·ω</text>
+      <text x="159" y="103" text-anchor="middle" fill="#64748b" font-size="9.5">L·di/dt = u − Ri − Ke·ω</text>
       <text x="159" y="118" text-anchor="middle" fill="#58a6ff" font-size="10">状态 x₃ = i</text>
       <line x1="218" y1="96" x2="253" y2="96" stroke="#58a6ff" stroke-width="2" marker-end="url(#arB)"/>
       <text x="234" y="88" fill="#58a6ff" font-size="12" font-weight="bold">i</text>
@@ -364,7 +364,7 @@
       <!-- 机械回路 -->
       <rect x="345" y="66" width="125" height="60" rx="9" fill="rgba(245,158,11,.1)" stroke="#f59e0b" stroke-width="1.6"/>
       <text x="407" y="86" text-anchor="middle" class="my-t1">机械回路</text>
-      <text x="407" y="103" text-anchor="middle" fill="#9aa4b2" font-size="9.5">J·dω/dt = τ − b·ω − τL</text>
+      <text x="407" y="103" text-anchor="middle" fill="#64748b" font-size="9.5">J·dω/dt = τ − b·ω − τL</text>
       <text x="407" y="118" text-anchor="middle" fill="#f59e0b" font-size="10">状态 x₂ = ω</text>
       <line x1="470" y1="96" x2="518" y2="96" stroke="#f59e0b" stroke-width="2" marker-end="url(#arO)"/>
       <text x="492" y="88" fill="#f59e0b" font-size="12" font-weight="bold">ω</text>
@@ -633,7 +633,7 @@ print(ct.eigvals(A - L @ C))</code></pre>
       <line x1="108" y1="45" x2="167" y2="45" stroke="#58a6ff" stroke-width="2" marker-end="url(#fB)"/>
       <text x="128" y="34" fill="#58a6ff" font-size="12" font-weight="bold">u</text>
       <circle cx="140" cy="45" r="3" fill="#58a6ff"/>
-      <text x="420" y="30" fill="#8b949e" font-size="10.5">u = −Kx̂ + Nr(N 为参考前馈)</text>
+      <text x="420" y="30" fill="#64748b" font-size="10.5">u = −Kx̂ + Nr(N 为参考前馈)</text>
       <!-- 对象 -->
       <rect x="170" y="20" width="160" height="62" rx="9" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
       <text x="250" y="40" text-anchor="middle" class="my-t1">对象(真实关节)</text>
@@ -666,8 +666,8 @@ print(ct.eigvals(A - L @ C))</code></pre>
       <line x1="95" y1="261" x2="95" y2="62" stroke="#f59e0b" stroke-width="2" marker-end="url(#fO)"/>
       <text x="70" y="150" fill="#f59e0b" font-size="11" font-weight="bold">−Kx̂</text>
       <!-- 误差定义注释 -->
-      <text x="420" y="135" fill="#8b949e" font-size="10.5">估计误差 e = x − x̂, 动态 (A−LC)e</text>
-      <text x="420" y="152" fill="#8b949e" font-size="10.5">观测器极点比控制极点快 3~10 倍</text>
+      <text x="420" y="135" fill="#64748b" font-size="10.5">估计误差 e = x − x̂, 动态 (A−LC)e</text>
+      <text x="420" y="152" fill="#64748b" font-size="10.5">观测器极点比控制极点快 3~10 倍</text>
       <!-- 图例 -->
       <text x="310" y="318" text-anchor="middle" class="my-t1">蓝 = 控制流(u) · 橙 = 估计/反馈流(x̂, −Kx̂) · 绿 = 测量流(y)</text>
     </svg>
@@ -687,7 +687,8 @@ print(ct.eigvals(A - L @ C))</code></pre>
   <h3>是什么:预测—更新两步循环</h3>
   <p><b>为什么:</b>龙伯格观测器把测量当「完全可信」,把模型当「完全准确」,真实世界两头都不成立(编码器量化噪声、模型参数误差)。卡尔曼滤波(KF)把不确定性显式写进数学:模型误差用过程噪声 w~N(0,Q<sub>n</sub>),传感器误差用测量噪声 v~N(0,R<sub>n</sub>),然后回答——「在这个噪声水平下,<b>均方误差最小</b>的估计是什么」。</p>
   <div class="formula">\text{预测:}\quad \hat{x}^{-} = A\hat{x} + Bu, \qquad P^{-} = A P A^{\mathsf T} + Q_n</div>
-  <div class="formula">\text{更新:}\quad K_k = P^{-} C^{\mathsf T}\big(C P^{-} C^{\mathsf T} + R_n\big)^{-1},\;\; \hat{x} = \hat{x}^{-} + K_k\big(y - C\hat{x}^{-}\big),\;\; P = (I - K_k C)P^{-}</div>
+  <div class="formula">\text{更新:}\quad K_k = P^{-} C^{\mathsf T}\big(C P^{-} C^{\mathsf T} + R_n\big)^{-1}</div>
+  <div class="formula">\hat{x} = \hat{x}^{-} + K_k\big(y - C\hat{x}^{-}\big), \qquad P = (I - K_k C)\,P^{-}</div>
   <ul>
     <li><b>预测(模型说话):</b>用状态方程把估计推到下一拍;协方差 P⁻ 变大——「只靠模型,心里越来越没底」。</li>
     <li><b>更新(测量说话):</b>来了新测量 y,按 Kalman 增益 K<sub>k</sub> 折中修正;P 变小——「测量补了信息」。</li>
@@ -731,7 +732,8 @@ for y_meas in encoder_readings:      # 每个采样周期
     <li><b>② 代价函数:</b>把「贴参考 + 省控制 + 变化平滑」写成二次型;</li>
     <li><b>③ 约束:</b>执行器饱和、状态边界、ZMP 必须落在支撑多边形内……显式写进优化问题,这是 MPC 区别于 LQR 的灵魂。</li>
   </ul>
-  <div class="formula">J = \sum_{k=1}^{N_p} \Big( \| x_k - x_{k}^{\mathrm{ref}} \|_Q^2 + \| u_{k-1} \|_R^2 \Big) + \sum_{k=1}^{N_c-1} \| \Delta u_k \|_{R_\Delta}^2 \quad \text{s.t.} \;\; x_{k+1}=A_d x_k + B_d u_k,\;\; u_{\min} \le u \le u_{\max}</div>
+  <div class="formula">J = \sum_{k=1}^{N_p} \Big( \| x_k - x_{k}^{\mathrm{ref}} \|_Q^2 + \| u_{k-1} \|_R^2 \Big) + \sum_{k=1}^{N_c-1} \| \Delta u_k \|_{R_\Delta}^2</div>
+  <div class="formula">\text{s.t.}\;\; x_{k+1}=A_d x_k + B_d u_k, \qquad u_{\min} \le u \le u_{\max}</div>
 
   <p><b>怎么做:QP 一句话与 N<sub>p</sub>/N<sub>c</sub> 调参</b></p>
   <p><b>QP 求解一句话:</b>把模型递推代入代价,决策变量是未来控制序列 U=[u₀,…,u<sub>Nc</sub>−1],整个问题变成「二次目标 + 线性约束」的<b>凸二次规划(QP)</b>——有唯一全局最优,专业求解器(OSQP、qpOASES、HPIPM)在嵌入式上毫秒级可解;没有约束时一阶导为零,解析解恰好退化为 LQR 增益。</p>
@@ -754,7 +756,7 @@ for y_meas in encoder_readings:      # 每个采样周期
       <text x="365" y="42" text-anchor="middle" fill="#f59e0b" font-size="10.5">每拍向右滚动一格,重新求解</text>
       <!-- 下一拍窗口(幽灵) -->
       <rect x="220" y="58" width="320" height="174" rx="10" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3 5" opacity=".55"/>
-      <text x="522" y="74" text-anchor="end" fill="#f59e0b" font-size="10" opacity=".85">下一拍窗口</text>
+      <text x="534" y="224" text-anchor="end" fill="#f59e0b" font-size="10" opacity=".85">下一拍窗口</text>
       <!-- 预测时域窗口 -->
       <rect x="140" y="58" width="320" height="174" rx="10" fill="rgba(245,158,11,.05)" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="6 4"/>
       <text x="300" y="24" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">预测时域 Np:模型向前推演 Np 步</text>
@@ -763,7 +765,7 @@ for y_meas in encoder_readings:      # 每个采样周期
       <text x="140" y="72" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold">现在 k</text>
       <!-- 历史测量 -->
       <polyline points="70,196 90,180 110,186 138,162" fill="none" stroke="#8b949e" stroke-width="2"/>
-      <text x="86" y="212" fill="#8b949e" font-size="10.5">历史测量</text>
+      <text x="86" y="212" fill="#64748b" font-size="10.5">历史测量</text>
       <!-- 参考轨迹 -->
       <polyline points="140,162 240,132 340,110 460,94 548,88" fill="none" stroke="#22c55e" stroke-width="1.8" stroke-dasharray="7 5" marker-end="url(#mG)"/>
       <text x="480" y="70" fill="#22c55e" font-size="10.5">参考轨迹 x_ref</text>
@@ -778,7 +780,7 @@ for y_meas in encoder_readings:      # 每个采样周期
       <rect x="140" y="248" width="120" height="40" rx="6" fill="rgba(88,166,255,.07)" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4 3"/>
       <polyline points="140,266 200,266 200,256 260,256 260,264 460,264" fill="none" stroke="#58a6ff" stroke-width="2.2"/>
       <text x="146" y="300" fill="#58a6ff" font-size="10.5">控制时域 Nc:只执行第一个 u0*,</text>
-      <text x="400" y="300" fill="#8b949e" font-size="10.5">Nc 之后保持不变 · 下一拍重算</text>
+      <text x="400" y="300" fill="#64748b" font-size="10.5">Nc 之后保持不变 · 下一拍重算</text>
     </svg>
     <div class="my-fig-cap">图④ MPC 滚动优化:在每个采样拍,以当前状态为起点优化未来 N<sub>p</sub> 步的轨迹与 N<sub>c</sub> 步的控制序列,但只执行第一拍,窗口随时间滚动前进</div>
   </div>
