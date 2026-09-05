@@ -3,7 +3,7 @@
    题目来源三种:
      'q:xxx'    → 本文件 Q 内的自建选择题(客观判分)
      'qb:N'     → _assets/quiz-bank.js 官方题库第 N 题(客观判分)
-     'ref:xx-n' → _assets/ib-data-a/b.js 面试题库条目(快问快答,自评计分)
+     'ref:xx-n' → _assets/ib-data-a/b/c.js 面试题库条目(快问快答,自评计分)
    配套页面: 08_学习工具/12_闯关学习.html(按需懒加载本文件)
    ============================================================ */
 window.QUEST_BANK = {
@@ -51,13 +51,13 @@ levels: [
     qs:['q:q120','q:q121','q:q122','q:q123','q:q124','q:q125'] },
   { id:'L08', w:2, name:'FOC 与三环', icon:'🌀', type:'normal', exp:50, pass:0.7,
     desc:'坐标变换、带宽分离与电流环公式。',
-    qs:['qb:14','qb:47','qb:48','qb:51','qb:52','qb:53'] },
+    qs:['qb:14','ref:yk-10','qb:48','qb:51','qb:52','qb:53'] },
   { id:'L09', w:2, name:'ADRC 与先进控制', icon:'🧠', type:'normal', exp:50, pass:0.7,
     desc:'ESO 总扰动、带宽整定、MPC 与前馈。',
-    qs:['q:q130','q:q131','q:q132','q:q133','q:q134','qb:33'] },
+    qs:['q:q130','q:q131','q:q132','q:q133','q:q134','ref:adrc-09'] },
   { id:'B3', w:2, name:'调参综合 BOSS', icon:'👑', type:'boss', exp:150, pass:0.8,
     desc:'PID + FOC + ADRC 调参实战 10 题。',
-    qs:['qb:25','qb:51','qb:53','q:q121','q:q123','q:q130','q:q132','qb:52','q:q124','ref:pid-10'] },
+    qs:['qb:25','qb:51','qb:53','q:q121','q:q123','q:q130','q:q132','qb:52','ref:adrc-10','ref:pid-10'] },
 
   /* ---------- W4 软件大陆 ---------- */
   { id:'L10', w:3, name:'C / C++ 基础', icon:'🖥️', type:'normal', exp:50, pass:0.7,
@@ -78,18 +78,18 @@ levels: [
     desc:'复试最高频的控制学快问快答,口述后自评。',
     qs:['ref:zkl-01','ref:zkl-03','ref:zkl-05','ref:pid-01','ref:pid-03','ref:pid-05'] },
   { id:'L14', w:4, name:'现控 + 信号快问', icon:'📊', type:'normal', exp:50, pass:0.7,
-    desc:'能控能观、观测器、卡尔曼与采样定理。',
-    qs:['ref:xk-02','ref:xk-04','ref:xk-07','ref:dsp-01','ref:dsp-03','ref:dsp-04'] },
+    desc:'能控能观、观测器、卡尔曼与数学基础快问。',
+    qs:['ref:xk-02','ref:xk-04','ref:xk-07','ref:dsp-01','ref:dsp-03','ref:sx-01'] },
   { id:'L15', w:4, name:'硬件 + 电调快问', icon:'🔌', type:'normal', exp:50, pass:0.7,
     desc:'防反接、运放、电源与无人机电调。',
     qs:['ref:hw-01','ref:hw-02','ref:hw-05','ref:esc-02','ref:esc-03','ref:esc-04'] },
   { id:'L16', w:4, name:'ROS + 嵌入式 + C++ 快问', icon:'⚙️', type:'normal', exp:50, pass:0.7,
     desc:'跨学科组合快问,模拟跨方向考官。',
-    qs:['ref:ros-01','ref:ros-03','ref:c-03','ref:cpp-04','ref:emb-02','ref:frt-03'] },
+    qs:['ref:ros-01','ref:ros-03','ref:c-03','ref:cpp-04','ref:ky-04','ref:frt-03'] },
   { id:'FIN', w:4, name:'保研复试全真模拟', icon:'🏆', type:'boss', exp:200, pass:0.8,
     desc:'15 题全学科混战:8 道选择 + 7 道口述自评,80% 及格。拿出真本事!',
     qs:['qb:4','qb:14','q:q130','q:q141','qb:48','q:q121','qb:33','q:q113',
-        'ref:zkl-02','ref:pid-06','ref:xk-05','ref:hw-06','ref:esc-06','ref:ros-05','ref:c-08'] }
+        'ref:zkl-02','ref:pid-06','ref:xk-05','ref:hw-06','ref:yy-01','ref:ros-05','ref:zs-04'] }
 ],
 
 /* ---------- 自建选择题库(客观题) ---------- */

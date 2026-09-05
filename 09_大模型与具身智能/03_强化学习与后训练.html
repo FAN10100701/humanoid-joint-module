@@ -42,7 +42,7 @@
   </table></div>
 
   <h2><span class="h2-num">3</span> PPO vs GRPO:三个差异</h2>
-  <div class="my-svg"><svg viewBox="0 0 560 170" role="img" aria-label="PPO vs GRPO"><rect x="20" y="24" width="240" height="120" rx="12" fill="rgba(59,130,246,.1)" stroke="#58a6ff"/><rect x="300" y="24" width="240" height="120" rx="12" fill="rgba(34,197,94,.1)" stroke="#22c55e"/>
+  <div class="my-svg"><svg viewBox="0 0 560 170" role="img" aria-label="PPO vs GRPO"><rect x="20" y="24" width="240" height="120" rx="12" fill="#1f3a5f" stroke="#58a6ff"/><rect x="300" y="24" width="240" height="120" rx="12" fill="#143524" stroke="#22c55e"/>
   <text x="140" y="48" font-size="13" fill="currentColor" text-anchor="middle" font-weight="700">PPO</text>
   <text x="420" y="48" font-size="13" fill="currentColor" text-anchor="middle" font-weight="700">GRPO(DeepSeek 系)</text>
   <text x="140" y="74" font-size="11.5" fill="#9aa4b2" text-anchor="middle">Policy + Value(critic)+ RM + Ref</text>
@@ -55,11 +55,11 @@
   <div class="my-svg" style="max-width:620px;margin:14px auto"><svg viewBox="0 0 520 160" role="img" aria-label="GRPO 组采样优势示例">
 <text x="10" y="16" font-size="12" font-weight="700" fill="currentColor">同一道题采样 5 个答案(G=5),可验证奖励:对=1 错=0</text>
 <g font-size="11" fill="currentColor" text-anchor="middle">
-  <rect x="30"  y="30" width="70" height="44" rx="8" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><text x="65"  y="50">答案1</text><text x="65"  y="66" fill="#86efac">r=1</text>
-  <rect x="130" y="30" width="70" height="44" rx="8" fill="rgba(239,68,68,.18)" stroke="#ef4444"/><text x="165" y="50">答案2</text><text x="165" y="66" fill="#fca5a5">r=0</text>
-  <rect x="230" y="30" width="70" height="44" rx="8" fill="rgba(239,68,68,.18)" stroke="#ef4444"/><text x="265" y="50">答案3</text><text x="265" y="66" fill="#fca5a5">r=0</text>
-  <rect x="330" y="30" width="70" height="44" rx="8" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><text x="365" y="50">答案4</text><text x="365" y="66" fill="#86efac">r=1</text>
-  <rect x="430" y="30" width="70" height="44" rx="8" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><text x="465" y="50">答案5</text><text x="465" y="66" fill="#86efac">r=1</text>
+  <rect x="30"  y="30" width="70" height="44" rx="8" fill="#143524" stroke="#22c55e"/><text x="65"  y="50">答案1</text><text x="65"  y="66" fill="#86efac">r=1</text>
+  <rect x="130" y="30" width="70" height="44" rx="8" fill="#3d1a1a" stroke="#ef4444"/><text x="165" y="50">答案2</text><text x="165" y="66" fill="#fca5a5">r=0</text>
+  <rect x="230" y="30" width="70" height="44" rx="8" fill="#3d1a1a" stroke="#ef4444"/><text x="265" y="50">答案3</text><text x="265" y="66" fill="#fca5a5">r=0</text>
+  <rect x="330" y="30" width="70" height="44" rx="8" fill="#143524" stroke="#22c55e"/><text x="365" y="50">答案4</text><text x="365" y="66" fill="#86efac">r=1</text>
+  <rect x="430" y="30" width="70" height="44" rx="8" fill="#143524" stroke="#22c55e"/><text x="465" y="50">答案5</text><text x="465" y="66" fill="#86efac">r=1</text>
 </g>
 <line x1="20" y1="96" x2="510" y2="96" stroke="#f59e0b" stroke-dasharray="5 4"/><text x="510" y="92" font-size="10.5" fill="#f59e0b" text-anchor="end">组均值 0.6 = 基线(代替critic)</text>
 <text x="95"  y="120" font-size="11" fill="#86efac">优势 = (1−0.6)/σ = + 正 → 强化</text>

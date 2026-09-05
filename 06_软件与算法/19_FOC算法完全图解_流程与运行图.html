@@ -160,7 +160,7 @@
       <rect x="238" y="76" width="132" height="152" rx="11" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff" stroke-width="2"/>
       <text x="304" y="97" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="bold">MCU</text>
       <text x="304" y="113" text-anchor="middle" fill="#7cb8ff" font-size="10">Cortex-M4F @170MHz</text>
-      <g font-size="10.5" fill="#9aa4b8">
+      <g font-size="10.5" fill="#64748b">
         <text x="250" y="131">① 电流采样换算</text>
         <text x="250" y="147">② Clark ③ Park</text>
         <text x="250" y="163">④ PI 电流环(×2)</text>
@@ -306,7 +306,7 @@
       <text x="72" y="233" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">编码器 θe</text>
       <text x="72" y="249" text-anchor="middle" fill="#22c55e" font-size="10">(电角度,第 7 节)</text>
       <line x1="138" y1="237" x2="148" y2="237" stroke="#22c55e" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#flArrG)"/>
-      <rect x="6" y="308" width="132" height="42" rx="9" fill="#94a3b8" fill-opacity=".12" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 3"/>
+      <rect x="6" y="308" width="132" height="42" rx="9" fill="#64748b" fill-opacity=".12" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 3"/>
       <text x="72" y="325" text-anchor="middle" fill="#64748b" font-size="11" font-weight="bold">Udc 母线电压</text>
       <text x="72" y="341" text-anchor="middle" fill="#64748b" font-size="10">(分压采样,周期更新)</text>
       <line x1="138" y1="329" x2="148" y2="329" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#flArrG)"/>
@@ -718,7 +718,7 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
         <line x1="350" y1="30" x2="350" y2="172"/><line x1="410" y1="30" x2="410" y2="172"/>
         <line x1="470" y1="30" x2="470" y2="172"/><line x1="530" y1="30" x2="530" y2="172"/>
       </g>
-      <g font-size="10.5" fill="#94a3b8" text-anchor="middle">
+      <g font-size="10.5" fill="#64748b" text-anchor="middle">
         <text x="140" y="24">V0</text><text x="200" y="24">V4</text><text x="260" y="24">V6</text>
         <text x="320" y="24">V7</text><text x="380" y="24">V6</text><text x="440" y="24">V4</text><text x="500" y="24">V0</text>
       </g>
@@ -936,7 +936,7 @@ duty_a += ia_comp;  duty_b += 0;  duty_c += 0;   /* 三相各算各的,再统一
         <line x1="320" y1="224" x2="320" y2="232"/><line x1="445" y1="224" x2="445" y2="232"/>
         <line x1="570" y1="224" x2="570" y2="232"/>
       </g>
-      <g font-size="10" fill="#94a3b8" text-anchor="middle">
+      <g font-size="10" fill="#64748b" text-anchor="middle">
         <text x="70" y="244">0</text><text x="195" y="244">25μs</text><text x="320" y="244">50μs</text>
         <text x="445" y="244">75μs</text><text x="570" y="244">100μs</text>
       </g>

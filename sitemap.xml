@@ -23,6 +23,7 @@
   <url><loc>https://cyco.top/02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/14_硬件公式计算器矩阵.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/02_硬件基础/15_传感器与关节标定专题.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/02_硬件基础/17_STM32外设基础_时钟中断DMA_ADC.html</loc><lastmod>2026-09-05</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/03_项目实操/07_立创EDA逐模块绘制步骤.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/03_项目实操/08_完整学习手册_备查用.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
@@ -96,5 +97,7 @@
   <url><loc>https://cyco.top/06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/19_FOC算法完全图解_流程与运行图.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/06_软件与算法/20_工程电机控制框架对比_流程与选型.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/20_FreeRTOS任务调度与实时性.html</loc><lastmod>2026-09-05</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cyco.top/06_软件与算法/21_代码规范_C_Python_Verilog.html</loc><lastmod>2026-09-05</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cyco.top/08_学习工具/18_学习路径规划.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>

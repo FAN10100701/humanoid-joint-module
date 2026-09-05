@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 02-14 STM32 外设基础:时钟 / 中断 / DMA / ADC / 定时器
+  结构严格遵循 _assets/页面模板.html
+  本页聚焦: G431 时钟树 / NVIC 分组与 FreeRTOS 约定 / DMA+DMAMUX /
+  规则组注入组与 TIM 触发 / 定时器家族与 PWM 死区 / DWT 调试 /
+  常见误区 / 自测 6 题,与 06-19(ISR 级 FOC)、02-11(公式矩阵)互链
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · STM32外设基础_时钟中断DMA_ADC</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<script>
+  window.PAGE = {
+    pageId: "02-14",
+    root: "..",
+    breadcrumb: [ { t: "硬件基础", u: "../index.html#sec2" }, { t: "STM32 外设基础:时钟/中断/DMA/ADC" } ],
+    prev: { t: "PCB Layout 检查清单", u: "16_PCB_Layout检查清单.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧩 STM32 外设基础:时钟 / 中断 / DMA / ADC / 定时器</h1>
+    <div class="sub">以 STM32G431(关节驱动板最常用 MCU 之一)为标本,把五套"地基外设"一次讲透:170MHz 时钟树怎么搭、NVIC 优先级分组怎么配才不跟 FreeRTOS 打架、DMA 怎么替 CPU 搬 ADC 数据、电流环采样怎么用定时器精准触发、PWM 互补输出与死区怎么算。学完本页,你读任何 G4/F4 例程都能一眼看懂"这段配置在动哪根管子"。</div>
+    <div class="tags">
+      <span class="tag">STM32G431</span>
+      <span class="tag">时钟树 / RCC</span>
+      <span class="tag">NVIC / DMA</span>
+      <span class="tag">ADC 触发采样</span>
+      <span class="tag">PWM 与死区</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出 HSE→PLL→SYSCLK→AHB/APB 的分频链,并手工配出 G431 的 170MHz 主频<br>
+    2. 能解释抢占优先级与子优先级的区别、NVIC 分组规则,说出 FreeRTOS 下的优先级约定<br>
+    3. 能配置 DMA 循环模式搬运 ADC 数据,说清 PSIZE/MSIZE、MINC 与缓存一致性注意点<br>
+    4. 能算 ADC 采样时间与总转换时间,并配置"定时器触发 + 注入组"的电流环同步采样<br>
+    5. 能用 ARR/PSC 算 PWM 频率,配置互补输出 + 死区,并用 DWT 周期计数器测函数耗时<br>
+    <b>建议用时:</b>约 55 分钟(配合 02-11 公式矩阵页与 06-19 ISR 级 FOC 页使用)
+  </div>
+
+  <!-- ================= 1 时钟树 ================= -->
+  <h2><span class="h2-num">1</span> 时钟树:170MHz 是这样"一路分频"长出来的</h2>
+
+  <h3>1.1 从晶振到内核的五级链路</h3>
+  <p><b>是什么:</b>STM32 的所有外设都由一棵"时钟树"供电,树的根是时钟源,枝干是分频器。G431 的典型路径:<b>HSE 外部晶振</b>(常见 8MHz)或 <b>HSI 内部 16MHz RC</b> → 进入 <b>PLL 锁相环</b>(先 /M 得到 VCO 输入,再 ×N 倍频、/R 分频输出)→ 得到 <b>SYSCLK 系统时钟</b>(G431 上限 170MHz,需要电压调节器 Range 1 Boost)→ 分给 <b>AHB 总线</b>(HCLK,CPU/DMA/SRAM)→ 再分给 <b>APB1</b>(低速外设:TIM2~7、USART2/3、I2C、SPI2/3)与 <b>APB2</b>(高速外设:TIM1/8/15/16/17、USART1、ADC、SPI1)。<b>为什么这么绕:</b>内核要高频,晶振做不了高频(高了难起振、EMC 差),所以用"低频晶振 + PLL 倍频"的分工;各总线外设速度要求不同,所以 AHB/APB 分级供血。</p>
+  <div class="formula">f_{\text{SYSCLK}} = \frac{f_{\text{HSE}}}{M} \times N \div R \;\;\Longrightarrow\;\; \frac{8\,\text{MHz}}{1} \times 42.5 \div 2 = 170\,\text{MHz} \quad (\text{G431 典型配置})</div>
+  <div class="table-wrap"><table>
+    <tr><th>层级</th><th>时钟</th><th>G431 上限</th><th>挂在上面有什么</th><th>分频注意事项</th></tr>
+    <tr><td>时钟源</td><td>HSE / HSI16</td><td>HSE ≤ 48MHz</td><td>HSI 快速可用但精度 ±1%,HSE 精度高</td><td>PLL 只能选 HSE 或 HSI 之一</td></tr>
+    <tr><td>锁相环</td><td>PLL(×N /M /R)</td><td>VCO 输入 2.66~8MHz(保证 N 合理)</td><td>产生 SYSCLK;另有 PLLSAI1 等</td><td>M/N/R 有合法范围,组合不对直接起不来</td></tr>
+    <tr><td>系统级</td><td>SYSCLK</td><td>170MHz(需 Range 1 Boost)</td><td>内核、SYSTICK 源</td><td>Flash 等待周期随频率升到 4WS</td></tr>
+    <tr><td>总线</td><td>AHB(HCLK)</td><td>170MHz</td><td>Cortex-M4、DMA1/2、SRAM、GPIO</td><td>常配 /1 直接满速</td></tr>
+    <tr><td>总线</td><td>APB1 / APB2</td><td>170MHz</td><td>APB1: TIM2~7、USART2/3;APB2: TIM1/8、ADC1/2、USART1、SPI1</td><td>分频 ≠ 1 时<b>定时器时钟 ×2 规则</b>(第 7 节误区)</td></tr>
+  </table></div>
+  <pre><code>/* ============ G431 170MHz 典型 RCC 配置(HAL 风格, CubeMX 生成等价) ============ */
+RCC_OscInitTypeDef osc = {0};
+osc.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+osc.HSEState       = RCC_HSE_ON;
+osc.PLL.PLLState   = RCC_PLL_ON;
+osc.PLL.PLLSource  = RCC_PLLSOURCE_HSE;        /* 8MHz 外部晶振   */
+osc.PLL.PLLM       = 1;                        /* 8MHz / 1 = 8MHz */
+osc.PLL.PLLN       = 85;                       /* 8 × 85 = 680MHz (VCO) */
+osc.PLL.PLLP       = RCC_PLLP_DIV2;            /* 340MHz → 备用输出     */
+osc.PLL.PLLR       = RCC_PLLR_DIV4;            /* 680 / 4 = 170MHz !!!  */
+HAL_RCC_OscConfig(&amp;osc);
+
+RCC_ClkInitTypeDef clk = {0};
+clk.ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+                   | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+clk.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+clk.AHBCLKDivider  = RCC_SYSCLK_DIV1;          /* HCLK  = 170MHz */
+clk.APB1CLKDivider = RCC_HCLK_DIV1;            /* APB1  = 170MHz */
+clk.APB2CLKDivider = RCC_HCLK_DIV1;            /* APB2  = 170MHz */
+HAL_RCC_ClockConfig(&amp;clk, FLASH_LATENCY_4);    /* 170MHz 需 4 个 Flash 等待周期 */</code></pre>
+  <p><b>面试怎么问:</b>"把 G431 从 8MHz 晶振配到 170MHz,M、N、R 怎么取?有什么约束?"——答:先定 VCO 输入(÷M 后落在 2.66~8MHz),再定 VCO 输出(×N,合法范围内),最后 ÷R 得 SYSCLK;同时检查 Flash 等待周期与电压 Range 1 Boost。能补充"HSI 精度不够做高精度通信/ADC 基准时钟,产线产品用 HSE"是加分。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①M/N/R 凑不出目标频率就硬改 N 到超界 —— VCO 输入/输出有合法窗口,不是纯乘除法游戏;②忘了 Range 1 Boost 与 Flash 等待周期 —— 170MHz 下直接 HardFault 或取指错误;③给 ADC/USART 挑错时钟源 —— ADC 可选同步 HCLK 或异步 PLLP 分频,USART 时钟也有独立选择,频率算错波特率就错。</div>
+
+  <!-- ================= 2 NVIC 与中断 ================= -->
+  <h2><span class="h2-num">2</span> NVIC 与中断:抢占优先级、分组与 FreeRTOS 约定</h2>
+
+  <h3>2.1 抢占优先级 vs 子优先级</h3>
+  <p><b>是什么:</b>Cortex-M4 的每个中断有 8 位优先级寄存器,STM32 只实现高 4 位(16 级)。这 4 位可切分:<b>抢占优先级(preemption priority)</b>决定"能否打断别人" —— 抢占优先级更高的中断可以打断正在执行的低抢占优先级中断(中断嵌套);<b>子优先级(sub priority)</b>只在"同时挂起"时决定谁先执行,<b>不能打断</b>任何正在运行的中断。<b>分组(grouping)</b>规定 4 位怎么分:<code>NVIC_PRIORITYGROUP_4</code> = 4 位全给抢占、0 位子优先级(16 级抢占、无子优先级);<code>GROUP_2</code> = 2+2。同抢占同级的中断之间<b>永远不会互相打断</b>,排队由子优先级与向量号决定。</p>
+  <div class="formula">\text{4 位优先级} = \underbrace{n_{\text{pre}}\text{ 位抢占}}_{\text{可嵌套}} + \underbrace{(4-n_{\text{pre}})\text{ 位子优先级}}_{\text{仅排队,不可嵌套}} \quad \text{GROUP}_4:\ n_{\text{pre}}=4</div>
+  <p><b>怎么做(关节控制器典型分配,GROUP_4):</b>数值越小优先级越高 —— 0~4:不调用 RTOS API 的最紧急中断(ADC 电流环、比较器过流保护);5~15:可调用 RTOS API 的普通中断(CAN、USART、编码器 Z 脉冲);SysTick 与 PendSV:15(最低,FreeRTOS 移植要求,机理见 <a href="../06_软件与算法/20_FreeRTOS任务调度与实时性.html">06-21 FreeRTOS 页</a>第 5 节)。</p>
+  <h3>2.2 FreeRTOS 下的两条铁律</h3>
+  <p>①<b>分组必须配 GROUP_4(或等效全抢占)</b>:FreeRTOS 优先级管理只看抢占优先级,子优先级会让"数值比较"语义失真,CubeMX 集成 FreeRTOS 时会强制此项。②<b>调用 FreeRTOS API(含 FromISR 版)的中断,抢占优先级数值必须 ≥ configMAX_SYSCALL_INTERRUPT_PRIORITY(典型 5)</b>:内核临界区通过 BASEPRI 只屏蔽这条线以下的中断,更紧急的中断若碰 API 会损坏内核数据结构。反之,放在 0~4 的中断(如 20kHz 电流环)享受"任何临界区都挡不住我"的最高确定性,代价是与 RTOS 完全隔离 —— 数据交互走"写内存标志 + 其他中断读取"或无锁单写者模式。</p>
+  <pre><code>/* ============ 中断优先级配置示例(GROUP_4 + FreeRTOS) ============ */
+HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);   /* FreeRTOS 必须 */
+
+/* ADC1+2 联合中断: 电流环, 不碰 FreeRTOS API → 放屏蔽线之上 */
+HAL_NVIC_SetPriority(ADC1_2_IRQn, 1, 0);              /* 抢占级 1 */
+HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
+
+/* CAN 收包: 要 xQueueSendFromISR → 数值必须 ≥ 5 */
+HAL_NVIC_SetPriority(CEC_CAN_IRQn, 6, 0);             /* 抢占级 6 */
+
+/* EXTI 编码器 Z 脉冲: 同样需要 RTOS API → ≥ 5 */
+HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
+
+/* SysTick / PendSV: FreeRTOS 移植层自动设为最低(15) */</code></pre>
+  <p><b>面试怎么问:</b>"抢占优先级和子优先级有什么区别?FreeRTOS 环境下分组怎么设?"——答:抢占级可嵌套打断、子级只能排队;FreeRTOS 只认抢占级,必须配 GROUP_4 并遵守"数值 ≥ 5 才可调 API"的屏蔽线约定。能画出本节那张 0~15 分层表即满分。</p>
+
+  <!-- ================= 3 DMA ================= -->
+  <h2><span class="h2-num">3</span> DMA:让 CPU 从"搬运工"岗位上退下来</h2>
+
+  <h3>3.1 通道、请求与 DMAMUX</h3>
+  <p><b>是什么:</b>DMA(Direct Memory Access)是独立于 CPU 的搬运硬件:外设发出"请求(Request)"→ DMA 控制器响应 → 按 配置 在外设寄存器与内存之间搬数据 → 搬完发中断。CPU 全程不参与,只在"一批搬完"时被通知。G4 有 DMA1/DMA2 各 8 个通道,且通过 <b>DMAMUX(_DMA 请求复用器)_</b>把通道与外设请求灵活配对 —— 不同于 F1 系列的"通道-外设死绑定",G4 上 ADC1 可以映射到任意空闲通道,配错"哪个外设请求接到哪个通道"这类 F1 时代事故在 G4 上基本消失。每个通道一份配置:<b>源地址/目标地址、传输数量 NDTR、数据宽度 PSIZE/MSIZE(字节/半字/字)、地址增量 PINC/MINC、模式(正常/循环)、优先级</b>。</p>
+  <h3>3.2 循环模式 vs 正常模式</h3>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>正常模式(NORMAL)</th><th>循环模式(CIRCULAR)</th></tr>
+    <tr><td>计数到零后</td><td>DMA 停止,需软件重新启动</td><td>自动回卷到起始地址,永不停止</td></tr>
+    <tr><td>典型用途</td><td>一次性发送串口帧、批量搬运采集数据</td><td><b>ADC 连续采样缓冲区(电流环标准姿势)</b>、串口不定长接收环形缓冲</td></tr>
+    <tr><td>CPU 介入</td><td>每批数据一次重启</td><td>零介入;用半满/全满中断做"乒乓"处理</td></tr>
+    <tr><td>风险点</td><td>忘记重启 → 数据断流</td><td>CPU 读缓冲与 DMA 写缓冲并发,需半满/全满同步或双缓冲</td></tr>
+  </table></div>
+  <p><b>怎么做(ADC + DMA 标准管线):</b>ADC 配连续/定时器触发转换,DMA 配<b>循环模式</b>把每次转换结果自动写入 16 位缓冲数组;开 DMA 半满(HT)与全满(TC)中断 —— 半满时处理前半段、全满时处理后半段(乒乓),CPU 与 DMA 永不碰同一半缓冲。多通道顺序采样(如三相电流 + 母线电压)时,ADC 扫描组的每个通道转换结果按序列顺序落进数组,<b>数组下标与通道的对应关系要对着 ADC_SQR 序列寄存器配置核对</b>,这是例程移植最容易张冠李戴的地方。</p>
+  <h3>3.3 数据宽度与缓存一致性</h3>
+  <p><b>PSIZE/MSIZE 与 MINC:</b>PSIZE 定义"从外设读多宽"(ADC 数据寄存器是 16 位 → 半字),MSIZE 定义"写进内存多宽",二者不等时 DMA 自动截断/扩展;PINC/MINC 决定搬完一次后源/目标地址是否递增。经典翻车:ADC(半字)搬到 32 位 int 数组且 MINC 配错,结果数组里全是"半字拼接"的错位数据。<b>缓存一致性:</b>Cortex-M4(G431)<b>没有数据 Cache</b>,DMA 与 CPU 看同一块 SRAM,天然一致 —— 但换到 Cortex-M7 平台(H7 系列)有 D-Cache,DMA 写入的缓冲区若还在 Cache 里是"脏"的,CPU 读到旧值;处理方式是缓冲区放不缓存的 SRAM 区、或搬前 <code>SCB_InvalidateDCache_by_Addr()</code> / 搬后 <code>SCB_CleanDCache_by_Addr()</code>,并把缓冲区按 32 字节对齐(<code>__attribute__((aligned(32)))</code>)。写可移植代码时把这条差异写进注释,是工程师成熟度的体现。</p>
+  <p><b>面试怎么问:</b>"ADC 连续采 8 通道,DMA 循环模式,软件怎么安全消费数据?"——答:循环缓冲 + HT/TC 双中断乒乓处理,处理段数据期间 DMA 只写另一段;再补"G4 无 Cache 无需维护,H7 需 invalidate/align 32 字节"即超出预期。</p>
+
+  <!-- ================= 4 ADC ================= -->
+  <h2><span class="h2-num">4</span> ADC:规则组、注入组与定时器触发的电流环采样</h2>
+
+  <h3>4.1 规则组 vs 注入组</h3>
+  <p><b>是什么:</b>G431 的 ADC1/ADC2 是 12 位逐次逼近型(硬件可过采样到 16 位),最高 4 Msps 级。转换组织成两个"组":<b>规则组(regular group)</b> —— 最多 16 个通道的扫描序列,结果存入一个共用数据寄存器(DR),多通道必须配 DMA 否则前一个结果被覆盖;<b>注入组(injected group)</b> —— 最多 4 个通道,<b>可打断规则组</b>优先转换("注入"之名由此而来),每个通道有独立数据寄存器(JDR1~4)。</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>规则组</th><th>注入组</th></tr>
+    <tr><td>通道数</td><td>最多 16</td><td>最多 4</td></tr>
+    <tr><td>数据寄存器</td><td>共用 1 个 DR(多通道必须 DMA)</td><td>独立 JDR1~4,无需 DMA 也能取</td></tr>
+    <tr><td>可否被打断</td><td>可被注入组打断(autoInject/autoDelay 等模式控制细节)</td><td>打断规则组,转换完规则组自动恢复</td></tr>
+    <tr><td>典型用途</td><td>慢速后台巡检:温度、电位器、母线电压</td><td><b>电流环同步采样:ia/ib 相电流</b>,定时器精准触发、中断读取</td></tr>
+    <tr><td>触发源</td><td>软件/定时器 TRGO/外部引脚</td><td>软件/定时器 TRGO2 等(与规则组可独立触发)</td></tr>
+  </table></div>
+  <h3>4.2 采样时间:一个必须会算的公式</h3>
+  <p><b>是什么:</b>逐次逼近 ADC 每次转换 = <b>采样保持时间(SMP 可选档)</b> + <b>12.5 个 ADC 时钟的逐次比较时间</b>(12 位分辨率)。G4 的 SMP 档位:2.5 / 6.25 / 12.5 / 24.5 / 47.5 / 92.5 / 247.5 / 640.5 个 ADC 时钟周期。</p>
+  <div class="formula">T_{\text{conv}} = \frac{T_{\text{SMP}} + 12.5}{f_{\text{ADC}}} \qquad f_s = \frac{1}{T_{\text{conv}}} \quad \text{例: } T_{\text{SMP}}=6.5,\ f_{\text{ADC}}=60\,\text{MHz} \Rightarrow T_{\text{conv}}=\frac{19}{60\,\text{MHz}}\approx 317\,\text{ns}</div>
+  <p><b>怎么选:</b>采样时间决定内部采样电容给信号源"充电"多久 —— 信号源阻抗高(经大电阻分压的母线电压)就要更长 SMP,否则保持电容没充到位,<b>读数系统性偏低且串扰到上一通道</b>("通道间串扰"是 SMP 不足的标志性症状);而电流环要快,又要留够精度。实用流程:先按 datasheet 的采样时间 vs 源阻抗表选下限,再在真实板上做"已知电压注入"验证精度;总采样率别顶满上限,留转换排序余量。</p>
+  <h3>4.3 与定时器联动:电流环采样的"黄金同步"</h3>
+  <p><b>为什么必须定时器触发:</b>软件随时启动转换 = 采样点随机散布在 PWM 周期里,采到的相电流一半是开关噪声。正确做法:高级定时器产生中心对齐 PWM,把 <b>TRGO(触发输出)指向计数器计到上溢/下溢的点</b> —— 这恰是 PWM 中心、下管导通半桥中点,电流纹波最平滑;ADC 收到触发自动转换,转换完触发中断,ISR 里做 FOC(完整链路见 <a href="../06_软件与算法/19_FOC算法完全图解_流程与运行图.html">06-19 FOC 图解页</a>)。<b>双重/联合模式:</b>ADC1 与 ADC2 可组成双 ADC 模式(规则同步、注入同步、交替采样等)—— 双电阻采样两相电流时,两个 ADC 同时触发、各采一相,时间上严格对齐;交替模式还能把等效采样率翻倍。</p>
+  <pre><code>/* ============ TIM1 触发 ADC 注入组: 电流环同步采样(G4 HAL 要点) ============ */
+/* 1) TIM1: 中心对齐 PWM, TRGO 在 Update(计到上溢)事件发出            */
+htim1.Init.CounterMode       = TIM_COUNTERMODE_CENTERALIGNED1;
+HAL_TIM_PWM_Init(&amp;htim1);
+TIM_MasterConfigTypeDef mst = {0};
+mst.MasterOutputTrigger      = TIM_TRGO_UPDATE;   /* 上溢点 = PWM 中心 */
+HAL_TIMEx_MasterConfigSynchronization(&amp;htim1, &amp;mst);
+
+/* 2) ADC1: 注入组采 ia, 外部触发 = TIM1_TRGO, 上升沿启动             */
+ADC_InjectionConfTypeDef inj = {0};
+inj.InjectedChannel          = ADC_CHANNEL_1;             /* PA0 → ia */
+inj.InjectedNbrOfConversion  = 1;
+inj.InjectedSamplingTime     = ADC_SAMPLETIME_6CYCLES_5;  /* 6.5 ADC clk */
+inj.ExternalTrigInjecConvEdge= ADC_EXTERNALTRIGINJEC_CONV_EDGE_RISING;
+inj.ExternalTrigInjecConv    = ADC_EXTERNALTRIGINJEC_T1_TRGO;
+inj.InjectedRank             = 1;
+HAL_ADCEx_InjectedConfigChannel(&amp;hadc1, &amp;inj);
+HAL_ADCEx_InjectedStart(&amp;hadc1);
+/* 3) 注入转换完成中断 → ISR 里读 JDR1 做 Clarke/Park(见 06-19 页)    */</code></pre>
+  <p><b>面试怎么问:</b>"电流环为什么用注入组 + 定时器触发,而不是规则组 + 软件轮询?"——答:注入组独立数据寄存器免 DMA、可打断后台规则组保证电流采样最高优先级;定时器 TRGO 把采样点锁定在 PWM 中心,采到的是无开关纹波的"真值";软件轮询的采样时刻随机,采到开关噪声,电流环输出随之抖动。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①SMP 配最短档还嫌精度差 —— 先查信号源阻抗,再谈 ADC 好坏;②双 ADC 模式下以为两个 ADC 自动同步 —— 模式(同步/交替/独立)必须显式配置,触发源也要对齐;③16 位过采样当作免费午餐 —— 过采样需要时间预算(采 N 次才得 1 个),电流环预算里装不下。</div>
+
+  <!-- ================= 5 定时器家族 ================= -->
+  <h2><span class="h2-num">5</span> 定时器家族:从"数羊"到互补 PWM 与编码器接口</h2>
+
+  <h3>5.1 三大家族各管什么</h3>
+  <div class="table-wrap"><table>
+    <tr><th>家族</th><th>代表(G431)</th><th>关键特征</th><th>典型用途</th></tr>
+    <tr><td>基本定时器</td><td>TIM6 / TIM7</td><td>只有计数与更新中断,无输出通道,可触发 DAC</td><td>纯时基:HAL 时基(CubeMX 把 SysTick 让给 FreeRTOS 后的替代)、周期性中断</td></tr>
+    <tr><td>通用定时器</td><td>TIM2(32 位)/ TIM3 / TIM4 / TIM15~17</td><td>计数 + 输入捕获 + 输出比较 + 编码器接口(TIM2~5)</td><td>PWM(无互补)、测频/测脉宽、编码器测速、超时检测</td></tr>
+    <tr><td>高级定时器</td><td>TIM1 / TIM8(G4 部分型号还有 TIM20)</td><td>通用全部功能 + <b>互补输出 CHxN + 死区插入 + 刹车输入 BKIN + 重复计数器</b></td><td><b>三相逆变 PWM(电机驱动必用)</b>、电子变压器、数字电源</td></tr>
+  </table></div>
+  <h3>5.2 PWM 生成:ARR、CCR 与死区的算术</h3>
+  <div class="formula">f_{\text{PWM}} = \frac{f_{\text{TIM}}}{(\text{PSC}+1)\,(\text{ARR}+1)},\qquad D = \frac{\text{CCR}}{\text{ARR}+1}\ (\text{向上计数模式})</div>
+  <div class="formula">t_{\text{dead}} = \text{DTG 对应时间}\quad \text{例: } f_{\text{TIM}}=170\,\text{MHz},\ \text{PSC}=0,\ \text{ARR}=4249 \Rightarrow f_{\text{PWM}}=40\,\text{kHz}</div>
+  <p><b>为什么电机驱动必须互补输出 + 死区:</b>半桥的上下管绝不能同时导通(母线直通短路)。高级定时器的 CHx 与 CHxN 由硬件产生<b>逻辑互补</b>的死区波形 —— 上升沿延迟 t_dead 才拉高、下降沿也延迟,任何软件错误都无法造出直通(刹车输入 BKIN 还能在外部故障时硬件级关断全部输出,不经过软件)。死区取值:大于功率管关断时间 + 栅驱传播延迟,典型 0.2~1μs;过大则占空比损失、低速电流过零畸变(死区效应,驱动器层可做死区补偿,见 02-06/02-08 页)。</p>
+  <h3>5.3 编码器接口模式:硬件自动正交解码</h3>
+  <p><b>是什么:</b>通用定时器 TIM3/TIM4 的编码器接口模式把 TI1/TI2 两个输入(A/B 相)交给硬件解码:计数器随正交脉冲自动加减 —— 顺时针 A 超前 B 计数器增,反转则减,<b>4 倍频(A、B 每个边沿都计数)由硬件免费完成</b>。配置要点:CR1 的 SMS 位选编码器模式 3(双边沿 4 倍频)、CCMR1 输入滤波(防毛刺,ICFilter)、ARR 按编码器线数 ×4 − 1 设置。<b>软件只做一件事:</b>周期性读 CNT 换算角度(并处理跨零溢出),配合 Z 脉冲做绝对零位校准(流程见 <a href="15_传感器与关节标定专题.html">02-12 标定页</a>)。相比 EXTI 中断数脉冲,硬件解码零 CPU 负载、高转速不丢步 —— 高转速下 EXTI 每个边沿一次中断的方案会直接把 CPU 打满。</p>
+  <p><b>面试怎么问:</b>"1000 线编码器,4 倍频后定时器 ARR 设多少?一圈计多少数?"——答:ARR = 4000 − 1,一圈 4000 计数;若说明"计数器模式中心对齐时倍数另有定义、以手册为准"更严谨。再追问"为什么用硬件编码器模式而不是 EXTI",答 CPU 负载与丢步即可。</p>
+
+  <!-- ================= 6 常用调试外设 ================= -->
+  <h2><span class="h2-num">6</span> 常用调试外设:USART 打印、SWD 与 DWT 周期计数器</h2>
+
+  <h3>6.1 USART:printf 的代价与正确姿势</h3>
+  <p><b>是什么:</b>调试打印最常用的路径是 USART1(常接 USB-TTL)。<b>重定向 printf:</b>实现 <code>int fputc(int ch, FILE *f)</code> 内部调 HAL_UART_Transmit(或直接写 TDR 等待 TXE 标志)。<b>三条性能军规:</b>①阻塞发送每字节 ≈ 波特率倒数(115200bps 下 ~87μs/字节),<b>高频控制环里严禁 printf</b> —— 一行日志能把 50μs 的电流环预算吃光十遍;②要吐波形数据用 <b>DMA 发送</b>或二进制协议(浮点 4 字节直传,别用 ASCII);③printf 默认占用几十 KB 栈与 Flash(浮点格式化),任务栈按 2KB 起配(对应 <a href="../06_软件与算法/20_FreeRTOS任务调度与实时性.html">06-21 页</a>栈估算)。</p>
+  <h3>6.2 SWD:两根线的"透视镜"</h3>
+  <p><b>是什么:</b>SWD(Serial Wire Debug)用 SWDIO/SWCLK 两根线提供下载、断点、单步、寄存器/内存观察 —— 关节驱动板 Layout 必留 SWD 排针(见 <a href="16_PCB_Layout检查清单.html">02-13 Layout 清单</a>)。实用技巧:①<b>被优化代码调试</b> —— -O2 下断点会"跳行",变量显示 optimized out,调试时降级 -O0 或对函数加 volatile 临时观察;②<b>ITM/SWO</b> —— 加一根 SWO 线可用 printf 重定向到调试器通道,不占 USART 与 CPU 串行等待;③<b>硬故障定位</b> —— HardFault 后从 LR/PC 值回溯调用栈,配合 map 文件定位崩到哪个函数。</p>
+  <h3>6.3 DWT 周期计数器:零开销的秒表</h3>
+  <pre><code>/* ============ DWT CYCCNT: 测任意代码块的 CPU 周期数 ============ */
+#define DWT_ENABLE()  do {                                                  \
+    CoreDebug-&gt;DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  /* 打开调试跟踪 */       \
+    DWT-&gt;CYCCNT      = 0;                            /* 清零计数器   */       \
+    DWT-&gt;CTRL       |= DWT_CTRL_CYCCNTENA_Msk;       /* 启动计数     */       \
+} while (0)
+
+static inline uint32_t dwt_cycles(void) { return DWT-&gt;CYCCNT; }
+
+/* 用法: 170MHz 下 1 cycle ≈ 5.88ns, 精度远超示波器 GPIO 法 */
+void measure_control_loop(void)
+{
+    uint32_t t0 = dwt_cycles();
+    foc_current_loop();                       /* 被测代码            */
+    uint32_t dt = dwt_cycles() - t0;          /* 纯周期差, 零额外开销 */
+    g_worst_cycles = MAX(g_worst_cycles, dt); /* 长跑取最大 = WCET   */
+    /* 例: dt = 3400 → 3400/170MHz ≈ 20μs, 占 50μs 周期预算 40% → 偏紧 */
+}</code></pre>
+  <p><b>为什么它是首选:</b>GPIO 翻转 + 示波器需要硬件接线且只能测宏观间隔;DWT 直接读内核周期计数器,一条指令读数、分辨率 1 cycle,长跑统计 WCET 完美贴合 <a href="../06_软件与算法/20_FreeRTOS任务调度与实时性.html">06-21 页</a>的实时性指标方法。注意:计数器 32 位、170MHz 下约 25 秒回卷一次,短时测量不受影响;HAL 时基与 SysTick 操作不影响 DWT(独立硬件)。</p>
+  <p><b>面试怎么问:</b>"不接示波器,怎么测一个函数的执行时间?"——答 DWT CYCCNT:使能 TRCENA + CYCCNTENA,前后读数差即周期数,除以主频得时间;长跑取 max 得 WCET。能补"32 位回卷约 25s、测量窗口要避开回卷或做差前判断"是细节加分。</p>
+
+  <!-- ================= 7 常见误区 ================= -->
+  <h2><span class="h2-num">7</span> 常见误区:四个"例程能跑、量产翻车"的经典坑</h2>
+
+  <h3>7.1 APB 定时器时钟 ×2 规则:PWM 频率算错一倍</h3>
+  <p><b>规则:</b>当 APB 预分频系数<b>不是 1</b> 时,挂在该 APB 上的<b>定时器</b>时钟自动翻倍(= PCLK × 2);分频为 1 时定时器时钟 = PCLK。这是 RCC 设计者为"低速总线 + 高速定时器"留的补偿机制(RCC_CFGR 的 TIMPRE 位族控制细节,以 RM0440 为准)。<b>事故:</b>例程在 HCLK=170/APB1=85MHz 下算出 PSC/ARR,你移植到 APB1=170MHz 的配置里忘改 —— PWM 频率直接偏一倍,开关损耗、电流纹波全变。<b>正解:</b>每次动时钟树,把"APB 分频 → PCLK → 定时器时钟(应用 ×2 规则)"三步写进注释重算一遍。</p>
+  <h3>7.2 DMA 数据宽度错配:半字与字的"错位拼接"</h3>
+  <p><b>症状:</b>ADC 数据数组出现 0x0FFF0FFF 这种"同一个值重复两半"或错位拼接的诡异值。<b>机理:</b>ADC DR 是 16 位(半字),PSIZE 必须配 HALF_WORD;目标数组若开成 32 位 int 数组且 MSIZE 仍是半字,两个结果会拼进同一个 32 位单元(取决于 MINC 与地址推进方式),解析全乱。<b>正解:</b>"外设宽度 → PSIZE、变量宽度 → MSIZE、两者一致 + 数组元素类型匹配",拷例程时这三处必须重核而不是照抄。</p>
+  <h3>7.3 中断里做浮点运算拖慢响应</h3>
+  <p><b>症状:</b>开了浮点库的高频中断偶尔超时,或低优先级中断集体迟到。<b>机理:</b>Cortex-M4F 硬件 FPU 单次乘加 1 周期本身很快,但<b>中断入口/出口要压弹 FPU 上下文(S0~S15 + FPSCR,额外约 17 个寄存器)</b> —— 中断里用一次浮点,进出场成本从 ~12 周期涨到 ~30+ 周期;更糟的是无 FPU 库函数(sinf/cosf 查表 + 多项式)动辄数百周期。电流环里 Clarke/Park 的 sin/cos 必须用查表法或 CORDIC(见 06-19 页)。<b>正解:</b>①高频中断浮点不可免时确认编译器开启了硬 FPU(-mfpu=fpv4-sp-d16 -mfloat-abi=hard),别掉进软件浮点;②非必要的浮点处理挪出中断、放在任务里。</p>
+  <h3>7.4 忘记使能 GPIO 时钟:寄存器"写不进去"</h3>
+  <p><b>症状:</b>GPIO_Init 配置后引脚毫无反应,读回配置寄存器永远是 0。<b>机理:</b>STM32 所有外设时钟默认关闭以省电,<b>时钟没开的外设寄存器写入无效</b>。手写寄存器级代码必写 <code>RCC-&gt;AHB2ENR |= RCC_AHB2ENR_GPIOAEN;</code>(G4 的 GPIO 挂 AHB2);HAL 侧由 <code>__HAL_RCC_GPIOx_CLK_ENABLE()</code> 承担 —— 例程迁移时最容易漏的就是这一行(或 MSP 初始化文件没拷)。<b>正解:</b>"外设不响应,先查时钟使能"应成为条件反射;另外注意时钟使能后要短暂的几个周期等待(写后立即读可能未生效,HAL 已处理)。</p>
+  <div class="table-wrap"><table>
+    <tr><th>误区</th><th>典型症状</th><th>一句话正解</th></tr>
+    <tr><td>APB 定时器时钟忘 ×2</td><td>PWM 频率偏差一倍</td><td>APB 分频 ≠1 时定时器时钟 = PCLK×2,配置后重算 PSC/ARR</td></tr>
+    <tr><td>DMA PSIZE/MSIZE 错配</td><td>数据错位拼接、数组值诡异</td><td>宽度三处对齐:外设寄存器 / DMA 配置 / 数组类型</td></tr>
+    <tr><td>中断里大量浮点</td><td>高频中断超时、其他中断迟到</td><td>硬 FPU 编译选项 + 查表法 sin/cos + 浮点尽量出中断</td></tr>
+    <tr><td>忘使能 GPIO 时钟</td><td>引脚无反应、寄存器读回 0</td><td>外设不响应先查 RCC 时钟使能位</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>"例程在别人板上 PWM 是 20kHz,到你板上变成 10kHz,可能的原因?"——答主方向:两板时钟树不同(HSE 频率、APB 分频),叠加定时器时钟 ×2 规则差异,PSC/ARR 没跟着重算;再排查 SYSCLK 实际值(读 RCC 寄存器或 MCO 引脚输出验证)。</p>
+
+  <!-- ================= 8 小结与思考 ================= -->
+  <div class="box box-tip"><b>📌 本节小结:</b>时钟树是"低频晶振 + PLL 倍频 + 总线分级"的供水系统,G431 走 HSE 8MHz → PLL(×85/R4) → 170MHz,APB 分频 ≠1 时定时器时钟自动 ×2。NVIC 4 位优先级里,抢占级管嵌套、子级只管排队,FreeRTOS 环境必须 GROUP_4 + "数值 ≥5 才可调 API"。DMA 用 DMAMUX 灵活配对、循环模式 + HT/TC 乒乓消费是 ADC 连续采样标准姿势,G4 无 Cache 天然一致(H7 要 invalidate + 32 字节对齐)。ADC 分规则组(16 通道、配 DMA、慢巡检)与注入组(4 通道、独立 JDR、可打断规则组),转换时间 = (SMP+12.5)/f_ADC,电流环的正确姿势是"TIM1 TRGO 中心点触发 + 注入组 + 中断读 JDR"。定时器三家族:基本 TIM6/7 做时基、通用 TIM2~5 做编码器/PWM、高级 TIM1/8 加互补 + 死区 + 刹车保三相逆变不直通。调试三板斧:USART(别在环内打印)、SWD(两根线透视)、DWT CYCCNT(1 周期分辨率测 WCET)。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>
+    1. 你的关节板要同时跑:20kHz 电流环(ADC 注入组 + TIM1 触发)、1kHz 速度环任务(FreeRTOS)、CAN 收发、编码器解码 —— 请把本页五个外设(时钟/NVIC/DMA/ADC/定时器)的配置串成一张完整初始化清单,并标注每项的优先级数值。<br>
+    2. 若母线电压采样走规则组 DMA 循环模式、相电流走注入组,注入组打断规则组时,DMA 正在搬运的规则序列会发生什么?如何保证母线电压数据不被污染?<br>
+    3. 同一块 G431,把 APB1 从 170MHz 降到 85MHz 后,TIM3 的 PWM 频率变不变?提示:×2 规则与 PCLK 变化的方向是否抵消,取决于分频系数从几变成几。
+  </div>
+
+  <!-- ================= 9 本节自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. G431 上 APB1 预分频为 2(APB1 = 85MHz)时,挂在其上的 TIM3 的计数时钟是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 85MHz(定时器时钟永远等于 PCLK)</button>
+      <button data-v="B">B. 170MHz(APB 分频 ≠1 时定时器时钟自动 ×2)</button>
+      <button data-v="C">C. 42.5MHz(定时器时钟跟随 APB 再减半)</button>
+      <button data-v="D">D. 340MHz(×4 补偿)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 B:×2 规则是 RCC 的硬件行为 —— 只要 APB 预分频系数不是 1,该总线上的定时器时钟就自动翻倍(HCLK=170、APB1=÷2=85MHz 时,TIM3 计数时钟 = 170MHz),设计意图是让低速总线上的定时器仍能获得接近主频的计数分辨率。逐项点评:<br><b>A(错):</b>"永远等于 PCLK"只在 APB 分频 = 1 时成立 —— 这正是例程跨配置移植后 PWM 频率漂移一倍的第一大根因;记忆规则必须带上"分频系数 ≠1 才 ×2"这个条件,丢掉条件就失去了规则的适用边界,本选项的表述在这个条件下直接不成立。<br><b>C(错):</b>不存在"PCLK 再减半"的档位 —— 定时器时钟只有两种关系:分频 =1 时等于 PCLK,分频 ≠1 时等于 PCLK×2;凭直觉把"总线分频"再叠加一次减半,脑补出第四种关系,这种"想当然"的频率推算恰恰是时钟配置事故的最常见来源。<br><b>D(错):</b>×2 是唯一的补偿系数(RCC_CFGR 的 TIMPRE 位族在不同产品线上有细节差异,以 RM0440 为准),×4 的补偿机制不存在;凑数字式的记忆杜撰在面试里是扣分项 —— 答不准时说"以参考手册为准"远比编一个系数可靠。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. FreeRTOS + STM32(GROUP_4,configMAX_SYSCALL_INTERRUPT_PRIORITY=5)下,以下哪个配置是合法的?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. CAN 中断设抢占级 3,ISR 里调用 xQueueSendFromISR</button>
+      <button data-v="B">B. ADC 电流环中断设抢占级 15,ISR 内只做 FOC 计算、不调用任何 FreeRTOS API</button>
+      <button data-v="C">C. USART 中断设抢占级 2,ISR 里用 taskENTER_CRITICAL 保护共享变量</button>
+      <button data-v="D">D. 编码器 Z 脉冲中断设抢占级 6,ISR 里调用 xSemaphoreGiveFromISR 并 portYIELD_FROM_ISR</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 D:抢占级 6 ≥ 5(屏蔽线以下),可以安全调用 FromISR API,xSemaphoreGiveFromISR + portYIELD_FROM_ISR 的组合正是标准写法。逐项点评:<br><b>A(错):</b>抢占级 3 数值小于 5,属于"比屏蔽线更紧急"的中断 —— 内核临界区挡不住它,此时调用任何 FreeRTOS API(含 FromISR 版)都可能打断内核修改就绪链表的临界区,损坏内核数据结构;合法做法二选一:把优先级降到 ≥5,或保持 3 但彻底不碰 API、只写内存标志。<br><b>B(错):</b>该配置"合法但次优" —— 数值 15 当然允许调用 API,但电流环中断放在最低档,白白让 20kHz 的电流环暴露在所有临界区屏蔽之下,放弃了 0~4 档"任何临界区都挡不住我"的最高确定性;工程上电流环应放在屏蔽线之上(如抢占级 1),这是"能跑"与"设计正确"的差别,作为选型判断属于错误答案。<br><b>C(错):</b>taskENTER_CRITICAL 是任务级 API,中断里必须用 taskENTER_CRITICAL_FROM_ISR 且用返回值配对 taskEXIT_CRITICAL_FROM_ISR 恢复;而且抢占级 2 在屏蔽线之上,根本不该触碰内核的任何临界区机制 —— ISR 内保护共享变量的正确工具是关中断短临界区或无锁单写者结构。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 电流环相电流采样为什么推荐"定时器 TRGO 触发 + 注入组",而不是"软件启动 + 规则组轮询"?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 采样点被锁定在 PWM 中心(无开关纹波处),且注入组独立数据寄存器、可打断规则组保证最高优先级</button>
+      <button data-v="B">B. 注入组的 ADC 精度比规则组更高,可以突破 12 位分辨率</button>
+      <button data-v="C">C. 规则组不支持定时器触发,只能软件启动</button>
+      <button data-v="D">D. 软件轮询可以自由选择采样时刻,灵活性优于硬件触发</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 A:硬件触发把采样时刻与 PWM 计数器硬绑定在中心对齐点 —— 此时下管导通、开关沿已结束,采到的是无纹波"真值";注入组四个独立 JDR 免 DMA、可打断规则组,保证电流采样永远最先被处理,这正是 06-19 页 ISR 级 FOC 链路的开端。逐项点评:<br><b>B(错):</b>凭空杜撰 —— 规则组与注入组共用同一个 ADC 逐次逼近内核,精度、分辨率、采样时间档位完全相同;"注入组精度更高"是把软件优先级概念错误地投射到硬件精度上,突破 12 位靠的是过采样(需要额外时间预算),与选哪个组毫无关系。<br><b>C(错):</b>与事实相反 —— 规则组同样支持定时器 TRGO、外部引脚等丰富的硬件触发源(RM0440 与 AN3116 列得清楚),"规则组 + 定时器触发 + DMA"恰恰是母线电压、温度等慢速巡检的标准配置;规则组与注入组的差别在数据寄存器与优先级,不在触发能力。<br><b>D(错):</b>"灵活"恰是缺陷所在 —— 软件轮询的采样时刻随指令流漂移,散布在 PWM 开关沿附近,采到的是开关噪声与电流纹波的混合物,电流环会把噪声当信号放大输出;硬件触发的"不灵活"(严格锁定时刻)正是它确定性的价值,对实时控制而言确定性永远优于灵活性。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 1000 线增量式编码器接 TIM4,采用编码器接口双边沿 4 倍频模式,一圈计数多少?ARR 建议设为?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 一圈 1000 计数,ARR = 999</button>
+      <button data-v="B">B. 一圈 2000 计数,ARR = 1999</button>
+      <button data-v="C">C. 一圈 4000 计数,ARR = 3999</button>
+      <button data-v="D">D. 一圈 40000 计数,ARR = 39999</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 C:编码器接口模式 3(双边沿计数)对 A、B 两相的上升沿与下降沿都计数 —— 1000 线 × 每线 4 个边沿 = 4000 计数/圈,ARR = 4000 − 1 = 3999,计数器每圈恰好走满一个周期,零位与速度换算常数都以此为准。逐项点评:<br><b>A(错):</b>这是"无数倍频"的算法(仅计 A 相上升沿),与题目明确给定的"双边沿 4 倍频"条件直接矛盾;若真按 1000 计数配置,位置分辨率白白损失 4 倍,且换算常数与硬件实际计数不一致,关节角度与速度全部错一个系数。<br><b>B(错):</b>这是 2 倍频(如 A 相双边沿)的结果,对应 SMS 配置的另一种模式 —— 说明写驱动前必须分清 SMS=001/010/011 三种模式的倍频差异;配置与算式必须同源,否则位置换算常数错 2 或 4 倍,零位标定与速度估计全部失真,这类错还特别隐蔽,低速时难以察觉。<br><b>D(错):</b>量级离谱 —— 像是把"×4 倍频"与脑补的"再 ×10 细分"叠加;增量式编码器自身没有细分,4 倍频就是正交解码的物理上限,更高分辨率要靠更高线数编码器或后续插值算法,凭空乘 10 属于对编码器原理的概念不清。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 ADC 采样时间(SMP)的选择,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="B">B. 信号源阻抗越高,需要的采样时间越长;SMP 不足会导致读数偏低与通道间串扰</button>
+      <button data-v="A">A. 采样时间越短越好,可以最大化采样率</button>
+      <button data-v="C">C. 采样时间只影响总转换时间,与精度完全无关</button>
+      <button data-v="D">D. SMP 档位可以任意连续取值,比如 10.3 个周期</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 B:逐次逼近 ADC 的采样保持电容要在采样窗口内经信号源内阻充到目标电压(误差 ≤0.5LSB),源阻抗越大 RC 时间常数越长,所需窗口越长;窗口不足时电容没充满 —— 读数系统性偏低,残留电荷还污染下一通道,表现为"上一通道的值串进这一通道"的串扰。逐项点评:<br><b>A(错):</b>把采样率当唯一目标 —— 极短 SMP 下高阻抗通道直接失真,而且电流环的真实瓶颈通常是触发同步与 ISR 处理时间,不是这几百纳秒的采样窗;"先保精度再谈速率"才是选型顺序,为几微秒牺牲精度得不偿失。<br><b>C(错):</b>"只影响转换时间、与精度无关"错在把次要影响当唯一影响 —— SMP 直接决定保持电容充电的充分程度,是影响精度的第一现场参数;datasheet 里"采样时间 vs 最大信号源阻抗"那张表的存在,本身就说明二者强相关,精度问题先查 SMP 是排障常识。<br><b>D(错):</b>与硬件事实不符 —— SMP 是寄存器里的档位选择,只能在 2.5/6.25/12.5/24.5/47.5/92.5/247.5/640.5 这几档里挑(数值以 RM0440 为准),不存在任意连续取值;写驱动时只能查表选取并按档位重算转换时间,假设连续可调会算出错误的总采样率。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于 DMA 循环模式搬运 ADC 数据,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 计数到零后自动回卷重新开始,适合 ADC 连续采样缓冲</button>
+      <button data-v="B">B. 可用半满(HT)+ 全满(TC)中断做乒乓处理,避免 CPU 与 DMA 同时读写同一段</button>
+      <button data-v="C">C. PSIZE/MSIZE 应与外设寄存器宽度、数组元素类型一致(ADC 为半字)</button>
+      <button data-v="D">D. 在 H7(M7 内核,带 D-Cache)上使用 DMA 缓冲区不需要任何额外处理,与 G4 完全一样</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 本题选<b>错误的说法</b>,答案 D。这正是 3.3 节强调的可移植性陷阱 —— G4 的 Cortex-M4 没有数据 Cache,DMA 与 CPU 直读同块 SRAM 天然一致;但 H7 的 Cortex-M7 有 D-Cache,DMA 写入后 CPU 可能从 Cache 读到旧值,必须做 SCB_InvalidateDCache_by_Addr(收数据方向)并把缓冲区按 32 字节对齐,"跨平台照抄 DMA 代码"是真实发生过的事故,不是理论风险。<br><b>A(说法正确):</b>回卷由硬件自动完成、无需软件重启,这正是循环模式对连续采样不可替代的原因 —— 正常模式每批数据都要 CPU 手动重新启动,一旦忘记重启数据流就断了,连续采样场景下这一条就足以决定选型。<br><b>B(说法正确):</b>标准乒乓管线 —— 半满时处理前半、全满时处理后半,DMA 永远在写"另一段",并发安全由空间隔离保证,不需要任何锁与忙等,比在中断里抢临界区干净得多,这是 DMA 循环缓冲消费数据的标准姿势。<br><b>C(说法正确):</b>宽度三处对齐(ADC DR 半字 → PSIZE 半字 → uint16_t 数组)是 7.2 节"错位拼接"事故的正解,MINC 地址递增使能也必须核对,漏配或错配任何一处,数组里的数据都会错位,且症状诡异难查。</div>
+  </div>
+
+  <!-- ================= 10 参考来源 ================= -->
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://www.st.com/resource/en/reference_manual/rm0440-stm32g4-series-advanced-armbased-32bit-mcus-stmicroelectronics.pdf" target="_blank" rel="noopener">ST RM0440:STM32G4 系列参考手册</a> —— 时钟树(RCC 章节)、NVIC、DMA/DMAMUX、ADC、定时器全部寄存器级细节的权威来源,本页寄存器名以它为准。</li>
+    <li><a href="https://www.st.com/resource/en/application_note/an4776-generalpurpose-timer-cookbook-stmicroelectronics.pdf" target="_blank" rel="noopener">ST AN4776:《General-purpose timer cookbook》</a> —— 定时器家族、PWM 生成、编码器接口、触发联动的官方应用笔记,本页第 5 节框架与之对应。</li>
+    <li><a href="https://www.st.com/resource/en/datasheet/stm32g431cb.pdf" target="_blank" rel="noopener">ST STM32G431 数据手册</a> —— 170MHz 主频上限、外设清单、引脚与时序参数。</li>
+    <li><a href="https://www.st.com/resource/en/application_note/an3116-stm32s-adc-modes-and-their-applications-stmicroelectronics.pdf" target="_blank" rel="noopener">ST AN3116:STM32 ADC modes and their applications</a> —— 规则组/注入组/双 ADC 模式的官方说明与用例。</li>
+    <li><a href="https://www.arm.com/products/silicon-ip-cpu/cortex-m/cortex-m4" target="_blank" rel="noopener">Arm Cortex-M4 处理器页</a> —— NVIC 优先级模型、DWT 调试单元的内核侧说明(细节以 ARMv7-M 架构参考手册为权威)。</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡/KaTeX 公式渲染 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

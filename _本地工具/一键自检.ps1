@@ -1,8 +1,11 @@
 # self-check.ps1 - one-click site consistency check (ASCII only)
-# Checks: 1) JS syntax of all HTML pages  2) relative link audit
-#         3) search-index vs actual pages  4) sitemap url count
-#         5) version consistency (site.js / index.html / CHANGELOG)
+# Checks: JS/external-JS syntax - relative links - search-index/sitemap sync - version chain -
+#         quiz/ib/quest data sync - script tag balance - KaTeX loader single source - SITE_STATS -
+#         localStorage key prefixes - og page count - 3D lib path - privacy - esc dedup -
+#         path-data integrity (C9) - data-file links (C10) - quest refs (C11) -
+#         learning-map integrity (C12) - interview-bank count copy spots (C13)
 # Usage: powershell -ExecutionPolicy Bypass -File "_local-tool-path\self-check.ps1"
+#        (all checks resolve against -Root, never (Get-Location))
 param([string]$Root = "")
 
 if([string]::IsNullOrWhiteSpace($Root)){ $Root = (Get-Location).Path }
@@ -137,7 +140,7 @@ $swHead = [regex]::Match($swContent, [regex]::Escape($banben) + ':\s*(V[0-9][0-9
 Check "sw.js header follows version" ($swHead -eq $verShort) ("swhead=" + $swHead + " ver=" + $verShort)
 # ---- 5b) V2.1.14 fog guard: a bare html:not([data-theme-early...]) selector (no descendant)
 # whose block sets opacity would paint the WHOLE root translucent (the "fog" bug).
-$root2 = (Get-Location).Path
+$root2 = $root   # V2.1.19 fix: was (Get-Location).Path, ignoring -Root when run from another CWD
 $toolsDir2 = [string]::Join('', [char]0x672C, [char]0x5730, [char]0x5DE5, [char]0x5177)
 $d3dir2 = '00_3D' + [string]::Join('', [char]0x89E3, [char]0x5256)
 $scanFiles = Get-ChildItem -Path $root2 -Recurse -Include *.html,*.css,*.js -File | Where-Object {
@@ -208,7 +211,7 @@ $ibDecl = "?"
 if($ibPage){
   $ibHtml = [IO.File]::ReadAllText($ibPage.FullName, [Text.Encoding]::UTF8)
   $m = [regex]::Match($ibHtml, '(\d{2,3})\D{0,4}?\u9898')   # NNN + CJK char for "ti"
-  if(-not $m.Success){ $m = [regex]::Match($ibHtml, '\x9898|(\d{2,3})') }
+  if(-not $m.Success){ $m = [regex]::Match($ibHtml, '(\d{2,3})\s*\u9898') }   # V2.1.19: '\x9898' branch was dead (\x takes 2 hex digits) and the bare (\d{2,3}) fallback could grab ANY first number
   if($m.Success -and $m.Groups[1].Value){ $ibDecl = $m.Groups[1].Value }
   $ibPageHas = ($ibDecl -eq [string]$ibCount)
 }
@@ -340,7 +343,7 @@ $c8bad | Select-Object -First 4 | ForEach-Object { Write-Output ("   DUP: " + $_
 
 
 # ---- C9: path-data integrity (path layer) ----
-$pdRoot = (Get-Location).Path
+$pdRoot = $root   # V2.1.19 fix: was (Get-Location).Path, ignoring -Root
 $pdFile = Join-Path $pdRoot "_assets\path-data.js"
 $pdOk = $false; $pdDetail = "file missing"
 if(Test-Path $pdFile){
@@ -359,6 +362,127 @@ if(Test-Path $pdFile){
   $pdDetail = "ids=" + $pdIds.Count + " missing=" + $pdMissing.Count + " dupInPath=" + $pdDup
 }
 Check "C9 path-data integrity" $pdOk $pdDetail
+
+# ---- C10: data-file link audit (V2.1.19) ----
+# HTML link audit (#2) never sees links inside JS data files:
+#   ib-data-a/b/c.js  item links[].u + subject rel[].u   (resolve relative to the 08_* hosting dir)
+#   quiz-bank.js      link.u                             (same hosting dir)
+#   quest-data.js     Q.*.link.u                         (same hosting dir)
+#   path-data.js      pages[].u                          (site-root relative AND must equal a search-index u,
+#                                                         the alignment path-data.js header promises)
+$hostDir = $null
+if($ibPage){ $hostDir = $ibPage.DirectoryName }
+if(-not $hostDir){
+  $d08 = Get-ChildItem -Path $root -Directory | Where-Object { $_.Name -like '08_*' } | Select-Object -First 1
+  if($d08){ $hostDir = $d08.FullName }
+}
+$dataLinkMiss = @()
+if($hostDir){
+  foreach($df in @($ibA, $ibB, $ibC, $quizBank, $qst)){
+    foreach($m in [regex]::Matches($df, "u:\s*'([^']+)'")){
+      $u = ($m.Groups[1].Value -split '\?')[0] -split '#'
+      $u = $u[0]
+      if($u -match '^(https?:|mailto:|javascript:|data:)' -or $u -eq ''){ continue }
+      $full = [IO.Path]::GetFullPath((Join-Path $hostDir $u))
+      if(-not (Test-Path $full)){ $dataLinkMiss += ("data:" + $u) }
+    }
+  }
+  if($pdContent){
+    foreach($m in [regex]::Matches($pdContent, 'u:\s*"([^"]+)"')){
+      $u = ($m.Groups[1].Value -split '\?')[0]
+      if(-not ($idxUrls -contains $u)){ $dataLinkMiss += ("path-not-in-index:" + $u) }
+      elseif(-not (Test-Path (Join-Path $root ($u -replace '/','\')))){ $dataLinkMiss += ("path-missing:" + $u) }
+    }
+  }
+} else { $dataLinkMiss += "08_* hosting dir not found" }
+Check "C10 data-file links" (($dataLinkMiss.Count -eq 0) -and ($null -ne $hostDir)) ($dataLinkMiss.Count.ToString() + " broken/unaligned")
+$dataLinkMiss | Select-Object -First 8 | ForEach-Object { Write-Host ("   DATALINK: " + $_) }
+
+# ---- C11: quest-data reference integrity (V2.1.19) ----
+# 'ref:xx-nn' must exist in ib item ids; 'qb:N' must match a quiz-bank entry id (1..60);
+# 'q:qxxx' must exist in the Q object; every Q entry answer must be A-D with exactly 4 options.
+$ibIdList = @()
+foreach($m in [regex]::Matches(($ibA + $ibB + $ibC), "\{ id:'([a-z]+-\d+)'")){ $ibIdList += $m.Groups[1].Value }
+$qbIdList = @([regex]::Matches($quizBank, '\bid:(\d+)') | ForEach-Object { $_.Groups[1].Value })
+$qKeyList = @([regex]::Matches($qst, "(?m)^\s*(q\d+):\{") | ForEach-Object { $_.Groups[1].Value })
+$refBad = @(); $qbBad = @(); $qRefBad = @()
+foreach($m in [regex]::Matches($qst, "'ref:([a-z]+-\d+)'")){
+  if($ibIdList -notcontains $m.Groups[1].Value){ $refBad += $m.Groups[1].Value }
+}
+foreach($m in [regex]::Matches($qst, "'qb:(\d+)'")){
+  if($qbIdList -notcontains $m.Groups[1].Value){ $qbBad += $m.Groups[1].Value }
+}
+foreach($m in [regex]::Matches($qst, "'q:(q\d+)'")){
+  if($qKeyList -notcontains $m.Groups[1].Value){ $qRefBad += $m.Groups[1].Value }
+}
+$ansBad = 0; $optBad = 0
+foreach($m in [regex]::Matches($qst, "a:'([A-E])'")){ if($m.Groups[1].Value -notin @('A','B','C','D')){ $ansBad++ } }
+foreach($m in [regex]::Matches($qst, "o:\[(.*?)\]\s*,\s*a:'")){
+  $optCnt = [regex]::Matches($m.Groups[1].Value, "'[^']*'").Count
+  if($optCnt -ne 4){ $optBad++ }
+}
+$c11bad = $refBad.Count + $qbBad.Count + $qRefBad.Count + $ansBad + $optBad
+Check "C11 quest refs" ($c11bad -eq 0) ("ref=" + $refBad.Count + " qb=" + $qbBad.Count + " q=" + $qRefBad.Count + " ans=" + $ansBad + " opts=" + $optBad)
+$refBad + $qbBad + $qRefBad | Select-Object -First 8 | ForEach-Object { Write-Host ("   QUEST-REF: " + $_) }
+
+# ---- C12: learning-map integrity (V2.1.19) ----
+# 06_学习地图.html must: reference only existing files, cover every SITE_SECTIONS id,
+# group every SITE_SECTIONS key; plus S.STATS.pages must equal sections+1 (V2.1.16 blank-page class).
+$mapPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\06_[^\\]*\.html$' } | Select-Object -First 1
+$c12bad = @(); $mapNodeCnt = 0; $grpKeyCnt = 0
+if($mapPage){
+  $mapHtml = [IO.File]::ReadAllText($mapPage.FullName, [Text.Encoding]::UTF8)
+  foreach($m in [regex]::Matches($mapHtml, 'id:\s*"(\d\d-\d\d)",\s*t:\s*"[^"]*",\s*u:\s*"([^"]+)"')){
+    $mapNodeCnt++
+    $mu = ($m.Groups[2].Value -split '\?')[0]
+    if(-not (Test-Path ([IO.Path]::GetFullPath((Join-Path $mapPage.DirectoryName $mu))))){ $c12bad += ("map-missing:" + $m.Groups[1].Value) }
+  }
+  foreach($sid in ($secIds | Select-Object -Unique)){
+    if(-not ($mapHtml -match ('id:\s*"' + $sid + '"'))){ $c12bad += ("map-no-node:" + $sid) }
+  }
+  $grpKeys = @([regex]::Matches($mapHtml, 'key:\s*"(\d\d)"') | ForEach-Object { $_.Groups[1].Value })
+  $grpKeyCnt = $grpKeys.Count
+  foreach($sk in ([regex]::Matches($secContent, 'key:\s*"(\d\d)"') | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)){
+    if($grpKeys -notcontains $sk){ $c12bad += ("map-no-group:" + $sk) }
+  }
+} else { $c12bad += "map page not found" }
+$statsPagesM = [regex]::Match($siteJs, 'S\.STATS\s*=\s*\{[^}]*pages:\s*(\d+)')
+if($statsPagesM.Success -and ([int]$statsPagesM.Groups[1].Value -ne ($secIds.Count + 1))){ $c12bad += ("stats-pages:" + $statsPagesM.Groups[1].Value) }
+Check "C12 learning-map integrity" ($c12bad.Count -eq 0) ("nodes=" + $mapNodeCnt + " groups=" + $grpKeyCnt + " bad=" + $c12bad.Count)
+$c12bad | Select-Object -First 8 | ForEach-Object { Write-Host ("   MAP: " + $_) }
+
+# ---- C13: interview-bank count copy spots (V2.1.19) ----
+# "N 学科 M 题" lives in ~8 hand-written spots; C3 only guards site.js. Chinese literals stay
+# ASCII-safe via regex \uXXXX escapes (PS 5.1 reads BOM-less UTF-8 sources as GBK).
+#   \u5B66\u79D1=学科  \u9898=题  \u9053=道  \u4E2A=个  \u53EF\u5206=可分  \u56FE\u6587\u8BE6\u89E3=图文详解
+#   \u4EBA\u5DE5\u7F16\u5199=人工编写  \u5237\u9898=刷题  \u542B\u5DE5\u7A0B\u5B9E\u8DF5\u9898=含工程实践题
+$c13bad = @()
+$c13spots = @(
+  @("index-sec8",   $index,      '(\d{2,3})\s*\u5B66\u79D1\s*(\d{2,3})\s*\u9053', 2),
+  @("index-tool",   $index,      '\u00B7\s*(\d{2,3})\s*\u5B66\u79D1\s*(\d{2,3})\s*\u9898\(\u542B\u5DE5\u7A0B\u5B9E\u8DF5\u9898', 2),
+  @("11-title",     $ibHtml,     '<title>[^<]*\((\d{2,3})\s*\u5B66\u79D1\s*(\d{2,3})\s*\u9898\)</title>', 2),
+  @("11-hero",      $ibHtml,     '(\d{2,3})\s*\u4E2A\s*\u5B66\u79D1\s*\u00B7\s*(\d{2,3})\s*\u9053', 2),
+  @("11-tag",       $ibHtml,     '(\d{2,3})\s*\u5B66\u79D1</span>', 1, 'subj'),
+  @("11-usage",     $ibHtml,     '(\d{2,3})\s*\u5B66\u79D1\s*\u53EF\u5206', 1, 'subj'),
+  @("12-card",      $qHtml,      '(\d{2,3})\s*\u5B66\u79D1\s*(\d{2,3})\s*\u9898\u56FE\u6587\u8BE6\u89E3', 2),
+  @("page-meta",    $metaContent, 'verified:"(\d{2,3})\s*\u9898\u4EBA\u5DE5\u7F16\u5199"', 1, 'total'),
+  @("path-desc",    $pdContent,  '(\d{2,3})\s*\u5B66\u79D1\s*(\d{2,3})\s*\u9898\u5237\u9898', 2),
+  @("readme",       $readme,     '(\d{2,3})\s*\u5B66\u79D1\s*(\d{2,3})\s*\u9898', 2)
+)
+foreach($sp in $c13spots){
+  $m13 = [regex]::Match($sp[1], $sp[2])
+  $c13ok = $m13.Success
+  if($c13ok -and $sp[3] -eq 2){ $c13ok = (([int]$m13.Groups[1].Value -eq $ibSubj) -and ([int]$m13.Groups[2].Value -eq $ibTotal)) }
+  if($c13ok -and $sp[3] -eq 1){
+    # 5th element picks the expected value: 'subj' for subject-count copy, 'total' for item-count copy
+    $expect = if($sp.Count -ge 5){ $sp[4] } else { 'total' }
+    $ref = if($expect -eq 'subj'){ $ibSubj } else { $ibTotal }
+    $c13ok = ([int]$m13.Groups[1].Value -eq $ref)
+  }
+  if(-not $c13ok){ $c13bad += $sp[0] }
+}
+Check "C13 ib count copy spots" ($c13bad.Count -eq 0) ($c13bad.Count.ToString() + " stale spots (real=" + $ibSubj + "subj/" + $ibTotal + "items)")
+$c13bad | Select-Object -First 10 | ForEach-Object { Write-Host ("   STALE: " + $_) }
 
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }
