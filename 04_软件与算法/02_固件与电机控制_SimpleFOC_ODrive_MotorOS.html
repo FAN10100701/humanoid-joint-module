@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 04-02 固件与电机控制
+  内容: 嵌入式基础 / FOC 固件原理(代码级) / SimpleFOC / ODrive /
+        小米电机生态与国产方案 / 固件开发常见坑 / 自测
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 固件与电机控制:SimpleFOC / ODrive / 国产方案</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式:复制代码按钮(命名加前缀,避免与全局冲突) */
+  .my-copy-btn{position:absolute;top:8px;right:8px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#9ecbff;font-size:11px;padding:3px 10px;border-radius:6px;cursor:pointer;font-family:inherit;transition:.15s}
+  .my-copy-btn:hover{background:rgba(59,130,246,.35);color:#fff}
+  .my-copy-btn.ok{background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5);color:#86efac}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-02",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec4" },
+      { t: "固件与电机控制" }
+    ],
+    prev: { t: "软件学习路线图", u: "01_软件学习路线图.html" },
+    next: { t: "ROS2 与机器人软件栈", u: "03_ROS2与机器人软件栈.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>⚙️ 固件与电机控制:SimpleFOC / ODrive / 国产方案</h1>
+    <div class="sub">从嵌入式选型到 FOC 固件原理(代码级),再到 SimpleFOC、ODrive 两大开源生态的上手路径,
+      最后落到小米电机生态与国产开源方案。读完你能独立跑通一个无刷电机的 FOC 闭环。</div>
+    <div class="tags">
+      <span class="tag">FOC</span>
+      <span class="tag">SimpleFOC</span>
+      <span class="tag">ODrive</span>
+      <span class="tag">STM32</span>
+      <span class="tag">固件开发</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说出 STM32 与 ESP32 在电机控制场景下的选型依据(主频、外设、价格、社区生态)<br>
+    2. 能按"电流采样 → Clark → Park → PID → 逆 Park → SVPWM"完整讲清 FOC 闭环的每一步数学含义,并读懂对应代码<br>
+    3. 能在 Arduino/ESP32 上用 SimpleFOC 跑通无刷电机的"开环 → 编码器校准 → 闭环"全流程<br>
+    4. 会用 ODFinder / odrivetool 配置 ODrive,并写出最简单的 Python 控制脚本<br>
+    5. 能说清国产电机方案(小米 CyberGear 等)与 MIT Mini Cheetah 开源控制的基本思路<br>
+    <b>建议用时:</b>约 60 分钟(含动手实验约 90 分钟)
+  </div>
+
+  <!-- ================= 1 嵌入式基础速览 ================= -->
+  <h2><span class="h2-num">1</span> 嵌入式基础速览</h2>
+  <p>人形机器人一个关节 = <strong>电机 + 减速器 + 编码器 + 驱动器</strong>。驱动器固件是关节的"神经系统":它负责读编码器、采电流、算 FOC、输出 PWM、走 CAN 总线。无论是直接用 SimpleFOC / ODrive,还是自研驱动,最终都要落到 <strong>MCU 固件</strong>这一层。先把硬件选型和外设角色搞清楚,后面学库才会"知其然也知其所以然"。</p>
+
+  <h3>1.1 STM32 / ESP32 选型对比</h3>
+  <p>电机控制对 MCU 的核心要求是:<strong>高精度定时器(互补 PWM + 死区)、高速 ADC(同步采样)、足够的算力(FPU 最好有)</strong>。下面是两大家族在电机控制场景下的直接对比:</p>
+  <div class="table-wrap"><table>
+    <tr><th>型号</th><th>内核 / 主频</th><th>电机控制关键外设</th><th>参考价格</th><th>社区生态</th><th>适合场景</th></tr>
+    <tr><td>STM32F103C8T6</td><td>Cortex-M3 @72MHz,无硬件浮点</td><td>基础定时器 / ADC,无高级电机控制外设</td><td>约 ¥5~10</td><td>教程海量</td><td>裸机入门、学习 MCU 基本功</td></tr>
+    <tr><td>STM32F401/F411</td><td>Cortex-M4F @84/100MHz,带 FPU</td><td>通用定时器 / ADC / DMA</td><td>约 ¥10~20</td><td>丰富</td><td>中小型项目、带 FPU 的过渡选择</td></tr>
+    <tr><td>STM32G431(关节主力)</td><td>Cortex-M4F @170MHz + FPU + CORDIC</td><td>高级定时器(互补 PWM/死区)、内部比较器、运放、FDCAN</td><td>约 ¥15~25</td><td>电机控制资料多</td><td>关节 FOC 主力,众多商用关节的参考架构</td></tr>
+    <tr><td>ESP32</td><td>Xtensa 双核 @240MHz</td><td>外设丰富,但<strong>无 CAN 控制器</strong>(需外接)、ADC 精度一般</td><td>约 ¥10~20</td><td>极活跃,Arduino/ESP-IDF</td><td>学习 SimpleFOC、无线调试、原型验证</td></tr>
+  </table></div>
+  <p><strong>结论:</strong>学习 FOC 用 <strong>ESP32 + SimpleFOC</strong> 上手最快(库支持好、接线简单);做产品原型对标主流关节方案,选 <strong>STM32G431</strong> 这类带高级定时器 + 内部运放/比较器 + FDCAN 的型号,它几乎是"为 FOC 而生"。</p>
+
+  <h3>1.2 四大外设在电机控制中的角色</h3>
+  <div class="table-wrap"><table>
+    <tr><th>外设</th><th>在电机控制中的角色</th><th>关键点</th></tr>
+    <tr><td>高级定时器(TIM1/8)</td><td>生成三相六路互补 PWM 并插入死区;编码器正交解码(ABI);触发 ADC 同步采样</td><td>死区时间、PWM 频率(常见 10~40kHz)、中心对齐模式</td></tr>
+    <tr><td>ADC</td><td>采样相电流(低边采样电阻)与母线电压</td><td>必须由定时器触发、避开开关沿噪声;三相只需采两相</td></tr>
+    <tr><td>PWM 输出</td><td>把 SVPWM 计算结果变成三相桥的开关信号</td><td>六路互补、死区插入、逐波限流(硬件比较器)</td></tr>
+    <tr><td>CAN / FDCAN</td><td>关节间总线通信,把目标位置/速度/力矩下发给各关节</td><td>周期 ≤1ms;人形机器人多关节级联的事实标准;FDCAN 速率更高</td></tr>
+  </table></div>
+
+  <h3>1.3 开发环境搭建</h3>
+  <ul>
+    <li><strong>路线 A:STM32CubeIDE</strong>(免费)。用 STM32CubeMX 图形化配置时钟/引脚/外设,自动生成 HAL 工程。适合 STM32 原生开发、自研固件;Hdrive 类关节工程基本都是这条路。</li>
+    <li><strong>路线 B:PlatformIO</strong>(VSCode 插件)。一套工具管理 Arduino/ESP32/STM32 等多种平台,直接用 Arduino 框架跑 SimpleFOC,库管理方便、示例即插即用。适合快速上手 FOC 学习。</li>
+  </ul>
+  <div class="box box-tip"><b>💡 学习建议:</b>第一周用 <strong>PlatformIO + ESP32 + SimpleFOC</strong> 把闭环跑通,建立"FOC 能工作"的信心;第二周再用 <strong>STM32CubeIDE + G431</strong> 重新实现一遍,重点看定时器触发 ADC、互补 PWM 和死区配置——这两步做完,固件地基就扎实了。</div>
+
+  <!-- ================= 2 FOC 固件实现原理(代码级) ================= -->
+  <h2><span class="h2-num">2</span> FOC 固件实现原理(代码级)</h2>
+  <p><strong>FOC(Field Oriented Control,磁场定向控制)</strong>一句话概括:把三相交流电机在"与转子同步旋转的坐标系"里看成一个直流电机,然后像控制直流电机一样用两个 PID 控制电流。这样既能精确控制力矩,又能让电流正弦、效率高、噪声小。</p>
+
+  <h3>2.1 FOC 控制流水线总览</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>电流采样</b><br>定时器同步触发 ADC,采两相电流</div>
+    <div class="step-item"><span class="n">2</span><b>Clark 变换</b><br>三相 → 两相静止(α,β)</div>
+    <div class="step-item"><span class="n">3</span><b>Park 变换</b><br>静止 → 旋转(d,q),得直流量</div>
+    <div class="step-item"><span class="n">4</span><b>双环 PID</b><br>d/q 轴电流分别做无静差控制</div>
+    <div class="step-item"><span class="n">5</span><b>逆 Park 变换</b><br>旋转 → 静止,得目标电压矢量</div>
+    <div class="step-item"><span class="n">6</span><b>SVPWM 调制</b><br>电压矢量 → 三相 PWM 开关序列</div>
+  </div>
+  <p>其中第 2、3 步合称"电流解算",第 5、6 步合称"电压合成"。整个过程每个 PWM 周期(如 10kHz 时 100μs)执行一次,顺序不能乱。</p>
+
+  <h3>2.2 第一步:电流采样</h3>
+  <p>力矩与电流成正比(<strong>τ = Kt · Iq</strong>),所以闭环控制力矩必须先"看见"电流。工程上最常见的是<strong>低边采样电阻 + 差分运放 → ADC</strong>。三相电流满足基尔霍夫定律 <strong>Ia + Ib + Ic = 0</strong>,因此只需采两相即可算出第三相。采样时刻必须在 PWM 中心对齐处、避开功率管开关瞬间的电流尖峰(详见第 6 节"常见坑")。</p>
+  <pre><code>// 伪代码:定时器更新事件触发 ADC 中断,一次采样两相电流
+void adc_isr(void) {
+  float ia = adc_read(CH_A);          // A 相电流(经运放放大后换算)
+  float ib = adc_read(CH_B);          // B 相电流
+  float ic = -(ia + ib);              // 基尔霍夫: Ia + Ib + Ic = 0
+  // 交给后续 Clark 变换处理...
+}</code></pre>
+
+  <h3>2.3 Clark 变换(三相 → 两相静止坐标系)</h3>
+  <p>三相电流在空间上是 120° 分布的,直接处理麻烦。Clark 变换把它们投影到两个正交轴 α、β 上(等幅值形式):</p>
+  <pre><code>Iα = Ia
+Iβ = (Ia + 2·Ib) / √3</code></pre>
+  <pre><code>// C 实现(等幅值 Clark 变换)
+#define SQRT3 1.7320508f
+float ialpha = ia;                                  // Iα = Ia
+float ibeta  = (ia + 2.0f * ib) / SQRT3;            // Iβ = (Ia + 2·Ib)/√3</code></pre>
+
+  <h3>2.4 Park 变换(静止 → 旋转坐标系)</h3>
+  <p>α/β 轴上的电流仍是正弦交流量,PID 对交流量无法做到无静差跟踪。Park 变换把 α/β 投影到<strong>与转子同步旋转</strong>的 d/q 坐标系上,得到两个近似直流的分量:<strong>Id(励磁分量)、Iq(力矩分量)</strong>。这里的 θ 是转子<strong>电角度</strong>——这正是编码器的用武之地。</p>
+  <pre><code>Id = Iα·cos(θ) + Iβ·sin(θ)
+Iq = −Iα·sin(θ) + Iβ·cos(θ)</code></pre>
+  <pre><code>// C 实现(Park 变换)
+float ct = cosf(theta);                             // theta = 转子电角度
+float st = sinf(theta);
+float id = ialpha * ct + ibeta * st;                // Id = Iα·cosθ + Iβ·sinθ
+float iq = -ialpha * st + ibeta * ct;               // Iq = −Iα·sinθ + Iβ·cosθ</code></pre>
+
+  <h3>2.5 电流环 PID</h3>
+  <p>得到直流量后,两个独立的 PID 分别控制 d 轴与 q 轴电流:<strong>q 轴目标来自速度/位置外环(要多少力矩),d 轴目标通常恒为 0</strong>(永磁电机最大转矩电流比,即 MTPA 的简化形式)。</p>
+  <pre><code>// 以 q 轴电流环为例(每个控制周期执行一次)
+float err = iq_ref - iq;                    // iq_ref 来自外环
+integral += err * dt;
+if (integral >  limit) integral =  limit;   // 抗积分饱和
+if (integral < -limit) integral = -limit;
+float vq = kp * err + ki * integral + kd * (err - err_prev) / dt;
+err_prev = err;
+// vd 同理,通常 id_ref = 0</code></pre>
+  <p>电流环响应要快(带宽 1~2kHz),所以它必须跑在最快的中断优先级上,直接由 PWM 周期驱动。</p>
+
+  <h3>2.6 逆 Park 变换(旋转 → 静止)</h3>
+  <p>PID 输出的 vd、vq 还是旋转坐标系下的量,要变成实际的三相电压,先逆 Park 回 α/β 静止坐标系:</p>
+  <pre><code>Vα = Vd·cos(θ) − Vq·sin(θ)
+Vβ = Vd·sin(θ) + Vq·cos(θ)</code></pre>
+  <pre><code>// C 实现(逆 Park 变换)
+float valpha = vd * ct - vq * st;           // Vα = Vd·cosθ − Vq·sinθ
+float vbeta  = vd * st + vq * ct;           // Vβ = Vd·sinθ + Vq·cosθ</code></pre>
+
+  <h3>2.7 SVPWM 调制(电压 → 开关序列)</h3>
+  <p>SVPWM(空间矢量脉宽调制)把 (Vα, Vβ) 这个电压矢量用三相桥的 8 个基本开关状态(6 个非零矢量 + 2 个零矢量)来合成。每个 PWM 周期内,先判断矢量落在哪个扇区,再计算相邻两个基本矢量的作用时间 T1、T2,剩余时间 T0 用零矢量填充,最后按"七段式"中心对齐排布开关序列:</p>
+  <pre><code>扇区 s 内,γ 为电压矢量相对扇区起始边的角度:
+  T1 = (√3·Ts / Vdc) · |V| · sin(60° − γ)
+  T2 = (√3·Ts / Vdc) · |V| · sin(γ)
+  T0 = Ts − T1 − T2</code></pre>
+  <pre><code>// 伪代码:SVPWM 主流程(每 PWM 周期一次)
+int sector = sector_of(valpha, vbeta);      // 由 Vα/Vβ 符号与比值判扇区 1..6
+float t1 = calc_t1(sector, valpha, vbeta, Ts, Vdc);
+float t2 = calc_t2(sector, valpha, vbeta, Ts, Vdc);
+float t0 = Ts - t1 - t2;                    // 零矢量填充
+update_compare_regs(sector, t1, t2, t0);    // 更新比较寄存器,硬件输出六路互补 PWM</code></pre>
+  <div class="box box-tip"><b>💡 为什么用 SVPWM,而不是简单的 120° 方波六步换相?</b>
+    ① <strong>母线电压利用率更高</strong>:SVPWM 线性调制区最大相电压幅值可达 Vdc/√3(约 0.577·Vdc),比六步方波等效的约 0.5·Vdc 提高约 15%;<br>
+    ② <strong>电流谐波小、转矩脉动小</strong>:三相电流更接近正弦,电机噪声和振动明显更低;<br>
+    ③ <strong>与 FOC 天然衔接</strong>:逆 Park 输出的 (Vα, Vβ) 直接就是 SVPWM 的输入,算法闭环无缝。</div>
+
+  <h3>2.8 为什么必须用编码器</h3>
+  <p>回到第 2.4 节:Park 变换和逆 Park 变换都需要<strong>转子电角度 θ</strong>,它是整个旋转坐标系的"基准"。没有 θ,FOC 就无从谈起:</p>
+  <ul>
+    <li><strong>开环(盲转)</strong>:不接编码器,直接给 (Vα, Vβ) 一个旋转矢量,电机也能转,但不知道转子实际位置——无法控制力矩方向,转速一变或负载一变就容易失步,只能做"能不能转"的验证。</li>
+    <li><strong>闭环</strong>:编码器提供 θ,电流/力矩方向永远正确,FOC 才能成立。电角度 θ = 机械角 × 极对数。</li>
+  </ul>
+  <p>编码器常见两种:<strong>增量式</strong>(ABI 正交输出或霍尔,便宜但上电不知道绝对位置,需找零)和<strong>绝对值</strong>(磁编码器如 AS5600/MT6701,上电即知位置,关节类产品几乎都用绝对值编码器)。</p>
+  <div class="box box-warn"><b>⚠️ 常见事故:</b>编码器接反、极对数设错或未校准电角度偏移,会导致力矩方向判断错误,电机上电瞬间"爆冲"猛转——做实验务必先在电源端限流(可调电源限到 1~2A),再接电机。</div>
+
+  <h3>2.9 与 SimpleFOC 的代码结构对照</h3>
+  <p>SimpleFOC 把上面整条流水线封装成非常清晰的两步,理解 FOC 原理后读它的源码毫无障碍:</p>
+  <pre><code>// SimpleFOC 的主循环结构(简化示意)
+void loop() {
+  motor.loopFOC();   // ① 读编码器 → 电流采样 → Clark → Park → 电流 PID → 逆 Park → SVPWM
+  motor.move(target); // ② 根据控制模式(力矩/速度/位置)计算电流目标,交给 loopFOC 执行
+}</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>FOC 数学步骤</th><th>SimpleFOC 内部对应</th><th>你改的是什么</th></tr>
+    <tr><td>电流采样</td><td>BLDCDriver3PWM / 电流检测类(取决于是否带电流采样)</td><td>驱动板与引脚</td></tr>
+    <tr><td>Clark / Park / 逆 Park</td><td>BLDCMotor 内部电流解算与电压合成</td><td>一般不用改</td></tr>
+    <tr><td>电流 PID</td><td>PIDController(电流环)</td><td>KP/KI 与输出限幅</td></tr>
+    <tr><td>编码器 → 电角度</td><td>Encoder / MagneticSensorI2C 等传感器类</td><td>编码器类型与极对数</td></tr>
+    <tr><td>SVPWM</td><td>驱动层的 setPwm / writeDutyCycle</td><td>PWM 频率、死区(在 MCU 层)</td></tr>
+  </table></div>
+
+  <!-- ================= 3 SimpleFOC 入门实战 ================= -->
+  <h2><span class="h2-num">3</span> SimpleFOC 入门实战</h2>
+
+  <h3>3.1 SimpleFOC 是什么</h3>
+  <p><strong>SimpleFOC</strong> 是目前最流行的开源 FOC 库:在 Arduino 生态上把"电机 + 驱动板 + 编码器"抽象成 <code>BLDCMotor</code>、<code>BLDCDriver3PWM</code>、<code>Encoder</code> 等类,内置力矩/速度/位置三种控制模式,以及开环模式。官方文档(docs.simplefoc.com)有完整的中英文教程,社区活跃度很高,是个人开发者进入 FOC 世界的第一站。</p>
+
+  <h3>3.2 支持哪些板子</h3>
+  <p>SimpleFOC 支持 Arduino 全系(UNO/Nano/Mega 等)、<strong>STM32</strong>(BluePill、Nucleo 系列,B-G431B-ESC1 这类电机专用板体验最佳)、<strong>ESP32</strong>(最推荐入门)、Teensy、Raspberry Pi Pico 等;编码器支持增量 ABI、霍尔、以及 <strong>AS5600 等 I2C 磁编码器</strong>。详细的板子清单以官方文档为准。</p>
+
+  <h3>3.3 硬件接线示例(以 ESP32 + 三相驱动板为例)</h3>
+  <ul>
+    <li><strong>电源</strong>:12~24V 直流电源(或电池)→ 驱动板 VM/GND;驱动板逻辑电源 5V 接开发板 5V(注意共地)。</li>
+    <li><strong>电机相线</strong>:无刷电机三根相线 A/B/C → 驱动板三相输出(任意顺序,方向不对后面软件里调)。</li>
+    <li><strong>编码器</strong>:ABI 增量编码器 → 开发板的两路 GPIO 中断引脚;AS5600 这类 I2C 磁编码器 → SDA/SCL 引脚。</li>
+    <li><strong>串口</strong>:USB 连开发板,用于 Serial 监视器与调参。</li>
+  </ul>
+  <div class="box box-danger"><b>🔥 上电前必查三项:</b>① 电源正负极与电压档位(24V 就上 24V,别上 48V);② 电机三根相线不能短路、不能碰到金属;③ 可调电源先限流 1~2A——校准或接线错误时,限流能保住驱动板和电机。</div>
+
+  <h3>3.4 最小可用代码(可直接复制)</h3>
+  <p>下面是一份完整的 SimpleFOC 示例(基于 ESP32):先跑<strong>开环</strong>验证电机能转,再接编码器切换<strong>电压闭环</strong>。注释里标了每一步的作用。</p>
+  <pre><code>// SimpleFOC 最小可用示例:BLDC 无刷电机 · 开环 → 闭环
+// 硬件:ESP32 + 三相无刷驱动板(如 L6234 模块/大疆 FOC 板)+ 无刷电机
+// 接线:驱动板 VM/GND 接 12~24V 电源;三相输出接电机 A/B/C;
+//       编码器(可选)接 GPIO36/39;电机每转一圈的极对数按实际填
+#include &lt;SimpleFOC.h&gt;
+
+// 电机对象:极对数(pole pairs),例如 7 —— 必须与电机实际一致
+BLDCMotor motor = BLDCMotor(7);
+
+// 三相 PWM 驱动器:引脚依次为 A、B、C(ESP32 示例,按你的接线改)
+BLDCDriver3PWM driver = BLDCDriver3PWM(32, 33, 25);
+
+// 增量编码器:ABI 两路引脚 + 每圈计数(CPR),没有编码器可先不启用
+Encoder encoder = Encoder(36, 39, 2048);
+
+// 编码器中断回调(ABI 编码器必须)
+void doA(){ encoder.handleA(); }
+void doB(){ encoder.handleB(); }
+
+void setup(){
+  // 1) 驱动器:设置供电电压并初始化
+  driver.voltage_power_supply = 12.0f;   // 与你的电源电压一致!
+  driver.init();
+  motor.linkDriver(&amp;driver);
+
+  // 2) 编码器:初始化并接上电机(注释掉可先跑开环)
+  encoder.init();
+  encoder.enableInterrupts(doA, doB);
+  motor.linkSensor(&amp;encoder);
+
+  // 3) 控制模式:先开环验证,再接编码器后改成 voltage / velocity / angle
+  motor.controller = MotionControlType::openloop;   // 开环:不需要编码器
+  // motor.controller = MotionControlType::voltage; // 闭环:注释掉上一行,启用这行
+
+  // 4) 安全限幅:限制最大电压,防止误操作烧电机
+  motor.voltage_limit = 3.0f;             // 先给 3V,能转再加
+  motor.init();
+  motor.initFOC();                        // 编码器校准 + FOC 初始化(开环模式会自动跳过)
+
+  Serial.begin(115200);
+  delay(1000);
+}
+
+void loop(){
+  motor.loopFOC();                        // 闭环时必须调用(开环模式内部会跳过)
+  motor.move(2.0f);                       // 开环:2V 电压矢量;闭环:2V 目标电压(≈力矩)
+}</code></pre>
+  <p><strong>运行顺序建议:</strong>先保持 <code>openloop</code> 模式上电,电机应以 2V 小电压平稳旋转;再接入编码器、改成 <code>voltage</code> 模式重新上电,`initFOC()` 会自动执行编码器校准,成功后电机会"咔"地锁定,此时 `move()` 给的就是带反馈的力矩指令。</p>
+
+  <h3>3.5 调参顺序(先开环 → 编码器校准 → 闭环)</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>开环验证</b><br>openloop 模式给 2~3V,确认电机能转、相线/电源正确</div>
+    <div class="step-item"><span class="n">2</span><b>编码器接线</b><br>接好编码器,Serial 打印角度,转动电机看读数变化</div>
+    <div class="step-item"><span class="n">3</span><b>编码器校准</b><br>initFOC() 自动找电角度偏移;Serial 报 "OK" 即通过</div>
+    <div class="step-item"><span class="n">4</span><b>电压闭环</b><br>voltage 模式,给固定电压看是否有力矩反馈</div>
+    <div class="step-item"><span class="n">5</span><b>速度闭环</b><br>velocity 模式,调 PID_velocity 的 P、I 与输出斜坡</div>
+    <div class="step-item"><span class="n">6</span><b>位置闭环</b><br>angle 模式,调 PID_angle,最后接上位机做关节控制</div>
+  </div>
+  <div class="box box-warn"><b>⚠️ 调参纪律:</b>每次只改一个参数;速度环先给很小的目标值(如 1 rad/s)确认方向;发现电机尖叫抖动,立即断电,把 P 调小一半再试。电压闭环是最稳的起点,电流/速度环都建立在它之上。</div>
+
+  <!-- ================= 4 ODrive 入门 ================= -->
+  <h2><span class="h2-num">4</span> ODrive 入门</h2>
+
+  <h3>4.1 ODrive 是什么</h3>
+  <p><strong>ODrive</strong> 是机器人圈最著名的<strong>开源高功率 FOC 驱动板</strong>:硬件、固件、上位机工具全部开源(GitHub: odriverobotics/ODrive)。经典板卡 <strong>v3.6</strong> 基于 STM32F405 + DRV8301 栅极驱动,支持 24~48V 母线电压、双轴驱动,单轴峰值电流可达数十安培量级(持续电流取决于散热,以官方手册为准)。它把"FOC 固件 + 三环控制 + 总线接口"做成即插即用的整板,是轮式机器人、直驱关节样机的标配。</p>
+
+  <h3>4.2 功能特点</h3>
+  <ul>
+    <li><strong>双轴独立控制</strong>:一块板同时驱动两个无刷电机(两个编码器接口)。</li>
+    <li><strong>原生三环控制</strong>:力矩(torque)/速度(velocity)/位置(position)三种模式,还有轨迹模式。</li>
+    <li><strong>大功率</strong>:24~48V 供电,适合轮毂电机、直驱关节这类需要大电流的场景。</li>
+    <li><strong>编码器支持广</strong>:增量 ABI、绝对值编码器、霍尔传感器都可接入。</li>
+    <li><strong>完善的上位机工具链</strong>:Python 包 odrive、图形工具 ODFinder、命令行 odrivetool,调试配置非常舒服。</li>
+    <li><strong>接口丰富</strong>:USB / UART / 步进脉冲输入 / 双向 GPIO,可扩展 CAN 通信。</li>
+  </ul>
+
+  <h3>4.3 用 ODFinder / odrivetool 配置的步骤</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>安装</b><br>PC 上执行 pip install odrive,装好 ODFinder 与 odrivetool</div>
+    <div class="step-item"><span class="n">2</span><b>连接</b><br>USB 连接 ODrive,ODFinder 自动识别板卡与固件版本</div>
+    <div class="step-item"><span class="n">3</span><b>基础参数</b><br>odrivetool 中设置极对数 pole_pairs、总线电压、编码器类型</div>
+    <div class="step-item"><span class="n">4</span><b>电机校准</b><br>执行校准命令,自动辨识编码器偏移、电机电阻与电感</div>
+    <div class="step-item"><span class="n">5</span><b>保存</b><br>save_configuration() 写入板载 Flash,断电不丢</div>
+  </div>
+  <pre><code># 终端 1:进入交互式工具(需要先安装: pip install odrive)
+odrivetool
+
+# 在 odrivetool 交互环境中(伪代码,以实际命令为准):
+odrv0.axis0.motor.config.pole_pairs = 7      # 极对数
+odrv0.axis0.motor.config.current_lim = 20    # 电流限制(A)
+odrv0.axis0.encoder.config.cpr = 4096        # 编码器每圈计数
+odrv0.axis0.config.startup_closed_loop = False  # 上电不自动闭环(调试期)
+odrv0.axis0.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # 执行校准
+odrv0.save_configuration()                   # 保存配置</code></pre>
+
+  <h3>4.4 Python API 示例</h3>
+  <p>校准完成后,日常控制就是几行 Python。下面的脚本让 axis0 进入闭环并依次做速度、位置、力矩控制:</p>
+  <pre><code>import odrive
+from odrive.enums import *
+
+# 找到并连接 ODrive(USB)
+odrv0 = odrive.find_any(timeout=10)
+
+axis = odrv0.axis0
+# 进入闭环控制
+axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+
+axis.input_vel = 10.0        # 速度模式:目标 10 rad/s
+axis.input_pos = 3.14        # 位置模式:目标 π rad
+axis.input_torque = 0.5      # 力矩模式:目标 0.5 N·m
+
+# 读取当前状态
+print("pos:", axis.pos_estimate, "vel:", axis.vel_estimate)
+
+# 保存配置(参数改动后调用)
+odrv0.save_configuration()</code></pre>
+  <div class="box box-tip"><b>💡 提示:</b>位置、速度、力矩三个 <code>input_*</code> 同时存在,生效的是当前控制模式对应的那个。切换模式前先让电机停下,直接改 <code>requested_state</code> 前最好把目标清零。</div>
+
+  <h3>4.5 适合做什么</h3>
+  <ul>
+    <li><strong>轮式机器人</strong>:两块 ODrive 驱动四个轮毂电机,是最经典的入门整车方案。</li>
+    <li><strong>直驱关节样机</strong>:配合直驱电机做机械臂、四足、人形关节原型验证。</li>
+    <li><strong>与 SimpleFOC 怎么选</strong>:SimpleFOC 是"库",给你最大自由但一切自己搭;ODrive 是"整板",开箱即用但硬件成本高、自由度低。学习原理用 SimpleFOC,快速做整机原型用 ODrive。</li>
+  </ul>
+
+  <!-- ================= 5 小米电机生态与国产开源方案 ================= -->
+  <h2><span class="h2-num">5</span> 小米电机生态与国产开源方案</h2>
+
+  <h3>5.1 关于"小米 MotorOS"的核查说明</h3>
+  <div class="box box-warn"><b>🔍 事实核查:</b>网络上有"2025 年小米开源了名为 MotorOS 的 STM32 电机控制库"的说法。但经 web_search 多方核实(检索小米官方渠道、GitHub、开发者大会新闻),<strong>截至本文写作时,未检索到小米官方开源的 "MotorOS" 电机控制库的可核实资料</strong>。GitHub 上确实有名为 <code>motoros</code> 的仓库,但那是 Motoman 工业机械臂的 ROS 驱动,与小米无关。学习时请以小米官方开发者渠道和官方 GitHub 组织为准,警惕 AI 生成内容中的错误引用——本页不传播未经核实的"MotorOS"描述。</div>
+
+  <h3>5.2 小米开源电机生态(可核实部分)</h3>
+  <p>小米在电机与机器人方向确实有实打实的开源动作,最典型的是 <strong>CyberGear 微伺服电机</strong>(2023 年发布):这是一颗<strong>开源准直驱关节模组</strong>,把电机、减速器、编码器、驱动器集成一体,首发价约 499 元,通过 CAN 总线(1Mbps)通信,社区资料齐全,极大拉低了人形/四足关节的入门门槛。围绕它形成了丰富的国产开源生态:</p>
+  <ul>
+    <li><strong>社区 STM32 驱动库</strong>:如 GitHub 上 LJW0401/MotorDrive,提供 STM32F4 HAL 库的 CAN 收发与力矩/速度/位置控制封装,刷一块板子就能带 CyberGear。</li>
+    <li><strong>ESP-IDF / M5Stack 方案</strong>:cybergear-robotics/cybergear 等仓库提供 ESP32 生态的驱动组件,适合快速原型。</li>
+    <li><strong>CyberDog 开源 SDK</strong>:小米 CyberDog 四足机器人开源了整体软件栈(含电机控制、感知、运动控制接口),是学习"关节之上"整机软件的好材料。</li>
+  </ul>
+
+  <h3>5.3 其他国产与开源方案</h3>
+  <ul>
+    <li><strong>ST 官方 Motor Control SDK</strong>:STM32 官方 FOC 固件库(X-CUBE-SPN),工业级参考实现,含 GUI 调参工具,适合做量产固件的起点。</li>
+    <li><strong>国产电机控制芯片生态</strong>:峰岹科技(FU68xx 系列 MCU+栅驱集成方案)、灵动微、极海等国产 MCU/驱动生态,成本更低,是国产关节供应链的重要组成。</li>
+    <li><strong>Hdrive 等国产关节模组</strong>:把 FOC 驱动 + 减速器 + 编码器做成标准模组,开发者直接按 CAN/RS485 协议用,本学习站其他章节有详述。</li>
+  </ul>
+
+  <h3>5.4 MIT 开源方案:Mini Cheetah 的控制思路</h3>
+  <p><strong>MIT Mini Cheetah</strong> 是麻省理工的开源四足机器人:电机放在关节处的准直驱设计 + 高带宽力控,让它能跑、能跳、能后空翻。其<strong>开源控制栈</strong>包含状态估计、运动规划与关节力矩分配(虚拟模型控制 / 凸优化),社区实现如 <strong>CHAMP</strong>(MIT Cheetah I 的完整开源实现)把整套控制拆成可读的模块。学习它的意义在于:单关节 FOC 只是"肌肉",Mini Cheetah 展示的是"神经"——如何把整机目标(跑/跳)实时分配成每个关节的力矩指令。</p>
+  <div class="box box-ok"><b>✅ 生态小结:</b>今天的开源世界,个人开发者完全可以复现顶级实验室的方案:SimpleFOC 学 FOC 原理、ODrive 做整机原型、CyberGear 做低门槛关节、MIT 开源控制栈学整机算法。选择取决于你的目标——学原理、做产品、还是做研究。</div>
+
+  <!-- ================= 6 固件开发常见坑 ================= -->
+  <h2><span class="h2-num">6</span> 固件开发常见坑</h2>
+  <div class="box box-danger"><b>🧯 六大坑位自检清单(踩过的人都会回来点赞):</b></div>
+  <ul>
+    <li><strong>① 电流采样时序</strong>:ADC 必须在 PWM 中心对齐时刻、由定时器同步触发,避开功率管开关沿的电流尖峰;采样窗口内电流要稳定。采错时刻 = 采到噪声 = 电流环发散。</li>
+    <li><strong>② 死区时间</strong>:互补 PWM 必须插入死区(典型 0.1~1μs)。死区太小 → 上下管直通烧驱动;死区太大 → 电流谐波大、效率低、低速抖动。</li>
+    <li><strong>③ 母线电压波动</strong>:大电流下母线电压会跌落,导致力矩不足或控制发散。对策:加母线电容、软启动(预充电)、欠压保护、电压前馈补偿。</li>
+    <li><strong>④ 编码器零点校准</strong>:电角度偏移必须校准;接线反了或极对数错了,力矩方向反 → 电机爆冲。绝对值编码器也要做安装偏移校准;温度变化后最好重新校准。</li>
+    <li><strong>⑤ CAN 通信帧格式</strong>:帧 ID、数据字节序(大小端)、符号位、CRC 校验必须和协议一致;多节点要注意仲裁与优先级;CAN 收发器(如 TJA1051)和终端电阻(120Ω)不能省。</li>
+    <li><strong>⑥ 散热与限流保护</strong>:MOS 管和电机都有热极限,必须有温度降额、过流保护(硬件比较器逐波限流)、堵转检测;断电时注意母线电容残余电压和电机制动能量回馈。</li>
+  </ul>
+  <p>这些坑基本都可以在硬件设计 + 固件防护两层同时设防:硬件上保证采样电路和死区电路正确,固件上把限流、欠压、过温保护写进主循环,任何一层兜住都不至于炸板。</p>
+
+  <!-- ================= 7 本节自测 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 关于 Park 变换在 FOC 中的作用,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 把静止坐标系下的交流量投影到与转子同步旋转的 d/q 坐标系,得到近似直流量,便于 PID 做无静差控制</button>
+      <button data-v="B">B. 把三相电流变换成两相静止电流,用于生成 PWM</button>
+      <button data-v="C">C. 把旋转坐标系电压变换回静止坐标系,用于电流采样</button>
+      <button data-v="D">D. 提高 SVPWM 的母线电压利用率</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Clark 变换(三相→α/β)解决的是"三相互差 120° 不好处理"的问题;Park 变换(α/β→d/q)解决的是"交流量 PID 无法无静差跟踪"的问题——投影到与转子同步旋转的坐标系后,Id/Iq 近似直流,PID 才能精确控制。逆 Park 才是"旋转→静止",电压利用率与 SVPWM 有关,与 Park 变换本身无关。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 在 SimpleFOC 项目里,AS5600 磁编码器的 SDA/SCL 应该接到开发板的?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 任意 GPIO 都行,软件模拟即可</button>
+      <button data-v="B">B. 具备 I2C 功能的 SDA/SCL 引脚,并与开发板共地</button>
+      <button data-v="C">C. 三相 PWM 输出引脚</button>
+      <button data-v="D">D. ADC 采样引脚</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:AS5600 是 I2C 磁编码器,必须接到硬件 I2C 的 SDA/SCL 引脚并共地;若用 ABI 增量编码器,则接支持编码器计数/中断的引脚(如 ESP32 的 GPIO 中断)。接线错误是最常见的"电机不动/校准失败"原因——先查接线,再查代码。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 用 odrivetool 控制 ODrive,校准完成后要让电机进入闭环运行,应该把 axis0.requested_state 设为?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. AXIS_STATE_IDLE</button>
+      <button data-v="B">B. AXIS_STATE_CLOSED_LOOP_CONTROL</button>
+      <button data-v="C">C. AXIS_STATE_FULL_CALIBRATION_SEQUENCE</button>
+      <button data-v="D">D. AXIS_STATE_OPENLOOP_CONTROL</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:FULL_CALIBRATION_SEQUENCE 只在首次校准(辨识编码器偏移/电阻/电感)时使用;正常运行时把 requested_state 设为 CLOSED_LOOP_CONTROL 即进入闭环,之后通过 input_pos / input_vel / input_torque 给定目标。IDLE 是待机,OPENLOOP_CONTROL 是开环。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 FOC 相电流采样的正确做法是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 任意时刻采样,多采几次取平均即可</button>
+      <button data-v="B">B. 在 PWM 开关沿瞬间采样,信号最"新鲜"</button>
+      <button data-v="C">C. 由定时器触发,在 PWM 中心对齐、避开开关噪声的窗口内采样</button>
+      <button data-v="D">D. 只在电机停止时采样,运行时不采</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:相电流采样必须与 PWM 同步——在中心对齐 PWM 的固定时刻(如定时器更新事件)触发 ADC,避开功率管开关瞬间的电流尖峰,才能采到真实相电流。这也是电机控制 MCU 强调"定时器触发 ADC 同步采样"的原因;取平均并不能消除开关噪声,反而引入误差。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 FOC 闭环与编码器,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 不接编码器也能精确控制力矩方向,开环即可实现完整 FOC 闭环</button>
+      <button data-v="B">B. 不接编码器只能开环「盲转」,无法控制力矩方向,只能做「能不能转」的验证</button>
+      <button data-v="C">C. 增量式编码器上电即知绝对位置,无需找零</button>
+      <button data-v="D">D. 闭环 FOC 中电角度 θ 与机械角无关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Park 变换与逆 Park 变换都依赖转子电角度 θ,没有 θ 就无法确定力矩方向,只能开环「盲转」验证电机能否转(第 2.8 节)。增量式编码器便宜但上电不知道绝对位置、需要找零,所以关节类产品几乎都用上电即知位置的绝对值编码器;电角度 θ = 机械角 × 极对数,并非与机械角无关。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于 ESP32 与 STM32G431 在电机控制中的选型,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. ESP32 自带 CAN 控制器、ADC 精度高,是关节量产的主力 MCU</button>
+      <button data-v="B">B. STM32G431 无硬件浮点、无高级定时器,不适合 FOC</button>
+      <button data-v="C">C. ESP32 无 CAN 控制器、ADC 精度一般,适合学习 SimpleFOC 与原型验证;做产品原型应选 STM32G431 这类带高级定时器 + FDCAN 的型号</button>
+      <button data-v="D">D. 选型时只需比较两者主频高低,外设无关紧要</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 1.1 节表格明确指出:ESP32 外设丰富但无 CAN 控制器(需外接)、ADC 精度一般,适合「学习 SimpleFOC、无线调试、原型验证」;而 STM32G431 是 Cortex-M4F @170MHz + FPU + CORDIC,带高级定时器(互补 PWM/死区)、内部比较器、运放、FDCAN,是「关节 FOC 主力」。选型要综合主频、外设、价格与生态,不能只看主频。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于 SVPWM 相比简单六步方波换相,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 六步方波的电流谐波更小、转矩脉动更小</button>
+      <button data-v="B">B. SVPWM 母线电压利用率比六步方波更低</button>
+      <button data-v="C">C. 只需 2 个基本开关状态即可合成任意电压矢量,无需零矢量</button>
+      <button data-v="D">D. SVPWM 线性调制区最大相电压幅值约 0.577·Vdc,比六步方波约 0.5·Vdc 提高约 15%</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 2.7 节说明:SVPWM 用 8 个基本开关状态(6 个非零矢量 + 2 个零矢量)合成电压矢量,零矢量用于填充剩余时间 T0;其线性调制区最大相电压幅值可达 Vdc/√3 ≈ 0.577·Vdc,比六步方波等效的约 0.5·Vdc 提高约 15%,且电流更接近正弦、谐波小、转矩脉动小。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①FOC 流水线:电流采样 → Clark → Park → 双环 PID → 逆 Park → SVPWM,每个 PWM 周期执行一次;②选型:学习用 ESP32 + SimpleFOC,量产原型用 STM32G431(高级定时器 + FDCAN);③闭环离不开编码器(提供电角度 θ = 机械角 × 极对数),调参顺序是「先开环 → 再校准 → 后闭环」;④SVPWM 线性调制区最大相电压幅值约 0.577·Vdc,比六步方波高约 15%;⑤ODrive 是开箱即用高功率整板,用 odrivetool 校准后设 CLOSED_LOOP_CONTROL 进闭环;⑥六大坑:采样时序、死区、母线电压、编码器校准、CAN 帧格式、散热限流。</div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>FOC 的本质是把三相交流电机放到旋转坐标系里当直流电机控制,完整流水线是"电流采样 → Clark → Park → 双环 PID → 逆 Park → SVPWM",每一步都有清晰的数学与代码对应;SimpleFOC 是学习这条流水线最快的入口(先开环、再校准、后闭环),ODrive 是开箱即用的高功率整板方案;国产生态里小米 CyberGear 把关节模组成本打到数百元,而 MIT Mini Cheetah 展示了从单关节力控到整机运动控制的开源路径。最后记住:采样时序、死区、母线电压、编码器校准、CAN 帧格式、散热限流,是固件开发的六大生死坑。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果电机不接编码器,FOC 闭环能跑吗?能跑到什么程度?什么场景下"盲转"也够用?<br>
+    2. 人形机器人 40+ 个关节如果全部用 ODrive 这类整板,会面临哪些系统级问题(成本、总线带宽、散热、体积)?<br>
+    3. 假如你要自研一个关节驱动固件,会复用 SimpleFOC 的哪些模块(采样、变换、PID),又必须重写哪些(实时性、安全保护、通信协议)?
+  </div>
+
+  <!-- ================= 8 参考来源 ================= -->
+  <h2><span class="h2-num">8</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://docs.simplefoc.com/" target="_blank" rel="noopener">SimpleFOC 官方文档(含 Arduino/STM32/ESP32 教程与中文文档)</a></li>
+    <li><a href="https://github.com/simplefoc/Arduino-FOC" target="_blank" rel="noopener">SimpleFOC / Arduino-FOC 开源仓库(GitHub)</a></li>
+    <li><a href="https://docs.arduino.cc/libraries/simple-foc/" target="_blank" rel="noopener">Arduino 官方库页:Simple FOC(支持板卡清单)</a></li>
+    <li><a href="https://docs.odriverobotics.com/" target="_blank" rel="noopener">ODrive 官方文档(odrivetool / ODFinder 使用说明)</a></li>
+    <li><a href="https://github.com/odriverobotics/ODrive" target="_blank" rel="noopener">ODrive 开源仓库(硬件与固件,GitHub)</a></li>
+    <li><a href="https://zhuanlan.zhihu.com/p/650089972" target="_blank" rel="noopener">小米 CyberGear 准直驱关节模组解析(知乎专栏)</a></li>
+    <li><a href="https://github.com/LJW0401/MotorDrive" target="_blank" rel="noopener">社区 STM32 驱动库:MotorDrive(小米电机 STM32F4 HAL 库)</a></li>
+    <li><a href="https://github.com/chvmp/champ" target="_blank" rel="noopener">CHAMP:MIT Cheetah I 完整开源实现(GitHub)</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 页面内脚本(单一 script 块,保守 ES5 语法):为代码块添加"复制"按钮 -->
+<script>
+(function(){
+  "use strict";
+  var COPY_TXT = "复制";
+  var DONE_TXT = "已复制";
+  var buttons = [];
+
+  function makeCopyBtn(pre){
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "my-copy-btn";
+    btn.textContent = COPY_TXT;
+    btn.onclick = function(){
+      var code = pre.querySelector("code");
+      var txt = code && code.innerText ? code.innerText : pre.textContent;
+      var done = function(){ btn.className = "my-copy-btn ok"; btn.textContent = DONE_TXT; };
+      var reset = function(){
+        setTimeout(function(){ btn.className = "my-copy-btn"; btn.textContent = COPY_TXT; }, 1500);
+      };
+      var fallback = function(){
+        var ta = document.createElement("textarea");
+        ta.value = txt;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); done(); } catch(e){ btn.textContent = "复制失败"; }
+        document.body.removeChild(ta);
+        reset();
+      };
+      if (window.navigator.clipboard && window.navigator.clipboard.writeText) {
+        window.navigator.clipboard.writeText(txt).then(function(){ done(); reset(); }, fallback);
+      } else {
+        fallback();
+      }
+    };
+    pre.style.position = "relative";
+    pre.appendChild(btn);
+    buttons.push(btn);
+  }
+
+  function init(){
+    var pres = document.querySelectorAll("pre");
+    for (var i = 0; i < pres.length; i++) { makeCopyBtn(pres[i]); }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

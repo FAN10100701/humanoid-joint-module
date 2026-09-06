@@ -20,11 +20,11 @@
     { t:"理论入门", u:"index.html#sec1" },
     { t:"硬件基础", u:"index.html#sec2" },
     { t:"项目实操", u:"index.html#sec3" },
-    { t:"软件算法", u:"index.html#sec6" },
-    { t:"前沿知识", u:"index.html#sec7" },
-    { t:"学习工具", u:"index.html#sec8" },
-    { t:"大模型",   u:"index.html#sec9" },
-    { t:"NPU·IC",   u:"index.html#sec10" }
+    { t:"软件算法", u:"index.html#sec4" },
+    { t:"前沿知识", u:"index.html#sec5" },
+    { t:"学习工具", u:"index.html#sec6" },
+    { t:"大模型",   u:"index.html#sec7" },
+    { t:"NPU·IC",   u:"index.html#sec8" }
   ];
 
   /* 全站统计单源(V2.1.7):pages = site-sections.js 全部 pageId + 首页;
@@ -93,6 +93,29 @@
   function saveProgress(p){
     try{ localStorage.setItem(STORE, JSON.stringify(p)); }catch(e){}
   }
+  /* V2.1.21 板块编号连续化(06→04…10→08)一次性进度键迁移:
+     老打卡键(06-xx~10-xx)重命名为新键,已存在的键不覆盖;迁移后置守卫,只跑一次 */
+  (function(){
+    try{
+      var KMFLAG = "humanoid-keymap-v21";
+      if(localStorage.getItem(KMFLAG)) return;
+      var KM = { "06-": "04-", "07-": "05-", "08-": "06-", "09-": "07-", "10-": "08-" };
+      var p = getProgress(), moved = 0, k;
+      for(k in p){
+        if(!Object.prototype.hasOwnProperty.call(p, k)) continue;
+        for(var pre in KM){
+          if(Object.prototype.hasOwnProperty.call(KM, pre) && k.indexOf(pre) === 0){
+            var nk = KM[pre] + k.slice(pre.length);
+            if(!p[nk]){ p[nk] = p[k]; moved++; }
+            delete p[k];
+            break;
+          }
+        }
+      }
+      if(moved) saveProgress(p);
+      localStorage.setItem(KMFLAG, "1");
+    }catch(e){}
+  })();
   S.isDone = function(id){ return !!getProgress()[id]; };
   /* 学习活动记录(首页日历热力图数据源):每次新打卡记一次当日活动 */
   var AKEY = "humanoid-site-activity-v1";
@@ -558,9 +581,9 @@
     S.NAV.forEach(function(it){
       html += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
     });
-    /* V2.1.14:去掉 index.html#sec9「大模型」——S.NAV 已含大模型条目,此前下拉里重复出现两次 */
-    html += '<a href="' + root + '/08_学习工具/12_闯关学习.html">闯关学习</a>'
-      + '<a href="' + root + '/08_学习工具/14_个人作品台.html">个人作品台</a>'
+    /* V2.1.14:去掉 index.html#sec7「大模型」——S.NAV 已含大模型条目,此前下拉里重复出现两次 */
+    html += '<a href="' + root + '/06_学习工具/12_闯关学习.html">闯关学习</a>'
+      + '<a href="' + root + '/06_学习工具/14_个人作品台.html">个人作品台</a>'
       + '</div></div></div>'
       /* V2.1.11:本页阅读进度环(窄屏隐藏) */
       + '<span class="nav-prog" title="本页阅读进度"><svg viewBox="0 0 36 36" width="22" height="22" aria-hidden="true">'
@@ -592,8 +615,8 @@
       S.NAV.forEach(function(it){
         dhtml += '<a href="' + root + "/" + it.u + '">' + it.t + "</a>";
       });
-      dhtml += '<a href="' + root + '/08_学习工具/12_闯关学习.html">闯关学习</a>'
-        + '<a href="' + root + '/08_学习工具/14_个人作品台.html">个人作品台</a>';
+      dhtml += '<a href="' + root + '/06_学习工具/12_闯关学习.html">闯关学习</a>'
+        + '<a href="' + root + '/06_学习工具/14_个人作品台.html">个人作品台</a>';
       drawer.innerHTML = dhtml;
       document.body.appendChild(drawer);
       var closeDrawer = function(){
@@ -825,7 +848,7 @@
     if(!scored.length){
       var r0 = page().root || "";
       box.innerHTML = '<div class="search-empty">没有找到与「' + esc(q) + '」相关的内容,换个词试试<br>' +
-        '<a class="search-ai-link" href="' + (r0 ? r0 + "/" : "") + '08_学习工具/13_AI答疑助手.html?q=' + encodeURIComponent(q) + '">🤖 让 AI 答疑试试 →</a></div>';
+        '<a class="search-ai-link" href="' + (r0 ? r0 + "/" : "") + '06_学习工具/13_AI答疑助手.html?q=' + encodeURIComponent(q) + '">🤖 让 AI 答疑试试 →</a></div>';
       return;
     }
     scored.sort(function(a, b){ return b.s - a.s; });
@@ -844,7 +867,7 @@
   }
   function aiPageURL(q){
     var root = page().root || "";
-    return (root ? root + "/" : "") + "08_学习工具/13_AI答疑助手.html" + (q ? "?q=" + encodeURIComponent(q) : "");
+    return (root ? root + "/" : "") + "06_学习工具/13_AI答疑助手.html" + (q ? "?q=" + encodeURIComponent(q) : "");
   }
   S.openSearch = function(initQuery){
     ensureSearchIndex(function(){
@@ -887,7 +910,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.20(2026-09-06)";
+  S.VERSION = "V2.1.21(2026-09-06)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -1087,7 +1110,7 @@
 
   /* ---------- AI 内嵌聊天挂件(V2.1.3):面板直接问答,复用 ai-assistant.js 引擎 ---------- */
   function initAiFab(){
-    if(page().pageId === "08-13") return;   /* AI 完整页自身不显示 */
+    if(page().pageId === "06-13") return;   /* AI 完整页自身不显示 */
     var root = page().root || "";
     [ "_assets/ai-assistant.js", "_assets/ai-fab-chat.js" ].forEach(function(f){
       var sc = document.createElement("script");

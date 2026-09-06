@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<!-- 人形机器人学习站 · 06 软件与算法 / 03 ROS2 与机器人软件栈(遵循 _assets/页面模板.html 与 site.css) -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · ROS2 与机器人软件栈</title>
+<!-- 共享样式:二级目录页面用 ../_assets/site.css -->
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(可选),命名加 -- 前缀避免与全局冲突 */
+  pre{position:relative}
+  .my-copy-btn{
+    position:absolute;top:8px;right:8px;z-index:2;
+    background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.4);
+    color:#9ecbff;font-size:12px;font-family:inherit;
+    padding:3px 12px;border-radius:7px;cursor:pointer;opacity:.75;transition:.15s
+  }
+  .my-copy-btn:hover{opacity:1;background:rgba(59,130,246,.32);color:#fff}
+  /* SVG 双主题文字类(与全站钦定口径一致) */
+  .my-lg{fill:#26303b}html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-sub-b{fill:#1d4ed8}html[data-theme-early='dark'] .my-sub-b{fill:#9ecbff}
+  .my-sub-o{fill:#b45309}html[data-theme-early='dark'] .my-sub-o{fill:#fcd34d}
+  .my-grn{fill:#15803d}html[data-theme-early='dark'] .my-grn{fill:#86efac}
+  .my-bwd{fill:#991b1b}html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
+</style>
+<script>
+  /* ============================================================
+     window.PAGE 配置(★ 每页必填 ★) pageId: 04-03 → 打卡用
+     ============================================================ */
+  window.PAGE = {
+    pageId: "04-03",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec4" },
+      { t: "ROS2 与机器人软件栈" }
+    ],
+    prev: { t: "固件与电机控制", u: "02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html" },
+    next: { t: "仿真与强化学习", u: "04_仿真与强化学习_MuJoCo_Isaac.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🤖 ROS2 与机器人软件栈</h1>
+    <div class="sub">从零理解机器人"操作系统"级的中间件:ROS2 是什么、六大核心概念、colcon 构建、URDF/RViz2/TF 可视化、MoveIt2 运动规划,以及宇树等真实人形机器人的软件栈。适合已掌握单片机/嵌入式基础、想进入"整机软件"层的读者。</div>
+    <div class="tags">
+      <span class="tag">ROS2</span>
+      <span class="tag">中间件</span>
+      <span class="tag">colcon</span>
+      <span class="tag">URDF</span>
+      <span class="tag">MoveIt2</span>
+      <span class="tag">人形机器人</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能解释"为什么机器人软件需要中间件",说出 ROS2 相对 ROS1 的核心变化(DDS、去中心化、生命周期、实时性)<br>
+    2. 能分清节点/话题/服务/动作/参数/命名空间,独立写出可运行的发布-订阅程序<br>
+    3. 会用 colcon 构建工作空间,读懂 package.xml / CMakeLists / launch,熟练使用 ros2 命令<br>
+    4. 理解 URDF / xacro / TF,能用 RViz2 查看机器人模型并排查 TF 错误<br>
+    5. 能说出 MoveIt2 的适用场景,以及人形机器人为什么还需要 WBC / MPC<br>
+    <b>建议用时:</b>约 60 分钟(含动手练习)
+  </div>
+
+  <!-- ================= 1. ROS2 是什么 ================= -->
+  <h2><span class="h2-num">1</span> ROS2 是什么:为什么机器人软件需要中间件</h2>
+  <p>前面几部分我们一直在"单关节模组"的尺度工作:MCU 上跑固件、CAN/串口收发帧、控制一个关节。但一台<strong>人形机器人</strong>是另一个量级:20~40+ 个关节、相机/激光雷达/IMU、2~3 台上位机,还要接仿真与强化学习环境——天然是<strong>分布式</strong>系统。</p>
+  <p>如果每个模块都自己写通信代码,就会出现大量重复难维护的"轮子":进程/跨设备通信、节点发现、消息类型、参数配置、日志、时钟同步……<strong>中间件(middleware)</strong>把这层公共能力抽出来,让大家只写业务逻辑。ROS2 正是人形/足式机器人领域事实标准的开源中间件框架,由三部分组成:</p>
+  <ul>
+    <li><strong>客户端库 rcl</strong>:统一开发 API(rclpy / rclcpp),Python 与 C++ 编程模型一致;</li>
+    <li><strong>中间件抽象层 rmw</strong>:把通信实现(默认 DDS)包装成统一接口,可插拔替换;</li>
+    <li><strong>DDS(Data Distribution Service)</strong>:底层的发布/订阅通信协议,负责发现、传输、QoS。</li>
+  </ul>
+
+  <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 318" role="img" aria-label="ROS2 分层架构图:用户代码、rcl、rmw、DDS 与操作系统网络五层" font-family="Microsoft YaHei,sans-serif">
+    <text x="74" y="55" font-size="10.5" class="my-lg" text-anchor="middle" font-weight="bold">用户代码</text>
+    <text x="74" y="109" font-size="10.5" fill="#64748b" text-anchor="middle">rcl</text>
+    <text x="74" y="163" font-size="10.5" fill="#64748b" text-anchor="middle">rmw</text>
+    <text x="74" y="217" font-size="10.5" fill="#64748b" text-anchor="middle">DDS</text>
+    <text x="74" y="271" font-size="10.5" fill="#64748b" text-anchor="middle">OS / 网络</text>
+    <line x1="136" y1="84" x2="136" y2="234" stroke="#2563eb" stroke-opacity=".5"/>
+    <line x1="130" y1="84" x2="136" y2="84" stroke="#2563eb" stroke-opacity=".5"/>
+    <line x1="130" y1="234" x2="136" y2="234" stroke="#2563eb" stroke-opacity=".5"/>
+    <rect x="150" y="30" width="440" height="42" rx="8" fill="#2563eb" fill-opacity=".1" stroke="#2563eb"/>
+    <text x="166" y="56" font-size="11.5" class="my-lg" font-weight="bold">应用层:用户节点(rclcpp / rclpy)</text>
+    <text x="574" y="56" font-size="9.5" fill="#64748b" text-anchor="end">感知·规划·控制</text>
+    <rect x="150" y="84" width="440" height="42" rx="8" fill="#2563eb" fill-opacity=".1" stroke="#2563eb"/>
+    <text x="166" y="110" font-size="11.5" class="my-lg" font-weight="bold">客户端库 rcl:统一 API 与生命周期</text>
+    <text x="574" y="110" font-size="9.5" fill="#64748b" text-anchor="end">节点/话题/服务/动作/参数</text>
+    <rect x="150" y="138" width="440" height="42" rx="8" fill="#f59e0b" fill-opacity=".12" stroke="#f59e0b"/>
+    <text x="166" y="164" font-size="11.5" class="my-sub-o" font-weight="bold">rmw 中间件抽象层(可插拔)</text>
+    <text x="574" y="164" font-size="9.5" fill="#64748b" text-anchor="end">换 DDS 不改业务代码</text>
+    <rect x="150" y="192" width="440" height="42" rx="8" fill="#2563eb" fill-opacity=".1" stroke="#2563eb"/>
+    <text x="166" y="218" font-size="11.5" class="my-lg" font-weight="bold">DDS 实现:发现 · 传输 · QoS</text>
+    <text x="574" y="218" font-size="9.5" fill="#64748b" text-anchor="end">Fast DDS / Cyclone DDS 可替换</text>
+    <rect x="150" y="246" width="440" height="42" rx="8" fill="#64748b" fill-opacity=".1" stroke="#64748b"/>
+    <text x="166" y="272" font-size="11.5" class="my-lg" font-weight="bold">操作系统与网络:Linux / RTOS</text>
+    <text x="574" y="272" font-size="9.5" fill="#64748b" text-anchor="end">UDP / 共享内存 · 实时调度</text>
+    <text x="8" y="310" font-size="9.5" fill="#64748b">去中心化:节点经 DDS 自动发现、直连,无 roscore 单点;QoS 逐话题权衡「实时 vs 可靠」(传感器可丢帧,控制指令不能丢)。</text>
+  </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:ROS2 分层架构——用户代码只面向 rcl 统一 API;rmw 屏蔽底层差异,使 Fast DDS / Cyclone DDS 可整只替换;DDS 去中心化自动发现,取代 ROS1 的 roscore</div></div>
+
+  <h3>1.1 中间件要解决的四类问题</h3>
+  <p><b>通信</b>(进程内/进程间/跨设备,1 对 1、1 对 N、N 对 M 分发)、<b>解耦</b>(发布者不用知道订阅者是谁、在哪台机器、什么语言)、<b>组织</b>(节点生命周期、参数配置、日志诊断、时间同步)、<b>实时与可靠</b>(用 QoS 权衡实时性与可靠性:传感器可丢帧,控制指令不能丢)。</p>
+
+  <h3>1.2 ROS2 与 ROS1 的核心区别</h3>
+  <p>ROS1 诞生于 2007 年,面向"单机、研究原型",存在单点故障(必须有一个 roscore)、实时性差、多机协同难等硬伤;ROS2 从 2015 年重写。工程上最关键的差异:</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>维度</th><th>ROS1</th><th>ROS2</th></tr>
+      <tr><td>通信中间件</td><td>自研 TCPROS/UDPROS,基于 TCP 连接</td><td>采用 DDS(Data Distribution Service)标准,多机互通有标准可循</td></tr>
+      <tr><td>架构中心</td><td>需要 roscore 中心节点,它挂了全系统瘫痪</td><td>去中心化,节点经 DDS 自动发现、直连,可独立增删重启</td></tr>
+      <tr><td>生命周期</td><td>节点生命周期由用户自行管理</td><td>内置生命周期管理(未配置→未激活→激活→关闭)</td></tr>
+      <tr><td>实时性</td><td>不保证,受 TCP 与中心架构限制</td><td>通过 QoS 与 DDS 实时实现,可满足部分硬实时场景</td></tr>
+      <tr><td>通信模型</td><td>话题/服务/动作/参数</td><td>话题/服务/动作/参数,全部支持 QoS 与类型安全</td></tr>
+      <tr><td>平台与语言</td><td>主要是 Linux + C++/Python</td><td>Windows/macOS/嵌入式也支持,上位机与板载系统可统一</td></tr>
+      <tr><td>安全性</td><td>几乎无安全机制</td><td>内置 SROS2 加密/认证/权限控制</td></tr>
+    </table>
+  </div>
+
+  <h3>1.3 当前主流发行版与 LTS 情况(已核实)</h3>
+  <p>ROS2 以"发行版(distribution)"为单位发布,锁定一组兼容包并绑定特定 Ubuntu。自 2022 年起 LTS 每两年一个(偶数年)、支持 5 年,非 LTS 约 18 个月。截至 2025 年主流版本(以官方 Releases 页为准):</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>发行版</th><th>发布日期</th><th>支持类型</th><th>EOL(停止支持)</th><th>绑定 Ubuntu</th><th>说明</th></tr>
+      <tr><td>Humble Hawksbill</td><td>2022-05</td><td>LTS(5 年)</td><td>2027-05</td><td>22.04</td><td>生态最成熟,宇树等厂商包普遍支持,新手首选</td></tr>
+      <tr><td>Iron Irwini</td><td>2023-05</td><td>非 LTS(18 个月)</td><td>2024-11</td><td>22.04</td><td>已 EOL,不建议新项目采用</td></tr>
+      <tr><td>Jazzy Jalisco</td><td>2024-05</td><td>LTS(5 年)</td><td>2029-05</td><td>24.04</td><td>当前最新 LTS,新项目推荐</td></tr>
+      <tr><td>Kilted</td><td>2025-05</td><td>非 LTS</td><td>约 2026-11</td><td>24.04</td><td>非 LTS,尝鲜用</td></tr>
+    </table>
+  </div>
+  <div class="box box-tip">
+    <b>💡 选版口诀:</b>新项目且能上 Ubuntu 24.04 → <b>Jazzy</b>;要兼容厂商 SDK/老教程/22.04 工控机 → <b>Humble</b>;仿真训练环境常要求特定发行版,先查版本表。
+  </div>
+
+  <!-- ================= 2. 六大核心概念 ================= -->
+  <h2><span class="h2-num">2</span> 六大核心概念:节点 / 话题 / 服务 / 动作 / 参数 / 命名空间</h2>
+  <p>这六个概念是 ROS2 的"语法":人形机器人的状态估计、运动规划、关节控制,都是它们的组合。</p>
+
+  <h3>2.1 节点(Node):一切功能的载体</h3>
+  <p>节点是 ROS2 图(Graph)中的基本计算单元:一个进程可含多个节点,各负责一项职责(如"状态估计节点"、"左腿控制节点")。节点之间不直接调用函数,而是通过话题/服务/动作通信,因此<strong>节点可被独立启动、停止、替换</strong>。</p>
+  <pre><code># 最小节点(run 后阻塞等待回调)
+import rclpy
+from rclpy.node import Node
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = Node("hello_node")
+    node.get_logger().info("节点已启动!")
+    rclpy.spin(node)
+    rclpy.shutdown()</code></pre>
+
+  <h3>2.2 话题(Topic):发布/订阅,异步、一对多</h3>
+  <p>话题是最常用的通信方式:发布者广播,订阅者按需接收。<strong>发布者不知道谁在听,订阅者不知道谁在发</strong>——这是解耦的核心。<code>/joint_states</code>(关节角)、<code>/odom</code>、<code>/scan</code> 都是典型话题。下面是一对可运行示例:</p>
+  <pre><code># talker.py —— 发布者:每 1 秒向 /chatter 发一条字符串
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class Talker(Node):
+    def __init__(self):
+        super().__init__("talker")
+        self.pub = self.create_publisher(String, "chatter", 10)  # 队列深度 10
+        self.timer = self.create_timer(1.0, self.tick)
+        self.count = 0
+
+    def tick(self):
+        msg = String()
+        msg.data = "hello %d" % self.count
+        self.pub.publish(msg)
+        self.get_logger().info("发布: %s" % msg.data)
+        self.count += 1
+
+def main(args=None):
+    rclpy.init(args=args)
+    rclpy.spin(Talker())
+    rclpy.shutdown()</code></pre>
+  <pre><code># listener.py —— 订阅者:收到 /chatter 消息并打印
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class Listener(Node):
+    def __init__(self):
+        super().__init__("listener")
+        self.sub = self.create_subscription(String, "chatter", self.cb, 10)
+
+    def cb(self, msg):
+        self.get_logger().info("收到: %s" % msg.data)
+
+def main(args=None):
+    rclpy.init(args=args)
+    rclpy.spin(Listener())
+    rclpy.shutdown()</code></pre>
+  <p><b>验证:</b>两个终端分别运行发布者与订阅者,再开第三个终端 <code>ros2 topic echo /chatter</code> 即可旁听数据流——这正是 ROS2 调试的日常姿势。</p>
+
+  <h3>2.3 服务(Service):请求/响应,同步、一对一的"函数调用"</h3>
+  <p>需要"问一句、答一句"(如查询机器人是否就绪、让关节归零并等待结果)时用服务。</p>
+  <pre><code># add_server.py —— 服务端:两个整数相加
+import rclpy
+from rclpy.node import Node
+from example_interfaces.srv import AddTwoInts
+
+class AddServer(Node):
+    def __init__(self):
+        super().__init__("add_server")
+        self.srv = self.create_service(AddTwoInts, "add_two_ints", self.cb)
+
+    def cb(self, req, res):
+        res.sum = req.a + req.b
+        return res
+
+def main(args=None):
+    rclpy.init(args=args)
+    rclpy.spin(AddServer())
+    rclpy.shutdown()</code></pre>
+  <p>客户端既可用 Python 的 <code>call_async</code> 发起,也可直接用命令行测试:</p>
+  <pre><code>ros2 service call /add_two_ints example_interfaces/srv/AddTwoInts "{a: 3, b: 5}"</code></pre>
+
+  <h3>2.4 动作(Action):长任务、可取消、带反馈</h3>
+  <p>任务要跑几十秒(如"走到门口")、需要进度反馈、还能中途取消时,用动作。动作是"服务 + 话题"的组合:<strong>目标</strong>像服务请求,<strong>反馈</strong>用话题持续推送,<strong>结果</strong>结束时返回。</p>
+  <pre><code># 动作服务端骨架:执行"移动到目标位姿"的长任务
+class MoveServer(Node):
+    def __init__(self):
+        super().__init__("move_server")
+        self.act = self.create_action_server(MoveToPose, "move_to_pose", self.execute)
+
+    def execute(self, goal_handle):
+        goal_handle.publish_feedback(MoveToPose.Feedback(progress=0.3))  # 推送进度
+        if goal_handle.is_cancel_requested:                              # 支持取消
+            goal_handle.canceled()
+            return MoveToPose.Result(success=False)
+        # …… 长任务执行 ……
+        goal_handle.succeed()
+        return MoveToPose.Result(success=True)</code></pre>
+  <p>命令行:<code>ros2 action send_goal /move_to_pose my_msgs/action/MoveToPose "{x: 1.0, y: 0.0}" --feedback</code></p>
+
+  <h3>2.5 参数(Parameter):运行时可调的键值配置</h3>
+  <p>参数让节点行为<strong>不重新编译、不重启</strong>就能调整,例如把"最大关节速度"做成参数,方便标定调参。</p>  <pre><code># 节点内声明与读取参数
+self.declare_parameter("max_speed", 1.5)                 # 默认 1.5
+speed = self.get_parameter("max_speed").value
+# 命令行: ros2 param get /talker max_speed
+#          ros2 param set /talker max_speed 2.0</code></pre>
+
+  <h3>2.6 命名空间(Namespace):多机器人/多模块隔离</h3>
+  <p>命名空间给话题/服务/节点名加前缀,把不同机器人或子系统隔开:两台 H1 同时在线的场景下,一台发 <code>/robot1/joint_states</code>,另一台发 <code>/robot2/joint_states</code>,互不干扰。</p>
+  <pre><code># 节点放进命名空间 /robot1,话题自动变为 /robot1/chatter
+ros2 run demo_nodes_py talker --ros-args -r __ns:=/robot1
+ros2 topic list          # 应看到 /robot1/chatter</code></pre>
+
+  <h3>2.7 六概念速查表</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>概念</th><th>通信模型</th><th>适合场景</th><th>日常类比</th></tr>
+      <tr><td>节点</td><td>—</td><td>承载一个功能模块</td><td>公司里的一个部门</td></tr>
+      <tr><td>话题</td><td>发布/订阅(异步)</td><td>传感器数据、状态流、指令流</td><td>广播电台</td></tr>
+      <tr><td>服务</td><td>请求/响应(同步)</td><td>查询状态、一次性操作</td><td>打电话问客服</td></tr>
+      <tr><td>动作</td><td>目标+反馈+结果</td><td>长任务、需要进度、可取消</td><td>外卖下单(可跟踪、可取消)</td></tr>
+      <tr><td>参数</td><td>键值存储</td><td>运行时可调配置</td><td>旋钮/配置文件</td></tr>
+      <tr><td>命名空间</td><td>名字前缀</td><td>多机器人、多模块隔离</td><td>部门前缀(研发-张三)</td></tr>
+    </table>
+  </div>
+
+  <!-- ================= 3. 工作空间与构建 ================= -->
+  <h2><span class="h2-num">3</span> 工作空间与构建:colcon / package.xml / launch / CLI</h2>
+
+  <h3>3.1 工作空间结构与 colcon 构建流程</h3>
+  <p>ROS2 用 <strong>colcon</strong> 构建(替代 ROS1 的 catkin)。一个典型工作空间长这样:</p>
+  <pre><code>dev_ws/
+├── src/        源码(包都放这里)
+├── build/      构建中间产物
+├── install/    安装结果(可执行/库)
+└── log/        构建日志</code></pre>
+  <pre><code>mkdir -p ~/dev_ws/src
+cd ~/dev_ws/src
+ros2 pkg create my_first_pkg --build-type ament_python --dependencies rclpy std_msgs
+cd ~/dev_ws
+colcon build --symlink-install
+source install/setup.bash
+ros2 run my_first_pkg talker</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ 常见错误:</b>忘 <code>source install/setup.bash</code> 会报 "Package not found"。建议把系统与工作空间的 setup.bash 都写进 <code>~/.bashrc</code>,且<strong>先 source 系统 ROS2,再 source 工作空间</strong>。
+  </div>
+
+  <h3>3.2 package.xml 与 CMakeLists.txt:一个包的两张"身份证"</h3>
+  <p><code>package.xml</code> 描述包的名字、依赖、许可;Python 包用 <code>setup.py</code> 声明入口,C++ 包用 <code>CMakeLists.txt</code> 描述编译规则。</p>
+  <pre><code>&lt;?xml version="1.0"?&gt;
+&lt;package format="3"&gt;
+  &lt;name&gt;my_first_pkg&lt;/name&gt;
+  &lt;version&gt;0.0.1&lt;/version&gt;
+  &lt;description&gt;我的第一个 ROS2 包&lt;/description&gt;
+  &lt;maintainer email="you@example.com"&gt;you&lt;/maintainer&gt;
+  &lt;license&gt;Apache-2.0&lt;/license&gt;
+  &lt;exec_depend&gt;rclpy&lt;/exec_depend&gt;
+  &lt;exec_depend&gt;std_msgs&lt;/exec_depend&gt;
+  &lt;export&gt;
+    &lt;build_type&gt;ament_python&lt;/build_type&gt;
+  &lt;/export&gt;
+&lt;/package&gt;</code></pre>
+  <pre><code># CMakeLists.txt(C++ 包)关键片段
+cmake_minimum_required(VERSION 3.8)
+project(my_cpp_pkg)
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+
+add_executable(talker src/talker.cpp)
+ament_target_dependencies(talker rclcpp std_msgs)
+
+install(TARGETS talker DESTINATION lib/${PROJECT_NAME})
+
+ament_package()</code></pre>
+  <p>Python 包还要在 <code>setup.py</code> 的 <code>entry_points</code> 里声明 <code>"talker = my_first_pkg.talker:main"</code> 这类可执行入口。</p>
+
+  <h3>3.3 launch 文件:一键启动整个系统</h3>
+  <p>launch 文件用 Python 编写,把要启动的节点、参数、命名空间一次拉起——人形机器人的"开机流程"就是一个 launch 文件,还能 <code>include</code> 别的 launch 形成层级结构。</p>
+  <pre><code># my_first_pkg/launch/demo.launch.py
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(package="demo_nodes_py", executable="talker",
+             name="my_talker", output="screen"),
+        Node(package="demo_nodes_py", executable="listener",
+             name="my_listener", output="screen"),
+        Node(package="my_first_pkg", executable="talker",
+             parameters=[{"max_speed": 2.0}]),   # 带参数启动
+    ])</code></pre>
+  <pre><code>ros2 launch my_first_pkg demo.launch.py</code></pre>
+
+  <h3>3.4 命令行工具速查表</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>命令</th><th>作用</th></tr>
+      <tr><td><code>ros2 node list</code> / <code>ros2 node info &lt;node&gt;</code></td><td>列出节点 / 查看节点的发布、订阅、服务</td></tr>
+      <tr><td><code>ros2 topic list -t</code></td><td>列出话题及其消息类型</td></tr>
+      <tr><td><code>ros2 topic echo &lt;topic&gt;</code></td><td>实时打印话题消息(调试神器)</td></tr>
+      <tr><td><code>ros2 topic info &lt;topic&gt; -v</code></td><td>话题详情:发布者、订阅者、QoS</td></tr>
+      <tr><td><code>ros2 topic hz &lt;topic&gt;</code></td><td>统计发布频率,检查节点是否卡死</td></tr>
+      <tr><td><code>ros2 service list</code> / <code>ros2 service type</code></td><td>列出服务 / 查询服务类型</td></tr>
+      <tr><td><code>ros2 service call &lt;srv&gt; &lt;type&gt; "{...}"</code></td><td>直接调用一个服务</td></tr>
+      <tr><td><code>ros2 action list -t</code> / <code>ros2 action send_goal ... --feedback</code></td><td>列出动作 / 发送动作目标并打印反馈</td></tr>
+      <tr><td><code>ros2 param list / get / set / dump</code></td><td>参数查看、读取、修改、导出</td></tr>
+      <tr><td><code>ros2 run &lt;pkg&gt; &lt;executable&gt;</code></td><td>运行包里的节点</td></tr>
+      <tr><td><code>ros2 launch &lt;pkg&gt; &lt;file&gt;</code></td><td>按 launch 文件启动多节点系统</td></tr>
+      <tr><td><code>ros2 doctor</code></td><td>系统自检:发现网络、配置、环境问题</td></tr>
+    </table>
+  </div>
+
+  <!-- ================= 4. 机器人描述与可视化 ================= -->
+  <h2><span class="h2-num">4</span> 机器人描述与可视化:URDF / xacro / RViz2 / TF</h2>
+
+  <h3>4.1 URDF:机器人的"骨骼说明书"</h3>
+  <p>URDF 是用 XML 描述机器人结构的标准格式:<strong>link</strong> 是刚体(含视觉几何、碰撞几何、惯量),<strong>joint</strong> 是 link 间的连接(含类型、旋转轴、运动范围)。"pelvis → 髋 → 大腿 → 小腿 → 踝"的链就是一条腿,左右两条腿加躯干和手臂组成人形机器人。</p>
+  <pre><code>&lt;!-- 一个 link + 一个 revolute 关节的最小示例 --&gt;
+&lt;link name="pelvis"&gt;
+  &lt;visual&gt;
+    &lt;geometry&gt;&lt;box size="0.25 0.4 0.1"/&gt;&lt;/geometry&gt;
+    &lt;origin xyz="0 0 0" rpy="0 0 0"/&gt;
+  &lt;/visual&gt;
+&lt;/link&gt;
+
+&lt;joint name="l_hip_pitch" type="revolute"&gt;
+  &lt;parent link="pelvis"/&gt;
+  &lt;child link="l_upper_leg"/&gt;
+  &lt;origin xyz="0 0.1 0" rpy="0 0 0"/&gt;   &lt;!-- 关节在父坐标系中的位姿 --&gt;
+  &lt;axis xyz="1 0 0"/&gt;                     &lt;!-- 旋转轴 --&gt;
+  &lt;limit lower="-1.57" upper="1.57" effort="300" velocity="8"/&gt;
+&lt;/joint&gt;</code></pre>
+  <p>关节类型:<code>revolute</code>(有限角度,如髋/膝/踝)、<code>continuous</code>(无限旋转)、<code>prismatic</code>(平移)、<code>fixed</code>(固定)、<code>floating</code>(6 自由度浮动,常模拟"基座-世界"关系)。</p>
+
+  <h3>4.2 xacro:给 URDF 加"宏与变量"</h3>
+  <p>手写 URDF 时左右腿几乎一样,复制粘贴又长又难维护。<strong>xacro</strong> 提供宏、属性、数学表达式与文件包含,是人形 URDF 的标配写法:</p>
+  <pre><code>&lt;?xml version="1.0"?&gt;
+&lt;robot name="my_humanoid" xmlns:xacro="http://www.ros.org/wiki/xacro"&gt;
+  &lt;xacro:macro name="leg" params="side"&gt;
+    &lt;link name="${side}_upper_leg"&gt;
+      &lt;visual&gt;
+        &lt;geometry&gt;&lt;cylinder length="0.35" radius="0.04"/&gt;&lt;/geometry&gt;
+      &lt;/visual&gt;
+    &lt;/link&gt;
+    &lt;joint name="${side}_hip_pitch" type="revolute"&gt;
+      &lt;parent link="pelvis"/&gt;
+      &lt;child link="${side}_upper_leg"/&gt;
+    &lt;/joint&gt;
+  &lt;/xacro:macro&gt;
+
+  &lt;xacro:leg side="left"/&gt;   &lt;!-- 两行生成两条腿 --&gt;
+  &lt;xacro:leg side="right"/&gt;
+&lt;/robot&gt;</code></pre>
+  <pre><code>ros2 run xacro xacro robot.xacro &gt; robot.urdf   # 展开成标准 URDF</code></pre>
+
+  <h3>4.3 本站 00 部分的机器人模型资源</h3>
+  <p>本站 00 部分提供了 H1/G1/X1 的解剖视图与 3D 模型素材,学习"把真实关节布局映射成 URDF"时非常有用:</p>
+  <div class="grid">
+    <a class="card" href="../00_3D解剖/人形机器人解剖式知识可视化.html"><span class="go">进入 →</span><div class="ic">🦿</div><div class="t">人形机器人解剖式知识可视化</div><div class="d">整机结构与关节爆炸视图,理解真实关节如何对应 URDF 的 joint</div></a>
+    <a class="card" href="../00_3D解剖/减速器剖面图详解.html"><span class="go">进入 →</span><div class="ic">⚙️</div><div class="t">三种减速器 · 剖面结构与原理图解</div><div class="d">谐波/行星/摆线的剖面与传动关系,配合 URDF 的 link 几何设置理解关节结构</div></a>
+  </div>
+
+  <h3>4.4 用 RViz2 查看机器人模型</h3>
+  <p>要"看到"机器人,需要三个角色:<code>robot_state_publisher</code>(读 URDF 发 TF)、<code>joint_state_publisher</code>(发关节角度,带 GUI 可拖动)、RViz2(渲染)。</p>
+  <pre><code># 手动三件套:robot_state_publisher + joint_state_publisher_gui + rviz2
+ros2 run robot_state_publisher robot_state_publisher \
+      --ros-args -p robot_description:="$(cat robot.urdf)"
+ros2 run joint_state_publisher_gui joint_state_publisher_gui
+rviz2</code></pre>
+  <p>RViz2 关键设置:<strong>Fixed Frame</strong> 设为 <code>pelvis</code>/<code>base_link</code>(否则报"frame 不在 TF 树中");<strong>Add → RobotModel</strong> 显示模型,再 Add → <strong>TF</strong> 显示坐标系;拖动关节滑块观察腿部运动。</p>
+
+  <h3>4.5 TF 坐标变换:全机器人共用的"坐标系语言"</h3>
+  <p>TF(Transform)管理所有坐标系间的相对位姿,构成一棵 <strong>TF 树</strong>:map → odom → base_link → 各关节坐标系 → 传感器坐标系。为什么需要它?<strong>每个数据都诞生在某个坐标系里</strong>(点云在雷达系、图像在相机系、关节角在关节系),要融合数据就必须能随时做坐标变换。常用命令:</p>
+  <pre><code># 发布固定不变的静态变换(如 map → odom 初始关系)
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom
+ros2 run tf2_tools view_frames            # 可视化 TF 树(frames.pdf)
+ros2 run tf2_ros tf2_echo base_link l_ankle   # 检查坐标系间变换</code></pre>
+  <div class="box box-warn">
+    <b>⚠️ 排错铁律:</b>RViz2 里"模型乱飞 / 没有 TF"九成是 TF 树断链、Fixed Frame 设错、或 <code>robot_state_publisher</code> 没读到 URDF。先 <code>view_frames</code> 看树,再查 <code>ros2 topic hz /tf</code>。
+  </div>
+
+  <!-- ================= 5. 仿真接口 ================= -->
+  <h2><span class="h2-num">5</span> 仿真接口:与 Gazebo / Isaac Sim 桥接</h2>
+  <p>真机调试代价高、风险大,几乎必须先仿真。ROS2 的价值之一就是"同一套代码,换一个仿真后端":机器人侧代码不变,只换与硬件之间的"桥"。</p>
+  <ul>
+    <li><strong>Gazebo(Gazebo Classic 与新版 gz-sim)</strong>:经典开源物理仿真。<code>gazebo_ros_pkgs</code> 提供 <code>gazebo_ros</code>(导入模型、spawn)与 <code>gazebo_ros2_control</code>(把仿真关节暴露成 <code>ros2_control</code> 接口,与真机控制代码一致);新版用 <code>ros_gz</code> 桥接。流程:写 URDF/xacro → 加仿真插件 → <code>ros2 launch</code> → 用话题驱动。</li>
+    <li><strong>Isaac Sim / Isaac Lab(NVIDIA)</strong>:高保真渲染 + PhysX,GPU 并行,<strong>强化学习训人形</strong>的主流平台。<code>isaacsim-ros2-bridges</code> 把图像/深度/里程计/TF 发布成 ROS2 话题,并订阅关节指令,实现"仿真 ⇄ ROS2 同栈",适合先训策略再 sim2real。</li>
+    <li><strong>MuJoCo</strong>:轻量高速、接触动力学准确,详见本站 04 部分。</li>
+  </ul>
+  <div class="table-wrap">
+    <table>
+      <tr><th>仿真器</th><th>桥接包/方式</th><th>优势</th><th>典型用途</th></tr>
+      <tr><td>Gazebo Classic</td><td>gazebo_ros / gazebo_ros2_control</td><td>成熟稳定、生态大、免费</td><td>传统仿真、测试 ROS2 栈</td></tr>
+      <tr><td>Gazebo(gz-sim)</td><td>ros_gz / gz_ros2_control</td><td>新一代,插件架构、性能更好</td><td>新项目默认选择</td></tr>
+      <tr><td>Isaac Sim</td><td>isaacsim-ros2-bridges</td><td>高保真、GPU 物理、RL 集成</td><td>人形 sim2real、RL 训练</td></tr>
+      <tr><td>MuJoCo</td><td>mjros / 自写桥</td><td>极快、接触稳定、轻量</td><td>RL 迭代、控制算法验证</td></tr>
+    </table>
+  </div>
+  <div class="box box-tip">
+    <b>💡 桥接的本质:</b>无论哪个仿真器,都是把"仿真中的关节状态/传感器数据"翻译成 ROS2 话题(如 <code>/joint_states</code>、<code>/odom</code>),同时把 ROS2 上的指令(如 <code>/cmd_vel</code>)翻译回仿真器。学会这层抽象,真机与仿真切换只是换一个"驱动"。
+  </div>
+
+  <!-- ================= 6. 运动规划 ================= -->
+  <h2><span class="h2-num">6</span> 运动规划简介:MoveIt2 及其对人形机器人的局限</h2>
+
+  <h3>6.1 MoveIt2 是什么</h3>
+  <p>MoveIt2 是 ROS2 生态最主流的<strong>运动规划框架</strong>(官方站点 moveit.ai),把"机械臂如何从 A 姿态走到 B 姿态"工具化。核心组件:</p>
+  <ul>
+    <li><strong>move_group 节点</strong>:规划系统总调度,对外提供服务/动作接口;</li>
+    <li><strong>规划场景(PlanningScene)</strong>:维护机器人模型、关节状态、障碍物;</li>
+    <li><strong>规划器插件(OMPL)</strong>:RRT、RRTConnect、BKPIECE 等采样算法;</li>
+    <li><strong>碰撞检测(FCL)</strong> 与 <strong>运动学(KDL/IKFast)</strong>:实时避障与正逆解。</li>
+  </ul>
+  <p>典型 Python 用法(<code>moveit_commander</code>;新项目也可用官方 <code>moveit_py</code>):</p>
+  <pre><code>import moveit_commander
+from geometry_msgs.msg import Pose
+
+moveit_commander.roscpp_initialize([])
+robot = moveit_commander.RobotCommander()
+scene = moveit_commander.PlanningSceneInterface()
+arm   = moveit_commander.MoveGroupCommander("arm")
+
+# 1) 关节空间规划:直接给目标关节角
+arm.set_joint_value_target({"shoulder_pitch": 0.5, "elbow": -1.2})
+plan = arm.plan(); arm.execute(plan, wait=True)
+# 2) 笛卡尔空间规划:给末端位姿,自动逆解+插值
+pose = Pose(); pose.position.x = 0.4; pose.position.y = 0.1; pose.position.z = 0.8
+arm.set_pose_target(pose); arm.go(wait=True)</code></pre>
+
+  <h3>6.2 为什么 MoveIt2 难以直接用于足式/人形机器人</h3>
+  <p>MoveIt2 的设计前提是<strong>固定基座机械臂</strong>:基座不动,只需规划关节角。而人形机器人是<strong>浮动基座 + 全身协调 + 平衡约束</strong>的系统:</p>
+  <ul>
+    <li><strong>基座会动</strong>:重心(CoM)与零力矩点(ZMP)必须在支撑多边形内,规划要同时约束躯干姿态与双脚支撑,这是 MoveIt2 没有的约束;</li>
+    <li><strong>全身耦合</strong>:手、躯干、腿互相影响,20~40 关节的采样规划难以实时;</li>
+    <li><strong>动态性</strong>:行走是动态过程,规划须与控制闭环(毫秒级),"先规划后执行"不适用;</li>
+    <li><strong>步态</strong>:落脚点、支撑相/摆动相规划超出机械臂规划范畴。</li>
+  </ul>
+
+  <h3>6.3 人形/足式运动规划的替代方案</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>方案</th><th>定位</th><th>说明</th></tr>
+      <tr><td>MoveIt2(局部使用)</td><td>上肢/手臂规划</td><td>腰部以上若是机械臂式结构可单独规划手臂</td></tr>
+      <tr><td>轨迹平滑(tosr_ts 等)</td><td>轨迹后处理</td><td>社区常用 tosr_ts 等把步态/足端轨迹平滑成时间最优、加速度受限的轨迹,供执行层跟踪</td></tr>
+      <tr><td>自研 WBC(全身控制)</td><td>实时控制层</td><td>Whole-Body Control:把平衡/姿态/任务优先级建模成 QP,毫秒级求解关节力矩,人形标配</td></tr>
+      <tr><td>MPC(模型预测控制)</td><td>动态规划</td><td>基于简化动力学模型在线滚动优化,厂商常用于步态与平衡</td></tr>
+      <tr><td>强化学习策略</td><td>学习式规划</td><td>如 NVIDIA GR00T WBC / Isaac Lab 训练的策略,直接输出关节指令</td></tr>
+    </table>
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 认知纠偏:</b>人形机器人 ≠ "移动机械臂"。第一优先级永远是<strong>平衡</strong>,规划必须把动力学与平衡约束一起求解。学 MoveIt2 的价值在于掌握"规划/场景/碰撞"这些通用概念,而不是指望它直接让人形机器人走路。
+  </div>
+
+  <!-- ================= 7. 人形机器人软件栈案例 ================= -->
+  <h2><span class="h2-num">7</span> 人形机器人软件栈案例:宇树与开源参考</h2>
+
+  <h3>7.1 宇树机器人的 ROS2 支持情况(已核实)</h3>
+  <p>宇树(Unitree)官方维护了两个开源仓库,是学习"真实人形机器人如何接 ROS2"的一手资料:</p>  <ul>
+    <li><strong><a href="https://github.com/unitreerobotics/unitree_ros2" target="_blank" rel="noopener">unitreerobotics/unitree_ros2</a></strong>:ROS2 官方包,支持 Go2/B2/H1/G1,含 <code>unitree_api</code>(DDS 通信接口)、<code>unitree_go</code>/<code>unitree_hg</code>(消息定义)、<code>unitree_ros2_real</code>(真机桥)与 <code>unitree_ros2_sim</code>(Gazebo 仿真桥),并附可直接 <code>colcon build</code> 的工作空间;</li>
+    <li><strong><a href="https://github.com/unitreerobotics/unitree_ros" target="_blank" rel="noopener">unitreerobotics/unitree_ros</a></strong>:ROS1 时代仓库(unitree_legged_msgs 等),可对照阅读迁移差异。</li>
+  </ul>
+  <p>通信原理:宇树机器人本体通过 <strong>DDS</strong>(而非 CAN/串口)与上位机交换数据,ROS2 侧把"状态量→DDS 主题"包装成标准消息(关节状态、IMU、触地信息)并接收高层指令。拿到真机后 <code>ros2 topic list</code> 就能看到一整套状态话题——ROS2 扮演"整机软件总线"。</p>
+
+  <h3>7.2 一套典型的人形机器人软件架构</h3>
+  <p>把上面的概念串起来,一台真实人形机器人的软件栈大致分层如下(各层之间全部通过 ROS2 通信):<b>感知层</b>(相机/LiDAR/IMU/编码器)→ <b>状态估计层</b>(ESKF/因子图融合,发布 <code>/odom</code> 与 TF)→ <b>决策规划层</b>(步态/WBC/MPC/RL,输出关节目标)→ <b>关节控制层</b>(三环、阻抗、<code>ros2_control</code>)→ <b>执行层</b>(CAN/以太网到关节模组,参见本站 Hdrive)。</p>
+  <ul>
+    <li><strong>感知层</strong>:原始数据几乎全走话题(高频可丢帧,用 sensor data QoS);</li>
+    <li><strong>状态估计层</strong>:多源融合成"我在哪、姿态如何",输出 TF 根节点附近的变换;</li>
+    <li><strong>决策规划层</strong>:整机"大脑",人形场景由 <strong>WBC/MPC</strong> 或 <strong>RL 策略</strong>实现(而非 MoveIt2);</li>
+    <li><strong>关节控制层</strong>:用 <code>ros2_control</code> 抽象"控制器↔硬件",同一套代码无缝跑仿真与真机;</li>
+    <li><strong>执行层</strong>:对接本站前几部分的关节模组(CAN/FOC 固件),是软硬件边界。</li>
+  </ul>
+
+  <h3>7.3 值得阅读的开源参考项目</h3>
+  <ul>
+    <li><a href="https://github.com/unitreerobotics/unitree_ros2" target="_blank" rel="noopener">unitree_ros2</a>:真机/仿真双桥,消息定义规范,学"整机 ROS2 接口设计";</li>
+    <li><a href="https://github.com/NVlabs/GR00T-WholeBodyControl" target="_blank" rel="noopener">NVlabs/GR00T-WholeBodyControl</a>:NVIDIA 开源的人形全身控制(WBC)平台,把平衡、姿态、任务目标统一成优化问题,配合 Isaac 生态;</li>
+    <li>本站 <a href="../04_软件与算法/22_通信与控制算法升级路线.html">04-23 通信与控制算法升级路线</a>:从单关节通信升级到整机软件栈的衔接内容。</li>
+  </ul>
+
+  <!-- ================= 7.5 QoS 速查 ================= -->
+  <h2><span class="h2-num" style="font-size:0.8em;">+</span> QoS 速查:reliability × durability 组合表</h2>
+  <p>ROS2 的 QoS 由多个策略组成,其中最常踩坑的是 <code>reliability</code>(可靠/尽力)与 <code>durability</code>(易失/暂存)两个维度。下表给出 4 种典型组合的适用场景与典型坑:</p>
+  <div class="table-wrap"><table>
+    <tr><th>组合</th><th>典型用途</th><th>何时用</th><th>典型坑</th></tr>
+    <tr>
+      <td><code>RELIABLE</code> + <code>VOLATILE</code><br><b>(ROS2 默认)</b></td>
+      <td>传感器数据、命令指令</td>
+      <td>大多数场景的稳妥默认:不允许丢消息,订阅者上线后才收后续消息</td>
+      <td>无线/弱网下重传堆积造成延迟;高频大消息(如点云)用默认可靠 QoS 会丢帧反而更糟</td>
+    </tr>
+    <tr>
+      <td><code>RELIABLE</code> + <code>TRANSIENT_LOCAL</code></td>
+      <td>latched 配置、地图、静态 TF</td>
+      <td>"后加入者也要拿到最新一帧"的场景:地图、代价地图、标定参数、<code>/tf_static</code></td>
+      <td>发布端历史深度(depth)默认只有 1,发布多条只保留最后几条;订阅端晚启动时拿到的是"旧值"而非"无值",调试时容易误判时序</td>
+    </tr>
+    <tr>
+      <td><code>BEST_EFFORT</code> + <code>VOLATILE</code></td>
+      <td>高频传感器流</td>
+      <td>相机、IMU、点云等高频流:丢一帧没关系,要的是低延迟不堆积</td>
+      <td>必须与订阅端 <code>best_effort</code> 匹配;若订阅端写的是默认 <code>reliable</code>,会静默断连收不到任何数据(见下方排查三步)</td>
+    </tr>
+    <tr>
+      <td><code>BEST_EFFORT</code> + <code>TRANSIENT_LOCAL</code></td>
+      <td>少用</td>
+      <td>仅在"允许丢 + 要最新值"的极特殊场景(如低频状态心跳)考虑</td>
+      <td>两头的坑都占:既可能丢消息,又只有最后一次发布可补发;语义容易让人误解,团队协作时尽量不用</td>
+    </tr>
+  </table></div>
+
+  <h3>发布与订阅 QoS 不兼容:静默断连排查三步</h3>
+  <p>QoS 不兼容的表现非常隐蔽:<b>话题在 <code>ros2 topic list</code> 里存在,但订阅端一条数据都收不到,也没有任何报错</b>(例如发布端 <code>best_effort</code>、订阅端默认 <code>reliable</code>)。排查三步:</p>
+  <ol>
+    <li><b>看双方 QoS:</b><code>ros2 topic info /your_topic -v</code>,分别核对 Publisher 与 Subscription 的 Reliability、Durability、History 与 depth;</li>
+    <li><b>对照兼容矩阵:</b>reliability 上 <code>reliable</code> 订阅端只能配 <code>reliable</code> 发布端,durability 上 <code>transient_local</code> 订阅端只能配 <code>transient_local</code> 发布端——任何一项"要求高于对方提供"即不兼容;</li>
+    <li><b>改到兼容:</b>要么改订阅端代码里的 QoS,要么改发布端;运行时可加载的节点(如 rosbridge、相机驱动)优先在 yaml 参数里改 QoS 覆盖,免去重新编译。</li>
+  </ol>
+  <pre><code># 第一步:查看话题双方 QoS 配置
+ros2 topic info /camera/image_raw -v
+# 输出重点看两段:
+#   Publisher: Reliability: BEST_EFFORT, Durability: VOLATILE
+#   Subscription: Reliability: RELIABLE   ← 与发布端不兼容,静默断连
+#
+# 第三步:用 yaml 给驱动类节点覆盖 QoS(免编译),再重启节点
+# qos_override.yaml:
+#   /camera/image_raw:
+#     data_type: "image"
+#     reliability: best_effort
+ros2 run rclcpp_components component_container_mt ...
+# 启动时追加: --params-file qos_override.yaml</code></pre>
+
+  <!-- ================= 8. 常见坑与建议 ================= -->
+  <h2><span class="h2-num">8</span> 常见坑与建议</h2>
+
+  <div class="box box-warn">
+    <b>⚠️ 坑 1:版本不匹配(最高频):</b>发行版 ↔ Ubuntu ↔ 包版本必须对齐:Humble 只支持 22.04,Jazzy 只支持 24.04;装包用 <code>apt</code> 官方源(<code>ros-humble-xxx</code>),勿混用不同发行版包。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 坑 2:DDS 实现不一致导致"互相看不见":</b>ROS2 默认 Fast DDS,宇树 SDK 等常要求 Cyclone DDS。两端 <code>RMW_IMPLEMENTATION</code> 不一致且跨机时可能互相发现不了——两端统一(<code>export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp</code>),复杂网络再用 <code>CYCLONEDDS_URI</code> 指定网卡与多播。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 坑 3:环境变量与网络:</b>所有节点须同 <code>ROS_DOMAIN_ID</code>(多机器人务必分开);本机调试可 <code>export ROS_LOCALHOST_ONLY=1</code>。跨机要求同一网段、放行多播 UDP,用 <code>ping</code> + <code>ros2 doctor</code> 排查;节点"消失"也可能是 daemon 缓存,<code>ros2 daemon stop</code> 重试。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 坑 4:与嵌入式侧通信(CAN → ROS2 桥):</b>关节模组(如本站 Hdrive)走 CAN/串口,需一个桥:现成方案 <code>socketcan_bridge</code>(CAN 帧 → <code>can_msgs/Frame</code>)、<code>canopen_402</code>(CiA402 伺服),或自研"读帧 → 解析协议 → 发布 <code>JointState</code>"。<b>桥进程要稳定、周期要准</b>(丢帧直接表现为关节抖动),高频反馈建议独立进程 + 高优先级线程。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 坑 5:QoS 不匹配与时间同步:</b>传感器用 <code>best_effort</code> + 深队列,控制指令用 <code>reliable</code>;两端不兼容会<strong>静默断连</strong>(无报错只是没数据),用 <code>ros2 topic info -v</code> 核对。仿真要 <code>use_sim_time:=true</code> 并读 <code>/clock</code>。
+  </div>
+  <div class="box box-tip">
+    <b>💡 学习建议顺序:</b>① 先 CLI 后代码;② 先单机后多机;③ 先仿真后真机(整套栈先在 Gazebo/Isaac 跑通);④ 每加一层先确认"上层输出话题有数据";⑤ 灵异问题先 <code>ros2 doctor</code> / <code>view_frames</code> / <code>ros2 topic hz</code>。
+  </div>
+
+  <!-- ================= 9. 小结与思考 ================= -->
+  <h2><span class="h2-num">9</span> 小结与思考题</h2>
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>ROS2 是分布式机器人软件的"操作系统级中间件":DDS 去中心化取代 roscore,引入 QoS 与生命周期;六大概念覆盖几乎所有通信需求;colcon + package.xml + launch 是标准工程范式;URDF/xacro 描述结构、TF 描述坐标系、RViz2 可视化;MoveIt2 擅长固定基座机械臂,人形机器人还需要 WBC/MPC/RL 全身控制;宇树 unitree_ros2 展示了真实人形机器人如何以 ROS2 为总线组织整机软件。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 为什么 40 个关节角适合用"话题"发布,而"切换行走模式"适合用"服务"或"动作"?各举一个真实场景。<br>
+    2. 两台 H1 同时在线且都发布 <code>/joint_states</code> 会出什么问题?如何用命名空间隔离?<br>
+    3. 把一条腿的 URDF 从"左右复制"改成 xacro 宏,你能省掉哪些重复代码?惯性参数从哪来(参考 00 部分素材)?<br>
+    4. 为什么"先规划再执行"的 MoveIt2 模式不适合跑步的人形机器人?如果是"站定后伸臂抓取",MoveIt2 能胜任吗?
+  </div>
+
+  <!-- ================= 10. 自测题 ================= -->
+  <h2><span class="h2-num">10</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 关于 ROS2 与 ROS1 的区别,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. ROS2 使用 DDS 作为底层通信中间件</button>
+      <button data-v="B">B. ROS2 取消了 roscore 中心节点,架构去中心化</button>
+      <button data-v="C">C. ROS2 的节点只能运行在同一台电脑上</button>
+      <button data-v="D">D. ROS2 通过 QoS 策略权衡实时性与可靠性</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:ROS2 恰恰为了支持多机分布式而设计,DDS 天然支持跨设备发现与通信;节点可分布在任意多台机器上。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 相比服务(Service),动作(Action)的核心优势是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 传输速度更快</button>
+      <button data-v="B">B. 支持长时间任务、中途取消与进度反馈</button>
+      <button data-v="C">C. 不需要节点参与</button>
+      <button data-v="D">D. 只能传输图像数据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:动作 = 目标 + 反馈 + 结果三段式,反馈用话题推送、目标可取消,适合"走到门口"这类长任务;服务是短促的请求/响应。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 想要列出当前系统所有话题及其消息类型,应使用哪条命令?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. ros2 topic list -t</button>
+      <button data-v="B">B. ros2 node list</button>
+      <button data-v="C">C. ros2 topic echo /chatter</button>
+      <button data-v="D">D. ros2 pkg list</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:-t 让 topic list 附带消息类型;node list 列节点、topic echo 打印话题内容、pkg list 列已装包。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 TF 坐标变换与 URDF,说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 所有机器人的 TF 树都必须从 map 开始</button>
+      <button data-v="B">B. static_transform_publisher 用于发布固定不变的坐标变换(如传感器支架)</button>
+      <button data-v="C">C. URDF 的 joint 类型只有 revolute 一种</button>
+      <button data-v="D">D. RViz2 中模型乱飞一定是因为 GPU 驱动问题</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:TF 树根取决于任务;静态变换常固定传感器与本体;URDF 的 joint 有五种类型;模型乱飞绝大多数是 TF 断链或 Fixed Frame 设错。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 MoveIt2 与人形机器人,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. MoveIt2 主要面向固定基座的机械臂运动规划</button>
+      <button data-v="B">B. 人形机器人是浮动基座 + 全身协调 + 平衡约束的系统,直接套 MoveIt2 难以走路</button>
+      <button data-v="C">C. 人形机器人的全身平衡控制通常由 WBC / MPC / RL 策略实现</button>
+      <button data-v="D">D. MoveIt2 专为人形机器人的步态与平衡控制而设计</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 6.2 节。MoveIt2 的设计前提是「固定基座机械臂」;人形机器人是浮动基座、重心/ZMP 需在支撑多边形内、全身耦合、动态行走的系统,「先规划后执行」不适用,需改用 WBC/MPC/RL。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 某团队工控机为 Ubuntu 22.04、需兼容宇树等厂商 SDK,新手应首选哪个 ROS2 发行版?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. Humble Hawksbill(LTS)</button>
+      <button data-v="B">B. Jazzy Jalisco(LTS)</button>
+      <button data-v="C">C. Iron Irwini</button>
+      <button data-v="D">D. Kilted</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见 1.3 节。Humble 绑定 Ubuntu 22.04、生态最成熟、宇树等厂商包普遍支持,是新手首选;Jazzy 绑定 24.04,Iron 已 EOL,Kilted 为非 LTS 尝鲜版。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于 QoS 与通信故障,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 传感器数据常用 best_effort + 深队列,允许丢帧</button>
+      <button data-v="B">B. 控制指令常用 reliable,保证不丢</button>
+      <button data-v="C">C. 两端 QoS 不兼容时会弹出明确报错提示</button>
+      <button data-v="D">D. 仿真时需设置 use_sim_time:=true 并读取 /clock</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:见坑 5。QoS 不匹配会「静默断连」——无报错、只是没数据,需用 ros2 topic info -v 核对;其余三项均为正确用法。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①ROS2 用 DDS 去中心化取代 ROS1 的 roscore,引入 QoS 与生命周期;②六大概念:节点 / 话题(异步一对多)/ 服务(同步请求响应)/ 动作(长任务可取消带反馈)/ 参数(运行时可调)/ 命名空间(多机隔离);③工程范式:colcon build + package.xml + launch,忘 source install/setup.bash 会报 Package not found;④URDF/xacro 描述结构、TF 描述坐标系、RViz2 可视化,模型乱飞多为 TF 断链;⑤MoveIt2 适合固定基座机械臂,人形走路需 WBC/MPC/RL 全身控制;⑥常见坑:发行版对齐(Humble↔22.04、Jazzy↔24.04)、RMW 实现统一、QoS 匹配、ROS_DOMAIN_ID 隔离。</div>
+
+  <!-- ================= 11. 参考来源 ================= -->
+  <h2><span class="h2-num">11</span> 参考来源</h2>
+  <div class="box box-tip"><b>🧭 配套实战:</b>学完本页概念后,推荐继续 <a href="09_ROS2入门实战_第一个节点.html">04-09 · ROS2 入门实战:第一个节点</a>(西交笃行队教程精华:小鱼安装/Zsh 终端/完整代码跑通)。</div>
+  <ul>
+    <li><a href="https://zhuanlan.zhihu.com/p/1959705428637246803" target="_blank" rel="noopener">西安交通大学笃行机器人队 · ROS2 教程(知乎)</a>:乐高比喻、人体类比表、第一个节点完整实战</li>
+    <li><a href="https://docs.ros.org/en/humble/index.html" target="_blank" rel="noopener">ROS 2 官方文档(Humble)</a> / <a href="https://docs.ros.org/en/jazzy/index.html" target="_blank" rel="noopener">Jazzy 版</a>:核心概念、教程、API 第一手来源</li>
+    <li><a href="https://docs.ros.org/en/rolling/Releases.html" target="_blank" rel="noopener">ROS 2 发行版发布与 EOL(官方 Releases 页)</a> 与 <a href="https://eol.wiki/zh/ros-2/" target="_blank" rel="noopener">EOL.Wiki ROS 2 汇总</a>:核实 Humble/Jazzy 的 LTS 与 EOL</li>
+    <li><a href="https://docs.ros.org/en/humble/Concepts/About-DDS-and-ROS-middleware.html" target="_blank" rel="noopener">ROS 2 概念:DDS 与中间件</a> 与 <a href="https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html" target="_blank" rel="noopener">命令行工具教程</a>:DDS/QoS 与 CLI 全量用法</li>
+    <li><a href="https://docs.ros.org/en/humble/Tutorials/Intermediate/URDF/URDF-Main.html" target="_blank" rel="noopener">URDF 教程(ROS 2 官方)</a>:link/joint/xacro/RViz2 可视化</li>
+    <li><a href="https://moveit.ai/" target="_blank" rel="noopener">MoveIt 官网</a> 与 <a href="https://moveit.picknik.ai/" target="_blank" rel="noopener">MoveIt 2 文档</a>:规划器、场景、接口说明</li>
+    <li><a href="https://github.com/unitreerobotics/unitree_ros2" target="_blank" rel="noopener">unitreerobotics/unitree_ros2(宇树官方 ROS2 仓库)</a> 与 <a href="https://github.com/unitreerobotics/unitree_ros" target="_blank" rel="noopener">unitree_ros(ROS1 仓库)</a>:核实宇树 ROS2 支持情况</li>
+    <li><a href="https://gazebosim.org/" target="_blank" rel="noopener">Gazebo 官网</a> 与 <a href="https://docs.omniverse.nvidia.com/isaacsim/latest/installation/install_ros.html" target="_blank" rel="noopener">Isaac Sim ROS2 桥接安装文档</a>:仿真桥接</li>
+    <li><a href="https://github.com/NVlabs/GR00T-WholeBodyControl" target="_blank" rel="noopener">NVlabs/GR00T-WholeBodyControl</a>:人形全身控制开源参考</li>
+    <li>本站 <a href="../00_3D解剖/人形机器人解剖式知识可视化.html">00 部分 · 人形机器人解剖式知识可视化</a> 与 <a href="../04_软件与算法/22_通信与控制算法升级路线.html">04-23 通信与控制算法升级路线</a>:结构与单关节通信背景</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- ================= 页面内脚本(唯一一个 script 块,保守 ES5 语法) =================
+     功能:为每个 <pre> 代码块添加"复制"按钮,并处理复制逻辑 -->
+<script>
+(function(){
+  "use strict";
+
+  /* 给所有 <pre> 添加复制按钮(不处理带 data-copy="off" 的块) */
+  function addCopyButtons(){
+    var pres = document.querySelectorAll("pre");
+    for(var i = 0; i < pres.length; i++){
+      (function(pre){
+        if(pre.getAttribute("data-copy") === "off") return;
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "my-copy-btn";
+        btn.textContent = "复制";
+        btn.addEventListener("click", function(){
+          var codeEl = pre.querySelector("code");
+          var txt = codeEl ? codeEl.innerText : pre.innerText;
+          copyText(txt, btn);
+        });
+        pre.appendChild(btn);
+      })(pres[i]);
+    }
+  }
+
+  /* 复制文本:优先 navigator.clipboard,降级 execCommand */
+  function copyText(txt, btn){
+    var flash = function(){
+      var old = btn.textContent;
+      btn.textContent = "已复制 ✓";
+      setTimeout(function(){ btn.textContent = old; }, 1200);
+    };
+    if(window.navigator && navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(flash, function(){ legacyCopy(txt, flash); });
+    } else {
+      legacyCopy(txt, flash);
+    }
+  }
+
+  function legacyCopy(txt, done){
+    var ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch(e){ /* 忽略 */ }
+    document.body.removeChild(ta);
+    done();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", addCopyButtons);
+  } else {
+    addCopyButtons();
+  }
+})();
+</script>
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

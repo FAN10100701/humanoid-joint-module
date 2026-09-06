@@ -5,7 +5,7 @@
    字段: id=题目ID  s=学科  q=问题  lv=复试频率(1~5星)
          tags=考点标签  a=参考答案(HTML)  svg=图解(可选)
          formula=KaTeX公式(可选)  follow=延伸追问  extend=知识点拓展(可选)  links=站内关联
-   配套页面: 08_学习工具/11_保研复试面试题库.html(按需懒加载本文件)
+   配套页面: 06_学习工具/11_保研复试面试题库.html(按需懒加载本文件)
    ============================================================ */
 window.IB_A = {
 
@@ -35,7 +35,7 @@ subjects: [
       { t:'PID 的局限', f:4, h:'不估计扰动、依赖线性假设——引出 ADRC' }
     ],
     rel:[ { t:'FOC 调参整定实战手册', u:'../02_硬件基础/11_FOC调参整定实战手册.html' },
-          { t:'代码实验室 · PID 模拟器', u:'../08_学习工具/04_代码实验室.html' } ] },
+          { t:'代码实验室 · PID 模拟器', u:'../06_学习工具/04_代码实验室.html' } ] },
 
   { id:'adrc', name:'ADRC 自抗扰', en:'Active Disturbance Rejection', icon:'🧭', freq:4,
     desc:'项目里用过 ADRC 或能讲清 ESO 思想,是控制方向复试的显著加分项;核心一句话:"把内扰外扰打包成总扰动,实时估计并抵消"。',
@@ -47,8 +47,8 @@ subjects: [
       { t:'ADRC vs PID / 滑模 / MPC', f:4, h:'抗扰强、模型依赖弱;与滑模同属"主动抗扰"谱系' }
     ],
     rel:[ { t:'3D 解剖 · ADRC 可视化', u:'../00_3D解剖/人形机器人解剖式知识可视化.html' },
-          { t:'ADRC自抗扰控制与嵌入式实现', u:'../06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html' },
-          { t:'通信与控制算法升级路线', u:'../04_升级进阶/09_通信与控制算法升级路线.html' } ] },
+          { t:'ADRC自抗扰控制与嵌入式实现', u:'../04_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html' },
+          { t:'通信与控制算法升级路线', u:'../04_软件与算法/22_通信与控制算法升级路线.html' } ] },
 
   { id:'yk', name:'运动控制 · FOC', en:'Motion Control', icon:'⚡', freq:5,
     desc:'机器人/电机方向的硬通货:FOC 坐标变换为什么、三环怎么配、SVPWM 强在哪,几乎构成一场"电机复试"的骨架。',
@@ -64,8 +64,8 @@ subjects: [
     rel:[ { t:'核心原理动画 · FOC/三环', u:'../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html' },
           { t:'FOC 驱动器硬件深挖', u:'../02_硬件基础/09_FOC驱动器硬件深挖.html' },
           { t:'SVPWM 交互实验室', u:'../02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html' },
-          { t:'FOC算法完全图解:流程与运行图', u:'../06_软件与算法/19_FOC算法完全图解_流程与运行图.html' },
-          { t:'工程电机控制框架对比与选型', u:'../06_软件与算法/20_工程电机控制框架对比_流程与选型.html' },
+          { t:'FOC算法完全图解:流程与运行图', u:'../04_软件与算法/19_FOC算法完全图解_流程与运行图.html' },
+          { t:'工程电机控制框架对比与选型', u:'../04_软件与算法/20_工程电机控制框架对比_流程与选型.html' },
           { t:'FOC调参整定实战手册', u:'../02_硬件基础/11_FOC调参整定实战手册.html' } ] },
 
   { id:'xk', name:'现代控制理论', en:'Modern Control', icon:'📐', freq:4,
@@ -80,9 +80,9 @@ subjects: [
       { t:'Lyapunov 稳定性', f:3, h:'能量观点看稳定:V>0 且 V̇<0 则稳定' }
     ],
     rel:[ { t:'控制数学工具箱 · 状态空间', u:'../01_理论入门/06_控制数学工具箱.html' },
-          { t:'现代控制理论:状态空间到MPC', u:'../06_软件与算法/16_现代控制理论_状态空间到MPC.html' },
-          { t:'状态观测器全解:龙伯格/EKF/SMO', u:'../06_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html' },
-          { t:'NPU与数字IC设计', u:'../10_NPU与数字IC设计/01_板块总览与学习路线.html' } ] },
+          { t:'现代控制理论:状态空间到MPC', u:'../04_软件与算法/16_现代控制理论_状态空间到MPC.html' },
+          { t:'状态观测器全解:龙伯格/EKF/SMO', u:'../04_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html' },
+          { t:'NPU与数字IC设计', u:'../08_NPU与数字IC设计/01_板块总览与学习路线.html' } ] },
 
   { id:'dsp', name:'信号处理', en:'Signal Processing', icon:'📊', freq:4,
     desc:'采样定理、FFT、滤波器三大件:嵌入式+控制方向常结合"电流采样为什么滤波""编码器信号怎么去噪"来问。',
@@ -163,7 +163,7 @@ items: [
   a:'<p><b>口诀:P 管现在、I 管过去、D 管未来。</b></p><ul><li><b>P(比例)</b>:误差乘增益直接输出,"有差就动"。K<sub>p</sub> 越大响应越快、稳态误差越小,但过大振荡甚至失稳;纯 P 对一类输入必然有静差(比例控制"靠误差吃饭",误差为 0 输出也为 0)。</li><li><b>I(积分)</b>:误差的历史累积,"有错必纠到底"。消除稳态误差(本质是给开环加积分环节、系统升型),但引入 90° 相位滞后、降低稳定裕度,且可能积分饱和;K<sub>i</sub> 越大消差越快但振荡加剧。</li><li><b>D(微分)</b>:误差的变化率,"提前刹车"抑制超调与振荡,提高阻尼。但对测量噪声极其敏感(噪声被微分成尖峰),且纯 D 不能消除稳态误差;K<sub>d</sub> 越大超调越小,过大则系统"发神经"(高频抖动)。</li></ul><p><b>参数增大趋势速记(阶跃响应):</b>K<sub>p</sub>↑→快、超调↑、稳态误差↓;K<sub>i</sub>↑→消差快、振荡↑;K<sub>d</sub>↑→超调↓、对噪声敏感↑。</p>',
   svg:'<svg viewBox="0 0 560 190" role="img" aria-label="P I D 参数增大对阶跃响应的影响"><text x="10" y="16" font-size="12" fill="currentColor">Kp 增大:更快但超调变大</text><line x1="20" y1="80" x2="180" y2="80" stroke="currentColor" stroke-width="1"/><path d="M20,80 C50,80 45,20 75,24 C105,28 90,100 120,95 C145,91 140,72 170,74" fill="none" stroke="#6b7280" stroke-width="1.8"/><path d="M20,80 C55,80 50,8 82,10 C118,13 95,110 130,102 C160,96 150,70 178,72" fill="none" stroke="#ef4444" stroke-width="2.2"/><text x="230" y="16" font-size="12" fill="currentColor">Ki 增大:消静差但振荡加剧</text><line x1="240" y1="80" x2="400" y2="80" stroke="currentColor" stroke-width="1"/><path d="M240,80 C270,80 268,42 295,48 C322,54 315,105 340,102 C365,99 380,66 398,74" fill="none" stroke="#6b7280" stroke-width="1.8"/><path d="M240,80 C268,80 265,18 295,22 C330,28 312,124 344,116 C370,110 385,58 398,72" fill="none" stroke="#f59e0b" stroke-width="2.2"/><text x="450" y="16" font-size="12" fill="currentColor">Kd 增大:抑制超调</text><line x1="460" y1="80" x2="545" y2="80" stroke="currentColor" stroke-width="1"/><path d="M460,80 C485,80 480,50 505,58 C525,66 520,95 543,80" fill="none" stroke="#6b7280" stroke-width="1.8"/><path d="M460,80 C482,80 478,66 500,72 C518,78 525,84 543,79" fill="none" stroke="#22c55e" stroke-width="2.2"/><text x="10" y="120" font-size="11" fill="#6b7280">虚线基线=目标值;灰=参数较小,红/橙/绿=参数增大后</text><line x1="20" y1="150" x2="545" y2="150" stroke="currentColor" stroke-width="0.6" opacity="0"/><text x="10" y="178" font-size="11" fill="currentColor">规律:P 提速、I 消差、D 阻尼——三者按"先 P 后 I 再 D"的顺序整定</text></svg>',
   follow:['为什么纯比例控制一定有稳态误差(以 0 型对象+阶跃为例)?','D 作用为什么在噪声大的场合常被关掉或滤波?'],
-  links:[{t:'代码实验室 · PID 模拟器',u:'../08_学习工具/04_代码实验室.html'},{t:'FOC 调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'}] },
+  links:[{t:'代码实验室 · PID 模拟器',u:'../06_学习工具/04_代码实验室.html'},{t:'FOC 调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'}] },
 
 { id:'pid-02', s:'pid', lv:5, tags:['位置式','增量式'],
   q:'位置式 PID 与增量式 PID 有什么区别?增量式有什么优点?',
@@ -171,7 +171,7 @@ items: [
   formula:'\\Delta u(k)=K_p\\,[e(k)-e(k-1)]+K_i\\,e(k)+K_d\\,[e(k)-2e(k-1)+e(k-2)]',
   a2:'<ul><li><b>优点一(无积分累加):</b>不存在显式积分项,不会积分溢出/饱和,单次计算误差不累积。</li><li><b>优点二(无扰切换):</b>控制器切换/重启时增量式天然从当前状态继续;位置式需要重新对准执行器位置。</li><li><b>优点三(限幅容易):</b>对 Δu 限幅即可实现输出平滑,适合步进电机/电动阀等积分型执行器。</li><li><b>局限:</b>需要执行器自身具备积分特性(累计增量),且手动/自动无扰切换要处理初值。位置式则适合直接输出占空比、力矩指令的场合(如电流环)。</li></ul>',
   follow:['增量式 PID 用在什么执行器上最合适?','两种实现积分饱和处理上有什么不同?'],
-  links:[{t:'代码实验室',u:'../08_学习工具/04_代码实验室.html'}] },
+  links:[{t:'代码实验室',u:'../06_学习工具/04_代码实验室.html'}] },
 
 { id:'pid-03', s:'pid', lv:5, tags:['积分饱和','抗饱和'],
   q:'什么是积分饱和(windup)?有哪些抗饱和方法?',
@@ -196,7 +196,7 @@ items: [
   q:'说说你知道的 PID 工程整定方法。',
   a:'<p><b>①试凑法(现场最常用):</b>先 P 后 I 再 D。I、D 置零,加大 K<sub>p</sub> 到响应出现 3~5 次等幅振荡前回退 20~30%;加 K<sub>i</sub> 消静差(以不明显牺牲稳定为度);必要时加 K<sub>d</sub> 压超调。依赖经验,配合示波器/曲线观测。</p><p><b>②临界比例度法(Ziegler-Nichols 闭环法):</b>I、D 置零,增大 K<sub>p</sub> 直到等幅振荡,记下临界增益 K<sub>u</sub> 与振荡周期 T<sub>u</sub>;按经验表给 PID(K<sub>p</sub>=0.6K<sub>u</sub>,T<sub>i</sub>=0.5T<sub>u</sub>,T<sub>d</sub>=0.125T<sub>u</sub>)。缺点:要故意把系统推到临界,危险设备不能用;结果偏"激进"(衰减约 1/4),通常再回调。</p><p><b>③继电反馈法(Åström):</b>用带滞环的继电切换代替人工找临界,自动激发极限环测出 K<sub>u</sub>、T<sub>u</sub>,再套 ZN 表——自整定温控仪的原理,安全且自动。</p><p><b>④基于模型:</b>已知对象传函时零极点对消+带宽配置(FOC 电流环 K<sub>p</sub>=ω<sub>c</sub>L、K<sub>i</sub>=ω<sub>c</sub>R 就是典型)。回答时点出"方法没有最好,按对象危险程度与建模程度选"是加分项。</p>',
   follow:['为什么 ZN 法结果往往偏振荡?','继电自整定的滞环起什么作用?'],
-  links:[{t:'FOC 调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'},{t:'代码实验室 · PID 挑战',u:'../08_学习工具/04_代码实验室.html'}] },
+  links:[{t:'FOC 调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'},{t:'代码实验室 · PID 挑战',u:'../06_学习工具/04_代码实验室.html'}] },
 
 { id:'pid-06', s:'pid', lv:4, tags:['串级PID'],
   q:'什么是串级 PID?相比单环有什么优势?举一个例子。',
@@ -279,7 +279,7 @@ items: [
   a:'<p><b>总原则:先估 b0、再定 ωc、后升 ωo;先"能用"再"好用"。</b>LADRC 把整定坍缩成三个数,上机有标准流程:</p><ul><li><b>第 1 步 估 b0(控制量增益):</b>对被控量做开环小阶跃,取稳态斜率 b0≈Δẏ/Δu(速度环即"单位电压产生的加速度"),或按模型估算。只要数量级正确(偏差 2~3 倍以内),后续调 ωo 都能兜住;<b>单位用错、量级错是落地翻车第一原因</b>。</li><li><b>第 2 步 定 ωc(控制带宽):</b>按需要的响应速度给(速度环常 20~50Hz,对应 ωc≈120~300 rad/s),控制器增益由公式直接算:k<sub>p</sub>=ω<sub>c</sub>²、k<sub>d</sub>=2ω<sub>c</sub>。此步先不开 ESO(或 ωo 给很小),验证"PD+扰动补偿"的基线响应。</li><li><b>第 3 步 升 ωo(观测器带宽):</b>从 ωo≈3ω<sub>c</sub> 起步,逐步上调到扰动抑制满意为止。<b>上限经验:ωo ≤ f<sub>s</sub>/10</b>(采样 1kHz 时 ωo 上限约 600 rad/s),本质是离散实现稳定裕度与噪声放大的折中;输出毛刺变大、电机发出嘶嘶声就是 ωo 到顶的信号,退回上一档。</li><li><b>第 4 步 回调 b0:</b>响应偏慢、扰动恢复差→b0 减小(等效加大补偿力度);噪声被放大、控制量毛刺大→b0 增大。最后做负载突变、参数漂移工况验证鲁棒性。</li></ul><p><b>加分总结:</b>ωc 管"想要多快"、ωo 管"估计多快"、b0 管"信不信模型"——三者解耦调整正是 LADRC 优于手调非线性 ADRC 的工程理由。</p>',
   extend:'<b>ωo≤fs/10 的来历:</b>连续域设计的观测器极点在 −ωo,前向欧拉离散要求 ωo·Ts 足够小(工程取 ωo·Ts≤0.2~0.3,即理论上限 fs/5~fs/3);再叠加高增益放大测量噪声的工程折中,惯例收紧到 fs/10。<br><b>与 PID 经验的迁移:</b>已有调好的 PID 时,LADRC 起点取 ωc≈原闭环带宽、b0 由 Δu→Δ加速度辨识,通常一两轮即可对齐 PID 基线——"从 PID 平滑迁移"是现场推广 ADRC 的标准话术。<br><b>按对象阶数选结构:</b>温度、电流等一阶对象用一阶 LADRC(ESO 只扩张一个状态,ωo 可以更高也不炸噪);二阶 LADRC 留给位置/速度这类双积分对象,不要一律上高阶。',
   follow:['ωo 一升就抖,除了降 ωo 还有什么工程手段(滤波/降阶/换测速方案)?','b0 偏大与偏小分别表现为什么现象?','二阶对象为什么控制器可以简化成 PD(kp=ωc², kd=2ωc)?'],
-  links:[{t:'ADRC自抗扰控制与嵌入式实现',u:'../06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html'},{t:'3D解剖·ADRC可视化',u:'../00_3D解剖/人形机器人解剖式知识可视化.html'},{t:'通信与控制算法升级路线',u:'../04_升级进阶/09_通信与控制算法升级路线.html'}] },
+  links:[{t:'ADRC自抗扰控制与嵌入式实现',u:'../04_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html'},{t:'3D解剖·ADRC可视化',u:'../00_3D解剖/人形机器人解剖式知识可视化.html'},{t:'通信与控制算法升级路线',u:'../04_软件与算法/22_通信与控制算法升级路线.html'}] },
 
 { id:'adrc-10', s:'adrc', lv:4, tags:['离散实现','定点数','采样率'],
   q:'ESO 怎么离散化到 MCU 上跑?定点 Q15 与 float 怎么选?单次计算耗时怎么估?',
@@ -287,7 +287,7 @@ items: [
   code:'/* 二阶 LADRC 的 ESO:前向欧拉离散,h = 1/fs,每周期调用一次 */\nfloat e = z1 - y;\nz1 += h * ( z2 - beta1 * e );            /* beta1 = 3*wo    */\nz2 += h * ( z3 + b0 * u - beta2 * e );   /* beta2 = 3*wo*wo */\nz3 += h * ( - beta3 * e );               /* beta3 = wo^3    */\n/* 控制量补偿后输出: u = (u0 - z3) / b0, 再做限幅 */',
   extend:'<b>离散失稳的现场特征:</b>ωo·h 过大时 z₁ 不发散但出现高频锯齿,输出"毛刺化",常被误判为噪声大——先查 ωo·h 再加滤波。<br><b>定点定标技巧:</b>把 β 组除以 ωo 的幂归一(β₁/ωo=3、β₂/ωo²=3、β₃/ωo³=1),数值全部落个位数,Q15 直接表示;或对状态做量程归一。工程也常用 Q12+32 位中间累加。<br><b>中断工程:</b>ESO 必须与采样严格同频(时间戳抖动=等效扰动);计算晚一拍要纳入 ωo 上限核算——延迟越大,可用 ωo 越低。中断优先级:电流环 > ESO > 通信。',
   follow:['ωo=600 rad/s、fs=1 kHz 时用前向欧拉会看到什么现象?','Q15 实现里最隐蔽的坑是什么(定标/饱和/溢出)?','什么场合用一阶降阶 ESO 就够了?'],
-  links:[{t:'ADRC自抗扰控制与嵌入式实现',u:'../06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html'},{t:'通信与控制算法升级路线',u:'../04_升级进阶/09_通信与控制算法升级路线.html'}] },
+  links:[{t:'ADRC自抗扰控制与嵌入式实现',u:'../04_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html'},{t:'通信与控制算法升级路线',u:'../04_软件与算法/22_通信与控制算法升级路线.html'}] },
 
 { id:'adrc-11', s:'adrc', lv:4, tags:['观测器本质','卡尔曼','MPC选型'],
   q:'ESO 的本质是不是状态观测器?与龙伯格观测器、卡尔曼滤波有什么异同?什么时候该选 MPC?',
@@ -295,7 +295,7 @@ items: [
   svg:'<svg viewBox="0 0 560 220" role="img" aria-label="龙伯格/KF/ESO 三种观测器同构对比"><defs><marker id="aA11" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><rect x="20" y="28" width="160" height="72" rx="10" fill="rgba(59,130,246,.13)" stroke="#58a6ff"/><text x="100" y="50" font-size="12.5" fill="currentColor" text-anchor="middle" font-weight="700">龙伯格观测器</text><text x="100" y="68" font-size="10.5" fill="#9aa4b2" text-anchor="middle">观测状态 x̂,模型完整</text><text x="100" y="85" font-size="10.5" fill="#9ecbff" text-anchor="middle">L 极点配置,常值</text><rect x="200" y="28" width="160" height="72" rx="10" fill="rgba(34,197,94,.12)" stroke="#22c55e"/><text x="280" y="50" font-size="12.5" fill="currentColor" text-anchor="middle" font-weight="700">卡尔曼滤波 KF</text><text x="280" y="68" font-size="10.5" fill="#9aa4b2" text-anchor="middle">观测状态 x̂,噪声统计已知</text><text x="280" y="85" font-size="10.5" fill="#86efac" text-anchor="middle">K 随协方差在线变化</text><rect x="380" y="28" width="160" height="72" rx="10" fill="rgba(245,158,11,.12)" stroke="#f59e0b"/><text x="460" y="50" font-size="12.5" fill="currentColor" text-anchor="middle" font-weight="700">ESO(ADRC 心脏)</text><text x="460" y="68" font-size="10.5" fill="#9aa4b2" text-anchor="middle">观测状态+总扰动 z(n+1)</text><text x="460" y="85" font-size="10.5" fill="#fcd34d" text-anchor="middle">L 常值带宽法,模型依赖最弱</text><rect x="90" y="146" width="380" height="46" rx="10" fill="rgba(59,130,246,.08)" stroke="#6b7280" stroke-dasharray="5 4"/><text x="280" y="165" font-size="11.5" fill="currentColor" text-anchor="middle">同一结构:预测 x̂⁺=Ax̂+Bu,再用残差 e=y−Cx̂ 修正(×L)</text><text x="280" y="183" font-size="10.5" fill="#9aa4b2" text-anchor="middle">差异只在:扩张了什么状态、增益 L/K 从哪来</text><line x1="100" y1="100" x2="200" y2="144" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#aA11)"/><line x1="280" y1="100" x2="280" y2="144" stroke="#22c55e" stroke-width="1.4" marker-end="url(#aA11)"/><line x1="460" y1="100" x2="360" y2="144" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#aA11)"/></svg>',
   extend:'<b>与扰动观测器 DOB 的对比:</b>DOB 基于名义模型逆+低通 Q 滤波器,噪声敏感、依赖精确模型;ESO 不做模型求逆、直接状态扩张,模型要求更低——"DOB 是频域思路,ESO 是状态空间思路"。<br><b>KF 与 ESO 的合流:</b>把扰动建模为随机游走代入 KF,稳态增益与带宽法 ESO 同构——面试里点出"KF 是概率语言、ESO 是确定性语言,工程上殊途同归"非常加分。<br><b>选型的成本维度:</b>ADRC 参数 3 个、算力 O(n);MPC 要建模+调权+算力(O(Np³) 级求解)、还有可行性/稳定性论证——团队工程能力与维护成本也是选型依据,不只是控制性能。',
   follow:['为什么说 ESO 对常值/斜坡扰动稳态估计误差为零(内模原理)?','KF 增益时变、ESO 增益常值,各损失/获得了什么?','MPC 上层+ADRC 底层的分层控制,接口上要交换哪些量?'],
-  links:[{t:'ADRC自抗扰控制与嵌入式实现',u:'../06_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html'},{t:'3D解剖·ADRC可视化',u:'../00_3D解剖/人形机器人解剖式知识可视化.html'},{t:'通信与控制算法升级路线',u:'../04_升级进阶/09_通信与控制算法升级路线.html'}] },
+  links:[{t:'ADRC自抗扰控制与嵌入式实现',u:'../04_软件与算法/18_ADRC自抗扰控制与嵌入式实现.html'},{t:'3D解剖·ADRC可视化',u:'../00_3D解剖/人形机器人解剖式知识可视化.html'},{t:'通信与控制算法升级路线',u:'../04_软件与算法/22_通信与控制算法升级路线.html'}] },
 
 /* ================= 运动控制 yk ================= */
 { id:'yk-01', s:'yk', lv:5, tags:['FOC','坐标变换'],
@@ -361,7 +361,7 @@ items: [
   svg:'<svg viewBox="0 0 560 220" role="img" aria-label="低边采样窗口与单电阻分时重构"><defs><marker id="yA10" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><text x="8" y="18" font-size="12" fill="currentColor">三电阻低边采样:窗口=(1−D)·Tsw,ADC 触发放 PWM 中点</text><line x1="30" y1="30" x2="30" y2="95" stroke="currentColor" stroke-width="1.2"/><line x1="30" y1="95" x2="530" y2="95" stroke="currentColor" stroke-width="1.2"/><path d="M30,30 L90,30 L90,95 L210,95 L210,30 L330,30 L330,95 L450,95 L450,30 L530,30" fill="none" stroke="#58a6ff" stroke-width="2.2"/><text x="112" y="50" font-size="10.5" fill="#58a6ff">上管导通 D·Tsw</text><rect x="210" y="30" width="120" height="65" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-dasharray="4 3"/><text x="270" y="118" font-size="10.5" fill="#22c55e" text-anchor="middle">下管导通窗口(可采样)</text><line x1="270" y1="30" x2="270" y2="95" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="5 3"/><circle cx="270" cy="62" r="4" fill="#ef4444"/><text x="278" y="88" font-size="10.5" fill="#ef4444">ADC 触发=计数器中点(避开振铃)</text><text x="8" y="150" font-size="12" fill="currentColor">单电阻重构:有效矢量期间母线电流=相电流,分时采 t1/t2</text><line x1="30" y1="160" x2="30" y2="205" stroke="currentColor" stroke-width="1.2"/><line x1="30" y1="205" x2="530" y2="205" stroke="currentColor" stroke-width="1.2"/><path d="M30,160 L120,160 L120,205 L210,205 L210,160 L330,160 L330,205 L420,205 L420,160 L530,160" fill="none" stroke="#f59e0b" stroke-width="2.2"/><circle cx="165" cy="182" r="4" fill="#ef4444"/><text x="128" y="176" font-size="10.5" fill="#ef4444">t1 采样</text><circle cx="375" cy="182" r="4" fill="#ef4444"/><text x="338" y="176" font-size="10.5" fill="#ef4444">t2 采样</text><text x="398" y="176" font-size="10.5" fill="#9aa4b2">窄矢量区窗口不足→移相补偿</text></svg>',
   extend:'<b>采样链工程细节:</b>采样电阻开尔文四线接法消除焊点/铜箔压降;运放增益按 ADC 满量程匹配(如 ±0.165V→偏置 1.65V+增益 5);VDDA 独立 RC 滤波。<br><b>单电阻移相补偿:</b>窄矢量期间把该相 PWM 边沿向两侧对称平移,"借"出最小采样窗(典型 1~2μs),代价是电压矢量轻微畸变,补偿量要限幅。<br><b>与控制性能的联系:</b>窗口不足=电流信息缺失=电流环在特定扇区"失明",表现为转矩纹波与可闻噪声;用 ADC 注入通道把原始采样值回传上位机看包络即可定位。<br><b>新趋势:</b>ΣΔ 隔离型采样(AMC130x 类)抗高压共模 dv/dt,低压关节模组开始集成片内电流检测——面试答"分立三电阻→集成化"的趋势是加分点。',
   follow:['为什么 ADC 触发要放在 PWM 计数器中点而不是计数器溢出时刻?','单电阻方案在扇区边界为什么重构失败,工程怎么补救?','高占空比下低边窗口变窄,对电流环带宽意味着什么?'],
-  links:[{t:'FOC算法完全图解:流程与运行图',u:'../06_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'工程电机控制框架对比与选型',u:'../06_软件与算法/20_工程电机控制框架对比_流程与选型.html'},{t:'FOC 驱动器硬件深挖',u:'../02_硬件基础/09_FOC驱动器硬件深挖.html'},{t:'整机调试实战·步态调参与故障排查',u:'../03_项目实操/12_整机调试实战_步态调参与故障排查.html'}] },
+  links:[{t:'FOC算法完全图解:流程与运行图',u:'../04_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'工程电机控制框架对比与选型',u:'../04_软件与算法/20_工程电机控制框架对比_流程与选型.html'},{t:'FOC 驱动器硬件深挖',u:'../02_硬件基础/09_FOC驱动器硬件深挖.html'},{t:'整机调试实战·步态调参与故障排查',u:'../03_项目实操/12_整机调试实战_步态调参与故障排查.html'}] },
 
 { id:'yk-11', s:'yk', lv:4, tags:['死区','补偿','谐波'],
   q:'逆变器死区造成的电压损失怎么定量计算?按电流方向补偿具体怎么实现?',
@@ -372,7 +372,7 @@ items: [
   svg:'<svg viewBox="0 0 560 220" role="img" aria-label="死区时间与伏秒损失示意"><defs><marker id="yA11" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><text x="8" y="16" font-size="11.5" fill="currentColor">门极信号: 互补 PWM 插入死区 Td(红带),上下管皆关断</text><path d="M40,58 L60,58 L60,38 L190,38 L190,58 L365,58 L365,38 L500,38" fill="none" stroke="#58a6ff" stroke-width="2"/><text x="96" y="32" font-size="10" fill="#58a6ff">上管门极</text><path d="M40,108 L215,108 L215,88 L340,88 L340,108 L500,108" fill="none" stroke="#f59e0b" stroke-width="2"/><text x="240" y="82" font-size="10" fill="#f59e0b">下管门极</text><rect x="190" y="30" width="25" height="82" fill="rgba(239,68,68,.20)"/><rect x="340" y="30" width="25" height="82" fill="rgba(239,68,68,.20)"/><text x="192" y="126" font-size="10" fill="#ef4444">Td</text><text x="342" y="126" font-size="10" fill="#ef4444">Td</text><text x="8" y="146" font-size="11.5" fill="currentColor">输出电压: 死区内由电流方向决定(电流&gt;0 钳到 0),每周期损失伏秒积 Td·Udc</text><line x1="40" y1="152" x2="40" y2="212" stroke="currentColor" stroke-width="1.1"/><line x1="40" y1="212" x2="520" y2="212" stroke="currentColor" stroke-width="1.1"/><text x="6" y="134" font-size="10" fill="#9aa4b2">Udc</text><rect x="190" y="160" width="25" height="52" fill="rgba(239,68,68,.28)"/><rect x="340" y="160" width="25" height="52" fill="rgba(239,68,68,.28)"/><path d="M40,212 L60,212 L60,160 L190,160 L190,212 L365,212 L365,160 L520,160" fill="none" stroke="#58a6ff" stroke-width="2"/><path d="M40,212 L60,212 L60,160 L215,160 L215,212 L340,212 L340,160 L520,160" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="6 4"/><text x="452" y="152" font-size="10" fill="#f59e0b">虚线=无死区理想</text><text x="60" y="176" font-size="10.5" fill="#ef4444">红块=伏秒损失→基波损失 ΔV1=4Td·fs·Udc/π</text></svg>',
   extend:'<b>为什么谐波集中在 6k±1 次:</b>死区误差方波的三相合成在旋转坐标系表现为 6 倍频分量(各相 5、7 次折算到同一频率),转矩脉动、低速爬行、速度环抖动都源于此;与齿槽转矩的判别——齿槽随机械位置固定、死区脉动锁定 6 倍电频率。<br><b>非线性本质:</b>死区是<b>依赖电流极性的分段常值扰动</b>,线性控制器原理上无法完全消除,所以补偿都走"前馈查表+滞环"或非线性观测器路线;零速/低速电流小、极性判别难,是死区补偿的经典难点区。<br><b>器件层面出路:</b>GaN 无体二极管反向恢复、ns 级开关,可把 T<sub>d</sub> 压到几十 ns,死区损失降近一个量级——人形关节"高频化+低压大电流"趋势下的高频追问点。',
   follow:['为什么死区转矩脉动是 6 倍电频率(5、7 次怎么折算)?','电流过零附近补偿极性频繁切换,除滞环外还有什么办法?','母线电压波动时,死区补偿量需要实时更新吗?'],
-  links:[{t:'FOC算法完全图解:流程与运行图',u:'../06_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'FOC调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'},{t:'FOC调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'}] },
+  links:[{t:'FOC算法完全图解:流程与运行图',u:'../04_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'FOC调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'},{t:'FOC调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'}] },
 
 { id:'yk-12', s:'yk', lv:4, tags:['弱磁','MTPA','电压极限'],
   q:'为什么需要弱磁控制?电压圆/椭圆约束怎么来的?负 Id 有哪两种给法?MTPA 与弱磁是什么关系?',
@@ -382,7 +382,7 @@ items: [
   svg:'<svg viewBox="0 0 560 220" role="img" aria-label="dq 平面电流圆、电压椭圆与 MTPA/弱磁轨迹"><defs><marker id="yA12" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><line x1="170" y1="205" x2="170" y2="16" stroke="currentColor" stroke-width="1.1"/><line x1="60" y1="110" x2="330" y2="110" stroke="currentColor" stroke-width="1.1"/><text x="336" y="114" font-size="11" fill="currentColor">id</text><text x="163" y="14" font-size="11" fill="currentColor">iq</text><circle cx="170" cy="110" r="78" fill="none" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="6 4"/><ellipse cx="140" cy="110" rx="44" ry="86" fill="none" stroke="#f59e0b" stroke-width="1.8"/><ellipse cx="157" cy="110" rx="25" ry="50" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="5 4"/><path d="M170,110 C160,95 149,74 139,50" fill="none" stroke="#22c55e" stroke-width="2.4" marker-end="url(#yA12)"/><path d="M115,55 A78,78 0 0 1 150,35" fill="none" stroke="#ef4444" stroke-width="2.4" marker-end="url(#yA12)"/><text x="147" y="66" font-size="10.5" fill="#22c55e">MTPA</text><text x="178" y="40" font-size="10.5" fill="#ef4444">弱磁区轨迹</text><text x="86" y="204" font-size="10" fill="#58a6ff">电流圆 |is|≤imax</text><text x="88" y="30" font-size="10" fill="#f59e0b">电压椭圆 ω1</text><text x="186" y="96" font-size="10" fill="#f59e0b">ω2&gt;ω1(收缩)</text><circle cx="170" cy="110" r="3" fill="#22c55e"/><rect x="350" y="24" width="200" height="160" rx="10" fill="rgba(59,130,246,.06)" stroke="#6b7280" stroke-dasharray="4 4"/><text x="360" y="46" font-size="11" fill="#58a6ff">● 电流圆: 峰值电流限制</text><text x="360" y="68" font-size="11" fill="#f59e0b">● 电压椭圆: 随 ωe 升高收缩</text><text x="360" y="90" font-size="11" fill="#22c55e">● MTPA: 基速内最省电流</text><text x="360" y="112" font-size="11" fill="#ef4444">● 弱磁: 沿椭圆∩圆交点上移</text><text x="360" y="134" font-size="11" fill="currentColor">● 深度弱磁: 切换 MTPV</text><text x="360" y="156" font-size="10.5" fill="#9aa4b2">可行域 = 圆 ∩ 椭圆</text><text x="360" y="174" font-size="10.5" fill="#9aa4b2">id 下限: 防永磁体退磁</text></svg>',
   extend:'<b>弱磁三段式:</b>恒转矩区(MTPA)→恒功率区(弱磁,沿电流圆)→深度弱磁区(MTPV,沿最大转矩电压比曲线),完整答出三段与切换条件是高分动作。<br><b>弱磁区的额外代价:</b>负 i<sub>d</sub> 不产生转矩只占电流预算(表贴式尤其亏),铜损上升、效率下降;且 d 轴电流改变磁路饱和点,L<sub>d</sub> 有效值漂移,电流环 PI 与 MTPA 查表都要考虑修正。<br><b>工程细节:</b>电压余量 PI 输出要限幅+慢积分(防止深度弱磁锁死);进出弱磁区加滞回防抖;i<sub>d</sub>/i<sub>q</sub> 让位策略——电压饱和时先压 i<sub>q</sub>(转矩)保 i<sub>d</sub>(励磁),否则会失磁飞车。',
   follow:['电压余量 PI 的输入输出分别是什么?带宽怎么选?','为什么弱磁区让 iq 让位而不是等比例缩?','表贴式电机弱磁为什么效率差(负 id 只发热不产生磁阻转矩)?'],
-  links:[{t:'FOC算法完全图解:流程与运行图',u:'../06_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'工程电机控制框架对比与选型',u:'../06_软件与算法/20_工程电机控制框架对比_流程与选型.html'}] },
+  links:[{t:'FOC算法完全图解:流程与运行图',u:'../04_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'工程电机控制框架对比与选型',u:'../04_软件与算法/20_工程电机控制框架对比_流程与选型.html'}] },
 
 { id:'yk-13', s:'yk', lv:5, tags:['电角度','零位标定','编码器'],
   q:'电角度与机械角度什么关系?编码器零点(电角度对零)怎么校准?校准失败怎么排查?',
@@ -390,7 +390,7 @@ items: [
   code:'/* 电角度零位校准: 注入固定 d 轴电流对齐转子, 记录编码器读数 */\nvoid calib_zero(void) {\n    output_zero();                        /* 关 PWM, 状态清零 */\n    set_current_id(I_CAL, 0.0f);          /* thetae=0, id=I_CAL, iq=0 */\n    wait_ms(1500);                        /* 等转子机械对齐(大惯量再延长) */\n    th_m0 = encoder_read();               /* 对齐位置的机械角 */\n    th0   = wrap_2pi(0.0f - PP * th_m0);  /* 零位偏移 = -p * th_m0 */\n    flash_save(TH0_ADDR, th0);\n}\n/* 运行时: theta_e = wrap_2pi(PP * encoder_read() + th0); */',
   extend:'<b>增量式编码器的寻零:</b>没有绝对信息,靠 Index(Z 脉冲)在上电后旋转一圈找标志位,再叠加对零得到的电角度偏移;断电丢位置是它的先天短板。<br><b>双编码器架构的分工:</b>电机端编码器(高带宽)供 FOC 换相,输出端编码器(高精度)供关节角与力控;输出端零位在装配后用机械限位/销孔标定,与电角度对零是两件独立的事——面试常拿这点考"清不清楚系统层级"。<br><b>免对齐方案:</b>上电用高频注入或脉冲激励辨识初始位置(无感起步思路搬到有感系统),用于减速器背隙大、不允许强排电流的场景;代价是算法复杂度与初始误差。',
   follow:['为什么对齐时只给 id 而 iq=0(对齐的是 d 轴还是 q 轴)?','极对数怎么快速验证(转动一圈看电角度变化几个周期)?','增量式编码器上电怎么找回位置(Index 寻零流程)?'],
-  links:[{t:'FOC算法完全图解:流程与运行图',u:'../06_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'FOC调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'}] },
+  links:[{t:'FOC算法完全图解:流程与运行图',u:'../04_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'FOC调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'}] },
 
 { id:'yk-14', s:'yk', lv:5, tags:['电流环','带宽设计','延迟补偿'],
   q:'电流环 PI 怎么按目标带宽设计(Kp=Lωc, Ki=Rωc)?数字控制一拍延迟有什么影响?dq 耦合怎么补偿?',
@@ -400,7 +400,7 @@ items: [
   svg:'<svg viewBox="0 0 560 220" role="img" aria-label="电流环带宽设计与解耦前馈框图"><defs><marker id="yA14" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><text x="8" y="24" font-size="12" fill="currentColor">id*</text><line x1="32" y1="20" x2="56" y2="20" stroke="currentColor" stroke-width="1.5" marker-end="url(#yA14)"/><circle cx="66" cy="20" r="10" fill="none" stroke="#ef4444" stroke-width="1.6"/><text x="62" y="25" font-size="13" fill="#ef4444">−</text><line x1="76" y1="20" x2="102" y2="20" stroke="currentColor" stroke-width="1.5" marker-end="url(#yA14)"/><rect x="104" y="0" width="98" height="40" rx="8" fill="rgba(59,130,246,.15)" stroke="#58a6ff"/><text x="153" y="17" font-size="11.5" fill="currentColor" text-anchor="middle">PI: Kp=L·ωc</text><text x="153" y="33" font-size="10" fill="#9aa4b2" text-anchor="middle">Ki=R·ωc(零点对消)</text><line x1="202" y1="20" x2="226" y2="20" stroke="currentColor" stroke-width="1.5" marker-end="url(#yA14)"/><circle cx="236" cy="20" r="9" fill="none" stroke="#f59e0b" stroke-width="1.6"/><text x="231" y="25" font-size="13" fill="#f59e0b">+</text><line x1="245" y1="20" x2="270" y2="20" stroke="currentColor" stroke-width="1.5" marker-end="url(#yA14)"/><rect x="272" y="0" width="116" height="40" rx="8" fill="rgba(239,68,68,.10)" stroke="#ef4444"/><text x="330" y="17" font-size="11.5" fill="currentColor" text-anchor="middle">数字延迟 ≈1.5Ts</text><text x="330" y="33" font-size="10" fill="#ef4444" text-anchor="middle">采样+计算+PWM 装载</text><line x1="388" y1="20" x2="412" y2="20" stroke="currentColor" stroke-width="1.5" marker-end="url(#yA14)"/><rect x="414" y="0" width="122" height="40" rx="8" fill="rgba(245,158,11,.12)" stroke="#f59e0b"/><text x="475" y="17" font-size="11.5" fill="currentColor" text-anchor="middle">电机一阶 RL</text><text x="475" y="33" font-size="10" fill="#9aa4b2" text-anchor="middle">G(s)=1/(Ls+R)</text><line x1="536" y1="20" x2="552" y2="20" stroke="currentColor" stroke-width="1.5"/><text x="542" y="12" font-size="11" fill="currentColor">id</text><path d="M545,20 L545,60 L66,60 L66,32" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#yA14)"/><text x="290" y="56" font-size="10" fill="#9aa4b2">电流反馈</text><text x="8" y="88" font-size="11.5" fill="#f59e0b">交叉解耦前馈(解耦后 PI 只面对一阶对象, 带宽设计才成立):</text><rect x="30" y="100" width="250" height="34" rx="8" fill="rgba(245,158,11,.10)" stroke="#f59e0b"/><text x="155" y="122" font-size="11.5" fill="currentColor" text-anchor="middle">ud_ff = +ωe·Lq·iq(去 d↔q 耦合)</text><rect x="300" y="100" width="250" height="34" rx="8" fill="rgba(245,158,11,.10)" stroke="#f59e0b"/><text x="425" y="122" font-size="11.5" fill="currentColor" text-anchor="middle">uq_ff = −ωe·(Ld·id+ψf)(反电动势)</text><path d="M155,100 C190,74 214,44 230,30" fill="none" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#yA14)"/><path d="M425,100 C380,74 288,44 244,30" fill="none" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#yA14)"/><text x="8" y="164" font-size="11.5" fill="#ef4444">延迟相位侵蚀 φ≈−1.5·ωc·Ts rad → ωc 取 fsw 的 1/10~1/20, 更高带宽需预测补偿</text><text x="8" y="186" font-size="11" fill="#9aa4b2">例: fsw=20kHz、ωc=2π×1kHz → 穿越点损失约 27° 相位裕度, 这就是带宽上限的直接来源</text><text x="8" y="206" font-size="11" fill="#9aa4b2">验证: 给正弦 iq* 扫频, 看幅值 −3dB 与相移 −45° 点是否落在设计带宽</text></svg>',
   extend:'<b>d、q 电感不同怎么取:</b>IPM 的 L<sub>d</sub>≠L<sub>q</sub>,PI 参数按各轴自己的 L 算(K<sub>p,d</sub>=L<sub>d</sub>ω<sub>c</sub>、K<sub>p,q</sub>=L<sub>q</sub>ω<sub>c</sub>);饱和时有效电感下降,固定参数等效带宽升高、噪声敏感——高精度伺服做增益调度或用有效电感查表。<br><b>带宽的实验验证:</b>扫频法——给 i<sub>q</sub>* 注入不同频率正弦,记录 i<sub>q</sub> 幅相,−3dB/−45° 点即带宽;比"看阶跃响应拍脑袋"专业得多,面试说出来是强加分。<br><b>延迟的精确表述:</b>半拍采样+半拍 PWM 对称双更新下可压到约 0.5~1T<sub>s</sub>;预测补偿本质是相位超前,过头会放大噪声,工程折中是补偿半拍。采样噪声大时宁可降 ω<sub>c</sub>——带宽、噪声、延迟三者是联立方程。',
   follow:['一拍延迟为什么近似 1.5Ts 而不是 1Ts(采样/计算/装载各占多少)?','为什么解耦前馈在高速时尤其重要(耦合项与 ωe 成正比)?','弱磁区 Ld 有效值变化对零点对消法有什么影响?'],
-  links:[{t:'FOC算法完全图解:流程与运行图',u:'../06_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'FOC调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'},{t:'工程电机控制框架对比与选型',u:'../06_软件与算法/20_工程电机控制框架对比_流程与选型.html'},{t:'固件与电机控制 SimpleFOC/ODrive',u:'../06_软件与算法/02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html'}] },
+  links:[{t:'FOC算法完全图解:流程与运行图',u:'../04_软件与算法/19_FOC算法完全图解_流程与运行图.html'},{t:'FOC调参整定实战手册',u:'../02_硬件基础/11_FOC调参整定实战手册.html'},{t:'工程电机控制框架对比与选型',u:'../04_软件与算法/20_工程电机控制框架对比_流程与选型.html'},{t:'固件与电机控制 SimpleFOC/ODrive',u:'../04_软件与算法/02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html'}] },
 
 /* ================= 现控 xk ================= */
 { id:'xk-01', s:'xk', lv:5, tags:['状态空间'],
@@ -476,7 +476,7 @@ items: [
   code:'/* 连续 PI: u = Kp*e + Ki*∫e, Tustin 离散(系数离线算好) */\n/* 递推: u = u1 + b0*e + b1*e1;  b0 = Kp + Ki*T/2;  b1 = Ki*T/2 - Kp */\nfloat u = u1 + b0 * e + b1 * e1;\nu1 = u;  e1 = e;\n/* 若关注 ωc 附近精度, 先预畸变: Tw = tanf(wc*T/2) / wc, 再用 Tw 代入上式 */',
   extend:'<b>预畸变举例:</b>希望离散后 50Hz 处增益相位准确、T=1ms,则用 T<sub>w</sub>=tan(2π×50×0.001/2)/(2π×50) 代入 Tustin 公式——只保一个点,多点需求要分段或换方法。<br><b>频率特性对照:</b>中低频(ωT≤0.1)四种方法几乎重合;高频处前向/后向的幅相误差最大,ZOH(对对象)最忠实,Tustin 有畸变但结构最好——所以"采样率高于带宽 20 倍"时方法不重要,"10 倍左右"时方法决定成败。<br><b>翻车实例:</b>电机电流环 R=1Ω、L=100μH,极点 −R/L=−10⁴,T=100μs → sT=−1,前向欧拉 z=0 尚稳;若 L=20μH 则 sT=−5,前向欧拉直接映射到 z=−4 圆外——数字电流环炸机的常见暗雷,答出算例直接镇场。',
   follow:['为什么前向欧拉会把 s=−2/T 左侧的稳定极点映射到圆外(代入算一遍)?','Tustin 预畸变在什么场合必须做?','对象用 ZOH、控制器用 Tustin,为什么这是标准分工?'],
-  links:[{t:'现代控制理论:状态空间到MPC',u:'../06_软件与算法/16_现代控制理论_状态空间到MPC.html'},{t:'状态观测器全解:龙伯格/EKF/SMO',u:'../06_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html'}] },
+  links:[{t:'现代控制理论:状态空间到MPC',u:'../04_软件与算法/16_现代控制理论_状态空间到MPC.html'},{t:'状态观测器全解:龙伯格/EKF/SMO',u:'../04_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html'}] },
 
 { id:'xk-11', s:'xk', lv:4, tags:['LQR','权重整定','Bryson'],
   q:'LQR 的 Q/R 权重在工程上怎么定?Bryson 方法是什么?权重和响应速度/能耗怎么对应?',
@@ -486,7 +486,7 @@ items: [
   code:'/* Bryson 法给 Q/R 初值: 按允许最大偏差/最大控制量归一 */\nfor (i = 0; i < n; i++) Q[i][i] = 1.0f / (x_max[i] * x_max[i]);\nfor (j = 0; j < m; j++) R[j][j] = 1.0f / (u_max[j] * u_max[j]);\n/* 整定: 固定 R=1, 扫 Q 乘子 10^k (k = -2..2), 记录调节时间与 |u| 峰值 */\n/* 选折中拐点后, 再对个别状态单独加权(如角度权重 x10) 微调 */',
   extend:'<b>裕度保证的前提:</b>"LQR 至少 60° 相位裕度、(1/2,∞) 增益裕度"只在<b>全状态反馈+精确模型</b>下成立;状态用观测器估计后(LQG)该保证失效(著名的 LQG 回退问题)——面试敢主动指出这点,是理论深度的直接证明。<br><b>常用扩展:</b>LQI(增广积分状态消稳态差)、输出加权(Q=CᵀQ<sub>y</sub>C,直接罚可测输出)、离散 LQR(Q<sub>d</sub>/R<sub>d</sub> 按采样周期离散)。<br><b>与 MPC 的关系:</b>无约束 MPC 的代价与 LQR 同构,窗口有限时是"有限时域 LQR",Np→∞ 收敛到 LQR——权重整定经验可互相迁移。',
   follow:['为什么 Q、R 同乘一个常数最优增益不变?','全状态不可测、用观测器补齐后,60° 裕度保证还成立吗?','R 取 0 会发生什么(高增益/噪声放大/无界解)?'],
-  links:[{t:'现代控制理论:状态空间到MPC',u:'../06_软件与算法/16_现代控制理论_状态空间到MPC.html'},{t:'状态观测器全解:龙伯格/EKF/SMO',u:'../06_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html'}] },
+  links:[{t:'现代控制理论:状态空间到MPC',u:'../04_软件与算法/16_现代控制理论_状态空间到MPC.html'},{t:'状态观测器全解:龙伯格/EKF/SMO',u:'../04_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html'}] },
 
 { id:'xk-12', s:'xk', lv:4, tags:['EKF','调参','发散排查'],
   q:'EKF 的 Q/R 怎么给初值?常见发散原因有哪些?怎么用协方差与新息做监控?',
@@ -495,7 +495,7 @@ items: [
   code:'/* EKF 每帧更新后的健康监控(与滤波器同频跑) */\nfor (i = 0; i < n; i++)              /* 强制对称, 防数值误差累积 */\n    for (j = 0; j < n; j++)\n        P[i][j] = 0.5f * (P[i][j] + P[j][i]);\nfor (i = 0; i < n; i++)              /* 协方差下限, 防过度自信 */\n    if (P[i][i] < P_MIN[i]) P[i][i] = P_MIN[i];\nnis = quadform(nu, S_inv);           /* 新息加权范数, 期望≈测量维数 m */\nif (nis > 9.0f * m) diverge_cnt++;   /* 连续超限 -> 告警/重置 P */',
   extend:'<b>UKF 对照:</b>强非线性/雅可比难写时用无迹变换(2n+1 个 Sigma 点),免雅可比、精度高一阶;代价 2~3 倍算力。EKF 够用就别上 UKF——工程第一原则。<br><b>工程实践语境:</b>机器人上最常用的是 ESKF(误差状态卡尔曼):名义状态非线性递推、误差状态线性 EKF,IMU 预积分+里程计融合的标准架构——答 EKF 调参时带出 ESKF,面试官会眼前一亮。<br><b>在线自适应:</b>Q/R 固定不合适时用残差方差匹配(新息实测方差≫S 则调大 Q/R)或 Sage-Husa 类方法;但要加限幅防"追噪"——自适应滤波发散比固定参数更难查。',
   follow:['为什么 Q 太小导致发散而不是"更平滑"(过度自信的正反馈链)?','怎么用数值微分验证雅可比(中心差分逐项对比)?','P 失去正定性的数值根源是什么,平方根滤波怎么防?'],
-  links:[{t:'状态观测器全解:龙伯格/EKF/SMO',u:'../06_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html'},{t:'现代控制理论:状态空间到MPC',u:'../06_软件与算法/16_现代控制理论_状态空间到MPC.html'}] },
+  links:[{t:'状态观测器全解:龙伯格/EKF/SMO',u:'../04_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html'},{t:'现代控制理论:状态空间到MPC',u:'../04_软件与算法/16_现代控制理论_状态空间到MPC.html'}] },
 
 { id:'xk-13', s:'xk', lv:5, tags:['MPC','滚动优化','约束处理'],
   q:'MPC 的三要素是什么?为什么说"QP 一句话"?预测时域 Np 怎么选?为什么足式机器人步态都用 MPC?',
@@ -504,7 +504,7 @@ items: [
   svg:'<svg viewBox="0 0 560 220" role="img" aria-label="MPC 滚动时域优化示意"><defs><marker id="xA13" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><line x1="30" y1="190" x2="530" y2="190" stroke="currentColor" stroke-width="1.2" marker-end="url(#xA13)"/><text x="536" y="194" font-size="11" fill="currentColor">t</text><path d="M30,150 C110,66 250,58 380,110 C440,134 490,140 528,136" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="7 5"/><text x="440" y="122" font-size="10.5" fill="#f59e0b">参考轨迹</text><rect x="140" y="42" width="250" height="134" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-dasharray="5 4"/><text x="252" y="38" font-size="10.5" fill="#58a6ff">预测时域 Np(t_k 时刻)</text><line x1="140" y1="42" x2="140" y2="190" stroke="#22c55e" stroke-width="1.8"/><text x="96" y="34" font-size="10.5" fill="#22c55e">当前 t_k</text><path d="M140,158 C200,84 260,70 330,76 C350,80 372,86 390,92" fill="none" stroke="#58a6ff" stroke-width="2.4"/><text x="300" y="66" font-size="10.5" fill="#58a6ff">优化出的未来轨迹</text><line x1="140" y1="158" x2="176" y2="118" stroke="#ef4444" stroke-width="2.4" marker-end="url(#xA13)"/><text x="150" y="176" font-size="10.5" fill="#ef4444">只执行第一步 u_k</text><line x1="230" y1="42" x2="230" y2="190" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3 3"/><rect x="230" y="52" width="250" height="124" fill="none" stroke="#f59e0b" stroke-dasharray="5 4"/><text x="352" y="64" font-size="10" fill="#f59e0b">t_(k+1): 窗口后移,重新优化</text><path d="M230,116 C290,84 340,82 400,98 C440,110 468,116 480,118" fill="none" stroke="#58a6ff" stroke-width="1.8" stroke-dasharray="6 4"/><text x="30" y="212" font-size="11" fill="currentColor">新测量进来→窗口滚动→重解 QP→再执行第一步;约束(摩擦锥/ZMP 多边形)在整个窗口内被显式满足</text></svg>',
   extend:'<b>与 LQR 的关系:</b>无约束 MPC=有限时域 LQR,Np→∞ 时收敛到 LQR 增益——所以 MPC 可以理解为"LQR+约束+时域滚动",一句话把两个考点串起来。<br><b>稳定性保证:</b>有限时域最优本身不保证稳定,工程靠终端代价(取无穷时域 LQR 的值函数)+终端约束(状态落入终端集)兜底,这是 MPC 理论课的必考追问。<br><b>实时性工程:</b>变量数 N<sub>c</sub>×m、QP 的稀疏带状结构、warm start(上一步解做初值)、求解器迭代上限+超时回退(用上一步 u)——面试问"跑不起来怎么办"就答这四条。层级化趋势:全身控制用凸 MPC+WBC,关节级仍是电流环 PI,一层一个频带。',
   follow:['为什么只执行优化解的第一步就扔掉后面(反馈与抗扰的来源)?','Np 太短会有什么问题(约束穿越/急刹式控制量)?','非线性 MPC 用什么求解思路(SQP/iLQR 一句话)?'],
-  links:[{t:'现代控制理论:状态空间到MPC',u:'../06_软件与算法/16_现代控制理论_状态空间到MPC.html'},{t:'状态观测器全解:龙伯格/EKF/SMO',u:'../06_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html'},{t:'NPU与数字IC设计',u:'../10_NPU与数字IC设计/01_板块总览与学习路线.html'},{t:'全身控制与步态规划 WBC/MPC',u:'../04_升级进阶/02_全身控制与步态规划_WBC与MPC.html'}] },
+  links:[{t:'现代控制理论:状态空间到MPC',u:'../04_软件与算法/16_现代控制理论_状态空间到MPC.html'},{t:'状态观测器全解:龙伯格/EKF/SMO',u:'../04_软件与算法/17_状态观测器全解_龙伯格_EKF_SMO.html'},{t:'NPU与数字IC设计',u:'../08_NPU与数字IC设计/01_板块总览与学习路线.html'},{t:'全身控制与步态规划 WBC/MPC',u:'../04_软件与算法/23_全身控制与步态规划_WBC与MPC.html'}] },
 
 /* ================= 信号处理 dsp ================= */
 { id:'dsp-01', s:'dsp', lv:5, tags:['采样定理','混叠'],
@@ -550,6 +550,6 @@ items: [
   q:'相关分析为什么能从噪声中提取信号?锁相放大器思想?',
   a:'<p><b>原理:</b>信号与噪声不相关,不同频率正弦正交。把含噪信号与已知参考(同频)做互相关,信号分量"同频同相"地累积(积分非零),噪声分量随机正负抵消(趋于零)——<b>相关积分是对"与你长得像的成分"的检索</b>,积分时间越长信噪比改善越大(SNR ∝ √T)。</p><p><b>锁相放大(Lock-in):</b>参考信号 r(t)=cos(ωt) 分两路(正交对)与输入相乘+低通:输出正比于信号在 ω 处的同相/正交幅值——把"测幅值"变成"测直流",带宽做窄到 mHz 级,弱光/弱电测量神器。编码器/雷达/阻抗谱都基于此。</p><p>机器人应用:编码器测速 PLL、谐振频率识别(扫频相关)、触觉滑动检测(高频特征相关)。答出"相关=频域选通+时间积分换信噪比"即到位。</p>',
   follow:['为什么积分时间越长信噪比越好?','正交两路相关能同时得到什么(幅值+相位)?'],
-  links:[{t:'术语词典',u:'../08_学习工具/01_术语词典.html'}] }
+  links:[{t:'术语词典',u:'../06_学习工具/01_术语词典.html'}] }
 ]
 };

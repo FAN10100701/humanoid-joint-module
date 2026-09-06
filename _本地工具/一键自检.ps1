@@ -25,7 +25,7 @@ $pages = Get-ChildItem -Path $root -Recurse -File -Include *.html | Where-Object
 # pages that intentionally have no search-index entry (404 page + 05 redirect stubs + baidu verify file)
 # NOTE: keep this file ASCII-safe (PS 5.1 reads BOM-less UTF-8 as ANSI/GBK, Chinese chars get mangled)
 $indexablePages = $pages | Where-Object {
-  $_.Name -ne '404.html' -and $_.FullName -notlike '*\05_HdriveV2*' -and $_.Name -notlike 'baidu_verify*'
+  $_.Name -ne '404.html' -and $_.FullName -notlike '*\13_HdriveV2*' -and $_.Name -notlike 'baidu_verify*'
 }
 
 # ---- 1) JS syntax ----
@@ -160,7 +160,7 @@ Check "Root fog guard (bare selector + opacity)" ($bareHits -eq 0) ("hits=" + $b
 # ---- 6) quiz/glossary data sync (data files vs display pages) ----
 # NOTE: no Chinese literals here - PS 5.1 reads BOM-less UTF-8 scripts as GBK and mangles them
 $quizBank = [IO.File]::ReadAllText((Join-Path $root "_assets\quiz-bank.js"), [Text.Encoding]::UTF8)
-$quizPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\03_[^\\]*\.html$' } | Select-Object -First 1
+$quizPage = $pages | Where-Object { $_.FullName -match '\\06_[^\\]*\\03_[^\\]*\.html$' } | Select-Object -First 1
 $gh1 = 0
 $qbCount = [regex]::Matches($quizBank, '\bq:"').Count
 if($quizPage){
@@ -170,7 +170,7 @@ if($quizPage){
 }
 Check "Quiz bank sync" (($qbCount -eq $gh1) -and ($gh1 -gt 0)) ($qbCount.ToString() + " vs " + $gh1)
 $glossJs = [IO.File]::ReadAllText((Join-Path $root "_assets\glossary-tip.js"), [Text.Encoding]::UTF8)
-$glossPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\01_[^\\]*\.html$' } | Select-Object -First 1
+$glossPage = $pages | Where-Object { $_.FullName -match '\\06_[^\\]*\\01_[^\\]*\.html$' } | Select-Object -First 1
 $gh2 = 0
 if($glossPage){ $glossHtml = [IO.File]::ReadAllText($glossPage.FullName, [Text.Encoding]::UTF8); $gh2 = [regex]::Matches($glossHtml, 'class="term-card"').Count }
 $gjCount = [regex]::Matches($glossJs, '(?m)^\s*"[^"]+":\s*"').Count
@@ -205,7 +205,7 @@ $ibB = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-b.js"), [Text.En
 $ibC = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-c.js"), [Text.Encoding]::UTF8)
 # V2.1.7 fix: ib-data-c (added in V2.1.6) was missing from the count -> 117 vs 150 false FAIL
 $ibCount = ([regex]::Matches($ibA, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibB, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibC, "\{ id:'[a-z]+-\d+'")).Count
-$ibPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\11_[^\\]*\.html$' } | Select-Object -First 1
+$ibPage = $pages | Where-Object { $_.FullName -match '\\06_[^\\]*\\11_[^\\]*\.html$' } | Select-Object -First 1
 $ibPageHas = $false
 $ibDecl = "?"
 if($ibPage){
@@ -218,7 +218,7 @@ if($ibPage){
 Check "Interview bank sync" $ibPageHas ("ib-items=" + $ibCount + " page-declared=" + $ibDecl)
 $qst = [IO.File]::ReadAllText((Join-Path $root "_assets\quest-data.js"), [Text.Encoding]::UTF8)
 $lvCount = [regex]::Matches($qst, "\{ id:'[A-Z][A-Z0-9]*',\s*w:").Count
-$qPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\12_[^\\]*\.html$' } | Select-Object -First 1
+$qPage = $pages | Where-Object { $_.FullName -match '\\06_[^\\]*\\12_[^\\]*\.html$' } | Select-Object -First 1
 $qPageHas = $false
 if($qPage){
   $qHtml = [IO.File]::ReadAllText($qPage.FullName, [Text.Encoding]::UTF8)
@@ -365,7 +365,7 @@ Check "C9 path-data integrity" $pdOk $pdDetail
 
 # ---- C10: data-file link audit (V2.1.19) ----
 # HTML link audit (#2) never sees links inside JS data files:
-#   ib-data-a/b/c.js  item links[].u + subject rel[].u   (resolve relative to the 08_* hosting dir)
+#   ib-data-a/b/c.js  item links[].u + subject rel[].u   (resolve relative to the 06_* hosting dir)
 #   quiz-bank.js      link.u                             (same hosting dir)
 #   quest-data.js     Q.*.link.u                         (same hosting dir)
 #   path-data.js      pages[].u                          (site-root relative AND must equal a search-index u,
@@ -373,7 +373,7 @@ Check "C9 path-data integrity" $pdOk $pdDetail
 $hostDir = $null
 if($ibPage){ $hostDir = $ibPage.DirectoryName }
 if(-not $hostDir){
-  $d08 = Get-ChildItem -Path $root -Directory | Where-Object { $_.Name -like '08_*' } | Select-Object -First 1
+  $d08 = Get-ChildItem -Path $root -Directory | Where-Object { $_.Name -like '06_*' } | Select-Object -First 1
   if($d08){ $hostDir = $d08.FullName }
 }
 $dataLinkMiss = @()
@@ -394,7 +394,7 @@ if($hostDir){
       elseif(-not (Test-Path (Join-Path $root ($u -replace '/','\')))){ $dataLinkMiss += ("path-missing:" + $u) }
     }
   }
-} else { $dataLinkMiss += "08_* hosting dir not found" }
+} else { $dataLinkMiss += "06_* hosting dir not found" }
 Check "C10 data-file links" (($dataLinkMiss.Count -eq 0) -and ($null -ne $hostDir)) ($dataLinkMiss.Count.ToString() + " broken/unaligned")
 $dataLinkMiss | Select-Object -First 8 | ForEach-Object { Write-Host ("   DATALINK: " + $_) }
 
@@ -428,7 +428,7 @@ $refBad + $qbBad + $qRefBad | Select-Object -First 8 | ForEach-Object { Write-Ho
 # ---- C12: learning-map integrity (V2.1.19) ----
 # 06_学习地图.html must: reference only existing files, cover every SITE_SECTIONS id,
 # group every SITE_SECTIONS key; plus S.STATS.pages must equal sections+1 (V2.1.16 blank-page class).
-$mapPage = $pages | Where-Object { $_.FullName -match '\\08_[^\\]*\\06_[^\\]*\.html$' } | Select-Object -First 1
+$mapPage = $pages | Where-Object { $_.FullName -match '\\06_[^\\]*\\06_[^\\]*\.html$' } | Select-Object -First 1
 $c12bad = @(); $mapNodeCnt = 0; $grpKeyCnt = 0
 if($mapPage){
   $mapHtml = [IO.File]::ReadAllText($mapPage.FullName, [Text.Encoding]::UTF8)

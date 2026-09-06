@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 04-21 FreeRTOS 任务调度与实时性
+  结构严格遵循 _assets/页面模板.html
+  本页聚焦: RTOS 动机 / 任务与调度 / 队列与信号量(优先级继承) /
+  软件定时器与事件组 / 中断管理 / 实时性指标 / STM32 移植 /
+  常见误区 / 自测 6 题,与 04-19(ISR 级 FOC)、04-20(框架对比)互链
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · FreeRTOS任务调度与实时性</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(my- 前缀,避免与全局冲突) */
+  .my-num{font-family:Consolas,"Courier New",monospace;font-size:.92em}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-21",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec4" },
+      { t: "FreeRTOS 任务调度与实时性" }
+    ],
+    prev: { t: "工程电机控制框架对比:流程与选型", u: "20_工程电机控制框架对比_流程与选型.html" },
+    next: { t: "代码规范:C / Python / Verilog", u: "21_代码规范_C_Python_Verilog.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>⏱️ FreeRTOS 任务调度与实时性</h1>
+    <div class="sub">为什么 1kHz 关节电流环必须"确定性"而不是"跑得快" —— 从裸机大循环的抖动困境讲到 FreeRTOS 的抢占调度、队列通信、优先级继承、FromISR 中断家族,再到 STM32 移植要点与实时性指标测算。学完本页,你应能独立搭出一个"1kHz 控制环 + 通信层 + 监控层"的 RTOS 固件骨架。</div>
+    <div class="tags">
+      <span class="tag">FreeRTOS</span>
+      <span class="tag">抢占式调度</span>
+      <span class="tag">优先级反转</span>
+      <span class="tag">FromISR API</span>
+      <span class="tag">STM32 移植</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说清裸机大循环与 RTOS 抢占调度的本质区别,并算出两者的最坏响应延迟<br>
+    2. 能解释优先级抢占 + 同优先级时间片 + 空闲任务的调度规则,并为控制环/通信/监控任务分配合适优先级<br>
+    3. 能区分队列、二值信号量、计数信号量、互斥量的适用场景,并讲出火星探路者优先级反转事故的机理与修复<br>
+    4. 能正确使用 FromISR API 家族、taskENTER_CRITICAL 临界区,并说出 configMAX_SYSCALL_INTERRUPT_PRIORITY 的含义<br>
+    5. 能在 STM32 上完成 FreeRTOS 移植并回答三个问题:节拍从哪来、上下文切换在哪发生、栈溢出怎么发现<br>
+    <b>建议用时:</b>约 50 分钟(配合 04-19 页 ISR 级 FOC 一起读效果最佳)
+  </div>
+
+  <!-- ================= 1 为什么关节控制需要 RTOS ================= -->
+  <h2><span class="h2-num">1</span> 为什么关节控制需要 RTOS:裸机大循环的抖动困境</h2>
+
+  <h3>1.1 裸机大循环是怎么"错过节拍"的</h3>
+  <p><b>是什么:</b>裸机固件最常见形态是"一个大循环 + 若干中断":main 里 while(1) 依次执行控制计算、协议解析、日志输出,紧急事件靠中断插队。问题在于,<b>大循环里每一段代码的耗时都不确定</b> —— printf 遇到长字符串、协议层遇到大数据包,都会把"下一次控制计算"往后推。于是控制环的实际执行周期 = 名义周期 + 大循环其余段落的总耗时,而且这个值<b>每次都不一样</b>。</p>
+  <div class="formula">T_{\text{cycle}}(k) = T_{\text{body}}(k) - T_{\text{ctrl}} \qquad \text{裸机下 } T_{\text{body}}(k)\text{ 逐拍变化,控制节拍随之抖动}</div>
+  <p><b>为什么致命:</b>电流环是离散控制器,它的 Kp/Ki、前馈系数、滤波器截止频率全部按固定采样周期 Ts 设计。周期从 50μs 飘到 80μs,离散积分就多积了 60%;周期抖动还会把纹波"调制"进相电流,表现为高频啸叫与力矩纹波。位置/速度环同理 —— 1kHz 的速度环若某拍迟了 2ms,控制器会误以为"速度突变",输出一个多余的转矩阶跃,传到机械上就是"咔"的一声顿挫。</p>
+  <p><b>RTOS 给的答案:</b>FreeRTOS 用<b>抢占式调度</b>把"什么时候执行谁"从代码顺序里解放出来:每个任务声明一个优先级,调度器保证"任意时刻,CPU 上跑的是就绪任务里优先级最高的那个"。控制环任务设最高优先级,它到点就被 tick 中断唤醒、抢占一切低优先级代码立即执行 —— <b>响应延迟从"大循环最坏耗时"缩小到"最长临界区/最差中断占用"</b>,且可分析、可测量。这就是"实时"的准确含义:<b>不是快,而是确定性(deadline 前必然完成)</b>。</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>裸机大循环(轮询)</th><th>FreeRTOS 抢占调度</th></tr>
+    <tr><td>控制环最坏响应延迟</td><td>大循环全部其余代码耗时之和(不可控,毫秒级常见)</td><td>被高优先级任务/临界区阻塞的最坏时间(可控,微秒级)</td></tr>
+    <tr><td>周期抖动(jitter)</td><td>随每拍分支、打印、协议包长度变化</td><td>基本只受 tick 对齐与最长关中断时间影响</td></tr>
+    <tr><td>事件驱动能力</td><td>靠中断置标志、主循环轮询,轮询间隔不确定</td><td>队列/信号量/任务通知直接唤醒对应任务,零轮询</td></tr>
+    <tr><td>模块化</td><td>状态机互相嵌套,共享全局变量遍地</td><td>每任务一个独立上下文与独立栈,天然解耦</td></tr>
+    <tr><td>代价</td><td>零,无 RAM/Flash 开销</td><td>内核 ROM 约 6~12KB,每任务独立栈(通常 512B~2KB),调度本身有几十 μs 开销</td></tr>
+    <tr><td>适用场合</td><td>单一控制环、无通信无日志的极简固件</td><td>多环 + 通信(CAN/RS485)+ 状态机 + 监控的关节/整机控制器</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>"实时操作系统'实时'指什么?裸机大循环为什么达不到?"——答:<b>实时 = 在确定的最坏时间内完成响应</b>,不是平均快;裸机大循环的最坏响应 = 其余所有代码段耗时之和,随分支与数据量变化、不可分析;RTOS 把最坏响应压缩为"被最高优先级干扰的最坏时间",可以测量并写进指标。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①把"实时"理解成"速度快" —— 一个平均 10μs 但最坏 10ms 的系统不是实时系统,一个平均 100μs、最坏 120μs 的才是;②以为 RTOS 一定比裸机"快" —— 调度本身有开销,RTOS 买到的是<b>确定性</b>,不是吞吐;③单环玩具电机驱动用 RTOS 属于过度设计 —— 需求先于技术。</div>
+
+  <pre><code>/* ============ 同一份"1kHz 控制 + 通信 + 日志"两种骨架 ============ */
+/* ---- 裸机大循环: 控制节拍被通信/日志拖延, 抖动不可控 ---- */
+int main(void){
+    peripherals_init();
+    while (1) {
+        if (tick_flag)      { tick_flag = 0; control_1k(); }      /* 周期随下面两行波动 */
+        comm_poll();        /* 收到 1KB CAN 包时拖后几百微秒          */
+        log_poll();         /* printf 长串时拖后几毫秒(阻塞式)       */
+    }
+}
+
+/* ---- FreeRTOS: 控制环到点即被唤醒, 与通信/日志完全解耦 ---- */
+void control_task(void *arg){                 /* 优先级 = 最高 */
+    TickType_t wake = xTaskGetTickCount();
+    for (;;) {
+        control_1k();                          /* 确定的 1kHz 节拍 */
+        vTaskDelayUntil(&amp;wake, pdMS_TO_TICKS(1)); /* 绝对时间唤醒 */
+    }
+}
+void comm_task(void *arg){                    /* 优先级低于控制环 */
+    for (;;) { can_read_frame(...); xQueueSend(g_qcmd, &amp;f, portMAX_DELAY); }
+}
+void log_task(void *arg){                     /* 最低优先级, 随时被饿 */
+    for (;;) { char *s = ...; printf("%s", s); vTaskDelay(pdMS_TO_TICKS(10)); }
+}</code></pre>
+
+  <!-- ================= 2 任务与调度器 ================= -->
+  <h2><span class="h2-num">2</span> 任务与调度器:优先级抢占、时间片与空闲任务</h2>
+
+  <h3>2.1 调度规则三句话</h3>
+  <p><b>是什么:</b>FreeRTOS 的调度器(默认可抢占配置 <code>configUSE_PREEMPTION = 1</code>)遵守三条规则:①<b>优先级抢占</b> —— 高优先级任务就绪的瞬间,立即抢占正在运行的低优先级任务;②<b>同优先级时间片轮转</b>(<code>configUSE_TIME_SLICING = 1</code> 时)—— 同级任务轮流占用 CPU,每个 tick 轮换一次;③<b>空闲任务兜底</b> —— 无任何就绪任务时,调度器运行优先级 0 的 Idle Task(它负责清理被删除任务的内存、必要时让 CPU 进低功耗)。优先级范围 0 ~ <code>configMAX_PRIORITIES-1</code>,<b>数字越大优先级越高</b>(注意与 Cortex-M NVIC 数值越小优先级越高<b>方向相反</b>,这是新手的经典混淆点)。</p>
+  <div class="table-wrap"><table>
+    <tr><th>任务状态</th><th>含义</th><th>进入方式</th><th>离开方式</th></tr>
+    <tr><td>Running 运行态</td><td>正在占用 CPU</td><td>调度器选中</td><td>被更高优先级抢占 / 主动阻塞</td></tr>
+    <tr><td>Ready 就绪态</td><td>可运行,只差 CPU</td><td>延时到期、事件到来、被创建</td><td>被调度器选中</td></tr>
+    <tr><td>Blocked 阻塞态</td><td>等待事件或延时</td><td>vTaskDelay / xQueueReceive 等带超时</td><td>事件到来 / 超时 → 转就绪</td></tr>
+    <tr><td>Suspended 挂起态</td><td>完全不被调度</td><td>vTaskSuspend()</td><td>vTaskResume()</td></tr>
+  </table></div>
+  <p><b>怎么做(优先级怎么分):</b>嵌入式关节控制器的经典分层 —— <b>硬实时层(电流/速度环、安全保护)最高</b>,因为错一拍直接出力错误;<b>准实时层(通信解析、状态估计)居中</b>;<b>人机与日志层最低</b>,宁可被饿也不能挤占实时层。判断口诀:<b>"这个任务晚执行 1ms 会怎样?"</b> —— 会出安全问题 → 最高;只是数据晚一点 → 中;纯粹显示打印 → 最低。</p>
+  <h3>2.2 任务栈:每个任务一块"私人内存"</h3>
+  <p>与裸机共享一个 main 栈不同,RTOS 每个任务有<b>独立栈</b>(xTaskCreate 的 usStackDepth 参数,单位是 StackType_t 即 4 字节)。上下文切换时调度器把当前任务的全部寄存器(R0-R12、LR、PC、xPSR,以及带 FPU 时的 S0-S15、FPSCR)压入该任务栈,再从新任务栈弹出 —— 这就是切换的"快照保存/恢复"。栈大小估不准是 RTOS 事故第一来源:过小则栈溢出、踩坏相邻任务内存,症状是"随机崩溃、变量莫名被改";过大则 RAM 浪费。实用方法:先给 512~1024 字(2~4KB),运行后用 <code>uxTaskGetStackHighWaterMark()</code> 查历史最小剩余,再回填精确值(详见第 7 节)。</p>
+  <p><b>面试怎么问:</b>"FreeRTOS 任务切换时保存了什么?保存在哪里?"——答:任务上下文 = CPU 通用寄存器 + 程序状态(+FPU 寄存器),由 PendSV 处理程序压入/弹出<b>该任务自己的栈</b>;栈指针本身保存在任务控制块 TCB 里。能补一句"PendSV 配最低优先级保证切换不被中断打断"是加分点(第 7 节)。</p>
+  <div class="box box-tip"><b>💡 与站内已有内容的关系:</b>04-19 页讲的"ISR 级 FOC"把电流环放在 <b>ADC 中断</b>里跑(20kHz、裸中断);本页的 1kHz 速度/位置环放在 RTOS 任务里跑 —— <b>"中断跑最快环、RTOS 任务跑其余"是关节固件的标准分层</b>,两层并存不矛盾:中断提供最高确定性,RTOS 提供多任务的秩序。</div>
+
+  <!-- ================= 3 队列与任务通信 ================= -->
+  <h2><span class="h2-num">3</span> 队列与任务通信:从全局变量到优先级继承</h2>
+
+  <h3>3.1 队列:RTOS 世界里"数据的唯一正道"</h3>
+  <p><b>是什么:</b><code>xQueueCreate(uxQueueLength, uxItemSize)</code> 创建的队列是 FreeRTOS 最核心的通信原语 —— 定长、深拷贝、<b>线程安全且阻塞安全</b>:发送端 <code>xQueueSend(q, &amp;item, timeout)</code> 满时阻塞,接收端 <code>xQueueReceive(q, &amp;item, timeout)</code> 空时阻塞,并自动把等待者按优先级排序唤醒。裸机固件用"全局变量 + volatile 标志"传数据,遇到"生产快于消费"覆盖、多字节撕裂(16/32 位数据在读取途中被改)、无唤醒(轮询浪费)三大问题;队列把三者一次性解决。<b>要点:入队是整值拷贝</b> —— 传小结构体直接拷,传大数据(如 1KB 缓冲)则传<b>指针</b>并管理所有权,避免深拷贝开销。</p>
+  <h3>3.2 信号量家族与互斥量的优先级继承</h3>
+  <p>FreeRTOS 提供四种"事件原语",名字相近、语义迥异,选错就埋雷:</p>
+  <div class="table-wrap"><table>
+    <tr><th>原语</th><th>创建 API</th><th>语义</th><th>典型场景</th><th>注意</th></tr>
+    <tr><td>二值信号量</td><td>xSemaphoreCreateBinary</td><td>0/1 事件标志,初始为空须先 Give</td><td>ISR → 任务"事件发生"通知</td><td>无优先级继承;连续 Give 只记 1 次</td></tr>
+    <tr><td>计数信号量</td><td>xSemaphoreCreateCounting(max, init)</td><td>0~max 的资源计数</td><td>资源池(空闲缓冲区个数)</td><td>"有 n 个可用"才用它</td></tr>
+    <tr><td>互斥量</td><td>xSemaphoreCreateMutex</td><td>锁,带<b>优先级继承</b></td><td>保护共享外设/数据结构</td><td>禁用于中断;不能替代二值信号量做"发事件"</td></tr>
+    <tr><td>递归互斥量</td><td>xSemaphoreCreateRecursiveMutex</td><td>同任务可重复加锁</td><td>函数嵌套调用同一把锁</td><td>Take/Give 次数必须配对</td></tr>
+  </table></div>
+  <p><b>优先级继承(priority inheritance)是什么:</b>当高优先级任务 H 阻塞在互斥量上、而该锁被低优先级任务 L 持有时,内核临时<b>把 L 的优先级提升到 H 的水平</b>,让 L 尽快跑完临界区归还锁,锁还回去后 L 优先级复原。它专治下面这个真实发生过的灾难。</p>
+  <div class="box box-danger"><b>🚨 案例:1997 火星探路者(Mars Pathfinder)优先级反转事故。</b>"旅居者"号火星车的 VxWorks 系统里,低优先级的<b>气象数据任务</b>持有互斥量(总线管理共享区),中途被高优先级的长耗时计算任务抢占; meanwhile 高优先级的<b>总线管理任务</b>来取锁、被阻塞。此时中优先级的计算任务一直就绪,把持锁的低优先级任务"压"在下面 —— 形成<b>优先级反转</b>:高优先级任务在等一个"永远轮不到运行"的任务放锁。看门狗判定总线管理任务失联,触发<b>整机重启</b> —— 火星车在火星上反复重启数日。JPL 工程师远程上传补丁,开启互斥量的<b>优先级继承</b>后问题消失。教训三条:①互斥量与二值信号量不是一回事 —— 前者带优先级继承、专用于锁;②长临界区是事故温床 —— 持锁期间绝不调耗时函数;③优先级反转在地面测试中复现率低、上真机才炸,设计期就该用对原语。</div>
+  <p><b>面试怎么问:</b>"什么是优先级反转?优先级继承怎么解决?有什么代价?"——答:反转 = 高优先级被"低优先级持锁 + 中优先级抢跑"间接阻塞;继承 = 持锁者临时升到等锁者的优先级,尽快还锁;代价 = 引入临界区时间的不可预测性(持锁者可能继承到很高优先级,干扰第三方任务),所以临界区要短。加分项:还有一条更狠的方案"优先级天花板(priority ceiling)",持锁即升到天花板优先级,彻底杜绝反转,代价是过度提升。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①在 ISR 里用 xSemaphoreGive 等非 FromISR API —— 直接导致断言失败或内核数据损坏(第 5 节);②把互斥量当"发事件"用 —— 互斥量的 Give 必须与 Take 成对、同任务,拿来当事件标志语义全错;③嵌套 Take 同一把普通互斥量 —— 自我死锁(同任务再次 Take 永久阻塞),需要嵌套场景用 RecursiveMutex。</div>
+
+  <!-- ================= 4 软件定时器与事件组 ================= -->
+  <h2><span class="h2-num">4</span> 软件定时器与事件组:两个轻量同步原语</h2>
+
+  <h3>4.1 软件定时器:回调跑在"守护任务"里</h3>
+  <p><b>是什么:</b><code>xTimerCreate("name", period, autoReload, timerID, callback)</code> 创建的软件定时器,<b>回调函数并不在中断里执行,而是在一个专门的"定时器服务任务(Timer Service / Daemon Task)"上下文中执行</b> —— 这个任务优先级由 <code>configTIMER_TASK_PRIORITY</code> 决定。API 调用(xTimerStart/Stop/Reset/ChangePeriod)本质是往"定时器命令队列"(长度 <code>configTIMER_QUEUE_LENGTH</code>)里塞命令,由守护任务消化。三条军规:①回调里<b>绝不能阻塞/延时</b>(会拖死所有定时器);②回调执行时刻受守护任务优先级影响,精度是"毫秒级可用、微秒级不行" —— 电流环绝不用软件定时器;③同一定时器周期回调若执行超时,会"追拍"堆积,注意 autoReload 场景的耗时预算。典型用途:500ms 刷一次状态灯、10s 无心跳就进入安全停机 —— 都是几十毫秒级精度足够的地方。</p>
+  <h3>4.2 事件组:一个变量同步多个任务</h3>
+  <p><b>是什么:</b><code>xEventGroupCreate()</code> 创建的事件组是一个 24 位标志集合(EventBits_t),<code>xEventGroupSetBits()</code> 置位、<code>xEventGroupWaitBits(eg, bits, xClearOnExit, xWaitForAllBits, timeout)</code> 等待 —— 可等"任意一位"(AND/OR 语义由 xWaitForAllBits 决定),天然适合"<b>多条件齐备才开工</b>"的同步:例如整机进入行走模式前,等待"IMU 标定完成位 + 编码器零位完成位 + 上位机指令位"三者齐备。它把裸机里"多个 volatile 标志 + 轮询与运算"的繁琐写法变成一个阻塞调用,且等待时任务不占 CPU。<b>与队列的分工:</b>事件组只传"发生了什么"(位),不传数据;要传数据用队列/任务通知。代价:置位/等待内部短暂关调度,不适合超高频调用,高频"一对一"通知用更轻的 <code>xTaskNotifyGive()/ulTaskNotifyTake()</code>(任务通知,零内存分配,是最快的信号量替代品)。</p>
+  <pre><code>/* ============ 事件组: 三个子系统自检完成才允许进入行走态 ============ */
+EventGroupHandle_t g_ready;
+#define BIT_IMU_OK    (1 &lt;&lt; 0)
+#define BIT_ENC_OK    (1 &lt;&lt; 1)
+#define BIT_CMD_OK    (1 &lt;&lt; 2)
+#define BITS_ALL      (BIT_IMU_OK | BIT_ENC_OK | BIT_CMD_OK)
+
+void imu_task(void *arg){   /* IMU 自检线程 */
+    imu_calibrate();
+    xEventGroupSetBits(g_ready, BIT_IMU_OK);
+    vTaskDelete(NULL);
+}
+void walk_mgr_task(void *arg){              /* 整机模式管理 */
+    for (;;) {
+        /* 阻塞等待三位置齐(AND), 齐后自动清零退出 */
+        EventBits_t b = xEventGroupWaitBits(g_ready, BITS_ALL,
+                        pdTRUE, pdTRUE, portMAX_DELAY);
+        enter_walk_mode();                   /* 此时 IMU/编码器/指令全部就绪 */
+        vTaskDelay(portMAX_DELAY);           /* 等待退出指令再进下一循环 */
+    }
+}</code></pre>
+  <p><b>面试怎么问:</b>"软件定时器的回调在什么上下文执行?里面能调用 vTaskDelay 吗?"——答:定时器服务(守护)任务上下文,不是中断;绝不能阻塞(vTaskDelay/无限等队列),否则同队列的其他定时器全部延期。能说出"Start/Stop 是往命令队列发命令"更进一步。</p>
+
+  <!-- ================= 5 中断管理 ================= -->
+  <h2><span class="h2-num">5</span> 中断管理:FromISR 家族、临界区与 BASEPRI 屏蔽线</h2>
+
+  <h3>5.1 FromISR API 家族与"暂停调度"标志</h3>
+  <p><b>是什么:</b>FreeRTOS 为几乎每个阻塞 API 提供了中断版:<code>xQueueSendFromISR</code>、<code>xQueueReceiveFromISR</code>、<code>xSemaphoreGiveFromISR</code>、<code>xEventGroupSetBitsFromISR</code> 等。区别有两点:①<b>绝不允许阻塞</b> —— 中断没有"任务"身份,阻塞会把调度器状态搅坏,所以 FromISR 版没有 timeout 参数;②多了一个 <code>pxHigherPriorityTaskWoken</code> 出参 —— 当本中断唤醒了一个<b>优先级高于被打断任务</b>的任务时置 pdTRUE,退出前调用 <code>portYIELD_FROM_ISR(woken)</code> 让调度器立即切换。漏写这一行不会崩,但会白白多等一个 tick 才切换 —— 实时性指标直接劣化 1ms。</p>
+  <pre><code>/* ============ 标准写法: CAN 收包中断 → 唤醒通信任务 ============ */
+void CAN_RX0_IRQHandler(void)
+{
+    BaseType_t woken = pdFALSE;               /* ① 必须初始化为 pdFALSE */
+    CAN_RxHeaderTypeDef hdr;
+    uint8_t data[8];
+    HAL_CAN_GetRxMessage(&amp;hcan, CAN_RX_FIFO0, &amp;hdr, data);
+
+    can_frame_t f = { .id = hdr.StdId, .len = hdr.DLC };
+    memcpy(f.data, data, hdr.DLC);
+    xQueueSendFromISR(g_qcan, &amp;f, &amp;woken);    /* ② FromISR 版, 不阻塞   */
+
+    portYIELD_FROM_ISR(woken);                /* ③ 需要切换时立即切      */
+    /* 没唤醒更高优先级任务则此处正常中断返回, 零额外开销 */
+}</code></pre>
+  <h3>5.2 临界区:taskENTER_CRITICAL 到底关了什么</h3>
+  <p><b>怎么做:</b>任务级临界区 <code>taskENTER_CRITICAL()</code> / <code>taskEXIT_CRITICAL()</code> 并<b>不是粗暴关全局中断(不写 PRIMASK)</b>,而是把中断优先级低于/等于 <code>configMAX_SYSCALL_INTERRUPT_PRIORITY</code> 的中断全部屏蔽(Cortex-M 上通过设置 BASEPRI 寄存器实现)。这意味着:<b>比屏蔽线更紧急的中断(数值更小)照常响应</b> —— 例如 20kHz 电流环 ADC 中断可以完全不调用 FreeRTOS API,把优先级配在屏蔽线之上,任何临界区都挡不住它。三条规则:①临界区内代码必须极短(几微秒级,通常只做"读-改-写共享变量");②临界区<b>不可嵌套计数错误</b>(ENTER/EXIT 必须配对,内核有嵌套计数,配对错了屏蔽不解除);③中断里要用 <code>taskENTER_CRITICAL_FROM_ISR()</code>(返回值保存、用 <code>taskEXIT_CRITICAL_FROM_ISR(x)</code> 恢复),不能混用任务版。</p>
+  <h3>5.3 configMAX_SYSCALL_INTERRUPT_PRIORITY:一条"分界线"</h3>
+  <p><b>为什么:</b>Cortex-M 的优先级数值<b>越小优先级越高</b>。FreeRTOS 的约定:凡是<b>调用 FreeRTOS API 的中断,其优先级数值必须 ≥ configMAX_SYSCALL_INTERRUPT_PRIORITY</b>(STM32 移植层通常定义为 5,对应 NVIC 4 位优先级下的抢占优先级 5~15)—— 因为内核临界区只屏蔽这条线以下的中断;若一个数值更小(更紧急)的中断也调 FreeRTOS API,内核根本屏蔽不住它,它可能打断"正在修改内核链表"的临界区,<b>内核数据结构即刻损坏</b> —— 症状是随机 HardFault 或任务列表诡异错乱,极难排查。反过来,<b>数值小于 5 的中断不得调用任何 FreeRTOS API</b>(包括 FromISR 版),它们是"RTOS 视野之外"的纯硬件中断 —— 这正是电流环中断的标准做法。</p>
+  <div class="table-wrap"><table>
+    <tr><th>NVIC 抢占优先级</th><th>相对位置</th><th>能否调 FreeRTOS API</th><th>典型用途</th></tr>
+    <tr><td>0~4(数值小,最紧急)</td><td>屏蔽线之上,BASEPRI 挡不住</td><td><span class="my-tag" style="background:rgba(239,68,68,.14);color:#fca5a5">禁止</span></td><td>20kHz ADC/FOC 电流环、硬件故障保护(过流比较器)</td></tr>
+    <tr><td>5~15(数值大,较缓)</td><td>屏蔽线之下,临界区会被屏蔽</td><td><span class="my-tag" style="background:rgba(34,197,94,.14);color:#86efac">允许(用 FromISR)</span></td><td>CAN/USART 收发、编码器 Z 脉冲、1ms tick 之外的普通中断</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>"FreeRTOS 移植到 STM32,SysTick 和 PendSV 优先级怎么设?为什么?"——答:都设<b>最低(15)</b>。SysTick 最低保证 tick 处理不抢占紧急中断;PendSV 是上下文切换执行者,必须等所有中断做完再切换,否则在 IRQ 里切走、IRQ 后半段操作的却是另一个任务的栈,直接崩溃。能说出"FreeRTOS 延迟切换:所有 ISR 通过置 PendSV 挂起位统一触发切换"是深度加分。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①优先级分组配置错误 —— FreeRTOS 要求 <code>NVIC_SetPriorityGrouping(3)</code>(4 位全给抢占优先级,无子优先级),HAL 默认分组若不同,优先级语义全变;②以为 FromISR API "更安全所以随处可用" —— 它们只是中断专用,屏蔽线规则同样约束它们;③vTaskSuspendAll 手动挂调度器时间过长 —— 挂调度器期间 tick 照常计数,但长于一个 tick 会让延时任务"迟到"。</div>
+
+  <!-- ================= 6 实时性指标 ================= -->
+  <h2><span class="h2-num">6</span> 实时性指标:响应延迟、抖动与最坏情况怎么测</h2>
+
+  <h3>6.1 三个必须量化的指标</h3>
+  <p><b>是什么:</b>说一个 RTOS 系统"实时性很好"没有意义,必须落到三个可测量的量:</p>
+  <div class="table-wrap"><table>
+    <tr><th>指标</th><th>定义</th><th>决定因素</th><th>测量方法</th></tr>
+    <tr><td><b>响应延迟</b> Response Latency</td><td>事件发生 → 对应任务开始执行的时间</td><td>最长临界区 + 更高优先级任务的最坏运行时间 + 中断处理时间</td><td>事件引脚拉高、任务开头翻转 GPIO,示波器测两沿间隔</td></tr>
+    <tr><td><b>抖动</b> Jitter</td><td>多次响应延迟的最大差值(或标准差)</td><td>tick 量化(±1 tick)、抢占不确定性、Cache/Flash 等待周期</td><td>连续采集 N&gt;1000 次延迟,画直方图,取 max−min</td></tr>
+    <tr><td><b>最坏执行时间</b> WCET</td><td>单次任务体执行时间的最大值</td><td>分支最坏路径、最坏输入数据、中断嵌套叠加</td><td>DWT 周期计数器(02-14 页)包裹任务体,长跑取最大</td></tr>
+  </table></div>
+  <p><b>怎么解读:</b>关节控制环最关心<b>抖动</b> —— 平均延迟再小,只要 max−min 达到数百微秒,电流环的离散设计就失真。工程验收标准示例(以 1kHz 速度环任务为例):平均延迟 &lt; 50μs,<b>抖动峰峰值 &lt; 20μs</b>(即所有节拍都在名义时刻 ±10μs 内),WCET &lt; 30% 周期预算。tick 率 <code>configTICK_RATE_HZ = 1000</code> 时,vTaskDelay 本身带来 ±1 tick 的量化抖动,这就是"软件定时器精度毫秒级"的原因,也是精确节拍必须用 <code>vTaskDelayUntil</code> 的原因(第 8 节)。</p>
+  <h3>6.2 CPU 负载与运行时统计</h3>
+  <div class="formula">\text{CPU 负载} = \frac{\sum_i T_i \cdot f_i}{f_{\text{CPU 调度总时间}}} \approx \frac{\text{统计窗口内各任务运行时间之和}}{\text{窗口总时间}} \times 100\%</div>
+  <p><b>怎么做:</b>FreeRTOS 内置运行时统计:开 <code>configGENERATE_RUN_TIME_STATS = 1</code> 并提供一个 20 倍于 tick 频率的时基(常用 DWT CYCCNT),再调 <code>vTaskGetRunTimeStats(buf)</code> 打印每个任务的绝对运行时间与占比 —— 一条命令看清"谁在吃 CPU"。经验红线:<b>总负载 &gt; 70% 就要警惕</b>,因为最坏情况下中断与临界区会叠加,70% 平均负载可能意味着 95% 最坏负载,余量不足。另一招 <code>uxTaskGetSystemState()</code> 拿到全任务状态快照,适合做在线健康监测(任务意外挂起/栈水位异常报警)。</p>
+  <pre><code>/* ============ CPU 负载与栈水位: 每秒打印一次的监控任务 ============ */
+void monitor_task(void *arg){
+    static char buf[512];
+    for (;;) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskGetRunTimeStats(buf);            /* 需 configGENERATE_RUN_TIME_STATS */
+        printf("== Runtime stats ==\n%s\n", buf);
+        /* 栈历史最小剩余(单位: 字), 长期偏小 = 该加栈了 */
+        printf("ctrl stack high-water: %u words\n",
+               (unsigned)uxTaskGetStackHighWaterMark(g_ctrl_handle));
+    }
+}</code></pre>
+  <p><b>面试怎么问:</b>"你的控制环抖动是多少?怎么测的?"——这是嵌入式面试的黄金题,答法:GPIO 翻转 + 示波器/逻辑分析仪测 N&gt;1000 拍,报出平均/峰峰值;能补"tick 量化贡献 ±1ms 用 vTaskDelayUntil 消除、剩余抖动来自最长临界区"即可拿满分;只答"感觉挺稳的"直接出局。</p>
+
+  <!-- ================= 7 STM32 移植要点 ================= -->
+  <h2><span class="h2-num">7</span> STM32 移植要点:SysTick、PendSV 与栈溢出检测</h2>
+
+  <h3>7.1 节拍与切换:两个系统异常各司其职</h3>
+  <p><b>是什么:</b>FreeRTOS 在 Cortex-M 上的移植层把三个内核异常排成一班岗:①<b>SysTick</b> —— 配成 <code>configTICK_RATE_HZ</code>(典型 1kHz)产生 tick 中断,负责 tick 计数、检查延时到期任务、同级任务轮转;②<b>PendSV</b> —— 设为<b>最低优先级</b>,是真正的"上下文切换执行者":调度器决定切换后只是把 PendSV 挂起位点亮,等所有中断处理完才进入切换,保证切换动作本身不被打断;③<b>SVC(SuperVISecall)</b> —— 仅在启动阶段用一次:调度器通过 SVC 指令"跳"进第一个任务(因为初始时"上一个任务"并不存在,只能靠异常返回机制伪造一帧)。HAL 工程注意:CubeIDE 里勾选 FreeRTOS 后 HAL 时基默认改用 TIM6/7 等其他定时器(SysTick 让给 RTOS),若手写移植则要把 <code>HAL_InitTick</code> 与 FreeRTOS 的 tick 驱动分开,这是移植翻车常见点。</p>
+  <h3>7.2 堆栈与内存:configTOTAL_HEAP_SIZE 怎么估</h3>
+  <p>FreeRTOS 常用 heap_4 方案:内核一次性占用 <code>configTOTAL_HEAP_SIZE</code> 大小的静态数组,任务栈/TCB/队列/信号量都从这里分配。估算公式:</p>
+  <div class="formula">H_{\text{total}} \ge \sum_{i} \big(\text{栈}_i + T_{\text{TCB}}\big) + \sum_j \big(\text{队列}_j + \text{信号量}_j\big) + \text{余量 } 20\%</div>
+  <p>实测手段:<code>xPortGetFreeHeapSize()</code> 查当前剩余、<code>xPortGetMinimumEverFreeHeapSize()</code> 查历史最低水位 —— 长跑后最低水位若接近 0,加堆。Flash 侧,内核本体约 6~12KB(Cortex-M4,-Os),加任务代码后典型关节固件 40~80KB,G431 的 32KB Flash 塞 RTOS + FOC 会紧张,建议选 64KB 以上型号或砍功能。</p>
+  <h3>7.3 栈溢出检测:两种方法与 hook 函数</h3>
+  <pre><code>/* ============ 栈溢出检测: FreeRTOSConfig.h + hook 实现 ============ */
+/* FreeRTOSConfig.h */
+#define configCHECK_FOR_STACK_OVERFLOW   2   /* 方法2: 16字节图案 + 指针越界双检 */
+#define configUSE_MALLOC_FAILED_HOOK     1   /* 堆分配失败 hook 也一并打开       */
+
+/* 方法1(轻量): 切换时仅检查栈指针是否越过栈底 —— 快但可能漏检   */
+/* 方法2(推荐): 切换时额外校验栈尾 16 字节 0xA5A5A5A5 图案是否被写 */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    /* 不能依赖被溢出破坏的栈 —— 只做最简单的记录+安全停机 */
+    (void)xTask;
+    log_error_blocking("STACK OVERFLOW: %s", pcTaskName);
+    taskDISABLE_INTERRUPTS();     /* 停机前先关中断, 防止半死状态继续跑 */
+    for (;;) { }                  /* 挂调试器看现场; 量产可改为安全停机  */
+}
+void vApplicationMallocFailedHook(void)
+{
+    log_error_blocking("HEAP EXHAUSTED");
+    taskDISABLE_INTERRUPTS();
+    for (;;) { }
+}</code></pre>
+  <p><b>怎么做(栈大小回填流程):</b>①初值给 512 字(2KB)/任务,典型任务(位置环、CAN 解析)通常 256~512 字够用,printf 任务给 1024+;②长跑 24h(覆盖全部分支)后读 <code>uxTaskGetStackHighWaterMark()</code>,<b>剩余 ≥ 总量的 25%</b> 才安全;③按水位回填,再跑一轮确认。注意方法 2 的检测发生在<b>上下文切换时</b> —— 若溢出后任务再不切换(如死循环中断),检测不到;所以它兜底而非替代正确估算。</p>
+  <p><b>面试怎么问:</b>"FreeRTOS 怎么发现栈溢出?检测不到的情况有什么?"——答两级:方法 1 查 SP 越界、方法 2 查栈尾水印图案,都在切换时执行,hook 里应关中断停机;检测不到 = 溢出后不再发生任务切换、或溢出恰好没踩图案也没越界(踩到的是别人任务的数据 —— 表现为"变量被神秘修改")。</p>
+
+  <!-- ================= 8 常见误区 ================= -->
+  <h2><span class="h2-num">8</span> 常见误区:四个真实炸过无数固件的坑</h2>
+
+  <h3>8.1 中断里调用非 FromISR API</h3>
+  <p><b>症状:</b>随机 HardFault、任务列表损坏、configASSERT 断言命中。<b>机理:</b>非 FromISR API 内部可能"阻塞"或直接操作调度器就绪链表,中断上下文没有任务身份,操作会破坏内核状态;即使侥幸不崩,也埋下数据竞争。<b>正解:</b>中断里只用 FromISR 家族;更狠的保险是打开 <code>configASSERT()</code>(断言宏检查 ISR 上下文),开发期任何误用立即停在断言处。</p>
+  <h3>8.2 优先级设得越高越好:饿死与反转的温床</h3>
+  <p><b>症状:</b>通信任务收不到包、日志半天不吐、看门狗复位。<b>机理:</b>控制环任务若优先级过高且不主动阻塞(vTaskDelay/等队列),就绪链表里它永远在跑,同级与低级任务全部饿死 —— 这叫"非让式任务(run-to-completion 满血循环)"。<b>正解:</b>①每个高优先级任务体必须是"<b>干活 → 阻塞等待下一事件</b>"结构,单次执行时间有限;②优先级能低则低,只给真正硬实时的环;③长跑测 CPU 占比(vTaskGetRunTimeStats)确认低优先级任务有时间片。</p>
+  <h3>8.3 二值信号量当互斥量用</h3>
+  <p><b>症状:</b>偶发"三个任务轮流被卡住"的死等、优先级反转事故(火星探路者同款)。<b>机理:</b>二值信号量没有"持有者"概念,也没有优先级继承 —— A 任务 Take 到当锁用,B/C 抢不到只能等,持锁者还可能被无关任务插队,反转链条成型。<b>正解:</b>保护共享资源一律 <code>xSemaphoreCreateMutex</code>;二值信号量只用于"事件通知"(ISR Give → 任务 Take)。口诀:<b>"锁资源用互斥量,发事件用二值/计数信号量,传数据用队列"</b>。</p>
+  <h3>8.4 vTaskDelay(1) ≠ 1ms 精确周期</h3>
+  <p><b>症状:</b>"我明明延时 1ms,为什么实测周期 1.3ms、还在漂?"<b>机理:</b><code>vTaskDelay(n)</code> 是<b>相对延时</b> —— 从"本次调用完成"起再等 n tick。任务体执行耗时 t_exec 会被累加进周期:周期 = n·tick + t_exec,周期随负载漂移、抖动无界。<b>正解:</b>周期性任务用 <code>vTaskDelayUntil(&amp;wake, period)</code>(新内核为 <code>xTaskDelayUntil</code>)—— 以<b>绝对节拍点</b>为基准,把上次唤醒时刻 + period 作为下次唤醒点,执行耗时被自动补偿,周期恒定、抖动只剩 tick 量化(±1 tick)。注意 vTaskDelayUntil 若任务被推迟到节拍点之后才唤醒,内核会立即返回追拍 —— 负载超标时表现为"任务越来越忙",这本身就是过载报警信号。</p>
+  <div class="table-wrap"><table>
+    <tr><th>误区</th><th>典型症状</th><th>一句话正解</th></tr>
+    <tr><td>中断调用非 FromISR API</td><td>随机 HardFault / 内核数据损坏</td><td>中断只用 FromISR + portYIELD_FROM_ISR</td></tr>
+    <tr><td>优先级一律拉满</td><td>低级任务饿死、看门狗复位</td><td>高优先级任务必须"干活→阻塞",能低则低</td></tr>
+    <tr><td>二值信号量当锁</td><td>偶发死等、优先级反转</td><td>锁用 Mutex(有继承),事件才用信号量</td></tr>
+    <tr><td>vTaskDelay 做周期任务</td><td>周期漂移、抖动无界</td><td>改用 vTaskDelayUntil 绝对节拍</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>"vTaskDelay 和 vTaskDelayUntil 的区别,画个时间轴说明。"——答:vTaskDelay 从"当前时刻"起延时,周期 = 延时 + 任务体耗时,抖动累积;vTaskDelayUntil 以"上次唤醒点 + period"为下次唤醒绝对时刻,耗时不累积,周期精确,前提是任务体耗时 &lt; period(否则追拍/过载)。</p>
+
+  <!-- ================= 9 小结与思考 ================= -->
+  <div class="box box-tip"><b>📌 本节小结:</b>RTOS 买的是"确定性"不是速度 —— 抢占调度把最坏响应从"大循环其余代码之和"压到"最长临界区"。三条调度规则:高优先级抢占、同级时间片轮转、空闲任务兜底;优先级数字越大越高(与 NVIC 相反)。通信四件套:队列传数据、互斥量锁资源(带优先级继承,火星探路者事故的解药)、计数信号量管资源池、事件组做多条件齐备;中断里一律 FromISR + portYIELD_FROM_ISR,且只有优先级数值 ≥ configMAX_SYSCALL_INTERRUPT_PRIORITY(典型 5)的中断才能碰 FreeRTOS API。实时性用三个指标说话:响应延迟、抖动、WCET;1kHz 周期任务必须 vTaskDelayUntil。STM32 移植记三个名字:SysTick 出节拍、PendSV 切上下文(最低优先级)、vApplicationStackOverflowHook 抓栈溢出。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>
+    1. 你的关节固件里有 20kHz 电流中断(不调 FreeRTOS API)、1kHz 速度环任务、CAN 解析任务、日志任务 —— 给这四个执行体排优先级(NVIC 与 FreeRTOS 两个体系分别排),并说明电流中断放在屏蔽线之上的好处与代价。<br>
+    2. 火星探路者事故里,如果气象任务的临界区只有 10μs,事故还会发生吗?由此推论"临界区长度应该怎么定上限"?<br>
+    3. 若速度环任务用 vTaskDelayUntil 但负载过重导致任务体耗时超过 1ms,系统会出现什么现象?你如何在监控任务里第一时间发现?
+  </div>
+
+  <!-- ================= 10 本节自测 ================= -->
+  <h2><span class="h2-num">10</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. FreeRTOS 中,当一个高优先级任务就绪时,调度器会做什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 等当前任务执行完当前时间片后再切换</button>
+      <button data-v="B">B. 立即抢占:暂停当前低优先级任务,马上切换到高优先级任务</button>
+      <button data-v="C">C. 把高优先级任务插入队列尾部,按先进先出顺序执行</button>
+      <button data-v="D">D. 将当前任务优先级临时提升到相同水平再公平轮转</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 B:抢占式调度(configUSE_PREEMPTION=1)的定义就是"高优先级就绪即切换",切换动作由 PendSV 在所有中断处理完后执行,延迟微秒级,这正是硬实时节拍得以保证的机制。<br><b>A(错):</b>时间片轮转只适用于同优先级任务之间 —— 若高优先级任务要等当前时间片(最长 1ms)跑完才能执行,电流环这类微秒级敏感的节拍早已失真,抢占存在的意义就是消除这段不可控等待;把轮转规则套到跨优先级场景,说明对调度模型的理解还没建立起来。<br><b>C(错):</b>FreeRTOS 的就绪任务按优先级分桶存放在位图结构里,调度器永远先取最高优先级桶,不是先进先出队列;把"就绪表"与"消息队列"两种数据结构的语义混为一谈是初学者常见错误 —— 若真按插入顺序调度,任务优先级字段就形同虚设,抢占与饿死都无从谈起。<br><b>D(错):</b>真实的优先级协议是"低优先级持锁者被临时提升"(优先级继承),不存在"高优先级者降级迁就运行中任务"的机制;降级方案会牺牲所有硬实时任务的确定性保证,而且本题场景根本不涉及锁,把锁协议的变体硬套到抢占调度上属于张冠李戴。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 关于 configMAX_SYSCALL_INTERRUPT_PRIORITY(典型值 5),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 优先级数值小于 5 的中断也必须调用 FromISR API</button>
+      <button data-v="B">B. 它把优先级数值大于 5 的中断全部永久关闭</button>
+      <button data-v="C">C. 它定义的是 SysTick 的中断优先级,不可更改</button>
+      <button data-v="D">D. 优先级数值 ≥ 5 的中断可以调用 FreeRTOS API;数值 &lt; 5 的中断不得调用任何 FreeRTOS API</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 D:这条 BASEPRI 屏蔽线是 Cortex-M 移植层的核心约定 —— 内核临界区(taskENTER_CRITICAL)只屏蔽数值 ≥5 的中断,所以它们可以安全调用 API;数值更小(更紧急)的中断不受内核管控,必须保持"RTOS 视野之外"。<br><b>A(错):</b>恰好说反 —— 数值小于 5 的中断 BASEPRI 挡不住,若它调用 FreeRTOS API,可能打断内核正在修改就绪链表的临界区,直接损坏内核数据结构,症状是随机 HardFault 或任务列表错乱;正确规则是"数值 ≥5 才可用 FromISR 版",这是第 5 节反复强调的底线,绝不能反过来记。<br><b>B(错):</b>"永久关闭"与机制完全不符 —— 屏蔽只发生在内核临界区/任务级临界区内部,退出即恢复,平时这些中断照常响应;而且 BASEPRI 是"临时屏蔽优先级数值 ≥ 阈值的中断",中断使能位(ISER)根本没动,把动态屏蔽说成永久关闭,是对机制作用范围与持续时间的双重误读。<br><b>C(错):</b>混淆了两个独立配置 —— configMAX_SYSCALL_INTERRUPT_PRIORITY 是"API 可用性分界线",SysTick 的优先级是另一个配置项(通常设最低 15,保证 tick 不抢占紧急中断);两者独立可改,SysTick 甚至可以在部分移植里用其他硬件定时器替代,不存在"定义的是 SysTick 优先级且不可更改"这回事。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 火星探路者(1997)反复重启的直接根因是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 优先级反转:高优先级任务等待低优先级任务持有的互斥量,而后者被中优先级任务长期抢占</button>
+      <button data-v="B">B. 优先级继承:低优先级任务被提升优先级后长期霸占 CPU</button>
+      <button data-v="C">C. 任务栈溢出导致气象数据写穿了总线管理任务的控制块</button>
+      <button data-v="D">D. 中断里调用了非 FromISR API 导致内核链表损坏</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 A:事故链条是"低优先级气象任务持锁 → 中优先级计算任务就绪、把持锁者压住 → 高优先级总线管理任务取锁被阻塞 → 看门狗判定失联触发整机复位",教科书级三方优先级反转,后被 JPL 远程上传补丁、开启优先级继承修复。<br><b>B(错):</b>描述的恰恰是"事后修复方案"而非事故原因 —— 事故发生时优先级继承尚未启用,JPL 上传补丁开启继承后才解决问题;"长期霸占 CPU"也不符合机制设计 —— 继承是临时提升、还锁立即恢复,把解药当成病因,是这道题最常见的记忆混淆点。<br><b>C(错):</b>栈溢出是另一类经典病因但不是本案 —— 探路者的故障记录指向互斥量等待超时与看门狗复位,不是内存越界;栈溢出的典型表现是变量被神秘修改或 HardFault,故障指纹与"周期性看门狗复位"对不上,答题时要能分辨"哪场事故对应哪类根因"。<br><b>D(错):</b>这是 FreeRTOS 时代专属的错误模式,而探路者 1997 年用的是 VxWorks;事故机理发生在任务级的锁等待上,与中断服务程序调什么 API 毫无关系 —— 把两个经典案例嫁接在一起是面试记忆串线的典型表现,案例与机理必须一一对应才能答稳。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 1kHz 周期任务要求节拍精确,以下哪种写法最合适?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. vTaskDelay(pdMS_TO_TICKS(1)),简单直观</button>
+      <button data-v="B">B. 软件定时器 autoReload 周期 1ms,回调里执行控制计算</button>
+      <button data-v="C">C. vTaskDelayUntil(&amp;wake, pdMS_TO_TICKS(1)),以绝对节拍点唤醒</button>
+      <button data-v="D">D. while(1) 空转读 tick 计数,到点即执行</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 C:vTaskDelayUntil 以"上次唤醒点 + period"为绝对基准,任务体执行耗时被自动补偿,周期恒定,抖动只剩 tick 量化 ±1 tick,是周期性实时任务的标准写法(新内核版本名为 xTaskDelayUntil)。<br><b>A(错):</b>vTaskDelay 是相对延时 —— 从"本次调用完成"起再等 n tick,于是周期 = 1ms + 任务体耗时;通信包长度、分支路径都会让耗时波动,周期随之漂移且抖动逐拍累积,正是第 8.4 节"延时 1ms 实测 1.3ms"的事故原型,看似简单的写法恰恰不满足"节拍精确"的要求。<br><b>B(错):</b>双重问题 —— 软件定时器回调跑在守护任务上下文里,精度受守护任务优先级与同队列回调排队影响,毫秒级勉强可用;而把整个控制计算放进回调直接违反"回调不得耗时/阻塞"军规,回调超时会拖死同队列所有定时器,正确分工是定时器管慢节奏事件、控制环交给高优先级任务。<br><b>D(错):</b>空转轮询让 CPU 占用 100%,同级及低优先级任务全部饿死,通信与日志再也无法推进;而且读 tick 计数的量化误差同样是 ±1 tick,精度毫无提升 —— 这等于把裸机大循环的缺点原样搬进 RTOS,还白白浪费了调度器的阻塞休眠能力,是四个选项里最差的方案。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于互斥量与二值信号量,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 两者完全等价,可以随意互换使用</button>
+      <button data-v="B">B. 互斥量带优先级继承,用于保护共享资源;二值信号量用于事件通知</button>
+      <button data-v="C">C. 二值信号量带优先级继承,更适合在中断里当锁用</button>
+      <button data-v="D">D. 互斥量可以在中断服务程序里 Take/Give,保护 ISR 共享数据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 B:这是两者的标准分工 —— 互斥量有"持有者"语义与优先级继承,专治共享资源竞争;二值信号量是 0/1 事件旗子,ISR Give、任务 Take,语义是"事情发生了"。<br><b>A(错):</b>"完全等价"只停留在功能表象(都是 0/1 状态) —— 互斥量的 Take/Give 必须同任务配对、带优先级继承、禁用于中断;二值信号量无持有者、可跨上下文释放。拿二值信号量当锁就复刻了火星探路者优先级反转事故,拿互斥量发事件则"任务 Take 掉事件"的语义混乱且无法跨任务释放,两个方向都会埋雷。<br><b>C(错):</b>两处硬伤 —— 优先级继承是互斥量专属特性,二值信号量根本没有这项机制;而"在中断里当锁用"更不成立,中断没有任务身份、不存在"持有者"概念,任何锁类原语的中断级 Take 都会破坏调度器状态,ISR 内保护共享数据的正确工具是短临界区或 FromISR 队列序列化。<br><b>D(错):</b>直接违反"互斥量禁用于中断"的硬规则 —— 中断里无法阻塞等待、优先级继承也无处生效(继承的对象是任务优先级),互斥量的全部设计前提在中断上下文都不成立;ISR 内保护共享数据的正确做法是 taskENTER_CRITICAL_FROM_ISR 短临界区、无锁单写者模式,或把数据打包经 FromISR 队列交给任务处理。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于 FreeRTOS 的栈溢出检测,下列说法错误的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. configCHECK_FOR_STACK_OVERFLOW = 2 时,切换上下文会检查栈尾水印图案与栈指针越界</button>
+      <button data-v="B">B. 检测到溢出会调用 vApplicationStackOverflowHook,其中应关中断并停机</button>
+      <button data-v="C">C. uxTaskGetStackHighWaterMark 可查询任务历史最小剩余栈,用于回填栈大小</button>
+      <button data-v="D">D. 开启检测后就能捕获所有栈溢出,不需要再关注栈大小估算</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 本题选<b>错误的说法</b>,答案 D。检测机制是"任务切换时兜底"而非"全量监控" —— 例如溢出后任务陷入不再切换的死循环(或溢出发生在中断里),水印校验根本没机会执行;溢出恰好没踩到图案、而是改写了相邻任务数据时,检测同样沉默,所以它不能替代正确的栈大小估算与高水位回填流程。<br><b>A(说法正确):</b>方法 2 的两道检查 —— SP 越界判断 + 栈尾 16 字节 0xA5A5A5A5 水印校验,正是对方法 1(只查指针)的增强,代价是每次上下文切换多几十个周期,描述准确,不是错误选项。<br><b>B(说法正确):</b>hook 上下文里任务栈已经不可信,必须 taskDISABLE_INTERRUPTS + 停机/记录最小现场,绝不能再调用依赖栈的复杂函数,更不能"继续跑" —— 半死状态下继续运行会覆盖事故现场,事后排查无从下手。<br><b>C(说法正确):</b>HighWaterMark 返回历史最深使用后的剩余字数,长跑覆盖全部分支后按"剩余 ≥25%"回填并复测,是栈定型的标准流程,比拍脑袋给初值可靠得多 —— 这正是第 7.3 节给出的回填流程。</div>
+  </div>
+
+  <!-- ================= 11 参考来源 ================= -->
+  <h2><span class="h2-num">11</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://www.freertos.org/" target="_blank" rel="noopener">FreeRTOS 官方网站 www.freertos.org</a> —— API 手册、内核配置项(configMAX_SYSCALL_INTERRUPT_PRIORITY、configCHECK_FOR_STACK_OVERFLOW 等)的权威定义,本页全部 API 名以官方文档为准。</li>
+    <li><a href="https://www.freertos.org/fr-content-src/uploads/2016/09/161204_Mastering_the_FreeRTOS_Real_Time_Kernel-A_Hands-On_Tutorial_Guide.pdf" target="_blank" rel="noopener">《Mastering the FreeRTOS Real Time Kernel: A Hands-On Tutorial Guide》官方手册</a> —— Richard Barry 著,任务/队列/信号量/定时器/中断管理的系统教程,本页第 2~5 节的框架与官方手册章节对应。</li>
+    <li><a href="https://www.freertos.org/Documentation/02-Kernel/04-API-references/10-Software-timers/02-xTimerCreate" target="_blank" rel="noopener">FreeRTOS 官方文档:Software Timers</a> —— 守护任务(Timer Service Task)与命令队列机制说明。</li>
+    <li>Mike Jones, "What really happened on Mars?"(1997,优先级反转经典案例的分析邮件存档,JPL 迭代修复过程)—— 火星探路者事故的原始一手记录,网络检索关键词 "Mars Pathfinder priority inversion" 可达多个存档版本。</li>
+    <li><a href="https://www.st.com/en/embedded-software/freertos.html" target="_blank" rel="noopener">ST 官方 FreeRTOS 移植资源页</a> —— STM32 Cube 集成 FreeRTOS 的移植说明,SysTick/HAL 时基冲突的处理见 X-CUBE-FREERTOS 与 STM32CubeMX 用户手册。</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡/KaTeX 公式渲染 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

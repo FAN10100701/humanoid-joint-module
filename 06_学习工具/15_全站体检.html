@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!-- 全站体检:fetch 审计(链接/索引/题库/版本/结构)。需经本地服务器或线上访问;file:// 下自动降级 -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全站体检 · 人形机器人学习站</title>
+<script>
+(function(){ try{ var t=localStorage.getItem("site-theme")||"light"; document.documentElement.setAttribute("data-theme-early",t==="dark"?"dark":"light"); }catch(e){} })();
+</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+.audit-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13.5px}
+.audit-row .m{min-width:26px}.ok{color:#86efac}.no{color:#fca5a5}.sk{color:#fbbf24}
+#sum{font-size:15px;font-weight:800;margin:14px 0}
+details.faq .faq-a pre{font-size:11.5px;white-space:pre-wrap;color:#9aa4b2}
+</style>
+<script>
+  window.PAGE = { pageId:"06-15", root:"..",
+    breadcrumb:[{t:"学习工具",u:"../index.html#sec6"},{t:"全站体检"}],
+    prev:{t:"学习数据分析",u:"10_学习数据分析.html"}, next:{t:"保研复试面试题库",u:"11_保研复试面试题库.html"} };
+</script>
+</head>
+<body>
+<div class="container">
+  <div class="page-head">
+    <h1>🩺 全站体检</h1>
+    <div class="sub">浏览器内 fetch 审计:链接 / 索引 / 题库 / 版本 / 页面结构<br>需经本地服务器或线上访问;file:// 下部分检查自动降级跳过</div>
+  </div>
+  <div class="key-point"><div class="kp-title">🎯 使用说明</div>
+  打开本页自动跑全套审计:全站链接逐个 fetch、搜索索引一致性、题库同步、版本单源、每页结构抽查。全部 <b style="color:#86efac">✓</b> 即健康;✗ 项展开看细节。</div>
+  <div id="sum">审计中…</div>
+  <div id="rows"></div>
+</div>
+<script src="../_assets/site.js"></script>
+<script>
+(function(){
+  "use strict";
+  var rows = document.getElementById("rows"), sum = document.getElementById("sum");
+  var fails = 0, total = 0, lines = [];
+  function row(name, pass, detail){
+    total++; if(pass === false) fails++;
+    lines.push({ name:name, pass:pass, detail:detail||"" });
+    var cls = pass === true ? "ok ✓" : (pass === false ? "no ✗" : "sk ⚠");
+    rows.insertAdjacentHTML("beforeend", "<div class='audit-row'><span class='m " + (pass===true?"ok":pass===false?"no":"sk") + "'>" + cls + "</span><span><b>" + name + "</b>" + (detail ? "<br><span style='color:#9aa4b2;font-size:12px'>" + detail + "</span>" : "") + "</span></div>");
+    sum.textContent = "审计中… 已完成 " + total + " 项" + (fails ? ",失败 " + fails + " 项" : "");
+  }
+  async function fetchText(u){ const r = await fetch(u); if(!r.ok) throw new Error(r.status); return await r.text(); }
+  const http = location.protocol.indexOf("http") === 0;
+  const root = "..";
+
+  async function main(){
+    if(!http){ row("运行环境", null, "file:// 下无法 fetch,仅做本地检查"); }
+
+    /* 1) 全站链接审计 */
+    try{
+      const sm = await fetchText(root + "/sitemap.xml");
+      const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
+      const base = location.origin + "/";   /* 中文路径会被编码,直接用站点根 */
+      let bad = 0, checked = 0;
+      for(const u of locs){
+        try{ const r = await fetch(new URL(u.replace("https://cyco.top", base)), { method:"GET" }); checked++; if(!r.ok) bad++; }
+        catch(e){ checked++; bad++; }
+        if(checked % 15 === 0) rows.insertAdjacentHTML("beforeend", "<div class='audit-row'><span class='m ok'>…</span><span>链接审计进行中 " + checked + "/" + locs.length + "</span></div>");
+      }
+      row("全站链接审计(sitemap " + locs.length + " URL)", bad === 0, "检查 " + checked + " 个,失败 " + bad + " 个" + (bad ? "(含 404/网络)" : ""));
+    }catch(e){ row("全站链接审计", false, "sitemap 获取失败:" + e.message); }
+
+    /* 2) 搜索索引一致性 */
+    try{
+      const sj = await fetchText(root + "/_assets/search-index.js");
+      const n = (sj.match(/\{ t:"/g) || []).length;
+      row("搜索索引条目(正则计数)", n > 0, n + " 条");
+    }catch(e){ row("搜索索引条目", false, e.message); }
+
+    /* 3) 题库同步 */
+    try{
+      const qb = await fetchText(root + "/_assets/quiz-bank.js");
+      const cnt = (qb.match(/\bq:"/g) || []).length;
+      const page = await fetchText("03_自测题库.html");
+      const shown = page.indexOf("data-runtime-quiz") >= 0 ? cnt : (page.match(/class="quiz-q"/g) || []).length;
+      row("题库同步(quiz-bank ↔ 自测题库页)", cnt === shown && cnt > 0, cnt + " vs " + shown);
+    }catch(e){ row("题库同步", false, e.message); }
+
+    /* 4) 版本单源 */
+    try{
+      const sj = await fetchText(root + "/_assets/site.js");
+      const v = (sj.match(/S\.VERSION\s*=\s*"([^"]+)"/) || [])[1];
+      const idx = await fetchText(root + "/index.html");
+      const cl = await fetchText(root + "/CHANGELOG.md");
+      const sw = await fetchText(root + "/sw.js");
+      const c = (sw.match(/var\s+CACHE\s*=\s*"hrl-site-v([^"]+)"/) || [])[1];
+      const vn = (v||"").split("(")[0].replace("V","");
+      const okAll = idx.indexOf(v) >= 0 && cl.indexOf(vn) >= 0 && c === vn;
+      row("版本单源(site.js/index/CHANGELOG/sw)", okAll, v + " · sw=" + c);
+    }catch(e){ row("版本单源", false, e.message); }
+
+    /* 5) 页面结构抽查 */
+    try{
+      const idx = await fetchText(root + "/index.html");
+      let secs = (idx.match(/key:"\d\d"/g) || []).length;
+      try{ const ss = await fetchText(root + "/_assets/site-sections.js");
+        secs = (ss.match(/key:"\d\d"/g) || []).length; }catch(e){}
+      row("板块组(SECTIONS 单源)", secs >= 7, secs + " 个板块组");
+      const hasGlass = idx.indexOf("glass-title") >= 0;
+      row("首页玻璃设计系统已接入", hasGlass, hasGlass ? "glass-title 存在" : "未找到 glass-title");
+      const pageIds = (await fetchText(root + "/_assets/page-meta.js")).match(/"(\d\d-\d\d)":/g) || [];
+      row("page-meta 注册量", pageIds.length >= 60, pageIds.length + " 个 pageId");
+    }catch(e){ row("页面结构抽查", false, e.message); }
+
+    if(fails === 0){
+      sum.innerHTML = "<span class='ok'>✅ 体检完成:" + total + " 项全部通过</span>";
+    }else{
+      let netFail = 0;
+      document.querySelectorAll("#rows .no").forEach(function(){ netFail++; });
+      const hint = (fails >= total - 2)
+        ? "<br><span class='sk'>💡 全部链接项失败 = 本地服务器大概率未启动:请双击 _本地工具/启动教学页面.bat 后,刷新本页重新体检(离线缓存只能显示页面,不能 fetch)</span>"
+        : "";
+      sum.innerHTML = "<span class='no'>❌ 体检完成:" + fails + " / " + total + " 项失败,展开下方明细</span>" + hint;
+    }
+    sum.insertAdjacentHTML("beforeend", "<div style='font-size:10.5px;color:#6b7280;margin-top:4px'>audit v2 · 2026-08-29</div>");
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", main); else main();
+})();
+</script>
+</body>
+</html>

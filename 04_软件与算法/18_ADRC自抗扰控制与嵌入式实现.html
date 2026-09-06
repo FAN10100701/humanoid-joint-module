@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 04-18 ADRC 自抗扰控制与嵌入式实现
+  结构严格遵循 _assets/页面模板.html
+  本页是 ADRC 的「体系页」: 动机思想 / TD / ESO / LADRC 带宽法 /
+  b0 整定 / 完整整定流程 / 离散实现 / 完整 C 代码 / 抗扰验证 /
+  失效排查 / 业界现状,与 00-01(ESO推导+代码)、04-09(升级路线)、
+  06-11(面试题库)互链,不重复其内容
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · ADRC自抗扰控制与嵌入式实现</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(全部 my- 前缀,避免与全局冲突) ===== */
+  /* SVG 插图容器 */
+  .my-fig{background:rgba(13,17,23,.72);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 12px;margin:16px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:560px;width:100%;height:auto;margin:0 auto}
+  .my-fig text{font-family:Consolas,"Courier New",monospace}
+  .my-fig-cap{font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.7}
+  /* 彩色小标签(表格内使用) */
+  .my-tag{display:inline-block;padding:1px 10px;border-radius:6px;font-size:11.5px;font-weight:700;white-space:nowrap;line-height:1.7;vertical-align:middle}
+  .my-tag-green{background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.4)}
+  .my-tag-blue{background:rgba(59,130,246,.15);color:#9ecbff;border:1px solid rgba(59,130,246,.42)}
+  .my-tag-orange{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.45)}
+  .my-tag-red{background:rgba(239,68,68,.14);color:#fca5a5;border:1px solid rgba(239,68,68,.45)}
+  /* 代码块字号微调(ADRC 代码较长) */
+  .my-pre pre{font-size:12.8px;line-height:1.62}
+  /* ===== 资源卡(与 02-05 参考资料页同构) ===== */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .my-badge-book{background:linear-gradient(135deg,#fefce8,#fef9c3)}
+  .my-badge-paper{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-article{background:linear-gradient(135deg,#fdf4ff,#fae8ff)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-code{background:linear-gradient(135deg,#fff7ed,#ffedd5)}
+  .my-tag-paper{background:#dbeafe;color:#1e40af}
+  .my-tag-zhihu{background:#e0e7ff;color:#3730a3}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-book{background:#fef3c7;color:#92400e}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  /* ===== 浅色主题适配 ===== */
+  html:not([data-theme-early="dark"]) .my-fig{background:rgba(255,255,255,.72);border-color:rgba(148,163,184,.35)}
+  html:not([data-theme-early="dark"]) .my-fig-cap{color:#5a6a85}
+  html:not([data-theme-early="dark"]) .my-tag-green{background:rgba(34,197,94,.12);color:#15803d;border-color:rgba(34,197,94,.35)}
+  html:not([data-theme-early="dark"]) .my-tag-blue{background:rgba(37,99,235,.1);color:#1d4ed8;border-color:rgba(37,99,235,.3)}
+  html:not([data-theme-early="dark"]) .my-tag-orange{background:rgba(245,158,11,.12);color:#b45309;border-color:rgba(245,158,11,.4)}
+  html:not([data-theme-early="dark"]) .my-tag-red{background:rgba(239,68,68,.1);color:#b91c1c;border-color:rgba(239,68,68,.35)}
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+  /* V2.1.16a 观感修复:SVG 图例/步骤框文字双主题 */
+  .my-lg{fill:#26303b} html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-t{fill:#b45309} html[data-theme-early='dark'] .my-t{fill:#fcd34d}
+  .my-tb{fill:#1d4ed8} html[data-theme-early='dark'] .my-tb{fill:#9ecbff}
+  .my-tg{fill:#15803d} html[data-theme-early='dark'] .my-tg{fill:#86efac}
+  .my-bwd{fill:#991b1b} html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-18",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec4" },
+      { t: "ADRC自抗扰控制与嵌入式实现" }
+    ],
+    prev: { t: "状态观测器全解:龙伯格/EKF/SMO", u: "17_状态观测器全解_龙伯格_EKF_SMO.html" },
+    next: { t: "FOC算法完全图解:流程与运行图", u: "19_FOC算法完全图解_流程与运行图.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🛡️ ADRC 自抗扰控制与嵌入式实现</h1>
+    <div class="sub">TD / ESO / LADRC 完整推导 + STM32 落地细节 —— 从韩京清「估计 + 补偿」哲学,到高志强带宽法三个参数搞定整定,再到一阶/二阶 LADRC 的可移植 C 代码、抗扰验证与失效排查。本页是 ADRC 的体系页,与 00-01 的 ESO 代码演示、04-09 的工程升级路线、06-11 的面试题库互为补充。</div>
+    <div class="tags">
+      <span class="tag">ADRC 自抗扰</span>
+      <span class="tag">TD / ESO / LADRC</span>
+      <span class="tag">带宽参数化</span>
+      <span class="tag">STM32 C 实现</span>
+      <span class="tag">抗扰整定</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出 ADRC 的完整结构框图,说清 TD、ESO、LSEF/NLSEF、扰动补偿四部分各自解决什么问题<br>
+    2. 能推导三阶 ESO 方程组,并用高志强带宽法写出 β₁ β₂ β₃ 与 kp kd 的全部增益表达式<br>
+    3. 能解释 b₀ 的物理意义,并用空载阶跃实验估计 b₀,说出 b₀ 过大/过小的两种相反症状<br>
+    4. 能按「先内环后外环、ωₒ 从低到高扫」的流程把一个 PI 环替换成一阶 LADRC,并知道 ωₒ ≤ fs/10 的由来<br>
+    5. 能在 STM32 上部署 ~80 行的一阶/二阶 LADRC C 代码,并根据症状表排查 ωₒ 过高、b₀ 失配等失效模式<br>
+    <b>建议用时:</b>约 45 分钟(推导部分可配合 00-01 页的交互仿真对照阅读)
+  </div>
+
+  <!-- ================= 1 动机与思想 ================= -->
+  <h2><span class="h2-num">1</span> ADRC 动机与思想:把「不知道」当成扰动来估计</h2>
+
+  <h3>1.1 是什么:PID 的「误差导向」范式到底卡在哪</h3>
+  <p><b>是什么:</b>PID 的控制量完全由「设定值 − 输出值」这个误差驱动:<code>u = Kp·e + Ki·∫e + Kd·de/dt</code>。它不看对象内部发生了什么,只看「结果差多少」再事后补救。这套范式统治工业八十年,靠的是两条:不依赖模型、结构简单。但放在人形机器人关节上,它的三个短板被放大:</p>
+  <ul>
+    <li><b>事后性:</b>误差出现了才出力 —— 负载冲击先造成速度跌落,PID 再往回拉,「抗扰」永远是被动响应;</li>
+    <li><b>微分困境:</b>对误差直接差分求微分,会把编码器/PWM 噪声放大大几倍到几十倍,所以电流环干脆不敢用 D(见 <a href="../00_3D解剖/人形机器人解剖式知识可视化.html">00-01 三环控制小节</a>);</li>
+    <li><b>模型依赖的隐性成本:</b>PID 参数只在「整定时的工况」下最优 —— 负载惯量一变、摩擦一变就得重调,机器人大变姿态时这个矛盾尤其尖锐。</li>
+  </ul>
+  <p><b>为什么:</b>问题的根源是「扰动不可见」。韩京清(中科院系统科学研究所,ADRC 创始人)的切入点是:与其给每种扰动单独建模,不如<b>把所有「模型对不上 + 外部作用」统一打包成一个量,在线估计它,然后从控制量里减掉</b>。这个打包后的量就叫<b>总扰动</b>:</p>
+  <ul>
+    <li><b>内扰(模型内不确定性):</b>参数漂移(惯量 J、电阻 R、电感 L 随温度变化)、非线性摩擦、齿槽转矩、谐波柔轮迟滞;</li>
+    <li><b>外扰(外部作用):</b>负载突变、足端着地冲击、接触力、重力矩;</li>
+    <li><b>总扰动 f = 内扰 + 外扰 + 一切未建模动态,</b>统一折算到输入通道(加速度端),量纲与「加速度」一致。</li>
+  </ul>
+  <div class="formula">\ddot{y}(t) = f\big(\,y,\ \dot{y},\ w(t),\ t\,\big) + b_0\,u(t) \qquad\text{(二阶对象标准型,如关节位置环)}</div>
+  <p><b>怎么做:</b>把对象强制写成上式 —— 唯一要求知道的模型信息只有两个:<b>阶次 n</b>(关节位置/速度环通常是二阶)和<b>输入增益 b₀ 的估计值</b>。剩下所有复杂东西都塞进 f。这就是 ADRC「不依赖精确模型」的准确含义:不是不用模型,而是只用的部分<b>少而粗</b>(阶次 + b₀,误差 3 倍以内都能工作)。</p>
+  <p><b>面试怎么问:</b>「ADRC 为什么说是不基于模型的?它到底需要知道什么?」——标准答案:需要对象的<b>相对阶次</b>和<b>输入增益估计 b₀</b>,其余(参数摄动、非线性、外扰)全部归入总扰动由 ESO 在线估计;这是它与自抗扰之前所有「先建模再设计」方法的本质区别。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①把「总扰动」理解成只有外部负载 —— 它还包括参数漂移和未建模动态,这正是比「扰动观测器 DOB」覆盖面更广的地方;②以为总扰动是标量常值 —— 它是 y、ẏ、外输入 w 和时间 t 的函数,只是被当成「扩张状态」在线跟踪。</div>
+
+  <h3>1.2 核心思想:估计 + 补偿,ADRC 四件套各司其职</h3>
+  <p><b>是什么:</b>ADRC(Active Disturbance Rejection Control)= <b>TD + ESO + 状态误差反馈 + 扰动补偿</b>四件套。逻辑链只有三步:</p>
+  <ol>
+    <li><b>安排过渡过程(TD):</b>目标指令先经跟踪微分器「柔化」,不再拿阶跃直接砸闭环 —— 消超调、防激励机械谐振,顺带得到无噪声放大的微分信号;</li>
+    <li><b>估计总扰动(ESO):</b>把 f 扩张成第 n+1 个状态,用输入 u 和测量 y 实时观测出 z₁…zₙ₊₁,其中 z₃(二阶对象)就是总扰动的估计;</li>
+    <li><b>对消 + 反馈(补偿):</b>控制量里减去 z₃/b₀,把对象实时「改造成」纯积分器链,再用 PD(或 NLSEF)控制这个被简化后的对象 —— 问题从「控制复杂不确定对象」降维成「控制教科书级积分器」。</li>
+  </ol>
+  <div class="formula">\text{补偿后:}\quad \ddot{y} = \underbrace{f - z_3}_{\approx\,0} + b_0\cdot\frac{u_0 - (f-z_3)}{b_0} \;\approx\; u_0 \qquad\text{(对象被实时改造成双积分器)}</div>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 380" role="img" aria-label="ADRC 自抗扰控制器完整结构框图:参考输入经 TD 跟踪微分器得到 v1 v2,与 ESO 估计的 z1 z2 求误差后经 NLSEF 得 u0,再与负的 z3 比 b0 扰动补偿合成控制量 u 作用于被控对象;ESO 同时接收 u 与输出 y,输出 z1 z2 给误差反馈、z3 给扰动补偿">
+      <defs>
+        <marker id="ar-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="ar-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+        <marker id="ar-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+        <marker id="ar-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- 参考输入 v -->
+      <text x="12" y="76" fill="#22c55e" font-size="13" font-weight="bold">v</text>
+      <text x="8" y="92" fill="#8b98a9" font-size="10">参考输入</text>
+      <line x1="24" y1="71" x2="50" y2="71" stroke="#22c55e" stroke-width="2" marker-end="url(#ar-g)"/>
+      <!-- TD 框 -->
+      <rect x="52" y="42" width="132" height="58" rx="10" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="118" y="67" fill="#22c55e" font-size="13" font-weight="bold" text-anchor="middle">TD 跟踪微分器</text>
+      <text x="118" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle">安排过渡过程·提取微分</text>
+      <!-- TD 输出 v1 v2 → Σ1 -->
+      <path d="M184 71 L240 71 L240 139" fill="none" stroke="#22c55e" stroke-width="2" marker-end="url(#ar-g)"/>
+      <text x="246" y="112" fill="#22c55e" font-size="12">v₁ v₂</text>
+      <!-- Σ1 求和 -->
+      <circle cx="240" cy="156" r="15" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="240" y="161" fill="#ef4444" font-size="14" font-weight="bold" text-anchor="middle">Σ</text>
+      <text x="222" y="140" fill="#22c55e" font-size="11">+</text>
+      <text x="222" y="188" fill="#f59e0b" font-size="11">−</text>
+      <!-- Σ1 → LSEF -->
+      <line x1="255" y1="156" x2="298" y2="156" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar-b)"/>
+      <text x="276" y="146" fill="#8b98a9" font-size="10.5" text-anchor="middle">e₁ e₂</text>
+      <!-- LSEF 框 -->
+      <rect x="300" y="124" width="150" height="64" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="375" y="150" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">NLSEF / 线性PD (LSEF)</text>
+      <text x="375" y="170" fill="#8b98a9" font-size="11" text-anchor="middle">u₀ = kp·e₁ + kd·e₂</text>
+      <!-- LSEF → Σ2 -->
+      <line x1="450" y1="156" x2="491" y2="156" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar-b)"/>
+      <text x="470" y="146" fill="#58a6ff" font-size="12" text-anchor="middle">u₀</text>
+      <!-- Σ2 求和(扰动补偿点) -->
+      <circle cx="508" cy="156" r="15" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="508" y="161" fill="#ef4444" font-size="14" font-weight="bold" text-anchor="middle">Σ</text>
+      <text x="490" y="140" fill="#58a6ff" font-size="11">+</text>
+      <text x="490" y="188" fill="#ef4444" font-size="11">−</text>
+      <!-- Σ2 → 对象 -->
+      <line x1="523" y1="156" x2="554" y2="156" stroke="#22c55e" stroke-width="2" marker-end="url(#ar-g)"/>
+      <text x="538" y="146" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">u</text>
+      <!-- 被控对象 -->
+      <rect x="556" y="124" width="76" height="64" rx="10" fill="rgba(148,163,184,.12)" stroke="#94a3b8" stroke-width="1.6"/>
+      <text x="594" y="150" fill="#64748b" font-size="12" font-weight="bold" text-anchor="middle">被控对象</text>
+      <text x="594" y="170" fill="#8b98a9" font-size="10.5" text-anchor="middle">ÿ=f+b₀u</text>
+      <!-- u 分支下行进 ESO -->
+      <circle cx="540" cy="156" r="3.5" fill="#22c55e"/>
+      <path d="M540 156 L540 262 L392 262 L392 290" fill="none" stroke="#22c55e" stroke-width="2" marker-end="url(#ar-g)"/>
+      <text x="546" y="228" fill="#22c55e" font-size="11">u(控制量)</text>
+      <!-- 对象输出 y 下行进 ESO -->
+      <path d="M594 188 L594 324 L464 324" fill="none" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar-b)"/>
+      <text x="530" y="316" fill="#58a6ff" font-size="11">y(测量)</text>
+      <!-- ESO 框 -->
+      <rect x="160" y="292" width="304" height="64" rx="10" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="312" y="316" fill="#f59e0b" font-size="13" font-weight="bold" text-anchor="middle">ESO 扩张状态观测器</text>
+      <text x="312" y="336" fill="#8b98a9" font-size="10.5" text-anchor="middle">e = z₁−y · ż₁=z₂−β₁e · ż₂=z₃−β₂e+b₀u · ż₃=−β₃e</text>
+      <text x="312" y="351" fill="#8b98a9" font-size="10.5" text-anchor="middle">吃进 u 与 y,吐出 z₁ z₂(状态) + z₃(总扰动)</text>
+      <!-- z1 z2 上行进 Σ1 -->
+      <path d="M230 292 L230 200 L240 200 L240 173" fill="none" stroke="#f59e0b" stroke-width="2" marker-end="url(#ar-o)"/>
+      <text x="196" y="238" fill="#f59e0b" font-size="11">z₁ z₂</text>
+      <!-- z3 经补偿盒进 Σ2 -->
+      <path d="M330 292 L330 230 L373 230" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#ar-r)"/>
+      <rect x="375" y="214" width="122" height="32" rx="8" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="436" y="235" fill="#ef4444" font-size="11.5" font-weight="bold" text-anchor="middle">扰动补偿 −z₃/b₀</text>
+      <path d="M497 230 L508 230 L508 173" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#ar-r)"/>
+      <!-- 图例 -->
+      <text x="320" y="374" fill="#8b98a9" font-size="10.5" text-anchor="middle">绿:指令/控制通道 · 蓝:测量通道 · 橙:观测器状态反馈 · 红:求和与扰动补偿</text>
+    </svg>
+    <div class="my-fig-cap">图① ADRC 完整结构:ESO 是「心脏」—— 同时吃控制量 u 和测量 y,把总扰动 z₃ 估出来;控制律只做两件事:PD 出力 u₀ + 减去 z₃/b₀ 对消扰动</div>
+  </div>
+  <p><b>面试怎么问:</b>「画出 ADRC 的结构框图,并指出总扰动从哪进、从哪出。」—— 总扰动「进」在对象方程的加速度端(与 b₀u 同一通道),「出」在 ESO 的扩张状态 z₃,最终以 −z₃/b₀ 的形式汇入控制量。画不出 ESO 双输入(u、y)是常见扣分点。</p>
+  <div class="box box-tip"><b>💡 与站内已有内容的关系:</b><a href="../00_3D解剖/人形机器人解剖式知识可视化.html">00-01 3D 解剖页</a>的「ADRC 推导与代码」小节给了二阶 LADRC 的<b>交互仿真与单文件宏定义版代码</b>;<a href="../04_软件与算法/22_通信与控制算法升级路线.html">04-23 升级路线页</a>给了「三环 PID → 三环 ADRC」的工程变体表。本页负责把<b>推导、整定方法论与嵌入式细节</b>一次讲全 —— 三页配合使用。</div>
+
+
+  <!-- ================= 2 TD 与 ESO ================= -->
+  <h2><span class="h2-num">2</span> TD 跟踪微分器与 ESO 扩张状态观测器:ADRC 的两大「信号器官」</h2>
+
+  <h3>2.1 TD 安排过渡过程:一次性解决超调与微分噪声放大</h3>
+  <p><b>是什么:</b>TD(Tracking Differentiator,跟踪微分器)是一个二阶动态环节,输入原始指令 v(k),输出两个信号:v₁ —— 平滑跟踪 v 的「过渡过程」,v₂ —— v₁ 的微分。<b>为什么需要它:</b>阶跃指令直接进闭环,误差瞬间达到最大值,积分项迅速饱和 → 超调;而想给 PID 加微分项,直接对测量差分,信噪比崩塌。TD 用「最速跟踪 + 微分在环内产生」同时解决这两个老问题 —— 这是韩京清对 PID「微分噪声放大」死结的正面回答。</p>
+  <p><b>怎么做(fhan 最速离散跟踪微分器):</b></p>
+  <div class="formula">v_1(k+1)=v_1(k)+h\,v_2(k),\qquad v_2(k+1)=v_2(k)+h\,\cdot\mathrm{fhan}\big(v_1(k)-v(k),\ v_2(k),\ r,\ h_0\big)</div>
+  <div class="formula">\text{其中}\ \ d=r\,h_0,\ \ d_0=h_0\,d,\ \ y=x_1+h_0\,x_2,\ \ a_0=\sqrt{d^2+8r\,|y|},\ \ a=\begin{cases} x_2+\dfrac{a_0-d}{2}\,\mathrm{sign}(y), & |y|>d_0\\[4pt] x_2+\dfrac{y}{h_0}, & |y|\le d_0 \end{cases}</div>
+  <div class="formula">\mathrm{fhan}(x_1,x_2,r,h_0)=\begin{cases} -r\,\mathrm{sign}(x_2), & |a|>d\\[3pt] -\dfrac{r\,a}{d}, & |a|\le d \end{cases}</div>
+  <p>直观理解:fhan 是「最速控制综合函数」—— 它回答「以加速度上限 r,最快多少步能把 x₁ 拉到 0」。把它接进上面两行迭代,得到的 v₁ 就是「在加速度受限下最快又最平滑地跟上 v 的轨迹」,v₂ 就是这条轨迹的速度,天然可用作前馈。</p>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>物理意义</th><th>调大</th><th>调小</th><th>工程经验</th></tr>
+    <tr><td><b>r 速度因子</b></td><td>「虚拟加速度上限」,决定过渡过程快慢</td><td>跟踪快,但 r→∞ 时 v₁ 退化为阶跃,失去安排过渡过程的意义</td><td>过渡平缓、无超调,但响应滞后</td><td>按「希望几个周期到达」反推;常从阶跃响应时间 T 估 r ≈ 10·v₀/T 量级起试</td></tr>
+    <tr><td><b>h₀ 滤波因子</b></td><td>等效滤波时间常数,抑制输入噪声</td><td>v₁/v₂ 更平滑,但相位滞后增大,v₂ 滞后于真实微分</td><td>跟随快,噪声残留多</td><td>h₀ ≥ 采样周期 h,典型 (3~10)·h;输入噪声大时加大</td></tr>
+  </table></div>
+  <p><b>工程简化(重要):</b>人形机器人整机控制器通常以 1kHz 下发「位置 + 速度 + 力矩前馈」三元组(q_des, dq_des, τ_ff),指令本身就是平滑轨迹、速度前馈现成 —— 此时关节侧 <b>TD 可省略</b>,直接令 v₁=q_des、v₂=dq_des(00-01 页同样结论)。TD 真正的用武之地是:指令来自阶跃型上位机、或需要从「又脏又跳」的指令里提取干净微分信号的场合。</p>
+  <p><b>面试怎么问:</b>「TD 解决什么问题?r 和 h₀ 分别管什么?」——答「安排过渡过程消超调 + 无噪声放大的微分提取」;r 管快慢(等效加速度限幅),h₀ 管滤波(等效噪声采样窗),二者独立可调是 TD 优于「一阶惯性 + 差分」的地方。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①把 h₀ 直接填成采样周期 h —— 滤波几乎为零,v₂ 满屏毛刺;②把 r 调到天文数字然后抱怨「TD 没用」—— r 过大就等于没安排过渡过程;③以为 TD 有闭环稳态精度概念 —— 它是开环信号预处理,不参与抗扰。</div>
+
+  <h3>2.2 ESO:把总扰动扩张为第 n+1 个状态</h3>
+  <p><b>是什么:</b>ESO(Extended State Observer,扩张状态观测器)是 ADRC 的心脏。普通状态观测器(见 <a href="17_状态观测器全解_龙伯格_EKF_SMO.html">04-17 状态观测器全解</a>)只估计模型里<b>已有</b>的状态;ESO 的绝招是<b>把「模型之外的一切」—— 总扰动 f —— 也当作一个状态 x₃ = f 扩张进来</b>,让观测器把它连同 x₁ x₂ 一起估出来。对二阶对象(以关节位置环为例,x₁=y、x₂=ẏ、x₃=f):</p>
+  <div class="formula">\dot{x}_1=x_2,\qquad \dot{x}_2=x_3+b_0 u,\qquad \dot{x}_3=\dot{f}\approx 0\ \ (\text{扰动缓变假设})</div>
+  <p><b>为什么能收敛:</b>第三行的 ḟ≈0 不是说扰动真的不变,而是「在观测器带宽对应的时标内近似不变」。对扩张系统构造观测器,用输出误差 e = z₁ − y 驱动三个状态的校正,就得到<b>非线性三阶 ESO</b>:</p>
+  <div class="formula">\begin{aligned} \dot{z}_1&=z_2-\beta_1\,\mathrm{fal}(e,\alpha_1,\delta)\\ \dot{z}_2&=z_3-\beta_2\,\mathrm{fal}(e,\alpha_2,\delta)+b_0\,u\\ \dot{z}_3&=-\beta_3\,\mathrm{fal}(e,\alpha_3,\delta) \end{aligned}\qquad e=z_1-y</div>
+  <div class="formula">\mathrm{fal}(e,\alpha,\delta)=\begin{cases} \dfrac{e}{\delta^{\,1-\alpha}}, & |e|\le\delta\ \ (\text{线性段防抖})\\[5pt] |e|^{\alpha}\,\mathrm{sign}(e), & |e|>\delta \end{cases}\qquad 0 &lt; \alpha &lt; 1</div>
+  <p><b>fal 函数与收敛性直觉:</b>当 0 &lt; α &lt; 1 时,|e| 很小则 |e|^α 反而比 |e| 大(例如 e=0.01、α=0.5 时 |e|^α=0.1)——<b>「小误差大增益、大误差小增益」</b>:误差小时强拉快收敛,误差大时增益自动回落防超调,δ 线性段保证过零处增益有限不抖振。这套「幂次增益」与滑模观测器的 sigmoid 边界层、电机控制里的变结构思想一脉相承。收敛性的严格证明较难(韩京清用有限时间稳定性与时间尺度概念给直觉论证),但线性化后看:β 配置使特征多项式全负实部 + 扰动变化率有界 ⇒ 估计误差最终有界收敛;工程上更重要的是下一节的带宽法 —— 它把「β 怎么选」变成一个频率参数。</p>
+  <p><b>怎么做(读 ESO 的三个输出):</b>z₁ = 位置估计(可直接替代测量做反馈,滤了噪声)、z₂ = 速度估计(比编码器差分干净,可省掉独立测速滤波)、<b>z₃ = 总扰动估计</b>(重力 + 摩擦 + 负载冲击的「合力」,既送去补偿,也可顺手做碰撞检测:|z₃| 突增即触碰)。观察 z₃ 波形是调 ESO 的第一手诊断量 —— 它应当平滑地跟随重力/摩擦的慢变化。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 620 300" role="img" aria-label="ESO 收敛性示意图:横轴时间,纵轴状态估计误差;三条曲线分别是 ωo 较小时缓慢收敛、ωo 适中时快速收敛、ωo 过高加上显式欧拉离散和噪声时振荡发散">
+      <defs>
+        <marker id="ax" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+      </defs>
+      <!-- 坐标轴 -->
+      <line x1="70" y1="250" x2="585" y2="250" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#ax)"/>
+      <line x1="70" y1="250" x2="70" y2="38" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#ax)"/>
+      <text x="575" y="270" fill="#8b98a9" font-size="12" text-anchor="end">t (s)</text>
+      <text x="30" y="34" fill="#8b98a9" font-size="12">|x−z| 估计误差</text>
+      <!-- 零误差线 -->
+      <line x1="70" y1="238" x2="580" y2="238" stroke="#8b98a9" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>
+      <text x="580" y="231" fill="#8b98a9" font-size="10" text-anchor="end">误差 = 0</text>
+      <!-- ωo=50 绿:慢收敛 -->
+      <path d="M70 70 C 200 92, 380 190, 560 234" fill="none" stroke="#22c55e" stroke-width="2.2"/>
+      <!-- ωo=200 蓝:快收敛 -->
+      <path d="M70 70 C 120 78, 160 170, 230 216 S 330 236, 420 237" fill="none" stroke="#58a6ff" stroke-width="2.2"/>
+      <!-- ωo=2000 红:振荡发散 -->
+      <path d="M70 100 L92 170 L114 52 L136 196 L158 40 L180 216 L202 30 L224 240 L246 20 L268 252 L290 12" fill="none" stroke="#ef4444" stroke-width="1.8"/>
+      <text x="298" y="20" fill="#ef4444" font-size="11.5" font-weight="bold">ωₒ 过高:振荡发散</text>
+      <text x="298" y="36" fill="#ef4444" font-size="10">(显式欧拉 + 噪声)</text>
+      <!-- 注释 -->
+      <text x="150" y="130" fill="#22c55e" font-size="11.5">ωₒ=50:收敛慢,扰动「追不上」</text>
+      <text x="330" y="120" fill="#58a6ff" font-size="11.5" font-weight="bold">ωₒ=200:快速干净收敛 ✓</text>
+      <line x1="70" y1="100" x2="70" y2="100" stroke="#22c55e" stroke-width="2"/>
+      <!-- 图例 -->
+      <rect x="420" y="52" width="158" height="70" rx="8" fill="rgba(13,17,23,.45)" stroke="rgba(255,255,255,.12)"/>
+      <line x1="432" y1="70" x2="460" y2="70" stroke="#22c55e" stroke-width="2.2"/><text x="468" y="74" class="my-lg" font-size="10.5">ωₒ 小 · 慢</text>
+      <line x1="432" y1="90" x2="460" y2="90" stroke="#58a6ff" stroke-width="2.2"/><text x="468" y="94" class="my-lg" font-size="10.5">ωₒ 适中 · 快且稳</text>
+      <line x1="432" y1="110" x2="460" y2="110" stroke="#ef4444" stroke-width="2"/><text x="468" y="114" class="my-lg" font-size="10.5">ωₒ 过高 · 发散</text>
+    </svg>
+    <div class="my-fig-cap">图② ESO 收敛性随观测器带宽 ωₒ 的变化:ωₒ 越大对扰动的「追赶」越快,但受噪声与离散化限制 —— ωₒ 超过采样率允许的上限后,显式欧拉下直接振荡发散(第 6 节给出定量关系)</div>
+  </div>
+  <p><b>面试怎么问:</b>「ESO 为什么能估计不知道的扰动?它对扰动做了什么假设?」——标准答案三层:①扩张状态——把 f 当第 n+1 个状态纳入观测器;②唯一假设是扰动「缓变」(ḟ≈0 或变化率有界),观测器带宽决定能跟踪多快的扰动;③收敛靠 β 增益配置使误差动态稳定, fal 的「小误差大增益」进一步加快小误差段收敛。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①把 ESO 与 04-17 的扰动观测器(DOB)混为一谈 —— DOB 需要对象逆模型 Q(s),ESO 只要 b₀ 和阶次,模型依赖更低;②忽略「扰动能被观测」的前提:扰动频率接近或超过观测器带宽时 z₃ 显著滞后,补偿能力随之下降 —— 这是 ωₒ 要尽量做高的根本原因;③fal 的 δ 取 0,导致过零抖振(数值上等价于去掉线性段)。</div>
+
+
+  <!-- ================= 3 LADRC 线性化与带宽法 ================= -->
+  <h2><span class="h2-num">3</span> LADRC 线性化与带宽参数化:工程落地的关键一步</h2>
+
+  <h3>3.1 高志强带宽法:全部增益由 ωₒ 一个参数决定</h3>
+  <p><b>是什么:</b>非线性 ADRC 的 fal、fhan 里有一堆参数(α₁ α₂ α₃ δ β₁ β₂ β₃…),整定困难、理论分析也难。高志强(克利夫兰州立大学)在 ACC 2003 论文(资源卡 R2)里给出<b>尺度变换 + 带宽参数化</b>:把 ESO 全部增益用<b>单一参数 —— 观测器带宽 ωₒ</b> 表示,办法是把观测器特征多项式的所有极点统一配置在 −ωₒ:</p>
+  <div class="formula">(s+\omega_o)^3 = s^3+3\omega_o\,s^2+3\omega_o^2\,s+\omega_o^3 \;\Longrightarrow\; \beta_1=3\omega_o,\quad \beta_2=3\omega_o^2,\quad \beta_3=\omega_o^3</div>
+  <p><b>为什么这么配:</b>观测器误差动态的特征多项式就是 s³+β₁s²+β₂s+β₃(对三阶 ESO),把它对比 (s+ωₒ)³ 的展开,β 就全定了 —— 三重极点统一在 −ωₒ,单调无超调的收敛形态,物理意义就是「误差以 ωₒ 为时间尺度的指数速度被拉回」。同理控制器侧把 PD 的两个极点统一配在 −ω_c:k_p=ω_c²、k_d=2ω_c。于是<b>整个二阶 LADRC 只剩三个待定参数:ωₒ、ω_c、b₀</b>,且前两个都是频率量纲、可以直接对着「闭环带宽需求」和「采样率上限」拍板。</p>
+  <p><b>为什么工程都用 LADRC:</b></p>
+  <ul>
+    <li><b>整定成本断崖式下降:</b>非线性版十几个参数 → 线性版 3 个,且互不纠缠(ω_c 管响应、ωₒ 管估计、b₀ 管对消);</li>
+    <li><b>可分析、可仿真、可自动化:</b>线性系统有频域工具,MathWorks 直接内置 ADRC 模块(资源卡 R13),整定可写进出厂流程;</li>
+    <li><b>性能损失小:</b>大量对比研究表明线性版在绝大多数伺服场景追平非线性版;韩京清坚持的「非线性才最速」主要在大误差、强非线性段的极限性能上有意义(见 3.3)。</li>
+  </ul>
+  <p><b>面试怎么问:</b>「LADRC 的带宽参数化是怎么把多参数问题变成单参数的?」——答:把 ESO(和 PD)特征多项式按 (s+ωₒ)ⁿ/(s+ω_c)ⁿ 展开对比系数,β₁=3ωₒ、β₂=3ωₒ²、β₃=ωₒ³、k_p=ω_c²、k_d=2ω_c;ωₒ 定「估计多快」,ω_c 定「闭环多快」,经验 ωₒ≈(3~5)ω_c。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①β 的表达式只对「三阶 ESO / 二阶对象」成立 —— 一阶对象用二阶 ESO,是 β₁=2ωₒ、β₂=ωₒ²(第 5.2 节);别背错阶次。②ωₒ、ω_c 是<b>弧度/秒</b>,和 Hz 差 2π —— 「fs=1kHz 所以 ωₒ≤100」是把单位搞混的典型事故(应为 ωₒ≤628 rad/s)。</div>
+
+  <h3>数值算例:给定电机参数算 ESO 增益与控制律(手推)</h3>
+  <p><b>对象:</b>某关节电机二阶模型 J·θ̈ = u − d(含负载/摩擦总扰动 d),折算到电机端的惯量 J = 0.002 kg·m²,则 b₀ = 1/J = <b>500</b>(单位 1/(kg·m²),配转矩指令 u 时恰是 rad/s²/N·m 的换算)。取观测器带宽 ωₒ = 150 rad/s、控制器带宽 ω<sub>c</sub> = 100 rad/s(经验 ωₒ ≈ (3~5)ω<sub>c</sub> 的中段)。</p>
+  <p><b>三阶 ESO 增益(带宽法一步算完):</b></p>
+  <div class="formula">\beta_1 = 3\omega_o = 3\times150 = \mathbf{450},\qquad \beta_2 = 3\omega_o^2 = 3\times150^2 = 3\times22500 = \mathbf{67500},\qquad \beta_3 = \omega_o^3 = 150^3 = \mathbf{3.375\times10^6}</div>
+  <p><b>控制器 PD 增益:</b>k<sub>p</sub> = ω<sub>c</sub>² = 100² = <b>10000</b>,k<sub>d</sub> = 2ω<sub>c</sub> = <b>200</b>。<b>代一组数感受量纲:</b>设位置误差 v₁−z₁ = 0.05 rad、估计速度 z₂ = 2 rad/s、负载扰动 d = 3 N·m(z₃ ≈ −d/J = −1500 rad/s²),则 u₀ = 10000×0.05 − 200×2 = 500 − 400 = <b>100 rad/s²</b>(加速度指令),控制量 u = (u₀ − z₃)/b₀ = (100 − (−1500))/500 = 1600/500 = <b>3.2 N·m</b>。拆开看:0.2 N·m 用于加速(u₀/b₀ = 100×0.002),3.0 N·m 用于顶住负载——<b>扰动补偿项占了 94%,这就是 z₃/b₀ 在干活</b>。</p>
+  <p><b>采样率校核:</b>由 ωₒ ≤ f<sub>s</sub>/10 得 f<sub>s</sub> ≥ 10×150 = <b>1.5 kHz</b>。对照 §12 分层表:速度/位置环通常跑 1~2 kHz——取 2 kHz 时高于最低要求 1.5 kHz,但余量仅 33%(f<sub>s</sub>/ωₒ ≈ 13.3 倍,刚过 10 倍准则),环频一旦掉到 1.5 kHz 以下就得降 ωₒ;电流环 20 kHz 相比之下宽裕一个数量级,进一步说明 ESO 放在位置/速度层、电流层仍交给 PI 的分层是自洽的。若现场只剩 1 kHz,反解 ωₒ ≤ 628 rad/s,需把 ωₒ 降到 ~120 rad/s 并同步下调 ω<sub>c</sub>。</p>
+  <div class="box box-tip"><b>📌 自检:</b>把数字换成你的电机参数重算一遍(提示:先重算 b₀ = 1/J,再按 β₁=3ωₒ、β₂=3ωₒ²、β₃=ωₒ³、k<sub>p</sub>=ω<sub>c</sub>²、k<sub>d</sub>=2ω<sub>c</sub> 逐个代,最后用 ωₒ≤f<sub>s</sub>/10 校核你控制器的环频)。</div>
+
+  <h3>3.2 线性控制律与扰动补偿:u = (u₀ − z₃)/b₀</h3>
+  <p><b>是什么:</b>LADRC 的控制律分两步 —— 先用估计状态做线性 PD(称作 LSEF,Linear State Error Feedback),再做扰动补偿:</p>
+  <div class="formula">u_0 = k_p\,(v_1-z_1) + k_d\,(v_2-z_2),\qquad k_p=\omega_c^2,\ \ k_d=2\omega_c</div>
+  <div class="formula">u = \frac{u_0 - z_3}{b_0} \qquad\Longrightarrow\qquad \ddot{y} \approx u_0\ \ (\text{总扰动被对消,对象变成双积分器})</div>
+  <p><b>怎么理解补偿这一步:</b>对象真实满足 ÿ = f + b·u(真实增益 b)。代入 u=(u₀−z₃)/b₀ 得 ÿ = u₀ + (b/b₀)(f−z₃)·b₀/b₀… 把量纲捋直:ÿ = (b/b₀)·u₀ + [f − (b/b₀)·z₃]。<b>当 b₀≈b 且 z₃≈f 时,ÿ≈u₀</b> —— 控制器面对的等效对象变成了干净的双积分器,PD 控制双积分器是教科书问题,这就是「ADRC 把复杂对象改造为积分器串联型」的含义。注意两点:①即使 b₀≠b,z₃ 也会把 (b/b₀−1)·u₀ 的部分一起「吸收」掉,这正是 ADRC 对 b₀ 失配鲁棒的来源;②u 的量纲跟随 b₀ 的定义(电压、电流指令或力矩),写代码前先统一。</p>
+  <p><b>面试怎么问:</b>「z₃/b₀ 里的 b₀ 是干嘛的?去掉行不行?」——不行:z₃ 是加速度量纲的总扰动,要换算成「控制量」量纲才能在输入端对消,除以 b₀ 就是这个换算;b₀ 是 b 的估计,失配只会降低对消质量,不会破坏结构。</p>
+
+  <h3>3.3 NLSEF:什么时候才真的需要「非线性」</h3>
+  <p><b>是什么:</b>NLSEF(非线性状态误差反馈)把线性 PD 换成 fal 组合:</p>
+  <div class="formula">u_0 = \beta\,\mathrm{fal}(e_1,\alpha_1,\delta) + \beta\,\mathrm{fal}(e_2,\alpha_2,\delta)\qquad(\text{非线性版,常用 } \alpha_1&lt;1&lt;\alpha_2)</div>
+  <p><b>与线性 PD 的差别:</b>线性 PD 的增益恒定 —— 误差大时出力「不够狠」,误差小时又「推不动残差」;NLSEF 用幂次函数做<b>变增益</b>:小误差段(α&lt;1)增益趋于无穷大级地放大,消除稳态残差又快又干净;大误差段增益相对收敛,防止猛出力导致超调。再加上「大误差段 α&gt;1 加速合围」的组合策略,理论上比线性更接近时间最优。</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>线性 LSEF(PD)</th><th>非线性 NLSEF</th></tr>
+    <tr><td>增益特性</td><td>恒定,频域工具齐全</td><td>随误差幅值变化,「小误差大增益」</td></tr>
+    <tr><td>稳态残差</td><td>依赖 ω_c 与扰动补偿质量</td><td>幂次增益对小残差「穷追不舍」,更干净</td></tr>
+    <tr><td>整定与分析</td><td>ω_c 单参数,可自动化</td><td>多参数(α、δ、β),无成熟频域方法</td></tr>
+    <tr><td>适用场合</td><td><b>绝大多数伺服/关节场景(工程默认)</b></td><td>大范围高精度快速定位、强非线性对象、对极限性能有要求的研究课题</td></tr>
+  </table></div>
+  <p><b>怎么做(决策建议):</b>先用线性版把系统跑通、拿到基线性能;只有当「小误差段爬行」「大误差段超调」两类问题同时出现、且线性版调不动时,才考虑把 LSEF 换成 NLSEF —— 并接受整定时间翻倍的代价。韩京清原著(资源卡 R1)对非线性机理讲得最透,可作为进阶阅读。</p>
+  <p><b>面试怎么问:</b>「LADRC 已经线性了,韩京清的原始 ADRC 为什么坚持非线性?你选哪个?」——答出取舍即可:非线性版理论性能上限更高(最速性),线性版工程可控性更好;选型看「性能缺口是否存在 + 整定资源是否充裕」,工业界默认线性。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>把 NLSEF 和「给 PID 加个非线性增益」划等号 —— NLSEF 作用的对象是<b>补偿后的积分器链</b>,误差用的是估计状态误差 (v−z),不是测量误差 (r−y);脱离 ESO 单独用 fal 组合,既丢了抗扰又引入抖振。</div>
+
+  <!-- ================= 4 b0 ================= -->
+  <h2><span class="h2-num">4</span> b₀ 的物理意义与整定:三个参数里最容易翻车的那个</h2>
+
+  <h3>4.1 b₀ 是什么:控制增益估计,失配的两种相反症状</h3>
+  <p><b>是什么:</b>b₀ 是对象方程 ÿ = f + b·u 中<b>真实输入增益 b 的估计值</b> —— 「1 单位控制量能产生多少加速度」。位置/速度环里 b ≈ 1/J(J 为折算到该环输出端的转动惯量);电流环一阶模型里 b ≈ 1/L。它出现在两处:ESO 用它把「u 产生的那部分」从总变化里剥离(模型项),控制律用它把 z₃ 换算回控制量量纲(补偿项)。</p>
+  <p><b>为什么它决定性能:</b>b₀ 不准时,ESO 与补偿同时「错」,但错的方式部分抵消 —— 所以 ADRC 对 b₀ 误差有 3~5 倍的容忍度(远好于增益调度),但超出后症状对称地出现:</p>
+  <div class="table-wrap"><table>
+    <tr><th>b₀ 取值</th><th>补偿效果</th><th>等效对象</th><th>典型症状</th><th>处理方向</th></tr>
+    <tr><td><span class="my-tag my-tag-red">b₀ 过小</span>(b₀ &lt; 真实 b)</td><td>过度补偿:同样的 z₃ 被换算出更大的控制量</td><td>等效增益虚高</td><td>响应变快但<b>超调、振荡、啸叫</b>,严重时发散</td><td>增大 b₀</td></tr>
+    <tr><td><span class="my-tag my-tag-blue">b₀ 过大</span>(b₀ &gt; 真实 b)</td><td>补偿不足:对消不干净</td><td>等效增益偏低 + 残留扰动</td><td><b>响应迟钝、爬行</b>,抗扰恢复慢,像「欠阻尼的软系统」</td><td>减小 b₀</td></tr>
+    <tr><td>b₀ 准确(±3 倍内均可工作)</td><td>对消干净</td><td>≈ 双积分器</td><td>阶跃快而稳,z₃ 平滑贴合负载变化</td><td>固化参数</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>「b₀ 失配会失稳吗?怎么判断往哪个方向调?」——答:多数情况不直接失稳(z₃ 会吸收一部分失配),但性能退化;<b>「振荡 → b₀ 偏小,迟钝 → b₀ 偏大」</b>这组对称口诀必须答出来。判断技巧:比较 |u₀| 与 |z₃/b₀| 的量级 —— 若补偿项远大于反馈项,说明 b₀ 或扰动通道有问题。</p>
+
+  <h3>4.2 b₀ 怎么估:从一次空载阶跃到在线自整定</h3>
+  <p><b>怎么做(三条路,由易到难):</b></p>
+  <ol>
+    <li><b>惯量折算法(桌面估计):</b>查电机转子惯量 J_r、减速比 i、负载折算 J_L,得 b₀ ≈ 1/(J_r + J_L/i²)(输出端系)。5 分钟出初值,误差可到 ±50%,但足够当扫参起点;</li>
+    <li><b>空载阶跃拟合法(推荐,10 分钟):</b>断开位置环,对速度环(或直接电压)施加已知小阶跃 u₀(额定值的 10~20%,避免饱和),由编码器测角加速度 ä:<b>b₀ ≈ ä/u₀</b>。多取几个幅值求平均,注意剔除摩擦主导的低速段数据;</li>
+    <li><b>在线辨识/递推最小二乘(进阶):</b>把 b 作为参数随运行数据递推更新,负载大范围变化(机械臂抓放)时值得做,代价是引入参数激励条件问题。</li>
+  </ol>
+  <div class="formula">b_0 \approx \frac{\Delta\ddot{y}}{\Delta u}\Big|_{\text{空载小信号阶跃}}\qquad\text{(多次取幅值平均;电流环则 } b_0\approx 1/L\text{,用 datasheet 的相电感)}</div>
+  <p><b>面试怎么问:</b>「现场没有惯量数据,如何 10 分钟拿到可用的 b₀?」——答空载小信号阶跃 + 差分求加速度 + 线性回归,并补一句「量测端先做低通再差分,否则噪声把 ä 淹没」。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①在饱和区测 b₀ —— 输出饱和后 ä 不再随 u 线性增长,估出来系统性偏小;②忘了单位折算 —— 减速比平方出现在惯量折算里(1/i²)、编码器单位 rad 还是 count,错一个量级 b₀ 就错两个量级;③认为 b₀ 越准越好而过度打磨 —— b₀ 偏大 30% 只损失少量响应速度,优先把时间花在 ωₒ 扫描上。</div>
+
+
+  <!-- ================= 5 整定流程 ================= -->
+  <h2><span class="h2-num">5</span> LADRC 完整整定流程:从 b₀ 到固化参数的六步</h2>
+
+  <h3>5.1 整定 step-flow:先内环后外环,ωₒ 从低到高扫</h3>
+  <p><b>怎么做:</b>多环系统(电流→速度→位置)遵循「<b>先内环后外环</b>」—— 内环整定完成后,对外环近似为理想力矩源,外环才好整。单环之内按下面流程走:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 620 436" role="img" aria-label="LADRC 整定流程图:第一步辨识 b0,第二步定控制器带宽 ωc,第三步定观测器带宽 ωo 从三到五倍 ωc 起扫且不超过采样频率十分之一,第四步阶跃验证,振荡则回退,第五步突加负载扰动验证,最后固化参数写入固件">
+      <defs>
+        <marker id="fl" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="fl-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+        <marker id="fl-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- step1 -->
+      <rect x="150" y="16" width="300" height="52" rx="10" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="300" y="38" class="my-t" font-size="13" font-weight="bold" text-anchor="middle">① 辨识 b₀(空载小信号阶跃)</text>
+      <text x="300" y="57" class="my-lg" font-size="11" text-anchor="middle">b₀≈Δÿ/Δu;或 1/J 惯量折算,误差 3 倍内可用</text>
+      <line x1="300" y1="68" x2="300" y2="90" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
+      <!-- step2 -->
+      <rect x="150" y="92" width="300" height="52" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="300" y="114" class="my-tb" font-size="13" font-weight="bold" text-anchor="middle">② 定控制器带宽 ωc</text>
+      <text x="300" y="133" class="my-lg" font-size="11" text-anchor="middle">按闭环需求从需求值的一半起(位置环 30~150 rad/s)</text>
+      <line x1="300" y1="144" x2="300" y2="166" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
+      <!-- step3 -->
+      <rect x="150" y="168" width="300" height="52" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="300" y="190" class="my-tb" font-size="13" font-weight="bold" text-anchor="middle">③ 定观测器带宽 ωₒ:从 (3~5)·ωc 起扫</text>
+      <text x="300" y="209" class="my-lg" font-size="11" text-anchor="middle">只往上扫,上限 fs/10;盯 z₃ 平滑度与电流啸叫</text>
+      <line x1="300" y1="220" x2="300" y2="242" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
+      <!-- step4 阶跃验证 -->
+      <rect x="130" y="244" width="340" height="52" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="300" y="266" class="my-tg" font-size="13" font-weight="bold" text-anchor="middle">④ 小幅阶跃验证:超调?振荡?稳态残差?</text>
+      <text x="300" y="285" class="my-lg" font-size="11" text-anchor="middle">振荡 → ωc 回退 30%;迟钝 → 查 b₀ 方向(第 4.1 节口诀)</text>
+      <line x1="300" y1="296" x2="300" y2="318" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
+      <!-- 回退支路 -->
+      <path d="M470 270 L500 270 L500 194 L454 194" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#fl-r)"/>
+      <rect x="496" y="216" width="118" height="46" rx="8" fill="rgba(239,68,68,.10)" stroke="rgba(239,68,68,.5)" stroke-width="1.2"/>
+      <text x="555" y="235" class="my-bwd" font-size="10.5" text-anchor="middle">啸叫/抖动 →</text>
+      <text x="555" y="251" class="my-bwd" font-size="10.5" text-anchor="middle">降 ωₒ(或改滤波)</text>
+      <!-- step5 扰动验证 -->
+      <rect x="150" y="320" width="300" height="52" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="300" y="342" class="my-tg" font-size="13" font-weight="bold" text-anchor="middle">⑤ 突加负载扰动验证(对照 PI 基线)</text>
+      <text x="300" y="361" class="my-lg" font-size="11" text-anchor="middle">看跌落深度与恢复时间(第 8 节读曲线四步)</text>
+      <line x1="300" y1="372" x2="300" y2="394" stroke="#58a6ff" stroke-width="2" marker-end="url(#fl)"/>
+      <!-- step6 固化 -->
+      <rect x="170" y="396" width="260" height="36" rx="10" fill="rgba(34,197,94,.16)" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="300" y="419" class="my-tg" font-size="13" font-weight="bold" text-anchor="middle">⑥ 固化参数 · 写入固件 · 记录版本</text>
+    </svg>
+    <div class="my-fig-cap">图③ LADRC 整定流程:唯一允许「来回」的只有 ③→④ 的回退环 —— ωₒ 只增不减地扫,遇到啸叫先降 ωₒ 或加滤波,不要回头去动 ω_c</div>
+  </div>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>起点</th><th>扫描方向</th><th>停止判据</th></tr>
+    <tr><td><b>b₀</b></td><td>阶跃拟合值 / 1/J</td><td>按症状微调(振荡↑b₀、迟钝↓b₀)</td><td>阶跃无超调、无爬行</td></tr>
+    <tr><td><b>ω_c</b></td><td>需求带宽的一半</td><td>从小到大</td><td>轻微振荡后回退 30%</td></tr>
+    <tr><td><b>ωₒ</b></td><td>(3~5)·ω_c</td><td><b>从低到高</b>,典型扫到 fs/5~fs/10 为止</td><td>z₃ 平滑、阶跃恢复达标、无啸叫</td></tr>
+    <tr><td><b>限幅 u_max</b></td><td>执行器能力(电流/力矩)</td><td>—</td><td>涵盖补偿项与反馈项之和</td></tr>
+  </table></div>
+  <p><b>ωₒ 上限为什么是「典型 1/5~1/10 采样率」:</b>ωₒ 越高,ESO 对突扰动的跟踪越快,但显式欧拉离散的稳定域有限(第 6 节推导),且 β₂=3ωₒ²、β₃=ωₒ³ 会把编码器量化噪声放大进 z₂ z₃。工程折中:先扫到 z₃ 开始「起毛」,再退一档 —— 这比任何公式都可靠。</p>
+  <p><b>面试怎么问:</b>「给你一个新关节,LADRC 三参数你怎么下手?顺序能乱吗?」——答 b₀ 先行(没它补偿方向都不知道)、ω_c 按需求、ωₒ 最后且必须 ≥3ω_c;顺序乱调会互相掩盖症状。</p>
+
+  <h3>5.2 与 PID 对照:一个 PI 电流环改造成一阶 LADRC 的完整替换</h3>
+  <p><b>为什么用电流环举例:</b>电流环对象是一阶(R-L 电路),对应<b>一阶 LADRC(二阶 ESO)</b>,代码最短、收益直观(反电动势 Ke·ω 就是现成的「总扰动」—— ESO 会把它估出来并补偿,等效于免费的自适应反电动势前馈)。对象方程:</p>
+  <div class="formula">L\frac{di_q}{dt} = -R\,i_q + u - K_e\,\omega \;\;\Longrightarrow\;\; \dot{i}_q = \underbrace{\tfrac{1}{L}\big(-R\,i_q - K_e\omega\big)}_{\text{总扰动 }f} + \underbrace{\tfrac{1}{L}}_{b_0}\,u</div>
+  <p><b>一阶 LADRC 完整方程(二阶 ESO,β₁=2ωₒ、β₂=ωₒ²):</b></p>
+  <div class="formula">\dot{z}_1=z_2-\beta_1(z_1-i_q)+b_0\,u,\qquad \dot{z}_2=-\beta_2\,(z_1-i_q),\qquad u=\frac{k_p\,(i_q^{ref}-z_1)-z_2}{b_0},\quad k_p=\omega_c</div>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>留基线</b><br>记录原 PI 参数(Kp,Ki)与 3 组阶跃/突扰波形,给改造后的对比留下「对照组」</div>
+    <div class="step-item"><span class="n">2</span><b>算 b₀</b><br>b₀=1/L(L 取 datasheet 相电感);ω_c 取原 PI 穿越频率;ωₒ=4ω_c 起步</div>
+    <div class="step-item"><span class="n">3</span><b>换函数</b><br>把 PI 函数替换为第 7 节 ladrc1_calc();调用位置、周期、限幅都不变</div>
+    <div class="step-item"><span class="n">4</span><b>扫 ωₒ</b><br>从 fs/20 扫到 fs/10,盯电流波形毛刺与啸叫;再校 ω_c 对齐原带宽</div>
+    <div class="step-item"><span class="n">5</span><b>对比验证</b><br>反电动势工况(高速段)与突加负载下对比基线:跌落深度、恢复时间</div>
+    <div class="step-item"><span class="n">★</span><b>留退路</b><br>参数表里保留 PI/LADRC 双方案与切换开关 —— 量产路径允许回滚</div>
+  </div>
+  <div class="box box-tip"><b>💡 预期收益与代价:</b>电流环换一阶 LADRC 后,高速段因反电动势被 z₂ 实时补偿,电流跟踪滞后明显减小;代价是每周期多 ~30 次浮点运算(第 6.2 节),以及多了 ωₒ 一个需要保护的参数(改错会啸叫)。速度环换二阶 LADRC 的流程完全相同,对象换成 J·dω/dt,b₀≈1/J,ESO 多一个状态。</div>
+  <p><b>面试怎么问:</b>「把 PI 环换成 LADRC,最小改动是什么?哪些必须保持不变?」——答:只替换「误差→控制量」的映射函数,执行周期、输出限幅、保护逻辑、通信接口全部保持;必须保留原方案基线与回滚开关。</p>
+
+
+  <!-- ================= 6 离散实现与采样率 ================= -->
+  <h2><span class="h2-num">6</span> 离散实现与采样率:ωₒ 上限、浮点/定点与耗时量级</h2>
+
+  <h3>6.1 欧拉离散与 ωₒ ≤ fs/10 的由来</h3>
+  <p><b>是什么:</b>MCU 上跑的是差分方程。对连续 ESO 用<b>前向欧拉</b>(显式)离散最简单 —— 每周期把导数乘以 Ts 直接累加:</p>
+  <div class="formula">z_1^{k+1}=z_1^{k}+T_s\big[z_2^{k}-\beta_1 e^{k}+b_0 u^{k}\big],\qquad z_2^{k+1}=z_2^{k}+T_s\big[z_3^{k}-\beta_2 e^{k}\big],\qquad z_3^{k+1}=z_3^{k}-T_s\,\beta_3 e^{k}</div>
+  <p><b>为什么 ωₒ 有上限:</b>显式欧拉把连续极点 −ωₒ 映射到 z 平面的 1−ωₒTs,落在单位圆内才稳定,粗略要求 <b>ωₒ·Ts ≲ 1</b>;再考虑三重极点的稳定裕度收紧 5~10 倍,就得到工程经验式:</p>
+  <div class="formula">\omega_o \;\le\; \frac{f_s}{10}\qquad\Big(f_s=\tfrac{1}{T_s}\ \text{为采样频率,如 } f_s=1\,\text{kHz}\Rightarrow\omega_o\le 628\ \text{rad/s}\approx 100\,\text{Hz}\Big)</div>
+  <p><b>怎么做(想突破上限怎么办):</b>①改离散方法 —— 后向欧拉/Tustin(双线性)把稳定域扩大,Tustin 下 ωₒ 上限可放宽到 fs/3 左右,代价是每周期多做几次乘加;②精确离散 —— 观测器矩阵是 3×3,可用查表或上电时算一次矩阵指数;③降采样需求 —— 高速环(20kHz)本来就给了 ωₒ 巨大空间,「ωₒ 不够用」通常只发生在拿 1kHz 位置环硬扛大冲击的场合,此时应把 ADRC 下沉到速度环(2kHz+)。</p>
+  <div class="table-wrap"><table>
+    <tr><th>控制环</th><th>典型 fs</th><th>ωₒ 上限(fs/10)</th><th>对应 ω_c(取 ωₒ/4)</th><th>ESO 阶次建议</th></tr>
+    <tr><td>电流环</td><td>10~20 kHz</td><td>6280~12570 rad/s</td><td>≈2000~3000 rad/s(充裕)</td><td>一阶 LADRC(2 阶 ESO)</td></tr>
+    <tr><td>速度环</td><td>1~5 kHz</td><td>628~3140 rad/s</td><td>150~800 rad/s</td><td>二阶 LADRC(3 阶 ESO)</td></tr>
+    <tr><td>位置环</td><td>0.5~2 kHz</td><td>314~1257 rad/s</td><td>80~300 rad/s</td><td>二阶 LADRC / PD+前馈</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>「ωₒ 能配到任意高吗?上限由什么决定?」——三层:①采样与离散(ωₒ≤fs/10,显式欧拉);②噪声(β₃=ωₒ³ 放大编码器量化噪声);③执行器(把噪声顶到电流里成啸叫)。答出任意两层即合格。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①单位混用 —— fs 是 Hz、ωₒ 是 rad/s,差 2π(前面易错点再次出现,因为这是真事故高发区);②用「预测-校正」顺序错误地展开欧拉 —— 更新 z₂ 时必须用<b>本拍之前</b>的 z₃、u 值,代码里顺手用了刚更新的 z₁ 会让离散化与设计不符,高 ωₒ 时直接发散;③中断里 ESO 和控制律不同频调用 —— 两者必须同频,或严格按多速率重推离散式。</div>
+
+  <h3>6.2 浮点、定点与 STM32 上的耗时量级</h3>
+  <p><b>是什么:</b>一次 LADRC 计算的代价 ≈ ESO 的乘加次数 + 补偿除法。二阶 LADRC(三阶 ESO)约 30~40 次 FMA + 1 次除法;一阶约一半。</p>
+  <ul>
+    <li><b>带 FPU 的内核(M3 除外的 M4/M7/G4/H7):</b>直接 float。Cortex-M4F 的 FPU 一次 float 乘加 1 周期,一次 <code>ladrc2_calc()</code> 实测量级 <b>1~2 μs @170MHz</b>、一阶 0.5~1 μs —— 在 20kHz 电流环(50μs 周期)里占比 &lt;4%,1kHz 位置环更是零头。20 个关节全上二阶 LADRC 也吃不满 1kHz 任务的预算;</li>
+    <li><b>无 FPU 内核(M0/M3):</b>float 走软件库,单次乘法上百周期,LADRC 单次可能拖到几十 μs —— 此时二选一:降采样率(≤1kHz 的环还能用 float),或改 <b>Q15/Q31 定点</b>;</li>
+    <li><b>定点化要点:</b>β₂=3ωₒ²、β₃=ωₒ³ 数值大且分散(ωₒ=600 时 β₃≈2×10⁸),必须<b>先归一化再定标</b>:把 e 归一到 ±1、增益按 2 的幂定标移位实现,乘加后检查饱和;e 的线性段 δ 附近增益 1/δ^(1−α) 很大,Q15 精度不足时先炸的就是这里。</li>
+  </ul>
+  <p><b>面试怎么问:</b>「STM32G431 跑 20kHz 电流环,能不能塞进一阶 LADRC?算一笔账。」——答:G431 带 FPU,一阶 LADRC 约 0.5~1μs,加 FOC 本体约 10~15μs,20kHz 周期 50μs,占比 &lt;30%,可以;若换 M0 就要定点化或降环频。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①除法用 b₀ 而不是 b₀ 的倒数 —— 初始化时算好 <code>inv_b0 = 1/b0</code>,运行期只做乘法(除法在 M4 上 ~14 周期,且定点化后根本没法除);②中断优先级里让 ESO 被高优先级任务打断 —— ESO 状态跨周期不一致等于隐式变步长;③调试时 printf 浮点拖垮实时性 —— 高频环里用 DMA 上传,别在环内做格式化输出。</div>
+
+
+  <!-- ================= 7 完整 C 实现 ================= -->
+  <h2><span class="h2-num">7</span> 完整 C 实现:一阶/二阶 LADRC 教学精简版(~80 行)</h2>
+
+  <h3>7.1 结构体 + init + calc 完整代码与站内版本对照</h3>
+  <p><b>是什么:</b>下面这份代码包含<b>一阶(LADRC1)与二阶(LADRC2)两套</b>结构体和计算函数,前向欧拉离散、参数运行时可改。与 <a href="../00_3D解剖/人形机器人解剖式知识可视化.html">00-01 3D 解剖页</a>的 <code>ADRC_Init/ADRC_Calc</code> 单文件宏定义版相比:那边是「二阶专用、宏参数、零依赖」,适合直接抄进工程演示;本版是「一阶+二阶通用、结构体参数、含输出限幅与上一拍 u 缓存」,适合做<b>在线整定上位机</b>或多关节复用 —— 两版算法内核完全一致,可互移植。</p>
+  <div class="my-pre">
+  <pre><code>/* ===================================================================
+ * ladrc.c —— 一阶/二阶 LADRC 教学精简版(前向欧拉离散, float)
+ * 依赖: 无(纯 float 运算) | 移植: 复制即用, 无动态内存
+ * 带宽约束: w_o &lt;= fs/10;  经验: w_o ≈ (3~5)*w_c
+ * ================================================================ */
+typedef struct {                 /* ---- 一阶: 对象 dy = f + b0*u ---- */
+    float Ts, w_o, w_c, b0;      /* 周期 / 观测器带宽 / 控制带宽 / 增益 */
+    float kp, inv_b0;            /* kp = w_c;  预先取倒数避免运行期除法 */
+    float z1, z2;                /* z1: 输出估计   z2: 总扰动估计        */
+    float u;                     /* 上一拍输出(ESO 更新要用)             */
+    float u_max;                 /* 输出限幅                            */
+} ladrc1_t;
+
+typedef struct {                 /* ---- 二阶: 对象 ddy = f + b0*u ---- */
+    float Ts, w_o, w_c, b0;
+    float kp, kd, inv_b0;        /* kp = w_c^2;  kd = 2*w_c             */
+    float z1, z2, z3;            /* z1: 位置  z2: 速度  z3: 总扰动估计   */
+    float u;
+    float u_max;
+} ladrc2_t;
+
+void ladrc1_init(ladrc1_t *a, float Ts, float w_o, float w_c,
+                 float b0, float u_max)
+{
+    a-&gt;Ts = Ts;  a-&gt;w_o = w_o;  a-&gt;w_c = w_c;  a-&gt;b0 = b0;
+    a-&gt;u_max = u_max;
+    a-&gt;kp     = w_c;             /* 一阶: 极点统一配在 -w_c            */
+    a-&gt;inv_b0 = 1.0f / b0;
+    a-&gt;z1 = 0.0f;  a-&gt;z2 = 0.0f;  a-&gt;u = 0.0f;
+}
+
+void ladrc2_init(ladrc2_t *a, float Ts, float w_o, float w_c,
+                 float b0, float u_max)
+{
+    a-&gt;Ts = Ts;  a-&gt;w_o = w_o;  a-&gt;w_c = w_c;  a-&gt;b0 = b0;
+    a-&gt;u_max = u_max;
+    a-&gt;kp     = w_c * w_c;       /* 二阶: (s+w_c)^2 = s^2 + 2w_c s + w_c^2 */
+    a-&gt;kd     = 2.0f * w_c;
+    a-&gt;inv_b0 = 1.0f / b0;
+    a-&gt;z1 = 0.0f;  a-&gt;z2 = 0.0f;  a-&gt;z3 = 0.0f;  a-&gt;u = 0.0f;
+}
+
+/* -------- 一阶 LADRC: 每周期调用一次, v=目标, y=测量(已滤波) -------- */
+float ladrc1_calc(ladrc1_t *a, float v, float y)
+{
+    float b1 = 2.0f * a-&gt;w_o;            /* 极点统一在 -w_o:            */
+    float b2 = a-&gt;w_o * a-&gt;w_o;          /* (s+w_o)^2 = s^2+2w_o s+w_o^2 */
+    float e, u0;
+
+    e = a-&gt;z1 - y;                       /* 输出误差                    */
+    a-&gt;z1 += a-&gt;Ts * (a-&gt;z2 - b1 * e + a-&gt;b0 * a-&gt;u);   /* ESO 欧拉更新  */
+    a-&gt;z2 += a-&gt;Ts * (-b2 * e);
+    u0 = a-&gt;kp * (v - a-&gt;z1);            /* 状态误差反馈(kp=w_c)        */
+    a-&gt;u = (u0 - a-&gt;z2) * a-&gt;inv_b0;     /* 扰动补偿 u=(u0-z2)/b0       */
+    if (a-&gt;u &gt;  a-&gt;u_max) a-&gt;u =  a-&gt;u_max;   /* 限幅防饱和              */
+    if (a-&gt;u &lt; -a-&gt;u_max) a-&gt;u = -a-&gt;u_max;
+    return a-&gt;u;
+}
+
+/* -------- 二阶 LADRC: v1=目标, v2=目标微分(前馈, 可为0) ------------ */
+float ladrc2_calc(ladrc2_t *a, float v1, float v2, float y)
+{
+    float c1 = 3.0f * a-&gt;w_o;            /* 极点统一在 -w_o:            */
+    float c2 = 3.0f * a-&gt;w_o * a-&gt;w_o;   /* (s+w_o)^3 展开系数          */
+    float c3 = a-&gt;w_o * a-&gt;w_o * a-&gt;w_o;
+    float e, u0;
+
+    e = a-&gt;z1 - y;
+    a-&gt;z1 += a-&gt;Ts * (a-&gt;z2 - c1 * e);
+    a-&gt;z2 += a-&gt;Ts * (a-&gt;z3 - c2 * e + a-&gt;b0 * a-&gt;u);
+    a-&gt;z3 += a-&gt;Ts * (-c3 * e);
+    u0 = a-&gt;kp * (v1 - a-&gt;z1) + a-&gt;kd * (v2 - a-&gt;z2);
+    a-&gt;u = (u0 - a-&gt;z3) * a-&gt;inv_b0;
+    if (a-&gt;u &gt;  a-&gt;u_max) a-&gt;u =  a-&gt;u_max;
+    if (a-&gt;u &lt; -a-&gt;u_max) a-&gt;u = -a-&gt;u_max;
+    return a-&gt;u;
+}
+
+/* -------- 用法示例: 1kHz 位置环(整机下发 q_des/dq_des/tau_ff) ------ */
+/* static ladrc2_t g_pos;                                            */
+/* void pos_init(void){ ladrc2_init(&amp;g_pos, 0.001f, 240.0f,          */
+/*                               60.0f, 8.0f, 20.0f); }              */
+/* void pos_1kHz(float q_des,float dq_des,float q)                   */
+/* {  float iq = ladrc2_calc(&amp;g_pos, q_des, dq_des, q);              */
+/*    motor_set_iq(iq);      输出送电流环力矩指令  }                 */</code></pre>
+  </div>
+  <p><b>代码四个细节,面试常被追问:</b></p>
+  <ul>
+    <li><b>inv_b0 预倒数:</b>除法换乘法,M4F 上省 ~14 周期,定点化后更是必须;</li>
+    <li><b>u 缓存(z₂/z₃ 更新用上一拍 u):</b>ESO 是因果系统 —— 本拍 u 还没算出来时,只能用上一拍值;顺序写反成「先算 u 再更新 ESO」在高 ωₒ 下引入一拍环路延迟,可能临界稳定;</li>
+    <li><b>限幅后回写 a-&gt;u:</b>ESO 必须知道<b>真实执行</b>的控制量(限幅后的),否则饱和期间 ESO 拿着「虚开的 u」估出错误的 z₃,退饱和瞬间反冲 —— 这是抗饱和的关键一行;</li>
+    <li><b>v2 前馈入口:</b>二阶版留了目标微分参数,整机下发 dq_des 时直接接入,不用就传 0(等价于只用 v₁)。</li>
+  </ul>
+  <p><b>面试怎么问:</b>「你的 LADRC 代码怎么处理输出饱和?」——答限幅三件套:控制量限幅、限幅后的 u 回写进 ESO(而不是裸 u₀−z₃)、必要时对 z₃ 补偿项也做权重衰减;只答「clamp 输出」是不完整的。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①z₁ 初始化成 0 而 y 非 0 —— 上电瞬间 e 很大,ωₒ 高时 z₃ 冲一记「虚拟扰动」,电机抽动一下;正确做法是首拍把 z₁=y、z₂=0(或用速度 0)、z₃=0 同步;②Ts 用宏写死但调用频率改了 —— 任何环频变更都要同步改 Ts;③float 直接和 0 比较做收敛判断 —— 浮点残余误差永远存在,给死区。</div>
+
+  <h3>7.2 float 与 Q15 定点的选择建议</h3>
+  <div class="table-wrap"><table>
+    <tr><th>场景</th><th>建议</th><th>理由</th></tr>
+    <tr><td>STM32F4/G4/H7 等带 FPU 内核</td><td><span class="my-tag my-tag-green">float 直用</span></td><td>硬件浮点 1 周期乘加,1~2μs 算完,LADRC 不是算力瓶颈;可读性、可移植性最好</td></tr>
+    <tr><td>M0/M3 无 FPU、环频 ≤1kHz</td><td>float 可接受</td><td>软件浮点单次几十~百周期,1kHz 周期 1000μs 仍放得下,先跑通再优化</td></tr>
+    <tr><td>M0/M3、环频 ≥10kHz(电流环 ADRC)</td><td><span class="my-tag my-tag-orange">Q15/Q31 定点</span></td><td>软浮点撑不住高频;定点乘加用 DSP 扩展指令单周期;但要做归一化与饱和检查(第 6.2 节)</td></tr>
+    <tr><td>调试/上位机侧</td><td>永远 float</td><td>整定、仿真、日志全用 float,只在下位机最后一公里定点化</td></tr>
+  </table></div>
+  <p>开源实现可对照阅读:GitHub 上的 <a href="https://github.com/JcZou/ADRC_Lib" target="_blank" rel="noopener">JcZou/ADRC_Lib</a>(float 版 C 库)与 <a href="https://github.com/simorxb/ADRC-Pendulum-C" target="_blank" rel="noopener">simorxb/ADRC-Pendulum-C</a>(二阶 ADRC 摆杆示例,含 Python 绘图),见资源卡 R11/R12。</p>
+
+  <!-- ================= 8 抗扰性能验证 ================= -->
+  <h2><span class="h2-num">8</span> 抗扰性能验证:突加负载曲线怎么读,PI vs ADRC 怎么选</h2>
+
+  <h3>8.1 突加负载扰动仿真/实测曲线的四步读法</h3>
+  <p><b>怎么做:</b>抗扰实验的标准做法:系统稳定跟踪某一中等幅值指令(速度环或位置环),在 t₀ 时刻突加/突卸负载(对关节即撞块、挂重物、或电流环里注入反向阶跃),记录输出响应。读曲线四步:</p>
+  <ol>
+    <li><b>量跌落深度 Δ:</b>扰动瞬间输出偏离稳态的最大幅度 —— 反映 ESO 估出扰动并补偿之前「扛」了多久,主要由 ωₒ 决定(ωₒ 高则浅);</li>
+    <li><b>量恢复时间 tr:</b>从 t₀ 到回到 ±2% 稳态带的时间 —— 反映补偿之后 PD 拉回的速度,主要由 ω_c 决定;</li>
+    <li><b>看恢复过程形态:</b>单调爬回 = 健康;来回振荡 = ω_c 过高或 b₀ 偏小;爬一半停住(残差)= 补偿不足,查 b₀ 或 z₃ 是否被限幅压住;</li>
+    <li><b>对照基线:</b>同一工况跑原 PI,两条曲线叠一起 —— 没有基线的「ADRC 变好了」不可信。</li>
+  </ol>
+  <div class="my-fig">
+    <svg viewBox="0 0 620 320" role="img" aria-label="PI 与 ADRC 突加负载扰动响应对比示意图:虚线为稳态指令,在 t0 时刻突加负载,PI 曲线跌落深且恢复慢,ADRC 曲线跌落浅且快速恢复">
+      <defs>
+        <marker id="cv" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+      </defs>
+      <!-- 坐标轴 -->
+      <line x1="60" y1="280" x2="595" y2="280" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#cv)"/>
+      <line x1="60" y1="280" x2="60" y2="34" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#cv)"/>
+      <text x="585" y="300" fill="#8b98a9" font-size="12" text-anchor="end">t</text>
+      <text x="24" y="30" fill="#8b98a9" font-size="12">输出(速度/位置)</text>
+      <!-- 稳态指令线 -->
+      <line x1="60" y1="92" x2="590" y2="92" stroke="#8b98a9" stroke-width="1" stroke-dasharray="5 4"/>
+      <text x="66" y="84" fill="#8b98a9" font-size="10.5">稳态指令</text>
+      <!-- 扰动时刻 -->
+      <line x1="330" y1="52" x2="330" y2="280" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="4 4"/>
+      <text x="338" y="62" fill="#ef4444" font-size="11.5" font-weight="bold">t₀ 突加负载</text>
+      <!-- PI 曲线(橙): 上升→稳态→深跌→慢恢复 -->
+      <path d="M60 262 C 120 250, 170 118, 230 96 L320 92 C 336 92, 340 196, 356 200 C 380 206, 420 150, 470 116 C 505 94, 545 94, 585 93" fill="none" stroke="#f59e0b" stroke-width="2.4"/>
+      <!-- ADRC 曲线(蓝): 上升→稳态→浅跌→快恢复 -->
+      <path d="M60 262 C 115 248, 150 110, 205 94 L320 92 C 336 92, 340 142, 354 144 C 372 146, 398 104, 430 95 C 455 90, 480 92, 585 92" fill="none" stroke="#58a6ff" stroke-width="2.4"/>
+      <!-- 跌落深度标注 -->
+      <line x1="356" y1="92" x2="356" y2="200" stroke="#f59e0b" stroke-width="1.2"/>
+      <text x="362" y="224" fill="#f59e0b" font-size="11">PI: 跌落深 Δ₁ · 恢复慢</text>
+      <line x1="354" y1="92" x2="354" y2="144" stroke="#58a6ff" stroke-width="1.2" opacity=".8"/>
+      <text x="418" y="160" fill="#9ecbff" font-size="11">ADRC: 跌落浅 Δ₂ · 恢复快</text>
+      <!-- 图例 -->
+      <rect x="420" y="40" width="168" height="54" rx="8" fill="rgba(13,17,23,.45)" stroke="rgba(255,255,255,.12)"/>
+      <line x1="432" y1="60" x2="460" y2="60" stroke="#f59e0b" stroke-width="2.4"/><text x="468" y="64" class="my-lg" font-size="10.5">PI(整定至临界良好)</text>
+      <line x1="432" y1="80" x2="460" y2="80" stroke="#58a6ff" stroke-width="2.4"/><text x="468" y="84" class="my-lg" font-size="10.5">LADRC(同对象同限幅)</text>
+      <!-- 结论 -->
+      <text x="330" y="308" fill="#64748b" font-size="11" text-anchor="middle">跌落深度 Δ 主要由 ωₒ 决定 · 恢复时间 tr 主要由 ω_c 决定 · 恢复形态诊断 b₀ 方向</text>
+    </svg>
+    <div class="my-fig-cap">图④ PI vs ADRC 突加负载对比(示意):两者阶跃跟踪差距不大,差距在扰动瞬间 —— ESO 在扰动「造成大错之前」就开始补偿,跌落更浅、恢复更快;交互版仿真见 00-01 页 ADRC 小节</div>
+  </div>
+  <p><b>面试怎么问:</b>「ADRC 抗扰好,好在这条曲线的哪一段?为什么?」——答:好在扰动后的<b>跌落与恢复段</b>。PI 要等误差积分起来才反击,ADRC 的 ESO 从 u、y 的不一致里「抢先」估出扰动并前馈对消,所以跌落浅、恢复快;阶跃跟踪段两者可以调到接近。</p>
+
+  <h3>8.2 PI vs ADRC 全面对比表:什么时候 ADRC 不值得上</h3>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>三环 PID</th><th>LADRC</th><th>结论</th></tr>
+    <tr><td>阶跃响应</td><td>调好后同样快</td><td>调好后同样快</td><td><span class="my-tag my-tag-gray">打平</span></td></tr>
+    <tr><td>超调(有 TD/过渡过程时)</td><td>PID 本体难消大误差超调</td><td>TD 安排过渡,天然小超调</td><td><span class="my-tag my-tag-blue">ADRC 优</span></td></tr>
+    <tr><td><b>抗突发扰动</b></td><td>误差驱动,滞后反击</td><td>扰动前馈对消,跌落浅恢复快</td><td><span class="my-tag my-tag-blue">ADRC 明显优</span></td></tr>
+    <tr><td>参数鲁棒(负载/温度漂移)</td><td>工况变了要重调</td><td>总扰动兜底,一组参数管宽工况</td><td><span class="my-tag my-tag-blue">ADRC 优</span></td></tr>
+    <tr><td>调试成本(首次)</td><td>3 参数,人人会调</td><td>3 参数(ωₒ/ω_c/b₀),需理解机理</td><td><span class="my-tag my-tag-orange">PI 略优</span></td></tr>
+    <tr><td>计算量</td><td>~5 次乘加</td><td>一阶 ~15、二阶 ~35 次乘加</td><td><span class="my-tag my-tag-orange">PI 优(差距已不重要)</span></td></tr>
+    <tr><td>对测量噪声的敏感</td><td>不用 D 则不敏感</td><td>z₂/z₃ 微分本质,噪声大会起毛</td><td><span class="my-tag my-tag-orange">PI 略优</span></td></tr>
+  </table></div>
+  <p><b>什么时候 ADRC 不值得(诚实清单):</b></p>
+  <ul>
+    <li><b>测量噪声大且不可滤:</b>ESO 的 z₂ 是微分本质,噪声先于扰动毁掉性能;滤波又吃相位裕度 —— 编码器纹波大的系统先修传感器,再谈 ADRC;</li>
+    <li><b>纯时滞大的对象:</b>ESO 模型不含死区时间,时滞占比大(如长管道温控)时估计总是「慢半拍」,此时 Smith 预估或模型预测更对症(见 <a href="16_现代控制理论_状态空间到MPC.html">04-16</a>);</li>
+    <li><b>算力弱、环频高:</b>M0 级 MCU 上的 20kHz 电流环,软浮点 + 定点化成本 &gt; 收益 —— 电流环对象模型精确,PI+前馈本就够好(00-01 页同结论);</li>
+    <li><b>模型准、工况恒定:</b>一台永不换负载的测试台架,PI 调到最优后 ADRC 没有增量价值 —— ADRC 买的是「不确定性保险」,没不确定性就别付保费。</li>
+  </ul>
+  <p><b>面试怎么问:</b>「ADRC 是不是全面优于 PID?什么时候你会拒绝用 ADRC?」——这是压力题,考察对适用边界的诚实:答出噪声、大时滞、算力三条拒绝理由,比背十条优点加分得多。</p>
+
+  <!-- ================= 9 失效模式与排查 ================= -->
+  <h2><span class="h2-num">9</span> 失效模式与排查:从症状反推参数</h2>
+  <p><b>怎么做:</b>ADRC 调试 90% 的问题落在「ωₒ、b₀、噪声」三处。把症状 → 原因 → 处理做成查表,现场照单抓药:</p>
+  <div class="table-wrap"><table>
+    <tr><th>症状</th><th>机理</th><th>确认方法</th><th>处理</th></tr>
+    <tr><td><span class="my-tag my-tag-red">观测器振荡/发散</span></td><td>ωₒ 过高 × 显式欧拉:1−ωₒTs 跑出稳定域;或 Δωₒ 步进太猛</td><td>z₁ z₂ 锯齿状自激,与输入无关;降 ωₒ 立刻消失</td><td>降 ωₒ 至 ≤fs/10;或改 Tustin/后向欧拉;步进按 1.5× 逐档扫</td></tr>
+    <tr><td><span class="my-tag my-tag-orange">z₃ 微分噪声(毛刺)</span></td><td>β₃=ωₒ³ 放大编码器量化/采样噪声,以微分形式灌入 z₃</td><td>静止时 z₃ 不为零且高频抖;z₃ 频谱集中在编码器量化频率</td><td>提高编码器有效分辨率;y 先过 α-β/二阶低通;降 ωₒ;加大 fal 的 δ(非线性版)</td></tr>
+    <tr><td><span class="my-tag my-tag-red">b₀ 偏小:振荡/啸叫</span></td><td>补偿过度,等效增益虚高(第 4.1 节)</td><td>阶跃超调大、恢复来回摆;增大 b₀ 症状减轻</td><td>增大 b₀(每次 ×1.5);确认未在饱和区辨识</td></tr>
+    <tr><td><span class="my-tag my-tag-blue">b₀ 偏大:迟钝/残差</span></td><td>补偿不足,扰动残留</td><td>响应变「软」;稳态有固定残差;减小 b₀ 症状减轻</td><td>减小 b₀;重做空载阶跃辨识;检查单位折算(rad/count、减速比)</td></tr>
+    <tr><td><span class="my-tag my-tag-orange">上电瞬间抽动</span></td><td>z₁ 初始化为 0,y 非 0,首拍误差巨大冲出假 z₃</td><td>只在使能瞬间出现一次</td><td>使能首拍同步 z₁=y、z₂=0、z₃=0;或使能前先「预跑」ESO 若干拍不输出</td></tr>
+    <tr><td><span class="my-tag my-tag-blue">低速爬行/死区感</span></td><td>静摩擦进入总扰动但变化太快,z₃ 跟不上;或输出限幅过紧</td><td>换向瞬间速度凹陷;|u| 常贴 u_max</td><td>提 ωₒ(留噪声裕量);放宽 u_max;速度环加摩擦前馈双管齐下</td></tr>
+  </table></div>
+  <p><b>测量噪声预处理三原则(上 ADRC 之前先做):</b>①<b>源头</b> —— 编码器线数/细分、采样同步(在 PWM 中央对齐点采电流),比任何滤波都值钱;②<b>前置滤波</b> —— 给 y 过一个截止频率 ≈ 5ωₒ 的低通,滤波器本身相位滞后要计入预算;③<b>留诊断口</b> —— z₁ z₂ z₃ 与 u 全部走 DMA 上位机画曲线,盲调 LADRC 等于蒙眼开环。</p>
+  <p><b>面试怎么问:</b>「现场 LADRC 电机啸叫,你按什么顺序查?」——标准顺序:①确认啸叫频率(开关频率=电气问题;几十~几百 Hz=控制环)②降 ωₒ 观察(消失→观测器噪声/稳定域问题)③看 z₃ 毛刺(毛刺大→编码器/滤波问题)④查 b₀ 方向(振荡→偏小)⑤都无效→回滚 PI 基线,逐项排除。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>把「啸叫」一律归因 ωₒ 过高 —— 电流采样相序错、PWM 死区补偿缺失同样啸叫,先排除硬件层,再动控制参数;否则会把好参数越调越坏。</div>
+
+  <!-- ================= 10 业界应用与考问 ================= -->
+  <h2><span class="h2-num">10</span> 业界应用与高频考问:关节电机里的 ADRC 现状</h2>
+
+  <h3>10.1 宇树 / 优必选 / 智元的关节控制里,ADRC 处在什么位置</h3>
+  <p><b>是什么:</b>主流整机厂目前普遍采用<b>「三环 PID 底座 + 选择性 ADRC 增强 + 上层 MPC/WBC」</b>的混合架构(即 04-09 页定义的<b>变体 C</b>),而非「全环 ADRC」:</p>
+  <ul>
+    <li><b>宇树 / 优必选 / 智元(公开资料口径):</b>关节底层以电流 PI + 速度/位置 PD(阻抗形式)为主,力矩前馈由上层 MPC/WBC 下发;ADRC/扰动观测器思想用于抗扰增强与碰撞检测,分布式关节架构下即使主控断连,关节本地控制器也能维持支撑(04-09 页「分布式智能关节」条目);</li>
+    <li><b>学术/高端实验平台:</b>「电流一阶 + 速度二阶 + 位置三阶」全 ADRC(变体 A)或双环 ADRC(变体 B)常见于 PMSM 伺服与关节模组研究 —— 东南大学「改进 ADRC 提升机器人关节模组精度」、哈工大 PMSM 弱磁 ADRC 等工作持续发表;</li>
+    <li><b>工具链现状:</b>TI C2000 提供电机 ADRC 参考实现,MathWorks Simulink Control Design 内置 ADRC 模块并支持代码生成到 STM32/TI(资源卡 R13/R14),落地门槛已大幅降低。</li>
+  </ul>
+  <p>完整的「三环 PID → 三环 ADRC」工程变体表与五阶段升级路线,直接见 <a href="../04_软件与算法/22_通信与控制算法升级路线.html">04-23 通信与控制算法升级路线页</a>(不在此重复);未来 3~5 年的判断是「底层 ADRC 化 + 上层 MPC/RL 化」的混合架构,关节 MCU 只需做好「接指令 + 本地 ADRC 执行」。</p>
+  <p><b>面试怎么问:</b>「宇树的关节用的是 ADRC 吗?为什么大厂不全部上 ADRC?」——答混合架构现状 + 三条工程理由:①PID 三环已满足大部分指标,只补短板性价比高;②全 ADRC 调试与维护成本高,量产要为「产线工人能调」负责;③上层 MPC/RL 前馈已消化大部分可建模扰动,底层只需处理残余。</p>
+
+  <h3>10.2 面试高频四连问:标准答题框架</h3>
+  <details class="faq"><summary>Q1:ADRC 和 PID 的本质区别是什么?</summary><div class="faq-a">三层作答:①<b>信息来源</b> —— PID 只用「输出误差」这一个标量;ADRC 用 u 与 y 重构出全部状态 + 总扰动,信息量大一个量级。②<b>处理不确定性的方式</b> —— PID 靠参数鲁棒性「扛」,ADRC 靠 ESO 估计 + 前馈「对消」。③<b>结构</b> —— LADRC 线性化后可视为「PD + 扰动前馈 + 状态滤波」的组合,与 2DOF-PID 有深刻联系,但整定变量是物理意义明确的带宽,不是抽象增益。</div></details>
+  <details class="faq"><summary>Q2:ESO 为什么能估计「未知」扰动?它偷偷用了什么假设?</summary><div class="faq-a">核心机制:把总扰动扩张为第 n+1 个状态并入观测器,用「模型预测与测量的不一致」(e=z₁−y)通过 β 增益把它反解出来。两个前提必须主动说出:①扰动缓变(ḟ≈0 或变化率有界)—— 这决定了「能跟踪多快的扰动」由 ωₒ 决定;②b₀ 已知(至少量级正确)—— 否则 ESO 分不清「u 的功劳」和「扰动的捣乱」。</div></details>
+  <details class="faq"><summary>Q3:ωₒ 和 ω_c 到底怎么定?给一个可复现的流程。</summary><div class="faq-a">ω_c 按需求正向定:闭环带宽需求(位置环 30~150 rad/s 量级)→ 起点取一半,从小往大扫到轻微振荡回退 30%。ωₒ 按约束反向定:上限 min{(3~5)·ω_c 的跟踪需求, fs/10 的离散/噪声上限},从 3ω_c 起只增不减地扫,以 z₃ 平滑度 + 无啸叫为停止判据。最后 b₀ 微调按「振荡增大、迟钝减小」口诀。</div></details>
+  <details class="faq"><summary>Q4:ADRC 和状态观测器(04-17)、MPC(04-16)是什么关系?</summary><div class="faq-a">①<b>与龙伯格/KF:</b>ESO 就是「把扰动增广成状态」的龙伯格观测器;线性 ESO 与 KF 稳态等价(KF 的 Q/R 折算出等效增益)。04-17 讲的是「估状态」,ADRC 多走一步「估了就拿去补偿」。②<b>与 MPC:</b>MPC 靠精确模型向前滚动优化,模型错了全错 —— 工程上常用「ADRC 底层抗扰 + MPC 上层规划」分层互补:ADRC 消化快扰动,MPC 管轨迹与约束;也有研究把 ESO 嵌进 MPC 用估计状态替代真实状态(输出反馈 MPC)。③<b>与 04-17 的 SMO/HFI 无感:</b>同为观测器家族,但目标不同 —— 无感观测器估「反电动势/转子位置」,ESO 估「总扰动」。</div></details>
+  <p>更多真题与逐题解析见 <a href="../06_学习工具/11_保研复试面试题库.html">06-11 保研复试面试题库</a>的 adrc 学科 8 题(含「b₀ 偏小会怎样」等变形题)。</p>
+
+
+  <!-- ================= 11 本节自测 ================= -->
+  <h2><span class="h2-num">11</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. ESO 里被「扩张」进来的第 n+1 个状态是什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 测量噪声的方差</button>
+      <button data-v="B">B. 控制增益 b₀ 本身</button>
+      <button data-v="C">C. 总扰动 f(内扰 + 外扰 + 未建模动态,折算到输入通道)</button>
+      <button data-v="D">D. 参考输入的二阶导数</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 ESO 的「扩张」就是把总扰动 f 当成第 n+1 个状态(二阶对象里是 x₃=f),由 u、y 驱动观测器估出 z₃ 并补偿;b₀ 是已知量(估计值),不是被扩张的状态。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 二阶对象的 LADRC,观测器增益 β₁ β₂ β₃ 按带宽法应取?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. β₁=ωₒ, β₂=2ωₒ², β₃=ωₒ³</button>
+      <button data-v="B">B. β₁=3ωₒ, β₂=3ωₒ², β₃=ωₒ³</button>
+      <button data-v="C">C. β₁=2ωₒ, β₂=ωₒ², β₃=0</button>
+      <button data-v="D">D. β₁=3ωₒ, β₂=6ωₒ², β₃=6ωₒ³</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 三阶 ESO 极点统一配在 −ωₒ:(s+ωₒ)³=s³+3ωₒs²+3ωₒ²s+ωₒ³,对比系数得 β₁=3ωₒ、β₂=3ωₒ²、β₃=ωₒ³。注意 2ωₒ/ωₒ² 是<b>一阶对象</b>(二阶 ESO)的取法,别混。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 控制周期 1kHz 的位置环,观测器带宽 ωₒ 的工程上限大约是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 约 628 rad/s(≈100Hz,经验 ωₒ ≤ fs/10)</button>
+      <button data-v="B">B. 约 6280 rad/s(= fs/10 直接换算 Hz)</button>
+      <button data-v="C">C. 约 6.28 rad/s</button>
+      <button data-v="D">D. 没有限制,越高越好</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 fs=1000Hz,ωₒ≤fs/10=100Hz,换成弧度制 2π×100≈628 rad/s。B 选项是把 Hz 当 rad/s 的典型单位事故;ωₒ 过高时显式欧拉离散发散 + 噪声放大。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. LADRC 阶跃响应出现超调振荡、电机啸叫,按「b₀ 方向口诀」应如何调整?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 减小 b₀</button>
+      <button data-v="B">B. 增大 ωₒ 到 fs/2</button>
+      <button data-v="C">C. 减小 ω_c 到 0</button>
+      <button data-v="D">D. 增大 b₀(并适当降 ωₒ),说明此前 b₀ 偏小、补偿过度</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 口诀:振荡/啸叫 → b₀ 偏小(补偿过度、等效增益虚高)→ 增大 b₀;迟钝/爬行 → b₀ 偏大(补偿不足)→ 减小 b₀。同时检查 ωₒ 是否超出噪声/离散裕量。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 以下哪种场景<b>最不推荐</b>上 ADRC?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 负载惯量随姿态大幅变化的腿关节速度环</button>
+      <button data-v="B">B. 反电动势扰动明显的电流环(模型一阶)</button>
+      <button data-v="C">C. 测量噪声大且无法滤波、纯时滞占比高的对象</button>
+      <button data-v="D">D. 着地冲击剧烈的足端关节位置环</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 ESO 的 z₂/z₃ 是微分本质,噪声大时先于扰动毁掉性能;纯时滞对象超出「缓变扰动」假设,估计总是慢半拍 —— 这两类是 ADRC 的适用边界。A/B/D 恰是 ADRC 的优势场景。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>ADRC 用「估计 + 补偿」替代 PID 的「误差事后补救」:TD 安排过渡过程并产出无噪声放大的微分;ESO 把总扰动扩张为第 n+1 个状态实时估出 z₃;控制律 u=(u₀−z₃)/b₀ 把对象实时改造成积分器链再用 PD 控制。高志强带宽法把全部增益压缩到 ωₒ、ω_c、b₀ 三个参数:ω_c 按需求正向定,ωₒ≥3ω_c 且 ≤fs/10 反向定,b₀ 按空载阶跃辨识、按「振荡增大、迟钝减小」微调。嵌入式落地三件事:前向欧拉 + 限幅回写 ESO、inv_b0 预倒数、带 FPU 直接 float(1~2μs/次)。它买的是「不确定性保险」—— 噪声大、大时滞、算力弱时别买。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>
+    1. 你的关节位置环若把 ADRC 放在位置环、速度/电流环仍是 PI,总扰动里「速度环带宽不足」造成的滞后会被 ESO 当成扰动补偿 —— 这会不会掩盖速度环本身的整定问题?边界在哪?<br>
+    2. ωₒ 提高一倍,抗扰跌落深度大约怎么变?编码器量化噪声在 z₃ 上又怎么变?试着用 β₃=3ωₒ³ 定量解释。<br>
+    3. 若整机 MPC 已下发 τ_ff 重力/动力学前馈,关节内的 ESO 还需要估「重力」吗?前馈与 ESO 补偿同时存在会不会「双重补偿」?z₃ 稳态值会告诉你什么?
+  </div>
+
+  <!-- ================= 12 参考来源与延伸资源 ================= -->
+  <h2><span class="h2-num">12</span> 参考来源与延伸资源</h2>
+  <p>以下资源均经联网核实可达(2026-09)。⭐ 标注为强烈推荐:R1 是理论原著,R2 是带宽法原始论文,R9 是高志强本人 12 集入门讲座。</p>
+
+  <a class="my-res-card" href="https://book.douban.com/subject/3261327/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-book">📖</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ R1 · 韩京清《自抗扰控制技术:估计补偿不确定因素的控制技术》</div>
+      <div class="my-res-desc">ADRC 理论原著(国防工业出版社 2008,豆瓣 9.9 分)。TD/ESO/NLSEF 的原始推导、fhan/fal 函数出处、非线性机理的完整论述 —— 想回答「韩京清为什么坚持非线性」,只此一本。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-book">豆瓣图书页</span><span class="my-tag my-tag-recommend">⭐ 理论原著</span><span class="my-tag my-tag-paper">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://engagedscholarship.csuohio.edu/enece_facpub/528/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-paper">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ R2 · Gao, "Scaling and Bandwidth-Parameterization Based Controller Tuning" (ACC 2003)</div>
+      <div class="my-res-desc">高志强带宽参数化的原始论文(美国控制会议 ACC,DOI 10.1109/ACC.2003.1242516,被引 4000+)。LADRC 三参数整定、ωₒ≈(3~10)ω_c 准则均出自此文;克利夫兰州立大学机构库页面。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-paper">ACC 2003 论文</span><span class="my-tag my-tag-official">机构库正版</span><span class="my-tag my-tag-recommend">⭐ 带宽法源头</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://ieeexplore.ieee.org/document/1242516" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-paper">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R3 · 同上论文 IEEE Xplore 正式版</div>
+      <div class="my-res-desc">IEEE Xplore 收录版(需机构订阅)。引用此论文时的规范出处页,与 R2 内容相同。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-paper">IEEE Xplore</span><span class="my-tag my-tag-official">正式出版版</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1Q4411Q7Vg/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ R4 · B站《ADRC 入门讲座(高志强,2015 年 12 月)》12 集</div>
+      <div class="my-res-desc">高志强本人主讲的 ADRC 入门系列(「自抗扰控制-ADRC」账号发布,12 集连续讲座)。从 PID 剖析到 ESO 带宽法,中文 ADRC 视频第一站,与本书页 1~3 节一一对应。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-recommend">⭐ 作者亲授</span><span class="my-tag my-tag-paper">入门必看</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV15T411K7zK/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R5 · B站《快速认识 LADRC 与 LADRC 参数整定方法》(比 PID 好用系列)</div>
+      <div class="my-res-desc">面向工程的 LADRC 快速上手与整定演示,配合本书页第 5 节整定流程食用;同系列还有 ESO 应用解析续集。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-paper">整定演示</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1fh41127Tw/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R6 · B站《二阶自抗扰控制的原理及其带宽法 ADRC Matlab/Simulink》(此梦千寻 A5)</div>
+      <div class="my-res-desc">二阶 LADRC 的 Simulink 建模与带宽法整定实操,公众号提供仿真文件;同 UP 主 A1 集讲 ADRC 基本原理、A2 集讲一阶 ADRC 仿真,适合跟着搭一遍仿真再写 C。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-paper">Simulink 实操</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/585136444" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R7 · 知乎专栏《自抗扰控制 - 入门》</div>
+      <div class="my-res-desc">从 PID 局限讲到 TD/ESO/非线性反馈,并引入观测器带宽、控制器带宽的 LADRC 设计思路,中文社区口碑较好的入门长文。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-paper">入门长文</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/260480454" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R8 · 知乎专栏《控制算法手记 —— 自抗扰控制的几点思考》</div>
+      <div class="my-res-desc">偏工程视角的冷静分析:ESO 观测什么、补偿边界在哪、与 PID/前馈的关系,适合读完本书页后对照「哪些宣传夸大了、哪些是真的」。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-paper">工程思辨</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/2401_88409548/article/details/162585609" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">💻</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ R9 · CSDN《自抗扰控制(ADRC)原理与 STM32 硬核部署指南》</div>
+      <div class="my-res-desc">面向 STM32 的 ADRC 部署实战:角速度环 LADRC、嵌入式工程细节(非阻塞解析、寄存器输出等),与本书页第 6~7 节的嵌入式落地互补。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-csdn">CSDN 博客</span><span class="my-tag my-tag-recommend">⭐ STM32 实战</span><span class="my-tag my-tag-paper">嵌入式部署</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/2401_86684687/article/details/163642419" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">💻</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R10 · CSDN《从 PID 到 ADRC:原理、公式推导、C 语言实现与电机调参指南》</div>
+      <div class="my-res-desc">一条龙长文:PID → ADRC 的公式推导、C 实现、电机调参,TD 信号特性讲得细,可作为本书页的「另一份推导视角」对照阅读。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-csdn">CSDN 博客</span><span class="my-tag my-tag-paper">推导+C实现</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/handsome_for_kill/article/details/88398467" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">💻</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R11 · CSDN《ADRC 算法及参数整定(调参)心得体会》</div>
+      <div class="my-res-desc">一线调参经验帖:参数扫描顺序、常见症状与对应处理,与本书页第 9 节排查表互相印证。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-csdn">CSDN 博客</span><span class="my-tag my-tag-paper">调参经验</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/JcZou/ADRC_Lib" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧩</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R12 · GitHub: JcZou/ADRC_Lib(C 语言 ADRC 库,MIT)</div>
+      <div class="my-res-desc">纯 C 的 ADRC 库(adrc.c/adrc.h,float 版),36★/23 fork;适合与本书页 ladrc.c 对照学习「别人的结构体怎么组织」。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub 开源</span><span class="my-tag my-tag-paper">C 库</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/simorxb/ADRC-Pendulum-C" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧩</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R13 · GitHub: simorxb/ADRC-Pendulum-C(二阶 ADRC 摆杆 C 示例,MIT)</div>
+      <div class="my-res-desc">用 C 实现二阶 ADRC 控制摆杆模型(10ms 采样),Python 绘图验证 —— 想在 PC 上复现「完整闭环再移植 MCU」的完整流程,这是最小可跑样例。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub 开源</span><span class="my-tag my-tag-paper">可跑样例</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.mathworks.com/help/slcontrol/ug/active-disturbance-rejection-control.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ R14 · MathWorks《Active Disturbance Rejection Control》官方文档(Simulink Control Design)</div>
+      <div class="my-res-desc">MATLAB/Simulink 官方 ADRC 概念页与 ADRC 模块说明(内置 ESO 带宽法整定,支持代码生成部署);附 SEPIC/Boost/水箱等官方示例,中文版在 ww2.mathworks.cn 同路径。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-recommend">⭐ 仿真到代码生成</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://html.rhhz.net/tis/html/201711029.htm" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-paper">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">R15 · 《一种新型控制方法 —— 自抗扰控制技术及其工程应用综述》</div>
+      <div class="my-res-desc">中文核心期刊综述:ADRC 发展脉络、工程应用全景与 LADRC 带宽法地位,写论文/做调研时的引言素材库。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-paper">学术综述</span><span class="my-tag my-tag-official">期刊全文</span></div>
+    </div>
+  </a>
+
+  <div class="box box-ok"><b>📅 资源核实说明:</b>以上 15 条链接于 2026-09 通过搜索引擎与网页抓取逐一核实可达;其中原 MathWorks <code>/help/control/ug/</code> 路径已迁移至 <code>/help/slcontrol/ug/</code>(本书页采用新地址)。站内配套:00-01 页(ESO 推导 + STM32 代码 + PI/ADRC 交互仿真)、04-09 页(三环 PID → ADRC 变体表)、06-11 页(ADRC 面试 8 题)。</div>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡/KaTeX 公式渲染 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

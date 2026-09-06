@@ -17,7 +17,7 @@
       return;
     }
     var root = (window.PAGE && window.PAGE.root) || "";
-    var chatURL = (root ? root + "/" : "") + "08_学习工具/13_AI答疑助手.html";
+    var chatURL = (root ? root + "/" : "") + "06_学习工具/13_AI答疑助手.html";
     var POS_KEY = "humanoid-ai-fab-pos-v1";
 
     var st = document.createElement("style");

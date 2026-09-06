@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · VLA 与世界模型详解</title>
+<!-- 共享样式:二级目录页面用 ../_assets/site.css -->
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(均以 my- 前缀命名,避免与全局冲突) */
+  .my-model-card{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-left:4px solid #3b82f6;border-radius:12px;padding:14px 18px;margin:12px 0}
+  .my-model-head{font-size:15px;font-weight:800;color:#fff;margin-bottom:8px}
+  .my-model-tag{display:inline-block;font-size:11px;font-weight:600;color:#9ecbff;background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.35);padding:2px 10px;border-radius:999px;margin-left:8px;vertical-align:middle}
+  .my-model-row{font-size:13.5px;color:#c9d1d9;line-height:1.8;margin:3px 0}
+  .my-model-row b{color:#9ecbff}
+  .my-note{color:#6b7280;font-size:12px}
+  .my-year{color:#58a6ff;font-weight:700}
+  .my-filter{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+  .my-filter button{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:12.5px;padding:6px 14px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.15s}
+  .my-filter button:hover{border-color:#3b82f6;color:#fff}
+  .my-filter button.on{background:rgba(59,130,246,.25);border-color:#3b82f6;color:#fff}
+  .my-vla-card{transition:opacity .2s}
+  .my-vla-card.hidden{display:none}
+  .my-dl dt{font-size:14px;font-weight:700;color:#9ecbff;margin:10px 0 4px}
+  .my-dl dd{font-size:13.5px;color:#c9d1d9;line-height:1.8;margin:0 0 6px}
+</style>
+<script>
+  /* ============================================================
+     window.PAGE 配置(每页必填)
+     pageId : 唯一 ID,用于"标记完成"打卡,格式: 章节-序号
+     root   : 相对站点根的路径前缀,二级目录页面为 ".."
+     breadcrumb: 面包屑数组,最后一项不带 u(当前页)
+     prev/next : 上一篇/下一篇 {t:标题, u:相对本页的路径}
+     ============================================================ */
+  window.PAGE = {
+    pageId: "04-08",
+    root: "..",
+    breadcrumb: [ { t: "软件与算法", u: "../index.html#sec4" }, { t: "VLA 与世界模型详解" } ],
+    prev: { t: "sim2real 部署步骤拆解", u: "07_sim2real部署步骤拆解.html" },
+    next: { t: "ROS2 入门实战 · 第一个节点", u: "09_ROS2入门实战_第一个节点.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🤖 视觉-语言-动作模型(VLA)与世界模型详解</h1>
+    <div class="sub">从"动作 token"到"想象未来":深入拆解 RT-1 → RT-2 → OpenVLA → π0 → Helix/GR00T N1/GO-1/UnifoLM 的完整演进脉络,搞懂 VLA 与世界模型的分工、数据来源、评测方法与落地路线</div>
+    <div class="tags">
+      <span class="tag">VLA</span>
+      <span class="tag">世界模型</span>
+      <span class="tag">端到端</span>
+      <span class="tag">具身智能</span>
+      <span class="tag">π0</span>
+      <span class="tag">Helix</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说出传统「感知→规划→控制」分层范式与端到端 VLA 范式的本质区别,以及人形机器人为什么需要 VLA<br>
+    2. 能逐个讲清 RT-1、RT-2、OpenVLA、π0 的输入输出、架构要点、数据规模、亮点与局限<br>
+    3. 能对比 2025 年四大前沿方案:Figure Helix、NVIDIA GR00T N1、智元 GO-1(ViLLA)、宇树 UnifoLM<br>
+    4. 能解释世界模型的定义、三种预测粒度,并列举 Genie、Cosmos、UniSim、Neural Motion Simulator 等代表工作<br>
+    5. 能说清 VLA 与世界模型在分层架构中的分工,以及 Open X-Embodiment、DROID 等数据集的规模与用途<br>
+    <b>建议用时:</b>约 60 分钟(比 04-05 的入门版深入一层,建议先读 04-05)
+  </div>
+  <!-- ================= 1 从传统范式到 VLA ================= -->
+  <h2><span class="h2-num">1</span> 从传统范式到 VLA:一次"范式转移"</h2>
+  <p>要理解 VLA,先要理解它取代了什么。传统机器人软件栈是<b>模块化流水线</b>:感知 → 状态估计(SLAM/滤波)→ 任务规划 → 运动规划 → 底层控制(PD/MPC/FOC 伺服)。每个模块独立设计、独立调优,通过<b>显式接口</b>传递信息。这套体系在工业机械臂、自动驾驶上运转了 40 年,可靠、可解释、可验证。但它有四个结构性痛点,在人形机器人身上被放大到极限:</p>
+  <p>但它有四个结构性痛点,在人形机器人身上被放大到极限:</p>
+  <ul>
+    <li><b>接口信息损失:</b>语言描述("把红色杯子放到托盘上")要先翻译成几何目标,再翻译成关节轨迹,每次翻译都在丢失语义;</li>
+    <li><b>误差逐级累积:</b>检测框偏 2cm,抓取规划就跟着偏,最终抓空——模块间没有"端到端纠错";</li>
+    <li><b>长尾场景写不完规则:</b>家庭环境里"杯子"有成百上千种形态,规则和启发式永远跟不上;</li>
+    <li><b>维护成本高:</b>每换一个机器人本体,所有模块几乎都要重新标定。</li>
+  </ul>
+
+  <h3>VLA:把动作变成模型的"另一种语言"</h3>
+  <p><b>VLA(Vision-Language-Action,视觉-语言-动作)模型</b>的做法是:输入<b>图像 + 语言指令</b>,端到端输出<b>机器人动作</b>。核心思想一句话——既然 Transformer 能预测"下一个 token",为什么不能预测"下一步动作"?于是动作被 token 化(离散 bin)、被块化(action chunk)、被流匹配化(连续轨迹),像生成语言一样"生成"出来。VLA 与 VLM 的区别只在输出端:VLM 输出文字,VLA 输出动作。</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>维度</th><th>传统分层范式</th><th>端到端 VLA 范式</th></tr>
+      <tr>
+        <td><b>设计哲学</b></td>
+        <td>模块化,每层可解释、可单独验证</td>
+        <td>数据驱动,整体优化"图像+语言 → 动作"映射</td>
+      </tr>
+      <tr>
+        <td><b>模块接口</b></td>
+        <td>显式几何/语义接口,信息逐层损失</td>
+        <td>隐式表征,语义直接驱动动作</td>
+      </tr>
+      <tr>
+        <td><b>数据需求</b></td>
+        <td>每模块各要数据,标注成本高</td>
+        <td>需要海量"演示 + 指令"配对数据,但可复用互联网知识</td>
+      </tr>
+      <tr>
+        <td><b>泛化能力</b></td>
+        <td>依赖手工规则,长尾场景脆弱</td>
+        <td>借助预训练世界知识,对未见物体/场景有一定泛化</td>
+      </tr>
+      <tr>
+        <td><b>可解释性</b></td>
+        <td>强(每层都有明确输出)</td>
+        <td>弱(黑盒,动作来源难追溯)</td>
+      </tr>
+      <tr>
+        <td><b>安全与实时性</b></td>
+        <td>强(每层可加闸)</td>
+        <td>弱(大模型推理慢,必须分层兜底)</td>
+      </tr>
+    </table>
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 关键认知:</b>端到端 VLA <u>没有取代</u>低层控制。2025 年所有主流方案都是<b>分层架构</b>:VLA 在高处"选动作"(1~50Hz),RL/扩散策略在中层"生成轨迹"(50~200Hz),FOC 三环在底层"出扭矩"(1kHz)。VLA 革命的本质是<b>把"语义决策层"换成了可学习的端到端模型</b>,而不是把整个控制栈塞进一个网络。
+  </div>
+
+  <h3>为什么人形机器人尤其需要 VLA?</h3>
+  <ul>
+    <li><b>高自由度 + 长时程:</b>全身 40+ 关节、任务跨分钟级(叠衣、装洗碗机),手写规则覆盖不了动作序列的组合爆炸;</li>
+    <li><b>自然语言交互:</b>人形机器人要与普通人在同一空间协作,指令天然是"人话",VLA 直接把语言接进决策;</li>
+    <li><b>多技能复用:</b>一个模型吃多种任务的演示数据,技能共享表征,比"每任务一个专用策略"可维护得多;</li>
+    <li><b>借力互联网知识:</b>RT-2 证明,网络级图文语料里"杯子长什么样、怎么拿"的世界知识能迁移到机器人动作上——这是传统范式拿不到的数据红利。</li>
+  </ul>
+
+  <!-- ================= 2 VLA 代表模型逐个详解 ================= -->
+  <h2><span class="h2-num">2</span> VLA 代表模型逐个详解</h2>
+  <p>下面按时间线逐个拆解。每个模型从<b>机构/年份、输入输出、网络架构、数据规模、亮点、局限</b>六个维度展开,并配总览表收尾。可用下方按钮快速定位某一代际:</p>
+
+  <div class="my-filter" id="myFilter">
+    <button type="button" data-g="all" class="on">全部</button>
+    <button type="button" data-g="found">奠基期(2022–2023)</button>
+    <button type="button" data-g="open">开源基座(2024)</button>
+    <button type="button" data-g="front">2025 前沿</button>
+  </div>
+
+  <h3>奠基期:动作 token 与语义涌现(Google)</h3>
+
+  <div class="my-vla-card" data-g="found">
+    <div class="my-model-card">
+      <div class="my-model-head">RT-1 · Robotics Transformer(Google,2022)<span class="my-model-tag">开山之作</span></div>
+      <div class="my-model-row"><b>机构/年份:</b>Google Robotics,2022 年 12 月(arXiv:2212.06817)</div>
+      <div class="my-model-row"><b>输入 → 输出:</b>机器人相机图像(顶部 + 腕部)+ 自然语言指令 → 7 维末端动作(位置/姿态/夹爪),每维离散为 8 个 bin 的"动作 token"序列</div>
+      <div class="my-model-row"><b>网络架构:</b>EfficientNet 视觉编码 + FiLM 语言条件注入 + 8 层双向注意力 Transformer;动作以 token 形式自回归生成</div>
+      <div class="my-model-row"><b>训练数据规模:</b>13 台机器人自采约 13 万条演示、700+ 任务(含"拿水杯""放香蕉"等桌面操作)</div>
+      <div class="my-model-row"><b>亮点:</b>首次把"动作"当 token 交给 Transformer 生成,验证"机器人也吃大数据"的可扩展范式,奠定后续 VLA 的骨架</div>
+      <div class="my-model-row"><b>局限:</b>动作仅 8 bin/维,分辨率粗糙;只在自家数据上训练,语义泛化弱</div>
+    </div>
+  </div>
+
+  <div class="my-vla-card" data-g="found">
+    <div class="my-model-card">
+      <div class="my-model-head">RT-2 · Vision-Language-Action(Google,2023)<span class="my-model-tag">语义涌现</span></div>
+      <div class="my-model-row"><b>机构/年份:</b>Google DeepMind,2023 年 7 月(arXiv:2307.15818)</div>
+      <div class="my-model-row"><b>输入 → 输出:</b>机器人图像 + 指令(与大规模网络图文语料混合训练)→ 动作直接写成 VLM 词汇表里的文本 token(如 "1 128 91 242 …" 的数字串)</div>
+      <div class="my-model-row"><b>网络架构:</b>把动作当成"额外语种"融入 VLM:基于 PaLI-X 55B / PaLM-E 12B 主干,机器人与网络数据联合微调(co-fine-tuning)</div>
+      <div class="my-model-row"><b>训练数据规模:</b>RT-1 的机器人数据 + 网络级图文数据(WebLI 等)联合训练,把"世界知识"灌进动作预测</div>
+      <div class="my-model-row"><b>亮点:</b>获得"语义涌现":未见物体泛化成功率约为 RT-1 的 5 倍;证明互联网图文数据是机器人学习的天量金矿</div>
+      <div class="my-model-row"><b>局限:</b>动作精度受文本 token 分辨率限制;大模型推理慢(数百毫秒级);未开源完整权重,复现门槛高</div>
+    </div>
+  </div>
+
+  <h3>开源基座:社区可复现的 7B 时代(2024)</h3>
+
+  <div class="my-vla-card" data-g="open">
+    <div class="my-model-card">
+      <div class="my-model-head">OpenVLA(斯坦福 / UC Berkeley / Google / MIT,CoRL 2024)<span class="my-model-tag">开源基座</span></div>
+      <div class="my-model-row"><b>机构/年份:</b>Stanford + UC Berkeley + Google DeepMind + MIT,2024 年 6 月(arXiv:2406.09246,CoRL 2024)</div>
+      <div class="my-model-row"><b>输入 → 输出:</b>单目/多目图像 + 语言指令 → 7 维离散动作,每维 256 个 bin</div>
+      <div class="my-model-row"><b>网络架构:</b>Llama-2 7B 作为语言/动作主干 + SigLIP/DINOv2 双视觉编码器;两阶段训练(先对齐 VL 基座,再微调动作头)</div>
+      <div class="my-model-row"><b>训练数据规模:</b>Open X-Embodiment 跨具身数据集(22 种机器人、527 技能、100 万+ 轨迹)中约 97 万条演示微调</div>
+      <div class="my-model-row"><b>亮点:</b>完全开源(7B 权重 + 训练代码);真实机器人评测绝对成功率比 RT-2 提升约 16.5%(相对提升约 34%);成为社区 VLA 事实基座,大量后续工作(微调/蒸馏/端侧)都建立在它之上</div>
+      <div class="my-model-row"><b>局限:</b>逐帧输出单步动作,缺乏高频控制与长时程记忆;推理需要 GPU,不适合机载端侧</div>
+    </div>
+  </div>
+
+  <div class="my-vla-card" data-g="open">
+    <div class="my-model-card">
+      <div class="my-model-head">π0 / pi0(Physical Intelligence,2024)<span class="my-model-tag">连续动作</span></div>
+      <div class="my-model-row"><b>机构/年份:</b>Physical Intelligence(美国,多位顶尖学者创立),2024 年 10 月(arXiv:2410.24164)</div>
+      <div class="my-model-row"><b>输入 → 输出:</b>多相机图像 + 语言指令 + 本体状态 → 基于流匹配(flow matching)的<b>连续动作块</b>,50Hz 输出</div>
+      <div class="my-model-row"><b>网络架构:</b>PaliGemma 3B VLM 主干 + "Action Expert"(流匹配 Transformer)双组件;两阶段训练(先预训练 VLM,再用机器人数据微调动作专家)</div>
+      <div class="my-model-row"><b>训练数据规模:</b>7 种机器人(含 2 台人形)上采集的 1 万+ 小时真机数据</div>
+      <div class="my-model-row"><b>亮点:</b>用流匹配输出连续动作,突破离散 token 的分辨率天花板;动作块支持双臂协同;代码与权重开源(openpi / LeRobot),2025 年随 π0.5 一起开放</div>
+      <div class="my-model-row"><b>局限:</b>数据要求极高(1 万+ 小时真机);长时程任务仍需外层规划;对未见本体泛化有限</div>
+    </div>
+  </div>
+
+  <h3>2025 前沿:人形全身 + 世界模型 + 端侧部署</h3>
+
+  <div class="my-vla-card" data-g="front">
+    <div class="my-model-card">
+      <div class="my-model-head">Helix(Figure AI,2025)<span class="my-model-tag">人形端侧</span></div>
+      <div class="my-model-row"><b>机构/年份:</b>Figure AI,2025 年 2 月发布(Helix 2.0 于 2025 年 9 月)</div>
+      <div class="my-model-row"><b>输入 → 输出:</b>机载 4 个 RGB 相机图像 + 语言指令 → 分层动作:System 2(约 7~9Hz 语义推理)+ System 1(200Hz 级速率控制);Helix 2.0 将速率控制提升到 500Hz</div>
+      <div class="my-model-row"><b>网络架构:</b>双系统架构:System 2 是基于预训练 VLM 的语义规划器,输出高层意图;System 1 是高频视觉运动策略,把意图转成关节命令;两系统通过共享潜动作空间通信</div>
+      <div class="my-model-row"><b>训练数据规模:</b>自采遥操作演示 + 互联网图文数据(未公开具体规模)</div>
+      <div class="my-model-row"><b>亮点:</b>纯端侧推理(运行在机器人机载 GPU 上);两台人形机器人协作完成"从未见过"的物品整理;Helix 2.0 解锁洗碗机装碗、叠衣等长时程家务</div>
+      <div class="my-model-row"><b>局限:</b>模型细节未开源;长时程任务仍以实验室演示为主</div>
+    </div>
+  </div>
+
+  <div class="my-vla-card" data-g="front">
+    <div class="my-model-card">
+      <div class="my-model-head">NVIDIA Isaac GR00T N1(2025)<span class="my-model-tag">开源人形基座</span></div>
+      <div class="my-model-row"><b>机构/年份:</b>NVIDIA,2025 年 3 月发布(arXiv:2503.14734)</div>
+      <div class="my-model-row"><b>输入 → 输出:</b>视觉 + 语言 + 本体状态 → 双系统输出:System 2(VLM,约 10Hz 高层规划)+ System 1(扩散策略,约 120Hz 高频动作)</div>
+      <div class="my-model-row"><b>网络架构:</b>System 2 基于开放权重的 VLM 微调,负责语言理解与任务分解;System 1 是扩散模型策略,生成高频关节动作;两个系统共享视觉编码器</div>
+      <div class="my-model-row"><b>训练数据规模:</b>人类演示视频 + 跨机器人异构数据(DROID 等公开数据集 + 自采)</div>
+      <div class="my-model-row"><b>亮点:</b>全球首个<b>开源</b>人形机器人基础模型;与 Isaac 仿真生态打通,构成"仿真→训练→部署"闭环</div>
+      <div class="my-model-row"><b>局限:</b>双系统协同仍需针对本体调优;System 1 的扩散策略对高频扰动敏感</div>
+    </div>
+  </div>
+
+  <div class="my-vla-card" data-g="front">
+    <div class="my-model-card">
+      <div class="my-model-head">GO-1 · Genie Operator-1(智元机器人,2025)<span class="my-model-tag">世界模型 VLA</span></div>
+      <div class="my-model-row"><b>机构/年份:</b>智元机器人(稚晖君团队),2025 年 3 月发布,9 月开源</div>
+      <div class="my-model-row"><b>输入 → 输出:</b>多目视觉 + 语言指令(世界模型对未来帧的预测作为辅助)→ 潜动作(latent action)序列,由动作专家(Action Expert)解码为具体动作</div>
+      <div class="my-model-row"><b>网络架构:</b>ViLLA 架构 = VLM(理解)+ 世界模型(预测未来)+ 动作专家(执行);关键创新是 <b>LAPA 潜动作预训练</b>:先从海量无标注视频里学"潜在动作",再小样本微调到真实机器人</div>
+      <div class="my-model-row"><b>训练数据规模:</b>AgiBot World 百万级真机轨迹(100+ 机器人)+ 海量无标注互联网视频</div>
+      <div class="my-model-row"><b>亮点:</b>"看视频学动作"范式:用近乎零标注的视频预训练潜动作空间;少样本迁移到新任务/新本体;权重开源</div>
+      <div class="my-model-row"><b>局限:</b>潜动作空间可解释性弱,难直接调试;动作专家仍需按本体适配;世界模型预测误差会传导到动作层</div>    </div>
+  </div>
+
+  <div class="my-vla-card" data-g="front">
+    <div class="my-model-card">
+      <div class="my-model-head">UnifoLM 系列(宇树科技,2025)<span class="my-model-tag">物理常识</span></div>
+      <div class="my-model-row"><b>机构/年份:</b>宇树科技(Unitree),2025 年 5 月发布 UnifoLM-VLA-0,9 月开源 WMA 世界模型与 G1-Dex1 数据集</div>
+      <div class="my-model-row"><b>输入 → 输出:</b>UnifoLM-VLA-0:多模态视觉 + 语言 + 本体状态 → 高层操作动作;UnifoLM-WMA-0:状态 + 动作 → 未来状态推演(最多约 20 轮多步交互)</div>
+      <div class="my-model-row"><b>网络架构:</b>"大脑 + 小脑"统一大模型家族:LLM-0(语言)、VLA-0(视觉-语言-动作)、WMA-0(世界模型);VLA 置信度低时切换 WMA 做长视距推演再决策</div>
+      <div class="my-model-row"><b>训练数据规模:</b>真机操作数据 + 物理规律预训练;配套开源 G1-Dex1 灵巧手数据集</div>
+      <div class="my-model-row"><b>亮点:</b>提出"给机器人注入物理常识";WMA 世界模型支持多步交互推演,辅助 VLA 在不确定场景下决策;数据集与模型全部开源</div>
+      <div class="my-model-row"><b>局限:</b>世界模型多步推演误差随轮数累积;VLA-0 与 WMA-0 的级联策略仍在快速迭代中</div>
+    </div>
+  </div>
+
+  <div class="box box-tip">
+    <b>📌 2025 年 VLA 四大趋势:</b>
+    1) <b>人形全身化</b>——从"单臂抓取"走向"全身协作"(Helix 全身协调、GR00T、UnifoLM);<br>
+    2) <b>世界模型融合</b>——VLA 不再是"图像→动作"黑箱,而是"理解 + 想象 + 执行"(GO-1、UnifoLM-WMA);<br>
+    3) <b>端侧部署</b>——推理跑在机器人机载 GPU 上,同时解决延迟与隐私(Helix);<br>
+    4) <b>开源生态</b>——openpi、GR00T N1、GO-1、UnifoLM 全部开源,社区复现与二次开发门槛大幅降低。
+  </div>
+
+  <h3>总览对比表</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>模型</th><th>机构 / 年份</th><th>动作输出方式</th><th>数据规模</th><th>一句话定位</th></tr>
+      <tr><td><b>RT-1</b></td><td>Google / 2022</td><td>7-DoF 离散 token(8 bin/维)</td><td>13 万条演示</td><td>把动作变成 token 的开山之作</td></tr>
+      <tr><td><b>RT-2</b></td><td>Google DeepMind / 2023</td><td>动作写成 VLM 文本 token</td><td>机器人数据 + 网络图文</td><td>让世界知识涌入动作的语义涌现</td></tr>
+      <tr><td><b>OpenVLA</b></td><td>Stanford 等 / CoRL 2024</td><td>7-DoF 离散(256 bin/维)</td><td>OXE 97 万条演示</td><td>完全开源的社区事实基座</td></tr>
+      <tr><td><b>π0</b></td><td>Physical Intelligence / 2024</td><td>流匹配连续动作块(50Hz)</td><td>1 万+ 小时真机</td><td>连续动作 + 双臂的通用策略</td></tr>
+      <tr><td><b>Helix</b></td><td>Figure AI / 2025</td><td>System2(7~9Hz)+System1(200Hz)</td><td>遥操作 + 互联网数据</td><td>人形全身 + 纯端侧推理</td></tr>
+      <tr><td><b>GR00T N1</b></td><td>NVIDIA / 2025</td><td>VLM 规划(10Hz)+扩散动作(120Hz)</td><td>异构机器人数据 + 人类视频</td><td>首个开源人形基础模型</td></tr>
+      <tr><td><b>GO-1</b></td><td>智元 / 2025</td><td>潜动作(latent action)序列</td><td>AgiBot World 百万级 + 互联网视频</td><td>看视频学动作的 ViLLA 架构</td></tr>
+      <tr><td><b>UnifoLM</b></td><td>宇树 / 2025</td><td>VLA 高层动作 + WMA 世界模型推演</td><td>真机数据 + 物理常识预训练</td><td>大脑小脑统一、注入物理常识</td></tr>
+    </table>
+  </div>
+
+  <!-- ================= 3 世界模型专题 ================= -->
+  <h2><span class="h2-num">3</span> 世界模型专题:让机器人"预演未来"</h2>
+
+  <h3>定义:世界模型学的是"环境如何演化"</h3>
+  <p><b>世界模型(World Model)</b>是学习环境动态规律的模型:输入<b>当前状态 + 动作</b>,输出<b>未来的状态</b>。按输出粒度分三类:</p>
+  <ul>
+    <li><b>像素级视频预测:</b>输出未来若干帧图像(Genie、Cosmos Predict),最直观、最贵;</li>
+    <li><b>潜在表征预测:</b>在压缩后的隐空间预测状态演化(GO-1 世界模型、UnifoLM-WMA),更高效;</li>
+    <li><b>奖励/转移模型:</b>只预测"下一步的奖励/抽象状态转移",直接服务强化学习(Neural Motion Simulator 的隐状态预测)。</li>
+  </ul>
+  <p>它与文生视频(如 Sora)的本质区别是<b>可控性</b>:世界模型必须能接受"动作/干预"作为输入并据此 roll-out,而不是自由生成一段与输入动作无关的视频。一句话:<b>视频生成是外壳,可交互 roll-out 才是世界模型的灵魂。</b></p>
+  <h3>为什么世界模型对机器人重要?</h3>
+  <ul>
+    <li><b>数据稀缺的解药:</b>真机数据贵、慢、危险(一条演示动辄几万元、几分钟);世界模型可从海量视频/仿真中"无中生有"合成经验;</li>
+    <li><b>规划即前瞻:</b>像下棋先想几步——在想象中推演动作序列的后果,再择优执行,避免"走一步看一步"的短视;</li>
+    <li><b>样本效率:</b>基于模型的强化学习(MBRL)用"想象 roll-outs"训练策略,样本效率远超纯真机 RL(直接衔接 04-04);</li>
+    <li><b>长时程一致性:</b>对未来保持连贯预测,是长时程任务(装洗碗机、叠衣)规划的基础;</li>
+    <li><b>安全:</b>先在虚拟世界验证,再上真机,天然多一道安全闸。</li>
+  </ul>
+
+  <h3>代表工作逐个看</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>工作</th><th>机构 / 时间</th><th>输入 → 输出</th><th>核心价值</th></tr>
+      <tr>
+        <td><b>Genie 系列</b>(Genie / Genie 2 / Genie 3)</td>
+        <td>Google DeepMind 2024 / 2024 / 2025</td>
+        <td>图像/文本 → 可交互世界;Genie 2 生成可交互 3D 世界;Genie 3 实现"文本/图像 → 实时 2D 交互世界"</td>
+        <td>证明"世界可以被生成";Genie 从 20 万小时无标注视频学起,是潜动作思想(与 GO-1 同源)的先驱</td>
+      </tr>
+      <tr>
+        <td><b>NVIDIA Cosmos</b></td>
+        <td>NVIDIA 2025(CES 发布)</td>
+        <td>文本/视频 → 物理世界视频预测;平台含 Cosmos Predict / Transfer / Reason / Tokenizer</td>
+        <td>世界基础模型平台,用 2000 万小时视频预训练,为机器人生成合成训练数据并喂给 GR00T 等策略模型,是"数据引擎"的工业级实现</td>
+      </tr>
+      <tr>
+        <td><b>UniSim</b></td>
+        <td>Waymo 2024</td>
+        <td>真实驾驶日志 → 可交互的神经闭环传感器仿真</td>
+        <td>在自动驾驶上验证"神经仿真替代物理仿真":从真实数据构建可交互场景,支持闭环训练与测试,是机器人世界模型的前车之鉴</td>
+      </tr>
+      <tr>
+        <td><b>GO-1 世界模型组件</b></td>
+        <td>智元机器人 2025</td>
+        <td>当前帧 + 动作 → 未来帧预测</td>
+        <td>用互联网视频预训练"常识物理",驱动少样本动作学习;是 ViLLA 架构里"想象"的那一半</td>
+      </tr>
+      <tr>
+        <td><b>Neural Motion Simulator</b></td>
+        <td>Google(CVPR 2025)</td>
+        <td>状态 + 动作 → 下一步状态(隐空间)</td>
+        <td>在 4 种不同腿式机器人数据上训练世界模型,用"想象 roll-outs"跑强化学习并成功迁移真机——世界模型 + RL 可以替代物理仿真器训练运动策略</td>
+      </tr>
+      <tr>
+        <td><b>GWM</b>(高斯世界模型)</td>
+        <td>BIGAI 北京通用人工智能研究院(ICCV 2025)</td>
+        <td>高斯场景表示 → 操作未来状态</td>
+        <td>把世界模型做到"机器人操作"粒度,支持稠密 3D 表征下的操作预测</td>
+      </tr>
+    </table>
+  </div>
+  <h3>"数据引擎"与合成数据:世界模型的工业化出口</h3>
+  <p>世界模型最大的商业价值不在"预测未来"本身,而在于改写<b>数据采集的成本结构</b>:传统飞轮是"真机遥操作 → 训练",慢且贵;世界模型出现后变成:</p>  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>真实采样</b><br>少量真机/人类演示作为种子</div>
+    <div class="step-item"><span class="n">2</span><b>世界模型生成</b><br>Cosmos/Genie 从种子生成海量"如果这样动,世界会怎样"的合成视频</div>
+    <div class="step-item"><span class="n">3</span><b>策略训练</b><br>合成数据喂给 VLA/扩散策略(GR00T 即走此路)</div>
+    <div class="step-item"><span class="n">4</span><b>真机验证</b><br>策略部署回真机,新数据再回流世界模型,闭环滚动</div>
+  </div>
+  <div class="box box-tip">
+    <b>💡 理解"数据引擎":</b>世界模型 + 合成数据 = 一台"数据印钞机"。NVIDIA 把 Cosmos 定位成"Physical AI 的操作系统底座",宇树/智元把世界模型与自家真机数据绑定,本质都在抢占这条<b>数据生产链</b>——谁的数据引擎转得快,谁的模型就学得快。但合成数据只能覆盖"模型见过的物理规律",分布外场景仍需真机兜底。
+  </div>  <!-- ================= 4 VLA 与世界模型的关系 ================= -->
+  <h2><span class="h2-num">4</span> VLA 与世界模型:分工与协作</h2>
+
+  <h3>一句话分工</h3>
+  <div class="box box-ok">
+    <b>🎯 VLA 管"现在做什么",世界模型管"预演未来"。</b>VLA 回答"给定当前观察,下一步动作是什么"(决策器);世界模型回答"如果我这样做,世界会变成什么样"(预测器)。两者互补:没有世界模型,VLA 只能贪心逐拍决策;没有 VLA,世界模型只能想象却不能行动。
+  </div>
+  <h3>三种典型协作模式</h3>
+  <dl class="my-dl">
+    <dt>模式一:世界模型当"想象训练场"(数据侧协作)</dt>
+    <dd>世界模型生成合成 roll-outs,扩充 VLA 的训练数据(GR00T + Cosmos、Neural Motion Simulator + RL)。这是目前最成熟、落地最广的模式。</dd>
+    <dt>模式二:世界模型当"计划验证器"(决策侧协作)</dt>
+    <dd>VLA 先提出候选动作序列,世界模型在想象中 roll-out 这些序列,比较结局后选最优(类似 AlphaGo 的蒙特卡洛树搜索,只不过"棋盘"是真实世界)。GO-1 的未来帧预测、UnifoLM-WMA 的多步推演都属于这一思路。</dd>
+    <dt>模式三:级联兜底(风险侧协作)</dt>
+    <dd>UnifoLM 的做法:当 VLA 置信度低(输出分布平坦,说明场景偏离训练分布)或任务要求长视距规划时,切换 WMA 世界模型做多步推演,给出更谨慎的决策——世界模型成了 VLA 的"安全气垫"。</dd>
+  </dl>
+  <h3>放进分层架构:上层选目标、下层做执行</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>层级</th><th>频率</th><th>职责</th><th>典型技术</th></tr>
+      <tr>
+        <td><b>语义决策(上层)</b></td>
+        <td>1~10Hz</td>
+        <td>理解指令、分解子任务、选技能</td>
+        <td>VLA、LLM/VLM(第 2 节)</td>
+      </tr>
+      <tr>
+        <td><b>想象推演(横跨层)</b></td>
+        <td>按需</td>
+        <td>预演未来、验证计划、合成数据</td>
+        <td>世界模型、MBRL(第 3 节)</td>
+      </tr>
+      <tr>
+        <td><b>技能策略(中层)</b></td>
+        <td>50~200Hz</td>
+        <td>生成关节轨迹、保持平衡</td>
+        <td>RL、扩散策略、MPC(04-04)</td>
+      </tr>
+      <tr>
+        <td><b>关节伺服(底层)</b></td>
+        <td>1kHz+</td>
+        <td>电流→速度→位置三环闭环</td>
+        <td>FOC 三环(Hdrive)</td>
+      </tr>
+    </table>
+  </div>
+  <p>这张表和 04-05 第 6 节、04-04 的分层完全一致——VLA 只负责"选对的事",世界模型负责"想清楚后果",RL/MPC 负责"把事做稳",FOC 负责"把力出准"。声称"单模型端到端接管一切"的方案,工程上都要回到这张表落地。</p>
+
+  <!-- ================= 5 数据与训练 ================= -->
+  <h2><span class="h2-num">5</span> 数据与训练:VLA 的"燃料"从哪来</h2>
+
+  <h3>遥操作采集:数据的第一来源</h3>
+  <p>VLA 训练的根基是"图像 + 指令 + 动作"三元组,动作标签几乎只能来自<b>人演示</b>。主流方式:</p>  <ul>
+    <li><b>VR 遥操作</b>(Open-TeleVision 等):以机器人第一人称视角用 VR 手柄控制双臂与灵巧手,效率高;</li>
+    <li><b>主从遥操作</b>:主机械臂 + 从机械臂,精度高,是工业与科研主流;</li>    <li><b>动捕手套/外骨骼</b>:直接捕捉人手动作再重定向到机器人,适合灵巧手数据;</li>
+    <li><b>视频学习</b>:从互联网海量视频直接学(GO-1 的 LAPA 路线),零标注成本,但缺力/触觉/深度信息</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠️ 现实约束:</b>遥操作是"人肉数据工厂"——一条高质量演示约 30 秒到几分钟,熟练操作员一天也就采几十条。这也是为什么 2025 年各家疯狂开源数据集(宇树 G1-Dex1、智元 AgiBot World)并押注世界模型合成数据:因为<b>真机数据根本不够用</b>。
+  </div>
+  <h3>大规模具身数据集</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>数据集</th><th>规模</th><th>特点 / 用途</th></tr>
+      <tr>
+        <td><b>Open X-Embodiment</b>(2023,arXiv:2310.08864)</td>
+        <td>22 种机器人、527 技能、100 万+ 轨迹,60+ 数据集、34 家机构联合</td>
+        <td>跨具身(跨本体)学习的"ImageNet";OpenVLA、RT-X 都在其上训练,验证了异构数据统一训练可行</td>
+      </tr>
+      <tr>
+        <td><b>DROID</b>(2024,RSS,arXiv:2403.12945)</td>
+        <td>76,000 条演示、350 小时,564 个场景、86 个任务</td>
+        <td>野外(in-the-wild)大规模操作数据,13 家机构、8 城市联合采集,强调场景多样性</td>
+      </tr>
+      <tr>
+        <td><b>AgiBot World</b>(智元,2024 底开源)</td>
+        <td>百万级真机轨迹,100+ 机器人</td>
+        <td>全球最大的人形机器人操作数据集之一,支撑 GO-1 训练</td>
+      </tr>
+      <tr>
+        <td><b>G1-Dex1</b>(宇树,2025)</td>
+        <td>G1 灵巧手 + 双臂操作数据</td>
+        <td>灵巧手细分赛道开源数据集,配套 UnifoLM 系列</td>
+      </tr>
+      <tr>
+        <td><b>BridgeData V2 / ALOHA</b></td>
+        <td>数千~数万条演示</td>
+        <td>经典社区数据集,适合入门微调与算法复现</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>训练范式:从行为克隆到潜动作</h3>
+  <dl class="my-dl">
+    <dt>① 行为克隆 / 模仿学习(最基础)</dt>
+    <dd>直接用"观察 → 动作"监督训练:动作可以是离散 token(RT-1/OpenVLA)、连续块(π0 的流匹配)、扩散生成(GR00T System 1)。简单有效,但受限于演示数据覆盖度。</dd>
+    <dt>② 微调 VL 基座(最主流)</dt>
+    <dd>RT-2 与 OpenVLA 证明:在通用 VLM(Llama、PaLM-E、PaliGemma)上叠加动作头并微调,可把互联网图文知识"借"给机器人。成本低、见效快,是社区默认起点。</dd>
+    <dt>③ 潜动作预训练 LAPA(2024 起的新范式)</dt>
+    <dd>先从无标注视频学"潜在动作"压缩表示,再小样本微调到真机——GO-1 的 ViLLA 即此路线。优点:能用近乎无限的视频数据;缺点:潜动作空间不可解释。</dd>
+    <dt>④ 两阶段 + RL 后训练(进阶)</dt>
+    <dd>π0 先预训练 VLM 再微调动作专家;更进阶方案在行为克隆后用强化学习在仿真/世界模型里"自我对弈"打磨策略(Neural Motion Simulator 就是给 RL 当"想象环境")。</dd>
+  </dl>
+
+  <!-- ================= 6 评测与局限 ================= -->
+  <h2><span class="h2-num">6</span> 评测与局限:别被演示视频骗了</h2>
+
+  <h3>评测基准:人形机器人的"考试"</h3>
+  <ul>
+    <li><b>HumanoidBench</b>(arXiv:2403.10506,RSS 2024):基于 Unitree H1 的全身评测基准,27 个任务(15 个全身运动 + 12 个操作);结论是当前 RL 算法在全身任务上成功率普遍很低,分层/混合架构是主流解法;</li>
+    <li><b>LIBERO / CALVIN / RLBench</b>:桌面操作与长时程任务的经典评测,常用于 VLA 论文的仿真对比;</li>
+    <li><b>SIMPLER</b>(2024):在仿真中统一评测 RT-2/OpenVLA 等模型,缓解"每家用一套真机任务"的不可比问题;</li>
+    <li><b>真实世界评测的困境</b>:真机评测贵、慢、不可复现,这是人形机器人领域至今没有统一"ImageNet 式考试"的根本原因。</li>
+  </ul>
+
+  <h3>四大现实瓶颈</h3>
+  <div class="box box-warn">
+    <b>🚧 瓶颈一:幻觉与"演技"。</b>VLA 可能"看到"不存在的物体、编造不存在的动作理由(与 LLM 幻觉同源);更隐蔽的是<b>演示过拟合</b>——模型学会了"看起来在做"而不是"真的做到",长时程任务尤其明显。<br><br>
+    <b>🚧 瓶颈二:分布外泛化有限。</b>换光照、换场景、换物体颜色,成功率断崖式下跌是常态;RT-2 的"5 倍泛化"也仅对未见物体成立,离"家用机器人随便布置"还很远。<br><br>
+    <b>🚧 瓶颈三:实时性。</b>大模型推理 100ms~1s,而控制周期是 1kHz 量级;端侧算力(Helix 方案)正在缓解,但大模型上机载 GPU 仍是稀缺资源。<br><br>
+    <b>🚧 瓶颈四:评测不一致与安全缺位。</b>各家自报成功率口径不一,横向不可比;VLA 输出缺少形式化安全保证,必须依赖分层兜底(扭矩限幅、急停、世界模型预检)。
+  </div>
+
+  <!-- ================= 7 入门路线 ================= -->
+  <h2><span class="h2-num">7</span> 入门路线:从"跑通 demo"到"仿真接策略"</h2>
+  <p>不追求从零训一个大模型——那是顶级实验室的预算游戏。对学习者最务实的路径是<b>先用开源权重跑通,再在仿真里接策略</b>:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>准备环境</b><br>装好 Python + CUDA,克隆 openpi(Physical Intelligence)或 LeRobot(Hugging Face)仓库</div>
+    <div class="step-item"><span class="n">2</span><b>跑通推理 demo</b><br>加载 π0/π0.5 或 OpenVLA 开源权重,先用官方图片离线推理,再换自己的摄像头实时推理,观察输出动作流</div>
+    <div class="step-item"><span class="n">3</span><b>读懂数据格式</b><br>下载 Open X-Embodiment 或 DROID 的采样,搞清 observation 与 action 的张量结构——这是所有 VLA 的共同语言</div>
+    <div class="step-item"><span class="n">4</span><b>小规模微调</b><br>用 LeRobot 在公开数据集或自采的几十条演示上做 LoRA 微调,体验"数据质量 > 模型规模"</div>
+    <div class="step-item"><span class="n">5</span><b>仿真里接策略</b><br>回到 04-04 的 MuJoCo/Isaac:把微调后的策略装进仿真环境闭环评估,顺便试世界模型合成数据增强</div>
+    <div class="step-item"><span class="n">6</span><b>真机部署</b><br>按 04-07 的 sim2real 流程,走"VLA 选动作 + RL/MPC 执行 + FOC 伺服"的分层架构上线</div>
+  </div>
+  <div class="box box-tip">
+    <b>💡 学习资源提示:</b>openpi 官方仓库自带 π0/π0.5 推理与微调示例;LeRobot 把 π0.5 等模型做成"开箱即用"的 Python API;Open X-Embodiment 有官方数据浏览器。三个资源足够支撑第 1~4 步。
+  </div>
+  <!-- ================= 8 常见误区 ================= -->
+  <h2><span class="h2-num">8</span> 常见误区</h2>
+  <div class="box box-warn">
+    <b>🚫 误区一:"VLA 直接控制电机"</b><br>
+    VLA 输出低频(1~50Hz)高层动作或意图,不是 1kHz 扭矩指令。直接让大模型接管电机,实时性、安全性都无法保证。正确做法永远是分层:大模型选动作,伺服层闭环执行,扭矩限幅与急停常驻。
+  </div>  <div class="box box-warn">
+    <b>🚫 误区二:"世界模型 = 视频生成器"</b><br>
+    文生视频是"自由生成",世界模型必须"可交互、可接受动作输入、可 roll-out"。用生成视频的指标(画质/连贯性)评判世界模型是错位的——关键是<b>预测在动作干预下是否因果正确</b>。
+  </div>
+  <div class="box box-warn">
+    <b>🚫 误区三:"数据越多越好"</b><br>
+    机器人数据质量 > 数量:时间戳不同步、标定错误、本体不一致的脏数据对策略的伤害远大于文本模型。跨本体数据(OXE)有用,但必须做本体对齐;盲目堆数据只会让模型"学坏"。
+  </div>
+  <div class="box box-warn">
+    <b>🚫 误区四:"一个模型包打天下"</b><br>
+    2025 年所有主流方案(Helix、GR00T、GO-1、UnifoLM)都是分层 + 多模型协作,没有"单模型端到端全权接管"的成功案例。VLA、世界模型、RL、MPC 各管一段,组合拳才是工程现实。
+  </div>
+  <!-- ================= 9 小结与思考 ================= -->
+  <h2><span class="h2-num">9</span> 本节小结与思考题</h2>
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>VLA 是"图像 + 语言 → 动作"的端到端模型,演进脉络:RT-1 开创"动作 token"→ RT-2 借力网络图文获得语义涌现 → OpenVLA 开源化成为社区基座 → π0 用流匹配输出连续动作块 → 2025 年 Helix(端侧人形全身)、GR00T N1(开源人形基座)、GO-1(ViLLA + 潜动作)、UnifoLM(世界模型级联)各立山头。世界模型学"环境如何演化",分像素/潜空间/奖励三种粒度,代表工作有 Genie、Cosmos、UniSim、GO-1 组件与 Neural Motion Simulator,并催生了"世界模型 + 合成数据"的数据引擎。分工:VLA 管"现在做什么",世界模型管"预演未来",在分层架构中分别位于语义决策层与想象推演层,下层仍是 RL/MPC 与 FOC 伺服。数据来自遥操作与大规模开源数据集(OXE、DROID、AgiBot World、G1-Dex1),训练范式从行为克隆进化到潜动作预训练。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果让你给一台 Hdrive 关节模组组装的机器人选"大脑",你会先上 OpenVLA 还是先搭一个世界模型?两者的投入产出分别在哪里?<br>
+    2. RT-2 的"语义涌现"来自网络图文数据,但家庭场景的"物理常识"(杯子会碎、水会洒)图文里并没有完整记录——你认为世界模型能补上这块吗?为什么?<br>
+    3. HumanoidBench 显示当前算法在全身任务上成功率很低,你觉得瓶颈在数据、模型还是评测本身?
+  </div>
+  <!-- ================= 10 自测题 ================= -->
+  <h2><span class="h2-num">10</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 关于传统「感知→规划→控制」分层范式与端到端 VLA 的区别,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. VLA 完全取代了低层控制,FOC 三环不再需要</button>
+      <button data-v="B">B. 分层范式用隐式表征传递信息,端到端 VLA 用显式接口</button>
+      <button data-v="C">C. VLA 把"图像+语言→动作"整体学进网络,分层范式靠显式接口逐层传递信息、误差逐级累积</button>
+      <button data-v="D">D. 分层范式不需要数据,端到端 VLA 才需要数据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:A 错,2025 年主流方案都是分层架构,VLA 只接管语义决策层;B 说反了,分层范式用显式接口,端到端 VLA 用隐式表征;D 错,分层范式的每个模块同样需要数据。C 正确。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. π0(Physical Intelligence)在动作输出上的核心创新是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 把动作离散成 8 个 bin 的 token</button>
+      <button data-v="B">B. 用流匹配(flow matching)直接输出连续动作块,50Hz 生成</button>
+      <button data-v="C">C. 用扩散模型逐帧生成动作图像</button>
+      <button data-v="D">D. 完全不使用视觉输入</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:A 是 RT-1 的做法;C 是扩散策略流派(GR00T System 1);D 荒谬,π0 依赖多相机图像。π0 论文(arXiv:2410.24164)用流匹配输出连续动作块,故 B 正确。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 下列关于"世界模型"的说法,错误的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 世界模型就是文生视频模型,自由生成未来帧即可</button>
+      <button data-v="B">B. 世界模型学习"状态 + 动作 → 未来状态",可分像素/潜空间/奖励三种粒度</button>
+      <button data-v="C">C. GO-1 的 ViLLA 架构内含世界模型组件,用于预测未来帧</button>
+      <button data-v="D">D. Neural Motion Simulator 用世界模型做"想象 roll-outs"训练强化学习策略</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:世界模型与文生视频的本质区别是<b>可交互性与可控性</b>——必须接受动作输入并据此 roll-out,而非自由生成与动作无关的视频,故 A 错误;B、C、D 均正确。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 2025 年发布的方案中,主打"纯端侧推理 + 人形全身控制"双系统架构的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. OpenVLA</button>
+      <button data-v="B">B. π0</button>
+      <button data-v="C">C. UnifoLM-WMA-0</button>
+      <button data-v="D">D. Figure AI 的 Helix(System 2 语义规划 + System 1 高速率控制)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Helix 运行在机器人机载 GPU 上(纯端侧),System 2 以 7~9Hz 做语义规划、System 1 以 200Hz(2.0 为 500Hz)做速率控制,是全球首个端侧人形全身 VLA。OpenVLA/π0 需 GPU 服务器推理,UnifoLM-WMA-0 是宇树的世界模型,故 D 正确。</div>  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 VLA 的训练数据与大规模具身数据集,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. Open X-Embodiment 被称为跨具身学习的「ImageNet」,覆盖 22 种机器人、527 技能、100 万+ 轨迹</button>
+      <button data-v="B">B. DROID 只有几百条演示,规模很小</button>
+      <button data-v="C">C. AgiBot World 是宇树开源的灵巧手数据集</button>
+      <button data-v="D">D. 熟练操作员一天能轻松采集数千条高质量演示</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:B 错,DROID(第 5 节)有 76,000 条演示、350 小时;C 错,AgiBot World 是智元开源、支撑 GO-1 训练,宇树开源的是 G1-Dex1;D 错,第 5 节「现实约束」明确说熟练操作员一天也就采几十条。A 正确。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 针对「数据越多越好」这一常见误区,本页的正确观点是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只要数据量足够大,脏数据也能提升模型表现</button>
+      <button data-v="B">B. 机器人数据质量 > 数量,时间戳不同步、标定错误、本体不一致的脏数据对策略伤害远大于文本模型</button>
+      <button data-v="C">C. 跨本体数据(OXE)完全无用,只能单本体训练</button>
+      <button data-v="D">D. 机器人数据与文本数据一样,数量是唯一决定因素</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 8 节误区三明确指出质量 > 数量,脏数据会「让模型学坏」;C 错,OXE 有用但必须做本体对齐;A、D 把数量当成唯一决定因素,均违背原文。B 正确。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于智元 GO-1 的 ViLLA 架构与 LAPA 潜动作预训练,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. GO-1 完全不用世界模型,只看当前帧直接输出扭矩</button>
+      <button data-v="B">B. ViLLA = VLM(理解)+ 世界模型(预测未来)+ 动作专家(执行),LAPA 先从海量无标注视频学「潜在动作」再小样本微调到真机</button>
+      <button data-v="C">C. LAPA 要求每条视频都有人工动作标注</button>
+      <button data-v="D">D. GO-1 与宇树 UnifoLM 是同一个团队发布</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:A 错,GO-1 的 ViLLA 内含世界模型组件用于预测未来帧,且输出的是潜动作序列而非扭矩;C 错,LAPA 的关键正是「近乎零标注」的视频预训练;D 错,GO-1 属智元,UnifoLM 属宇树。B 正确(第 2 节 GO-1 与第 5 节训练范式③)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①VLA = 「图像 + 语言 → 动作」的端到端模型,演进:RT-1(动作 token)→ RT-2(借网络图文获语义涌现,未见物体泛化约为 RT-1 的 5 倍)→ OpenVLA(开源 7B、256 bin)→ π0(流匹配连续动作块 50Hz)→ 2025 前沿 Helix / GR00T N1 / GO-1 / UnifoLM;②世界模型学「状态 + 动作 → 未来状态」,分像素 / 潜空间 / 奖励三种粒度,代表工作有 Genie、Cosmos、UniSim、Neural Motion Simulator;③分工:VLA 管「现在做什么」(1~50Hz),世界模型管「预演未来」,下层 RL / MPC(50~200Hz)与 FOC 伺服(1kHz+)兜底执行,没有「单模型端到端接管一切」的成功案例;④数据来自遥操作 + OXE / DROID / AgiBot World / G1-Dex1 等开源数据集,训练范式从行为克隆进化到 LAPA 潜动作预训练,质量永远大于数量。</div>
+
+  <!-- ================= 11 参考来源 ================= -->
+  <h2><span class="h2-num">11</span> 参考来源</h2>
+  <p class="my-note">以下链接均经公开渠道核实(VLA / 世界模型领域进展极快,资料整理更新至 <span class="my-year">2025</span> 年,请以官方发布为准)。</p>
+  <ul>
+    <li>RT-1:Robotics Transformer for Real-World Control at Scale(Google,2022)— <a href="https://arxiv.org/abs/2212.06817" target="_blank" rel="noopener">arXiv:2212.06817</a></li>
+    <li>RT-2:Vision-Language-Action Models Transfer Web Knowledge to Robotic Control(Google DeepMind,2023)— <a href="https://arxiv.org/abs/2307.15818" target="_blank" rel="noopener">arXiv:2307.15818</a></li>
+    <li>OpenVLA:An Open-Source Vision-Language-Action Model(CoRL 2024)— <a href="https://arxiv.org/abs/2406.09246" target="_blank" rel="noopener">arXiv:2406.09246</a></li>
+    <li>Open X-Embodiment:Robotic Learning Datasets and RT-X Models(2023)— <a href="https://arxiv.org/abs/2310.08864" target="_blank" rel="noopener">arXiv:2310.08864</a></li>
+    <li>DROID:A Large-Scale In-The-Wild Robot Manipulation Dataset(RSS 2024)— <a href="https://arxiv.org/abs/2403.12945" target="_blank" rel="noopener">arXiv:2403.12945</a></li>
+    <li>π0:A Vision-Language-Action Flow Model for General Robot Control(Physical Intelligence,2024)— <a href="https://arxiv.org/abs/2410.24164" target="_blank" rel="noopener">arXiv:2410.24164</a>;开源实现 <a href="https://github.com/Physical-Intelligence/openpi" target="_blank" rel="noopener">openpi(GitHub)</a></li>
+    <li>π0.5 官方公告(Physical Intelligence,2025)— <a href="https://www.physicalintelligence.company/blog/pi05" target="_blank" rel="noopener">官方博客</a></li>
+    <li>Figure Helix:A Vision-Language-Action Model for Generalist Humanoid Control(2025)— <a href="https://www.figure.ai/news/helix" target="_blank" rel="noopener">Figure AI 官方公告</a>;Helix 2.0 洗碗/叠衣长时程报道 — <a href="https://interestingengineering.com/innovation/humanoid-robot-tackles-dishwasher-ai" target="_blank" rel="noopener">Interesting Engineering</a></li>    <li>NVIDIA Isaac GR00T N1:An Open Foundation Model for Humanoid Robots(2025)— <a href="https://arxiv.org/abs/2503.14734" target="_blank" rel="noopener">arXiv:2503.14734</a>;<a href="https://blogs.nvidia.cn/blog/accelerate-generalist-humanoid-robot-development-with-nvidia-isaac-gr00t-n1/" target="_blank" rel="noopener">NVIDIA 开发者博客(中文)</a></li>
+    <li>智元机器人 GO-1(2025)— <a href="https://www.agibot.com.cn/article/188/detail/79.html" target="_blank" rel="noopener">智元官方介绍</a>;开源报道 — <a href="https://ai.zol.com.cn/1052/10521666.html" target="_blank" rel="noopener">ZOL</a></li>
+    <li>AgiBot World 数据集(智元,2024 底开源)— <a href="https://github.com/OpenDriveLab/AgiBot-World" target="_blank" rel="noopener">GitHub</a></li>
+    <li>宇树 UnifoLM 系列开源报道(2025)— <a href="https://finance.sina.com.cn/jjxw/2025-09-16/doc-infqshpk5561775.shtml" target="_blank" rel="noopener">新浪财经</a>;WMA 最多 20 轮推演(王兴兴)— <a href="https://www.cnstock.com/commonDetail/756627" target="_blank" rel="noopener">上海证券报</a></li>
+    <li>宇树 G1-Dex1 灵巧手数据集 — <a href="https://huggingface.co/collections/unitreerobotics/unifolm-g1-dex1-diversemanip-dataset" target="_blank" rel="noopener">Hugging Face 官方合集</a></li>
+    <li>Genie 3:A New Frontier for World Models(Google DeepMind,2025)— <a href="https://deepmind.google/blog/genie-3-a-new-frontier-for-world-models/" target="_blank" rel="noopener">DeepMind 官方博客</a>;Genie 2 — <a href="https://deepmind.google/discover/blog/genie-2-a-world-model-that-generates-interactive-3d-environments/" target="_blank" rel="noopener">DeepMind 官方博客</a></li>
+    <li>NVIDIA Cosmos 世界基础模型(2025)— <a href="https://blogs.nvidia.cn/blog/cosmos-world-foundation-models/" target="_blank" rel="noopener">NVIDIA 官方博客(中文)</a></li>
+    <li>UniSim:A Neural Closed-Loop Sensor Simulator(Waymo,2024)— <a href="https://arxiv.org/abs/2308.01898" target="_blank" rel="noopener">arXiv:2308.01898</a></li>
+    <li>Neural Motion Simulator(Google,CVPR 2025)— <a href="https://arxiv.org/abs/2504.07095" target="_blank" rel="noopener">arXiv:2504.07095</a></li>
+    <li>HumanoidBench(RSS 2024)— <a href="https://arxiv.org/abs/2403.10506" target="_blank" rel="noopener">arXiv:2403.10506</a></li>
+    <li>GWM:Towards Scalable Gaussian World Models for Robotic Manipulation(BIGAI,ICCV 2025)— <a href="https://www.bigai.ai/blog/2025/11/26/gwm-towards-scalable-gaussian-world-models-for-robotic-manipulation/" target="_blank" rel="noopener">BIGAI 官方博客</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 页面内交互脚本(单一 script 块,保守 ES5 语法):
+     VLA 模型卡片按代际筛选 -->
+<script>
+  (function () {
+    var filter = document.getElementById('myFilter');
+    if (!filter) { return; }
+    var btns = filter.querySelectorAll('button');
+    var cards = document.querySelectorAll('.my-vla-card');
+    var i, j;
+    function apply(gen) {
+      for (j = 0; j < btns.length; j++) {
+        btns[j].className = (btns[j].getAttribute('data-g') === gen) ? 'on' : '';
+      }
+      for (j = 0; j < cards.length; j++) {
+        var g = cards[j].getAttribute('data-g');
+        var show = (gen === 'all' || g === gen);
+        cards[j].className = 'my-vla-card' + (show ? '' : ' hidden');
+      }
+    }
+    for (i = 0; i < btns.length; i++) {
+      (function (n) {
+        btns[n].addEventListener('click', function () {
+          apply(btns[n].getAttribute('data-g'));
+        });
+      })(i);
+    }
+  })();
+</script>
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

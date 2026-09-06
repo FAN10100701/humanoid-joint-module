@@ -21,7 +21,7 @@ cd /d "%~dp0.."
 rem [1/3] Stage EXPLICIT content paths only. NEVER use "git add -A" / "git add .":
 rem   they sweep untracked personal/dev files (video assets, .trae, .zcode,
 rem   browser profiles, unfinished personal pages) into this PUBLIC repo.
-"%GIT_EXE%" add .agents .github .gitignore .nojekyll _assets _本地工具 docs 00_3D解剖 01_理论入门 02_硬件基础 03_项目实操 04_升级进阶 05_HdriveV2工程 06_软件与算法 07_前沿知识库 08_学习工具 09_大模型与具身智能 10_NPU与数字IC设计 404.html AGENTS.md AUDIT.md CHANGELOG.md CONTRIBUTING.md LICENSE README.md baidu_verify_codeva-83ZAbuLmz6.html favicon.ico favicon.svg index.html manifest.json robots.txt sitemap.xml sw.js
+"%GIT_EXE%" add .agents .github .gitignore .nojekyll _assets _本地工具 docs 00_3D解剖 01_理论入门 02_硬件基础 03_项目实操 04_软件与算法 05_前沿知识库 06_学习工具 07_大模型与具身智能 08_NPU与数字IC设计 404.html AGENTS.md AUDIT.md CHANGELOG.md CONTRIBUTING.md LICENSE README.md baidu_verify_codeva-83ZAbuLmz6.html favicon.ico favicon.svg index.html manifest.json robots.txt sitemap.xml sw.js
 rem (V2.1.20b: whitelist was missing 09/10 sections + AGENTS.md/AUDIT.md/.agents/favicon - changes there silently never deployed)
 echo.
 

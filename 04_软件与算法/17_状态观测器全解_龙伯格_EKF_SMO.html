@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 04-17 状态观测器全解
+  内容: 观测器动机 / 龙伯格 / 卡尔曼 / EKF / SMO / MRAS / HFI /
+        无感速段切换策略 / 对比大表 / 工程落地 / 面试问答 / 自测
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 状态观测器全解:龙伯格/EKF/SMO</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名加 my- 前缀,避免与全局冲突) ===== */
+
+  /* 图形容器 */
+  .my-fig{background:rgba(13,17,23,.78);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 12px;margin:16px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:520px;max-width:100%;height:auto;margin:0 auto}
+  .my-fig-cap{font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6}
+
+  /* 资源卡片(与 02-05 参考资料汇总页同构) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+  /* 徽章配色 */
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+
+  /* 标签 */
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-zhihu{background:#dbeafe;color:#1d4ed8}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-1{background:#dcfce7;color:#166534}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+  .my-tag-smo{background:#bae6fd;color:#075985}
+  .my-tag-ekf{background:#e9d5ff;color:#6b21a8}
+  .my-tag-hfi{background:#fed7aa;color:#9a3412}
+  .my-tag-kf{background:#bbf7d0;color:#14532d}
+
+  /* 浅色主题适配 */
+  html:not([data-theme-early="dark"]) .my-fig{background:#ffffff;border-color:rgba(60,80,120,.14)}
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-17",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec4" },
+      { t: "状态观测器全解:龙伯格/EKF/SMO" }
+    ],
+    prev: { t: "现代控制理论:状态空间到MPC", u: "16_现代控制理论_状态空间到MPC.html" },
+    next: { t: "ADRC自抗扰控制与嵌入式实现", u: "18_ADRC自抗扰控制与嵌入式实现.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🔍 状态观测器全解:龙伯格 / KF / EKF / SMO / MRAS / HFI</h1>
+    <div class="sub">从"看不见的状态怎么估"讲起:龙伯格打地基、卡尔曼管噪声、EKF 解非线性、SMO 扛工业大梁、MRAS 平滑保底、HFI 补齐零低速,最后合成一张无感 FOC 全速域切换地图。电机工程师视角,每个观测器都按"是什么→为什么→怎么做→公式/代码→面试怎么问→易错点"展开。</div>
+    <div class="tags">
+      <span class="tag">状态观测器</span>
+      <span class="tag">无感FOC</span>
+      <span class="tag">EKF</span>
+      <span class="tag">SMO</span>
+      <span class="tag">高频注入HFI</span>
+      <span class="tag">PLL锁相</span>
+      <span class="tag">面试高频</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能写出龙伯格观测器的误差动态方程 ė = (A − LC)e,并说出增益 L 极点配置中"收敛快 vs 噪声敏感"的折中<br>
+    2. 能画出 EKF"预测—更新"两步框图,说出 Q、R 的物理意义("信模型"还是"信测量")与发散排查思路<br>
+    3. 能徒手推导 SMO 的滑模面、等效控制含 EEMF 的来龙去脉,并读懂 ~60 行教学版 C 实现<br>
+    4. 能解释为什么零低速必须 HFI、凸极效应(Ld≠Lq)是什么,以及速段切换带滞环与角度加权怎么做<br>
+    5. 能对着"观测器对比大表"回答面试题:SMO 抖振、EKF 发散、无感低速为什么难<br>
+    <b>建议用时:</b>约 70 分钟(精读)+ 30 分钟(自测与 FAQ 折叠展开)
+  </div>
+
+  <!-- ================= 1 为什么需要状态观测器 ================= -->
+  <h2><span class="h2-num">1</span> 为什么需要状态观测器:看不见的状态怎么估?</h2>
+  <p><b>是什么:</b>状态观测器(State Observer)是一个跑在 MCU 里的"软件传感器"——它用<b>能测到的量</b>(电压 u、电流 i 等)和<b>系统的数学模型</b>,实时重建出<b>测不到的状态</b>(转子角度 θ、转速 ω、磁链 ψ、负载转矩 T<sub>L</sub> 等),记作 θ̂、ω̂("帽子"读作"估计值")。一句话:<b>模型 + 测量 + 误差反馈 = 把不可测状态算出来</b>。</p>
+
+  <h3>1.1 哪些状态"测不到":无感 FOC 的动机</h3>
+  <p><b>为什么:</b>FOC 需要<b>转子电角度 θ</b> 做坐标变换、速度环需要 ω、力控碰撞检测需要 T<sub>L</sub>、磁链观测需要 ψ——但在真实关节里,这些量都没有现成的传感器输出:</p>
+  <div class="table-wrap"><table>
+    <tr><th>状态量</th><th>能否直接测</th><th>典型来源 / 问题</th></tr>
+    <tr><td>相电流 i<sub>a</sub> i<sub>b</sub> i<sub>c</sub></td><td>✅ 能测</td><td>采样电阻 + ADC,便宜可靠(但有噪声、增益误差)</td></tr>
+    <tr><td>母线电压 V<sub>dc</sub></td><td>✅ 能测</td><td>分压电阻 + ADC</td></tr>
+    <tr><td>转子电角度 θ、转速 ω</td><td>❌ 不能直接测</td><td>要编码器/旋变:<b>贵、占轴向空间、多一条线缆、薄弱环节</b>;机器人关节常用输出端编码器,转子侧仍无直接信息</td></tr>
+    <tr><td>永磁磁链 ψ<sub>f</sub></td><td>❌ 不能直接测</td><td>随温度漂移,只能标定或在线辨识</td></tr>
+    <tr><td>负载转矩 T<sub>L</sub></td><td>❌ 不能直接测</td><td>关节力矩传感器很贵;常用"观测器估 T<sub>L</sub>"做碰撞检测</td></tr>
+    <tr><td>绕组温度 / Rt</td><td>❌ 不能直接测</td><td>影响 Rs 取值,进而影响观测器精度</td></tr>
+  </table></div>
+  <p><b>怎么做——两条路线:</b>①装物理传感器(编码器/旋变/霍尔),简单可靠但每个关节多 30~100 元成本、多几毫米轴向长度、多一根 FPC/线缆,人形机器人 30~40 个关节就是一笔不小的开销和可靠性负担;②<b>无传感器(Sensorless,简称"无感")</b>:完全用算法从电压电流里"算出"θ̂ 和 ω̂——这就是本页主角。除无感 FOC 外,观测器还广泛用于<b>负载转矩估计(碰撞检测/自适应控制)</b>、<b>磁链与温度估计</b>、<b>滤波测速</b>(编码器微分噪声大,用观测器代替差分)。</p>
+  <div class="box box-tip"><b>💡 一句话动机:</b>凡是"模型知道、测量够不着"的量,都值得一个观测器。对机器人工程师:省一个编码器 = 省成本省空间省一根线;对算法工程师:观测器是从"经典调参"迈向"现代状态空间控制"(04-16)的第一道门。</div>
+  <p><b>面试怎么问:</b>"什么是状态观测器?为什么无感 FOC 需要它?无感能完全取代编码器吗?"(答:低速带载场景仍不能——见第 7、8 节。)</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>观测器估出来的 θ̂ 是<b>数学构造</b>,精度上限由模型参数(Rs、L、ψ<sub>f</sub>)决定;别把它当成"免费的高精度传感器"。参数失配时误差是系统性偏差,滤波再久也消不掉(见 10.2)。</div>
+
+  <!-- ================= 2 龙伯格观测器 ================= -->
+  <h2><span class="h2-num">2</span> 龙伯格观测器:一切观测器的地基</h2>
+  <p><b>是什么:</b>龙伯格(Luenberger)观测器是<b>线性系统</b>的全维状态观测器,结构最简单:拿同一个模型照着对象"跑一份拷贝",把输出误差 y − ŷ 通过增益 L 反馈回模型,把拷贝"拽"回真实轨迹。后续的卡尔曼、SMO,骨架都是它,只是"怎么算反馈增益、怎么处理噪声/非线性"不同。</p>
+
+  <h3>2.1 误差动态方程:为什么加 L 就能收敛</h3>
+  <p><b>怎么做:</b>设线性系统 ẋ = Ax + Bu,y = Cx(状态方程,见 04-16)。观测器用同样的 A、B 仿真,再加一个输出误差校正项:</p>
+  <div class="formula">观测器:\ \dot{\hat{x}} = A\hat{x} + Bu + L\,(y - C\hat{x}),\qquad 输出误差:\ e_y = y - C\hat{x}</div>
+  <p>定义估计误差 e = x − x̂,两式相减(Ax − Ax̂ = Ae,测量项 Cy − Cx̂ = Ce),得到<b>误差动态方程</b>:</p>
+  <div class="formula">\dot{e} = (A - LC)\,e \;\;\Rightarrow\;\; e(t) = e^{\,(A-LC)t}\,e(0) \xrightarrow{\;t\to\infty\;} 0</div>
+  <p>这一行就是观测器的灵魂:<b>只要矩阵 (A − LC) 的所有特征值都在左半平面(负实部),误差就指数收敛到零,收敛快慢由这些极点决定</b>。增益 L 就是干这件事的"旋钮"——不猜、不凑,直接配置极点。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 580 300" role="img" aria-label="龙伯格观测器结构框图:输入u同时送入被控对象与观测器,对象输出y与观测器输出估计y帽相减得到误差,经增益L反馈回观测器,使估计误差指数收敛">
+      <defs>
+        <marker id="lg-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="lg-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="lg-arr-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+        <marker id="lg-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+        <marker id="lg-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- u 输入 -->
+      <text x="16" y="154" fill="#22c55e" font-size="14" font-weight="bold">u</text>
+      <line x1="34" y1="150" x2="86" y2="150" stroke="#22c55e" stroke-width="2" marker-end="url(#lg-arr-g)"/>
+      <circle cx="86" cy="150" r="3.5" fill="#22c55e"/>
+      <!-- u 分支: 向上到对象 -->
+      <path d="M86 150 L86 74 L146 74" fill="none" stroke="#22c55e" stroke-width="2" marker-end="url(#lg-arr-g)"/>
+      <!-- u 分支: 向下到观测器 -->
+      <path d="M86 150 L86 226 L146 226" fill="none" stroke="#22c55e" stroke-width="2" marker-end="url(#lg-arr-g)"/>
+      <!-- 被控对象框 -->
+      <rect x="150" y="44" width="188" height="60" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="244" y="70" fill="#58a6ff" font-size="14" font-weight="bold" text-anchor="middle">被控对象(真实电机)</text>
+      <text x="244" y="90" fill="#8b98a9" font-size="12" text-anchor="middle">ẋ = Ax + Bu</text>
+      <!-- 对象输出 y -->
+      <line x1="338" y1="74" x2="540" y2="74" stroke="#58a6ff" stroke-width="2"/>
+      <text x="548" y="79" fill="#58a6ff" font-size="14" font-weight="bold" text-anchor="end">y</text>
+      <text x="420" y="66" fill="#58a6ff" font-size="12" text-anchor="middle">y = Cx(测量)</text>
+      <!-- y 向下进求和点 -->
+      <circle cx="480" cy="74" r="3.5" fill="#58a6ff"/>
+      <path d="M480 74 L480 136" fill="none" stroke="#58a6ff" stroke-width="2" marker-end="url(#lg-arr-b)"/>
+      <!-- 求和圆 -->
+      <circle cx="480" cy="152" r="16" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="480" y="158" fill="#ef4444" font-size="15" font-weight="bold" text-anchor="middle">Σ</text>
+      <text x="472" y="132" fill="#58a6ff" font-size="11" text-anchor="end">+</text>
+      <text x="472" y="182" fill="#f59e0b" font-size="11" text-anchor="end">−</text>
+      <!-- 观测器输出 ŷ 向上进求和点 -->
+      <line x1="480" y1="226" x2="480" y2="168" stroke="#f59e0b" stroke-width="2" marker-end="url(#lg-arr-o)"/>
+      <text x="490" y="216" fill="#f59e0b" font-size="12">ŷ = Cx̂(估计)</text>
+      <!-- 误差 e 输出 -->
+      <line x1="496" y1="152" x2="548" y2="152" stroke="#ef4444" stroke-width="2" marker-end="url(#lg-arr-r)"/>
+      <text x="546" y="144" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="end">e = y − ŷ</text>
+      <!-- 反馈路径: 从求和点向左绕回观测器, 经 ×L 放大(进盒顶、出盒左,箭头段独立保留可见) -->
+      <path d="M464 152 L390 152 L390 236" fill="none" stroke="#ef4444" stroke-width="2"/>
+      <line x1="352" y1="252" x2="342" y2="252" stroke="#ef4444" stroke-width="2" marker-end="url(#lg-arr-r)"/>
+      <rect x="352" y="236" width="76" height="32" rx="8" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="390" y="257" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle">× L</text>
+      <text x="408" y="272" fill="#ef4444" font-size="11">误差反馈增益</text>
+      <!-- 观测器框 -->
+      <rect x="150" y="196" width="188" height="60" rx="10" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="244" y="222" fill="#f59e0b" font-size="14" font-weight="bold" text-anchor="middle">龙伯格观测器(模型拷贝)</text>
+      <text x="244" y="242" fill="#8b98a9" font-size="12" text-anchor="middle">x̂̇ = Ax̂ + Bu + L(y − Cx̂)</text>
+      <!-- 观测器输出到求和点 -->
+      <path d="M338 226 L480 226" fill="none" stroke="#f59e0b" stroke-width="2"/>
+      <circle cx="480" cy="226" r="3.5" fill="#f59e0b"/>
+      <!-- 底部标注 -->
+      <text x="290" y="288" fill="#8b98a9" font-size="12" text-anchor="middle">目标: ė = (A − LC)e → 0,估计 x̂ 收敛到真实 x</text>
+    </svg>
+    <div class="my-fig-cap">图① 龙伯格观测器结构:同一模型跑一份"拷贝",输出误差 e = y − ŷ 经增益 L 反馈校正,把估计状态拽回真实轨迹</div>
+  </div>
+
+  <h3>2.2 极点配置:收敛速度 vs 噪声敏感的折中</h3>
+  <p><b>怎么做:</b>给 (A − LC) 配极点就是选观测器的"带宽"。<b>为什么是折中:</b></p>
+  <ul>
+    <li><b>L 大 → 极点远(快)</b>:误差几毫秒就收敛,跟踪快;但 L 也把测量噪声 y 里的毛刺原样放大进 x̂(y−Cx̂ 前面乘 L),估计值抖得厉害。</li>
+    <li><b>L 小 → 极点近(慢)</b>:估计平滑,但负载突变时要"追"很久,追的过程里 FOC 用着错误的 θ̂,轻则力矩脉动,重则失步。</li>
+  </ul>
+  <div class="formula">经验准则:观测器主导极点 ≈ (3 ~ 5) × 闭环主导极点,且 ≤ 采样频率的 1/10;再往上只换来噪声</div>
+  <p>可观测性是前提:若 (A, C) 不可观测,任何 L 都救不回来——某些状态在输出里根本没留"痕迹"。工程上常用 Ackermann 公式或直接解 Sylvester 方程求 L(MATLAB <code>place()</code> / <code>estim()</code>,见 MathWorks 观测器文档,资源卡 R4)。</p>
+  <p><b>面试怎么问:</b>"观测器增益 L 怎么选?极点配得越快越好吗?"——标准答案必须答出<b>噪声放大</b>这一半,只答"快就是好"是典型减分项。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①把观测器极点和闭环极点混在一起配——先定控制带宽,再让观测器快 3~5 倍;②忽略执行器饱和:误差大时 L·e 会让观测器输出飞到模型有效域之外,实际要给校正项限幅。</div>
+
+  <h3>2.3 分离原理与离散实现(含 C 代码)</h3>
+  <p><b>分离原理(Separation Principle):</b>对线性系统,"设计状态反馈 K"(04-16 的 LQR/极点配置)与"设计观测器 L"可以<b>完全独立</b>进行,合起来的闭环 (A − BK, LC) 的特征多项式恰好是两者之积,互不干扰。这条原理是现代控制的"模块化许可证":先按性能定 K,再按噪声定 L(详见 04-16 状态空间一页)。</p>
+  <p><b>离散实现:</b>MCU 上按周期 Ts 执行"预测 → 校正"两步。对 PMSM 电机的电流模型做龙伯格(可顺带把 EEMF 的一帧当扰动估计),核心就几行:</p>
+  <pre><code>// 龙伯格观测器离散实现(预测-校正形式),每个控制周期 Ts 执行一次
+// 系统已离散化: x[k+1] = Ad·x[k] + Bd·u[k],  y[k] = C·x[k]
+typedef struct {
+    float x_hat[4];   // 估计状态, 如 [ia ib ea eb](电流+EEMF)
+    float L[4];       // 观测器增益(按极点配置离线算好)
+    float Ad[4][4];   // 离散状态矩阵(由 A·Ts 一阶保持离散化)
+    float Bd[4][2];   // 离散输入矩阵
+} luenberger_t;
+
+void luenberger_step(luenberger_t *o, const float u[2], const float y[2], float Ts)
+{
+    float corr[2];                        // 输出误差 e_y = y - C·x̂
+    corr[0] = y[0] - o-&gt;x_hat[0];         // C = [I 0]: 只取电流两个状态作输出
+    corr[1] = y[1] - o-&gt;x_hat[1];
+    if (corr[0] &gt;  CORR_MAX) corr[0] =  CORR_MAX;   // 校正项限幅: 防止大误差冲飞估计
+    if (corr[0] &lt; -CORR_MAX) corr[0] = -CORR_MAX;
+    if (corr[1] &gt;  CORR_MAX) corr[1] =  CORR_MAX;
+    if (corr[1] &lt; -CORR_MAX) corr[1] = -CORR_MAX;
+
+    for (int i = 0; i &lt; 4; i++) {
+        float xd = 0.0f;
+        for (int j = 0; j &lt; 4; j++) xd += o-&gt;Ad[i][j] * o-&gt;x_hat[j];   // 预测: Ad·x̂
+        for (int j = 0; j &lt; 2; j++) xd += o-&gt;Bd[i][j] * u[j];          // + Bd·u
+        // 校正: + L·e_y(L 只有前两行非零, 因为只有电流可测)
+        xd += o-&gt;L[i] * ((i &lt; 2) ? corr[i] : 0.0f);
+        o-&gt;x_hat[i] = xd;                 // 注意: 严格应先算全部再加, 状态少时此写法误差可忽略
+    }
+    // x_hat[2]、x_hat[3] 即估计出的 EEMF 分量, 后续 arctan/PLL 得到 θ̂(与 SMO 相通)
+}</code></pre>
+  <p><b>面试怎么问:</b>"分离原理是什么?为什么能用估计状态代替真实状态做反馈?"——答出"控制律用 x̂ 代替 x,只要观测器稳定,闭环极点仍是 K 与 L 两组极点的并集"。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>龙伯格是<b>确定性</b>方法——它对"噪声长什么样"不做任何假设,增益配好了就定了,不随噪声变化自适应。当测量噪声大、需要"最优权衡"时,就该轮到卡尔曼滤波(第 3 节);当模型非线性时,轮到 EKF(第 4 节)。</div>
+
+  <!-- ================= 3 卡尔曼滤波 ================= -->
+  <h2><span class="h2-num">3</span> 卡尔曼滤波回顾:预测/更新与 Q·R 调参直觉</h2>
+  <p><b>是什么:</b>卡尔曼滤波(KF)是<b>线性、高斯噪声</b>假设下的最优状态观测器。和龙伯格"增益 L 拍死"不同,KF 的增益 K 每拍<b>根据误差协方差 P 现场计算</b>:模型可信(预测准、P 小)就少听测量,模型发散(P 大)就多听测量。它是"龙伯格 + 噪声统计"的升级,也是 EKF 的地基(系统性学习推荐资源卡 R1:rlabbe 免费在线书,直觉讲解第一)。</p>
+
+  <h3>3.1 预测/更新两步与 Q·R 的物理意义</h3>
+  <div class="formula">预测(Predict):\ \hat{x}^- = A\hat{x} + Bu,\qquad P^- = A\,P\,A^{\mathsf T} + Q</div>
+  <div class="formula">更新(Update):\ K = P^-C^{\mathsf T}(C\,P^-C^{\mathsf T} + R)^{-1},\quad \hat{x} = \hat{x}^- + K(y - C\hat{x}^-),\quad P = (I - KC)\,P^-</div>
+  <p><b>怎么做——Q 和 R 的调参直觉</b>(面试和工程都最常考):</p>
+  <div class="table-wrap"><table>
+    <tr><th>参数</th><th>物理意义</th><th>调大 / 调小的后果</th></tr>
+    <tr><td>Q:过程噪声协方差</td><td>"模型有多不准":建模误差、负载突变、参数漂移等未被模型描述的扰动</td><td><b>Q 大 → 信测量</b>:响应快、跟随负载变化,但毛刺多;Q 小 → 信模型,平滑但滞后</td></tr>
+    <tr><td>R:测量噪声协方差</td><td>"测量有多不准":ADC 噪声、采样误差(可实测:静止时采电流算方差)</td><td><b>R 大 → 信模型</b>:平滑、滤波强;R 小 → 信测量,噪声直达输出</td></tr>
+    <tr><td>P:估计误差协方差</td><td>滤波器对"自己现在错多少"的内部判断</td><td>初值 P₀ 给大一些,让滤波器快速信任测量、缩短初始收敛</td></tr>
+  </table></div>
+  <p>口诀:<b>"信模型还是信测量"——Q 谁大听测量,R 谁大听模型</b>。稳态时 K 趋于常数,KF 退化成一个增益固定的龙伯格观测器(这也是两流派在稳态下等价的直观理解)。</p>
+  <p><b>面试怎么问:</b>"Q、R 怎么取?它们和龙伯格增益 L 什么关系?"(Q/R 定 K 的稳态值 = 定效 L;Q/R 之比决定滤波带宽。)</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>Q、R 是<b>协方差矩阵</b>,不是标量噪声幅值;多维状态要对角放置各维噪声强度,量纲要和状态一致(rad、rad/s、A),混了量纲 P 会瞬间非正定。</div>
+
+  <h3>3.2 线性 KF 例:恒速假设下的负载转矩估计</h3>
+  <p><b>怎么做:</b>机器人关节做碰撞检测常估 T<sub>L</sub>。把机械方程当"增广状态"纳入 KF:状态取 x = [ω, T<sub>L</sub>]<sup>T</sup>,测量 y = ω<sub>enc</sub>(编码器转速,已滤波)。模型(转动惯量 J、黏摩擦 B、转矩常数 K<sub>t</sub>):</p>
+  <div class="formula">\dot{\omega} = \tfrac{K_t}{J}i_q - \tfrac{B}{J}\omega - \tfrac{1}{J}T_L,\qquad \dot{T}_L = 0\ (慢变随机游走:\ T_{L,k+1} = T_{L,k} + w_k,\ w_k \sim Q_{T})</div>
+  <p>T<sub>L</sub> 建成"随机游走"(每拍加一点过程噪声 w)是观测器里的经典套路——把慢变量放进状态、用 Q 给它"呼吸权",KF 就能一边用电流推算理论加速度、一边从转速残差里把 T<sub>L</sub> 反解出来。这里的模型是线性的,直接用 3.1 两步公式即可,不需要 EKF。<b>易错点:</b>T<sub>L</sub> 的 Q_T 给太小 → 碰撞后估计爬升太慢,检测延迟;给太大 → 正常加减速也被误判成"碰撞"。<b>面试怎么问:</b>"没有力矩传感器怎么检测碰撞?"——增广状态 + KF 估 T<sub>L</sub> + 阈值/滑窗判据,是标准答题框架。</p>
+
+  <h3>数值算例:一维 KF 递推 3 拍(恒值负载转矩估计,手推)</h3>
+  <p><b>对象:</b>恒值负载转矩 T<sub>L</sub> 估计,建模成随机游走 x[k+1] = x[k](预测步状态不变),测量 z = x + v。参数:P₀ = 1,Q = 0.01,R = 0.25(相当于测量噪声标准差 0.5 N·m);测量序列 z = [10.2, 9.8, 10.1] N·m。初始估计 x̂₀ = 0(无先验,P₀ 给大表示「自己也不知道」)。每拍三件事:<b>预测 P⁻ = P + Q → 增益 K = P⁻/(P⁻+R) → 更新 x̂ = x̂ + K(z−x̂)、P = (1−K)·P⁻</b>。数值保留 4 位小数:</p>
+  <div class="table-wrap"><table>
+    <tr><th>拍</th><th>预测 P⁻ = P+Q</th><th>增益 K = P⁻/(P⁻+R)</th><th>更新 x̂ = x̂+K(z−x̂)</th><th>P = (1−K)·P⁻</th></tr>
+    <tr><td>1</td><td>1.0000+0.01 = <b>1.0100</b></td><td>1.0100/1.2600 = <b>0.8016</b></td><td>0 + 0.8016×(10.2−0) = <b>8.1762</b></td><td>0.1984×1.0100 = <b>0.2004</b></td></tr>
+    <tr><td>2</td><td>0.2004+0.01 = <b>0.2104</b></td><td>0.2104/0.4604 = <b>0.4570</b></td><td>8.1762 + 0.4570×(9.8−8.1762) = 8.1762+0.7421 = <b>8.9183</b></td><td>0.5430×0.2104 = <b>0.1142</b></td></tr>
+    <tr><td>3</td><td>0.1142+0.01 = <b>0.1242</b></td><td>0.1242/0.3742 = <b>0.3320</b></td><td>8.9183 + 0.3320×(10.1−8.9183) = 8.9183+0.3923 = <b>9.3106</b></td><td>0.6680×0.1242 = <b>0.0830</b></td></tr>
+  </table></div>
+  <p><b>K 的收敛趋势与稳态值:</b>K 依次为 0.8016 → 0.4570 → 0.3320,继续递推依次约 0.2712 → 0.2373 → 0.2171 → 0.1965 → 0.1878 → …,单调收敛到稳态 K<sub>∞</sub> ≈ <b>0.181</b>。稳态值可闭式求解:令 P⁻ 的稳态为 p,由 p = R·p/(p+R) + Q 解得 p = [Q+√(Q²+4QR)]/2 = [0.01+√0.0101]/2 = 0.0552,故 K<sub>∞</sub> = 0.0552/(0.0552+0.25) = 0.1810——与递推趋势吻合(这就是 3.1 节「稳态时 KF 退化为定增益龙伯格观测器」的数值版)。</p>
+  <p><b>怎么读这张表:</b>初始阶段 P 大 → K 大 → 第一拍几乎全信测量(x̂ 从 0 直接跳到 8.18),这是「快速吃掉初始误差」;之后 P 逐拍收缩 → K 越来越小 → 每拍只按残差做小步修正,<b>K 小 = 越来越信模型、越来越不信单次测量</b>(对应 3.1 节口诀的动态版)。若真实负载是 10 N·m,3 拍后估到 9.31,还在收敛途中——继续跑会贴上去;若负载突然阶跃,P 很小、K 很小,估计会爬升变慢,这正是把 T<sub>L</sub> 的 Q 给大一点的理由(3.2 节碰撞检测的调参依据)。</p>
+  <div class="box box-tip"><b>📌 自检:</b>把数字换成你的电机参数重算一遍(提示:只改 Q、R、z 序列,三步公式不变;先口算稳态 K<sub>∞</sub>,再看递推是否走向它)。</div>
+
+  <!-- ================= 4 EKF ================= -->
+  <h2><span class="h2-num">4</span> 扩展卡尔曼滤波 EKF:非线性系统与 PMSM 无感主力</h2>
+  <p><b>是什么:</b>电机方程里有 sinθ、cosθ——天然非线性,KF 不能直接用。<b>EKF(Extended KF)的做法:围绕当前估计点把非线性函数泰勒展开取一次项(雅可比矩阵),把非线性问题"局部线性化",然后照搬 KF 的两步</b>。它是 PMSM 无感里精度上限最高的方案之一,代价是算力与调参负担。</p>
+
+  <h3>4.1 雅可比线性化:PMSM 状态 [i<sub>d</sub> i<sub>q</sub> ω θ] 推导框架</h3>
+  <p><b>怎么做:</b>非线性系统 x<sub>k+1</sub> = f(x<sub>k</sub>, u<sub>k</sub>) + w,y<sub>k</sub> = h(x<sub>k</sub>) + v,预测与更新中的 A、C 换成雅可比:</p>
+  <div class="formula">F_k = \left.\frac{\partial f}{\partial x}\right|_{\hat{x}_k,\,u_k},\qquad H_k = \left.\frac{\partial h}{\partial x}\right|_{\hat{x}_k},\qquad P^- = F_k P F_k^{\mathsf T} + Q</div>
+  <p>以 PMSM 无感为例(转子磁场坐标系 dq + 机械方程),状态取 x = [i<sub>d</sub>, i<sub>q</sub>, ω, θ]<sup>T</sup>,输入 u = [v<sub>d</sub>, v<sub>q</sub>]<sup>T</sup>,连续状态方程(表贴式 L<sub>d</sub>=L<sub>q</sub>=L<sub>s</sub> 时同理简化):</p>
+  <div class="formula">\begin{aligned}
+\dot{i}_d &= \tfrac{1}{L_d}\big(v_d - R_s i_d + \omega\,L_q\,i_q\big)\\
+\dot{i}_q &= \tfrac{1}{L_q}\big(v_q - R_s i_q - \omega(L_d\,i_d + \psi_f)\big)\\
+\dot{\omega} &= \tfrac{1}{J}\big(\tfrac{3}{2}p\,\psi_f\,i_q - T_L\big),\qquad \dot{\theta} = p\,\omega
+\end{aligned}</div>
+  <p>注意 ω、θ 都是状态——<b>EKF 一次同时给出转速和角度,不需要额外 PLL</b>(与 SMO 的关键差异)。测量方程 h(x) = [i<sub>d</sub>, i<sub>q</sub>]<sup>T</sup>(H 是常数矩阵)。离散化用前向欧拉(x<sub>k+1</sub> = x<sub>k</sub> + T·f),每拍重新算 4×4 雅可比 F(含 cosθ、sinθ 项),然后走 KF 两步。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 600 322" role="img" aria-label="EKF预测与更新两步框图:输入u与当前估计进入预测步得到先验估计x减与协方差P减,测量y与先验共同进入更新步计算卡尔曼增益K,输出校正后的估计与协方差,循环进入下一拍">
+      <defs>
+        <marker id="ek-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="ek-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="ek-arr-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+        <marker id="ek-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- 输入 -->
+      <text x="14" y="86" fill="#22c55e" font-size="14" font-weight="bold">u = [vd vq]</text>
+      <text x="14" y="104" fill="#8b98a9" font-size="11">本拍施加的电压</text>
+      <line x1="110" y1="82" x2="164" y2="82" stroke="#22c55e" stroke-width="2" marker-end="url(#ek-arr-g)"/>
+      <text x="14" y="250" fill="#58a6ff" font-size="14" font-weight="bold">y = [id iq]</text>
+      <text x="14" y="268" fill="#8b98a9" font-size="11">实测电流(ADC)</text>
+      <line x1="110" y1="246" x2="330" y2="246" stroke="#58a6ff" stroke-width="2" marker-end="url(#ek-arr-b)"/>
+      <circle cx="164" cy="82" r="3.5" fill="#22c55e"/>
+      <path d="M164 82 L164 300 L360 300" fill="none" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="4 3"/>
+      <text x="174" y="164" fill="#22c55e" font-size="11">u 上一拍值(延迟补偿)</text>
+      <!-- 预测框 -->
+      <rect x="168" y="30" width="240" height="118" rx="12" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="288" y="54" fill="#f59e0b" font-size="15" font-weight="bold" text-anchor="middle">① 预测 Predict(模型推)</text>
+      <text x="288" y="80" fill="#64748b" font-size="12.5" text-anchor="middle">x̂⁻ = f(x̂, u)</text>
+      <text x="288" y="102" fill="#64748b" font-size="12.5" text-anchor="middle">F = ∂f/∂x(雅可比, 含 cosθ sinθ)</text>
+      <text x="288" y="124" fill="#64748b" font-size="12.5" text-anchor="middle">P⁻ = F P Fᵀ + Q</text>
+      <text x="288" y="142" fill="#8b98a9" font-size="11" text-anchor="middle">"我觉得现在大概在哪"(先验)</text>
+      <!-- 预测到更新箭头 -->
+      <path d="M288 148 L288 196" fill="none" stroke="#f59e0b" stroke-width="2" marker-end="url(#ek-arr-o)"/>
+      <text x="296" y="178" fill="#8b98a9" font-size="11">x̂⁻, P⁻</text>
+      <!-- 更新框 -->
+      <rect x="168" y="200" width="240" height="96" rx="12" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.8"/>
+      <text x="288" y="222" fill="#58a6ff" font-size="15" font-weight="bold" text-anchor="middle">② 更新 Correct(测量校)</text>
+      <text x="288" y="246" fill="#64748b" font-size="12.5" text-anchor="middle">K = P⁻Hᵀ(HP⁻Hᵀ + R)⁻¹</text>
+      <text x="288" y="268" fill="#64748b" font-size="12.5" text-anchor="middle">x̂ = x̂⁻ + K(y − H x̂⁻),  P = (I−KH)P⁻</text>
+      <text x="288" y="288" fill="#8b98a9" font-size="11" text-anchor="middle">"用测量残差修正自己"(后验)</text>
+      <!-- 循环 -->
+      <path d="M408 248 L452 248 L452 88 L412 88" fill="none" stroke="#8b98a9" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#ek-arr)"/>
+      <text x="460" y="172" fill="#8b98a9" font-size="11">下一拍</text>
+      <!-- 输出 -->
+      <line x1="408" y1="222" x2="508" y2="222" stroke="#f59e0b" stroke-width="2" marker-end="url(#ek-arr-o)"/>
+      <text x="514" y="212" fill="#f59e0b" font-size="13" font-weight="bold">ω̂ θ̂</text>
+      <text x="514" y="230" fill="#8b98a9" font-size="11">给 Park 变换</text>
+      <text x="514" y="246" fill="#8b98a9" font-size="11">与速度环</text>
+      <text x="300" y="316" fill="#8b98a9" font-size="12" text-anchor="middle">Q = 过程噪声(模型不准的度量) · R = 测量噪声(ADC 不准的度量) · 每控制周期执行一次</text>
+    </svg>
+    <div class="my-fig-cap">图② EKF 两步循环:预测步"模型往外推",更新步"测量往回拉",增益 K 由协方差现场算出</div>
+  </div>
+
+  <h3>4.2 协方差传播、工程调参与定点实现</h3>
+  <p><b>协方差传播:</b>预测步 P⁻ = F P F<sup>T</sup> + Q 描述"不确定性随模型扩散",更新步 P = (I−KH)P⁻ 描述"测量把不确定性压回去"。P 对角线就是各状态当前估计误差的方差——它能当作<b>置信度输出</b>(切换策略里判断"观测器可信度"的天然指标)。</p>
+  <p><b>Q/R 初值方法(工程套路):</b></p>
+  <ul>
+    <li><b>R 先定</b>:电机静止、无注入时连续采 1000 拍电流,算方差 → R ≈ diag(σ<sub>id</sub>², σ<sub>iq</sub>²);</li>
+    <li><b>Q 再试</b>:初值取 R 的 1/100~1/10 量级,先保证收敛;负载动态大(机器人关节!)适当加大 ω、θ 对应的 Q<sub>33</sub>、Q<sub>44</sub>;</li>
+    <li><b>按响应微调</b>:θ̂ 跟不上加速 → Q<sub>44</sub> 加大;θ̂ 毛刺大 → R 加大或 Q<sub>44</sub> 减小。</li>
+  </ul>
+  <p><b>发散排查清单</b>(面试必背 + 现场救命):</p>
+  <div class="box box-danger"><b>🧯 EKF 发散排查八条:</b>① P 失去对称正定 → 用对称化 P=(P+Pᵀ)/2 或 Joseph 形式更新;② Q 太小 → 滤波器"过度自信"无视测量,残差越滚越大;③ R 太小 → 盲信噪声测量,P 被压得过小后突然失去纠偏能力;④ 初值 x̂₀ 离谱、P₀ 太小 → 初始 P₀ 给大(×100)让滤波器快速吸收测量;⑤ 步长 T 与采样率不匹配 / 模型离散化误差;⑥ Rs、L、ψ<sub>f</sub> 参数失配(温升后 Rs 可漂 30%+);⑦ 测量野值(ADC 毛刺)→ 残差卡方门限,超限跳过更新;⑧ 数值下溢:定点实现里 P 被截断到 0。</div>
+  <p><b>定点数实现注意:</b>EKF 全是矩阵乘加,P 的动态范围大(从 1e-6 到 1e3),Q15/Q16 定点极易溢出或下溢——要么用 Qm.n 长格式(64 位中间量),要么干脆选带硬件 FPU 的 MCU(STM32G4/F4,见 04-02)<b>直接上 float32</b>;4×4 矩阵求逆避免显式求逆,按 (HP⁻Hᵀ+R)<sup>-1</sup> 是 2×2 用解析式。<b>面试怎么问:</b>"EKF 为什么会发散?你怎么保证它不发散?"——答 Joseph 形式 / P 对称化 / 残差门限 / Q·R 在线校正,即可超出多数候选人。</p>
+  <p>EKF 核心循环伪代码(每控制周期一次):</p>
+  <pre><code>// EKF 伪代码框架: 状态 x = [id iq w th], 测量 y = [id iq]
+// 约定: f() 为离散状态方程, Jac() 返回 4x4 雅可比 F
+void ekf_step(ekf_t *e, const float u[2], const float y[2], float T)
+{
+    /* ---------- ① 预测 Predict ---------- */
+    f(e-&gt;x, u, T);                              // x̂⁻ = f(x̂, u): 非线性状态方程(前向欧拉)
+    Jac(e-&gt;F, e-&gt;x, u, T);                      // F = ∂f/∂x, 在当前估计点算(含 cos/sin)
+    mat_mult_AT_A(e-&gt;P, e-&gt;F, e-&gt;P);            // P⁻ = F·P·Fᵀ  (4x4)
+    for (i = 0; i &lt; 4; i++) e-&gt;P[i][i] += e-&gt;Q[i];   // P⁻ += Q(对角阵时简化)
+
+    /* ---------- ② 更新 Correct ---------- */
+    // H = [1 0 0 0; 0 1 0 0](测电流), S = H·P⁻·Hᵀ + R → 2x2
+    S[0][0] = e-&gt;P[0][0] + e-&gt;R[0];   S[0][1] = e-&gt;P[0][1];
+    S[1][0] = e-&gt;P[1][0];             S[1][1] = e-&gt;P[1][1] + e-&gt;R[1];
+    inv2(S_inv, S);                            // 2x2 解析求逆, 避免通用矩阵求逆
+    // K = P⁻·Hᵀ·S⁻¹ → 4x2: 取 P⁻ 前两列再右乘 S⁻¹
+    for (i = 0; i &lt; 4; i++)
+      for (j = 0; j &lt; 2; j++) {
+        K[i][j] = 0;
+        for (k = 0; k &lt; 2; k++) K[i][j] += e-&gt;P[i][k] * S_inv[k][j];
+      }
+    // 残差 r = y − H·x̂⁻ (可加卡方门限: |r|² 超限则跳过本拍更新, 防野值)
+    r[0] = y[0] - e-&gt;x[0];   r[1] = y[1] - e-&gt;x[1];
+    for (i = 0; i &lt; 4; i++) e-&gt;x[i] += K[i][0]*r[0] + K[i][1]*r[1];   // x̂ = x̂⁻ + K·r
+    for (i = 0; i &lt; 4; i++)            // P = (I − K·H)·P⁻(H 只取前两行, 简化展开)
+      for (j = 0; j &lt; 4; j++)
+        Pn[i][j] = e-&gt;P[i][j]
+                 - (K[i][0]*e-&gt;P[0][j] + K[i][1]*e-&gt;P[1][j]);
+    copy_P(e-&gt;P, Pn);
+    symmetrize(e-&gt;P);                          // P = (P + Pᵀ)/2: 数值稳定的关键一行
+
+    /* 输出: e-&gt;x[2] = ω̂ → 速度环; e-&gt;x[3] = θ̂(wrap 到 [0,2π)) → Park/逆Park */
+}</code></pre>
+  <p><b>面试怎么问:</b>"EKF 相比 SMO 好在哪、贵在哪?"——好:协方差加权、最优融合、天然给出 ω̂ 且抗噪可调;贵:每拍 4×4 矩阵乘(数百次乘加)、7 组以上参数要调、有发散风险,对 MCU 算力与浮点支持要求高。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①EKF 线性化只在估计点附近一阶有效——状态突跳大(启动冲击)时先验偏离,可能发散,工程上配合"启动阶段加大 Q"过渡;②θ 状态记得 wrap 到 [0, 2π),否则 sin/cos 与协方差随圈数漂移;③别用 0 初值估 θ̂——先用开环定位或 HFI 拉到 ±30° 内再切入 EKF。</div>
+
+  <!-- ================= 5 SMO 滑模观测器 ================= -->
+  <h2><span class="h2-num">5</span> SMO 滑模观测器:工业无感的主力方案</h2>
+  <p><b>是什么:</b>SMO(Sliding Mode Observer,滑模观测器)把"让估计误差归零"变成一个<b>滑动模态问题</b>:设计一个电流观测器,用大增益开关项把电流误差"砸"到零;误差为零时,开关项的<b>等效控制恰好等于扩展反电动势(EEMF)</b>——它里面藏着 θ。结构简单、计算量小、对参数不敏感,是商用无感固件(TI InstaSPIN 之外最常见的方案、ST MC SDK 标配)的主力,也是面试出题密度最高的观测器。</p>
+
+  <h3>5.1 结构三件套:电流观测器 + 滑模面 + 开关增益</h3>
+  <p><b>怎么做:</b>在静止 αβ 坐标系下,PMSM 电流方程为(dq 方程经反 Park 变换):</p>
+  <div class="formula">i̇_α = \tfrac{1}{L_s}\big(v_α - R_s\,i_α - e_α\big),\qquad i̇_β = \tfrac{1}{L_s}\big(v_β - R_s\,i_β - e_β\big)</div>
+  <p>照此搭一个电流估计器,把未知的 −e/L 项替换成<b>开关项</b>,并定义滑模面:</p>
+  <div class="formula">观测器:\ \dot{\hat{i}}_α = \tfrac{1}{L_s}\big(v_α - R_s\,\hat{i}_α + z_α\big),\quad z_α = k\cdot\mathrm{sign}(e_α),\qquad 滑模面:\ s = e_α = i_α - \hat{i}_α = 0</div>
+  <p>滑模存在条件(到达条件)s·ṡ &lt; 0 → 只要 <b>k 大于 EEMF 的幅值上界</b>(k &gt; max|ω ψ<sub>f</sub>|,留 1.5~2 倍裕量),误差就会被"顶"在零面上滑动——这一步完全不用精确的 L<sub>s</sub>、R<sub>s</sub> 值,这正是 SMO 对参数不敏感的原因(龙伯格做不到)。<b>面试怎么问:</b>"SMO 的滑模增益 k 怎么取?"——答"k 按最高转速下的 EEMF 幅值 ω<sub>max</sub>ψ<sub>f</sub> 取裕量,过大加剧抖振、过小到达不了滑模面"。</p>
+
+  <h3>5.2 等效控制含 EEMF:低通滤波提取与相位补偿</h3>
+  <p><b>为什么:</b>误差滑到零后,开关项高频切换的<b>等效(平均)值</b>就是被它顶替的那一项:</p>
+  <div class="formula">z_{α,eq} \approx e_α = -\psi_f\,\omega\sin\theta,\qquad z_{β,eq} \approx e_β = \psi_f\,\omega\cos\theta \quad(\text{扩展反电动势 EEMF})</div>
+  <p>EEMF 是个幅值 ∝ ωψ<sub>f</sub>、相位锁定在 θ+90° 的正弦对——把它当"量角器"就有 θ。但开关原始输出是"高频毛刺+低频正弦"的混合,要一阶低通滤波(LPF)把毛刺滤掉:</p>
+  <div class="formula">\hat{e} = \frac{z_{eq}}{\tau s + 1} \;\Rightarrow\; \text{相位滞后 } \Delta\theta = \arctan(\omega\,\tau),\qquad \tau = \tfrac{1}{\omega_{lpf}}\ (\text{截止角频率的倒数})</div>
+  <p>滤波必然引入随转速变化的相位滞后,<b>必须用 arctan(ω·τ) 在线补偿</b>,否则 θ̂ 落后真实 θ,FOC 力矩系数下降、高转速时甚至失步。截止频率取低 → 毛刺小但滞后大;取高 → 反之。这是 SMO 调参的第一矛盾。<b>易错点:</b>补偿角随 ω 变——低速时≈0 可忽略,高速时不补就是系统性角度误差,表现为"转速越高、带载能力越差"。</p>
+
+  <h3>5.3 抖振问题:sigmoid / 饱和函数与边界层</h3>
+  <p><b>是什么:</b>理想 sign 函数在零面附近无限频开关,叠加离散采样,输出像"锯齿上骑正弦"——这就是<b>抖振(chattering)</b>。后果:EEMF 毛刺大 → LPF 被迫取低截止 → 滞后加重;还带来高频噪声、损耗、机械啸叫。<b>怎么做:</b>工程三板斧:</p>
+  <ul>
+    <li><b>边界层法(最常用)</b>:sign 换成饱和函数 sat(e/Δ) 或 sigmoid——误差小于边界层宽度 Δ 时线性化,大于 Δ 时保持 ±1;Δ 取电流噪声/纹波量级(额定电流 2%~5%)。<b>Δ 小 → 精度高但抖振大,Δ 大 → 反之</b>,又是一个折中;</li>
+    <li><b>自适应滑模增益</b>:k 随 |误差| 衰减(误差大用大 k 快速拉回,接近零面降 k 减少切换幅度);</li>
+    <li><b>高阶滑模(如超螺旋 Super-Twisting)</b>:把不连续项藏进导数里,理论上可消抖振,B 站/CSDN 进阶资料见资源卡(搜索"超螺旋")。</li>
+  </ul>
+  <p><b>面试怎么问:</b>"SMO 抖振怎么抑制?"——标准答案组合拳:<b>边界层函数(sat/sigmoid)+ 合理 k + LPF 截止与相位补偿 + (加分)自适应增益或超螺旋</b>。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>sigmoid 严格说不再是"真滑模"(边界层内等效于高增益线性反馈),面试要说清"边界层内放弃完全滑模换取连续性";边界层 Δ 太大时 θ̂ 会带直流偏置。</div>
+
+  <h3>5.4 PLL 从 EEMF 提取 θ̂ 与 ω̂:为什么不用 arctan</h3>
+  <p><b>为什么:</b>拿到 (ê<sub>α</sub>, ê<sub>β</sub>),最直接是 θ̂ = atan2(ê<sub>β</sub>, ê<sub>α</sub>),ω̂ 再做差分。但:<b>①</b>低速时 EEMF 幅值小、信噪比差,除法/反正切把噪声放大;<b>②</b>atan2 结果要跨 2π 解包裹,毛刺直接窜进 θ̂;<b>③</b>ω̂ 由 θ̂ 差分而来,一次微分使噪声再放大 3dB 以上。所以工业实现全部用 <b>PLL(锁相环)</b>:把"相位跟踪"变成闭环控制问题,相当于对相位误差做了一次低通:</p>
+  <div class="formula">\varepsilon = -\hat{e}_α\cos\hat{\theta} - \hat{e}_β\sin\hat{\theta} \approx \psi_f\,\omega\sin(\theta - \hat{\theta}) \;\xrightarrow{\;\theta-\hat{\theta}\,\text{小}\;}\; \psi_f\,\omega\,(\theta - \hat{\theta})</div>
+  <div class="formula">\text{PI 环路:}\quad \hat{\omega} = K_p\,\varepsilon + K_i\!\int\!\varepsilon\,\mathrm{d}t,\qquad \hat{\theta} = \int\!\hat{\omega}\,\mathrm{d}t</div>
+  <p>ε 是"相位差 × 幅值"的误差信号,PI 把它调到零 → θ̂ 咬住 θ,PI 输出顺带就是平滑的 ω̂,一举两得。PI 带宽取"电流环带宽的 1/5~1/2、且低于采样频率 1/10":带宽高跟踪快但抖,带宽低平滑但动态滞后。<b>面试怎么问:</b>"为什么用 PLL 而不是直接 arctan?"——必须答出<b>噪声抑制 + 无需解包裹 + 同时平滑得到 ω̂</b> 三点。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 620 300" role="img" aria-label="SMO滑模观测器加PLL结构图:实测电流与估计电流相减得到误差,经饱和函数开关项,一路送电流观测器模型构成反馈,一路经低通滤波得到扩展反电动势,再进入PLL锁相环,PI加积分输出转速估计与角度估计">
+      <defs>
+        <marker id="sm-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="sm-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="sm-arr-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+        <marker id="sm-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+        <marker id="sm-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+      </defs>
+      <!-- 输入 -->
+      <text x="10" y="78" fill="#58a6ff" font-size="12.5" font-weight="bold">实测 iα iβ</text>
+      <text x="10" y="94" fill="#8b98a9" font-size="10.5">Clark 变换后</text>
+      <line x1="84" y1="74" x2="116" y2="74" stroke="#58a6ff" stroke-width="2" marker-end="url(#sm-arr-b)"/>
+      <!-- 求和点 -->
+      <circle cx="130" cy="74" r="14" fill="rgba(239,68,68,.14)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="130" y="79" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle">Σ</text>
+      <text x="122" y="60" fill="#58a6ff" font-size="10">+</text>
+      <text x="140" y="96" fill="#ef4444" font-size="10">−</text>
+      <!-- 电流误差 → 饱和函数 -->
+      <line x1="144" y1="74" x2="176" y2="74" stroke="#ef4444" stroke-width="2" marker-end="url(#sm-arr-r)"/>
+      <text x="124" y="106" text-anchor="end" fill="#ef4444" font-size="10.5">e = i − î(滑模面 s=0)</text>
+      <rect x="178" y="50" width="86" height="48" rx="9" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="221" y="70" fill="#ef4444" font-size="12" font-weight="bold" text-anchor="middle">饱和函数</text>
+      <text x="221" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle">z = k·sat(e/Δ)</text>
+      <!-- sat → LPF -->
+      <line x1="264" y1="74" x2="296" y2="74" stroke="#f59e0b" stroke-width="2" marker-end="url(#sm-arr-o)"/>
+      <!-- LPF -->
+      <rect x="298" y="50" width="98" height="48" rx="9" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="347" y="70" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">一阶低通 LPF</text>
+      <text x="347" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle">1/(τs+1) + 相位补偿</text>
+      <!-- LPF → EEMF 标签 → PLL -->
+      <line x1="396" y1="74" x2="428" y2="74" stroke="#f59e0b" stroke-width="2" marker-end="url(#sm-arr-o)"/>
+      <text x="300" y="42" fill="#f59e0b" font-size="11">êα ≈ −ψf·ω·sinθ, êβ ≈ ψf·ω·cosθ(EEMF)</text>
+      <!-- PLL 大框 -->
+      <rect x="430" y="34" width="180" height="150" rx="12" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.8"/>
+      <text x="520" y="56" fill="#22c55e" font-size="13" font-weight="bold" text-anchor="middle">PLL 锁相环</text>
+      <text x="520" y="76" fill="#64748b" font-size="11.5" text-anchor="middle">ε = −êα·cosθ̂ − êβ·sinθ̂</text>
+      <text x="520" y="96" fill="#64748b" font-size="11.5" text-anchor="middle">≈ ψf·ω·sin(θ−θ̂)</text>
+      <text x="520" y="120" fill="#22c55e" font-size="11.5" text-anchor="middle">PI → ω̂(平滑转速)</text>
+      <text x="520" y="140" fill="#22c55e" font-size="11.5" text-anchor="middle">∫ω̂ → θ̂(wrap 0~2π)</text>
+      <text x="520" y="166" fill="#8b98a9" font-size="10.5" text-anchor="middle">对相位误差闭环 = 又一层低通</text>
+      <!-- PLL 输出 -->
+      <line x1="520" y1="184" x2="520" y2="192" stroke="#22c55e" stroke-width="2" marker-end="url(#sm-arr-g)"/>
+      <text x="486" y="206" fill="#22c55e" font-size="11.5" font-weight="bold">θ̂ ω̂ → Park/速度环</text>
+      <!-- sat 开关项反馈给电流观测器 -->
+      <path d="M221 98 L221 192" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#sm-arr-r)"/>
+      <text x="228" y="146" fill="#ef4444" font-size="10.5">开关项 z</text>
+      <!-- 电流观测器模型框 -->
+      <rect x="150" y="196" width="220" height="62" rx="10" fill="rgba(88,166,255,.1)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="260" y="219" fill="#58a6ff" font-size="12" font-weight="bold" text-anchor="middle">电流观测器模型</text>
+      <text x="260" y="239" fill="#8b98a9" font-size="10.5" text-anchor="middle">dî/dt = (v − Rs·î + z)/Ls</text>
+      <!-- v 输入 -->
+      <text x="88" y="228" fill="#22c55e" font-size="12.5" font-weight="bold">vα vβ</text>
+      <text x="88" y="244" fill="#8b98a9" font-size="10.5">施加电压</text>
+      <line x1="130" y1="228" x2="150" y2="228" stroke="#22c55e" stroke-width="2" marker-end="url(#sm-arr-g)"/>
+      <!-- î 反馈到求和点 -->
+      <path d="M150 212 L130 212 L130 88" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#sm-arr-b)"/>
+      <text x="120" y="180" fill="#58a6ff" font-size="10.5" transform="rotate(-90 120 180)">估计电流 î</text>
+      <text x="310" y="286" fill="#8b98a9" font-size="11.5" text-anchor="middle">误差滑到零 → 开关项均值 ≈ EEMF → LPF 滤毛刺 → PLL 解调出 θ̂ 与 ω̂</text>
+    </svg>
+    <div class="my-fig-cap">图③ SMO + PLL 全链路:电流误差 → 饱和开关 → 电流模型(î 反馈) → LPF → EEMF → PLL → θ̂ ω̂</div>
+  </div>
+
+  <h3>5.5 完整离散 C 代码(教学版)</h3>
+  <p>把 5.1~5.4 串起来,一个能在 STM32 上 20kHz 跑的<b>最小可用</b> SMO 大约 60 行(实际产品还要加启动逻辑、参数在线修正与野值防护):</p>
+  <pre><code>// ================= SMO 滑模观测器 · 教学版(表贴式 PMSM, αβ 系) =================
+typedef struct {
+    float Rs, Ls;        // 定子电阻/电感(标定值)
+    float Fc;            // 控制周期频率 [Hz]
+    float k_slide;       // 滑模增益: 取 1.5~2 倍 ω_max·ψf
+    float w_lpf;         // EEMF 低通截止角频率 [rad/s], 约 ω_max/3
+    float bnd;           // 饱和函数边界层(额定电流 2%~5%)
+    float ii_a, ii_b;    // 估计电流 î
+    float ea, eb;        // LPF 后的 EEMF
+    float th, w;         // 输出: 电角度 θ̂ [rad] / 电角速度 ω̂ [rad/s]
+    float kp, ki, intg;  // PLL PI
+} smo_t;
+
+static inline float satf(float x, float b) {          // 边界层饱和函数(抗抖振核心)
+    if (x &gt;  b) return  1.0f;
+    if (x &lt; -b) return -1.0f;
+    return x / b;                                     // 层内线性, 层外饱和 ±1
+}
+
+void smo_init(smo_t *s, float rs, float ls, float fc) {
+    s-&gt;Rs = rs;  s-&gt;Ls = ls;  s-&gt;Fc = fc;
+    s-&gt;k_slide = 0;  s-&gt;w_lpf = 0;  s-&gt;bnd = 0.1f;    // 参数由电机标定后填入
+    s-&gt;ii_a = s-&gt;ii_b = s-&gt;ea = s-&gt;eb = 0;
+    s-&gt;th = 0;  s-&gt;w = 0;  s-&gt;intg = 0;
+}
+
+// 每控制周期调用一次: val = [vα vβ](施加电压), ial = [iα iβ](实测电流)
+void smo_step(smo_t *s, const float val[2], const float ial[2], float Ts)
+{
+    /* ① 电流误差 = 滑模面 s = i − î */
+    float ea_err = ial[0] - s-&gt;ii_a;
+    float eb_err = ial[1] - s-&gt;ii_b;
+
+    /* ② 开关项: 饱和函数代替 sign(k·sat(e/Δ)), 抑制抖振 */
+    float za = s-&gt;k_slide * satf(ea_err, s-&gt;bnd);
+    float zb = s-&gt;k_slide * satf(eb_err, s-&gt;bnd);
+
+    /* ③ 电流观测器(前向欧拉): dî/dt = (v − Rs·î + z)/Ls */
+    s-&gt;ii_a += Ts * (val[0] - s-&gt;Rs * s-&gt;ii_a + za) / s-&gt;Ls;
+    s-&gt;ii_b += Ts * (val[1] - s-&gt;Rs * s-&gt;ii_b + zb) / s-&gt;Ls;
+
+    /* ④ 一阶低通提取等效控制(≈EEMF): ê = z/(τs+1) */
+    float al = s-&gt;w_lpf * Ts;                         // 离散化系数(w_lpf·Ts ≪ 1)
+    s-&gt;ea += al * (za - s-&gt;ea);
+    s-&gt;eb += al * (zb - s-&gt;eb);
+
+    /* ⑤ PLL: ε ≈ ψf·ω·sin(θ−θ̂), PI 调零 → ω̂;再积分 → θ̂ */
+    float eps   = -s-&gt;ea * cosf(s-&gt;th) - s-&gt;eb * sinf(s-&gt;th);
+    s-&gt;intg    += s-&gt;ki * eps * Ts;                   // PI 积分支路
+    s-&gt;w        = s-&gt;kp * eps + s-&gt;intg;              // ω̂(已平滑, 直接给速度环)
+
+    /* ⑥ θ̂ 积分 + LPF 相位滞后补偿 arctan(ω·τ), τ = 1/w_lpf */
+    float comp  = atanf(s-&gt;w / s-&gt;w_lpf);             // 相位补偿角(随转速变化)
+    s-&gt;th      += (s-&gt;w + comp * s-&gt;w_lpf) * Ts;      // 近似: 把补偿并入积分速率
+    while (s-&gt;th &gt;= 6.2831853f) s-&gt;th -= 6.2831853f;  // wrap 到 [0, 2π)
+    while (s-&gt;th &lt;  0.0f)       s-&gt;th += 6.2831853f;
+}
+
+/* 调参口诀(按顺序):
+   1) k_slide = 2·ω_max·ψf 过大抖振/过小脱锁;  2) bnd = 0.02~0.05·额定电流;
+   3) w_lpf ≈ ω_max/3, 降落快但滞后大;        4) PLL 带宽: kp/ki 由 2ζωn、ωn² 反解,
+      ωn 取电流环带宽 1/5~1/2;                  5) 高速失步先查相位补偿是否生效 */</code></pre>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①三相欠采样误差会通过 î 反馈"教坏"观测器——电流采样偏置要先行校零(见 04-02 与 FOC 调参手册);②启动前 θ̂ 无意义,EEMF≈0 时 PLL 输出随机游走——必须配合第 8 节的启动策略;<b>③</b>ψ<sub>f</sub> 温漂不影响"到达滑模面",但影响 ε 的幅值标定,PLL 带宽设计要按最小 EEMF 校核。</div>
+
+  <!-- ================= 6 MRAS ================= -->
+  <h2><span class="h2-num">6</span> MRAS 模型参考自适应:平滑但吃模型</h2>
+  <h3>6.1 参考模型 / 可调模型 / 自适应律与 Popov 直觉</h3>
+  <p><b>是什么:</b>MRAS(Model Reference Adaptive System)的思路是"用两个模型互相打脸":<b>参考模型</b>不含待估量 ω(纯电压方程积分出的磁链),<b>可调模型</b>含可调参数 ω̂(电流方程算出的磁链);两者输出的<b>广义误差 ε</b> 喂给<b>自适应律</b>,实时修正 ω̂ 直到两模型一致——一致时,可调模型里的 ω̂ 就等于真实转速。</p>
+  <div class="formula">参考模型:\ \psi_α = \int(v_α - R_s\,i_α)\,\mathrm{d}t,\quad \psi_β = \int(v_β - R_s\,i_β)\,\mathrm{d}t \qquad 可调模型:\ \hat{\psi}_α = L_s i_α + \psi_f\cos\hat{\theta},\ \hat{\psi}_β = L_s i_β + \psi_f\sin\hat{\theta}</div>
+  <div class="formula">自适应律:\ \varepsilon = \psi_β\hat{\psi}_α - \psi_α\hat{\psi}_β,\qquad \hat{\omega} = K_p\,\varepsilon + K_i\!\int\!\varepsilon\,\mathrm{d}t,\qquad \hat{\theta} = \int\!\hat{\omega}\,\mathrm{d}t</div>
+  <p><b>为什么敢用比例积分:</b><b>Popov 超稳定性</b>一句话直觉——只要前向通道正实、反馈通道满足 Popov 不等式,PI 形式的自适应律就能保证误差系统全局渐近稳定,不必为每个电机单独做李雅普诺夫证明。结构里没有开关切换,输出天然平滑无抖振,计算量比 EKF 小一个量级。</p>
+  <p><b>与 SMO 对比(面试常考):</b>MRAS 平滑、噪声小;但<b>参考模型的纯积分会漂移</b>(直流偏置积分到天上,要用低通/高通替代或加复位),且两个模型都吃 R<sub>s</sub> 精度——低速时电压小、电阻压降占比大,误差急剧恶化,所以 MRAS 同样是<b>中高速方案</b>,平滑性换来的是比 SMO 更强的模型依赖。<b>面试怎么问:</b>"MRAS 三个要素?为什么自适应律是 PI?它和 SMO 怎么选?"(要平滑低噪选 MRAS,要参数鲁棒选 SMO,低速都靠 HFI。)</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>MRAS 的 ε 叉积里隐含 ψ<sub>f</sub> 标定——ψ<sub>f</sub> 错了 ω̂ 有标度误差;"自适应"指的是参数在线修正,不是"对参数失配免疫",别混为一谈。</div>
+
+  <!-- ================= 7 HFI 高频注入 ================= -->
+  <h2><span class="h2-num">7</span> HFI 高频注入:零低速的最后一块拼图</h2>
+
+  <h3>7.1 零低速为什么基波方案集体失效:凸极效应救场</h3>
+  <p><b>为什么:</b>SMO/EKF/MRAS 全都靠 EEMF,而 EEMF 幅值 = ψ<sub>f</sub>·ω——<b>ω≈0 时信号本身消失</b>,再好的观测器也只是放大噪声;同时零低速下逆变器死区压降、管压降这些非线性误差占比最大,S/N 双重崩塌。这就是"无感低速为什么难"的物理根源。<b>出路:</b>主动往电机里注入一个高频小信号,<b>让电机自己变成传感器</b>——位置信息不再来自反电动势,而来自<b>凸极效应</b>:内置式永磁电机(IPM)磁路不对称,<b>L<sub>d</sub> ≠ L<sub>q</sub></b>(典型 L<sub>q</sub> &gt; L<sub>d</sub>,凸极率 ρ = L<sub>q</sub>/L<sub>d</sub> ≈ 1.2~3),高频激励下的阻抗随转子位置角周期变化,高频电流响应里就调制着 2θ 信息。</p>
+  <div class="formula">高频阻抗:\ Z_d = R_s + j\omega_h L_d \;\neq\; Z_q = R_s + j\omega_h L_q \;\Rightarrow\; \text{注入响应含 } \sin 2\Delta\theta,\ \Delta\theta = \theta - \hat{\theta}</div>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 600 292" role="img" aria-label="HFI高频注入凸极示意图:左侧电机截面显示转子d轴磁阻小电感小Ld,q轴电感大Lq,凸极使高频阻抗随转子位置变化;右侧曲线显示解调信号随角度差Delta theta按sin二倍角变化,零差时幅值最大,据此把角度估计拉到真实位置">
+      <defs>
+        <marker id="hf-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="hf-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="hf-arr-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+      </defs>
+      <!-- 左: 电机截面 -->
+      <circle cx="150" cy="140" r="104" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="150" y="24" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">定子(IPM 电机截面)</text>
+      <!-- 转子 -->
+      <circle cx="150" cy="140" r="52" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="150" y="168" fill="#f59e0b" font-size="11.5" text-anchor="middle">转子(永磁体)</text>
+      <!-- d 轴(磁极方向, 垂直向上) -->
+      <line x1="150" y1="140" x2="150" y2="52" stroke="#ef4444" stroke-width="2.2" marker-end="url(#hf-arr)"/>
+      <text x="158" y="66" fill="#ef4444" font-size="12.5" font-weight="bold">d 轴</text>
+      <!-- q 轴(水平) -->
+      <line x1="150" y1="140" x2="242" y2="140" stroke="#22c55e" stroke-width="2.2" stroke-dasharray="6 4" marker-end="url(#hf-arr)"/>
+      <text x="196" y="132" fill="#22c55e" font-size="12.5" font-weight="bold">q 轴</text>
+      <!-- 凸极示意: 双弧 -->
+      <path d="M110 84 A 74 74 0 0 1 190 84" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="3 3"/>
+      <path d="M100 140 A 50 32 0 0 0 200 140" fill="none" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="3 3"/>
+      <text x="150" y="216" fill="#8b98a9" font-size="11.5" text-anchor="middle">凸极率 ρ = Lq/Ld &gt; 1(IPM)</text>
+      <text x="150" y="234" fill="#8b98a9" font-size="11.5" text-anchor="middle">表贴式 SPM: ρ ≈ 1 → 无凸极,HFI 失效</text>
+      <text x="150" y="264" fill="#ef4444" font-size="11" text-anchor="middle">d 轴:磁阻大 → Ld 小</text>
+      <text x="150" y="282" fill="#22c55e" font-size="11" text-anchor="middle">q 轴:磁阻小 → Lq 大</text>
+      <!-- 中间箭头 -->
+      <line x1="272" y1="140" x2="318" y2="140" stroke="#8b98a9" stroke-width="2" marker-end="url(#hf-arr)"/>
+      <text x="296" y="126" fill="#8b98a9" font-size="10.5" text-anchor="middle">注入 v_h</text>
+      <text x="296" y="160" fill="#8b98a9" font-size="10.5" text-anchor="middle">看响应</text>
+      <!-- 右: 解调曲线 -->
+      <line x1="340" y1="230" x2="580" y2="230" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#hf-arr)"/>
+      <line x1="460" y1="246" x2="460" y2="52" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#hf-arr)"/>
+      <text x="566" y="248" fill="#8b98a9" font-size="11" text-anchor="end">Δθ = θ − θ̂</text>
+      <text x="452" y="60" fill="#8b98a9" font-size="11" text-anchor="end">解调幅值</text>
+      <!-- cos(2Δθ) 曲线 -->
+      <path d="M340 230 C 368 230 396 88 460 88 C 524 88 552 230 580 230" fill="none" stroke="#58a6ff" stroke-width="2.4"/>
+      <text x="462" y="106" fill="#58a6ff" font-size="11.5" text-anchor="middle">幅值 ∝ cos(2Δθ)</text>
+      <!-- 零差点 -->
+      <circle cx="460" cy="88" r="5" fill="#f59e0b"/>
+      <line x1="460" y1="88" x2="460" y2="230" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <text x="460" y="262" fill="#f59e0b" font-size="11.5" text-anchor="middle">Δθ = 0:幅值最大 → PLL 把 θ̂ 拉向 θ</text>
+      <text x="460" y="280" fill="#8b98a9" font-size="11" text-anchor="middle">二倍频特性: ±180° 有歧义, 靠磁饱和极性辨识消除</text>
+    </svg>
+    <div class="my-fig-cap">图④ HFI 凸极原理:IPM 的 L<sub>d</sub>≠L<sub>q</sub> 让高频响应随转子位置变化,解调出 sin2Δθ 信号即可锁相</div>
+  </div>
+
+  <h3>7.2 脉振/旋转注入原理、噪声与损耗代价</h3>
+  <p><b>怎么做:</b>两种主流注入法:</p>
+  <ul>
+    <li><b>脉振注入(工业首选)</b>:在<b>估计的 d 轴</b>上注入高频电压 v<sub>d</sub>* = V<sub>h</sub>·sin(ω<sub>h</sub>t)(几十到几百 Hz,约为额定频率 1/10、幅值几十伏),高频电流只在 d 轴"原地脉振";因 L<sub>d</sub>≠L<sub>q</sub>,q 轴侧漏出带位置信息的高频电流,解调后:</li>
+  </ul>
+  <div class="formula">i_q^{h}\cdot\sin(\omega_h t) \xrightarrow{\ \text{LPF}\ } \; \epsilon_h \approx K\,\frac{V_h\,T}{4}\left(\frac{1}{L_d}-\frac{1}{L_q}\right)\sin(2\Delta\theta) \;\xrightarrow{\;\text{PLL}\;}\; \hat{\theta} \to \theta</div>
+  <ul>
+    <li><b>旋转注入</b>:在 αβ 系注入旋转电压矢量,高频电流幅值被 2θ 调制,信息量更多但实现与解调更复杂、噪声更宽。</li>
+  </ul>
+  <p><b>代价(缺点三连,面试必答):</b>①<b>噪声与损耗</b>:注入频率落在人耳听觉带,电机"啸叫"+附加铜损,家用/办公场景敏感;②<b>带宽低</b>:注入频率限制了位置环动态,一般只覆盖零低速;③<b>依赖凸极</b>:表贴式 PMSM(L<sub>d</sub>≈L<sub>q</sub>)理论无凸极,只能靠磁饱和引起的微弱凸极(凸极率 1.05 左右),信噪比差;±180° 歧义还要靠注入强脉冲辨识磁极极性(N-S 辨识)。</p>
+  <p><b>面试怎么问:</b>"HFI 为什么需要凸极?表贴式电机怎么办?"——答:凸极提供位置相关的阻抗差;SPM 靠饱和凸极勉强可用,或改用 IF 开环启动(见 8.2);机器人关节常用 IPM,天然适配 HFI。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>注入频率不是越高越好——要低于 PWM 开关频率的 1/10 且高于电流环带宽,否则解调失败;注入幅值过小信噪比差、过大发热啸叫,按"产生 5%~10% 额定电流的高频纹波"取值。</div>
+
+  <!-- ================= 8 无感切换策略 ================= -->
+  <h2><span class="h2-num">8</span> 无感方案分段切换策略:全速域拼图</h2>
+
+  <h3>8.1 速段划分、滞环与角度渐变加权</h3>
+  <p><b>怎么做:</b>工业无感固件的标准架构是"<b>低速 HFI + 中高速 SMO/EKF/MRAS + 切换带滞环与加权</b>":</p>
+  <div class="table-wrap"><table>
+    <tr><th>速段</th><th>方案</th><th>理由</th></tr>
+    <tr><td>零速~低速(0 ~ 5% ω<sub>N</sub>)</td><td>HFI(或 IF 启动)</td><td>基波无信号,只有"电机自传感"可用;静止也能定位</td></tr>
+    <tr><td>切换带(5% ~ 10% ω<sub>N</sub>)</td><td>滞环 + 渐变加权</td><td>两方案角度都有一定可信度,平滑交接避免力矩跳变</td></tr>
+    <tr><td>中高速(&gt;10% ω<sub>N</sub>)</td><td>SMO / EKF / MRAS</td><td>EEMF 信噪比充足;SMO 简单鲁棒,EKF 精度上限高</td></tr>
+  </table></div>
+  <p><b>为什么切换带要滞环:</b>单阈值切换在临界转速附近会"反复横跳"(升速刚切过去、减速刚切回来),造成 θ̂ 抖动甚至失步。用<b>双阈值</b>:升速到 ω<sub>hi</sub> 才切出 HFI,降速到 ω<sub>lo</sub> &lt; ω<sub>hi</sub> 才切回,中间是保持区。带内再做<b>角度/转速渐变加权</b>:</p>
+  <div class="formula">\hat{\theta} = w\,\hat{\theta}_{HFI} + (1-w)\,\hat{\theta}_{SMO},\qquad w:\ 1 \to 0 \ \text{随 } \hat{\omega}\ \text{线性渐变},\qquad \Delta\theta = \mathrm{wrap}_{\pm\pi}(\hat{\theta}_{HFI}-\hat{\theta}_{SMO})\ \text{先 wrap 再加权}</div>
+  <p><b>易错点:</b>加权前必须把两路<b>角度差 wrap 到 ±π</b> 再交叉插值,直接对 0~2π 原始值加权会在过零处瞬间飞掉;ω̂ 同理做凸组合。切换瞬间 PLL/HFI 内部状态(积分器)要预置到对侧值,避免交接后互相"拉扯"。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 620 250" role="img" aria-label="无感速段切换策略图:横轴转速从零到额定,红色低速段使用HFI高频注入,黄色切换带用滞环与渐变加权,蓝色中高速段使用SMO或EKF,标注升速切换点与降速返回点形成滞环">
+      <defs>
+        <marker id="sw-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="sw-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="sw-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+      </defs>
+      <!-- 主横条: 0~额定转速, x: 40~600 -->
+      <rect x="40" y="96" width="240" height="58" fill="rgba(239,68,68,.16)" stroke="#ef4444" stroke-width="1.6"/>
+      <rect x="280" y="96" width="90" height="58" fill="rgba(245,158,11,.18)" stroke="#f59e0b" stroke-width="1.6"/>
+      <rect x="370" y="96" width="230" height="58" fill="rgba(88,166,255,.14)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="160" y="120" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle">零低速:HFI 高频注入</text>
+      <text x="160" y="140" fill="#8b98a9" font-size="10.5" text-anchor="middle">(或 IF 开环启动兜底)</text>
+      <text x="325" y="120" fill="#f59e0b" font-size="12.5" font-weight="bold" text-anchor="middle">切换带</text>
+      <text x="325" y="138" fill="#8b98a9" font-size="10.5" text-anchor="middle">滞环+加权渐变</text>
+      <text x="485" y="120" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle">中高速:SMO / EKF / MRAS</text>
+      <text x="485" y="140" fill="#8b98a9" font-size="10.5" text-anchor="middle">EEMF 信噪比充足, 观测器接管</text>
+      <!-- 横轴 -->
+      <line x1="40" y1="176" x2="610" y2="176" stroke="#8b98a9" stroke-width="1.8" marker-end="url(#sw-arr)"/>
+      <text x="612" y="164" fill="#8b98a9" font-size="11.5" text-anchor="end">转速 ω →</text>
+      <!-- 刻度 -->
+      <line x1="40" y1="172" x2="40" y2="180" stroke="#8b98a9" stroke-width="1.5"/>
+      <text x="40" y="194" fill="#8b98a9" font-size="10.5" text-anchor="middle">0</text>
+      <line x1="280" y1="172" x2="280" y2="180" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="280" y="194" fill="#f59e0b" font-size="10.5" text-anchor="middle">5% ωN</text>
+      <line x1="370" y1="172" x2="370" y2="180" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="370" y="194" fill="#58a6ff" font-size="10.5" text-anchor="middle">10% ωN</text>
+      <text x="600" y="194" fill="#8b98a9" font-size="10.5" text-anchor="end">100% ωN(额定)</text>
+      <!-- 滞环标注: 升速切出 -->
+      <path d="M370 88 L370 66 L500 66" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#sw-arr-b)"/>
+      <text x="388" y="60" fill="#58a6ff" font-size="11">升速 ≥10%:切出 HFI(HFI 静默退后台)</text>
+      <circle cx="370" cy="88" r="4" fill="#58a6ff"/>
+      <!-- 滞环标注: 降速切回 -->
+      <path d="M280 88 L280 40 L140 40" fill="none" stroke="#ef4444" stroke-width="1.8" marker-end="url(#sw-arr-r)"/>
+      <text x="288" y="34" fill="#ef4444" font-size="11">降速 ≤5%:切回 HFI(滞环 5%, 防临界抖动)</text>
+      <circle cx="280" cy="88" r="4" fill="#ef4444"/>
+      <!-- 底部说明 -->
+      <text x="310" y="226" fill="#8b98a9" font-size="11.5" text-anchor="middle">带内: θ̂ = w·θ̂_HFI + (1−w)·θ̂_SMO(w 随 ω 线性渐变, 角度差先 wrap ±π)</text>
+      <text x="310" y="244" fill="#8b98a9" font-size="11.5" text-anchor="middle">判定源可用 ω̂、EEMF 幅值或 EKF 的 P 矩阵置信度</text>
+    </svg>
+    <div class="my-fig-cap">图⑤ 无感全速域切换策略:低速 HFI → 切换带滞环渐变 → 中高速基波观测器,双阈值防临界振荡</div>
+  </div>
+
+  <h3>8.2 混合方案框图与 IF 开环启动兜底</h3>
+  <p><b>混合方案一页纸框图</b>(自上而下读):<code>ADC(ia ib)→Clark→(vα vβ, iα iβ)→[HFI 模块|SMO 模块]→切换器(滞环+加权)→θ̂ ω̂→Park/速度环→SVPWM</code>。两个观测器<b>并行后台运行、切换器只选输出</b>,是商用固件最常见的实现——比"跑一个才启动一个"平稳,代价是算力(选型时可参考第 9 节大表的计算量行)。TI 的 InstaSPIN-FAST 则是另一种思路:单一观测器同时输出磁链/角度/转速/转矩,靠观测器内部自适应跨速段(资源卡 R2)。</p>
+  <p><b>IF(Current-Frequency)开环启动——无凸极时的兜底:</b>开关磁阻电机、表贴式 PMSM(HFI 凸极信号太弱)或算力跑不动 HFI 的场合,经典做法是:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>定向</b><br>d 轴通恒流,转子吸到已知位置(有抖动)</div>
+    <div class="step-item"><span class="n">2</span><b>开环拖动</b><br>θ̂ 按斜坡强制旋转,iq 给恒定拖动电流</div>
+    <div class="step-item"><span class="n">3</span><b>加速</b><br>频率斜坡上升,靠电流矢量"拖着"转子走</div>
+    <div class="step-item"><span class="n">4</span><b>切换</b><br>到切换转速且 EEMF 可信后,SMO 闭环接管</div>
+  </div>
+  <p>IF 启动简单可靠,但<b>带载能力弱、负载突变或惯量大时可能失步、转向必须预先已知</b>——机器人关节(高减速比、负载惯量反射到转子侧小)恰好是 IF 启动的舒适区,这也是很多关节驱动"上电抖一下"的来源。<b>面试怎么问:</b>"无感启动有哪些方案?各自适用什么电机?"——HFI(凸极 IPM,可带载静止启动)、IF(通用兜底,轻载)、V/F 开环(风机泵类)、复合式(零低速 HFI + 高速观测器)。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>IF 拖动阶段 iq 给小了拖不动(丢步反转),给大了切换瞬间转矩跳变——工程上按"能拖动负载惯量的最小电流 + 斜坡时间 ≥ 机电时间常数"整定;切换条件不能只看转速,要等观测器角度收敛(如 EEMF 幅值超阈值且 PLL 锁定标志置位)。</div>
+
+  <!-- ================= 9 观测器对比大表 ================= -->
+  <h2><span class="h2-num">9</span> 观测器对比大表:一张表选型</h2>
+  <p>选型没有"最好",只有"最合适"。下表把本页六个观测器按 9 个维度对齐(行 = 维度,列 = 观测器),面试与选型都建议记结论列:</p>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>龙伯格</th><th>KF(线性)</th><th>EKF</th><th>SMO</th><th>MRAS</th><th>HFI</th></tr>
+    <tr><td><b>适用速段</b></td><td>有测量时全速段(估不可测状态)</td><td>同左(线性系统)</td><td>中高速(基波无感)</td><td>中高速(基波无感)</td><td>中高速(基波无感)</td><td>零速~低速专属</td></tr>
+    <tr><td><b>被估状态</b></td><td>任意线性状态(含 T<sub>L</sub>)</td><td>线性状态 + 转矩等增广</td><td>[i<sub>d</sub> i<sub>q</sub> ω θ] 全套</td><td>经 EEMF→PLL 得 θ̂ ω̂</td><td>ω̂ θ̂(经磁链)</td><td>θ̂(低速)+极性</td></tr>
+    <tr><td><b>计算量</b></td><td>低(几十乘加)</td><td>低~中</td><td><b>高</b>(每拍 4×4 矩阵链)</td><td><b>低</b>(几十乘加 + LPF + PLL)</td><td>中(两模型 + PI)</td><td>中(注入 + 解调 + PLL)</td></tr>
+    <tr><td><b>参数敏感性</b></td><td>高(增益基于 A、B 精度)</td><td>高(Q/R 也依赖模型)</td><td>中(协方差可吸收部分失配)</td><td><b>低</b>(滑模到达条件只需上界)</td><td>高(纯积分漂移 + 双模型)</td><td>中(取决于凸极率)</td></tr>
+    <tr><td><b>抗噪性</b></td><td>取决于 L(快则噪)</td><td><b>最优</b>(高斯假设下)</td><td>好(Q/R 可调)</td><td>中(LPF/PLL 决定)</td><td>好(天然平滑)</td><td>好(相关双频解调)</td></tr>
+    <tr><td><b>抖振/副作用</b></td><td>无</td><td>无</td><td>无</td><td><b>有</b>(需边界层抑制)</td><td>无</td><td><b>啸叫 + 附加损耗</b></td></tr>
+    <tr><td><b>收敛动态</b></td><td>极点配置决定</td><td>K 随 P 自适应</td><td>K 随 P 自适应,可发散</td><td>到达滑模面后强收敛</td><td>Popov 保证渐近</td><td>PLL 牵引(慢)</td></tr>
+    <tr><td><b>实现复杂度</b></td><td>★ 简单</td><td>★★</td><td>★★★★(调参项多)</td><td>★★(约 60 行 C)</td><td>★★★</td><td>★★★(要调制/解调链)</td></tr>
+    <tr><td><b>典型应用</b></td><td>负载转矩估计、编码器滤波</td><td>多传感器融合、电量计</td><td>高端无感伺服、导航</td><td><b>无感 FOC 事实标准</b>(风机/水泵/关节)</td><td>无感方案备选、转速重构</td><td>零速带载启动(电梯/牵引/IPM 关节)</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>📌 选型口诀:</b>有编码器只估转矩/滤波 → 龙伯格或 KF;无感中高速看"算力换不换性能":算力够、要精度 → EKF;算力紧、要皮实 → SMO;要平滑低噪 → MRAS;零速带载启动 → 必须 HFI(有凸极)或 IF(兜底)。机器人关节 = IPM + 高动态,主流答案是 <b>HFI + SMO 切换</b>。</div>
+
+  <!-- ================= 10 工程落地要点 ================= -->
+  <h2><span class="h2-num">10</span> 工程落地要点:从仿真到真机的坑</h2>
+
+  <h3>10.1 采样与一拍延迟补偿,观测器与 FOC 的接口</h3>
+  <p><b>怎么做:</b>FOC 一拍流程是"采样 → 计算 → 下拍装载 PWM",电压矢量实际滞后计算值约 <b>1.5 拍</b>(采样半拍 + 装载一拍),高速时滞后角 ω·1.5T<sub>s</sub> 不可忽略,直接吃掉电压裕量并让观测器输入失真。标准补偿:</p>
+  <div class="formula">\theta_{cmp} = \hat{\theta} + \omega \cdot 1.5\,T_s\ (\text{旋转坐标一拍延迟补偿}),\qquad \text{观测器输入用上一拍实际输出电压 } v_{k-1}</div>
+  <p><b>与 FOC 电流环的接口:</b>观测器是 FOC 流水线里的"编外一环"——θ̂ 喂给 <b>Park/逆 Park 变换</b>当坐标基准(有传感器时这一格是编码器),ω̂ 喂给<b>速度环</b>做反馈;反过来,观测器吃 FOC 的<b>实际输出电压</b>(指令值经死区补偿后)和<b>相电流采样</b>。顺序上观测器必须在 Park 变换之前算完 θ̂,所以它和电流环挤在同一个高优先级中断里,20kHz 下的时间预算通常只有几微秒——这就是 SMO 在 MCU 上比 EKF 更常见的原因。</p>
+
+  <h3>10.2 参数 R<sub>s</sub>/L 失配的影响、在线辨识一句话与启动失败排查</h3>
+  <p><b>为什么:</b>观测器的"标尺"就是电机参数。R<sub>s</sub> 偏大 → 低速时电阻压降占比大,θ̂ 出现系统性超前/滞后偏差(带载能力下降);L 偏差 → 影响 EEMF 提取相位与 HFI 解调系数;ψ<sub>f</sub> 温漂 → 影响幅值标定与转矩常数。<b>易错点:</b>这些是<b>模型误差</b>,调 Q/R/带宽只能"掩盖"不能"消除"。<b>在线辨识一句话:</b>利用电压方程残差做递推最小二乘(RLS)辨识 R<sub>s</sub>/L(静止注入法标定 + 温升模型修正是工程折中),辨识值周期性刷新观测器参数,即可把参数失配从"系统性偏差"压成"慢变小扰动"。</p>
+  <div class="box box-danger"><b>🧯 启动失败/失步排查八步(按概率排序):</b>①<b>极对数 p</b> 配错(θ̂ 与真实 θ 成整数倍偏差,电机嗡嗡不动或抽动);②<b>相序/电流采样偏置</b>错(Clark 后波形畸变,观测器全错);③<b>R<sub>s</sub>/L<sub>s</sub> 标定值</b>与实物不符(温升后 R 漂移可达 30%~40%);④<b>IF 启动电流</b>太小拖不动(丢步)或斜坡太快;⑤<b>切换条件</b>过早(EEMF 未建立就切 SMO,必失步);⑥<b>PLL 带宽</b>过宽(低速毛刺当转速)/过窄(加速跟不上);⑦<b>注入参数</b>不当(幅值小信噪比差、频率过高解调失败);⑧<b>一拍延迟未补偿</b>,高速带载力矩掉、过流失步。排查顺序:先静态(编码器对拍 θ̂)→ 再空载启动 → 最后带载,一次只改一个参数。</div>
+  <p><b>面试怎么问:</b>"观测器在 FOC 里的位置和时序?高速时角度为什么变差?"——前者答"θ̂ 供 Park 变换、ω̂ 供速度环,与电流环同中断级";后者答"死区/延迟占比上升 + LPF 滞后角增大,需 1.5 拍旋转补偿与相位补偿联动"。</p>
+
+  <!-- ================= 11 面试高频问答 ================= -->
+  <h2><span class="h2-num">11</span> 面试高频问答:先背框架,再背细节</h2>
+  <p>以下 6 题是"观测器/无感 FOC"方向的必考题(与本站题库 <a href="../06_学习工具/11_保研复试面试题库.html">06-11 保研复试面试题库</a> 中 yk-09 无感 FOC、xk-04 观测器两题互为补充,先做题库建立问题地图,再用本页把每题答深)。</p>
+
+  <details class="faq">
+    <summary>Q1. SMO 的抖振是怎么产生的?怎么抑制?</summary>
+    <div class="faq-a">抖振来自理想 sign 开关项在滑模面两侧的高频切换,叠加离散采样后表现为 EEMF 上的高频毛刺。抑制四板斧:①sign 换成饱和函数/sigmoid 引入边界层(宽度取额定电流 2%~5%,层内线性、层外饱和);②滑模增益 k 按需取(过小到不了滑模面、过大加剧抖振),可做自适应 k;③LPF 滤毛刺并用 arctan(ω·τ) 补相位滞后;④进阶用超螺旋等高阶滑模,把不连续项移进导数。面试加分点:主动指出"边界层内已不是严格滑模,是连续近似"。</div>
+  </details>
+
+  <details class="faq">
+    <summary>Q2. EKF 跑着跑着发散了,可能是什么原因?怎么排查?</summary>
+    <div class="faq-a">按概率排:①P 失去对称正定(用对称化 P=(P+Pᵀ)/2 或 Joseph 形式更新);②Q 太小滤波器过度自信/或 R 太小盲信噪声;③初值差、P₀ 太小(放大 P₀);④Rs/L/ψf 参数失配(温升漂移);⑤测量野值未剔除(残差卡方门限);⑥步长/离散化误差。工程预防:限制 K 上限、协方差限幅、残差门限跳过更新、定期重置 P。答出"发散 = 协方差与真实误差脱钩"这个本质即超越多数候选人。</div>
+  </details>
+
+  <details class="faq">
+    <summary>Q3. HFI 为什么需要电机有凸极(Ld≠Lq)?表贴式怎么办?</summary>
+    <div class="faq-a">HFI 的位置信息不来自反电动势,而来自"高频阻抗随转子位置变化"——只有 Ld≠Lq,注入响应才含 sin2Δθ 调制项;Ld=Lq 时阻抗与位置无关,注入等于白注。表贴式 PMSM 理论凸极率≈1,只能利用磁饱和引起的微弱凸极(信噪比差),或放弃 HFI 改用 IF 开环启动/强注入做 N-S 极性辨识。IPM(凸极率 1.2~3)是 HFI 的舒适区,机器人关节多 IPM,天然适配。</div>
+  </details>
+
+  <details class="faq">
+    <summary>Q4. 观测器(或 PLL)的带宽/极点怎么选?越快越好吗?</summary>
+    <div class="faq-a">不是。观测器极点配置成比闭环主导极点快 3~5 倍即可,同时受两个约束:①不能超过采样频率的 1/10(离散化失真);②增益越大对测量噪声越敏感,θ̂ 毛刺会直接进 Park 变换变成力矩纹波。PLL 带宽参考:电流环带宽的 1/5~1/2,低速毛刺大降带宽、加速跟踪差升带宽。核心答法:"收敛速度与噪声抑制是一对矛盾,按'比控制环快、比噪声慢'取中间"。</div>
+  </details>
+
+  <details class="faq">
+    <summary>Q5. 无感控制在零低速为什么难?有哪些对策?</summary>
+    <div class="faq-a">双重原因:①可观测信号 EEMF 幅值 ∝ ω,零低速时信号物理性消失;②死区/管压降等逆变器非线性在低电压下占比最大,S/N 双崩。对策:零低速用 HFI(凸极 IPM,静止可定位,代价是噪声/损耗/带宽);表贴或无凸极用 IF 开环启动(轻载兜底);或零低速直接不开环、接受"死区"(某些风机泵类只中高速启动)。</div>
+  </details>
+
+  <details class="faq">
+    <summary>Q6. SMO 提取角度为什么用 PLL 而不直接 arctan?切换策略为什么要滞环?</summary>
+    <div class="faq-a">arctan 三宗罪:低速信噪比差时除法放大噪声、跨 2π 需解包裹有跳变毛刺、ω̂ 还要差分再放大噪声。PLL 把相位跟踪变成闭环:误差 ε≈ψf·ω·sin(θ−θ̂) 小角度下线性,PI 调零即锁定,输出 θ̂ 平滑且 ω̂ 白送,相当于对相位又做了一次低通。滞环同理是防"临界转速反复横跳":升速到 ω_hi 才切出、降速到 ω_lo&lt;ω_hi 才切回,带内角度加权渐变(角度差先 wrap ±π),避免 θ̂ 跳变造成力矩冲击。</div>
+  </details>
+
+  <!-- ================= 12 本节自测 ================= -->
+  <h2><span class="h2-num">12</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 龙伯格观测器的估计误差 e = x − x̂ 满足 ė = (A − LC)e。要让估计收敛,必须保证什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 矩阵 A 本身的特征值全在左半平面</button>
+      <button data-v="B">B. 矩阵 (A − LC) 的特征值全在左半平面,且 (A, C) 可观测</button>
+      <button data-v="C">C. 增益 L 取得足够小,越小收敛越快</button>
+      <button data-v="D">D. 采样频率必须高于开关频率</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:误差动态由 (A − LC) 决定,特征值配置在左半平面误差才指数收敛;可观测性 (A,C) 是存在这样的 L 的前提。L 不是越小越好——L 大收敛快但放大测量噪声(2.2 节的折中)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 卡尔曼滤波中,想让估计更快跟踪"负载突变",应该怎么调 Q(过程噪声)?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. Q 调小,让滤波器更信任模型预测</button>
+      <button data-v="B">B. R 调大,弱化测量噪声影响</button>
+      <button data-v="C">C. Q(对应状态维)调大,让滤波器更快相信测量、跟上变化,代价是毛刺变多</button>
+      <button data-v="D">D. P 初值调小,加快收敛</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Q 代表"模型有多不准"。Q 大 → 稳态增益 K 大 → 信测量 → 跟踪快但噪声直达输出;这是 3.1 节"信模型还是信测量"的口诀。P₀ 调小反而让初始阶段更不信任测量,收敛更慢。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. SMO 误差到达滑模面后,开关项的"等效控制"在物理上等于什么?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 扩展反电动势 EEMF(eα = −ψf·ω·sinθ,eβ = ψf·ω·cosθ),从中可提取转子角度</button>
+      <button data-v="B">B. 定子电阻压降 Rs·i</button>
+      <button data-v="C">C. 母线电压 Vdc</button>
+      <button data-v="D">D. 负载转矩 TL</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:滑模面上开关项的均值恰好顶替了模型中被略去的 EEMF 项(5.2 节),EEMF 相位锁定转子角度,经 LPF + PLL 解调出 θ̂ ω̂——这正是 SMO 能无感的原因。Rs·i 与 Vdc 都在观测器方程中显式出现,不是被估计的未知项。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 某关节采用表贴式 PMSM(Ld ≈ Lq),零速带载启动时最适合的无感方案是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 直接 SMO,零速也能观测 EEMF</button>
+      <button data-v="B">B. 标准脉振 HFI,零速定位精度高</button>
+      <button data-v="C">C. MRAS,自适应律可以估任意低速</button>
+      <button data-v="D">D. IF 开环启动(定向→开环斜坡拖动→切换闭环),因为无凸极时 HFI 信号极弱</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:零速 EEMF≈0,SMO/MRAS 全部失效(5.2 节与 Q5);HFI 依赖凸极 Ld≠Lq,表贴式凸极率≈1 无有效信号(7.1 节);IF 启动不依赖任何电机凸极特性,是通用兜底(8.2 节),代价是轻载适用、转向需已知。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 无感 FOC 在"HFI 与 SMO 两种方案的切换带"设计滞环(双阈值)的直接目的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 提高电机最高转速</button>
+      <button data-v="B">B. 防止转速在临界值附近波动时方案来回切换,导致 θ̂ 跳变与力矩冲击</button>
+      <button data-v="C">C. 降低电流采样噪声</button>
+      <button data-v="D">D. 补偿死区电压造成的角度误差</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:单阈值在临界转速会"反复横跳"(8.1 节):升速到 ω_hi 才切出、降速到 ω_lo &lt; ω_hi 才切回,中间保持区配合角度渐变加权(角度差先 wrap ±π),实现平滑交接。死区补偿是 10.1 节的另一件事,与滞环无关。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于 EKF 用于 PMSM 无感(状态 [id iq ω θ]),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. EKF 直接处理非线性方程,无需任何线性化</button>
+      <button data-v="B">B. EKF 只能估计角度,转速必须再用 PLL 提取</button>
+      <button data-v="C">C. EKF 靠雅可比矩阵在估计点附近线性化,ω 与 θ 都在状态里,一次估计同时输出 ω̂ 与 θ̂</button>
+      <button data-v="D">D. EKF 的 P 矩阵对调参毫无用处</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:EKF 的核心是雅可比线性化(4.1 节);与 SMO 不同,ω、θ 是 EKF 的增广状态,无需外挂 PLL(这是两者关键差异,面试常问);P 矩阵对角线是估计误差方差,可当置信度用于切换判据(8.1 节),并非无用。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①观测器 = 模型 + 测量 + 误差反馈,把不可测的 θ、ω、TL、ψ 从电压电流里"算"出来,无感 FOC 与负载转矩估计是两大动机;②龙伯格立骨架(误差动态 ė=(A−LC)e,极点快 3~5 倍,收敛 vs 噪声折中),KF 加噪声统计(Q 信测量、R 信模型),EKF 用雅可比啃下 PMSM 非线性并一次给出 ω̂ θ̂;③SMO 用滑模把电流误差砸到零、开关项均值即 EEMF,LPF+相位补偿+PLL 输出 θ̂ ω̂,抖振用边界层抑制;④MRAS 双模型 + PI 自适应律(Popov 保证),平滑但吃参数;⑤零低速基波全灭,EEMF∝ω 是物理根源,HFI 靠凸极 Ld≠Lq 补位;⑥全速域 = 低速 HFI + 中高速 SMO/EKF/MRAS + 滞环与角度渐变加权,真机还要过"一拍延迟补偿、参数失配、启动排查"三关。</div>
+
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 人形机器人膝关节(高减速比谐波 + IPM 电机)要做全速域无感,你会选哪套观测器组合?切换带放在额定转速的百分之几?为什么谐波减速器的反射惯量让 IF 启动变容易?<br>
+    2. 机器人负载是"时变惯量"(手臂伸屈改变 J),这对 EKF 的 Q 矩阵和 3.2 节的 TL 观测器各提出什么要求?<br>
+    3. 如果给你一块 STM32G431(170MHz FPU)和一块无 FPU 的 M0,分别你会把 EKF 和 SMO 部署在哪块上?算力之外还要考虑什么(定点误差、调试手段)?
+  </div>
+
+  <!-- ================= 13 参考来源与延伸资源 ================= -->
+  <h2><span class="h2-num">13</span> 参考来源与延伸资源</h2>
+  <div class="box box-tip"><b>📌 配套站内页:</b>本页是站内"观测器"唯一的体系页,建议与 <a href="../02_硬件基础/11_FOC调参整定实战手册.html">02-11 FOC 调参整定实战手册</a>(电流环/编码器校准,观测器的输入端)、<a href="../06_学习工具/11_保研复试面试题库.html">06-11 保研复试面试题库</a>(yk-09 无感 FOC、xk-04 观测器问答)、<a href="16_现代控制理论_状态空间到MPC.html">04-16 现代控制理论</a>(状态空间/分离原理前置)、<a href="18_ADRC自抗扰控制与嵌入式实现.html">04-18 ADRC 自抗扰</a>(把"扰动观测"推到极致的下一篇)连读。以下外部资源均经检索核实可访问(2026-09)。</div>
+
+  <a class="my-res-card" href="https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📗</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ Kalman and Bayesian Filters in Python(rlabbe,免费全书)</div>
+      <div class="my-res-desc">GitHub 19k+ star 的开源教材:14 章 Jupyter Notebook 全部可运行,覆盖 KF/EKF/UKF/粒子滤波,主打"建立直觉而非证明",CC BY 4.0 免费。本页第 3、4 节的最佳配套读物,3.1 节的 Q/R 直觉即源于此书讲法。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-github">GitHub 开源书</span>
+        <span class="my-tag my-tag-recommend">⭐ 强烈推荐</span>
+        <span class="my-tag my-tag-kf">KF/EKF</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.ti.com/lit/pdf/spruhj1" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ TI SPRUHJ1:InstaSPIN-FOC 与 InstaSPIN-MOTION 用户指南(FAST 观测器)</div>
+      <div class="my-res-desc">TI 官方文献(SPRUHJ1I,2021 修订):详述工业级 FAST 观测器如何同时估计磁链/角度/转速/转矩,以及无感启动与参数辨识(Motor Profiler)的工程细节,是"商用无感固件怎么做"的第一手参考(第 8.1 节混合方案提到过)。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">TI 官方文档</span>
+        <span class="my-tag my-tag-recommend">⭐ 工业视角</span>
+        <span class="my-tag my-tag-smo">无感FOC</span>
+        <span class="my-tag my-tag-diff-3">高级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.st.com/en/embedded-software/x-cube-mcsdk.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🛠️</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ST X-CUBE-MCSDK:STM32 电机控制软件开发套件(含状态观测器无感)</div>
+      <div class="my-res-desc">ST 官方 MCSDK(MCSDK 6.x):PMSM FOC 固件库 + Motor Control Workbench 配置工具,官方特性明确支持"无传感器运行(状态观测器)"与观测器+PLL 架构;配套 Motor Pilot 上位机可实时看 θ̂/ω̂ 波形,适合把本页算法"点灯"验证。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">ST 官方</span>
+        <span class="my-tag my-tag-smo">状态观测器</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.mathworks.com/help/sps/ref/luenbergerobserver.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">📐</div>
+    <div class="my-res-info">
+      <div class="my-res-title">MathWorks:Discrete-time Luenberger Observer 模块文档</div>
+      <div class="my-res-desc">Simulink 官方参考页:离散龙伯格观测器模块的定义、方程与使用条件(可观测系统),配套 Simscape Electrical 的"Observers"专题还有磁链观测器等电机专用观测器,把第 2 节公式落到仿真验证。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">MathWorks 官方</span>
+        <span class="my-tag my-tag-kf">龙伯格</span>
+        <span class="my-tag my-tag-diff-1">入门~中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/416224632" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ 知乎专栏:彻底吃透滑模观测器(PMSM 无感算法:理论精讲+推导+算法+调参)</div>
+      <div class="my-res-desc">知乎口碑最好的 SMO 系统性长文:从滑模变结构原理讲到完整推导、离散实现与调参,算法已在 Speedgoat 硬件上验证,凸极/非凸极电机均适用——与 5.1~5.5 节逐节对照着读,推导盲区全补齐。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎专栏</span>
+        <span class="my-tag my-tag-recommend">⭐ 推导最全</span>
+        <span class="my-tag my-tag-smo">SMO</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/607480847" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:滑模观测器(SMO)关键点解析和调参指导</div>
+      <div class="my-res-desc">实操向:详解 SMO 滑模增益、LPF 截止频率、边界层的调整方法,呼应 5.3 节"抖振 vs 精度"折中,看完就知道调参旋钮各管什么。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎专栏</span>
+        <span class="my-tag my-tag-smo">SMO 调参</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/699022257" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:使用"自适应"滑模观测器升级你的普通 SMO</div>
+      <div class="my-res-desc">进阶向:自适应滑模增益如何同时缓解抖振与相位滞后,甚至省掉一阶低通——对应 5.3 节"抖振三板斧"第三板,面试聊到 SMO 改进方向时引用。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎专栏</span>
+        <span class="my-tag my-tag-smo">自适应SMO</span>
+        <span class="my-tag my-tag-diff-3">高级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/550160197" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:扩展卡尔曼滤波器实例与推导(附 GitHub 代码)</div>
+      <div class="my-res-desc">EKF 核心思路——非线性系统在估计点雅可比线性化后套用 KF——的完整推导 + 可运行实例,适合把 4.1 节的公式骨架走一遍代码。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎专栏</span>
+        <span class="my-tag my-tag-ekf">EKF 推导</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/weixin_43047440/article/details/119636909" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN:扩展卡尔曼滤波 EKF 在 PMSM 无位置传感器控制上的运用详解(αβ 系建模)</div>
+      <div class="my-res-desc">从 αβ 坐标系建模出发讲 EKF 无感实现的系列文章,与本页 4.1 节 dq 系建模互为对照(两种坐标系选型本身就是一道面试题)。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-csdn">CSDN 博客</span>
+        <span class="my-tag my-tag-ekf">EKF 无感</span>
+        <span class="my-tag my-tag-diff-3">高级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/qq_28149763/article/details/137651358" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN:永磁同步电机无感 FOC 滑模观测器(SMO)完整笔记</div>
+      <div class="my-res-desc">章节完整:滑模变结构基本原理 → 传统二阶滑模观测器 → 全阶滑模观测器 → 反正切位置估计,"全阶 SMO"与"arctan vs PLL"两处可作为 5.4 节的延伸。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-csdn">CSDN 博客</span>
+        <span class="my-tag my-tag-smo">SMO 原理</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1to4y1h7wd/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ B站:SMO 滑模观测器入门(Sliding Mode Observer,本科毕设友好)</div>
+      <div class="my-res-desc">2 万+播放的入门视频:不用深数学先讲清"误差→开关→EEMF→角度"的因果链,适合读 5.1~5.3 节卡壳时换脑子;同 UP 主还有完整理论推导篇。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-bili">B站视频</span>
+        <span class="my-tag my-tag-recommend">⭐ 入门首选</span>
+        <span class="my-tag my-tag-smo">SMO</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1iT421e7dg/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站:无感 FOC 滑模观测器仿真讲解(反正切 + PLL 两种位置提取)</div>
+      <div class="my-res-desc">Simulink 仿真演示,把 5.4 节"arctan vs PLL"的对比做成了可复现实验,能直观看到 arctan 方案在噪声下的毛刺。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-bili">B站视频</span>
+        <span class="my-tag my-tag-smo">仿真实战</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1Jb4y137Qr/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ B站:(SMO + 高频脉振方波注入)FOC 矢量控制全速域方案</div>
+      <div class="my-res-desc">把本页第 7、8 节拼成完整方案的视频实现:中低速 SMO + 零低速脉振方波 HFI + 加权切换,正好是图⑤切换策略的活教材。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-bili">B站视频</span>
+        <span class="my-tag my-tag-hfi">HFI + SMO 切换</span>
+        <span class="my-tag my-tag-diff-3">高级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.microchip.com/en-us/application-notes/an1292" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Microchip AN1292:PMSM 无感 FOC + PLL 位置/速度估计器(应用笔记)</div>
+      <div class="my-res-desc">大厂应用笔记视角:SMO/EEMF 提取 + PLL 估计器的完整工程描述与实现要点,可作为本页 5.4 节 PLL 部分的"第二信源"交叉验证。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">Microchip 官方</span>
+        <span class="my-tag my-tag-smo">PLL 估计器</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <div class="my-res-card">
+    <div class="my-res-badge my-badge-doc">📚</div>
+    <div class="my-res-info">
+      <div class="my-res-title">教材章节推荐(Nise / Norman 观测器部分,不附链接)</div>
+      <div class="my-res-desc">《Control Systems Engineering》(Norman S. Nise)与《Automatic Control Systems》(Farid Golnaraghi / Benjamin C. Kuo)中"State-Space Design / Observers"章节:龙伯格观测器的严格定义、可观测性判据与极点配置例题——本页第 2 节的教科书出处,保研复试问概念时按教材口径作答最稳。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">教科书</span>
+        <span class="my-tag my-tag-kf">观测器理论</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

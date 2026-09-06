@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 08-09 NPU与数字IC设计 · 芯片设计流程与AHB/AXI总线
+  板块·第三阶段第1页:数字芯片完整设计流程、CDC 深入、AHB/AXI 总线协议原理
+  结构严格遵循 _assets/页面模板.html
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 芯片设计流程与AHB/AXI总线</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名加 my- 前缀,避免与全局冲突) ===== */
+
+  /* 流程图容器(固定深色底,保证 SVG 配色在明暗主题下一致) */
+  .my-fig{background:rgba(13,17,23,.78);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 12px;margin:16px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:520px;max-width:100%;height:auto;margin:0 auto}
+  .my-fig-cap{font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6}
+
+  /* 资源卡片(与 02-05 参考资料页同构) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-desc a{color:#58a6ff}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+  /* 徽章配色 */
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+
+  /* 标签 */
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-zhihu{background:#e0e7ff;color:#3730a3}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-1{background:#dcfce7;color:#166534}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+  .my-tag-paper{background:#bae6fd;color:#075985}
+  .my-tag-cdc{background:#f5d0fe;color:#86198f}
+  .my-tag-axi{background:#bfdbfe;color:#1e40af}
+  .my-tag-plain{background:#e2e8f0;color:#475569}
+
+  /* 浅色主题适配(与 site.css 玻璃风格一致) */
+  html:not([data-theme-early="dark"]) .my-res-card {background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover {border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title {color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc {color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-09",
+    root: "..",
+    breadcrumb: [
+      { t: "NPU与数字IC设计", u: "../index.html#sec8" },
+      { t: "芯片设计流程与AHB/AXI总线" }
+    ],
+    prev: { t: "模型量化与端侧部署", u: "08_模型量化与端侧部署.html" },
+    next: { t: "NPU项目实战(上)Spec与控制模块", u: "10_NPU项目实战上_Spec与控制模块.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🏭 芯片设计流程与 AHB/AXI 总线 —— 从 Spec 到流片的完整地图</h1>
+    <div class="sub">数字芯片全流程(前端/后端) → ASIC vs FPGA → CDC 进阶 → 仿真工程化骨架 → AHB 流水线 → AXI 五通道 → 总线选型。这是 NPU 项目实战前的「行前地图」:知道一颗芯片是怎么造出来的、模块之间靠什么语言说话,你的 RTL 才有处安放。</div>
+    <div class="tags">
+      <span class="tag">设计流程</span>
+      <span class="tag">ASIC vs FPGA</span>
+      <span class="tag">CDC进阶</span>
+      <span class="tag">AHB</span>
+      <span class="tag">AXI</span>
+      <span class="tag">总线选型</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能按顺序说出数字芯片从 Spec 到量产的 14 个环节、每个环节的一句话输入/输出/工具,并分清前端与后端<br>
+    2. 能用表格对比 ASIC 与 FPGA 在综合目标、时序约束、调试手段、成本结构上的差异,并说出 NPU 原型选 FPGA 的三个理由<br>
+    3. 能为任意一个跨时钟域场景选择正确的 CDC 方案(电平/脉冲/握手/格雷码/异步 FIFO/MUX 同步),并说清 CDC 工具能查出什么<br>
+    4. 能搭出 rtl/sim/tb/doc/scripts 的工程骨架,用 filelist.fif + Makefile 一条命令跑完编译、仿真、回归<br>
+    5. 能画出 AHB 两级流水线时序与 AXI 五通道结构,说清 VALID/READY 握手规则、outstanding、ID 重排,并为 NPU 项目做出总线选型<br>
+    <b>建议用时:</b>约 70 分钟(本页是第 10~12 页 NPU 项目的总纲,值得精读)
+  </div>
+
+  <!-- ================= 1 数字芯片完整设计流程 ================= -->
+  <h2><span class="h2-num">1</span> 数字芯片完整设计流程:从一页 Spec 到一颗芯片</h2>
+  <h3>1.1 是什么 · 为什么:一颗芯片的 14 站生命周期</h3>
+  <p><b>是什么:</b>数字芯片设计流程,是把「一页产品需求(Spec)」逐步变成「一颗能量产芯片」的工业流水线,通常拆成 14 个环节:<b>Spec → 架构/算法 → RTL 设计 → 功能仿真 → 综合 → DFT → 形式验证 → STA 静态时序分析 → 布局布线 PnR → 物理验证(DRC/LVS) → 签核 → GDSII 交付 → 流片 → 封装测试 → 量产</b>。<b>为什么必须先学它:</b>NPU 项目实战(本板块第 10~12 页)只是这条流水线最前面的「RTL 设计 + 功能仿真」两站 —— 但你必须知道自己的代码将来要被谁消费(综合器、时序分析器、验证环境),写出来的 RTL 才是「能落地」的代码,而不是「只会仿真」的代码。整条链按分工分成两段:</p>
+  <ul>
+    <li><b>数字前端(逻辑设计,蓝):</b>面向「功能与逻辑」,输入是自然语言/C 模型,输出是 RTL 与门级网表。数字前端岗位的日常 = 本板块四阶段学的内容。</li>
+    <li><b>数字后端(物理实现,橙):</b>面向「面积/功耗/时序的物理落地」,输入是网表,输出是 GDSII 版图。它决定了这颗芯片「造不造得出来、跑不跑得快」。</li>
+  </ul>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 396" role="img" aria-label="数字芯片设计流程全景图:上排蓝色数字前端八步,Spec、架构算法、RTL设计、功能仿真、综合、DFT、形式验证、STA静态时序分析,每步下方标注关键产出;下排橙色数字后端七步,布局布线PnR、物理验证DRC与LVS、签核、GDSII交付、流片、封装测试、量产,箭头依次串联,综合后的网表从前端传递到后端">
+      <defs>
+        <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+        <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- 分区标题 -->
+      <text x="20" y="24" font-size="12" font-weight="bold" fill="#58a6ff">数字前端 · 逻辑设计(本板块四阶段覆盖)</text>
+      <text x="20" y="228" font-size="12" font-weight="bold" fill="#f59e0b">数字后端 · 物理实现</text>
+      <!-- 前端 8 站 -->
+      <g font-size="10" fill="#e6edf3" text-anchor="middle" font-weight="bold">
+        <rect x="20" y="40" width="68" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="54" y="61">Spec</text>
+        <rect x="96" y="40" width="68" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="130" y="55">架构/</text><text x="130" y="67">算法</text>
+        <rect x="172" y="40" width="68" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="206" y="61">RTL设计</text>
+        <rect x="248" y="40" width="68" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="282" y="55">功能</text><text x="282" y="67">仿真</text>
+        <rect x="324" y="40" width="68" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="358" y="61">综合</text>
+        <rect x="400" y="40" width="68" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="434" y="61">DFT</text>
+        <rect x="476" y="40" width="68" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="510" y="55">形式</text><text x="510" y="67">验证</text>
+        <rect x="552" y="40" width="68" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="586" y="55">STA</text><text x="586" y="67">时序分析</text>
+      </g>
+      <!-- 前端箭头 -->
+      <g stroke="#58a6ff" stroke-width="1.6" fill="none">
+        <line x1="88" y1="57" x2="94" y2="57" marker-end="url(#arB)"/>
+        <line x1="164" y1="57" x2="170" y2="57" marker-end="url(#arB)"/>
+        <line x1="240" y1="57" x2="246" y2="57" marker-end="url(#arB)"/>
+        <line x1="316" y1="57" x2="322" y2="57" marker-end="url(#arB)"/>
+        <line x1="392" y1="57" x2="398" y2="57" marker-end="url(#arB)"/>
+        <line x1="468" y1="57" x2="474" y2="57" marker-end="url(#arB)"/>
+        <line x1="544" y1="57" x2="550" y2="57" marker-end="url(#arB)"/>
+      </g>
+      <!-- 前端关键产出 -->
+      <g font-size="8.5" fill="#8b98a9" text-anchor="middle">
+        <text x="54" y="90">规格书</text><text x="54" y="101">(需求定义)</text>
+        <text x="130" y="90">微架构文档</text><text x="130" y="101">+C模型</text>
+        <text x="206" y="90">可综合</text><text x="206" y="101">RTL 代码</text>
+        <text x="282" y="90">仿真通过</text><text x="282" y="101">报告/覆盖率</text>
+        <text x="358" y="90">门级网表</text><text x="358" y="101">+面积估算</text>
+        <text x="434" y="90">可测性逻辑</text><text x="434" y="101">+ATPG 向量</text>
+        <text x="510" y="90">等价性</text><text x="510" y="101">证明</text>
+        <text x="586" y="90">时序收敛</text><text x="586" y="101">报告</text>
+      </g>
+      <!-- 网表交接路径 -->
+      <path d="M 586 106 L 586 150 L 54 150 L 54 238" stroke="#8b98a9" stroke-width="1.4" stroke-dasharray="5 4" fill="none" marker-end="url(#arO)"/>
+      <rect x="240" y="140" width="160" height="20" rx="6" fill="rgba(139,152,169,.15)" stroke="none"/>
+      <text x="320" y="154" font-size="9.5" fill="#cdd9e5" text-anchor="middle">综合网表 + 时序约束 SDC 交给后端</text>
+      <!-- 后端 7 站 -->
+      <g font-size="10" fill="#e6edf3" text-anchor="middle" font-weight="bold">
+        <rect x="20" y="244" width="68" height="34" rx="8" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="54" y="259">布局布线</text><text x="54" y="271">PnR</text>
+        <rect x="104" y="244" width="68" height="34" rx="8" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="138" y="259">物理验证</text><text x="138" y="271">DRC/LVS</text>
+        <rect x="188" y="244" width="68" height="34" rx="8" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="222" y="265">签核</text>
+        <rect x="272" y="244" width="68" height="34" rx="8" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="306" y="259">GDSII</text><text x="306" y="271">交付</text>
+        <rect x="356" y="244" width="68" height="34" rx="8" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="390" y="265">流片</text>
+        <rect x="440" y="244" width="68" height="34" rx="8" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="474" y="259">封装</text><text x="474" y="271">测试</text>
+        <rect x="524" y="244" width="68" height="34" rx="8" fill="#12351f" stroke="#22c55e" stroke-width="1.4"/>
+        <text x="558" y="265">量产</text>
+      </g>
+      <!-- 后端箭头 -->
+      <g stroke-width="1.6" fill="none">
+        <line x1="88" y1="261" x2="102" y2="261" stroke="#f59e0b" marker-end="url(#arO)"/>
+        <line x1="172" y1="261" x2="186" y2="261" stroke="#f59e0b" marker-end="url(#arO)"/>
+        <line x1="256" y1="261" x2="270" y2="261" stroke="#f59e0b" marker-end="url(#arO)"/>
+        <line x1="340" y1="261" x2="354" y2="261" stroke="#f59e0b" marker-end="url(#arO)"/>
+        <line x1="424" y1="261" x2="438" y2="261" stroke="#f59e0b" marker-end="url(#arO)"/>
+        <line x1="508" y1="261" x2="522" y2="261" stroke="#22c55e" marker-end="url(#arG)"/>
+      </g>
+      <!-- 后端关键产出 -->
+      <g font-size="8.5" fill="#8b98a9" text-anchor="middle">
+        <text x="54" y="294">版图数据库</text><text x="54" y="305">(floorplan→route)</text>
+        <text x="138" y="294">DRC/LVS</text><text x="138" y="305">全部 CLEAN</text>
+        <text x="222" y="294">签核报告</text><text x="222" y="305">(时序/功耗/电压降)</text>
+        <text x="306" y="294">交付代工厂的</text><text x="306" y="305">GDSII 版图文件</text>
+        <text x="390" y="294">晶圆</text><text x="390" y="305">(MPW/全掩膜)</text>
+        <text x="474" y="294">封装样片</text><text x="474" y="305">+ATE 筛选</text>
+        <text x="558" y="294">良率报告</text><text x="558" y="305">(可发货芯片)</text>
+      </g>
+      <!-- 图例 -->
+      <g font-size="9.5" fill="#8b98a9">
+        <rect x="20" y="336" width="12" height="12" rx="3" fill="#1f3a5f" stroke="#58a6ff"/><text x="38" y="346">前端:决定「逻辑对不对」</text>
+        <rect x="210" y="336" width="12" height="12" rx="3" fill="#3d2c10" stroke="#f59e0b"/><text x="228" y="346">后端:决定「造得出来、跑得够快」</text>
+        <rect x="470" y="336" width="12" height="12" rx="3" fill="#12351f" stroke="#22c55e"/><text x="488" y="346">量产</text>
+      </g>
+      <text x="20" y="376" font-size="9" fill="#6e7b8b">任何一步 fail 都要回退返工:时序违例回 RTL 重构、DRC 违例回 PnR、流片后发现功能 bug 只能改版(re-spin),一次数月与百万级损失。</text>
+    </svg>
+    <div class="my-fig-cap">图 1 · 数字芯片设计流程全景:<b>蓝 = 前端(逻辑)</b>,从 Spec 到 STA,产出是「正确的网表」;<b>橙 = 后端(物理)</b>,从 PnR 到签核,产出是「能制造的 GDSII」;<b>绿 = 量产</b>。虚线是前端→后端的交接物:门级网表 + SDC 时序约束。每个方框下方是这一站的<b>关键产出物</b> —— 项目管理上,产出物 DONE 才算这一站 DONE。</div>
+  </div>
+
+  <h3>1.2 每步一句话:输入 → 输出 → 工具</h3>
+  <p>面试里「讲讲芯片设计流程」的满分答法,是每一步都能说出<b>输入、输出、用什么工具</b>。下表照此整理,最后一列给出学生党可白嫖的免费替代(第 08-02 页环境篇已配好):</p>
+  <div class="table-wrap"><table>
+    <tr><th>环节</th><th>一句话:在干什么</th><th>输入 → 输出</th><th>工业界工具</th><th>教学免费替代</th></tr>
+    <tr><td>① Spec</td><td>定义功能、性能、功耗、接口、工艺,全文评审冻结</td><td>市场需求 → 规格书</td><td>Word/评审会</td><td>一页 Markdown</td></tr>
+    <tr><td>② 架构/算法</td><td>定算力、存储分层、数据流、时钟规划;算法用 C/Python 建模验证指标</td><td>Spec → 微架构文档 + 黄金 C 模型</td><td>Matlab / C++ / SystemC</td><td>Python/NumPy 模型</td></tr>
+    <tr><td>③ RTL 设计</td><td>用 Verilog/SystemVerilog 把微架构写成可综合代码</td><td>微架构文档 → RTL</td><td>VSCode + Verilator lint</td><td>同左(第 08-03 页)</td></tr>
+    <tr><td>④ 功能仿真</td><td>搭 testbench 验证功能正确性、收覆盖率</td><td>RTL+TB → 通过报告</td><td>VCS / Questa / Xcelium</td><td>iverilog / Verilator</td></tr>
+    <tr><td>⑤ 综合</td><td>RTL + 工艺库 + 约束 → 门级网表,估面积/时序</td><td>RTL+SDC → 网表</td><td>Design Compiler / Genus</td><td>Yosys / Vivado synth</td></tr>
+    <tr><td>⑥ DFT</td><td>插扫描链/BIST,让量产测试机台能「透视」芯片</td><td>网表 → 可测网表+ATPG</td><td>Tessent / Modus</td><td>(概念了解即可)</td></tr>
+    <tr><td>⑦ 形式验证</td><td>数学证明综合前后逻辑等价(LEC),不跑仿真</td><td>RTL vs 网表 → 等价证明</td><td>Formality / Conformal</td><td>SymbiYosys(性质验证)</td></tr>
+    <tr><td>⑧ STA</td><td>穷举所有时序路径,检查 setup/hold 是否满足,不依赖激励</td><td>网表+SDC+库 → 时序报告</td><td>PrimeTime / Tempus</td><td>Vivado 时序报告</td></tr>
+    <tr><td>⑨ 布局布线 PnR</td><td>把网表中的单元摆到硅片上并连线,时钟树综合 CTS</td><td>网表 → 版图数据库</td><td>Innovus / IC Compiler II</td><td>(FPGA 由工具自动完成)</td></tr>
+    <tr><td>⑩ 物理验证</td><td>DRC 查几何规则、LVS 查版图与网表一致、Antenna/EM/IR-drop</td><td>版图 → CLEAN 报告</td><td>Calibre / Pegasus</td><td>(概念了解即可)</td></tr>
+    <tr><td>⑪ 签核</td><td>时序/功耗/物理/可靠性四类签核,签字放行</td><td>全部报告 → 放行单</td><td>PT+RedHawk+Calibre</td><td>—</td></tr>
+    <tr><td>⑫ GDSII</td><td>导出最终版图文件交给晶圆厂 tapeout</td><td>版图 → GDSII</td><td>Calibre GDS 流程</td><td>—</td></tr>
+    <tr><td>⑬ 流片</td><td>晶圆厂光刻制造;学生可拼 MPW 共享掩膜降低费用</td><td>GDSII → 晶圆</td><td>TSMC/SMIC 等代工厂</td><td>—</td></tr>
+    <tr><td>⑭ 封装测试→量产</td><td>切割封装,ATE 用 DFT 向量筛选,良率达标后量产</td><td>晶圆 → 可发货芯片</td><td>日月光/长电 + ATE</td><td>—</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💡 学生版现实流程:</b>没有 EDA 许可也能走通 ①→④(±⑤):<b>Spec 一页纸 → Python 定点模型 → RTL → iverilog/Verilator 回归 → Yosys/Vivado 综合看时序报告</b>。这套「迷你流水线」正是本板块第 10~12 页 NPU 项目要走的路,第 4 节的工程骨架会把它脚本化。DFT/PnR/物理验证三站,面试能讲清概念即可。</div>
+  <p><b>面试怎么问:</b>「把芯片设计流程讲一遍」(按图 1 从左到右,重点讲前端 4 步 + 交接物网表/SDC);「综合和仿真的区别?」(仿真验功能,综合产生网表并暴露时序/面积);「为什么综合之后还要形式验证?」(证明网表与 RTL 等价,防止综合工具 bug 或约束错误悄悄改了逻辑);「签核在签什么?」。</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 把「验证」只理解成跑仿真 —— 验证 = 功能仿真 + 形式验证 + 静态检查(CDC/Lint)三件套;<br>
+    2. 以为 STA 是「跑一遍仿真测时序」—— STA 是<b>不依赖激励</b>地穷举所有路径做数学检查,这正是它优于仿真的地方;<br>
+    3. 顺序记反:综合在功能仿真之后(先确认功能对再映射工艺),DFT 在综合后、PnR 前;<br>
+    4. 以为流片 = 项目结束 —— 流片后封装测试失败回到架构层复盘,一次 re-spin 数月起步,「一次流片成功」是团队最高目标。
+  </div>
+  <!-- /SEC1 -->
+
+  <!-- ================= 2 ASIC vs FPGA ================= -->
+  <h2><span class="h2-num">2</span> ASIC vs FPGA:同一套 RTL,两种归宿</h2>
+  <h3>2.1 是什么 · 为什么:流程四要素差异大表</h3>
+  <p><b>是什么:</b>同一份 Verilog,综合到 <b>ASIC</b>(专用芯片,映射到工艺库标准单元)或 <b>FPGA</b>(现场可编程芯片,映射到 LUT/FF/BRAM 阵列)后,走的是两条完全不同的流程。<b>为什么要分清:</b>教学与 NPU 原型在 FPGA 上做,但你面试的是数字 IC 岗 —— 「FPGA 思维」和「ASIC 思维」的差异点,恰恰是面试官区分「玩过开发板」和「懂设计方法学」的试金石。核心差异集中在四个要素:</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>ASIC(专用芯片)</th><th>FPGA(现场可编程)</th></tr>
+    <tr><td>综合目标</td><td>映射到<b>工艺库标准单元</b>(TSMC/SMIC .lib),看门数、面积、功耗;时序由库单元真实延迟决定</td><td>映射到 <b>LUT/FF/BRAM/DSP</b> 资源;看 LUT 级数、布线拥塞;同一个 always 块可能综合出完全不同的结构</td></tr>
+    <tr><td>时序约束</td><td>SDC:时钟定义 + 多周期/伪路径例外 + 输入输出延迟;跨周期路径要逐条分析,STA 签核是硬门槛</td><td>XDC:原理相同但由 Vivado 全包;<b>FPGA 工具默认假设你是新手</b>,时序不过会自动重试;CDC 伪路径要自己写,工具只提醒</td></tr>
+    <tr><td>调试手段</td><td><b>流片前只有仿真 + 形式验证 + 静态检查</b>,流片后黑盒:靠 DFT 扫描链/ATE 向量定位,不能改(除非 re-spin)</td><td><b>在线可视化:</b>ILA/SignalTap 把内部信号抓到 PC 看波形;bitstream 重新下载即「改版」,几分钟一次迭代</td></tr>
+    <tr><td>成本结构</td><td>NRE(掩膜+设计费)百万美元级,<b>摊到每颗</b>:量越大越便宜;单颗裸片成本可低至几美元</td><td>NRE ≈ 0(买开发板的钱),<b>单颗芯片贵</b>(同等逻辑容量常贵 5~50 倍),不适合大出货量</td></tr>
+    <tr><td>一次改动代价</td><td>re-spin:数月 + 再花一次流片费</td><td>重编译下载:分钟~小时级</td></tr>
+    <tr><td>适用场景</td><td>出货量大(10 万颗+)、对功耗/成本极致敏感的消费/车载/算力芯片</td><td>原型验证、小批量、协议多变、算法快速迭代(基站/原型/军工)</td></tr>
+  </table></div>
+  <p>成本结构可以用一个近似式回答「什么时候该转 ASIC」:</p>
+  <div class="formula">C_{\text{总}}(n) = \frac{NRE}{n} + C_{\text{单颗}} \quad\Rightarrow\quad n^* = \frac{NRE}{C_{\text{FPGA颗}} - C_{\text{ASIC颗}}} \quad(\text{盈亏平衡出货量})</div>
+  <p>例:某 NPU 逻辑 ASIC NRE 约 500 万美元,FPGA 方案单颗贵 40 美元,则盈亏平衡点约 12.5 万颗 —— 出货量低于它,留在 FPGA 更划算。<b>面试怎么问:</b>「FPGA 和 ASIC 流程差异?」「为什么 FPGA 不用付 NRE?」「你的 NPU 项目为什么用 FPGA 而不流片?」—— 第三问按下一节三点回答即可。</p>
+  <div class="box box-warn">
+    <b>⚠️ 易错点:</b>
+    1. 「FPGA 上时序过了 = ASIC 也能过」—— 错。LUT 延迟与工艺库延迟模型完全不同,FPGA 高分只说明代码「大致没问题」;<br>
+    2. 「FPGA 有工具兜底,可以不写约束/不管 CDC」—— Vivado 只是会报 critical warning,亚稳态照样发生;<br>
+    3. 「调试靠 ILA 很爽,所以 ASIC 也留后门」—— ASIC 流片后没有 ILA,DFT 扫描链是唯一「内窥镜」,这也是 DFT 必须在综合后插入的原因;<br>
+    4. 把「FPGA 是并行、ASIC 是串行」之类说法当结论 —— 两者都是并行硬件,差异在<b>实现介质</b>不在并发性。
+  </div>
+
+  <h3>2.2 怎么做:为什么教学与 NPU 原型选 FPGA</h3>
+  <p>本板块第 10~12 页的 NPU 项目(LeNet 手写数字识别加速器)选择 FPGA 作为落地平台,三个理由对应上面表格的三个要素:</p>
+  <ul>
+    <li><b>迭代速度 = 学习速度:</b>NPU 是「写一段、错一段」的工程,卷积滑窗地址错一位、FIFO 深度差一拍,都需要快速改了再看。FPGA 分钟级重编译 = 一天试 20 个想法;ASIC 一次 re-spin = 一个学期没了。</li>
+    <li><b>调试可视化 = 看得见的波形:</b>ILA 可以在真实运行中把 NPU 内部 count_valid、feature 数据抓出来对照 C 模型,「仿真通过 → 上板复现 → ILA 定位」三段式排错,是数字工程师最值钱的实操手感。</li>
+    <li><b>ZYNQ 生态 = 顺带练总线:</b>正点原子/黑金 ZYNQ 板的 PS(ARM)+PL(FPGA)架构,PS 配置 PL 外设天然走 <b>AXI-Lite</b>,DDR 搬运大权重天然走 <b>AXI Full/HP 口</b> —— 本页第 6~8 节学的总线知识,在板上有真实用武之地(资源见参考卡:正点原子 AXI4 之 DDR 读写实验)。</li>
+  </ul>
+  <div class="box box-tip"><b>💡 认知锚点:</b>「<b>用 FPGA 的流程,写 ASIC 风格的代码</b>」。工具用 Vivado 没关系,但代码习惯按 ASIC 标准来:单时钟域优先、复位统一、不写 latch、跨域必同步、时序约束自己写全 —— 这样项目经历在 FPGA 岗和 IC 岗两头都认。</div>
+  <!-- /SEC2 -->
+
+  <!-- ================= 3 CDC 深入回顾与进阶 ================= -->
+  <h2><span class="h2-num">3</span> CDC 深入回顾与进阶:把 08-04 的知识接上工程</h2>
+  <h3>3.1 回顾与前提:两级同步器的「适用条件」比结构本身更重要</h3>
+  <p>08-04 页(<a href="04_FIFO设计与跨时钟域CDC.html">FIFO 设计与跨时钟域 CDC</a>)已经讲过亚稳态、MTBF、两级同步器、格雷码与异步 FIFO 本体,本节不再重复推导,只补上工程视角的三块拼图。<b>第一块:两级同步器的三个隐含前提</b> —— 面试说出结构只算及格,说出前提才算懂:</p>
+  <ul>
+    <li><b>前提一:只同步单 bit 电平信号。</b>多 bit 总线各位亚稳恢复时间不一致,逐位同步会「撕裂」,必须改用 3.3 节方案;</li>
+    <li><b>前提二:信号一次有效电平要「足够宽」。</b>经验值 ≥ 1.5~2 个目的域时钟周期,保证目的域至少有一次「干净的」采样机会 —— 第一拍可能采到亚稳,第二拍必须能采到稳定值;</li>
+    <li><b>前提三:源信号要先寄存器化(组合逻辑输出先打一拍再跨域)</b>,否则毛刺(glitch)会被同步器当成有效电平同步过去 —— 同步器防亚稳,<b>不防毛刺</b>。</li>
+  </ul>
+  <p><b>快时钟域 → 慢时钟域的脉冲丢失问题:</b>前提二的极端情形。若源域 100MHz 发出一个 1 拍宽(10ns)的脉冲,目的域只有 25MHz(40ns 一拍),脉冲可能在两次慢时钟上升沿之间「出现又消失」—— 慢域永远看不到它,<b>不是采成亚稳,而是彻底丢失</b>。这是比亚稳态更隐蔽的 bug:仿真里激励凑巧能采到,上板随机丢指令。判据:</p>
+  <div class="formula">T_{\text{pulse}} \lt T_{\text{dst}}\ (\text{且不保证相位关系}) \;\Rightarrow\; \text{电平式两级同步必丢脉冲,改用 toggle 同步}</div>
+  <p><b>面试怎么问:</b>「两级同步器有什么前提?」「快时钟域往慢时钟域发一个单拍脉冲,直接打两拍会怎样?」「同步器能不能防毛刺?」。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>1. 把「打两拍」当万能药 —— 它只对「慢变化电平」有效;2. 用「把脉冲拉宽到 2 个慢域周期」解决丢脉冲 —— 能用但笨:拉多宽取决于频率比,频率一改就再翻车,正确答案是 toggle 同步;3. 忘记「快→慢」方向问题,以为「同步器在哪个域,问题就在哪个域」—— 脉冲丢失的根源在<b>源信号太窄</b>,与同步器本身无关。</div>
+
+  <h3>3.2 进阶一:电平同步 vs 脉冲同步(toggle + 边沿检测)vs 握手</h3>
+  <p><b>怎么做:</b>三种单 bit 方案按「源信号形态」选,电路一级比一级复杂:</p>
+  <div class="table-wrap"><table>
+    <tr><th>方案</th><th>源信号形态</th><th>电路结构</th><th>代价/局限</th></tr>
+    <tr><td>电平同步</td><td>电平,变化慢,事件间隔 ≥ 2 目的域周期</td><td>两级 FF 直打(08-04 图 2)</td><td>有 1~2 拍不确定延迟;事件密集会丢事件</td></tr>
+    <tr><td>脉冲同步<br>(toggle + 边沿检测)</td><td>脉冲(可快→慢),但<b>脉冲间隔 ≥ 3 目的域周期</b></td><td>源域:电平翻转 toggle;目的域:两级同步 + XOR 边沿检测还原脉冲</td><td>背靠背连续脉冲必丢(翻转太密);延迟 2~3 拍</td></tr>
+    <tr><td>握手(req-ack)</td><td>一批数据/一个事件,要求确认</td><td>req/ack 双向各过两级同步(08-04 图 4)</td><td>一次交接 4~5 拍,吞吐最低,只配低频场景</td></tr>
+  </table></div>
+  <pre><code>// 脉冲同步:源域 toggle + 目的域边沿检测(快时钟域脉冲 → 慢时钟域)
+// src 域:每个脉冲让电平翻转一次
+always @(posedge clk_src) begin
+    if (pulse_in)  toggle &lt;= ~toggle;   // toggle 是寄存器输出,电平可跨域
+end
+// dst 域:两级同步后,XOR 前后两拍还原出「脉冲」
+always @(posedge clk_dst) begin
+    ff1  &lt;= toggle;          // 第一级可能亚稳
+    ff2  &lt;= ff1;             // 第二级干净
+    ff3  &lt;= ff2;
+    pulse_out = ff3 ^ ff2;   // 检测 toggle 的每次跳变 → 还原 1 拍脉冲
+end</code></pre>
+  <p><b>面试怎么问:</b>「toggle 同步为什么不会丢脉冲?」(把「找脉冲」变成「找边沿」,电平永远在那里等你采);「它什么时候也会丢?」(背靠背脉冲:间隔小于目的域周期时,一次翻转还没同步完又来下一次)。</p>
+
+  <h3>3.3 进阶二:多 bit 跨域全家桶 + 复位同步器</h3>
+  <p><b>怎么做:</b>多 bit 信号(数据总线、指针、配置字)跨域只有四条正路,<b>没有任何一条是「逐位打两拍」</b>:</p>
+  <ul>
+    <li><b>格雷码编码:</b>只适合<b>单调 +1/-1 的计数器</b>(FIFO 指针),随机跳变的配置字编码了也白搭(08-04 §6);</li>
+    <li><b>异步 FIFO:</b>高速连续数据流的正解,指针格雷码化后过两级同步(08-04 §7);</li>
+    <li><b>握手(req-ack):</b>低速批量,数据静止期间被对端采样(08-04 §9);</li>
+    <li><b>MUX 同步器(DMUX re-synchronization):</b>握手方案的「资源优化版」—— 数据放稳后只把一根 <b>load/enable</b> 单 bit 信号同步过去,目的域用这根同步后的使能作为 MUX 选择/寄存器使能,把静止的数据抓进目的域寄存器。数据本身<b>不过同步器</b>,既省 N 组同步器又无撕裂。</li>
+  </ul>
+  <pre><code>// MUX 同步器:多 bit 数据静止 + 单 bit enable 跨域(时钟域 A → B)
+// 域 A:先把 data 稳定住(寄存器输出),再发 en_a 单 bit 脉冲
+// 域 B:en_a 经两级同步成为 en_b;数据总线直接进 B 域 MUX,不打包两拍
+always @(posedge clk_a) begin
+    data_a_reg &lt;= data_next;   // 数据先稳住
+    en_a       &lt;= ~en_a;       // 每次更新翻转一次(toggle 式使能)
+end
+always @(posedge clk_b) begin
+    en_b_ff1 &lt;= en_a;          // 单 bit 使能走两级同步
+    en_b_ff2 &lt;= en_b_ff1;
+    en_b_dly &lt;= en_b_ff2;
+    if (en_b_ff2 ^ en_b_dly)   // 边沿检测:检测到一次更新
+        data_b &lt;= data_a_reg;  // 数据静止,此刻抓取是安全的
+end</code></pre>
+  <p><b>复位同步器(reset synchronizer):</b>复位是「最容易被忽略的跨域信号」。规范做法是<b>异步复位、同步释放</b>:复位断言立即生效(让所有域同时进入复位),但释放要在各时钟域内打两拍,保证释放时刻满足本域时序,不会在时钟沿附近「半途松开」造成部分寄存器出复位、部分没出(复位释放违规,recovery/removal 违例)。代码模板见 08-04 §10 检查清单,每个时钟域各配一份。进阶概念 <b>RDC(复位域跨域)</b>:不同复位域之间信号交互,CDC 工具(如 VC SpyGlass RDC)也要查。</p>
+  <p><b>面试怎么问:</b>「多 bit 信号除了异步 FIFO 还能怎么跨?」「MUX 同步器和握手是什么关系?」「复位为什么要同步释放而不是同步断言?」「异步复位有什么问题,同步复位又有什么问题?」(答:异步复位对释放时序不设防/同步复位需要时钟在场且占脉冲宽度 —— 「异步断言、同步释放」两头兼顾)。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>1. MUX 同步器里把 data 也打了同步器 —— 数据静止的「静止窗口」是靠握手/toggle 协议保证的,数据路径打同步器既多余又引入各位错拍;2. 复位同步器写成「同步复位」—— 它的结构恰恰是<b>异步复位端 + 同步释放链</b>;3. 每个 FFT/AXI 时钟域只顾自己打两拍,忘了复位释放的<b>先后顺序依赖</b>(A 域没释放,B 域先放出来会收到无效握手)。</div>
+
+  <h3>3.4 进阶三:CDC 静态检查工具 + 方案选择决策图</h3>
+  <p><b>是什么:</b>CDC 检查工具(Synopsys <b>VC SpyGlass CDC</b>(原 SpyGlass CDC)、Siemens Questa CDC、Cadence 综合方案)对 RTL 做<b>结构 + 功能的静态分析</b>,不需要激励就能在流片前几个月把跨域问题扫出来。它<b>能</b>查出:未加同步器直接跨域的信号;多 bit 总线被逐位同步(总线直采);组合逻辑输出直接跨域(毛刺风险);同步后的信号再收敛(reconvergence,两路同步延迟不一致导致逻辑错);格雷码指针被组合逻辑「污染」后跨域;reset 跨域与释放顺序问题;SDC 里漏写 set_false_path / set_max_delay 导致 CDC 路径被错误约束。它<b>不能</b>替代的:同步器级数是否够、协议时序是否正确 —— 那要靠形式验证断言与人工 review。<b>怎么做:</b>遇到跨域场景,按下面的决策图一步选对方案:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 322" role="img" aria-label="CDC方法选择决策图:根节点跨时钟域信号,分出单bit与多bit两支,单bit下按电平慢变化选两级同步器、按脉冲或快到慢选toggle加边沿检测;多bit下按低速偶发选握手或MUX同步器、按高速连续流选异步FIFO、按单调计数选格雷码;底部独立红框为复位信号跨域必须用复位同步器异步复位同步释放">
+      <defs>
+        <marker id="arB2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        <marker id="arR2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+      </defs>
+      <!-- 根节点 -->
+      <rect x="255" y="12" width="130" height="28" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+      <text x="320" y="30" font-size="11" font-weight="bold" fill="#e6edf3" text-anchor="middle">信号要跨时钟域</text>
+      <!-- 一级 -->
+      <line x1="320" y1="40" x2="175" y2="66" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#arB2)"/>
+      <line x1="320" y1="40" x2="465" y2="66" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#arB2)"/>
+      <rect x="130" y="68" width="90" height="26" rx="8" fill="rgba(88,166,255,.12)" stroke="#58a6ff"/>
+      <text x="175" y="85" font-size="11" font-weight="bold" fill="#58a6ff" text-anchor="middle">单 bit</text>
+      <rect x="420" y="68" width="90" height="26" rx="8" fill="rgba(245,158,11,.12)" stroke="#f59e0b"/>
+      <text x="465" y="85" font-size="11" font-weight="bold" fill="#f59e0b" text-anchor="middle">多 bit</text>
+      <!-- 二级分支线 -->
+      <g stroke="rgba(139,152,169,.45)" stroke-width="1.1" fill="none">
+        <path d="M 175 94 L 175 112 L 76 112 L 76 172"/>
+        <path d="M 175 94 L 175 112 L 198 112 L 198 172"/>
+        <path d="M 465 94 L 465 112 L 320 112 L 320 172"/>
+        <path d="M 465 94 L 465 112 L 442 112 L 442 172"/>
+        <path d="M 465 94 L 465 112 L 564 112 L 564 172"/>
+      </g>
+      <!-- 二级条件标注 -->
+      <g font-size="9.5" fill="#8b98a9" text-anchor="middle">
+        <text x="90" y="132">慢变化电平</text>
+        <text x="90" y="144">(事件间隔≥2拍)</text>
+        <text x="230" y="132">窄脉冲 / 快→慢</text>
+        <text x="230" y="144">(间隔≥3目的域拍)</text>
+        <text x="340" y="132">低速偶发</text>
+        <text x="340" y="144">(配置字/状态字)</text>
+        <text x="465" y="132">高速连续流</text>
+        <text x="465" y="144">(流水线数据)</text>
+        <text x="585" y="132">单调计数</text>
+        <text x="568" y="144">(FIFO指针)</text>
+      </g>
+      <!-- 叶子 -->
+      <g font-size="10.5" font-weight="bold" text-anchor="middle">
+        <rect x="20" y="176" width="112" height="48" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="76" y="196" fill="#e6edf3">两级同步器</text><text x="76" y="211" font-size="9" font-weight="normal" fill="#8b98a9">电平直接打两拍</text>
+        <rect x="142" y="176" width="112" height="48" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.4"/>
+        <text x="198" y="196" fill="#e6edf3">toggle 同步</text><text x="198" y="211" font-size="9" font-weight="normal" fill="#8b98a9">翻转+XOR边沿检测</text>
+        <rect x="264" y="176" width="112" height="48" rx="8" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="320" y="196" fill="#e6edf3">握手 / MUX</text><text x="320" y="211" font-size="9" font-weight="normal" fill="#8b98a9">req-ack / 数据静止抓取</text>
+        <rect x="386" y="176" width="112" height="48" rx="8" fill="#12351f" stroke="#22c55e" stroke-width="1.4"/>
+        <text x="442" y="196" fill="#e6edf3">异步 FIFO</text><text x="442" y="211" font-size="9" font-weight="normal" fill="#8b98a9">格雷码指针·吞吐最高</text>
+        <rect x="508" y="176" width="112" height="48" rx="8" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="564" y="196" fill="#e6edf3">格雷码编码</text><text x="564" y="211" font-size="9" font-weight="normal" fill="#8b98a9">仅限 ±1 计数指针</text>
+      </g>
+      <!-- 复位特例 -->
+      <line x1="320" y1="224" x2="320" y2="256" stroke="#ef4444" stroke-width="1.4" marker-end="url(#arR2)"/>
+      <rect x="170" y="262" width="300" height="40" rx="8" fill="rgba(239,68,68,.14)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="320" y="279" font-size="10.5" font-weight="bold" fill="#ef4444" text-anchor="middle">特例:复位信号跨域 → 复位同步器</text>
+      <text x="320" y="294" font-size="9" fill="#8b98a9" text-anchor="middle">异步复位、同步释放(每个时钟域一份,08-04 §10 模板)</text>
+      <text x="20" y="314" font-size="9" fill="#6e7b8b">配套:SDC 写 false_path / max_delay + VC SpyGlass CDC / Questa CDC 静态检查 → 警告清零才许签核。</text>
+    </svg>
+    <div class="my-fig-cap">图 2 · CDC 方案选择决策图:<b>蓝 = 单 bit 方案</b>(看信号形态),<b>橙 = 多 bit 慢速/计数方案</b>,<b>绿 = 多 bit 高速方案</b>,<b>红 = 复位特例</b>。先问「几个 bit」,再问「什么形态、多快」,方案就唯一确定了。</div>
+  </div>
+  <p><b>面试怎么问:</b>「CDC 工具(SpyGlass)能查出什么、查不出什么?」「reconvergence 问题是什么?」「你的异步 FIFO 如果用 CDC 工具跑,预计会有哪些 warning、怎么消除?」。</p>
+  <!-- /SEC3 -->
+
+  <!-- ================= 4 仿真环境搭建工程化 ================= -->
+  <h2><span class="h2-num">4</span> 仿真环境搭建工程化:给 NPU 项目准备的工程骨架</h2>
+  <h3>4.1 是什么 · 为什么:目录结构 + 文件清单 filelist.fif</h3>
+  <p><b>是什么:</b>工程化仿真是把「点开 GUI 点编译」变成「一条命令跑完编译-仿真-判结果-汇总」。它由三件套组成:<b>固定目录结构</b>(谁放哪,半年后自己还看得懂)、<b>文件清单</b>(告诉工具编译哪些文件、什么顺序)、<b>驱动脚本</b>(Makefile 把流程串起来)。<b>为什么:</b>NPU 项目 RTL 会膨胀到十几个模块、几十个测试用例,手工操作必然出现「本地能跑、换台机器就崩」;而且第 08-02 页讲过,工业界(VCS/Questa)全是命令行 + 脚本驱动,早按工程化习惯训练,入职直接上手。标准骨架:</p>
+  <pre><code>npu_project/
+├── rtl/            # 可综合设计代码(只放 RTL,一个模块一个 .v)
+│   ├── npu_top.v       # 顶层
+│   ├── ctrl_reg.v      # 寄存器配置模块(AXI-Lite/APB 从机)
+│   ├── pe_array.v      # MAC 阵列
+│   └── ...
+├── sim/            # 仿真工作区(产物 build/ 波形 out/ 可 gitignore)
+│   ├── filelist.fif    # RTL 文件清单(相对仓库根)
+│   └── tests/          # 各测试用例的 plusarg/配置
+├── tb/             # 仿真专用代码(testbench、参考模型、任务)
+│   ├── tb_npu_top.v    # 顶层 testbench(无引脚约束,不进 filelist 的 rtl 段)
+│   └── ref_model.v     # Python/C 导出的黄金参考(定点模型,呼应第 08 页量化)
+├── doc/            # 微架构文档、寄存器表、验证计划
+└── scripts/        # Makefile、回归脚本、结果汇总</code></pre>
+  <p><b>filelist.fif 写法:</b>一行一个文件,<code>//</code> 注释,<code>+incdir+</code> 声明头文件/宏定义目录。它是 VCS(<code>vcs -f</code>)、Questa、iverilog(<code>-f</code>)通用的行业标准格式 —— 一次编写,全工具链通用:</p>
+  <pre><code>// sim/filelist.fif —— RTL 清单(不含 testbench,TB 由脚本单独加)
++incdir+rtl
++incdir+tb
+rtl/npu_pkg.v            // 若用 SystemVerilog package,必须最先编译
+rtl/ctrl_reg.v
+rtl/pe_array.v
+rtl/axi_lite_slave.v
+rtl/npu_top.v
+// testbench 由 Makefile 拼接:  -f sim/filelist.fif  tb/tb_npu_top.v</code></pre>
+  <p><b>面试怎么问:</b>「你项目的代码怎么组织?filelist 是干什么的?」「package/宏定义文件为什么要放清单最前面?」(编译顺序依赖:package 和 `define 必须先于使用者被编译)。</p>
+
+  <h3>4.2 怎么做:Makefile 一键回归 + 结果自动判定</h3>
+  <p><b>怎么做:</b>Makefile 暴露四个目标:<code>make compile</code> 只编译、<code>make sim TEST=xxx</code> 跑单用例、<code>make regress</code> 跑全部用例并汇总、<code>make clean</code> 清理。<b>回归的关键在「自动判定」</b>:testbench 必须在结尾按约定打印 <code>TEST_PASS</code> 或 <code>TEST_FAIL</code>,脚本 grep 这两个字符串记账 —— 没有 PASS/FAIL 判定的回归,跑完一万行日志等于白跑:</p>
+  <pre><code># scripts/Makefile —— NPU 项目仿真骨架(iverilog 版,教师机无 VCS 也能跑)
+SIM      = iverilog -g2012
+FILES    = -f sim/filelist.fif
+TB       = tb/tb_npu_top.v
+BUILD    = sim/build
+TESTS    = smoke lenet_small axi_rw stress    # 回归用例列表
+
+compile:
+	mkdir -p $(BUILD)
+	$(SIM) $(FILES) $(TB) -o $(BUILD)/sim.vvp
+
+sim: compile
+	vvp $(BUILD)/sim.vvp +TEST=$(TEST) | tee $(BUILD)/$(TEST).log
+	grep -q TEST_PASS $(BUILD)/$(TEST).log && echo "[PASS] $(TEST)" || (echo "[FAIL] $(TEST)"; exit 1)
+
+regress: compile
+	@rm -f $(BUILD)/regress.rpt; for t in $(TESTS); do \
+	    vvp $(BUILD)/sim.vvp +TEST=$$t &gt; $(BUILD)/$$t.log; \
+	    if grep -q TEST_PASS $(BUILD)/$$t.log; then echo "PASS $$t" &gt;&gt; $(BUILD)/regress.rpt; \
+	    else echo "FAIL $$t" &gt;&gt; $(BUILD)/regress.rpt; fi; done
+	@echo "==== 回归汇总 ===="; cat $(BUILD)/regress.rpt
+
+clean:
+	rm -rf $(BUILD)</code></pre>
+  <p>配套约定:testbench 用 <code>+TEST=</code> plusarg 选用例,<code>if (TEST_PASS) $display("TEST_PASS"); else $display("TEST_FAIL");</code> 收尾;<code>stress</code> 这类用例故意注入背靠背 AXI 传输与 FIFO 边界深度,专抓协议与流控 bug。回归通过率就是你的「进度条」—— 每次提交代码先 <code>make regress</code>,绿了才 push,这是把第 1 节「每步有产出物」的思想搬进日常开发。</p>
+  <p><b>面试怎么问:</b>「回归是怎么跑的?怎么判断对错?」「仿真发现 FAIL,你的排查流程?」(看 log 定位用例 → 打开对应 fsdb/vcd 波形 → 对照参考模型输出找第一处分歧 → 回 RTL/用例修 → 回归确认)。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>1. filelist 里用绝对路径 —— 换机器即崩,统一仓库根相对路径;2. 判定用「仿真没报错 = 通过」—— testbench 不主动打印 PASS/FAIL,回归就失去意义;3. build 产物和波形文件提交进 git —— 仓库爆炸,在 .gitignore 里排除 sim/build、*.vcd、*.fsdb;4. 只有 smoke 一个用例也敢叫「回归」—— 回归的价值在用例矩阵:功能 + 边界 + 协议违例注入,缺一不可。</div>
+  <!-- /SEC4 -->
+
+  <!-- ================= 5 AHB 协议原理 ================= -->
+  <h2><span class="h2-num">5</span> AHB 协议原理:AMBA 家族的「系统级」总线</h2>
+  <h3>5.1 是什么 · 为什么:定位与核心信号</h3>
+  <p><b>是什么:</b>AHB(Advanced High-performance Bus)是 ARM AMBA 规范(IHI0033)定义的<b>系统总线</b>:位宽 32~128bit、单周期传输、支持 burst,面向 CPU、DMA、片上 RAM 这类「要带宽」的主设备;比它低一档的是外设总线 APB(慢速寄存器访问,<a href="05_APB总线协议与接口设计.html">见 08-05 页</a>),高一档的是 AXI(第 6 节)。<b>为什么学:</b>AHB 是「从无流水线(APB)到全流水线(AXI)」之间最干净的教材 —— 它第一次引入了<b>两级流水线</b>和<b>等待状态</b>这两个概念,而这两个概念正是理解 AXI 的地基。AHB-Lite(单主版本)也是很多 SoC 教学项目的标配总线。核心信号一眼认全:</p>
+  <div class="table-wrap"><table>
+    <tr><th>信号组</th><th>信号</th><th>作用</th></tr>
+    <tr><td>全局</td><td>HCLK / HRESETn</td><td>单时钟、低有效复位(AMBA 全家族同款)</td></tr>
+    <tr><td>地址控制相</td><td>HADDR / HWRITE / HSIZE / HBURST / <b>HTRANS</b></td><td>地址相当拍发出:地址、读写、每拍字节数、突发类型、传输类型(IDLE/BUSY/<b>NONSEQ/SEQ</b>)</td></tr>
+    <tr><td>数据相</td><td>HWDATA / HRDATA</td><td>下一拍写数据 / 读数据(32~128bit)</td></tr>
+    <tr><td>反馈</td><td><b>HREADY</b> / HRESP</td><td>从机拉低 HREADY 插入等待周期;HRESP 报 OKAY/ERROR(两拍错误响应)</td></tr>
+  </table></div>
+
+  <h3>5.2 怎么做:两级流水线 —— 地址相 + 数据相交叠(图 3)</h3>
+  <p>AHB 的灵魂是一句口诀:<b>「这一拍发第 n 笔的地址,同时传第 n−1 笔的数据」</b>。传输被拆成地址相(A 相)与数据相(D 相)两个阶段,错开一拍交叠进行 —— 总线在每个周期都在干活,吞吐达到 1 笔/拍。对照波形图逐拍走一遍:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 300" role="img" aria-label="AHB两级流水线波形:HCLK八个周期,HADDR在T1到T3依次给出地址A、B、C,HRDATA在T2到T4依次返回D0、D1、D2,HREADY恒为一;蓝色A相方框与橙色D相方框交叠一拍,绿色虚线指出同一笔传输的地址相与数据相错开一拍">
+      <defs><marker id="arG2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker></defs>
+      <!-- 周期标签 -->
+      <g font-size="9.5" fill="#6e7b8b" text-anchor="middle">
+        <text x="132" y="14">T1</text><text x="196" y="14">T2</text><text x="260" y="14">T3</text><text x="324" y="14">T4</text>
+        <text x="388" y="14">T5</text><text x="452" y="14">T6</text><text x="516" y="14">T7</text><text x="580" y="14">T8</text>
+      </g>
+      <!-- 周期分隔虚线 -->
+      <g stroke="rgba(139,152,169,.25)" stroke-dasharray="3 4">
+        <line x1="164" y1="22" x2="164" y2="262"/><line x1="228" y1="22" x2="228" y2="262"/><line x1="292" y1="22" x2="292" y2="262"/>
+        <line x1="356" y1="22" x2="356" y2="262"/><line x1="420" y1="22" x2="420" y2="262"/><line x1="484" y1="22" x2="484" y2="262"/><line x1="548" y1="22" x2="548" y2="262"/>
+      </g>
+      <!-- 信号名 -->
+      <g font-size="11" fill="#cdd9e5" font-family="Consolas,monospace">
+        <text x="8" y="34">HCLK</text>
+        <text x="8" y="95">HADDR</text>
+        <text x="8" y="141">HREADY</text>
+        <text x="8" y="201">HRDATA</text>
+      </g>
+      <!-- HCLK -->
+      <path d="M100,24 H132 V40 H164 V24 H196 V40 H228 V24 H260 V40 H292 V24 H324 V40 H356 V24 H388 V40 H420 V24 H452 V40 H484 V24 H516 V40 H548 V24 H580 V40 H612" stroke="#cdd9e5" stroke-width="1.6" fill="none"/>
+      <!-- A相 蓝色衬底 -->
+      <g fill="rgba(88,166,255,.13)">
+        <rect x="100" y="66" width="64" height="40" rx="4"/><rect x="164" y="66" width="64" height="40" rx="4"/><rect x="228" y="66" width="64" height="40" rx="4"/>
+      </g>
+      <!-- HADDR 波形: A(T1) B(T2) C(T3) 无效(T4起) -->
+      <polyline points="100,86 292,86 292,102 612,102" stroke="#58a6ff" stroke-width="1.8" fill="none"/>
+      <g font-size="11" font-weight="bold" fill="#58a6ff" text-anchor="middle" font-family="Consolas,monospace">
+        <text x="132" y="82">A</text><text x="196" y="82">B</text><text x="260" y="82">C</text>
+      </g>
+      <text x="450" y="98" font-size="10" fill="#6e7b8b" text-anchor="middle">无后续传输</text>
+      <!-- A相标签 -->
+      <g font-size="9" fill="#58a6ff" text-anchor="middle">
+        <text x="132" y="120">A相·Xfer1</text><text x="196" y="120">A相·Xfer2</text><text x="260" y="120">A相·Xfer3</text>
+      </g>
+      <!-- HREADY 恒高 -->
+      <polyline points="100,138 612,138" stroke="#22c55e" stroke-width="1.8" fill="none"/>
+      <text x="598" y="132" font-size="9.5" fill="#22c55e" text-anchor="end">恒 1 = 零等待</text>
+      <!-- D相 橙色衬底 -->
+      <g fill="rgba(245,158,11,.14)">
+        <rect x="164" y="172" width="64" height="40" rx="4"/><rect x="228" y="172" width="64" height="40" rx="4"/><rect x="292" y="172" width="64" height="40" rx="4"/>
+      </g>
+      <!-- HRDATA 波形 -->
+      <polyline points="100,206 164,206 164,190 356,190 356,206 612,206" stroke="#f59e0b" stroke-width="1.8" fill="none"/>
+      <g font-size="11" font-weight="bold" fill="#f59e0b" text-anchor="middle" font-family="Consolas,monospace">
+        <text x="196" y="186">D0</text><text x="260" y="186">D1</text><text x="324" y="186">D2</text>
+      </g>
+      <text x="480" y="202" font-size="10" fill="#6e7b8b" text-anchor="middle">无效</text>
+      <!-- D相标签 -->
+      <g font-size="9" fill="#f59e0b" text-anchor="middle">
+        <text x="196" y="226">D相·Xfer1</text><text x="260" y="226">D相·Xfer2</text><text x="324" y="226">D相·Xfer3</text>
+      </g>
+      <!-- 同一笔传输连线 -->
+      <line x1="132" y1="124" x2="192" y2="168" stroke="#22c55e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arG2)"/>
+      <!-- 说明 -->
+      <g font-size="9.5" fill="#8b98a9">
+        <rect x="20" y="244" width="12" height="12" rx="3" fill="rgba(88,166,255,.2)" stroke="#58a6ff"/><text x="38" y="254">地址相:当拍发地址+控制(蓝)</text>
+        <rect x="250" y="244" width="12" height="12" rx="3" fill="rgba(245,158,11,.2)" stroke="#f59e0b"/><text x="268" y="254">数据相:下一拍传数据(橙)</text>
+        <text x="470" y="254">绿虚线 = 同一笔传输</text>
+        <text x="20" y="282">口诀:T(n) 拍发第 n 笔地址,同时传第 n−1 笔数据 → 稳态吞吐 1 笔/拍;HREADY=0 时数据相被拉长,</text>
+        <text x="20" y="296">且「排队中」的下一笔地址相也一起停 —— 全流水线同步等待,不存在乱序。</text>
+      </g>
+    </svg>
+    <div class="my-fig-cap">图 3 · AHB 两级流水线:T1 发 Xfer1 地址 A;T2 传 Xfer1 数据 D0 的<b>同时</b>发 Xfer2 地址 B —— A 相与 D 相永远交叠一拍。HREADY 是唯一的流控:从机没准备好就拉低,当拍数据相与下一笔地址相一起重试。</div>
+  </div>
+  <p><b>三个信号务必讲透:</b>① <b>HTRANS</b>(NONSEQ = 一笔新传输的第一拍;SEQ = 同一 burst 的后续拍;IDLE/BUSY = 主机不想传/主机想喘口气)—— 从机靠它在流水线里区分「这是新地址还是旧地址的延续」;② <b>HREADY</b> 方向是<b>从机 → 主机(和下一级从机)</b>,拉低时当前数据相原地重试;③ <b>HRESP</b> 错误响应固定占<b>两拍</b>(第一拍 ERROR + HREADY 低,第二拍仍 ERROR + HREADY 高),给主机留出放弃传输的反应时间。<b>面试怎么问:</b>「画出 AHB 读传输流水线时序」「HREADY 拉低时地址相为什么也停?」「HRESP 为什么要两拍?」。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>1. 把 AHB 画成「地址相结束后才开始数据相」—— 那是 APB 的节奏,AHB 的价值就在交叠;2. 忘记 slave 还要把 HREADY 传给上一级(多级流水串联时本级等待会「级联回去」);3. 以为 AHB 有独立的地址通道和写响应通道 —— 那是 AXI,AHB 是共享地址/数据总线,一次只能跑一笔;4. BUSY 拍也期待从机动作 —— BUSY 是主机自己插的「中场休息」,从机当它不存在。</div>
+
+  <h3>5.3 Burst 传输:SINGLE / INCR / WRAP + AHB vs APB</h3>
+  <p><b>怎么做:</b>HBURST 声明这笔传输「接下来还有几拍、地址怎么走」:<b>SINGLE</b> 单拍;<b>INCR4/8/16</b> 定长递增、<b>INCR</b> 不定长递增(地址按 HSIZE 步进,直到主机说停),适合顺序搬 DMA 数据;<b>WRAP4/8/16</b> 定长<b>回环</b> —— 地址在一个 size×beats 对齐的边界内递增、到顶绕回开头,专为 <b>cache line 填充</b>设计:CPU 要 line 里某一字节,先拿到要的那拍,其余拍补齐,且绝不越过 line 边界撞进相邻 line。回环边界算法:wrap 边界 = ⌊addr ÷ (size×beats)⌋ × (size×beats),越过边界就把地址模回边界。AHB 与 APB 的差异一张表说清:</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>APB(08-05 页)</th><th>AHB(本节)</th></tr>
+    <tr><td>定位</td><td>外设寄存器总线:低速、低功耗、极简</td><td>系统总线:CPU/DMA/片上存储</td></tr>
+    <tr><td>流水线</td><td>无(SETUP→ACCESS 两状态,每笔至少 2 拍)</td><td>两级流水,稳态 1 笔/拍</td></tr>
+    <tr><td>数据位宽</td><td>8/16/32bit</td><td>32~128bit</td></tr>
+    <tr><td>突发</td><td>不支持(一次一笔)</td><td>SINGLE/INCR/WRAP 4/8/16</td></tr>
+    <tr><td>等待/错误</td><td>PREADY 等待 + PSLVERR 单拍</td><td>HREADY 等待 + HRESP 两拍</td></tr>
+    <tr><td>多主机</td><td>无(桥是唯一主)</td><td>Full 版多主 + 仲裁;AHB-Lite 单主</td></tr>
+    <tr><td>典型场景</td><td>UART/GPIO/定时器配置</td><td>指令/数据取指、DMA 搬运、SRAM 访问</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>「WRAP 突发给谁用?为什么 cache line fill 要回环而不是一直递增?」「INCR 和 WRAP 地址序列各写一个 4 beat 例子」(如起始 0x38、HSIZE=word:WRAP4 序列 38→3C→30→34,INCR4 序列 38→3C→40→44)。</p>
+  <!-- /SEC5 -->
+
+  <!-- ================= 6 AXI 协议原理 ================= -->
+  <h2><span class="h2-num">6</span> AXI 协议原理:五通道、握手与高性能三板斧</h2>
+  <h3>6.1 是什么 · 为什么:五通道架构(图 4)</h3>
+  <p><b>是什么:</b>AXI(Advanced eXtensible Interface,AMBA 规范 IHI0022)把一次总线事务彻底「拆件」:读和写各走各的,地址和数据也各走各的 —— 共拆成 <b>5 条独立通道</b>:写地址 AW、写数据 W、写响应 B、读地址 AR、读数据 R。每条通道本质上是一条「信息单向运输带」,各自用 VALID/READY 双向握手。<b>为什么拆:</b>AHB 的地址总线与数据总线是共享的,一笔读没做完,谁也别想发起新事务;AXI 拆通道后,<b>读与写全双工并行、第 1 笔数据还在路上就能发第 2 笔地址</b> —— 这是 AXI 高吞吐的结构性来源,也是它比 AHB 复杂得多的原因。</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 348" role="img" aria-label="AXI五通道结构图:左侧Master主机与右侧Slave从机之间有五条通道,AW写地址通道和W写数据通道从主机指向从机,B写响应通道从从机指回主机,AR读地址通道从主机指向从机,R读数据通道从从机指回主机,每条通道标注VALID与READY握手及主要信号">
+      <defs>
+        <marker id="arAx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        <marker id="arAxO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+        <marker id="arAxG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- Master / Slave -->
+      <rect x="16" y="46" width="118" height="272" rx="12" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="75" y="86" font-size="14" font-weight="bold" fill="#e6edf3" text-anchor="middle">Master</text>
+      <text x="75" y="104" font-size="10.5" fill="#8b98a9" text-anchor="middle">主机·只发起事务</text>
+      <text x="75" y="188" font-size="10.5" fill="#cdd9e5" text-anchor="middle">NPU / DMA</text>
+      <text x="75" y="206" font-size="10.5" fill="#cdd9e5" text-anchor="middle">CPU</text>
+      <rect x="506" y="46" width="118" height="272" rx="12" fill="#3d2c10" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="565" y="86" font-size="14" font-weight="bold" fill="#e6edf3" text-anchor="middle">Slave</text>
+      <text x="565" y="104" font-size="10.5" fill="#8b98a9" text-anchor="middle">从机·只应答</text>
+      <text x="565" y="188" font-size="10.5" fill="#cdd9e5" text-anchor="middle">DDR 控制器</text>
+      <text x="565" y="206" font-size="10.5" fill="#cdd9e5" text-anchor="middle">SRAM / IP</text>
+      <!-- 写事务分组 -->
+      <rect x="146" y="52" width="348" height="140" rx="10" fill="rgba(88,166,255,.055)" stroke="rgba(88,166,255,.35)" stroke-dasharray="5 4"/>
+      <text x="320" y="70" font-size="10.5" font-weight="bold" fill="#58a6ff" text-anchor="middle">写事务 = AW + W + B(3 通道)</text>
+      <!-- 读事务分组 -->
+      <rect x="146" y="200" width="348" height="110" rx="10" fill="rgba(34,197,94,.06)" stroke="rgba(34,197,94,.4)" stroke-dasharray="5 4"/>
+      <text x="320" y="218" font-size="10.5" font-weight="bold" fill="#22c55e" text-anchor="middle">读事务 = AR + R(2 通道)</text>
+      <!-- AW -->
+      <line x1="150" y1="94" x2="486" y2="94" stroke="#58a6ff" stroke-width="2.2" marker-end="url(#arAx)"/>
+      <text x="320" y="88" font-size="10.5" font-weight="bold" fill="#cdd9e5" text-anchor="middle">AW 写地址通道 →</text>
+      <text x="320" y="108" font-size="9" fill="#8b98a9" text-anchor="middle" font-family="Consolas,monospace">AWVALID/AWREADY · AWADDR/AWLEN/AWSIZE/AWBURST/AWID</text>
+      <!-- W -->
+      <line x1="150" y1="146" x2="486" y2="146" stroke="#58a6ff" stroke-width="2.2" marker-end="url(#arAx)"/>
+      <text x="320" y="140" font-size="10.5" font-weight="bold" fill="#cdd9e5" text-anchor="middle">W 写数据通道 →</text>
+      <text x="320" y="160" font-size="9" fill="#8b98a9" text-anchor="middle" font-family="Consolas,monospace">WVALID/WREADY · WDATA/WSTRB/WLAST</text>
+      <!-- B -->
+      <line x1="490" y1="180" x2="154" y2="180" stroke="#f59e0b" stroke-width="2.2" marker-end="url(#arAxO)"/>
+      <text x="320" y="174" font-size="10.5" font-weight="bold" fill="#cdd9e5" text-anchor="middle">← B 写响应通道</text>
+      <text x="320" y="190" font-size="9" fill="#8b98a9" text-anchor="middle" font-family="Consolas,monospace" transform="translate(0,3)">BVALID/BREADY · BRESP(OKAY/EXOKAY/SLVERR/DECERR) · BID</text>
+      <!-- AR -->
+      <line x1="150" y1="252" x2="486" y2="252" stroke="#22c55e" stroke-width="2.2" marker-end="url(#arAxG)"/>
+      <text x="320" y="246" font-size="10.5" font-weight="bold" fill="#cdd9e5" text-anchor="middle">AR 读地址通道 →</text>
+      <text x="320" y="266" font-size="9" fill="#8b98a9" text-anchor="middle" font-family="Consolas,monospace">ARVALID/ARREADY · ARADDR/ARLEN/ARSIZE/ARBURST/ARID</text>
+      <!-- R -->
+      <line x1="490" y1="292" x2="154" y2="292" stroke="#f59e0b" stroke-width="2.2" marker-end="url(#arAxO)"/>
+      <text x="320" y="286" font-size="10.5" font-weight="bold" fill="#cdd9e5" text-anchor="middle">← R 读数据通道</text>
+      <text x="320" y="306" font-size="9" fill="#8b98a9" text-anchor="middle" font-family="Consolas,monospace">RVALID/RREADY · RDATA/RLAST/RRESP · RID</text>
+      <text x="20" y="336" font-size="9.5" fill="#8b98a9">要点:① 每通道独立 VALID/READY 握手;② 读写地址分开 → 全双工;③ 通道无固定先后,仅受依赖规则约束(第 7 节)。</text>
+    </svg>
+    <div class="my-fig-cap">图 4 · AXI 五通道结构:箭头即信息流向。写事务走 AW/W/B 三通道,读事务走 AR/R 两通道,互不阻塞;B 响应每笔写事务恰好一个,R 数据每拍都带响应位(RRESP)。</div>
+  </div>
+  <p><b>面试怎么问:</b>「AXI 五通道为什么分开?」—— 标准答案三层:①读写解耦,全双工;②地址与数据解耦,才能多笔 outstanding(地址先排队,数据后到);③每通道独立握手,各通道可各自反压,互不牵连。</p>
+
+  <h3>6.2 怎么做:VALID-READY 双向握手(图 5)</h3>
+  <p>五条通道的握手规则完全一致,记住四条铁律:① <b>VALID 一旦拉高,握手完成前不得拉低、不得改数据/控制信息</b>(主机不许「反悔」);② <b>READY 想早拉就早拉、想晚拉就晚拉</b>(可以先等 VALID,也可以提前备好);③ <b>VALID 与 READY 同一拍同时为高 = 握手完成</b>,信息当场交接;④ 握手前 VALID 为高时数据必须保持稳定。一笔三拍写事务的完整握手波形:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 330" role="img" aria-label="AXI VALID-READY握手波形:ACLK八个周期,AWVALID先于AWREADY拉高并在T2末握手,W通道连续三拍数据最后一拍WLAST并在T2至T4末各完成一次握手,写完成后BVALID与BREADY在T5同时拉高并于T6末握手完成整笔写事务,红色虚线标出握手时刻">
+      <g font-size="9.5" fill="#6e7b8b" text-anchor="middle">
+        <text x="132" y="12">T1</text><text x="196" y="12">T2</text><text x="260" y="12">T3</text><text x="324" y="12">T4</text>
+        <text x="388" y="12">T5</text><text x="452" y="12">T6</text><text x="516" y="12">T7</text><text x="580" y="12">T8</text>
+      </g>
+      <g stroke="rgba(139,152,169,.22)" stroke-dasharray="3 4">
+        <line x1="164" y1="20" x2="164" y2="292"/><line x1="228" y1="20" x2="228" y2="292"/><line x1="292" y1="20" x2="292" y2="292"/>
+        <line x1="356" y1="20" x2="356" y2="292"/><line x1="420" y1="20" x2="420" y2="292"/><line x1="484" y1="20" x2="484" y2="292"/><line x1="548" y1="20" x2="548" y2="292"/>
+      </g>
+      <g font-size="10.5" fill="#cdd9e5" font-family="Consolas,monospace">
+        <text x="6" y="34">ACLK</text>
+        <text x="6" y="85">AWVALID</text>
+        <text x="6" y="121">AWREADY</text>
+        <text x="6" y="167">WVALID</text>
+        <text x="6" y="203">WREADY</text>
+        <text x="6" y="249">BVALID</text>
+        <text x="6" y="283">BREADY</text>
+      </g>
+      <!-- ACLK -->
+      <path d="M100,24 H132 V40 H164 V24 H196 V40 H228 V24 H260 V40 H292 V24 H324 V40 H356 V24 H388 V40 H420 V24 H452 V40 H484 V24 H516 V40 H548 V24 H580 V40 H612" stroke="#cdd9e5" stroke-width="1.5" fill="none"/>
+      <!-- AWVALID: T1 起高, T2 末握手 -->
+      <polyline points="100,74 228,74 228,90 612,90" stroke="#58a6ff" stroke-width="1.8" fill="none"/>
+      <!-- AWREADY: T1 中段才拉高(READY 后到,合法) -->
+      <polyline points="100,126 132,126 132,110 228,110 228,126 612,126" stroke="#f59e0b" stroke-width="1.8" fill="none"/>
+      <!-- WVALID: T1 起高到 T4 末 -->
+      <polyline points="100,156 356,156 356,172 612,172" stroke="#58a6ff" stroke-width="1.8" fill="none"/>
+      <g font-size="10" font-weight="bold" fill="#58a6ff" text-anchor="middle">
+        <text x="196" y="151">W0</text><text x="260" y="151">W1</text>
+        <text x="324" y="151">W2+WLAST</text>
+      </g>
+      <!-- WREADY: T2 中段拉高到 T4 末 -->
+      <polyline points="100,208 196,208 196,192 356,192 356,208 612,208" stroke="#f59e0b" stroke-width="1.8" fill="none"/>
+      <!-- BVALID/BREADY: 写完后 T5 同时高, T6 末握手 -->
+      <polyline points="100,254 356,254 356,238 420,238 420,254 612,254" stroke="#58a6ff" stroke-width="1.8" fill="none"/>
+      <polyline points="100,288 356,288 356,272 420,272 420,288 612,288" stroke="#f59e0b" stroke-width="1.8" fill="none"/>
+      <text x="388" y="233" font-size="9.5" fill="#22c55e" text-anchor="middle">B 握手同时高</text>
+      <!-- 握手标记 -->
+      <g stroke="#ef4444" stroke-width="1.2" stroke-dasharray="3 3">
+        <line x1="228" y1="60" x2="228" y2="130"/><line x1="228" y1="146" x2="228" y2="212"/>
+        <line x1="292" y1="146" x2="292" y2="212"/><line x1="356" y1="146" x2="356" y2="212"/>
+        <line x1="420" y1="228" x2="420" y2="292"/>
+      </g>
+      <g fill="#ef4444">
+        <circle cx="228" cy="82" r="3"/><circle cx="228" cy="118" r="3"/>
+        <circle cx="228" cy="164" r="3"/><circle cx="228" cy="200" r="3"/>
+        <circle cx="292" cy="164" r="3"/><circle cx="292" cy="200" r="3"/>
+        <circle cx="356" cy="164" r="3"/><circle cx="356" cy="200" r="3"/>
+        <circle cx="420" cy="246" r="3"/><circle cx="420" cy="280" r="3"/>
+      </g>
+      <text x="228" y="52" font-size="9" fill="#ef4444" text-anchor="middle">①AW 握手</text>
+      <text x="305" y="134" font-size="9" fill="#ef4444" text-anchor="middle">②③④ W0/W1/W2 逐拍握手</text>
+      <text x="440" y="222" font-size="9" fill="#ef4444">⑤B 握手→本笔写完成</text>
+      <g font-size="9.5" fill="#8b98a9">
+        <text x="20" y="312">蓝 = VALID(主/从发起方) · 橙 = READY(接收方) · 红点 = VALID 与 READY 同拍为高的握手时刻。</text>
+        <text x="20" y="326">注意 AWVALID 先拉、AWREADY 后到合法;反之也合法;唯独「VALID 等 READY 才拉」在部分通道是死锁违例(第 7 节)。</text>
+      </g>
+    </svg>
+    <div class="my-fig-cap">图 5 · AXI VALID-READY 握手波形(以三拍写为例):地址通道 1 次握手、数据通道逐拍 3 次握手、响应通道 1 次握手 —— 一笔写事务 = AW×1 + W×N + B×1 共 N+2 次握手。</div>
+  </div>
+  <p><b>面试怎么问:</b>「VALID 和 READY 同时拉高会怎样?」—— <b>这就是一次正常握手</b>,当拍完成传输,没有任何额外代价;很多人以为「同时高」是冲突,实际协议明文允许。「VALID 拉高后还能撤吗?」「握手完成的数据在下一拍还能用吗?」(不能,握手拍就是交接拍)。</p>
+
+  <h3>6.3 高性能三板斧:Outstanding、Burst/Narrow、乱序 + 两种瘦身版</h3>
+  <p><b>① Outstanding(多笔未完成事务):</b>地址握手一完成,这笔事务就「挂账」了,主机不必等数据回来就能发下一笔地址 —— 读延迟被数据流「藏」了起来。要打满带宽,outstanding 深度须匹配延迟:</p>
+  <div class="formula">N_{\text{out}} \geq \left\lceil \frac{T_{\text{延迟}} \times f_{\text{clk}}}{N_{\text{beats}}} \right\rceil \quad(\text{例:延迟 20 拍、burst 16 拍} \Rightarrow \text{至少 2 笔 outstanding 才不断流})</div>
+  <p><b>② Burst 与 Narrow transfer:</b>AxLEN(AXI4 读/写均 1~256 拍)+ AxSIZE(每拍 1/2/4/…128 字节)+ AxBURST(FIXED 固定地址读 FIFO;INCR 递增访 DDR;WRAP 回环填 cache line)三件套,一次地址描述整段搬运;NPU 读写 DDR 全走 INCR。<b>4KB 边界铁律:</b>一笔 burst 不许跨越 4KB 地址边界(否则可能跨进另一个从机),主机侧要自行拆分。<b>Narrow transfer</b>(每拍字节数 &lt; 总线位宽)时用 <b>WSTRB</b> 逐字节标记哪些 lane 有效,如 64bit 总线上发 4 字节 beat,WSTRB=8'h0F。<b>③ 乱序(out-of-order):</b>从机对<b>不同 ID</b> 的事务可以乱序完成(慢的 DDR 行激活别堵住快的 SRAM 命中);<b>相同 ID 必须保序</b> —— ID 就是「重排的记账单位」,详见第 7 节。</p>
+  <p><b>两种瘦身版:</b><b>AXI4-Lite</b> = 去掉 burst/ID/WSTRB 的单拍版本,只剩寄存器读写,专门配控制面(本 NPU 项目的寄存器配置模块就用它);<b>AXI4-Stream</b> = 去掉地址概念的单向数据流,只剩 TVALID/TREADY(+TLAST/TKEEP),专门配数据面 —— 视频/网络/加速器间流水对接,不需要「寻址」时它最轻。</p>
+  <div class="box box-tip"><b>💡 记忆锚点:</b>AXI 家族三兄弟:<b>AXI4-Full</b>(带地址带 burst,访存)、<b>AXI4-Lite</b>(单拍寄存器,配置)、<b>AXI4-Stream</b>(无地址流,搬流)。NPU 里三者同框:Lite 配寄存器、Full 搬 DDR、Stream 串前后级。</div>
+  <!-- /SEC6 -->
+
+  <!-- ================= 7 AXI 握手规则与死锁避免 ================= -->
+  <h2><span class="h2-num">7</span> AXI 握手规则与死锁避免:依赖规则与 ID 重排</h2>
+  <h3>7.1 是什么 · 为什么:通道依赖规则(dependency rules)</h3>
+  <p><b>是什么:</b>五通道各自独立握手,但通道之间不能「互相等死」。规范(IHI0022 握手依赖一节)给出硬性规则,违例综合不出错、仿真也未必复现,上板却在随机时刻互相挂死 —— 这类题是 AXI 面试的深水区:</p>
+  <ul>
+    <li><b>规则一(最常考):VALID 不许等 READY。</b>发送方不得「看到对方 READY 才拉 VALID」(B、R 两通道除外,见规则二)。违例形态:主机等从机 WREADY 才发 AWVALID,而从机「等 AW 握手完成才给 WREADY」—— 双方互等,<b>死锁</b>;</li>
+    <li><b>规则二(唯二例外,都在从机侧):</b>BVALID 可以等「AWVALID&amp;AWREADY 且 WVALID&amp;WREADY 都握手」再拉(写响应本来就该等写完成);RVALID 可以等「ARVALID&amp;ARREADY 握手」再拉(读数据本来就依赖读地址);</li>
+    <li><b>规则三:READY 可以等 VALID</b>(合法且常见),但若 READY 是组合逻辑生成、又反过来依赖对方的 VALID/数据,要检查是否形成<b>组合环</b>;</li>
+    <li><b>规则四:VALID 拉高期间信息冻结</b> —— AWADDR/AWDATA 等必须在握手完成前保持不变。</li>
+  </ul>
+  <pre><code>// AXI-Lite 从机写路径:B 通道必须等 AW 与 W 两路都握手(依赖规则二)
+reg aw_hs, w_hs;             // 握手完成标志
+always @(posedge ACLK) begin
+    if (!ARESETn) begin
+        aw_hs &lt;= 1'b0;  w_hs &lt;= 1'b0;  bvalid &lt;= 1'b0;
+    end else begin
+        aw_hs &lt;= (AWVALID &amp;&amp; AWREADY) ? 1'b1 : (bvalid ? 1'b0 : aw_hs);
+        w_hs  &lt;= (WVALID  &amp;&amp; WREADY ) ? 1'b1 : (bvalid ? 1'b0 : w_hs );
+        // 只有 AW、W 都握手后才允许 BVALID 拉高 —— 这是规范明文的依赖
+        if (~bvalid &amp;&amp; aw_hs &amp;&amp; w_hs) begin
+            bvalid &lt;= 1'b1;
+            bresp   &lt;= 2'b00;            // OKAY
+        end else if (bvalid &amp;&amp; BREADY) begin
+            bvalid &lt;= 1'b0;              // B 握手完成,响应通道释放
+        end
+    end
+end</code></pre>
+  <p><b>怎么做(工程上保命):</b>① 从机代码把「B 等 AW+W」「R 等 AR」写成显式握手标志位(如上),不做任何隐性组合假设;② 主机侧 AW/W 两通道各自独立发,谁的 READY 来了谁先握手;③ 上形式验证或用 VIP 断言检查握手协议(VALID 稳定性、依赖关系),把违例在仿真期抓掉。<b>面试怎么问:</b>「AXI 的 VALID 能不能等 READY?哪些通道例外?为什么例外?」「写一个会死锁的主从组合」「BVALID 为什么可以先等 AW/W?」(因为依赖规则明文允许,且语义上响应必须等写完成)。</p>
+
+  <h3>7.2 ID 与重排:乱序的「记账单位」</h3>
+  <p><b>是什么:</b>每笔事务带 ID(AWID/ARID),它是乱序世界的「凭证号」:<b>同 ID 的事务必须按发起顺序完成并返回</b>(读数据同 ARID 按 RDATA 序返回、写响应对同 AWID 按序返回);<b>不同 ID 之间可以任意乱序</b>。写数据 W 通道没有自己的 ID —— 它天然依附于配对的 AW(同一主机内按序对应)。Interconnect(互联)用 ID 做两件事:路由事务到正确从机;给不同主机的 ID 加前缀宽化,避免「主机 A 的 ID0 和主机 B 的 ID0」在从机侧撞车。<b>为什么重要:</b>从机(尤其 DDR 控制器)对不同 ID 乱序返回,可以让「SRAM 命中的快读」不必排在「DDR 行激活的慢读」后面 —— 重排是 AXI 吞吐的隐形功臣。</p>
+  <p><b>怎么做(NPU 项目的 ID 分配建议):</b>权重读流、特征图读流、结果写流各分配一个 ID:<code>ARID=0 搬 weight、ARID=1 搬 feature、AWID=0 写输出</code> —— 三条流在 interconnect/DDR 里互不阻塞,读回来的 R 数据靠 RID 分拣进对应 FIFO。ID 位宽是参数(1~16bit),教学项目 2bit 足够。</p>
+  <p><b>面试怎么问:</b>「AXI 乱序的边界是什么?」「同一 ID 乱序返回行不行?」(不行,协议违例)「写响应为什么不用 WID?」「两个 master 的 ID 冲突怎么处理?」(interconnect 做 ID 宽化/前缀)。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>1. 以为「AXI 支持乱序 = 想怎么乱怎么乱」—— 同 ID 强制保序,乱序只发生在 ID 之间;2. 忘记 BRESP 与 AW 一一对应(每笔写恰好一个 B,同 ID 按 AW 顺序),数错响应笔数导致 FIFO 记账错乱;3. 用「同 ID + 期待乱序」设计性能优化 —— 互相矛盾,想乱序请加 ID;4. 主机侧把 R 数据「按到达顺序」当成请求顺序使用 —— 必须 按 RID + 同 ID 内顺序 还原,否则特征图错位。</div>
+  <!-- /SEC7 -->
+
+  <!-- ================= 8 三种总线对比与选型 ================= -->
+  <h2><span class="h2-num">8</span> APB / AHB / AXI 三总线对比与 NPU 选型</h2>
+  <h3>8.1 是什么:一张大表看懂 AMBA 三兄弟(图 6)</h3>
+  <p>三个协议是同一套思想在不同带宽档位的展开:APB 求极简、AHB 引入流水线、AXI 引入通道解耦与乱序。对照大表从上往下读一遍,你会发现每一行的演进都对应「带宽不够 → 加结构」这一条主线:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 640 428" role="img" aria-label="APB、AHB、AXI三种总线对比大表:八行对比项分别为通道结构、流水线、突发、乱序、带宽潜力、复杂度、典型场景、NPU项目用途,APB列绿色、AHB列橙色、AXI列蓝色,每格给出简短结论">
+      <!-- 表头 -->
+      <rect x="16" y="16" width="128" height="34" rx="6" fill="rgba(139,152,169,.14)"/>
+      <text x="80" y="38" font-size="12" font-weight="bold" fill="#cdd9e5" text-anchor="middle">对比项</text>
+      <rect x="148" y="16" width="156" height="34" rx="6" fill="rgba(34,197,94,.16)" stroke="#22c55e"/>
+      <text x="226" y="38" font-size="12" font-weight="bold" fill="#22c55e" text-anchor="middle">APB(08-05 页)</text>
+      <rect x="308" y="16" width="156" height="34" rx="6" fill="rgba(245,158,11,.16)" stroke="#f59e0b"/>
+      <text x="386" y="38" font-size="12" font-weight="bold" fill="#f59e0b" text-anchor="middle">AHB</text>
+      <rect x="468" y="16" width="156" height="34" rx="6" fill="rgba(88,166,255,.16)" stroke="#58a6ff"/>
+      <text x="546" y="38" font-size="12" font-weight="bold" fill="#58a6ff" text-anchor="middle">AXI</text>
+      <!-- 行底色 -->
+      <g fill="rgba(255,255,255,.028)">
+        <rect x="16" y="56" width="608" height="40" rx="4"/><rect x="16" y="140" width="608" height="40" rx="4"/>
+        <rect x="16" y="224" width="608" height="40" rx="4"/><rect x="16" y="308" width="608" height="40" rx="4"/>
+      </g>
+      <!-- 单元格文字:行 1 -->
+      <g font-size="9.8" fill="#cdd9e5">
+        <text x="80" y="73" font-weight="bold" fill="#8b98a9" text-anchor="middle">通道结构</text>
+        <text x="226" y="72" text-anchor="middle">单组地址/数据线</text><text x="226" y="86" text-anchor="middle" fill="#8b98a9">10 根信号起步</text>
+        <text x="386" y="72" text-anchor="middle">共享地址 + 数据总线</text><text x="386" y="86" text-anchor="middle" fill="#8b98a9">地址/数据分拍复用</text>
+        <text x="546" y="72" text-anchor="middle">5 条独立通道</text><text x="546" y="86" text-anchor="middle" fill="#8b98a9">每通道独立握手</text>
+        <!-- 行 2 -->
+        <text x="80" y="117" font-weight="bold" fill="#8b98a9" text-anchor="middle">流水线</text>
+        <text x="226" y="116" text-anchor="middle">无(SETUP+ACCESS,</text><text x="226" y="130" text-anchor="middle" fill="#8b98a9">每笔 ≥ 2 拍)</text>
+        <text x="386" y="116" text-anchor="middle">两级流水</text><text x="386" y="130" text-anchor="middle" fill="#8b98a9">稳态 1 笔/拍</text>
+        <text x="546" y="116" text-anchor="middle">深流水 + 多笔</text><text x="546" y="130" text-anchor="middle" fill="#8b98a9">outstanding 挂账</text>
+        <!-- 行 3 -->
+        <text x="80" y="161" font-weight="bold" fill="#8b98a9" text-anchor="middle">突发</text>
+        <text x="226" y="160" text-anchor="middle">不支持</text><text x="226" y="174" text-anchor="middle" fill="#8b98a9">一次一笔</text>
+        <text x="386" y="160" text-anchor="middle">SINGLE / INCR /</text><text x="386" y="174" text-anchor="middle" fill="#8b98a9">WRAP 4/8/16</text>
+        <text x="546" y="160" text-anchor="middle">FIXED/INCR/WRAP</text><text x="546" y="174" text-anchor="middle" fill="#8b98a9">1~256 拍,限 4KB 边界</text>
+        <!-- 行 4 -->
+        <text x="80" y="205" font-weight="bold" fill="#8b98a9" text-anchor="middle">乱序</text>
+        <text x="226" y="204" text-anchor="middle">无</text><text x="226" y="218" text-anchor="middle" fill="#8b98a9">—</text>
+        <text x="386" y="204" text-anchor="middle">无(严格按序)</text><text x="386" y="218" text-anchor="middle" fill="#8b98a9">流水线只能同步等</text>
+        <text x="546" y="204" text-anchor="middle">同 ID 保序</text><text x="546" y="218" text-anchor="middle" fill="#8b98a9">异 ID 可乱序</text>
+        <!-- 行 5 -->
+        <text x="80" y="249" font-weight="bold" fill="#8b98a9" text-anchor="middle">带宽潜力</text>
+        <text x="226" y="248" text-anchor="middle">低(每 2 拍 32bit)</text><text x="226" y="262" text-anchor="middle" fill="#8b98a9">够寄存器访问</text>
+        <text x="386" y="248" text-anchor="middle">每拍 32~128bit</text><text x="386" y="262" text-anchor="middle" fill="#8b98a9">突发连续打满</text>
+        <text x="546" y="248" text-anchor="middle">位宽×频率×outstanding</text><text x="546" y="262" text-anchor="middle" fill="#8b98a9">延迟被数据流隐藏</text>
+        <!-- 行 6 -->
+        <text x="80" y="293" font-weight="bold" fill="#8b98a9" text-anchor="middle">复杂度/面积</text>
+        <text x="226" y="292" text-anchor="middle">最低</text><text x="226" y="306" text-anchor="middle" fill="#8b98a9">学生一周写完从机</text>
+        <text x="386" y="292" text-anchor="middle">中(流水+仲裁)</text><text x="386" y="306" text-anchor="middle" fill="#8b98a9">多主需仲裁器</text>
+        <text x="546" y="292" text-anchor="middle">最高</text><text x="546" y="306" text-anchor="middle" fill="#8b98a9">5 通道握手+ID 记账</text>
+        <!-- 行 7 -->
+        <text x="80" y="337" font-weight="bold" fill="#8b98a9" text-anchor="middle">典型场景</text>
+        <text x="226" y="336" text-anchor="middle">UART/GPIO/定时器</text><text x="226" y="350" text-anchor="middle" fill="#8b98a9">等慢速外设寄存器</text>
+        <text x="386" y="336" text-anchor="middle">片上 SRAM / DMA</text><text x="386" y="350" text-anchor="middle" fill="#8b98a9">嵌入式 Flash 取指</text>
+        <text x="546" y="336" text-anchor="middle">DDR / GPU-NPU 互联</text><text x="546" y="350" text-anchor="middle" fill="#8b98a9">任何要带宽的地方</text>
+        <!-- 行 8 -->
+        <text x="80" y="381" font-weight="bold" fill="#8b98a9" text-anchor="middle">NPU 项目用途</text>
+        <text x="226" y="380" text-anchor="middle">可选:配置面</text><text x="226" y="394" text-anchor="middle" fill="#8b98a9">(经桥转换)</text>
+        <text x="386" y="380" text-anchor="middle">中间级缓存搬运</text><text x="386" y="394" text-anchor="middle" fill="#8b98a9">(SRAM-on-chip)</text>
+        <text x="546" y="380" text-anchor="middle">AXI-Lite 配置 +</text><text x="546" y="394" text-anchor="middle" fill="#8b98a9">AXI-Full 搬 weight/feature</text>
+      </g>
+      <text x="16" y="420" font-size="9.5" fill="#8b98a9">一句话:APB 省「复杂度」、AHB 省「面积」、AXI 买「带宽」—— 每一级演进都是拿面积/复杂度换吞吐。</text>
+    </svg>
+    <div class="my-fig-cap">图 6 · APB / AHB / AXI 对比大表:按「通道结构 → 流水线 → 突发 → 乱序」四行读,就是 AMBA 的演进史;按「NPU 项目用途」一行读,就是本项目的总线架构图。</div>
+  </div>
+
+  <h3>8.2 怎么做:NPU 项目的总线选型建议</h3>
+  <p><b>选型不是选「最好的」,是选「够用的」</b>—— 带宽需求倒推,别拿 AXI-Full 去配一个每秒访问一次的寄存器,也别拿 APB 去喂 MAC 阵列。给本板块 NPU 项目(第 10~12 页)的明确建议:</p>
+  <div class="table-wrap"><table>
+    <tr><th>数据流</th><th>特征</th><th>选型</th><th>理由</th></tr>
+    <tr><td>控制面:配置/状态寄存器</td><td>低速、单拍、人写固件访问</td><td><b>AXI4-Lite</b>(ZYNQ 场景)或 <b>APB</b>(自建 SoC)</td><td>单拍足够,08-05 的 APB 从机 / 08-10 页的 AXI-Lite 从机都是现成模板</td></tr>
+    <tr><td>数据面:weight/feature 读写 DDR</td><td>大块突发、要带宽、要 outstanding</td><td><b>AXI4-Full</b>(INCR,128~256bit,多 ID)</td><td>burst+outstanding 唯一能喂饱 MAC 阵列的组合</td></tr>
+    <tr><td>流水级之间:卷积→池化→全连接</td><td>片内、点对点、无地址概念</td><td><b>AXI4-Stream</b> 或自定义 valid/ready</td><td>无寻址需求,Stream 最轻;片内固定连接用自定义握手更省</td></tr>
+  </table></div>
+  <p>选型前先算一笔带宽账:8×8 MAC 阵列、INT8、200MHz,每拍消费 64 个权重 + 64 个特征字节,数据面需求 = <b>128B × 200MHz ≈ 25.6 GB/s</b>;而一路 128bit@200MHz 的 AXI 只有 3.2 GB/s —— 所以 ZYNQ 上要开 <b>4 路 AXI-HP 口</b>(4×3.2=12.8 GB/s)还得配合片上 line buffer 复用降需求。<b>这道算术就是「总线选型」的面试满分答法:</b>先算需求,再配路数,最后说协议。</p>
+  <p><b>面试怎么问:</b>「你的 NPU 为什么寄存器用 AXI-Lite 而数据用 AXI-Full?」「如果带宽不够,优先加位宽、加频率还是加 outstanding?」(都不是第一选项 —— 先复用/降数据流需求,再并行加通道)「APB 桥接 AXI-Lite 要注意什么?」。</p>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>1. 「AXI 一定比 APB 好」—— 配置寄存器用 AXI-Full 是浪费面积与验证成本;2. 选型只看协议不看带宽算术 —— 说不清「多少 GB/s、几路、多少 outstanding」的选型都是拍脑袋;3. 片内两级之间也硬套 AXI-Full —— 点对点固定连接,Stream 或 valid/ready 一根线的事;4. 忘记 4KB 边界拆分 —— 长突发跨边界在 interconnect 上直接返回 DECERR。</div>
+  <!-- /SEC8 -->
+
+  <!-- ================= 9 面试高频 ================= -->
+  <h2><span class="h2-num">9</span> 面试高频:四道总线必考题的标准答法</h2>
+  <p>下面四题覆盖了本页 80% 的总线面试提问率。回答框架统一是「<b>定义 → 结构原因 → 代价/边界 → 举 NPU 项目例子</b>」,最后一步是学生逆袭有经验工程师的关键。</p>
+  <details class="faq"><summary>Q1:AXI 五通道为什么要分开?</summary>
+    <div class="faq-a">三层递进:① <b>读写解耦</b> —— AW/W/B 与 AR/R 互不相干,读写可全双工并行;② <b>地址与数据解耦</b> —— 地址握手完就「挂账」,数据晚到无所谓,这才可能有多笔 outstanding,把 DDR 读延迟藏进数据流;③ <b>每通道独立 VALID/READY</b> —— 各通道可以独立反压,从机「地址收得下、数据要喘口气」这类不对称流控得以自然表达。代价是面积与验证复杂度暴涨,所以寄存器配置退化成 AXI-Lite。最后举 NPU 例子:weight 读流和 feature 读流互不阻塞,靠的就是通道独立 + 不同 ID。</div>
+  </details>
+  <details class="faq"><summary>Q2:VALID 和 READY 同时拉高会怎样?</summary>
+    <div class="faq-a">这就是<b>一次合法且最高效的握手</b> —— 协议规定握手完成条件就是「同一时钟上升沿 VALID 与 READY 同时为高」,没有任何冲突或额外代价。可以顺带秀一下完整规则:VALID 拉高后必须保持到握手完成且信息冻结;READY 何时拉高随意;唯一禁的是「VALID 等 READY」(B/R 通道除外),因为可能互相等待死锁。多数人这题答成「冲突/未定义」,你按协议原文回答就是降维打击。</div>
+  </details>
+  <details class="faq"><summary>Q3:AHB 与 AXI 最大的区别?</summary>
+    <div class="faq-a">一句话:<b>AHB 是「共享总线 + 两级流水」,AXI 是「多通道并行 + 事务记账」</b>。展开讲三点:① 结构上 AHB 地址/数据总线共享、一次只能跑一笔,AXI 拆五通道、可多笔并发;② 性能上 AHB 上限 1 笔/拍且等待会阻塞全流水,AXI 靠 outstanding + 乱序把延迟藏起来;③ 复杂度上 AXI 引入 ID/依赖规则/4KB 边界一整套约束。还可以补一句历史视角:AMBA 从 ASB→AHB→AXI 的演进主线就是「共享媒体 → 点对点通道化」。</div>
+  </details>
+  <details class="faq"><summary>Q4:CDC 工具(如 SpyGlass CDC)能查出什么?</summary>
+    <div class="faq-a">结构类:未同步直接跨域的信号、多 bit 总线被逐位同步、组合逻辑输出直接跨域(毛刺跨域)、格雷码指针被组合逻辑污染、同步器后多路再收敛(reconvergence)延迟不一致;约束类:CDC 路径漏写 set_false_path/set_max_delay、复位跨域与释放顺序问题(RDC);它<b>不负责</b>的:同步器级数是否够、握手协议时序对不对 —— 那要形式验证断言与人工 review。回答时带一句工程流程:「CDC 工具的 warning 必须逐条 waiver 或修复并归档,是签核门槛之一」,显得真跑过。</div>
+  </details>
+  <details class="faq"><summary>Q5(加餐):一条 AXI 读事务里,如果 slave 的 ARREADY 一直为 0 会怎样?写路径里 master 先发 W 还是先发 AW?</summary>
+    <div class="faq-a">ARREADY 恒 0:ARVALID 按规则必须保持住等握手,读事务无限期挂起 —— 这是合法反压(可能 slave 忙于之前的事务),但 master 应当设超时看门狗防真死锁。写路径 AW 与 W 的发起顺序<b>协议不规定</b> —— 两者任意顺序握手都合法,甚至要求 <b>WVALID 不得等 AWREADY</b>(常见实现是数据 FIFO 先蓄好水,地址一到就齐活);但 slave 的 BVALID 必须等 AW、W 两路都握手后才能拉。</div>
+  </details>
+  <!-- /SEC9 -->
+
+  <!-- ================= 本节自测 ================= -->
+  <h2><span class="h2-num">10</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 综合之后还需要「形式验证(LEC)」,它验证的是什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 用随机激励再跑一遍功能仿真,确认网表行为正确</button>
+      <button data-v="B">B. 数学证明综合生成的门级网表与 RTL 在逻辑上等价</button>
+      <button data-v="C">C. 检查网表的时序是否满足约束</button>
+      <button data-v="D">D. 检查版图与网表的一致性</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 LNC/LEC 等价性检查不跑激励,直接数学证明 RTL 与网表功能等价(A 是仿真的活,C 是 STA 的活,D 是 LVS 的活)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 100MHz 域发出 1 拍宽脉冲到 25MHz 域,直接打两级同步器,最可能发生什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 目的域触发器进入亚稳态并传播</button>
+      <button data-v="B">B. 脉冲被安全同步,只是延迟 2 拍</button>
+      <button data-v="C">C. 脉冲可能整个落在两个慢时钟沿之间而被彻底丢失</button>
+      <button data-v="D">D. 产生一个宽度 4 倍的脉冲</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 10ns 脉冲小于 40ns 的慢时钟周期,可能没有任何慢时钟沿「看见」它 —— 这是丢失问题而非亚稳态问题,正解是 toggle 同步。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 关于 AXI 的 VALID/READY 握手,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. VALID 必须等 READY 拉高后才能拉高</button>
+      <button data-v="B">B. VALID 与 READY 同时拉高属于协议冲突</button>
+      <button data-v="C">C. VALID 拉高后若 READY 迟迟不来,可以拉低 VALID 改天再发</button>
+      <button data-v="D">D. 同一拍 VALID 与 READY 同时为高即完成握手;VALID 在握手前必须保持且信息冻结</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 A/B 都是高频误区:同时高就是正常握手;「VALID 等 READY」才是死锁隐患(A 错,C 违反「握手前不得撤销」)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. AHB 两级流水线中,HREADY 被从机拉低,会发生什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只有当前数据相重试,下一笔地址照常推进</button>
+      <button data-v="B">B. 当前数据相原地重试,且「排队中」的下一笔地址相也一起停住</button>
+      <button data-v="C">C. 从机直接返回错误响应 HRESP,传输作废</button>
+      <button data-v="D">D. 总线仲裁立即切换给其他主机</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 AHB 无乱序:流水线是「刚性」的,任何一笔等待都会让整条流水线同步停等;HRESP 是另一回事(两拍错误响应),与等待无关。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. NPU 项目里,weight/feature 读写 DDR 的数据面最合理的总线方案是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. AXI4-Full:INCR 长突发 + 128bit 以上位宽 + 多笔 outstanding、多 ID</button>
+      <button data-v="B">B. APB:寄存器式逐字搬运,最稳定</button>
+      <button data-v="C">C. AXI4-Lite:单拍访问,配置最简单</button>
+      <button data-v="D">D. AHB-Lite:两级流水线足够,面积最小</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 数据面要的是带宽:只有 AXI4-Full 同时具备长突发、宽位宽、outstanding 与 ID 乱序;B/C 带宽差两个数量级,D 无乱序且位宽/并发受限。</div>
+  </div>
+  <!-- /QUIZ -->
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>一颗芯片走 Spec→架构→RTL→仿真→综合→DFT→形式验证→STA(前端)→PnR→物理验证→签核→GDSII→流片→封测→量产(后端),前端管「逻辑对不对」,后端管「造不造得出」;教学场景用 FPGA 以分钟级迭代换掉百万美元 NRE。CDC 的选型逻辑是「先数 bit、再看形态」:单 bit 电平打两拍、脉冲用 toggle、多 bit 慢速握手/MUX、高速异步 FIFO、指针格雷码、复位用「异步断言同步释放」,最后过 VC SpyGlass CDC 静态检查。工程化仿真 = 目录骨架 + filelist.fif + Makefile 回归,TEST_PASS/FAIL 自动判定是灵魂。总线三兄弟:APB 无流水配外设、AHB 两级流水 1 笔/拍、AXI 五通道 + outstanding + ID 乱序喂饱 NPU —— NPU 项目定式:AXI-Lite 配寄存器、AXI-Full 搬数据、Stream/自定义握手串流水级,先算带宽账再定路数。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 若把第 1 节流程中的「功能仿真」一步整体跳过、直接综合签核,各后续环节分别会遇到什么?<br>
+    2. NPU 的 weight 读流(ID=0)与 feature 读流(ID=1)都指向 DDR,若 DDR 对 ID=0 返回 16 拍、对 ID=1 返回 4 拍,主机侧按什么规则把 R 数据分拣回各自的 buffer?<br>
+    3. 你的 AXI-Lite 从机在 BVALID 拉高前把 bresp 改了三次,协议允许吗?主机最终看到哪个值?<br>
+    4. 把 8×8 MAC 阵列扩到 16×16,带宽需求翻几倍?若 AXI 位宽不变,有哪三条路补齐带宽、各自的代价是什么?<br>
+    5. 为什么 AHB 的 WRAP 突发对 cache line fill 是「刚需」,而 DMA 搬大块 feature 反而必须用 INCR?
+  </div>
+  <!-- /SUMMARY -->
+
+  <!-- ================= 参考来源与延伸资源 ================= -->
+  <h2><span class="h2-num">11</span> 参考来源与延伸资源</h2>
+  <p>以下资源均经人工访问核实(2026-09),⭐ 为强烈推荐。</p>
+
+  <a class="my-res-card" href="https://developer.arm.com/documentation/ihi0022/latest/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ ARM IHI0022 · AMBA AXI and ACE Protocol Specification</div>
+      <div class="my-res-desc">AXI 协议唯一权威出处:五通道信号定义、VALID/READY 握手依赖规则(B/R 通道例外条款原文)、burst 与 4KB 边界、ID 重排规则全部在此。旧链 developer.arm.com 已 301 至 support.arm.com,浏览器可正常打开;第 6~7 节每个结论都能对到它的章节号。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">ARM 官方规范</span><span class="my-tag my-tag-axi">AXI 原文</span><span class="my-tag my-tag-recommend">强烈推荐</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://developer.arm.com/documentation/ihi0033/latest/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ARM IHI0033 · AMBA AHB Protocol Specification</div>
+      <div class="my-res-desc">AHB/Lite 协议原文:HTRANS/HREADY/HRESP 语义、两级流水线时序图、SINGLE/INCR/WRAP 突发地址算法与回环边界公式,本页第 5 节的规范依据;同页还覆盖 AHB5 的扩展特性。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">ARM 官方规范</span><span class="my-tag my-tag-plain">已核实(301 至 support.arm.com)</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://developer.arm.com/Architectures/AMBA" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📚</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ARM 官方 · AMBA 总线家族总览页</div>
+      <div class="my-res-desc">APB/AHB/AXI/CHI 全家福官方入口:各规范最新版本号、下载入口与适用场景一句话简介,想系统收集 AMBA 规范从这里出发最稳。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">ARM 官方</span><span class="my-tag my-tag-plain">已核实可达</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://docs.amd.com/v/u/en-US/ug1037-vivado-axi-reference-guide" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📗</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ AMD/Xilinx UG1037 · Vivado Design Suite: AXI Reference Guide</div>
+      <div class="my-res-desc">从工程视角讲 AXI:三种接口(Full/Lite/Stream)怎么选、Vivado IP 如何互连、常见误区与排查,是 IHI0022 之外最适合 FPGA 实操者的配套读物;页面为 AMD 文档门户,打开后下载 PDF。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">AMD 官方指南</span><span class="my-tag my-tag-recommend">强烈推荐</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.paradigm-works.com/papers/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Paradigm Works 技术图书馆 —— Cummings 论文官方收藏 ⭐</div>
+      <div class="my-res-desc">Cummings 经典论文页 www.sunburst-design.com/papers/ 现已 301 重定向至此:《Clock Domain Crossing (CDC) Design &amp; Verification Techniques Using SystemVerilog》(SNUG2008 最佳论文,本页第 3 节 CDC 方案的原型)与异步 FIFO 两篇 SNUG2002 均在列,PDF 免费注册后下载。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-paper">英文论文</span><span class="my-tag my-tag-cdc">CDC 鼻祖</span><span class="my-tag my-tag-recommend">强烈推荐</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.synopsys.com/verification/static-and-formal-verification/vc-spyglass/vc-spyglass-cdc.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🛠️</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Synopsys VC SpyGlass CDC 官方产品页</div>
+      <div class="my-res-desc">业界事实标准的 CDC 签核工具(原 SpyGlass CDC,已并入 VC SpyGlass 平台):结构式 + 基于形式的功能性 CDC 分析、RDC 复位域检查、百万级违例的 ML 归因 —— 本页 3.4 节「CDC 工具能查出什么」的官方答案来源。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">Synopsys 官方</span><span class="my-tag my-tag-cdc">CDC 工具</span><span class="my-tag my-tag-official">已核实可达</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zipcpu.com/blog/2022/05/07/learning-axi.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">✍️</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ ZipCPU · Learning AXI: Where to start?</div>
+      <div class="my-res-desc">全球 FPGA 圈最有名的 AXI 自学路线图:从握手规则 → skid buffer → AXI-Lite 从机 → 完整 AXI 主从,再到形式验证,每步配练习题(作者点名 Xilinx 示例代码「错得离谱」,建议绕行)。站内另有 Building the perfect AXI4 slave 等系列;任务原引的 linux-axi 旧文已 404,以本页为准。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-paper">英文博客</span><span class="my-tag my-tag-axi">AXI 路线图</span><span class="my-tag my-tag-recommend">强烈推荐</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://soc.ustc.edu.cn/CECS/lab5/axi/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">USTC · 《计算机组成与设计》实验讲义:AXI4 总线简介</div>
+      <div class="my-res-desc">中科大 SoC 课程 Lab5 讲义:AXI4 五通道、VALID/READY 时序、信号速查表,中文、免费、无套路,适合当「协议速查手册」与本页互为对照。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">大学讲义</span><span class="my-tag my-tag-plain">中文</span><span class="my-tag my-tag-diff-1">入门</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/641597910" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎 · 深入理解 AMBA 总线(十一):AXI 协议导论</div>
+      <div class="my-res-desc">「深入理解 AMBA」系列的 AXI 篇:结合设计经验讲 AXI 特性与典型场景,不逐句翻译 ARM 手册;与 08-05 页引用的 APB 篇同作者成套,系列后续覆盖 AXI-Stream。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-plain">中文</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/550815975" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎 · 手写 AXI4 协议(一):AXI4-Lite(上)</div>
+      <div class="my-res-desc">「手写 AXI4」系列开篇:从基本概念到亲手实现 AXI4-Lite 从机,与本站第 08-10 页「NPU 控制模块」要写的 AXI-Lite 从机高度同构,可作为提前预习材料。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-plain">中文·代码向</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/210332191" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📝</div>
+    <div class="my-res-info">
+      <div class="my-res-title">正点原子 FPGA 连载 · AXI4 接口之 DDR 读写实验</div>
+      <div class="my-res-desc">正点原子 ZYNQ 教程的 AXI4 章节:自定义 AXI4 IP 经 AXI-HP 口读写 PS 端 DDR3,「寄存器走 Lite、大块数据走 Full」的完整实操示范,是本页 8.2 节选型建议的板级验证材料。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎专栏</span><span class="my-tag my-tag-plain">中文·教程</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1gy4y1Y7zr/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ B站 · FPGA探索者:AXI 接口简介(Xilinx/Vivado/AXI4 总线,5 集)</div>
+      <div class="my-res-desc">五集合集约 2 小时,把 AXI 接口在 ZYNQ/SDK 里的角色讲透(播放 5 万+),配套正点原子 ZYNQ 课程,适合先看视频建立画面感再回本页精读协议细节。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-recommend">强烈推荐</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV18r421p7Ck/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站 · 小梅哥 FPGA:例解 ZYNQ 系统中用到的 AXI4 协议</div>
+      <div class="my-res-desc">以真实 ZYNQ 工程为例逐个讲 AXI-GP/HP/ACP 口与 AXI4/Lite/Stream 的实际用法,把「选型」讲成了看得见的框图,与第 8 节选型表互为印证。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-plain">配套实战</span><span class="my-tag my-tag-diff-2">进阶</span></div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://search.bilibili.com/all?keyword=AXI4%E6%80%BB%E7%BA%BF" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🔍</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站搜索:AXI4 总线(百条视频实时检索)</div>
+      <div class="my-res-desc">官方搜索页直达:AXI 协议讲解、手写 AXI4-Full 从机、DMA 实战、秋招 AXI 八股等百条视频按热度排列,遇到讲不清的细节(如 WRAP 回环时序)来这补一个 10 分钟动画讲解。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站搜索</span><span class="my-tag my-tag-official">已核实可达</span><span class="my-tag my-tag-plain">检索入口</span></div>
+    </div>
+  </a>
+  <!-- /RES -->
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

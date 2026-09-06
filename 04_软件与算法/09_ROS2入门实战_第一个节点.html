@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · ROS2 入门实战:第一个节点</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(前缀 my-) */
+  .my-term{display:inline-block;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:#9ecbff;border-radius:6px;padding:1px 8px;font-size:12px;margin:0 4px 4px 0}
+  html:not([data-theme-early="dark"]) .my-term{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#1d4ed8}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-09",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec4" },
+      { t: "ROS2 入门实战 · 第一个节点" }
+    ],
+    prev: { t: "VLA 与世界模型详解", u: "08_视觉语言动作模型VLA与世界模型详解.html" },
+    next: { t: "ROS2 实战进阶 · URDF 与 MoveIt2", u: "10_ROS2实战进阶_URDF与MoveIt2.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🚀 ROS2 入门实战:跑通你的第一个节点</h1>
+    <div class="sub">从"ROS 是什么"到"第一个节点跑起来" —— 零基础实战路线,参考西安交通大学笃行机器人队《ROS2 教程》整理</div>
+    <div class="tags">
+      <span class="tag">零基础</span>
+      <span class="tag">第一个节点</span>
+      <span class="tag">colcon 工作空间</span>
+      <span class="tag">小鱼一键安装</span>
+      <span class="tag">Zsh 终端优化</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能用"人体/乐高"比喻向别人解释 ROS 是什么、不是什么<br>
+    2. 能一眼分辨 ROS1 教程与 ROS2 教程(关键词 / 命令 / 库名)<br>
+    3. 能独立完成:创建工作空间 → 创建功能包 → 写发布者 → colcon build → source → ros2 run → ros2 topic echo<br>
+    4. 知道两个经典坑:不要把工作空间的 setup.bash 写进 .bashrc;ROS1/ROS2 命令混用<br>
+    <b>建议用时:</b>60-90 分钟(含动手)
+  </div>
+
+  <h2><span class="h2-num">1</span> 认识 ROS:一个生动的比喻</h2>
+  <p>想象要造一个机器人,它需要:<b>眼睛</b>(摄像头/激光雷达)、<b>大脑</b>(决策电脑)、<b>四肢</b>(轮子/机械臂)、<b>神经系统</b>(线路与信号)。从零开始的话,换一个摄像头、加一个机械臂,整个通信系统可能都要重写。</p>
+  <div class="box box-tip">
+    <b>💡 核心比喻:</b>把构建机器人比作搭乐高 —— <b>ROS 就是那一套标准尺寸的乐高积木块</b>。它提供通信、驱动、算法库等基础模块和统一拼接标准,你只需专注"怎么搭"。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 一个常见误区:</b>ROS 名字里有"操作系统",但它<b>不是</b> Windows/Ubuntu 那样的操作系统,而是运行在 Linux(主要是 Ubuntu)之上的<b>"元操作系统"</b>(meta-operating system)或软件框架。
+  </div>
+
+  <h2><span class="h2-num">2</span> 核心概念:一张"人体类比"表</h2>
+  <div class="table-wrap"><table>
+    <tr><th>ROS 概念</th><th>中文</th><th>人体类比</th><th>一句话解释</th></tr>
+    <tr><td>Node</td><td>节点</td><td>大脑功能区/器官</td><td>一个个独立的可执行程序(如 camera_node 发图像、motor_control_node 控电机)</td></tr>
+    <tr><td>Topic</td><td>话题</td><td>广播频道</td><td>节点间异步通信管道,发布/订阅一对多广播</td></tr>
+    <tr><td>Message</td><td>消息</td><td>语言/信号</td><td>话题上传输的、有严格类型定义的数据</td></tr>
+    <tr><td>Service</td><td>服务</td><td>问答/请求</td><td>一对一同步请求-响应,适合"重置里程计"这类短暂任务</td></tr>
+    <tr><td>Action</td><td>动作</td><td>布置任务并汇报进度</td><td>带连续反馈的异步通信,适合"导航到 20 米外"这类长任务</td></tr>
+    <tr><td>Master</td><td>主节点(仅 ROS1)</td><td>总机/通信录</td><td>注册中心,启动任何 ROS1 系统前必须先启动(ROS2 已去掉)</td></tr>
+  </table></div>
+
+  <h2><span class="h2-num">3</span> ROS1 vs ROS2:先学会"判别",再谈学习</h2>
+  <p>网上海量教程仍是 ROS1 的,学习前先分清版本,否则会卡在各种报错里。</p>
+  <div class="table-wrap"><table>
+    <tr><th>判别点</th><th>ROS1(老)</th><th>ROS2(新,推荐学这个)</th></tr>
+    <tr><td>核心架构</td><td>中心化(依赖 Master,单点故障)</td><td>去中心化(节点自动发现,DDS 通信)</td></tr>
+    <tr><td>搜索关键词</td><td>—</td><td>务必加 "ROS 2" 或发行版名(Humble/Jazzy)</td></tr>
+    <tr><td>编译命令</td><td>catkin_make / catkin build</td><td><b>colcon build</b></td></tr>
+    <tr><td>Python 库</td><td>import rospy</td><td><b>import rclpy</b></td></tr>
+    <tr><td>C++ 库</td><td>#include "ros/ros.h"</td><td><b>#include "rclcpp/rclcpp.hpp"</b></td></tr>
+    <tr><td>运行命令</td><td>rosrun / rostopic</td><td><b>ros2 run / ros2 topic</b></td></tr>
+  </table></div>
+
+  <h2><span class="h2-num">4</span> 安装与环境:小鱼一键安装 + 环境变量</h2>
+  <p>国内用户强烈推荐 <b>小鱼的一键安装脚本</b>(支持 ROS Noetic / ROS2 Foxy / Humble 等):</p>
+  <pre><code>wget http://fishros.com/install -O fishros && . fishros</code></pre>
+  <p>安装后检查环境变量是否已写入 <code>~/.bashrc</code>(或 <code>~/.zshrc</code>):</p>
+  <pre><code>source /opt/ros/humble/setup.bash   # ROS2 Humble(Ubuntu 22.04)
+source ~/ros2_ws/install/setup.bash  # 你的工作空间(见下,别写进 .bashrc!)</code></pre>
+  <div class="box box-warn"><b>⚠️ 经典坑:</b>可以把<b>全局</b>的 <code>/opt/ros/humble/setup.bash</code> 写进 .bashrc,但<b>千万不要把工作空间的 <code>install/setup.bash</code> 写进去</b>—— 否则 ROS 环境被"写死"在一个工作空间,换项目时各种环境变量冲突。</div>
+  <p>验证:<code>printenv | grep ROS</code> 或直接敲 <code>ros2</code> 看是否有帮助信息。</p>
+
+  <h2><span class="h2-num">5</span> 终端优化:Zsh + Oh My Zsh(回报率极高)</h2>
+  <p>ROS 命令又长又多,配一个强大的命令行环境非常值得。三步搞定:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>装 Zsh</b><br>sudo apt install zsh git curl -y</div>
+    <div class="step-item"><span class="n">2</span><b>装 Oh My Zsh</b><br>sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"<br>提示设默认 Shell 时选 Y</div>
+    <div class="step-item"><span class="n">3</span><b>装两个核心插件</b><br>zsh-autosuggestions(灰色自动建议,按 → 采纳)<br>zsh-syntax-highlighting(命令语法高亮,防输错)</div>
+  </div>
+  <pre><code>git clone https://github.com/zsh-users/zsh-autosuggestions.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+# 编辑 ~/.zshrc,把 plugins=(git) 改为:
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+# 然后:
+source ~/.zshrc   # 或 exec zsh</code></pre>
+  <p>验证:新终端输入 <code>ros2 topic list -</code> 后按 Tab,应能看到参数补全提示。</p>
+
+  <h2><span class="h2-num">6</span> 实战:从零跑通第一个发布者节点</h2>
+  <h3>6.1 创建工作空间</h3>
+  <pre><code>mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws</code></pre>
+  <p><b>src</b> 是源代码目录(<b>关键字</b>);功能包都放这里。</p>
+  <h3>6.2 创建功能包</h3>
+  <pre><code>cd ~/ros2_ws/src
+ros2 pkg create --build-type ament_python --node-name simple_publisher my_first_package</code></pre>
+  <p><code>--build-type ament_python</code> 指定 Python 包(C++ 用 ament_cmake);<code>--node-name</code> 自动生成节点文件。生成的结构:</p>
+  <pre><code>src/my_first_package/
+├── my_first_package/
+│   ├── __init__.py
+│   └── simple_publisher.py   &lt;- 节点代码在这
+├── package.xml               &lt;- 包清单(依赖/许可证)
+├── setup.cfg
+├── setup.py                  &lt;- 入口点配置(见 6.4)
+└── resource/</code></pre>
+  <h3>6.3 编写发布者代码</h3>
+  <p>用编辑器打开 <code>simple_publisher.py</code>,替换为:</p>
+  <pre><code>import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class MinimalPublisher(Node):
+    def __init__(self):
+        super().__init__('minimal_publisher')
+        # 创建发布者:向 talker_topic 发 String 消息,队列长度 10(QoS 基础)
+        self.publisher_ = self.create_publisher(String, 'talker_topic', 10)
+        # 定时器:每 0.5 秒触发一次
+        self.timer = self.create_timer(0.5, self.timer_callback)
+        self.i = 0
+
+    def timer_callback(self):
+        msg = String()
+        msg.data = 'Hello World: %d' % self.i
+        self.publisher_.publish(msg)
+        self.get_logger().info('Publishing: "%s"' % msg.data)
+        self.i += 1
+
+def main(args=None):
+    rclpy.init(args=args)
+    minimal_publisher = MinimalPublisher()
+    rclpy.spin(minimal_publisher)   # 保持运行,处理回调
+    minimal_publisher.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+  <h3>6.4 配置 setup.py 入口点</h3>
+  <pre><code>entry_points={
+    'console_scripts': [
+        'talker = my_first_package.simple_publisher:main',
+    ],
+},</code></pre>
+  <p>意思是:创建名为 <code>talker</code> 的可执行脚本,运行它即执行包内模块的 <code>main()</code>。</p>
+  <h3>6.5 编译 → 激活 → 运行 → 验证</h3>
+  <pre><code># ① 编译(在 ~/ros2_ws)
+cd ~/ros2_ws
+colcon build
+
+# ② 激活环境(每个新终端都要先 source!)
+source install/setup.bash
+
+# ③ 运行节点(同一个已激活的终端)
+ros2 run my_first_package talker
+#    → [INFO] Publishing: "Hello World: 0" ... 每秒刷屏
+
+# ④ 新开一个终端,先 source,然后验证:
+source ~/ros2_ws/install/setup.bash
+ros2 topic list          # 应看到 /talker_topic
+ros2 topic echo /talker_topic   # 实时看到发布的消息
+rqt_graph                # 可视化计算图:节点 → 话题</code></pre>
+  <div class="box box-ok"><b>✅ 通关标准:</b>两个终端分别运行 talker 与 ros2 topic echo,能看到实时消息流,rqt_graph 里出现 <code>/minimal_publisher → /talker_topic</code> 的连线 —— 你的第一个 ROS2 程序就跑通了!</div>
+
+  <h2><span class="h2-num">7</span> 命令行速查表(调试必备)</h2>
+  <div class="table-wrap"><table>
+    <tr><th>命令</th><th>作用</th></tr>
+    <tr><td>ros2 run &lt;包&gt; &lt;可执行&gt;</td><td>运行一个节点</td></tr>
+    <tr><td>ros2 node list</td><td>列出所有运行中的节点</td></tr>
+    <tr><td>ros2 topic list / echo &lt;话题&gt;</td><td>列出话题 / 实时监听消息(调试最常用)</td></tr>
+    <tr><td>ros2 topic pub &lt;话题&gt; &lt;类型&gt; '&lt;数据&gt;'</td><td>从命令行发布一条消息</td></tr>
+    <tr><td>ros2 service list / call</td><td>列出服务 / 调用服务</td></tr>
+    <tr><td>ros2 param list</td><td>列出节点参数</td></tr>
+    <tr><td>ros2 bag record / play</td><td>录制 / 回放话题数据(现场录数据回实验室重放调试)</td></tr>
+    <tr><td>rqt_graph / rqt_plot / rqt_console</td><td>计算图可视化 / 数据曲线 / 日志过滤</td></tr>
+  </table></div>
+
+  <h2><span class="h2-num">8</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 下列哪个迹象说明你正在看的是 ROS1 教程?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 代码里出现 import rclpy</button>
+      <button data-v="B">B. 编译命令是 catkin_make 或 catkin build</button>
+      <button data-v="C">C. 运行命令是 ros2 run</button>
+      <button data-v="D">D. 提到 colcon build</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 catkin 是 ROS1 的构建工具;ROS2 用 colcon。看到 rospy/rosrun/rostopic 也是 ROS1 标志。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 为什么"不要把工作空间的 install/setup.bash 写进 .bashrc"?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 写进去会导致编译变慢</button>
+      <button data-v="B">B. 命令会失效</button>
+      <button data-v="C">C. 会把 ROS 环境"写死"在某个工作空间,换项目时环境变量冲突、找不到包</button>
+      <button data-v="D">D. 没有任何影响,随便写</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 全局的 /opt/ros/humble/setup.bash 可以进 .bashrc;工作空间的 setup.bash 应每次手动 source,避免环境被锁死。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. ros2 topic echo 的作用是什么?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 实时显示某个话题上发布的消息内容</button>
+      <button data-v="B">B. 录制话题数据到文件</button>
+      <button data-v="C">C. 列出所有节点</button>
+      <button data-v="D">D. 编译功能包</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 ros2 topic echo 是调试最常用的命令;录制回放用 ros2 bag,列节点用 ros2 node list。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 ROS 的说法,下列哪一项是正确的?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. ROS 是可以直接安装、替代 Windows/Ubuntu 的操作系统</button>
+      <button data-v="B">B. ROS 是运行在 Linux(主要是 Ubuntu)之上的「元操作系统」/软件框架</button>
+      <button data-v="C">C. ROS2 仍然必须依赖 Master 主节点才能通信</button>
+      <button data-v="D">D. ROS 只能用来控制机械臂</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见第 1 节「常见误区」:ROS 名字带「操作系统」但不是 Windows/Ubuntu 那样的操作系统,而是运行在 Linux 之上的元操作系统(meta-operating system)。Master 是 ROS1 的中心化组件,ROS2 已去掉(见第 2、3 节)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 发布者代码里 <code>self.create_publisher(String, 'talker_topic', 10)</code> 的第三个参数「10」表示什么?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 每秒发布 10 条消息</button>
+      <button data-v="B">B. 定时器的触发间隔(单位:秒)</button>
+      <button data-v="C">C. 发布队列长度(QoS 基础)</button>
+      <button data-v="D">D. 消息字符串的最大字符数</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 6.3 代码注释:「队列长度 10(QoS 基础)」。定时器间隔是 0.5 秒(<code>create_timer(0.5, ...)</code>),与 10 无关。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 用 Python 创建 ROS2 功能包时,<code>--build-type</code> 应填哪个值?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. catkin</button>
+      <button data-v="B">B. rosbuild</button>
+      <button data-v="C">C. ament_cmake</button>
+      <button data-v="D">D. ament_python</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 见 6.2:<code>--build-type ament_python</code> 指定 Python 包(C++ 用 ament_cmake)。catkin 是 ROS1 的构建工具,rosbuild 是更早期的构建方式——混用会卡在各种报错里(见第 3 节)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①ROS 是运行在 Ubuntu 之上的「元操作系统」/软件框架,不是替代 Ubuntu 的操作系统;②分辨版本:ROS1 用 catkin_make/rospy/rosrun,ROS2 用 colcon build/rclpy/ros2 run;③工作空间的 install/setup.bash 不要写进 .bashrc,每个新终端手动 source;④八步跑通节点:建工作空间 → 建包(ament_python)→ 写发布者 → 配 entry_points → colcon build → source → ros2 run → ros2 topic echo;⑤调试最常用:ros2 topic list / echo、rqt_graph。</div>
+
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>ROS 是"元操作系统",用乐高比喻最容易理解;学 ROS2 前先学会分辨 ROS1/ROS2(关键词/命令/库名);国内安装用小鱼一键安装;配好 Zsh 插件提升效率;按"建工作空间 → 建包 → 写代码 → 配入口点 → colcon build → source → ros2 run → ros2 topic echo"八步跑通第一个节点。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 把发布者改成订阅者需要改哪几行?试着订阅 /talker_topic 并打印。<br>
+    2. 为什么"每个新终端都要先 source"?这和 PATH 环境变量有什么关系?<br>
+    3. 试着自己写一个 Service 节点,完成一次"问答"(提示:rclpy 的 create_service)。
+  </div>
+
+  <h2><span class="h2-num">9</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://zhuanlan.zhihu.com/p/1959705428637246803" target="_blank" rel="noopener">西安交通大学笃行机器人队 · ROS2教程(本页主要参考)</a></li>
+    <li><a href="https://docs.ros.org/en/rolling/Tutorials.html" target="_blank" rel="noopener">ROS2 官方教程(Tutorials)</a></li>
+    <li><a href="http://fishros.com/" target="_blank" rel="noopener">小鱼 ROS 一键安装</a></li>
+    <li><a href="https://ohmyz.sh/" target="_blank" rel="noopener">Oh My Zsh 官网</a></li>
+    <li><a href="03_ROS2与机器人软件栈.html">本站 04-03 · ROS2 与机器人软件栈(概念详解)</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

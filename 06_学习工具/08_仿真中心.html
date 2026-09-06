@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 仿真中心:全站交互实验总入口</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<script>
+  window.PAGE = {
+    pageId: "06-08",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec6" }, { t: "仿真中心" } ],
+    prev: { t: "大厂面试专题", u: "07_大厂面试专题.html" },
+    next: { t: "动手项目清单", u: "09_动手项目清单.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🕹️ 仿真中心:全站交互实验总入口</h1>
+    <div class="sub">本站 20+ 个交互功能分散在各个知识页里,这里一网打尽——按学习阶段分类,每张卡片直达对应的 3D / 动画 / 实验台 / 计算器。</div>
+    <div class="tags"><span class="tag">总入口</span><span class="tag">3D拆解</span><span class="tag">实验台</span><span class="tag">计算器</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 怎么用这个页面</div>
+    1. 新手:按"原理动画 → 3D 拆解 → 实验台"的顺序建立直觉,再进入理论学习<br>
+    2. 学到硬件/项目阶段:常驻"硬件工具"与"工程实战"两组,配合动手项目清单使用<br>
+    3. 所有交互都在浏览器本地运行,无需安装任何环境<br>
+    <b>提示:</b>Ctrl+K 全站搜索随时可达
+  </div>
+
+  <h2><span class="h2-num">1</span> 🦾 3D 与爆炸拆解</h2>
+  <div class="grid">
+    <a class="card featured" href="../00_3D解剖/人形机器人解剖式知识可视化.html"><span class="go">进入 →</span><div class="ic">🦾</div><div class="t">3D 解剖主页面</div><div class="d">宇树 H1/G1、智元 X1 官方模型;5 场景爆炸拆解、步态对比、ADRC 与力控仿真、精细度切换(PWA 离线可用)</div></a>
+    <a class="card" href="../00_3D解剖/减速器剖面图详解.html"><span class="go">进入 →</span><div class="ic">🎬</div><div class="t">减速器剖面动画</div><div class="d">谐波/行星/摆线三张剖面图,点击"播放传动动画"看零件如何运动,暂停自动还原静态标注</div></a>
+    <a class="card" href="../00_3D解剖/电机编码器与灵巧手3D拆解.html"><span class="go">进入 →</span><div class="ic">🔩</div><div class="t">电机/编码器/灵巧手拆解</div><div class="d">无刷电机旋转磁场、磁/光电编码器、灵巧手关节 3D 拆解,支持爆炸与失步演示</div></a>
+  </div>
+
+  <h2><span class="h2-num">2</span> ⚡ 原理动画与图解</h2>
+  <div class="grid">
+    <a class="card" href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html"><span class="go">进入 →</span><div class="ic">⚙️</div><div class="t">核心原理动画(6 场景)</div><div class="d">内部结构剖视 / FOC 磁场定向 / 三环级联 / 谐波 / 行星 / 摆线,支持变速与单步</div></a>
+    <a class="card" href="../01_理论入门/03_驱动电路模块认知_交互式图解.html"><span class="go">进入 →</span><div class="ic">🔌</div><div class="t">驱动电路模块图解</div><div class="d">点击驱动板 12 个功能模块,联动右侧详解,认识功率/采样/通信分区</div></a>
+    <a class="card" href="../01_理论入门/01_整体知识框架_思维导图.html"><span class="go">进入 →</span><div class="ic">🗺️</div><div class="t">知识框架思维导图</div><div class="d">八大分支折叠展开,建立人形机器人知识全景</div></a>
+  </div>
+
+  <h2><span class="h2-num">3</span> 🧪 实验台与实验室</h2>
+  <div class="grid">
+    <a class="card" href="04_代码实验室.html"><span class="go">进入 →</span><div class="ic">💻</div><div class="t">代码实验室</div><div class="d">PID 整定示波器(阶跃/方波/扰动)、FOC 电流矢量合成、倒立摆平衡控制,零安装</div></a>
+    <a class="card" href="05_传动与控制实验台.html"><span class="go">进入 →</span><div class="ic">🔧</div><div class="t">传动与控制实验台</div><div class="d">减速器参数实验台(转速/扭矩/效率联动)、FOC 三环实时示波器</div></a>
+    <a class="card featured" href="../04_软件与算法/15_浏览器内强化学习实验室.html"><span class="go">进入 →</span><div class="ic">🧠</div><div class="t">强化学习实验室</div><div class="d">一键训练 Q-Learning 倒立摆:奖励曲线+策略热图实时演化,与 PD 控制同台对比,可"推一把"测试抗扰</div></a>
+    <a class="card" href="../04_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html"><span class="go">进入 →</span><div class="ic">🌌</div><div class="t">MuJoCo/Isaac 仿真导读</div><div class="d">整机级仿真与 RL 的知识页(环境对比、上手路径、sim2real)</div></a>
+  </div>
+
+  <h2><span class="h2-num">4</span> 🔌 硬件拓扑与计算器</h2>
+  <div class="grid">
+    <a class="card featured" href="../02_硬件基础/13_功率级拓扑与SVPWM交互实验室.html"><span class="go">进入 →</span><div class="ic">⚡</div><div class="t">功率级拓扑与 SVPWM 实验室</div><div class="d">点击 8 个电压矢量看三相逆变桥开关与电流路径;拖调制比/转速看扇区切换与马鞍波</div></a>
+    <a class="card featured" href="../02_硬件基础/14_硬件公式计算器矩阵.html"><span class="go">进入 →</span><div class="ic">🧮</div><div class="t">硬件计算器矩阵</div><div class="d">MOSFET 损耗 / 母线电容 / 采样电阻增益 / BUCK 电感 / Kt↔Ke / 惯量匹配,六个一键算</div></a>
+    <a class="card" href="../02_硬件基础/07_电机选型计算专题.html"><span class="go">进入 →</span><div class="ic">🔄</div><div class="t">电机选型计算器</div><div class="d">五步选型法+扭矩计算器,惯量匹配与热校验</div></a>
+    <a class="card" href="../02_硬件基础/08_热管理与散热设计专题.html"><span class="go">进入 →</span><div class="ic">🌡️</div><div class="t">结温计算器</div><div class="d">热阻网络法算结温,校核散热方案是否够用</div></a>
+    <a class="card" href="../01_理论入门/04_机械原理基础_连杆齿轮传动.html"><span class="go">进入 →</span><div class="ic">⚙️</div><div class="t">力矩/自由度计算器</div><div class="d">齿轮传动比与机构自由度(F=3n−2pl−ph)即算</div></a>
+  </div>
+
+  <h2><span class="h2-num">5</span> 📐 数学与运动学</h2>
+  <div class="grid">
+    <a class="card featured" href="../01_理论入门/06_控制数学工具箱.html"><span class="go">进入 →</span><div class="ic">📐</div><div class="t">控制数学工具箱</div><div class="d">拖 ζ/ωn 实时看二阶系统阶跃响应+Bode 图联动;拉普拉斯与带宽直觉</div></a>
+    <a class="card featured" href="../01_理论入门/05_运动学基础_正逆运动学与DH参数.html"><span class="go">进入 →</span><div class="ic">🧭</div><div class="t">2 连杆 FK/IK 演练场</div><div class="d">拖目标点实时解析逆解、肘上/肘下双解、可达域与奇异警告、det(J) 实时显示</div></a>
+  </div>
+
+  <h2><span class="h2-num">6</span> 🩺 工程实战工具</h2>
+  <div class="grid">
+    <a class="card" href="../02_硬件基础/11_FOC调参整定实战手册.html"><span class="go">进入 →</span><div class="ic">🎛️</div><div class="t">FOC 调参整定手册</div><div class="d">三环整定顺序流程单+电流环 PI 带宽法计算器+症状速查表</div></a>
+    <a class="card" href="../02_硬件基础/12_故障诊断决策树.html"><span class="go">进入 →</span><div class="ic">🩺</div><div class="t">故障诊断决策树</div><div class="d">交互问诊:选症状→走分支→定位根因与处置,覆盖电源/驱动/传感/控制四层</div></a>
+    <a class="card" href="../02_硬件基础/15_传感器与关节标定专题.html"><span class="go">进入 →</span><div class="ic">🎯</div><div class="t">标定专题</div><div class="d">电角度零位/IMU 六面/关节零位/力矩砝码标定的完整流程与避坑</div></a>
+  </div>
+
+  <h2><span class="h2-num">7</span> 🗺️ 学习导航</h2>
+  <div class="grid">
+    <a class="card" href="06_学习地图.html"><span class="go">进入 →</span><div class="ic">🗺️</div><div class="t">学习地图</div><div class="d">53+ 节点知识地图,进度点亮、推荐下一站</div></a>
+    <a class="card" href="09_动手项目清单.html"><span class="go">进入 →</span><div class="ic">🛠️</div><div class="t">动手项目清单</div><div class="d">L1~L5 十二个实战项目,前置知识+硬件清单+验收标准</div></a>
+    <a class="card" href="03_自测题库.html"><span class="go">进入 →</span><div class="ic">📝</div><div class="t">自测题库(SRS)</div><div class="d">40 题+间隔重复引擎+错题本</div></a>
+  </div>
+
+  <div class="box box-tip"><b>📌 小结:</b>本站的交互资产已覆盖"<b>看原理(动画/3D)→ 算参数(计算器)→ 亲手玩(实验台/RL)→ 解决问题(调参/诊断/标定)</b>"完整链路。建议收藏本页作为入口;所有功能离线可用(PWA),实验室数据全部本地计算。</div>
+
+</div><!-- /container -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

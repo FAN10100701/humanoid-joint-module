@@ -22,8 +22,8 @@
 
 ## 新增一个教学页(推荐流程)
 
-1. **复制模板**:复制 `_assets/页面模板.html` 到目标板块目录(如 `06_软件与算法/09_xxx.html`)
-2. **填写 PAGE 配置**:在 `<head>` 的 `window.PAGE` 中填好 `pageId`(章节-序号,如 `06-09`)、`root`(`..`)、`breadcrumb`、`prev` / `next`(上一页/下一页互链)
+1. **复制模板**:复制 `_assets/页面模板.html` 到目标板块目录(如 `04_软件与算法/09_xxx.html`)
+2. **填写 PAGE 配置**:在 `<head>` 的 `window.PAGE` 中填好 `pageId`(章节-序号,如 `04-09`)、`root`(`..`)、`breadcrumb`、`prev` / `next`(上一页/下一页互链)
 3. **写内容**:严格使用模板中的组件类名(见模板注释与 `_assets/site.css`):
    - 信息框 `.box .box-tip|box-warn|box-danger|box-ok`
    - 表格 `.table-wrap > table`
@@ -31,7 +31,7 @@
    - 步骤流 `.step-flow > .step-item`
    - 自测题 `.quiz`(每页建议 3~5 题,`data-answer` 写正确选项)
    - 每页必须带「🎯 本页学习目标」与小结、思考题
-4. **同步登记**(漏一处会被作者退回)——跑 `node _本地工具/登记页面.js` 自动完成六处:首页卡片网格 + `SITE_SECTIONS` ids、`_assets/search-index.js` 索引、`_assets/page-meta.js` 学习目标、`sitemap.xml`、`08_学习工具/06_学习地图.html` 节点、百度提交清单;手动两件随需:页面 `prev`/`next` 翻页链、新增 `_assets/*.js` 时登记进根 `sw.js` PRECACHE;最后在 `CHANGELOG.md` 顶部登记本期更新
+4. **同步登记**(漏一处会被作者退回)——跑 `node _本地工具/登记页面.js` 自动完成六处:首页卡片网格 + `SITE_SECTIONS` ids、`_assets/search-index.js` 索引、`_assets/page-meta.js` 学习目标、`sitemap.xml`、`06_学习工具/06_学习地图.html` 节点、百度提交清单;手动两件随需:页面 `prev`/`next` 翻页链、新增 `_assets/*.js` 时登记进根 `sw.js` PRECACHE;最后在 `CHANGELOG.md` 顶部登记本期更新
 5. **自查**:页面标题 / 链接 / 手机端显示 / 深浅两套主题都要正常
 
 ## 题库与数据文件维护约定(2026-08-28,V2.1.7 更新)
@@ -40,11 +40,11 @@
 
 | 数据文件 | 展示页(runtime 读取) | 规则 |
 | --- | --- | --- |
-| `_assets/quiz-bank.js`(60 题) | `08_学习工具/03_自测题库.html`、`_assets/srs.js` | 唯一题源(CI 强制校验) |
-| `_assets/ib-data-a.js`(控制类 6 学科) | `08_学习工具/11_保研复试面试题库.html` | 字段 `id/s/lv/tags/q/a/svg?/formula?/code?/a2?/follow/extend?/links` |
+| `_assets/quiz-bank.js`(60 题) | `06_学习工具/03_自测题库.html`、`_assets/srs.js` | 唯一题源(CI 强制校验) |
+| `_assets/ib-data-a.js`(控制类 6 学科) | `06_学习工具/11_保研复试面试题库.html` | 字段 `id/s/lv/tags/q/a/svg?/formula?/code?/a2?/follow/extend?/links` |
 | `_assets/ib-data-b.js`(硬件软件 7 学科) | 同上 | 同上(字段含 `extend?`) |
 | `_assets/ib-data-c.js`(通用 4 学科,V2.1.6) | 同上 | 同上;三文件合计科目/题数必须与 `_assets/site.js` 的 `S.STATS` 一致(自检 C3 校验) |
-| `_assets/quest-data.js`(闯关 5 大陆 21 关) | `08_学习工具/12_闯关学习.html` | 关卡 `qs` 引用三种题源:`q:自建题 / qb:quiz-bank题号 / ref:面试题卡ID`;改题源时确认被引用关卡仍可及格 |
+| `_assets/quest-data.js`(闯关 5 大陆 21 关) | `06_学习工具/12_闯关学习.html` | 关卡 `qs` 引用三种题源:`q:自建题 / qb:quiz-bank题号 / ref:面试题卡ID`;改题源时确认被引用关卡仍可及格 |
 
 改完跑 `_本地工具/一键自检.ps1` 确认全绿。
 

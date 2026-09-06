@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 全身控制与步态规划(WBC 与 MPC)
+  结构严格遵循 _assets/页面模板.html
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 全身控制与步态规划(WBC 与 MPC)</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式:公式块与对比小标签,均以 my- 前缀命名,避免与全局冲突 */
+  .my-formula{background:#0a0f16;border:1px solid rgba(255,255,255,.1);border-left:3px solid #3b82f6;border-radius:10px;padding:12px 16px;margin:12px 0;font-family:Consolas,"Courier New",monospace;font-size:13.5px;color:#a8c7e8;line-height:1.8;overflow-x:auto}
+  .my-lv{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .my-lv-1{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.4)}
+  .my-lv-2{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.4)}
+  .my-lv-3{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.4)}
+  /* 浅色主题适配(与全站 html:not([data-theme-early="dark"]) 玻璃风格一致) */
+  html:not([data-theme-early="dark"]) .my-formula{background:#ffffff;border-color:rgba(60,80,120,.14);border-left-color:#2563eb;color:#1e3a8a}
+  html:not([data-theme-early="dark"]) .my-lv-1{background:rgba(34,197,94,.14);color:#15803d;border-color:rgba(34,197,94,.45)}
+  html:not([data-theme-early="dark"]) .my-lv-2{background:rgba(245,158,11,.16);color:#b45309;border-color:rgba(245,158,11,.5)}
+  html:not([data-theme-early="dark"]) .my-lv-3{background:rgba(239,68,68,.12);color:#b91c1c;border-color:rgba(239,68,68,.45)}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-24",
+    root: "..",
+    breadcrumb: [ { t: "软件与算法", u: "../index.html#sec4" }, { t: "全身控制与步态规划" } ],
+    prev: { t: "通信与控制算法升级路线", u: "22_通信与控制算法升级路线.html" },
+    next: { t: "整机电气架构与安全设计", u: "24_整机电气架构与安全设计.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🤖 全身控制与步态规划:ZMP → WBC → MPC → RL</h1>
+    <div class="sub">人形机器人不是"40 个关节各自调好 PID"就能走路的。本页讲清步态规划、全身控制(WBC)、模型预测控制(MPC)与强化学习(RL)四条技术路线的原理、公式直觉与工程分工,适合已完成关节模组学习、想理解"躯干级算法"的读者。</div>
+    <div class="tags">
+      <span class="tag">步态规划</span>
+      <span class="tag">WBC 全身控制</span>
+      <span class="tag">MPC 模型预测控制</span>
+      <span class="tag">强化学习</span>
+    </div>
+  </div>
+
+  <!-- ================= 1 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说出人形机器人运动控制的三大难点(欠驱动、多接触、动力学耦合),并解释为什么必须"全身"协同而非"单关节"<br>
+    2. 能写出 ZMP 的判稳条件与捕获点(CP)公式,说出步态相位与离线/在线步态的区别<br>
+    3. 能讲清 WBC 的"任务分层 + 逆动力学 + QP 求解"流程,以及它与"每关节独立 PID"的本质区别<br>
+    4. 能解释 MPC 的"单刚体模型(SRBM)+ 滚动优化"思想,说出 MPC 与 WBC 的分工(MPC 给期望、WBC 给力矩)<br>
+    5. 能对比"基于模型"与"强化学习"两条路线,知道宇树 H1、unitree_rl_gym 等代表性成果与开源项目<br>
+    <b>建议用时:</b>约 60~90 分钟(建议配合 MuJoCo 动手练习)
+  </div>
+
+  <!-- ================= 2 人形机器人的运动控制问题 ================= -->
+  <h2><span class="h2-num">2</span> 人形机器人运动控制:为什么是"全身"问题</h2>
+
+  <h3>从"站得住"到"走得稳"</h3>
+  <p><strong>站立</strong>是一个静态/准静态问题:质心(CoM)的水平投影落在支撑多边形(两脚掌围成的凸包)内部,重力与地面反作用力大致共线,机器人就不倒。<strong>行走</strong>则完全不同——迈步时质心会周期性地"跑出"支撑多边形,机器人利用重力自然前倒,再用下一步的落点"接住"自己。也就是说,步行本质上是<b>受控的不稳定</b>:每一步都是一次"即将摔倒"被成功救回的过程。</p>
+  <p>而<strong>全身动作</strong>(挥手、抓取、弯腰、转身)会让问题进一步复杂化:手臂挥动时,根据牛顿第三定律,手臂对躯干产生反作用力矩,躯干必须用髋关节、脊柱甚至对侧腿来平衡;弯腰时质心位置改变,支撑脚的受力重新分配。关节之间不是独立的,而是通过连杆动力学<b>强耦合</b>在一起。这就是为什么说人形机器人控制是一个"全身(whole-body)"问题,而不是 40 个独立关节 PID 的简单叠加。</p>
+
+  <h3>三大难点</h3>
+  <div class="table-wrap"><table>
+    <tr><th>难点</th><th>含义</th><th>后果</th></tr>
+    <tr>
+      <td><strong>① 欠驱动 (Underactuation)</strong></td>
+      <td>人形机器人是"漂浮基座"系统:基座(躯干)的 6 个自由度(3 平动 + 3 转动)没有执行器直接驱动,只能通过足底与地面的接触力<strong>间接</strong>控制</td>
+      <td>不能像机械臂那样"跟踪关节轨迹就完事";质心与姿态是<strong>不稳定的内部动力学</strong>,必须靠接触力主动平衡</td>
+    </tr>
+    <tr>
+      <td><strong>② 多接触与接触切换</strong></td>
+      <td>行走中脚掌支撑→摆动→落地,支撑脚数量在 1~2 之间切换;接触是<strong>单边约束</strong>(只能推、不能拉),受摩擦锥限制,还可能打滑</td>
+      <td>系统在"单支撑/双支撑"之间切换,是<b>混合系统</b>;接触力未知,需要与关节力矩一起求解;接触点不准确模型就失效</td>
+    </tr>
+    <tr>
+      <td><strong>③ 高维动力学耦合</strong></td>
+      <td>全身 20~40+ 个自由度,质量分布随姿态大幅变化(腿部摆动会明显改变质心与惯量);方程强非线性、耦合项多</td>
+      <td>全模型实时求解代价高,必须做模型简化(后文 SRBM 就是为此而生);控制器要同时满足平衡、任务、约束</td>
+    </tr>
+  </table></div>
+
+  <div class="box box-tip">
+    <b>💡 一个直觉类比:</b>骑独轮车。独轮车几乎没有"支撑多边形",平衡全靠身体重心的连续调整——它是典型的欠驱动不稳定系统。人形机器人本质上是一台"有两条腿的独轮车":脚掌只是很小的支撑面,稳定不是默认状态,而是控制器每秒上千次主动维持的结果。你之前做的关节模组(Hdrive)负责的是"执行",本页讨论的是"谁来决策、怎样决策"。
+  </div>
+
+  <!-- ================= 3 步态规划 ================= -->
+  <h2><span class="h2-num">3</span> 步态规划:让"倒"变成"走"</h2>
+
+  <h3>3.1 倒立摆模型与 ZMP(零力矩点)</h3>
+  <p><strong>线性倒立摆(LIPM, Linear Inverted Pendulum Model)</strong>是步态规划最经典、最重要的简化:把机器人看成一根"长度不变"的腿顶着一个质点(质心),质点高度恒定为 h,绕脚踝铰接点摆动。它的水平动力学极其简洁:</p>
+  <div class="my-formula">ẍ = (g / h) · x　　(其中 x 为质心相对支撑点的水平偏移, g 为重力加速度)</div>
+  <p>注意这个方程右边没有负号——说明它天然是<b>不稳定的</b>(特征根 ±√(g/h),一个正根):质心一旦偏离支撑点,就会越偏越快。这正是"走路"的动力学本质:不是把摆"稳住",而是利用它的发散趋势,每一步提前"换一个支撑点"。</p>
+  <p><strong>ZMP(零力矩点, Zero Moment Point)</strong>由 Vukobratović 于 1968 年提出,是步态判稳的核心概念:它是<b>地面反作用力合力(含摩擦力)的作用点</b>。直觉上可以这样理解——足底受到的压力分布可以等效为一个合力,这个合力在地面上的作用点就是 ZMP。判稳条件:只要 ZMP 落在<b>支撑多边形内部</b>(两脚时的凸包、单脚时的脚掌),机器人就不会绕支撑边缘翻转。ZMP 与质心的关系(水平方向)为:</p>
+  <div class="my-formula">p_ZMP = x_com − (h / g) · ẍ_com　　(质心投影再减去惯性力修正)</div>
+  <p>静止时 ẍ=0,ZMP 就是质心投影;加速/减速时 ZMP 会"躲开"质心投影——这正是动态行走区别于静态行走的地方。ZMP 越靠近支撑区中心,稳定性裕度越大;越靠近边缘,一个扰动就可能让 ZMP 越界导致倾倒。</p>
+  <p>基于 ZMP 的经典规划是 <strong>Kajita 的预览控制(Preview Control)</strong>:不只盯着当前时刻,而是把未来约 1.6 秒的 ZMP 参考轨迹"预览"进来,反解出一条平滑、可执行的质心轨迹。早期人形机器人(如本田 ASIMO)就是这类离线预览轨迹 + 在线反馈修正的代表。</p>
+
+  <h3>3.2 捕获点(CP)与步态相位</h3>
+  <p><strong>捕获点(Capture Point, Pratt 等 2006)</strong>回答"被推了一下怎么办":地面上存在这样一点,只要把支撑点(落脚点)移到那里,机器人就能完全停下来(捕获自身动量)。对 LIPM 而言它有一个漂亮公式:</p>
+  <div class="my-formula">CP = ξ = x + ẋ / ω,　　ω = √(g / h)</div>
+  <p>直觉:质心位置 x 加上"速度导致的偏移量 ẋ/ω"。静止时 CP = 质心投影;速度越大,CP 越靠前。CP 在 LIPM 中就是那个"发散分量"(数学上称 Divergent Component of Motion, DCM)——它不稳定、会发散,但正因为如此,它把复杂的平衡问题变成了简单的"跟踪 CP"问题。</p>
+  <p>于是抗扰动策略就变得很直观:被推一下后,先算出新的 CP——</p>
+  <ul>
+    <li>如果 CP 仍落在当前支撑多边形内:<b>踝关节策略(ankle strategy)</b>,脚不动,用踝关节力矩把 CP 拉回中心;</li>
+    <li>如果 CP 已超出支撑区:<b>迈步策略(step strategy)</b>,直接迈一步,把新支撑点放到 CP 下方,"接住"自己。</li>
+  </ul>
+  <p><strong>步态相位(gait phase)</strong>指一个步态周期内的阶段划分:双腿支撑(起步、终止)→ 单腿支撑(另一腿摆动:抬脚→摆腿→落地缓冲)→ 再次双腿支撑。步行速度 = 步长 × 步频;要快跑就加大步长、提高步频、缩短甚至消除双支撑相。</p>
+
+  <h3>数值算例:CP 计算与迈步决策(手推)</h3>
+  <p><b>给定:</b>质心高度 h = 0.8 m,当前质心 x = 0.02 m、速度 ẋ = 0.45 m/s(被向右推了一下);支撑脚踩在原点,单脚支撑区前向半径约 0.12 m(足长 ~0.24 m 的一半)。</p>
+  <p><b>第 1 步:算 LIPM 自然频率。</b>ω = √(g/h) = √(9.81/0.8) = √12.26 ≈ <b>3.50 rad/s</b>。</p>
+  <p><b>第 2 步:算捕获点。</b>CP = x + ẋ/ω = 0.02 + 0.45/3.50 = 0.02 + 0.129 ≈ <b>0.149 m</b>。</p>
+  <p><b>第 3 步:判断——CP 0.149 m 已超出支撑区半径 0.12 m 达 0.029 m</b>,踝策略(靠脚踝力矩把 ZMP 挪到边缘)已无法把发散分量拉回来 → <b>触发迈步策略</b>。不干预会多快倒?支撑点在原点时 CP 满足 ξ̇ = ω·ξ,即 ξ(t) = 0.149·e^(3.50t) 指数发散,约 0.20 s 后翻倍到 0.30 m(ln(0.30/0.149)/3.50 ≈ 0.20)——<b>这就是"迈步决策窗口只有 ~0.2 s"的定量出处</b>,也解释了为什么步态控制器要跑在 100~500 Hz 这一层。</p>
+  <p><b>第 4 步:选落点并复核新 CP。</b>落点取 CP 投影<b>略前方</b> 0.16 m(比 CP 多迈 1 cm,留一点向前的调整预算)。落步瞬间 CP 不突变(它由质心位置和速度决定,不会因为脚落地就跳变),新支撑中心在 0.16 m,CP 相对新支撑中心的偏移 = 0.149 − 0.16 = <b>−0.011 m</b>,即 CP 落在新支撑中心后方 1.1 cm 处——回到 0.12 m 半径以内,<b>稳定裕度从 −0.029 m 恢复到 0.12 − 0.011 = 0.109 m</b>,机器人被"接住"。此后质心在 0.16 m 支撑点下做新的 LIPM 摆动,控制器继续监视 CP 等待下一步。</p>
+  <div class="box box-tip"><b>📌 自检:</b>把数字换成你的电机参数重算一遍(提示:先按你的质心高度重算 ω = √(g/h),再代入实测的 x、ẋ 算 CP,最后对照你的足底尺寸判断该用踝策略还是迈步)。</div>
+
+  <h3>3.3 离线步态 vs 在线调整</h3>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>离线步态(经典)</th><th>在线调整(现代)</th></tr>
+    <tr><td><strong>生成时机</strong></td><td>事先一次性算好整段轨迹</td><td>运行中每周期重规划</td></tr>
+    <tr><td><strong>对扰动</strong></td><td>无感知,靠底层反馈硬扛</td><td>实时修正落脚点/步频/相位</td></tr>
+    <tr><td><strong>对地形</strong></td><td>只适合平坦地面</td><td>可结合感知适应台阶、斜坡</td></tr>
+    <tr><td><strong>代表</strong></td><td>预览控制 + 轨迹跟随</td><td>MPC 滚动优化、CP/DCM 反馈迈步</td></tr>
+    <tr><td><strong>代价</strong></td><td>实现简单、实时性压力小</td><td>需要实时求解器 + 状态估计</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 记住这条主线:</b>ZMP 回答"稳不稳"(判稳条件)→ CP/DCM 回答"往哪迈"(稳定分量)→ 预览控制/MPC 回答"接下来整条轨迹怎么走"(滚动规划)。三者层层递进,后面的 WBC/MPC 都建立在"先把稳定判据想清楚"的基础上。
+  </div>
+
+  <!-- ================= 4 全身控制 WBC ================= -->
+  <h3>3.x 交互实验:重心(CoM)与零力矩点(ZMP)</h3>
+  <p>双足直立(正面视角):拖动"侧移摆幅"与"摆动频率",看 <b>CoM(重心)</b>与 <b>ZMP(零力矩点)</b>如何联动。核心关系(线性倒立摆 LIPM):</p>
+  <div class="formula">ZMP_{x} = CoM_{x} - rac{z_c}{g}\,\ddot{CoM}_{x}</div>
+  <p>摆得越快,惯性项越大,<b>ZMP 摆幅超过 CoM</b>;一旦 ZMP 跑出脚掌支撑范围(红色区域),机器人就倾覆——这正是步态规划要"压住 ZMP"的原因。</p>
+  <div class="zmp-lab">
+    <label>侧移摆幅 A: <input type="range" id="zpA" min="0.02" max="0.14" step="0.005" value="0.03" oninput="zpDraw()"><b id="zpAv">0.030 m</b></label>
+    <label>摆动频率 f: <input type="range" id="zpF" min="0.2" max="2.2" step="0.05" value="0.5" oninput="zpDraw()"><b id="zpFv">0.50 Hz</b></label>
+    <label>质心高度 z_c 固定 0.8 m · 脚掌半宽 0.06 m</label>
+  </div>
+  <canvas id="zpCv" width="880" height="330" style="max-width:100%"></canvas>
+  <div class="zmp-read" id="zpRead"></div>
+  <style>
+    .zmp-lab{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;font-size:13px;align-items:center}
+    .zmp-lab input[type=range]{vertical-align:middle;accent-color:#2563eb;width:150px}
+    .zmp-read{font-size:13.5px;line-height:2;margin-top:8px}
+    .zmp-read b{font-family:Consolas,monospace;color:#34d399}
+    html:not([data-theme-early="dark"]) .zmp-read b{color:#047857}
+  </style>
+
+  <h2><span class="h2-num">4</span> 全身控制(WBC):一个 QP 算出所有关节力矩</h2>
+
+  <h3>核心思想:任务分层</h3>
+  <p>WBC(Whole-Body Control)的基本思路是:不把每个关节当作独立的 PID 回路,而是把机器人当作一个整体,把"想让机器人做什么"表达成一系列<b>任务(task)</b>——质心加速度、身体姿态、手的位置、脚的落点、角动量……然后在一个统一的优化问题里,<b>同时解出所有关节力矩和接触力</b>。任务按优先级分层:</p>
+  <div class="table-wrap"><table>
+    <tr><th>优先级</th><th>任务层</th><th>内容</th></tr>
+    <tr><td><strong>最高</strong></td><td>接触与动力学约束</td><td>支撑脚不滑动、不穿透地面、接触力落在摩擦锥内;动力学方程必须严格满足</td></tr>
+    <tr><td><strong>高</strong></td><td>平衡任务</td><td>质心加速度、姿态角、角动量跟踪——保证不倒</td></tr>
+    <tr><td><strong>中</strong></td><td>末端任务</td><td>摆动脚轨迹、手的位置/朝向、躯干高度等(用户真正想做的事)</td></tr>
+    <tr><td><strong>低</strong></td><td>零空间/正则项</td><td>关节角速度最小化、避奇异、避免无效内部运动</td></tr>
+  </table></div>
+  <p>分层实现的两种方式:<strong>硬优先级</strong>(严格分层,高优先级任务在低优先级任务的零空间中执行,即任务空间分层 WBC,Sentis &amp; Khatib 经典框架)与<strong>软优先级</strong>(把所有任务加权放进一个 QP,权重越大越优先)。工程上常用软优先级,因为实现简单、数值稳定、可以通过权重连续调节"平衡 vs 任务"的取舍。</p>
+
+  <h3>逆动力学 + QP 求解</h3>
+  <p>WBC 的核心是<b>全身逆动力学</b>:已知期望的任务加速度,反解所需的关节力矩。刚体动力学方程:</p>
+  <div class="my-formula">M(q)·q̈ + C(q,q̇)·q̇ + G(q) = τ + Σ Jᵢᵀ·fᵢ</div>
+  <p>其中 M 为惯量矩阵,C 为科氏/离心项,G 为重力项,τ 为关节力矩,Jᵢᵀfᵢ 为第 i 个接触点的接触力(通过雅可比映射到关节空间)。注意 <code>τ</code> 和 <code>fᵢ</code> 都是未知数——所以 WBC 把"力矩"和"接触力"放在同一个优化里解,保证解出来的力矩真的能把脚"压"在地面上且不打滑。</p>
+  <p>于是每个控制周期(典型 500~1000Hz)求解一个二次规划(QP):</p>
+  <div class="my-formula">min　Σ wᵢ · ‖任务误差ᵢ‖² 　 s.t.　 动力学方程、f_z ≥ 0(只能推)、摩擦锥、τ_min ≤ τ ≤ τ_max</div>
+  <p>QP 是凸优化,有成熟的高速求解器(如 OSQP、qpOASES、HPIPM),在毫秒甚至亚毫秒级可解——这就是为什么 WBC 能跑到 1kHz 的实时率。解出的 τ 直接下发给关节,接触力 f 用于校核和状态估计。</p>
+
+  <h3>与"每关节独立 PID"的区别</h3>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>每关节独立 PID</th><th>全身控制 WBC</th></tr>
+    <tr><td><strong>控制对象</strong></td><td>各关节角度/速度</td><td>全身任务:质心、姿态、角动量、末端</td></tr>
+    <tr><td><strong>耦合处理</strong></td><td>不建模,靠高增益硬扛(增益大了互相打架)</td><td>统一动力学建模,显式解耦</td></tr>
+    <tr><td><strong>接触力</strong></td><td>不显式考虑</td><td>与力矩联合优化,保证接触可行</td></tr>
+    <tr><td><strong>扰动响应</strong></td><td>被扰动后才反应(反馈)</td><td>模型预测 + 任务重分配(前馈+反馈)</td></tr>
+    <tr><td><strong>调参</strong></td><td>每个关节一组增益,几十个参数</td><td>少量任务权重,物理意义明确</td></tr>
+    <tr><td><strong>算力</strong></td><td>关节 MCU 即可</td><td>需要躯干级高性能控制器(工控机/SoC)</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 类比:</b>独立 PID 像 40 个乐手各吹各的谱子,即使每个都"调得完美",合奏必然乱;WBC 像一位指挥,根据总谱(任务与约束)统一分配每个人的演奏。你的关节模组在全身系统里的角色是"乐手":忠实、快速、低延迟地执行指挥(躯干控制器)给的手指动作(力矩指令)。
+  </div>
+
+  <!-- ================= 5 MPC ================= -->
+  <h2><span class="h2-num">5</span> 模型预测控制(MPC):用简化模型"想三步,走一步"</h2>
+
+  <h3>为什么需要 MPC</h3>
+  <p>步态是一个"规划 + 控制"耦合的问题:落点选在哪、步频多快、质心怎么走,本身就是决策。PID/单步反馈只能"事后反应",而 <strong>MPC(模型预测控制)</strong>让控制器"向前看":每一周期用一个模型预测未来 1~2 秒的系统演化,在当前时刻解出一个最优控制序列,<b>只执行第一步,然后滚动重解</b>。预测 + 滚动 = 既有前瞻性,又能持续用最新状态修正,天然对扰动和模型误差鲁棒。</p>
+
+  <h3>单刚体模型(SRBM):把 40 个关节"折叠"成 1 块</h3>
+  <p>全动力学模型(几十个自由度)做滚动优化太慢。工程界的经典妥协是 <strong>单刚体模型(Single Rigid Body Model, SRBM)</strong>:把整个机器人看成一块具有质量 m、惯量 I 的刚体,几十个关节全被"折叠"掉,只保留质心的平动和本体姿态的转动,并假设"关节执行足够快、内部动量足够小、关节质量可忽略"。动力学只剩两条:</p>
+  <div class="my-formula">m·a_com = Σ fᵢ + m·g　(质心平动:合外力 = 接触力之和 + 重力)<br>
+  Ḣ = Σ (rᵢ − r_com) × fᵢ　(角动量变化 = 接触力相对质心的力矩之和)</div>
+  <p>状态只有十几维(位置、姿态、线速度、角速度、接触状态),却抓住了人形平衡最本质的东西:<b>接触力怎么分配</b>。SRBM 最早在 MIT 四足(Cheetah)上大放异彩,后来被广泛移植到人形机器人(H1、Talos、Atlas 研究平台等)的步态 MPC 中。</p>
+
+  <h3>滚动优化与鲁棒性</h3>
+  <p>MPC 每周期(典型 30~100Hz)求解一个时域最优控制问题:状态 x<sub>k+1</sub> = f(x<sub>k</sub>, u<sub>k</sub>),决策变量包括质心轨迹、身体姿态、<b>未来每一步的落脚点和步态时序</b>。解出来后只执行第一个控制量,下一周期用最新的状态估计重新求解。正因为落点本身是决策变量,MPC 具备"推一下自动迈一步"的能力——这就是它比固定步态规划鲁棒的根本原因。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>层级</th><th>典型频率</th><th>模型</th><th>输出</th><th>运行位置</th></tr>
+    <tr><td><strong>MPC 步态层</strong></td><td>30~100Hz</td><td>SRBM 简化模型</td><td>期望质心/姿态/落点轨迹</td><td>躯干控制器</td></tr>
+    <tr><td><strong>WBC 全身层</strong></td><td>500~1000Hz</td><td>全身动力学 + QP</td><td>各关节期望力矩 τ</td><td>躯干控制器</td></tr>
+    <tr><td><strong>关节执行层</strong></td><td>1~10kHz</td><td>单关节(电流/速度/位置环)</td><td>逆变器 PWM</td><td>关节 MCU(你的 Hdrive)</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 一句话分工(本页最重要的结论):</b><strong>MPC 用简化模型决定"该往哪走",WBC 用全身模型决定"每个关节给多少力矩",关节环负责"把力矩做出来"。</strong>上层"想得粗但看得远",下层"想得细但看得近"——频率逐层升高,模型逐层变细,这是整个现代人形机器人控制栈的统一范式。
+  </div>
+
+  <!-- ================= 6 强化学习步态 ================= -->
+  <h2><span class="h2-num">6</span> 强化学习(RL)步态:让策略自己学走路</h2>
+
+  <h3>思路与流程</h3>
+  <p><strong>强化学习(RL)</strong>路线不手工建模、不手工调 PID:定义好<b>奖励函数</b>(速度、姿态、能耗、平滑性、不摔倒……),在仿真里让一个策略网络(通常是 PPO 训练的 MLP)通过试错学会"给每个关节多大的目标位置/力矩"。由于在真实机器人上试错太危险、太慢,工程核心是 <b>sim-to-real</b>:在大规模并行仿真(Isaac Gym / MuJoCo)里训练数千个并行环境,再用领域随机化(随机化质量、摩擦、延迟、噪声)让策略在真实世界也稳健。</p>
+
+  <h3>与基于模型方法的对比</h3>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>基于模型(MPC / WBC)</th><th>强化学习(RL)</th></tr>
+    <tr><td><strong>动力学知识</strong></td><td>显式建模,可解释、可分析</td><td>隐式从数据中学,黑盒</td></tr>
+    <tr><td><strong>接触/复杂地形</strong></td><td>需要显式建模与调参,困难</td><td>自动隐式学习,擅长复杂接触</td></tr>
+    <tr><td><strong>开发成本</strong></td><td>动力学建模 + 求解器 + 调权重</td><td>奖励设计 + 大规模并行仿真训练</td></tr>
+    <tr><td><strong>运行时算力</strong></td><td>每周期解优化,算力高</td><td>部署是神经网络前向,非常轻(50~100Hz)</td></tr>
+    <tr><td><strong>可解释/安全性</strong></td><td>约束可审计,便于保证安全</td><td>难审计,需大量域随机化与测试</td></tr>
+    <tr><td><strong>当前主力场景</strong></td><td>实验室与高端平台(研究、验证)</td><td>产业落地(宇树、Figure 等商业产品)</td></tr>
+  </table></div>
+
+  <h3>代表性结果(已核实)</h3>
+  <ul>
+    <li><strong>宇树 H1:</strong>180cm/约 47kg 的全尺寸人形机器人,采用 RL 步态。2024 年 8 月以约 <b>3.3m/s(7.38mph)</b> 刷新人形机器人移动速度世界纪录(获吉尼斯认证),并亮相英伟达 GTC 2024;之后持续刷新纪录。这是 RL 步态从论文走向量产产品的标志性案例。</li>
+    <li><strong>unitree_rl_gym(官方开源):</strong>宇树开源的 RL 训练-仿真-部署全家桶,基于 Isaac Gym(legged_gym 架构),支持 H1、G1、Go2 等机型;提供从训练、导出 ONNX 模型到真机部署的完整流程与手把手教程。更新的 <strong>unitree_rl_lab</strong> 则基于 MuJoCo,把 Sim2Real 流程进一步标准化。</li>
+    <li><strong>趋势——混合架构:</strong>当前产业主流是"RL 做高层策略(踩哪、多快、姿态目标)+ 关节环/轻量 WBC 做底层执行",以及 <strong>MPC-guided RL</strong>(用 MPC 生成示范/参考轨迹加速 RL 训练),两条路线正在融合,而非二选一。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠️ 冷静看待 RL:</b>RL 步态不是"不需要动力学"——它只是把动力学"藏"进了仿真和网络权重里。sim-to-real 鸿沟(仿真与现实差异)是最大工程难点,领域随机化、策略蒸馏、真机安全边界缺一不可。而且 RL 策略是黑盒,出问题难定位,因此高端研究平台(如 MIT、IHMC)仍以 MPC/WBC 为主。两条路线都要学,本页就是帮你打好模型路线的底子。
+  </div>
+
+  <!-- ================= 7 实际工程 ================= -->
+  <h2><span class="h2-num">7</span> 实际工程:频率分层、状态估计与摔倒保护</h2>
+
+  <h3>控制频率:每一层都有自己的节奏</h3>
+  <div class="table-wrap"><table>
+    <tr><th>层级</th><th>频率</th><th>说明</th></tr>
+    <tr><td>任务规划 / 感知</td><td>10~50Hz</td><td>视觉、导航、任务决策,慢而粗</td></tr>
+    <tr><td>步态 / RL 策略</td><td>50~100Hz</td><td>落点、步频、质心目标(RL 前向推理)</td></tr>
+    <tr><td>MPC</td><td>30~100Hz</td><td>滚动优化,时域 1~2s</td></tr>
+    <tr><td>WBC</td><td>500~1000Hz</td><td>全身 QP 逆动力学</td></tr>
+    <tr><td>关节环(速度/位置)</td><td>1~5kHz</td><td>关节控制器(位置/力矩环)</td></tr>
+    <tr><td>电流环(FOC)</td><td>10~40kHz</td><td>电机电流闭环,由关节 MCU 承担</td></tr>
+  </table></div>
+  <p>这个"金字塔"决定了通信总线的选型:WBC 每毫秒要给 30+ 个关节发一次力矩指令——这正是上一页(EtherCAT 125μs~1ms 周期、SPE 高带宽)存在的根本原因。你的 RS485 轮询架构在单关节调试时够用,一旦接入全身系统,总线延迟和抖动会直接成为上层算法的瓶颈。</p>
+
+  <h3>状态估计:一切算法的"眼睛"</h3>
+  <p>MPC 和 WBC 都需要"全身状态":浮动基座的位置/姿态/速度、各关节角、接触力。工程上这些都无法直接测到——用 <strong>IMU(角速度/加速度)+ 关节编码器 + 足底力传感器</strong> 做融合估计(扩展卡尔曼滤波 EKF、互补滤波、滑动窗口估计)。其中"浮动基座位姿"尤其难:没有固定参考系,全靠积分+观测校正。状态估计误差是全身控制工程的第一大坑——模型再准、QP 解得再快,状态估错 1 厘米、1 度,平衡任务都会失真。</p>
+  <details class="faq">
+    <summary>为什么电流环要到 10~40kHz,而 WBC 只要 1kHz?</summary>
+    <div class="faq-a">电流环闭环的是电机电感—电阻回路,时间常数在亚毫秒级,必须高频采样才能稳定控制电流(也是力矩的来源);而 WBC 控制的是"几十公斤的刚体运动",惯量大、动态慢,1kHz 已足够。频率要和被控对象的动态特性匹配,不是越高越好——高频层吃算力、吃总线带宽,能低则低。</div>
+  </details>
+
+  <h3>摔倒保护:最后一层防线</h3>
+  <p>再好的算法也会遇到极端扰动,所以量产人形机器人必须有完整的摔倒保护链条:</p>
+  <ul>
+    <li><strong>检测:</strong>IMU 角速度/加速度阈值、CP 越界判断、足底接触异常——尽快判定"要倒了";</li>
+    <li><strong>响应:</strong>先尝试"缓冲步"(快速迈步接住自己);不行则屈膝下蹲降低质心、缩小势能落差;</li>
+    <li><strong>保护性倒地:</strong>空中调整姿态,用手臂/背部等安全部位着地,避免关节和头部落地的硬冲击;</li>
+    <li><strong>恢复:</strong>倒地后通过手臂支撑、翻滚调整重新站起。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠️ 对关节模组设计者的提醒:</b>摔倒时足底/关节会承受数倍体重甚至带冲击的过载,关节需要具备力矩限幅、过流保护、机械缓冲;同时"柔顺性"(阻抗/力矩环响应快)比"刚度"更能吸收落地冲击。你的 Hdrive 在全身系统里的验收标准,不只是"跟得上指令",还有"跟得上 + 摔不坏 + 抗得住冲击"。
+  </div>
+
+  <!-- ================= 8 代表开源项目 ================= -->
+  <h2><span class="h2-num">8</span> 代表开源项目:从哪下手读代码</h2>
+  <div class="table-wrap"><table>
+    <tr><th>项目</th><th>出身/定位</th><th>技术栈</th><th>难度</th><th>适合用途</th></tr>
+    <tr>
+      <td><strong>OCS2</strong><br>(github.com/leggedrobotics-usp/ocs2)</td>
+      <td>苏黎世联邦理工 RSL + 马普所,"Optimal Control for Switched Systems"</td>
+      <td>C++/ROS2,MPC + HPIPM 求解器,切换系统(接触模式)最优控制</td>
+      <td><span class="my-lv my-lv-3">★★★★ 高</span></td>
+      <td>研究人形/四足 MPC 步态、接触切换;四足 ANYmal 与多个人形示例</td>
+    </tr>
+    <tr>
+      <td><strong>Crocoddyl</strong><br>(github.com/loco-3d/crocoddyl)</td>
+      <td>法国 LAAS-CNRS,"接触-丰富轨迹优化"</td>
+      <td>Python/C++,差分动态规划(DDP/FDDP)</td>
+      <td><span class="my-lv my-lv-3">★★★★ 高</span></td>
+      <td>全身运动规划、多接触动作(人形 Talos、四足 Solo);论文复现首选</td>
+    </tr>
+    <tr>
+      <td><strong>Drake</strong><br>(github.com/RobotLocomotion/drake)</td>
+      <td>MIT/CMU/丰田研究院联合,"基于模型的机器人设计验证"</td>
+      <td>Python/MATLAB/C++,自带 ZMP 规划器与 Atlas 平衡/步行示例</td>
+      <td><span class="my-lv my-lv-2">★★★ 中</span></td>
+      <td>学 ZMP 预览控制与全身控制的教科书级代码;文档最全、最友好</td>
+    </tr>
+    <tr>
+      <td><strong>unitree_rl_gym</strong><br>(github.com/unitreerobotics/unitree_rl_gym)</td>
+      <td>宇树官方,"RL 训练-仿真-真机部署"全家桶</td>
+      <td>Isaac Gym + MuJoCo,PPO/legged_gym 架构,支持 H1/G1/Go2</td>
+      <td><span class="my-lv my-lv-2">★★★ 中</span></td>
+      <td>入门 RL sim-to-real 全流程;配真机教程,产业路线首选</td>
+    </tr>
+    <tr>
+      <td><strong>OpenLoong-Dyn-Control</strong><br>(github.com/loongOpen/OpenLoong-Dyn-Control)</td>
+      <td>国产开源人形机器人"青龙"的全身动力学控制软件包</td>
+      <td>Python/C++,全身动力学控制(动力学建模、控制与仿真)</td>
+      <td><span class="my-lv my-lv-3">★★★★ 高</span></td>
+      <td>国产全链路参考:从 URDF/动力学到全身控制</td>
+    </tr>
+    <tr>
+      <td><strong>tosr_ts</strong></td>
+      <td>社区盘点中与 OCS2/Crocoddyl 并列出现的人形控制 MPC 相关仓库(见参考来源的视频盘点)</td>
+      <td>—</td>
+      <td><span class="my-lv my-lv-1">★ 待核实</span></td>
+      <td>该名称在主流代码平台检索结果极少、公开资料不足,建议以官方仓库为准,谨慎参考</td>
+    </tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 读代码顺序建议:</b>先 <strong>Drake</strong>(学 ZMP 预览控制,文档好)→ 再 <strong>OCS2</strong>(学 MPC 步态框架)→ 最后 <strong>Crocoddyl</strong>(学接触轨迹优化);想快速体验产业路线则直接跑 <strong>unitree_rl_gym</strong> 的 H1 例程。切忌一上来就啃全代码,先跑通示例、再改参数、最后读核心求解器。
+  </div>
+
+  <!-- ================= 9 入门路线 ================= -->
+  <h2><span class="h2-num">9</span> 入门路线:一步一步走到 WBC/MPC</h2>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>单腿倒立摆</b><br>先写一个 1D/2D LIPM 仿真:调 ω、看质心如何发散;实现 ZMP 判稳与 CP 公式,感受"不稳定动力学"</div>
+    <div class="step-item"><span class="n">2</span><b>MuJoCo 里让 H1 站住</b><br>用 mujoco_menagerie 的 H1 模型,先跑通状态估计(IMU+编码器),再调关节 PD 让它站住不倒</div>
+    <div class="step-item"><span class="n">3</span><b>简单步态</b><br>实现离线 ZMP 预览步态,先走平地;再加踝策略/迈步策略应对小扰动</div>
+    <div class="step-item"><span class="n">4</span><b>MPC 步态</b><br>跑通 OCS2 或参考 SRBM-MPC 实现:理解"滚动优化 + 落点决策"</div>
+    <div class="step-item"><span class="n">5</span><b>WBC 全身层</b><br>实现一个 QP 逆动力学(OSQP 即可),把 MPC 的期望轨迹转成关节力矩</div>
+    <div class="step-item"><span class="n">6</span><b>RL 与真机</b><br>用 unitree_rl_gym 训练 H1 步态,再理解 sim-to-real;回到你的关节模组做执行层联调</div>
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 常见掉坑点:</b>跳过第 1 步直接上 WBC/MPC,会被"为什么不稳"折磨很久;而只做仿真不碰真实关节,又会低估执行层延迟/带宽对上层算法的影响。建议每一层都在"仿真 + 你的 Hdrive 实物"两侧同时验证。
+  </div>
+
+  <!-- ================= 10 常见误区 ================= -->
+  <h2><span class="h2-num">10</span> 常见误区</h2>
+  <div class="box box-warn">
+    <b>❌ 误区 1:"把每个关节 PID 调好,机器人自然就会走路"</b><br>
+    平衡是系统级问题,不是关节级问题。关节 PID 再好,也解决不了"质心该往哪去、接触力怎么分"——这正是 WBC/MPC 存在的意义。<br><br>
+    <b>❌ 误区 2:"ZMP 落在支撑多边形内就一定不会倒"</b><br>
+    ZMP 判稳是必要条件,不是充分条件:动态行走中 ZMP 必须留出裕度;姿态角速度、角动量、模型误差都会让"理论稳定"变成"实际摔倒"。经典准静态判断不能外推到动态。<br><br>
+    <b>❌ 误区 3:"MPC 模型越复杂越好"</b><br>
+    相反,SRBM 的成功恰恰在于"砍掉所有非本质自由度"。模型复杂 → 求解慢 → 频率低 → 反应慢。工程的核心是"用最简模型抓住本质(接触力分配)"。<br><br>
+    <b>❌ 误区 4:"有了 RL,动力学和 WBC 都没用了"</b><br>
+    RL 把动力学藏进仿真与权重,但部署后一样要面对状态估计、延迟、安全边界;当前产业主流是混合架构,且 RL 策略仍常由 WBC/底层环来执行。两条腿走路。<br><br>
+    <b>❌ 误区 5:"关节越硬(增益越高)越稳"</b><br>
+    高增益 = 低柔顺:落地冲击、足底打滑、结构共振都会被放大。人形关节需要"执行快 + 柔顺可调",这与你的关节模组设计(力矩环、阻抗)直接相关。
+  </div>
+
+  <!-- ================= 11 小结与思考 ================= -->
+  <h2><span class="h2-num">11</span> 小结与思考</h2>
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>人形机器人控制是"全身"问题,源于欠驱动、多接触、动力学耦合三大难点;步态规划以 LIPM 为基础,ZMP 判稳、CP 决定落脚点,离线轨迹 + 在线调整构成完整框架;WBC 用"任务分层 + 逆动力学 QP"一揽子解出全部关节力矩;MPC 用 SRBM 简化模型滚动优化,给出期望轨迹;两者分工是"MPC 给期望、WBC 给力矩、关节环做执行";RL 步态以 sim-to-real 为核心,已由宇树 H1 等产品验证,并与模型方法走向融合;工程上频率分层、状态估计与摔倒保护是落地成败关键。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果去掉 MPC 层,直接用 WBC 跟踪离线步态,被横向猛推一下会发生什么?为什么?(提示:落点不是决策变量)<br>
+    2. SRBM 假设"关节质量可忽略、内部动量小"。如果机器人手臂快速挥舞重物,这个假设还成立吗?工程上如何补救?<br>
+    3. 你的 Hdrive 关节模组要在全身系统中"合格",除了跟踪精度,还需要哪些指标?(提示:延迟、带宽、力矩环带宽、柔顺性、冲击耐受)
+  </div>
+
+  <!-- ================= 12 自测 ================= -->
+  <h2><span class="h2-num">12</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 人形机器人被称为"欠驱动"系统,主要指?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 关节电机功率不足,力矩输出受限</button>
+      <button data-v="B">B. 浮动基座(躯干)的 6 个自由度没有执行器,只能靠接触力间接控制</button>
+      <button data-v="C">C. 电池容量小,续航时间短</button>
+      <button data-v="D">D. 传感器精度不够,测不准关节角</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:欠驱动指"执行器数量少于自由度":基座没有电机直接驱动,质心与姿态只能通过足底接触力间接控制,这是人形机器人区别于机械臂的根本点。选 B。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 关于 ZMP(零力矩点)的判稳条件,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. ZMP 落在支撑多边形内部时,机器人不会绕支撑边缘翻转</button>
+      <button data-v="B">B. ZMP 等于质心的水平投影,两者永远重合</button>
+      <button data-v="C">C. ZMP 越靠近支撑区边缘,稳定性裕度越大</button>
+      <button data-v="D">D. 只要 CoM 投影在支撑区内部,动态行走就一定稳定</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:A 正确。ZMP 是地面反作用力合力的作用点,必须落在支撑多边形内;B 错:加速/减速时 ZMP ≠ CoM 投影(差惯性力修正);C 错:越靠边缘裕度越小;D 错:CoM 投影判稳只是准静态近似,动态行走需考虑 ZMP 与裕度。选 A。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 在现代人形机器人控制栈中,MPC 与 WBC 的正确分工是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. MPC 用全身模型算关节力矩,WBC 用简化模型算落点</button>
+      <button data-v="B">B. 两者完全等价,只是实现语言不同</button>
+      <button data-v="C">C. MPC 用简化模型(SRBM)低频给出期望轨迹,WBC 用全身模型高频解出关节力矩</button>
+      <button data-v="D">D. WBC 只负责手臂,WBC 的 QP 不需要考虑接触力</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:C 正确,这是本页核心结论"MPC 给期望、WBC 给力矩"。A 说反了;B 错,两者模型与频率都不同;D 错,WBC 恰恰把接触力与力矩联合优化。选 C。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 机器人被横向猛推一下,若新的捕获点(CP)已超出当前支撑多边形,正确的应对是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 什么都不做,靠关节 PID 的大增益硬扛</button>
+      <button data-v="B">B. 只加大踝关节力矩,脚不动</button>
+      <button data-v="C">C. 立即关机,防止损坏</button>
+      <button data-v="D">D. 迈一步,把新支撑点放到捕获点附近"接住"自己</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:D 正确。CP 超出支撑区说明踝策略已失效(无法靠脚内发力接住),必须迈步把支撑点移到 CP 处。A 靠增益硬扛在强扰动下必倒;B 只适用于 CP 仍在支撑区内的情形。选 D。</div>
+  </div>
+
+  <!-- ================= 13 参考来源 ================= -->
+  <h2><span class="h2-num">13</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://interestingengineering.com/innovation/unitree-world-record-fastest-humanoid-robot" target="_blank" rel="noopener">Unitree's H1 sets world record as fastest humanoid robot at 7.38 mph(≈3.3m/s)</a>(Guinness 世界纪录报道)</li>
+    <li><a href="https://github.com/unitreerobotics/unitree_rl_gym" target="_blank" rel="noopener">unitreerobotics/unitree_rl_gym(宇树官方 RL 训练-仿真-真机部署仓库)</a></li>
+    <li><a href="https://www.ithome.com/0/818/155.htm" target="_blank" rel="noopener">宇树机器人强化学习代码全面开源,训练到仿真和实操手把手教学(IT之家)</a></li>
+    <li><a href="https://github.com/leggedrobotics-usp/ocs2" target="_blank" rel="noopener">leggedrobotics-usp/ocs2 — Optimal Control for Switched Systems(ETH RSL)</a></li>
+    <li><a href="https://github.com/loco-3d/crocoddyl" target="_blank" rel="noopener">loco-3d/crocoddyl — Contact-Rich Trajectory Optimization(LAAS-CNRS)</a></li>
+    <li><a href="https://github.com/RobotLocomotion/drake" target="_blank" rel="noopener">RobotLocomotion/drake — Model-based design and verification for robotics(MIT/CMU/TRI)</a>;ZMP 规划器见 <a href="https://drake.mit.edu/doxygen_cxx/classdrake_1_1planning_1_1_zmp_planner.html" target="_blank" rel="noopener">Drake ZmpPlanner 文档</a></li>
+    <li><a href="https://github.com/loongOpen/OpenLoong-Dyn-Control" target="_blank" rel="noopener">loongOpen/OpenLoong-Dyn-Control — 国产开源人形机器人全身动力学控制软件包</a></li>
+    <li><a href="https://www.bilibili.com/video/BV1rw4m1a7CD/" target="_blank" rel="noopener">开源库,4 款人形机器人 MPC 控制的开源库(哔哩哔哩盘点视频,含 tosr_ts 等项目列表来源)</a></li>
+    <li><a href="https://github.com/google-deepmind/mujoco_menagerie" target="_blank" rel="noopener">google-deepmind/mujoco_menagerie — MuJoCo 官方机器人模型库(含 Unitree H1)</a></li>
+    <li><a href="https://en.wikipedia.org/wiki/Zero_moment_point" target="_blank" rel="noopener">Zero Moment Point(维基百科,Vukobratović 1968 概念出处)</a></li>
+    <li>Kajita 等,Biped Walking Pattern Generation by Using Preview Control of Zero-Moment Point, ICRA 2003(预览控制原文);Pratt 等,Capture Point: A Step toward Humanoid Push Recovery, Humanoids 2006(捕获点原文)——可经 <a href="https://scholar.google.com/scholar?q=preview+control+of+zero-moment+point" target="_blank" rel="noopener">Google Scholar</a> 检索获取</li>
+  </ul>
+
+</div><!-- /container -->
+
+<script>
+/* ============ CoM/ZMP 交互(LIPM: ZMP = CoM - (zc/g)·CoM̈) ============ */
+var zpT = 0, zpRaf = 0, zpLast = null, zpTrailC = [], zpTrailZ = [];
+function zpDraw(){
+  var A = parseFloat(document.getElementById('zpA').value);
+  var f = parseFloat(document.getElementById('zpF').value);
+  document.getElementById('zpAv').textContent = A.toFixed(3) + ' m';
+  document.getElementById('zpFv').textContent = f.toFixed(2) + ' Hz';
+  var cv = document.getElementById('zpCv'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height, cx = W/2, ground = H - 60, scale = 900; /* px per m(横向) */
+  var zc = 0.8, g = 9.81, w = 2*Math.PI*f, footHalf = 0.06;
+  var zAmp = A * (1 + zc*w*w/g);          /* ZMP 摆幅(LIPM 解析) */
+  var stable = zAmp <= footHalf;
+  function paint(){
+    var light = document.body.getAttribute('data-theme') !== 'dark';
+    var P = light ? {
+      bg:'#ffffff', grid:'#e3eaf4', ground:'#94a3b8', foot:'#cbd5e1',
+      okBg:'rgba(34,197,94,.15)', badBg:'rgba(239,68,68,.14)',
+      okTx:'#15803d', badTx:'#b91c1c',
+      rod:'#94a3b8', com:'#2563eb', comTx:'#1d4ed8',
+      zmp:'#16a34a', trailC:'rgba(37,99,235,.5)', trailZ:'rgba(22,163,74,.55)',
+      note:'#64748b'
+    } : {
+      bg:'#0b1626', grid:'#1e3a5f', ground:'#475569', foot:'#334155',
+      okBg:'rgba(34,197,94,.12)', badBg:'rgba(239,68,68,.15)',
+      okTx:'#34d399', badTx:'#f87171',
+      rod:'#64748b', com:'#60a5fa', comTx:'#93c5fd',
+      zmp:'#22c55e', trailC:'rgba(96,165,250,.5)', trailZ:'rgba(34,197,94,.6)',
+      note:'rgba(148,163,184,.85)'
+    };
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = P.bg; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = P.grid;
+    for(var gx=0; gx<W; gx+=30){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
+    /* 地面与双脚(位置固定 ±0.12m) */
+    ctx.strokeStyle = P.ground; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(40, ground); ctx.lineTo(W-40, ground); ctx.stroke();
+    [-0.12, 0.12].forEach(function(fx){
+      ctx.fillStyle = P.foot;
+      ctx.fillRect(cx + (fx-footHalf)*scale - 0, ground, footHalf*2*scale, 12);
+    });
+    /* 支撑域(两只脚外缘之间) */
+    var domL = cx + (-0.12-footHalf)*scale, domR = cx + (0.12+footHalf)*scale;
+    ctx.fillStyle = stable ? P.okBg : P.badBg;
+    ctx.fillRect(domL, ground-70, domR-domL, 82);
+    ctx.fillStyle = stable ? P.okTx : P.badTx; ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(stable ? '✔ ZMP 在支撑域内(稳定)' : '✘ ZMP 超出支撑域(倾覆!)', cx, ground-76);
+    /* 躯干(摆动的倒立摆) */
+    var comX = A * Math.sin(zpT * w * Math.PI);   /* 便于动画节奏,用 zpT 累计相位 */
+    var comPx = cx + comX * scale, comPy = ground - zc * (scale*0.35);
+    ctx.strokeStyle = P.rod; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(cx + comX*0.2*scale*0.2, ground); ctx.lineTo(comPx, comPy); ctx.stroke();
+    ctx.fillStyle = P.com;
+    ctx.beginPath(); ctx.arc(comPx, comPy, 14, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = P.comTx; ctx.font='12px sans-serif';
+    ctx.fillText('CoM', comPx, comPy - 20);
+    /* ZMP 标记 */
+    var zmpX = A*Math.sin(zpT * w * Math.PI) * (1 + zc*w*w/g);
+    var zmpPx = cx + zmpX * scale;
+    ctx.strokeStyle = P.zmp; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(zmpPx-9, ground-4); ctx.lineTo(zmpPx+9, ground-4);
+    ctx.moveTo(zmpPx, ground-13); ctx.lineTo(zmpPx, ground+5); ctx.stroke();
+    /* 轨迹带(上一周期包络) */
+    ctx.strokeStyle = P.trailC; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(cx - A*scale, ground-100); ctx.lineTo(cx + A*scale, ground-100); ctx.stroke();
+    ctx.strokeStyle = P.trailZ;
+    ctx.beginPath(); ctx.moveTo(cx - zAmp*scale, ground-116); ctx.lineTo(cx + zAmp*scale, ground-116); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = P.note; ctx.font='11.5px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('上虚线=CoM 摆幅包络 · 下虚线=ZMP 摆幅包络(ZMP 更宽!)', 44, ground-130);
+    document.getElementById('zpRead').innerHTML =
+      'CoM 摆幅 = <b>' + A.toFixed(3) + ' m</b> · ZMP 摆幅 = A·(1 + z_c·ω²/g) = <b>' + zAmp.toFixed(3) + ' m</b>' +
+      ' · 支撑半宽 = <b>0.060 m</b> ' +
+      (stable ? '<span style="color:' + P.okTx + '">✔ 稳定:ZMP 未出脚掌,踝关节转矩扛得住</span>'
+              : '<span style="color:' + P.badTx + '">✘ 倾覆:需要加快迈步转移支撑(这正是"步频快了才稳"的数学)</span>') +
+      ' · 提示:频率拉高或摆幅拉大,看 ZMP 如何先于 CoM 失稳。';
+  }
+  if(!zpRaf){
+    zpLast = performance.now();
+    (function loop(now){
+      var dt = Math.min((now - zpLast)/1000, 0.05); zpLast = now;
+      zpT += dt * 2;              /* 相位推进 */
+      paint();
+      zpRaf = requestAnimationFrame(loop);
+    })(performance.now());
+  } else { paint(); }
+}
+zpDraw();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>

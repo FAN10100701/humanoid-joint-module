@@ -20,8 +20,8 @@ const exists = (p) => fs.existsSync(path.join(ROOT, p));
 const FIXLOG = [];   // --detail 时打印每处浅色字/溢出明细
 const FOLDER2KEY = {
   "00_3D解剖": "00", "01_理论入门": "01", "02_硬件基础": "02", "03_项目实操": "03",
-  "04_升级进阶": "06", "06_软件与算法": "06", "07_前沿知识库": "07", "08_学习工具": "08",
-  "09_大模型与具身智能": "09", "10_NPU与数字IC设计": "10"
+  "04_软件与算法": "04", "05_前沿知识库": "05", "06_学习工具": "06",
+  "07_大模型与具身智能": "07", "08_NPU与数字IC设计": "08"
 };
 
 /* ---------- 单源数据 ---------- */
@@ -79,7 +79,7 @@ const QUEST_LINK_U = [...qstSrc.matchAll(/link:\s*\{[^}]*u:\s*'([^']+)'/g)].map(
 const QUEST_REFS = [...qstSrc.matchAll(/'ref:([a-z]+-\d+)'/g)].map((m) => m[1]);
 const QB_LINK_U = [...qbSrc.matchAll(/link:\s*\{[^}]*u:\s*'([^']+)'/g)].map((m) => m[1]);
 
-/* u 字段(相对 08_学习工具/ 解析)→ 站内相对路径;目录链接解析到 index.html */
+/* u 字段(相对 06_学习工具/ 解析)→ 站内相对路径;目录链接解析到 index.html */
 function toSiteRel(u) {
   let clean = u.split("?")[0].split("#")[0];
   clean = clean.replace(/^\.\.\//, "").replace(/^\.\//, "");
@@ -88,11 +88,14 @@ function toSiteRel(u) {
 }
 
 /* ---------- 页面扫描 ---------- */
-const SKIP_DIR = /(^|[\\/])(_[^\\/]*|node_modules|\.git|edge_prof|05_HdriveV2[^\\/]*)([\\/]|$)/;
+const SKIP_DIR = /(^|[\\/])(_[^\\/]*|node_modules|\.git|edge_prof|13_HdriveV2[^\\/]*)([\\/]|$)/;
 const pages = [];
 (function walk(dir) {
+  /* Containment:递归入口先校验仍在项目根内(防目录项异常/符号链接逃逸) */
+  if (!path.resolve(dir).startsWith(ROOT)) return;
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, ent.name);
+    if (!path.resolve(full).startsWith(ROOT)) continue;
     const rel = path.relative(ROOT, full).replace(/\\/g, "/");
     if (ent.isDirectory()) { if (!SKIP_DIR.test(rel + "/")) walk(full); continue; }
     if (!ent.name.endsWith(".html")) continue;

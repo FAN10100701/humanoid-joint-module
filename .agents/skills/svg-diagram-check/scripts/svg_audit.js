@@ -33,7 +33,7 @@ const numStrict = (v) => (/^-?[\d.]+$/.test(v || "") ? parseFloat(v) : null);   
 const clip = (s, n) => (s.length > n ? s.slice(0, n) + "…" : s);
 
 /* ---------- 收集页面 ---------- */
-const SKIP_DIR = /(^|[\\/])(_[^\\/]*|node_modules|\.git|edge_prof|05_HdriveV2[^\\/]*|\.agents|\.zcode)([\\/]|$)/;
+const SKIP_DIR = /(^|[\\/])(_[^\\/]*|node_modules|\.git|edge_prof|13_HdriveV2[^\\/]*|\.agents|\.zcode)([\\/]|$)/;
 const files = [];
 const isHTML = (p) => p.toLowerCase().endsWith(".html");
 if (argv.includes("--all")) {

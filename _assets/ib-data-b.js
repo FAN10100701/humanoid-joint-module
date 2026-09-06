@@ -2,7 +2,7 @@
    人形机器人学习站 · 保研复试面试题库数据 B(硬件 / 系统类 7 学科)
    学科: 硬件电路 hw / 无人机电调 esc / ROS与编队 ros /
          C语言 c / C++ cpp / 嵌入式编程 emb / FreeRTOS frt
-   字段同 ib-data-a.js; 配套页面: 08_学习工具/11_保研复试面试题库.html
+   字段同 ib-data-a.js; 配套页面: 06_学习工具/11_保研复试面试题库.html
    ============================================================ */
 window.IB_B = {
 
@@ -43,8 +43,8 @@ subjects: [
       { t:'Nav2 导航栈', f:4, h:'AMCL 定位→全局规划→局部规划→代价地图' },
       { t:'ROS1 vs ROS2(DDS)', f:4, h:'DDS 去中心化、QoS 可配、实时性更好' }
     ],
-    rel:[ { t:'软件学习路线图 · ROS2', u:'../06_软件与算法/01_软件学习路线图.html' },
-          { t:'仿真中心', u:'../08_学习工具/08_仿真中心.html' } ] },
+    rel:[ { t:'软件学习路线图 · ROS2', u:'../04_软件与算法/01_软件学习路线图.html' },
+          { t:'仿真中心', u:'../06_学习工具/08_仿真中心.html' } ] },
 
   { id:'c', name:'C 语言', en:'C Language', icon:'🖥️', freq:5,
     desc:'嵌入式复试的入场券:指针与数组、内存四区、volatile/static/const 三兄弟,几乎逢面必考。',
@@ -57,7 +57,7 @@ subjects: [
       { t:'函数指针', f:4, h:'回调/状态机/驱动表的核心手法' },
       { t:'宏的陷阱', f:4, h:'带参宏必须括号;do{}while(0) 包多语句' }
     ],
-    rel:[ { t:'代码实验室', u:'../08_学习工具/04_代码实验室.html' } ] },
+    rel:[ { t:'代码实验室', u:'../06_学习工具/04_代码实验室.html' } ] },
 
   { id:'cpp', name:'C++', en:'C++', icon:'⚙️', freq:4,
     desc:'面向对象三件套+内存管理五法则+STL 是三大题源;能讲清 vtable 与智能指针实现就超过大多数考生。',
@@ -70,7 +70,7 @@ subjects: [
       { t:'STL 与迭代器失效', f:4, h:'vector 扩容全失效;erase 返回下一个迭代器' },
       { t:'RAII 与移动语义', f:4, h:'资源=对象生命周期;move 转移所有权免拷贝' }
     ],
-    rel:[ { t:'软件学习路线图', u:'../06_软件与算法/01_软件学习路线图.html' } ] },
+    rel:[ { t:'软件学习路线图', u:'../04_软件与算法/01_软件学习路线图.html' } ] },
 
   { id:'emb', name:'嵌入式编程', en:'Embedded', icon:'🔧', freq:5,
     desc:'中断、DMA、串行总线三座大山+看门狗/低功耗,构成"能不能下车间"的判断题。',
@@ -83,8 +83,8 @@ subjects: [
       { t:'Bootloader / IAP', f:4, h:'分区+跳转;APP 中断向量表重定位' },
       { t:'低功耗模式', f:3, h:'睡眠/停止/待机;唤醒源与 IO 状态保持' }
     ],
-    rel:[ { t:'软件学习路线图 · 固件', u:'../06_软件与算法/01_软件学习路线图.html' },
-          { t:'通信与控制算法升级路线', u:'../04_升级进阶/09_通信与控制算法升级路线.html' } ] },
+    rel:[ { t:'软件学习路线图 · 固件', u:'../04_软件与算法/01_软件学习路线图.html' },
+          { t:'通信与控制算法升级路线', u:'../04_软件与算法/22_通信与控制算法升级路线.html' } ] },
 
   { id:'frt', name:'FreeRTOS', en:'FreeRTOS', icon:'⏱️', freq:4,
     desc:'RTOS 三问:任务怎么调度、任务间怎么通信、优先级反转怎么办——答好这三问,RTOS 面试就过关。',
@@ -97,7 +97,7 @@ subjects: [
       { t:'内存管理 heap_1~5', f:4, h:'heap_4 合并相邻空闲块,最常用' },
       { t:'栈溢出检测', f:4, h:'uxTaskGetStackHighWaterMark + 钩子函数' }
     ],
-    rel:[ { t:'软件学习路线图', u:'../06_软件与算法/01_软件学习路线图.html' } ] },
+    rel:[ { t:'软件学习路线图', u:'../04_软件与算法/01_软件学习路线图.html' } ] },
 
   { id:'ic', name:'NPU与数字IC设计', en:'NPU & Digital IC', icon:'🔲', freq:4,
     desc:'数字 IC/芯片方向保研复试的四板斧:Verilog 与状态机、跨时钟域与 FIFO、总线协议(APB/AHB/AXI)、NPU 架构与量化——再加 UVM 验证常识就是完整画像。答题要带「综合视角」:这段代码综合成什么电路、时序违例了怎么办。',
@@ -110,8 +110,8 @@ subjects: [
       { t:'脉动阵列与 INT8 量化', f:4, h:'PE 局部互落数据复用;r=s(q−z),per-channel 精度更好' },
       { t:'UVM 与覆盖率驱动', f:4, h:'sequence→sequencer→driver 分层;功能+代码覆盖率收敛' }
     ],
-    rel:[ { t:'NPU与数字IC设计板块总览', u:'../10_NPU与数字IC设计/01_板块总览与学习路线.html' },
-          { t:'Verilog语法与状态机', u:'../10_NPU与数字IC设计/03_Verilog语法与状态机设计.html' } ] },
+    rel:[ { t:'NPU与数字IC设计板块总览', u:'../08_NPU与数字IC设计/01_板块总览与学习路线.html' },
+          { t:'Verilog语法与状态机', u:'../08_NPU与数字IC设计/03_Verilog语法与状态机设计.html' } ] },
 
   { id:'llm', name:'大模型与具身智能', en:'LLM & Embodied AI', icon:'🧠', freq:4,
     desc:'AI 方向复试新必考:Transformer 注意力、MoE 稀疏架构、SFT/RLHF/DPO 三件套、LoRA 微调与端侧部署,再加 VLA/世界模型就覆盖了具身智能面试 90% 的问题。答题要能落到显存/FLOPs 的数量级估算,这是「跑过」和「背过」的分水岭。',
@@ -124,8 +124,8 @@ subjects: [
       { t:'VLA 视觉-语言-动作', f:4, h:'视觉编码器+LLM 主干+动作头(离散token/扩散);RT-2/OpenVLA' },
       { t:'世界模型与数据', f:3, h:'预测未来做想象规划;Open X-Embodiment 数据瓶颈与 sim2real' }
     ],
-    rel:[ { t:'大模型基础与MoE架构', u:'../09_大模型与具身智能/01_大模型基础与MoE架构图解.html' },
-          { t:'感知与具身智能VLA', u:'../06_软件与算法/05_感知与具身智能_VLA与世界模型.html' } ] }
+    rel:[ { t:'大模型基础与MoE架构', u:'../07_大模型与具身智能/01_大模型基础与MoE架构图解.html' },
+          { t:'感知与具身智能VLA', u:'../04_软件与算法/05_感知与具身智能_VLA与世界模型.html' } ] }
 ],
 
 items: [
@@ -158,7 +158,7 @@ items: [
   q:'LDO 与 DCDC(Buck/Boost)的原理与选型?',
   a:'<div class="table-wrap"><table><tr><th></th><th>LDO(线性)</th><th>DCDC(开关)</th></tr><tr><td>原理</td><td>调整管工作在线性区,当"可变电阻"分压</td><td>MOS 高频开关+电感储能,占空比调压</td></tr><tr><td>效率</td><td>η≈V<sub>out</sub>/V<sub>in</sub>(5V→3.3V 仅 66%)</td><td>85~97%</td></tr><tr><td>纹波/噪声</td><td><b>极低(μV 级),无 EMI</b></td><td>数十 mV 纹波+开关噪声,需滤波与布局功夫</td></tr><tr><td>成本/面积</td><td>低、简单</td><td>高(电感+续流管+补偿)</td></tr><tr><td>发热</td><td>(V<sub>in</sub>−V<sub>out</sub>)·I 全变热</td><td>小</td></tr><tr><td>选型</td><td>压差小、电流小、给 ADC/射频等敏感负载供电</td><td>大压差、大电流、电池续航敏感</td></tr></table></div><p><b>系统级答案(加分):</b>混合架构——DCDC 先高效降压(如 24V→5V),LDO 二级"净噪"(5V→3.3V 供 VDDA/晶振/射频),兼顾效率与纯净。关键参数:LDO 看压差(Dropout)、PSRR、静态电流;DCDC 看拓扑、开关频率(高→电感小但开关损耗/EMI 大)、轻载效率。</p>',
   follow:['LDO 的 PSRR 为什么对 ADC 供电重要?','Buck 的续流二极管换同步整流为什么效率更高?'],
-  links:[{t:'电源管理功率链路分析',u:'../03_项目实操/11_电源管理功率链路分析/'},{t:'电池与能源系统专题',u:'../07_前沿知识库/05_电池与能源系统专题.html'}] },
+  links:[{t:'电源管理功率链路分析',u:'../03_项目实操/11_电源管理功率链路分析/'},{t:'电池与能源系统专题',u:'../05_前沿知识库/05_电池与能源系统专题.html'}] },
 
 { id:'hw-06', s:'hw', lv:4, tags:['TVS','ESD','退耦'],
   q:'TVS、ESD 管、压敏电阻的区别?退耦电容为什么必须贴近芯片?',
@@ -238,7 +238,7 @@ items: [
   q:'ROS 的话题、服务、动作三种通信机制分别适合什么场景?',
   a:'<div class="table-wrap"><table><tr><th></th><th>话题 Topic</th><th>服务 Service</th><th>动作 Action</th></tr><tr><td>模型</td><td>发布/订阅(异步,单向流)</td><td>请求/应答(同步,一问一答)</td><td>目标/反馈/结果(异步长任务)</td></tr><tr><td>典型带宽</td><td>高频连续流</td><td>低频调用</td><td>持续数秒~分钟</td></tr><tr><td>支持</td><td>一对多、多对一</td><td>一对一(ROS2 可服务端多)</td><td>可取消、可抢占</td></tr><tr><td>例子</td><td>/cmd_vel、/scan、/imu</td><td>spawn、clear_costmap、设置模式</td><td>navigate_to_pose、move_base</td></tr></table></div><p><b>答题要点:</b>传感器流和控制流用 Topic(解耦、低延迟);偶发的"问一下/设置一下"用 Service;导航/抓取这类"启动-监控-完成/取消"用 Action。ROS2 中三者皆基于 DDS,Action 实现为"服务(目标/结果/取消)+话题(feedback/status)"组合。</p>',
   follow:['为什么 cmd_vel 不用服务(同步)而用话题?','Action 为什么必须支持取消?'] ,
-  links:[{t:'软件学习路线图 · ROS2',u:'../06_软件与算法/01_软件学习路线图.html'},{t:'ROS2与机器人软件栈',u:'../06_软件与算法/03_ROS2与机器人软件栈.html'}]},
+  links:[{t:'软件学习路线图 · ROS2',u:'../04_软件与算法/01_软件学习路线图.html'},{t:'ROS2与机器人软件栈',u:'../04_软件与算法/03_ROS2与机器人软件栈.html'}]},
 
 { id:'ros-02', s:'ros', lv:5, tags:['TF'],
   q:'ROS 的 TF(坐标变换)系统是什么?查一个变换的正确姿势?',
@@ -250,7 +250,7 @@ items: [
   a:'<p><b>思想:</b>队形以 leader 为锚,follower 维持与 leader 的<b>期望相对几何关系</b>(距离+方向),而不是各自独立走全局路径——leader 机动,follower 控制律自然保持队形。</p><ul><li><b>l-ψ(距离+方位角):</b>follower 维持期望距离 l 与相对 leader 航向的方位角 ψ——距离+方位两个极坐标量,一个距离误差+一个角度误差,分别映射到 follower 线速度/角速度控制。结构简单;缺点:不直接限制 follower 朝向(可能"横着蹭")。</li><li><b>l-α(距离+两条方位角):</b>约束 l、leader 方位 ψ<sub>L</sub> 与 follower 自身航向 α,可同时锁定相对位置与相对航向(队形更"刚"),代价是控制律复杂些。</li></ul><p><b>实现链路(仿真项目标准答案):</b>编队控制器节点订阅 leader 的 odom,按期望几何算出 follower 的目标点→发 follower 的 /cmd_vel(或 move_base 目标);Gazebo 多机模型+namespace 隔离;队形变换=在线改期望 (l,ψ) 参数。常追问稳定性:l-ψ 可化为级联误差动力学,用 Lyapunov 证明误差收敛。</p>',
   svg:'<svg viewBox="0 0 560 200" role="img" aria-label="leader-follower 编队几何"><defs><marker id="ar3" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><path d="M60,170 C120,60 220,40 300,60" fill="none" stroke="#6b7280" stroke-width="1.2" stroke-dasharray="5 4"/><text x="90" y="90" font-size="10" fill="#9aa4b2">leader 轨迹</text><rect x="292" y="46" width="26" height="16" rx="3" fill="rgba(59,130,246,.25)" stroke="#58a6ff"/><line x1="318" y1="54" x2="352" y2="54" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#ar3)"/><text x="330" y="44" font-size="10" fill="#58a6ff">航向θ_L</text><text x="296" y="80" font-size="11" fill="#58a6ff">Leader</text><path d="M258,120 C240,104 246,92 262,92 C276,92 280,104 268,120" fill="none" stroke="#22c55e" stroke-width="0"/><circle cx="240" cy="128" r="9" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><line x1="244" y1="124" x2="270" y2="104" stroke="#f59e0b" stroke-width="2"/><text x="250" y="112" font-size="11" fill="#f59e0b">l(期望距离)</text><path d="M262,112 A16 16 0 0 1 276,102" fill="none" stroke="#ef4444" stroke-width="1.6"/><text x="262" y="98" font-size="11" fill="#ef4444">ψ(方位角)</text><text x="212" y="150" font-size="11" fill="#22c55e">Follower</text><circle cx="180" cy="158" r="9" fill="rgba(34,197,94,.2)" stroke="#22c55e"/><text x="152" y="182" font-size="11" fill="#22c55e">Follower2</text><text x="360" y="120" font-size="11" fill="currentColor">误差: Δl→线速度, Δψ→角速度</text><text x="360" y="140" font-size="11" fill="currentColor">多follower=(l,ψ)参数表=队形库</text><text x="360" y="160" font-size="11" fill="currentColor">队形切换=改参数,轨迹无需重规划</text></svg>',
   follow:['队形中 follower 避障怎么加入(人工势场/避障层)?','l-ψ 编队的稳态误差在 leader 转弯时为什么变大?'] ,
-  links:[{t:'仿真中心',u:'../08_学习工具/08_仿真中心.html'},{t:'仿真与强化学习 MuJoCo/Isaac',u:'../06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html'}]},
+  links:[{t:'仿真中心',u:'../06_学习工具/08_仿真中心.html'},{t:'仿真与强化学习 MuJoCo/Isaac',u:'../04_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html'}]},
 
 { id:'ros-04', s:'ros', lv:4, tags:['多机仿真'],
   q:'Gazebo/ROS 里怎么做多机器人仿真?命名空间怎么用?',
@@ -261,13 +261,13 @@ items: [
   q:'ROS2 Nav2 导航栈的组成与工作流程?',
   a:'<p><b>四大服务器:</b>①Planner(全局规划,A*/Theta*/Smac,走全局代价地图);②Controller(局部跟踪控制,DWB/TEB/MPPI,走局部代价地图);③Recovery(清理代价地图/后退/旋转等恢复行为);④BT Navigator(行为树编排整流程)。加 Lifecycle 管理节点启停。</p><p><b>定位:</b>AMCL(自适应蒙特卡洛,粒子滤波)在已知栅格地图上融合激光+里程计估计位姿;地图由 SLAM Toolbox(在线建图)产出。</p><p><b>代价地图四层(常考):</b>静态地图层+障碍层(激光/超声实时)+膨胀层(障碍外扩代价梯度,膨胀半径=安全距离)+自定义层(如禁区)。</p><p><b>流程:</b>RViz 下发目标→BT 启动→AMCL 供位姿→Planner 全局路径→Controller 局部跟踪下发 cmd_vel→撞死则 Recovery→到达。对比 ROS1 move_base:Nav2 模块化为独立服务器+行为树,可组合、可实时替换控制器。</p>',
   follow:['膨胀半径怎么定(相对机器人半径+安全裕度)?','AMCL 粒子数与重采样策略的影响?'] ,
-  links:[{t:'软件学习路线图',u:'../06_软件与算法/01_软件学习路线图.html'},{t:'ROS2导航 Navigation2实战',u:'../06_软件与算法/11_ROS2导航_Navigation2实战.html'}]},
+  links:[{t:'软件学习路线图',u:'../04_软件与算法/01_软件学习路线图.html'},{t:'ROS2导航 Navigation2实战',u:'../04_软件与算法/11_ROS2导航_Navigation2实战.html'}]},
 
 { id:'ros-06', s:'ros', lv:4, tags:['DDS','ROS1vs2'],
   q:'ROS2 相比 ROS1 的关键改进?DDS 带来了什么?',
   a:'<div class="table-wrap"><table><tr><th></th><th>ROS1</th><th>ROS2</th></tr><tr><td>通信</td><td>自研 TCPROS/UDPROS,依赖 roscore(master)</td><td>DDS(数据分发服务),<b>去中心化自动发现</b></td></tr><tr><td>实时性</td><td>无保障</td><td>可配 QoS+内存预分配,可做硬实时节点</td></tr><tr><td>QoS</td><td>基本无</td><td>可靠性/历史深度/期限(deadline)/寿命等</td></tr><tr><td>多机</td><td>麻烦(URI/时间同步)</td><td>同一 DDS 域即互通,天然分布式</td></tr><tr><td>生命周期</td><td>无标准</td><td>Lifecycle 节点标准化的状态机管理</td></tr><tr><td>平台</td><td>Linux 为主</td><td>Linux/Win/mac/RTOS(嵌入式 micro-ROS)</td></tr></table></div><p><b>DDS 带来:</b>发布订阅自动发现(无 master 单点)、传输层可插拔(UDP 组播/共享内存 Iceoryx)、QoS 协商(传感器 best-effort vs 控制 reliable)。代价:默认组播在某些 WiFi/容器环境发现失败(常见坑:ROS_DOMAIN_ID 隔离、RMW 实现切换 FastDDS/CycloneDDS)。</p>',
   follow:['QoS 的 best_effort 与 reliable 各适合什么话题?','ROS_DOMAIN_ID 的作用?'] ,
-  links:[{t:'ROS2入门实战·第一个节点',u:'../06_软件与算法/09_ROS2入门实战_第一个节点.html'}]},
+  links:[{t:'ROS2入门实战·第一个节点',u:'../04_软件与算法/09_ROS2入门实战_第一个节点.html'}]},
 
 { id:'ros-07', s:'ros', lv:4, tags:['URDF','仿真'],
   q:'URDF 描述机器人的什么信息?Gazebo 仿真一个机器人还需要什么?',
@@ -278,13 +278,13 @@ items: [
   q:'简述激光 SLAM 的基本原理(以 Cartographer/SLAM Toolbox 为例)。',
   a:'<p><b>前端-后端框架:</b></p><ul><li><b>前端(里程计+匹配):</b>帧间匹配(scan-to-scan 或 scan-to-map,用相关性匹配/高斯牛顿优化),加上 IMU/轮式里程计预测,得到短时一致的位姿增量——不积累不行,只靠它也不行(漂移);</li><li><b>回环检测:</b>识别"回到走过的地方"(分支定界搜索候选匹配/特征指纹),建立新约束;</li><li><b>后端(图优化):</b>位姿图优化(Pose Graph),节点=关键帧位姿,边=约束(相邻+回环),回环边的强约束"拉直"历史漂移,g2o/Ceres 求解;子图(submap)概念用于海量激光管理;</li><li><b>建图:</b>优化后轨迹+激光投影出栅格占据地图(对数几率更新)。</li></ul><p>加回答疑:与视觉 SLAM(ORB-SLAM,特征点/直接法)对应关系一致(前端-回环-后端);2D 栅格 vs 3D 点云(LOAM 系)。</p>',
   follow:['回环检测为什么重要(不加会怎样)?','占据栅格的概率更新怎么做的?'] ,
-  links:[{t:'视觉SLAM与状态估计',u:'../06_软件与算法/06_视觉SLAM与状态估计.html'}]},
+  links:[{t:'视觉SLAM与状态估计',u:'../04_软件与算法/06_视觉SLAM与状态估计.html'}]},
 
 { id:'ros-09', s:'ros', lv:3, tags:['工程组织'],
   q:'一个 ROS 多机编队跟随仿真项目,你如何组织工程结构?',
   a:'<p><b>标准答案(体现工程素养):</b></p><ul><li><b>工作空间:</b>colcon 工作空间,包按功能拆:robot_description(xacro URDF)、robot_bringup(launch 集合)、formation_controller(编队算法)、formation_sim(gazebo world+多机 spawn)、formation_msgs(自定义消息 FormationConfig);</li><li><b>launch 分层:</b>gazebo.launch→robots.launch(xacro 循环 ns spawn N 机)→formation.launch(编队节点+RViz);一键 make launch;</li><li><b>参数化:</b>队形参数(每机 l,ψ,v_max)放 YAML/ROS param,运行时服务切换队形;</li><li><b>质量:</b>单元测试(编队几何计算 cpp test)、CI 构建、README 复现三步(clone→colcon build→ros2 launch)。</li></ul><p>复试价值点:能画出节点图(rqt_graph 口头版):leader odom→formation_controller(定时器)→N×cmd_vel,以及话题/TF 命名规范。被问"难点"标准素材:多机 TF 命名空间、Gazebo 性能、转弯时队形稳态误差。</p>',
   follow:['自定义消息为什么要单独成包?','编队节点内部用 ROS timer 还是订阅触发?为什么?'] ,
-  links:[{t:'开源整机与仓库深度解析',u:'../07_前沿知识库/07_开源整机与仓库深度解析.html'},{t:'动手项目清单',u:'../08_学习工具/09_动手项目清单.html'}]},
+  links:[{t:'开源整机与仓库深度解析',u:'../05_前沿知识库/07_开源整机与仓库深度解析.html'},{t:'动手项目清单',u:'../06_学习工具/09_动手项目清单.html'}]},
 
 /* ================= C 语言 c ================= */
 { id:'c-01', s:'c', lv:5, tags:['指针','数组'],
@@ -292,7 +292,7 @@ items: [
   a:'<p><b>常规关系:</b>表达式里数组名<b>退化为指向首元素的指针</b>:a[i] ≡ *(a+i),传参 `int a[]` 等价 `int *a`(函数内 sizeof 得到指针大小 4/8)。数组是"一块连续内存+编译期长度",指针是"一个地址变量",<b>本质不同</b>。</p><p><b>三个不退化例外(高频考点):</b></p><ul><li><b>sizeof(arr):</b>得到整个数组字节数,不是指针大小;</li><li><b>&arr:</b>得到"指向整个数组的指针"(int(*)[N]),数值同首地址但类型不同,+1 跳整个数组;</li><li><b>字符串字面量初始化数组</b> char s[]="abc"(可修改副本) vs char *p="abc"(只读常量区,改它段错误)。</li></ul><p><b>指针数组 vs 数组指针:</b>int *p[10](10 个指针) vs int (*p)[10](指向数组的指针)——看运算符优先级,[] 优先于 *。答题时给"右左法则"读法,加分。</p>',
   code:'int a[5] = {1,2,3,4,5};\nint (*p)[5] = &a;        /* 指向整个数组 */\nprintf("%zu %zu\\n", sizeof(a), sizeof(&a)); /* 20 8(64位) */\nprintf("%d %d\\n", *a, (*p)[2]);             /* 1 3 */',
   follow:['char s[]="abc" 与 char *p="abc" 修改时的区别?','二维数组传参为什么必须给列数?'] ,
-  links:[{t:'代码规范 C/Python/Verilog',u:'../06_软件与算法/21_代码规范_C_Python_Verilog.html'}]},
+  links:[{t:'代码规范 C/Python/Verilog',u:'../04_软件与算法/21_代码规范_C_Python_Verilog.html'}]},
 
 { id:'c-02', s:'c', lv:5, tags:['内存布局'],
   q:'C 程序的内存是怎么分区的?各放什么?',
@@ -305,7 +305,7 @@ items: [
   q:'volatile 关键字的作用?哪些场景必须用?它保证原子性吗?',
   a:'<p><b>作用:</b>告诉编译器"这个变量随时可能被程序控制流之外的因素改变",禁止对其读取/存储做优化(缓存到寄存器、合并读写、乱序删除),每次访问都真实读写内存。</p><p><b>三大必用场景:</b></p><ul><li><b>外设寄存器(MMIO):</b>status = *(volatile uint32_t*)0x40020000;不加可能被优化成读一次循环判空,死等;</li><li><b>ISR 与主程序共享变量:</b>不加,主循环里 while(flag==0) 可能被优化成只读一次寄存器版本;</li><li><b>多线程共享变量:</b>禁止编译器优化(但 volatile 不提供内存屏障/原子性)。</li></ul><p><b>经典追问——volatile 保证原子性吗?<b>不保证!</b>它只管"每次都真读内存",不管读-改-写的完整性。i++(读改写三步)在 ISR 与主程序间仍会丢更新,必须:关中断、或用原子操作(CMSIS __atomic)/硬件同步原语。另一个追问:const volatile 组合=只读状态寄存器(软件不能写,硬件会改)。</p>',
   follow:['const volatile 能同时用吗?什么含义?','volatile struct 修饰的是整个结构体还是成员?'],
-  links:[{t:'软件学习路线图 · 固件',u:'../06_软件与算法/01_软件学习路线图.html'}] },
+  links:[{t:'软件学习路线图 · 固件',u:'../04_软件与算法/01_软件学习路线图.html'}] },
 
 { id:'c-04', s:'c', lv:5, tags:['static','const','作用域'],
   q:'static 和 const 分别有哪些用法?指针的 const 怎么读?',
@@ -353,7 +353,7 @@ items: [
   a:'<p><b>封装:</b>public/protected/private 控制访问,数据与操作绑定,隐藏实现细节(不变式保护);<b>继承:</b>is-a 关系,代码复用+抽象层次(接口基类);<b>多态:</b>同一接口、不同行为——"父类指针调用,实际执行子类实现"。</p><p><b>C++ 多态三形态:</b>①编译期:函数重载、模板;②运行期:<b>虚函数</b>。实现机制:基类声明 virtual → 每个类有一张<b>虚函数表(vtable)</b>,每个对象带一个 vptr 指向所属类的 vtable;调用 obj->f() 编译为"经 vptr 找表,按槽位取函数指针跳转"——两次间接寻址,运行期按<b>实际对象类型</b>分发。</p><p><b>必要条件:</b>虚函数+指针/引用调用。对象切片(值传递/值拷贝会把子类切成基类,vptr 变基类表,多态失效)是经典陷阱。</p>',
   svg:'<svg viewBox="0 0 560 190" role="img" aria-label="虚函数表与多态调用"><defs><marker id="ar4" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><rect x="20" y="60" width="150" height="64" rx="8" fill="rgba(59,130,246,.14)" stroke="#58a6ff"/><text x="40" y="80" font-size="12" fill="#58a6ff">Derived d 对象</text><text x="40" y="98" font-size="11" fill="currentColor">vptr ──→ Derived::vtable</text><text x="40" y="114" font-size="10" fill="#9aa4b2">成员数据…</text><rect x="230" y="20" width="150" height="58" rx="8" fill="rgba(34,197,94,.12)" stroke="#22c55e"/><text x="250" y="40" font-size="12" fill="#22c55e">Base::vtable</text><text x="250" y="58" font-size="10" fill="currentColor">slot0: Base::draw()</text><rect x="230" y="108" width="150" height="58" rx="8" fill="rgba(245,158,11,.12)" stroke="#f59e0b"/><text x="250" y="128" font-size="12" fill="#f59e0b">Derived::vtable</text><text x="250" y="146" font-size="10" fill="currentColor">slot0: Derived::draw()</text><path d="M170,90 C200,90 200,140 230,137" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ar4)"/><text x="400" y="40" font-size="11" fill="currentColor">Base *p = &d; p->draw();</text><text x="400" y="60" font-size="11" fill="currentColor">编译成: (*(p->vptr)[0])(p)</text><text x="400" y="80" font-size="11" fill="#22c55e">→ 走 Derived 表,调 Derived::draw ✅</text><text x="400" y="104" font-size="11" fill="#9aa4b2">若对象按值拷贝给 Base b=d</text><text x="400" y="122" font-size="11" fill="#ef4444">→ 切片!vptr 变 Base 表 ❌</text></svg>',
   follow:['虚函数调用比普通函数慢多少,慢在哪?','构造函数可以是虚函数吗?为什么?'] ,
-  links:[{t:'代码规范 C/Python/Verilog',u:'../06_软件与算法/21_代码规范_C_Python_Verilog.html'}]},
+  links:[{t:'代码规范 C/Python/Verilog',u:'../04_软件与算法/21_代码规范_C_Python_Verilog.html'}]},
 
 { id:'cpp-02', s:'cpp', lv:5, tags:['构造析构','顺序'],
   q:'C++ 构造与析构的顺序规则?为什么基类析构函数要声明 virtual?',
@@ -409,13 +409,13 @@ items: [
   q:'编写中断服务函数(ISR)有哪些原则?为什么?',
   a:'<p><b>原则:"快进快出,只做标记"。</b></p><ul><li><b>短小:</b>ISR 执行期间同级/低级中断被阻塞,主循环也被打断——长 ISR 造成丢中断、控制周期抖动。耗时操作(打印、浮点重计算、协议解析)移到主循环/任务,ISR 只置标志/写缓冲/给信号量。</li><li><b>可重入安全:</b>与主程序共享的变量加 volatile;读-改-写要么关中断保护,要么用原子操作;访问外设寄存器经 volatile 指针。</li><li><b>不调用阻塞/不可重入库:</b>printf(malloc 锁、阻塞发送)、delay;RTOS 环境必须用 FromISR 系列 API。</li><li><b>清标志与返回:</b>入口清中断标志(或按硬件要求)、现场保护交给编译器但避免在 ISR 里调用复杂 C++(异常);ARM 上 ISR 尾用 portYIELD_FROM_ISR 触发调度。</li><li><b>向量与优先级:</b>NVIC 抢占优先级/子优先级分组;RTOS 的 syscall 中断优先级有约束(FreeRTOS configMAX_SYSCALL_INTERRUPT_PRIORITY 之上的中断不能调 FromISR API)。</li></ul>',
   follow:['为什么 printf 不能放 ISR 里(两层原因)?','FreeRTOS 里 FromISR API 的优先级限制?'],
-  links:[{t:'软件学习路线图',u:'../06_软件与算法/01_软件学习路线图.html'},{t:'STM32外设基础·时钟中断DMA/ADC',u:'../02_硬件基础/17_STM32外设基础_时钟中断DMA_ADC.html'}] },
+  links:[{t:'软件学习路线图',u:'../04_软件与算法/01_软件学习路线图.html'},{t:'STM32外设基础·时钟中断DMA/ADC',u:'../02_硬件基础/17_STM32外设基础_时钟中断DMA_ADC.html'}] },
 
 { id:'emb-02', s:'emb', lv:5, tags:['总线对比'],
   q:'UART、SPI、I2C、CAN 四种总线的特点与适用场景?',
   a:'<div class="table-wrap"><table><tr><th></th><th>UART</th><th>SPI</th><th>I2C</th><th>CAN</th></tr><tr><td>线数</td><td>2(TX/RX)</td><td>4(MOSI/MISO/SCK/CS)</td><td>2(SDA/SCL)</td><td>2(CANH/CANL 差分)</td></tr><tr><td>拓扑</td><td>点对点</td><td>一主多从(每从一根CS)</td><td>多主多从(地址寻址)</td><td>多主总线(报文ID仲裁)</td></tr><tr><td>速率</td><td>≤1~5Mbps</td><td>几~几十 Mbps</td><td>100k/400k/3.4M</td><td>≤1Mbps(经典CAN)</td></tr><tr><td>距离</td><td>短(PCB/模块)</td><td>极短(PCB 内)</td><td>短</td><td><b>长(百米级,抗扰强)</b></td></tr><tr><td>硬件细节</td><td>异步,双方波特率一致</td><td>同步,4种CPOL/CPHA模式</td><td>开漏+上拉,线与</td><td>差分,120Ω双端端接</td></tr><tr><td>典型用途</td><td>调试口、GPS、模组</td><td>Flash、屏幕、ADC、IMU</td><td>低速传感器、配置寄存器</td><td>汽车/机器人节点互联</td></tr></table></div><p>加分点:选型逻辑——板上高速外设 SPI(要吞吐)、多低速传感器挂总线 I2C(省引脚)、板间/车规可靠性 CAN(差分抗扰+仲裁+错误处理强);机器人关节级联常用 CAN(可长期位速率与错误受限恢复)。</p>',
   follow:['I2C 为什么要开漏+上拉,能不能推挽?','CAN 的显性/隐性电平与线与仲裁的关系?'],
-  links:[{t:'通信与控制算法升级路线',u:'../04_升级进阶/09_通信与控制算法升级路线.html'},{t:'STM32外设基础·时钟中断DMA/ADC',u:'../02_硬件基础/17_STM32外设基础_时钟中断DMA_ADC.html'}] },
+  links:[{t:'通信与控制算法升级路线',u:'../04_软件与算法/22_通信与控制算法升级路线.html'},{t:'STM32外设基础·时钟中断DMA/ADC',u:'../02_硬件基础/17_STM32外设基础_时钟中断DMA_ADC.html'}] },
 
 { id:'emb-03', s:'emb', lv:4, tags:['I2C时序','仲裁'],
   q:'I2C 的时序要点?多主仲裁怎么工作?',
@@ -460,7 +460,7 @@ items: [
   a:'<p><b>四状态:</b>运行(Running)、就绪(Ready)、阻塞(Blocked,等待事件/延时,让出 CPU)、挂起(Suspended,vTaskSuspend 挂起,任何事件唤不醒只有 Resume)。就绪→运行由调度器选;运行→阻塞靠等事件(vTaskDelay/队列/信号量);阻塞→就绪靠事件到来。</p><p><b>调度规则:</b>①<b>抢占式优先级调度</b>:永远运行最高优先级的就绪任务——高优任务一就绪立即抢占低优(需 configUSE_PREEMPTION=1);②<b>同优先级时间片轮转</b>(configUSE_TIME_SLICING):tick 中断轮流;③空闲任务(Idle)优先级 0 兜底,可挂钩子做低优先级后台活与内存回收。调度点:tick 中断、API 阻塞/释放、中断退出(portYIELD_FROM_ISR)。延时的正确姿势:vTaskDelay/vTaskDelayUntil(绝对延时,控制周期不累积漂移——做 1kHz 控制环必用 until)。</p>',
   svg:'<svg viewBox="0 0 560 180" role="img" aria-label="FreeRTOS 任务状态机"><defs><marker id="ar5" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/></marker></defs><circle cx="130" cy="40" r="26" fill="rgba(34,197,94,.16)" stroke="#22c55e"/><text x="130" y="44" font-size="11" fill="#22c55e" text-anchor="middle">运行</text><circle cx="390" cy="40" r="26" fill="rgba(59,130,246,.16)" stroke="#58a6ff"/><text x="390" y="44" font-size="11" fill="#58a6ff" text-anchor="middle">就绪</text><circle cx="390" cy="130" r="26" fill="rgba(245,158,11,.16)" stroke="#f59e0b"/><text x="390" y="134" font-size="11" fill="#f59e0b" text-anchor="middle">阻塞</text><circle cx="130" cy="130" r="26" fill="rgba(239,68,68,.14)" stroke="#ef4444"/><text x="130" y="134" font-size="11" fill="#ef4444" text-anchor="middle">挂起</text><line x1="156" y1="40" x2="364" y2="40" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/><line x1="364" y1="32" x2="156" y2="32" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/><text x="248" y="26" font-size="9.5" fill="currentColor" text-anchor="middle">被高优先级抢占 / 恢复</text><text x="252" y="56" font-size="9.5" fill="currentColor" text-anchor="middle">调度器选中(最高优先级就绪)</text><line x1="402" y1="66" x2="402" y2="104" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/><text x="414" y="88" font-size="9.5" fill="currentColor">等事件/延时</text><line x1="366" y1="122" x2="336" y2="60" stroke="currentColor" stroke-width="0" /><path d="M378,106 C300,90 200,80 158,58" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/><text x="240" y="82" font-size="9.5" fill="currentColor">事件到来/超时到</text><line x1="156" y1="118" x2="256,86" x2="256" y2="86" stroke="#ef4444" stroke-width="0"/><path d="M158,116 C220,100 280,70 366,48" fill="none" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar5)"/><text x="230" y="112" font-size="9.5" fill="#ef4444">vTaskResume</text><text x="12" y="170" font-size="10" fill="#9aa4b2">阻塞任务不占CPU——这就是RTOS相对裸机大循环的价值:多个"看似并行"的周期任务互不阻塞</text></svg>',
   follow:['vTaskDelay 与 vTaskDelayUntil 的区别(周期任务用哪个)?','空闲任务做什么,钩子里不能干什么?'] ,
-  links:[{t:'FreeRTOS任务调度与实时性',u:'../06_软件与算法/20_FreeRTOS任务调度与实时性.html'}]},
+  links:[{t:'FreeRTOS任务调度与实时性',u:'../04_软件与算法/20_FreeRTOS任务调度与实时性.html'}]},
 
 { id:'frt-02', s:'frt', lv:5, tags:['通信','IPC'],
   q:'FreeRTOS 的队列、信号量、互斥量、事件组、任务通知分别适合什么场景?',
@@ -472,7 +472,7 @@ items: [
   a:'<p><b>经典三角色:</b>高优 H、中优 M、低优 L,H 与 L 共享一把锁。</p><ol><li>L 拿锁访问共享资源;</li><li>H 就绪抢占 L,访问资源需锁→阻塞等 L 释放;</li><li>M 就绪(M 不需要锁)抢占 L——<b>L 被压着跑不了,H 实际等待优先级比自己低的 M</b>,等效"高优被中优反转压制",严重时看门狗超时。</li></ol><p><b>1997 火星探路者:</b>高优先气象任务与低优先总线任务共享信息,中优先通信任务长时间插队→高优任务饿死→看门狗复位,反复重启。NASA 远程打开优先级继承修复。</p><p><b>FreeRTOS 解决:</b>①互斥量(xSemaphoreCreateMutex)内置<b>优先级继承</b>:H 阻塞在锁上时,持锁的 L 临时被抬升到 H 的优先级,压过 M 尽快跑完临界区放锁,反转窗口压到最小;②注意:继承只在互斥量上,二值信号量(binary semaphore)没有继承——所以"保护共享资源必须用 Mutex,信号量只做同步";③优先级继承不能解决的极端:嵌套锁的死锁(层次化上锁顺序+超时)。VxWorks 当时还提供了优先级天花板,面试提一句加分。</p>',
   svg:'<svg viewBox="0 0 560 180" role="img" aria-label="优先级反转时序"><line x1="60" y1="20" x2="60" y2="160" stroke="currentColor"/><line x1="250" y1="20" x2="250" y2="160" stroke="currentColor"/><line x1="340" y1="20" x2="340" y2="160" stroke="currentColor"/><line x1="470" y1="20" x2="470" y2="160" stroke="currentColor"/><text x="46" y="16" font-size="10" fill="#9aa4b2">t0</text><text x="236" y="16" font-size="10" fill="#9aa4b2">t1</text><text x="326" y="16" font-size="10" fill="#9aa4b2">t2</text><text x="456" y="16" font-size="10" fill="#9aa4b2">t3</text><rect x="60" y="30" width="410" height="16" fill="rgba(239,68,68,.25)" stroke="#ef4444" stroke-width="0.8"/><text x="8" y="42" font-size="10" fill="#ef4444">高H</text><rect x="250" y="52" width="90" height="16" fill="rgba(245,158,11,.3)" stroke="#f59e0b" stroke-width="0.8"/><rect x="400" y="52" width="70" height="16" fill="rgba(245,158,11,.3)" stroke="#f59e0b" stroke-width="0.8"/><text x="8" y="64" font-size="10" fill="#f59e0b">中M</text><rect x="60" y="74" width="190" height="16" fill="rgba(34,197,94,.22)" stroke="#22c55e" stroke-width="0.8"/><rect x="340" y="74" width="60" height="16" fill="rgba(34,197,94,.22)" stroke="#22c55e" stroke-width="0.8"/><text x="8" y="86" font-size="10" fill="#22c55e">低L</text><path d="M190,60 C220,60 220,100 250,100" fill="none" stroke="#22c55e" stroke-width="1.2" marker-end="url(#ar5)"/><text x="120" y="106" font-size="9.5" fill="#9aa4b2">t1: L持锁被H抢,H等锁阻塞</text><path d="M250,116 C280,116 280,80 340,80" fill="none" stroke="#ef4444" stroke-width="1.2" marker-end="url(#ar5)"/><text x="230" y="132" font-size="9.5" fill="#ef4444">t2~t3: M两次插队,L跑不完,H被"反转"饿等</text><text x="60" y="152" font-size="9.5" fill="#22c55e">互斥量优先级继承:持锁L临时升到H级,M插不了队,锁尽快释放</text><text x="60" y="168" font-size="9.5" fill="#9aa4b2">信号量无继承→保护共享资源必须用互斥量(Mutex)</text></svg>',
   follow:['优先级继承和优先级天花板区别?','嵌套持锁为什么会死锁,怎么防?'] ,
-  links:[{t:'FreeRTOS任务调度与实时性',u:'../06_软件与算法/20_FreeRTOS任务调度与实时性.html'}]},
+  links:[{t:'FreeRTOS任务调度与实时性',u:'../04_软件与算法/20_FreeRTOS任务调度与实时性.html'}]},
 
 { id:'frt-04', s:'frt', lv:4, tags:['内存管理','heap'],
   q:'FreeRTOS 的 heap_1~heap_5 各是什么?怎么选?',
@@ -510,64 +510,64 @@ items: [
   a:'<p><b>数字前端(决定「逻辑对不对」):</b>①Spec/架构算法( C 模型建模)→②RTL 设计(Verilog)→③功能仿真(验证逻辑)→④综合( syn:RTL→门级网表,约束驱动)→⑤DFT 插入(可测性)/形式验证(等价性检查)→⑥STA 静态时序分析(签时序)。前端 fail 最多回到 RTL 重写。</p><p><b>数字后端(决定「造得出来、跑得够快」):</b>⑦布局布线 PnR(floorplan→place→route)→⑧物理验证 DRC/LVS(设计规则/版图与网表一致)→⑨签核(时序/功耗/电压降)→⑩交付 GDSII→流片(tapeout)→封装测试→量产。流片后发现功能 bug 只能改版(re-spin),一次数月与百万级损失。</p><p><b>一句话总结:</b>前端「逻辑对」,后端「物理落地」;综合网表+SDC 时序约束是两者的交接物。</p>',
   follow:['综合和布局布线的时序估计为什么会有偏差(线负载模型)?','DFT 插入的 scan 链是干什么的?'],
   extend:'面试官想听「回退成本」的量级概念:RTL 阶段改 bug 几乎免费,流片后改 bug 要重新投片——所以前端验证(仿真+形式验证+UVM)投入占项目一半以上是常态。',
-  links:[{t:'芯片设计流程与AHB/AXI',u:'../10_NPU与数字IC设计/09_芯片设计流程与AHB_AXI总线.html'},{t:'数字设计环境与工具链',u:'../10_NPU与数字IC设计/02_数字设计环境与工具链.html'}] },
+  links:[{t:'芯片设计流程与AHB/AXI',u:'../08_NPU与数字IC设计/09_芯片设计流程与AHB_AXI总线.html'},{t:'数字设计环境与工具链',u:'../08_NPU与数字IC设计/02_数字设计环境与工具链.html'}] },
 
 { id:'ic-02', s:'ic', lv:5, tags:['Verilog','阻塞非阻塞'],
   q:'Verilog 的阻塞赋值(=)和非阻塞赋值(<=)有什么区别?什么时候用哪个?',
   a:'<p><b>一句话结论:</b>组合逻辑 always @(*) 用阻塞 <b>=</b>,时序逻辑 always @(posedge clk) 用非阻塞 <b><=</b>。</p><p><b>语义区别:</b>阻塞赋值立即执行(顺序语句,像 C);非阻塞赋值在时间步结束时统一更新(所有 RHS 先采样旧值,再一起赋给 LHS)——这正是寄存器「时钟沿同时翻转」的语义。</p><p><b>经典反面教材:</b>时序块里写 <code>always @(posedge clk) b = a; c = b;</code> 会把 b 的新值传给 c(两个寄存器被综合成一个),违背「流水线两级」意图;而 <code>b <= a; c <= b;</code> 综合出两级移位。组合块里反着用非阻塞,则要多轮仿真才收敛,还可能残存旧值产生 latch 风险。</p><p><b>追问弹药:</b>同一 always 块不要混用两种赋值;组合块敏感列表用 @(*) 防漏信号生成意外 latch。</p>',
   follow:['always @(*) 为什么可能综合出锁存器?怎么避免?','非阻塞赋值的「时间步结束统一更新」在仿真调度里对应哪个 region?'],
   extend:'面试官常追「为什么会有这个规则」:本质是仿真调度语义与综合电路模型的对齐问题——非阻塞对应 NFS(非阻塞赋值语句)的 NBA region 更新,正好匹配 D 触发器沿翻转。',
-  links:[{t:'Verilog语法与状态机设计',u:'../10_NPU与数字IC设计/03_Verilog语法与状态机设计.html'}] },
+  links:[{t:'Verilog语法与状态机设计',u:'../08_NPU与数字IC设计/03_Verilog语法与状态机设计.html'}] },
 
 { id:'ic-03', s:'ic', lv:4, tags:['状态机','FSM'],
   q:'Mealy 型和 Moore 型状态机的区别是什么?为什么推荐三段式写法?',
   a:'<p><b>区别:</b>Moore 输出只由当前状态决定(输出经寄存器,无组合毛刺,但响应慢一拍);Mealy 输出依赖状态+当前输入(响应快一拍,但组合输出可能毛刺,且输入上的噪声直接透传到输出)。</p><p><b>三段式写法:</b>①时序块:状态寄存器 <code>state <= next_state</code>(非阻塞);②组合块:次态译码 <code>always @(*) case(state)</code>;③输出块:寄存输出或组合输出独立成段。优点:结构清晰易改、综合器友好(时序路径短)、输出可以打一拍消除毛刺。</p><p><b>工程要点(常追问):</b>状态编码用参数/localparam(或独热提高速度);必须写 default 分支防跑飞;跨时钟域的状态要先同步再译码。NPU 控制 FSM(取指→解码→计算→写回)就是典型三段式。</p>',
   follow:['状态机跑飞(进入非法状态)有哪些自恢复手段?','独热编码和二进制编码各适合什么场合?'],
-  links:[{t:'Verilog语法与状态机设计',u:'../10_NPU与数字IC设计/03_Verilog语法与状态机设计.html'},{t:'NPU项目实战上·控制模块',u:'../10_NPU与数字IC设计/10_NPU项目实战上_Spec与控制模块.html'}] },
+  links:[{t:'Verilog语法与状态机设计',u:'../08_NPU与数字IC设计/03_Verilog语法与状态机设计.html'},{t:'NPU项目实战上·控制模块',u:'../08_NPU与数字IC设计/10_NPU项目实战上_Spec与控制模块.html'}] },
 
 { id:'ic-04', s:'ic', lv:5, tags:['FIFO','CDC','格雷码'],
   q:'异步 FIFO 为什么要用格雷码做指针?FIFO 深度怎么计算?',
   a:'<p><b>格雷码的原因:</b>写指针(多位二进制)跨到读时钟域要经两级同步器,多位二进制值变化时可能多位同时翻转,采样可能得到「既不是旧值也不是新值」的中间态,导致空/满误判、数据覆写。格雷码相邻数只有 1 位变化,亚稳态采样最坏错成相邻值,空/满判断只会保守不会失效——这是唯一稳定的本质原因,答题必须说到。</p><p><b>空/满判断:</b>指针多打一位(宽度+1)做回卷标志:空=同步后两指针完全相等;满=前两位相反、其余位相同。</p><p><b>深度计算(经典追问):</b>最坏情况=突发写入量 − 同期读走量。如写入 100 clk × fA,读取 1 data / 2 clk × fB,深度 ≥ 突发数据 − (突发期间读出),再留余量。答公式更要答「最坏同时性假设」。</p>',
   follow:['为什么同步器要两级触发器,一级不行吗(亚稳态概率)?','格雷码 FIFO 深度为什么必须是 2 的幂?'],
   extend:'能主动讲「快时钟域→慢时钟域还要脉冲展宽或握手」是加分项:两级同步器只解决采样亚稳态,不解决「太快信号被漏采」。',
-  links:[{t:'FIFO设计与跨时钟域CDC',u:'../10_NPU与数字IC设计/04_FIFO设计与跨时钟域CDC.html'}] },
+  links:[{t:'FIFO设计与跨时钟域CDC',u:'../08_NPU与数字IC设计/04_FIFO设计与跨时钟域CDC.html'}] },
 
 { id:'ic-05', s:'ic', lv:4, tags:['CDC','亚稳态'],
   q:'单 bit 信号从一个时钟域到另一个时钟域,怎么处理?多 bit 信号为什么不能直接同步?',
   a:'<p><b>单 bit(慢→快):</b>两级(保守三级)D 触发器同步器。第一级可能进入亚稳态(输出在阈值附近振荡不定),第二级给它一整拍时间恢复到确定电平——亚稳态传播概率随级数指数级下降。代价是 2 拍延迟。</p><p><b>快→慢:</b>信号可能窄于慢域周期被完全漏采。手段:①电平化(翻转寄存器,慢域检测边沿);②脉冲展宽;③握手(req/ack,保证每次传递都被确认)。</p><p><b>多 bit 为什么不行:</b>各位走不同路径、偏斜(skew)不同,同步后可能采到「一半新一半旧」的组合值——这个值可能指向完全错误的语义(如状态机非法态)。正确做法:①格雷码(仅限计数类连续变化);②握手+数据保持稳定期间采样;③异步 FIFO;④多周期路径协议(MCP)。</p>',
   follow:['复位信号跨时钟域怎么处理(异步复位同步释放)?','静态时序分析为什么管不了跨时钟域路径?'],
-  links:[{t:'FIFO设计与跨时钟域CDC',u:'../10_NPU与数字IC设计/04_FIFO设计与跨时钟域CDC.html'}] },
+  links:[{t:'FIFO设计与跨时钟域CDC',u:'../08_NPU与数字IC设计/04_FIFO设计与跨时钟域CDC.html'}] },
 
 { id:'ic-06', s:'ic', lv:3, tags:['APB','总线'],
   q:'APB 总线的读写时序是怎样的?它为什么适合挂低速外设?',
   a:'<p><b>状态机只有三态:</b>IDLE → SETUP(1 拍:PSELx 拉高、PENABLE 低)→ ACCESS(1 拍:PENABLE 拉高,PREADY 采样)。无等待时每次传输固定 2 拍,所以带宽低——这正是设计取舍:接口极简(无突发/无流水)、门数少、功耗低、易验证,适合 UART/SPI/GPIO/看门狗这类寄存器配置外设。</p><p><b>关键信号:</b>PADDR/PWRITE/PWDATA/PSELx(片选)/PENABLE(使能)/PREADY(从机等待扩展)/PSLVERR(错误响应)。从机可在 ACCESS 拉低 PREADY 插入等待周期。</p><p><b>体系位置(加分):</b>AMBA 家族分层——AXI(高性能 SoC 主干,五通道流水+突发)→ AHB(中速单主)→ APB(慢速外设),通过桥接;NPU 子系统里 NN 核挂 AXI,配置寄存器挂 APB。</p>',
   follow:['APB 的 PSLVERR 在哪个拍采样?读和写都能报错吗?','APB 桥接 AXI 时要处理哪些时钟域与位宽转换?'],
-  links:[{t:'APB总线协议与接口设计',u:'../10_NPU与数字IC设计/05_APB总线协议与接口设计.html'}] },
+  links:[{t:'APB总线协议与接口设计',u:'../08_NPU与数字IC设计/05_APB总线协议与接口设计.html'}] },
 
 { id:'ic-07', s:'ic', lv:4, tags:['脉动阵列','NPU'],
   q:'脉动阵列(systolic array)为什么特别适合矩阵乘?代价是什么?',
   a:'<p><b>核心思想:</b>让数据像心脏泵血一样在相邻 PE(处理单元)间「流动复用」——每个权重/部分和只在相邻 PE 间传递,被连续多个周期重复使用,而不是每次都从内存/寄存器堆取。收益:①访存带宽需求大幅下降(数据复用是算力的前提,矩阵乘算访比 O(n));②互连只有最近邻,布线短、时钟频率高、易扩展;③规则结构 → 面积效率高,TPU v1 256×256 脉动阵列是代表。</p><p><b>三种数据流(追问弹药):</b>权重固定(weight stationary,权重留在 PE)适合 CNN 推理;输出固定(output stationary,部分和驻留)累加快;行固定/no delay 介于其间——NPU 项目常用权重固定或输出固定。</p><p><b>代价:</b>填充/排空延迟(阵列越大越明显,小矩阵利用率低)、单一规整计算假设(稀疏/不规则计算利用率差)、固定PE功能灵活性差。</p>',
   follow:['3×3 卷积怎么映射到脉动阵列(im2col 或卷积直接映射)?','稀疏化(剪枝后)的矩阵怎么提高脉动阵列利用率?'],
-  links:[{t:'NPU体系结构与脉动阵列',u:'../10_NPU与数字IC设计/07_NPU体系结构与脉动阵列.html'},{t:'NPU项目实战下·运算模块',u:'../10_NPU与数字IC设计/11_NPU项目实战下_运算模块与联调.html'}] },
+  links:[{t:'NPU体系结构与脉动阵列',u:'../08_NPU与数字IC设计/07_NPU体系结构与脉动阵列.html'},{t:'NPU项目实战下·运算模块',u:'../08_NPU与数字IC设计/11_NPU项目实战下_运算模块与联调.html'}] },
 
 { id:'ic-08', s:'ic', lv:4, tags:['量化','INT8'],
   q:'INT8 量化里的 scale 和 zero-point 是什么?对称量化和非对称量化怎么选?',
   a:'<p><b>仿射量化公式:</b>实数 r ≈ scale × (q − zero_point),q 是 INT8。scale 把整数步长映射回浮点步长(动态范围/255);zero_point 把浮点 0 精确对齐到某个整数——ReLU 后大量激活恰为 0、padding 也是 0,零点不对齐会累积巨大卷积偏差,这是非对称量化的存在理由。</p><p><b>对称量化:</b>zero_point=0,范围 [−127,127],硬件乘累加简单、权重常用;非对称:范围 [0,255](uint8),对非负激活(ReLU 后)动态范围利用率高。</p><p><b>粒度(加分):</b>per-tensor(整个张量一个 scale,快但精度损)vs per-channel(每输出通道一个 scale,权重分布差异大时明显更准,是主流方案)。校准方式:训练后量化 PTQ(需要校准集统计分布)与量化感知训练 QAT(训练中模拟量化,精度最好)。</p>',
   follow:['INT8 卷积的偏置为什么常用 INT32 累加?','PTQ 校准一般用多少数据?KL 散度校准在做什么?'],
-  links:[{t:'模型量化与端侧部署',u:'../10_NPU与数字IC设计/08_模型量化与端侧部署.html'},{t:'LeNet-5 INT8加速器实战',u:'../10_NPU与数字IC设计/06_深度学习基础与LeNet实战.html'}] },
+  links:[{t:'模型量化与端侧部署',u:'../08_NPU与数字IC设计/08_模型量化与端侧部署.html'},{t:'LeNet-5 INT8加速器实战',u:'../08_NPU与数字IC设计/06_深度学习基础与LeNet实战.html'}] },
 
 { id:'ic-09', s:'ic', lv:4, tags:['AXI','AMBA'],
   q:'AXI 总线有哪五个通道?突发传输和 outstanding 是怎么提升性能的?',
   a:'<p><b>五通道:</b>写地址(AW)、写数据(W)、写响应(B)、读地址(AR)、读数据(R)。地址/数据/响应双向独立、各自 VALID/READY 握手,读写可并行流水。</p><p><b>突发(burst):</b>一次地址携带多拍数据(INCR 递增/FIXED 固定/WRAP 回卷,cache line 填充用 WRAP),省掉逐字寻址的地址开销,配合宽总线把 DDR 效率拉满;NPU 读特征图/权重就是长 INCR burst。</p><p><b>outstanding:</b>主设备可连发多个地址不等数据返回,读写深度乱序执行掩盖延迟;靠 ID 区分不同事务、支持乱序完成——这是 AXI 相比 AHB 的本质增益。</p><p><b>握手规则(常追问):</b>VALID 一旦拉高不得在 READY 前撤销(信息不得依赖 READY);通道间不得死锁(如 AW 先于 W 的依赖关系有明确协议规定)。</p>',
   follow:['AXI 的 WRAP burst 为什么适合 cache line 填充?','AXI4 和 AXI4-Lite/Stream 的差别?'],
-  links:[{t:'芯片设计流程与AHB/AXI总线',u:'../10_NPU与数字IC设计/09_芯片设计流程与AHB_AXI总线.html'}] },
+  links:[{t:'芯片设计流程与AHB/AXI总线',u:'../08_NPU与数字IC设计/09_芯片设计流程与AHB_AXI总线.html'}] },
 
 { id:'ic-10', s:'ic', lv:4, tags:['UVM','验证'],
   q:'UVM 里 sequence、sequencer、driver 三者的关系是什么?验证怎么算「做完」?',
   a:'<p><b>激励分层:</b>sequence(业务层,产生事务序列:发什么包/什么顺序)→ sequencer(仲裁,多个 sequence 抢端口时按优先级排)→ driver(引脚层,把事务拆成具体信号时序驱动到接口)。sequence 不接触信号,driver 不懂业务——事务经 seq_item_port 用 get_next_item/item_done 握手传递。</p><p><b>为什么要分层(追问核心):</b>同一套 sequence 可在不同配置/接口速率下复用;virtual sequence 可跨 agent 编排(配置寄存器+发数据+等中断);测试用例只写 sequence,改激励不碰时序代码。</p><p><b>验证收敛标准:</b>①测试计划逐项落实;②功能覆盖率(覆盖组:边界/交叉场景)100% 达标;③代码覆盖率(行/分支/条件/翻转/fsm)达到目标且未覆盖项逐一分析豁免;④断言(SVA)无未解释失败;⑤回归通过且无已知遗留 bug——「覆盖率驱动验证」是行业方法论。</p>',
   follow:['RAL 寄存器模型在 UVM 里解决什么问题(前门/后门访问)?','virtual sequence 和 virtual sequencer 的「virtual」指什么?'],
   extend:'NPU 验证项目加分句:「我的覆盖点是 FIFO 空满边界、AXI 4KB 边界、count=0/count=max 的翻转,以及卷积 1×1/带 padding/跨步>1 的场景交叉」——把覆盖率说到具体边界才算真做过。',
-  links:[{t:'SystemVerilog与UVM架构',u:'../10_NPU与数字IC设计/12_SystemVerilog与UVM架构.html'},{t:'NPU验证项目·覆盖率',u:'../10_NPU与数字IC设计/13_NPU验证项目_环境搭建与覆盖率.html'}] },
+  links:[{t:'SystemVerilog与UVM架构',u:'../08_NPU与数字IC设计/12_SystemVerilog与UVM架构.html'},{t:'NPU验证项目·覆盖率',u:'../08_NPU与数字IC设计/13_NPU验证项目_环境搭建与覆盖率.html'}] },
 
 /* ================= 大模型与具身智能 llm ================= */
 { id:'llm-01', s:'llm', lv:5, tags:['Transformer','注意力'],
@@ -575,50 +575,50 @@ items: [
   a:'<p><b>公式:</b>Attention(Q,K,V) = softmax(QKᵀ/√d_k)·V。每个 token 的查询 Q 与所有 token 的键 K 做点积得相似度分数,softmax 归一成权重后对值 V 加权求和——本质是「按相关性做软寻址的信息聚合」:Q=我在找什么,K=我是什么(索引),V=我携带的信息(内容)。</p><p><b>为什么除以 √d_k(必追问):</b>q·k 是 d_k 个独立分量乘积之和,期望 0、方差 ∝ d_k;维度大时 logits 方差过大,softmax 进入饱和区(接近 one-hot),梯度趋零训练不动。除以 √d_k 把方差归一回 1,维持 softmax 在「工作区」。</p><p><b>多头:</b>把 d_model 切成 h 份各自做注意力再拼接——不同头可分别关注语法/位置/语义等不同子空间,等价于词表示的多视角特征提取。复杂度 O(n²·d)(序列长度平方)是主要瓶颈,催生了 FlashAttention、滑动窗口、线性注意力等优化。</p>',
   follow:['注意力掩码(padding mask 和 causal mask)分别做什么?','FlashAttention 为什么快(显存读写 vs 计算量)?'],
   extend:'面试官常让你推「为什么不能只用 Q=K=V 一个矩阵」:没有三组独立投影,注意力退化为对称相似度聚合,失去「查询什么/提供什么」的非对称表达能力。',
-  links:[{t:'大模型基础与MoE架构图解',u:'../09_大模型与具身智能/01_大模型基础与MoE架构图解.html'},{t:'感知与具身智能VLA与世界模型',u:'../06_软件与算法/05_感知与具身智能_VLA与世界模型.html'}] },
+  links:[{t:'大模型基础与MoE架构图解',u:'../07_大模型与具身智能/01_大模型基础与MoE架构图解.html'},{t:'感知与具身智能VLA与世界模型',u:'../04_软件与算法/05_感知与具身智能_VLA与世界模型.html'}] },
 
 { id:'llm-02', s:'llm', lv:4, tags:['MoE','稀疏激活'],
   q:'MoE(混合专家)是怎么做到「参数多但计算少」的?负载均衡损失是干什么的?',
   a:'<p><b>稀疏激活:</b>把 FFN 层换成 N 个专家 + 一个 router(门控网络);每个 token 只选 top-k(通常 1~2)个专家计算,其余专家不参与——总参数量随 N 增长,但每 token FLOPs 只随 k 增长,实现「容量大、计算省」。DeepSeek-V3 256 个路由专家+1 共享专家,每 token 激活 8 个。</p><p><b>负载均衡辅助损失(必追问):</b>router 若「偏心」个别专家(赢家通吃),其余专家得不到训练逐渐废弃,等于浪费参数还丢了容量。辅助损失惩罚专家间负载方差不均,把各专家期望负载推向均匀;工程上还配容量因子(capacity factor)与 token 丢弃策略、以及训练初期的小噪声帮助探索。DeepSeek 的创新还有:细粒度专家切分+共享专家(通用知识不再重复占用路由专家)。</p><p><b>代价:</b>显存要装下全部专家、多机训练有 all-to-all 通信开销、推理 batch 小时专家利用率低。</p>',
   follow:['MoE 推理时 batch 小(端侧)为什么吃亏?','共享专家和路由专家的分工是什么?'],
-  links:[{t:'大模型基础与MoE架构图解',u:'../09_大模型与具身智能/01_大模型基础与MoE架构图解.html'},{t:'DeepSeek架构精讲',u:'../09_大模型与具身智能/02_DeepSeek架构精讲.html'}] },
+  links:[{t:'大模型基础与MoE架构图解',u:'../07_大模型与具身智能/01_大模型基础与MoE架构图解.html'},{t:'DeepSeek架构精讲',u:'../07_大模型与具身智能/02_DeepSeek架构精讲.html'}] },
 
 { id:'llm-03', s:'llm', lv:5, tags:['RLHF','DPO','后训练'],
   q:'SFT、RLHF、DPO 三者是什么关系?DPO 为什么能省掉奖励模型?',
   a:'<p><b>SFT(监督微调):</b>拿人工标注的高质量问答做下一词预测的模仿学习——教会「格式与能力」,但只能模仿示范,无法表达「哪个回答更好」的偏好,且会放大标注噪声。</p><p><b>RLHF(基于人类反馈的强化学习):</b>三阶段——SFT 起步 → 人类对回答做偏好排序训出奖励模型 RM → 用 PPO 最大化 RM 得分同时用 KL 惩罚约束不偏离 SFT(防 reward hacking 与能力遗忘)。效果最好但工程链路长:RM 会过优化,PPO 训练不稳定、超参敏感、要 4 个模型同时在线(policy/ref/RM/value)。</p><p><b>DPO(直接偏好优化):</b>数学上证明 RLHF 目标存在闭式解,把奖励重参数化进目标函数,直接用「偏好对( chosen/rejected )」做类似分类的稳定训练——省掉 RM 训练与在线 RL,两个模型(SFT+当前)即可。取舍:对数据质量更敏感、离线方法天花板略低;工业界常见 RLHF/DPO 混用或先 DPO 后 RLHF。</p>',
   follow:['RLHF 里的 KL 惩罚项在防什么(reward hacking)?','PPO-clip 的 clip 机制在限制什么?'],
   extend:'加分结构:能按「目标→数据→训练稳定性→工程成本」四轴对比三者,并落到自己项目的选择(如「我只用 DPO 因为单卡训不动 RM」)最可信。',
-  links:[{t:'强化学习与后训练',u:'../09_大模型与具身智能/03_强化学习与后训练.html'}] },
+  links:[{t:'强化学习与后训练',u:'../07_大模型与具身智能/03_强化学习与后训练.html'}] },
 
 { id:'llm-04', s:'llm', lv:4, tags:['LoRA','微调'],
   q:'LoRA 的原理是什么?为什么它推理时零额外延迟?',
   a:'<p><b>核心假设:</b>微调时权重变化量 ΔW 是低秩的(任务适配不需要全参数自由度)。于是冻结原权重 W(d×d),只训练两个小矩阵 B(d×r)、A(r×d),r≪d(常 4~64),前向 h = Wx + BAx。参数量从 d² 降到 2×d×r——7B 模型可训参数从 70 亿降到千万级,单卡可微调。</p><p><b>零推理延迟的原因(必追问):</b>训练完成后 W′ = W + BA 可直接<b>合并</b>成一个权重矩阵,部署结构与原模型完全一致;对比 adapter(串行插入模块)永远多一层计算。A 用高斯初始化、B 初始化为 0(保证起点 ΔW=0,不破坏预训练能力)。</p><p><b>工程追问:</b>通常只挂在注意力的 W_q/W_v(性价比最高);r 越大容量越大但过拟合风险升;QLoRA 把冻结底座量化到 4bit(NF4)+分页优化器,进一步把 65B 微调压进单卡;多任务可保留多套 LoRA 权重按需切换或合并。</p>',
   follow:['LoRA 该挂在注意力的哪些矩阵上,挂在 FFN 上行不行?','QLoRA 的 NF4 量化为什么对正态分布权重更友好?'],
-  links:[{t:'代码实战·部署微调与Agent',u:'../09_大模型与具身智能/05_代码实战_部署微调与Agent.html'}] },
+  links:[{t:'代码实战·部署微调与Agent',u:'../07_大模型与具身智能/05_代码实战_部署微调与Agent.html'}] },
 
 { id:'llm-05', s:'llm', lv:4, tags:['部署','量化','显存'],
   q:'部署一个 7B 模型,FP16 需要多少显存?怎么把它压到消费级显卡甚至笔记本上?',
   a:'<p><b>显存账(先算再答,这是加分点):</b>7B 参数 FP16 = 7×2 = 14GB 权重;再加 KV cache(随上下文长度线性涨,长文本可到数 GB)与激活/框架开销,实际预留 ≥18~20GB——所以 FP16 的 7B 要 A100/4090 级别。</p><p><b>压缩路线:</b>①权重量化:INT8 约减半、INT4(如 GPTQ/AWQ)7B≈3.5GB,笔记本 4060/纯 CPU 可跑;②KV cache 量化与 paged attention(vLLM 的核心,把 KV 像虚拟内存分页管理,碎片与并发浪费大减);③投机解码(小模型草稿+大模型验证);④更小底座或 MoE 稀疏。CPU/端侧走 llama.cpp 的 gguf + mmap,手机端还有 NPU 专用量化格式。</p><p><b>代价要会讲:</b>INT4 权重对精度有损(困惑度上升,复杂推理/长尾知识下降);吞吐与批处理调度策略强相关(continuous batching)。</p>',
   follow:['KV cache 的大小怎么估算(层数×头数×维度×精度×序列长)?','vLLM 的 PagedAttention 解决了什么碎片问题?'],
   extend:'数量级直觉是面试分水岭:「每参数 2 字节(FP16)/1 字节(INT8)/0.5 字节(INT4)」张口就来,再乘参数量加 KV,基本任何部署题都能现场推。',
-  links:[{t:'代码实战·部署微调与Agent',u:'../09_大模型与具身智能/05_代码实战_部署微调与Agent.html'},{t:'模型量化与端侧部署',u:'../10_NPU与数字IC设计/08_模型量化与端侧部署.html'}] },
+  links:[{t:'代码实战·部署微调与Agent',u:'../07_大模型与具身智能/05_代码实战_部署微调与Agent.html'},{t:'模型量化与端侧部署',u:'../08_NPU与数字IC设计/08_模型量化与端侧部署.html'}] },
 
 { id:'llm-06', s:'llm', lv:4, tags:['VLA','具身智能'],
   q:'VLA(视觉-语言-动作)模型是怎么把「看和说」变成机器人动作的?',
   a:'<p><b>三段结构:</b>①视觉编码器(ViT/ResNet)把图像转 token;②预训练 LLM 做主干,融合语言指令与视觉 token 做推理(继承世界知识与泛化能力);③动作头把 LLM 输出映射为机器人可控动作——两条主流路线:离散动作 token(把连续动作离散成词表,如 RT-2 的 256 bins,动作生成变成「下一词预测」)与扩散/流动作头(连续轨迹生成,精细但慢)。代表:RT-2、OpenVLA、π0。</p><p><b>为什么用 LLM 主干(必追问):</b>免费获得语义理解、任务分解与零样本泛化——「把杯子放到红色方块左边」无需逐任务训练;这是 VLA 相比传统端到端模仿学习的本质增益。</p><p><b>落地难点:</b>推理延迟(LLM 前向几十~几百 ms,控制回路要求高频率)、数据贵(真机遥操作,Open X-Embodiment 就是共享数据集的尝试)、动作精度与安全性(幻觉动作要靠底层安全层兜底)、sim2real 差距。</p>',
   follow:['动作 token 的离散化粒度怎么权衡(过粗/过细)?','VLA 控制频率上不去时,工程上怎么补偿(分层:慢思考+快反射)?'],
-  links:[{t:'VLA与世界模型详解',u:'../06_软件与算法/08_视觉语言动作模型VLA与世界模型详解.html'},{t:'感知与具身智能VLA与世界模型',u:'../06_软件与算法/05_感知与具身智能_VLA与世界模型.html'},{t:'灵巧手专题',u:'../07_前沿知识库/04_灵巧手专题.html'},{t:'前沿技术专题库',u:'../07_前沿知识库/02_前沿技术专题库.html'}] },
+  links:[{t:'VLA与世界模型详解',u:'../04_软件与算法/08_视觉语言动作模型VLA与世界模型详解.html'},{t:'感知与具身智能VLA与世界模型',u:'../04_软件与算法/05_感知与具身智能_VLA与世界模型.html'},{t:'灵巧手专题',u:'../05_前沿知识库/04_灵巧手专题.html'},{t:'前沿技术专题库',u:'../05_前沿知识库/02_前沿技术专题库.html'}] },
 
 { id:'llm-07', s:'llm', lv:3, tags:['世界模型','数据'],
   q:'具身智能为什么需要世界模型?它和「直接端到端学策略」比优势在哪?',
   a:'<p><b>世界模型定义:</b>学一个环境的动力学「下一个状态会怎样」(状态转移+奖励预测),让智能体能在「脑内想象」中 rollout 未来——预测 hence 规划。</p><p><b>对比端到端策略学习(直接观测→动作):</b>①样本效率:真实机器人交互极贵(每小时数据采集/磨损成本高),世界模型可在想象中做 model-based RL(Dreamer 系列把真实交互需求降一个数量级);②可规划:显式预测未来才能做长视野任务分解与反事实推理;③可解释与安全评估:先「脑内试错」,危险动作不过真机;④数据角度:视频/仿真海量无动作标注数据可用于训世界模型,而策略学习必须要有动作标签——这是当前具身智能「数据瓶颈」下世界模型被寄予厚望的根本原因。</p><p><b>难点:</b>长时域预测漂移(误差累积)、物理一致性(接触/摩擦建模)、与策略怎么耦合(世界模型只是模拟器,还要 RL/ MPC 在里面规划)。</p>',
   follow:['Dreamer 系列的「想象中训练」是怎么回传梯度的?','视频生成模型(Sora 类)算世界模型吗?'],
-  links:[{t:'感知与具身智能VLA与世界模型',u:'../06_软件与算法/05_感知与具身智能_VLA与世界模型.html'},{t:'具身智能数据集与评测专题',u:'../07_前沿知识库/08_具身智能数据集与评测专题.html'},{t:'仿真与强化学习 MuJoCo/Isaac',u:'../06_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html'},{t:'全球人形机器人机型全景',u:'../07_前沿知识库/01_全球人形机器人机型全景.html'}] },
+  links:[{t:'感知与具身智能VLA与世界模型',u:'../04_软件与算法/05_感知与具身智能_VLA与世界模型.html'},{t:'具身智能数据集与评测专题',u:'../05_前沿知识库/08_具身智能数据集与评测专题.html'},{t:'仿真与强化学习 MuJoCo/Isaac',u:'../04_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html'},{t:'全球人形机器人机型全景',u:'../05_前沿知识库/01_全球人形机器人机型全景.html'}] },
 
 { id:'llm-08', s:'llm', lv:4, tags:['Agent','工具调用'],
   q:'大模型 Agent 的基本架构是什么?工具调用的完整闭环是怎么跑通的?',
   a:'<p><b>四大件:</b>①规划(任务分解:ReAct/CoT/计划-执行分离);②记忆(短 context + 长期外存:向量库/RAG);③工具(函数调用 function calling:LLM 输出结构化 JSON 调用请求);④反思与重试(结果校验、错误恢复)。最小闭环:用户指令 → LLM 判断需要工具 → 输出 tool_call(JSON:函数名+参数)→ 运行时解析执行真实函数 → 把结果回填到对话 → LLM 继续推理直到给出最终答案。</p><p><b>工程要点(必追问):</b>tool schema 的描述质量直接决定调用准确率;结果必须作为 tool 角色消息回填(「工具结果忘回填」是最常见的跑飞原因);循环上限与异常兜底(死循环/参数幻觉);并行工具调用与依赖编排。</p><p><b>典型失败模式(加分):</b>参数幻觉(编造不存在的枚举值)、过度调用(简单问题也查工具)、结果误读(把报错当成功)——对应解法:schema 校验+重试、few-shot 示例、结果摘要与断言。</p>',
   follow:['RAG 和微调各自适合注入什么知识?怎么选?','Agent 的多步任务里,怎么做「步数预算」防止死循环?'],
-  links:[{t:'代码实战·部署微调与Agent',u:'../09_大模型与具身智能/05_代码实战_部署微调与Agent.html'},{t:'AI Agent 介绍',u:'../08_学习工具/17_AI_Agent介绍.html'}] }
+  links:[{t:'代码实战·部署微调与Agent',u:'../07_大模型与具身智能/05_代码实战_部署微调与Agent.html'},{t:'AI Agent 介绍',u:'../06_学习工具/17_AI_Agent介绍.html'}] }
 ]
 };

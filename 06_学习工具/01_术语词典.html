@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 术语词典</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<script>
+  window.PAGE = {
+    pageId: "06-01",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec6" }, { t: "术语词典" } ],
+    prev: { t: "具身智能数据集与评测专题", u: "../05_前沿知识库/08_具身智能数据集与评测专题.html" },
+    next: { t: "常见问答 FAQ", u: "02_常见问答FAQ.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>📖 人形机器人术语词典</h1>
+    <div class="sub">按分类浏览或输入关键词实时搜索,查阅本站所有页面的专业术语</div>
+    <div class="tags">
+      <span class="tag">100+ 术语</span>
+      <span class="tag">中英对照</span>
+      <span class="tag">持续扩充</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能看懂本站所有页面的专业术语(机械、电机、控制、通信、软件、AI)<br>
+    2. 遇到陌生术语时,能通过关键词搜索快速定位到准确解释<br>
+    3. 建立中英文对照能力,便于阅读芯片手册、论文与开源代码<br>
+    <b>建议用时:</b>约 20 分钟(可随时回来查阅)
+  </div>
+
+  <!-- ================= 搜索与分类 ================= -->
+  <div class="gloss-search">
+    <input id="glossInput" type="text" placeholder="输入术语关键词,如 FOC、谐波、背隙…" autocomplete="off">
+  </div>
+  <div class="gloss-cats" id="glossCats">
+    <button data-cat="全部">全部</button>
+    <button data-cat="机械结构">机械结构</button>
+    <button data-cat="电机与驱动">电机与驱动</button>
+    <button data-cat="控制算法">控制算法</button>
+    <button data-cat="通信总线">通信总线</button>
+    <button data-cat="软件与仿真">软件与仿真</button>
+    <button data-cat="感知与AI">感知与AI</button>
+  </div>
+
+  <!-- ================= 一、机械结构 ================= -->
+  <div class="gloss-sec">
+  <h2><span class="h2-num">1</span> 机械结构</h2>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">关节模组</span><span class="term-en">Joint Module</span><div class="term-desc">集电机、减速器、编码器、驱动与控制于一体的标准化关节单元。<a class="term-link" href="../00_3D解剖/人形机器人解剖式知识可视化.html">解剖图 →</a></div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">谐波减速器</span><span class="term-en">Harmonic Drive</span><div class="term-desc">柔轮弹性变形实现大减速比传动,体积小、背隙极小,人形关节最主流方案。<a class="term-link" href="../00_3D解剖/减速器剖面图详解.html">剖面图解 →</a></div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">摆线减速器</span><span class="term-en">Cycloidal Drive</span><div class="term-desc">摆线轮与针齿啮合传动,减速比大、抗冲击强,常用于重载关节与工业机器人。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">RV 减速器</span><span class="term-en">RV Reducer</span><div class="term-desc">行星齿轮加摆线针轮两级减速,刚性好、精度高,工业机器人关节主流方案。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">行星减速器</span><span class="term-en">Planetary Reducer</span><div class="term-desc">太阳轮、行星轮与内齿圈同轴传动,功率密度高、结构紧凑,适合中低减速比。<a class="term-link" href="../00_3D解剖/减速器剖面图详解.html">剖面图解 →</a></div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">背隙</span><span class="term-en">Backlash</span><div class="term-desc">传动反向时的空程角度,由齿侧间隙等引起,直接影响关节重复定位精度。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">扭转刚度</span><span class="term-en">Torsional Stiffness</span><div class="term-desc">关节抵抗扭转变形的能力,刚度越高动态响应越快、力控越稳。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">传动误差</span><span class="term-en">Transmission Error</span><div class="term-desc">实际输出角度与理想值的偏差,含周期误差,影响轨迹精度与力控品质。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">交叉滚子轴承</span><span class="term-en">Crossed Roller Bearing</span><div class="term-desc">滚子交叉排列,可同时承受径向、轴向载荷与倾覆力矩,广泛用于关节输出端。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">中空走线</span><span class="term-en">Hollow-Shaft Wiring</span><div class="term-desc">减速器与电机采用中空轴设计,线缆从内部穿过,避免运动时缠绕磨损。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">抱闸</span><span class="term-en">Electromagnetic Brake</span><div class="term-desc">断电自动抱死转子的电磁制动器,防止关节断电后因重力下垂。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">准直驱 QDD</span><span class="term-en">Quasi-Direct Drive</span><div class="term-desc">低减速比大扭矩的直驱化方案,传动透明、力控性能好,常配大孔径无框力矩电机。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">行星滚柱丝杠</span><span class="term-en">Planetary Roller Screw</span><div class="term-desc">滚柱与丝杠多点螺纹啮合,承载大、寿命长,用于直线关节与线性执行器。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">减速比</span><span class="term-en">Reduction Ratio</span><div class="term-desc">输入转速与输出转速之比,决定关节扭矩放大倍数与输出分辨率。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">转动惯量</span><span class="term-en">Moment of Inertia</span><div class="term-desc">刚体旋转惯性的度量,直接决定关节的角加速度能力与动态性能。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">惯量匹配</span><span class="term-en">Inertia Matching</span><div class="term-desc">负载惯量与电机惯量的比值设计,影响响应速度与系统稳定性。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">扭矩密度</span><span class="term-en">Torque Density</span><div class="term-desc">单位质量或体积输出的扭矩,是人形机器人关节轻量化设计的核心指标。</div></div>
+
+  <div class="term-card" data-cat="机械结构"><span class="term-name">重力补偿</span><span class="term-en">Gravity Compensation</span><div class="term-desc">通过弹簧、配重或前馈力矩抵消重力影响,降低静态功耗与电机负担。</div></div>
+  <div class="term-card" data-cat="机械结构"><span class="term-name">灵巧手</span><span class="term-en">Dexterous Hand</span><div class="term-desc">仿人手多指末端执行器,通过多自由度与触觉实现精细抓取操作。</div></div>
+  <div class="term-card" data-cat="机械结构"><span class="term-name">欠驱动</span><span class="term-en">Underactuated</span><div class="term-desc">驱动数少于自由度数的机构,靠弹簧/耦合/接触约束自适应包络抓取。</div></div>
+  <div class="term-card" data-cat="机械结构"><span class="term-name">腱驱动</span><span class="term-en">Tendon-Driven</span><div class="term-desc">电机后置、用腱绳/钢丝传动手指关节,减轻手部重量与惯量。</div></div>
+  </div>
+
+  <!-- ================= 二、电机与驱动 ================= -->
+  <div class="gloss-sec">
+  <h2><span class="h2-num">2</span> 电机与驱动</h2>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">无框电机</span><span class="term-en">Frameless Motor</span><div class="term-desc">无外壳、轴承与轴的定转子套件,直接嵌入关节结构,省重省空间。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">无刷直流电机 BLDC</span><span class="term-en">Brushless DC Motor</span><div class="term-desc">反电动势为梯形波,常用霍尔换相,结构简单成本低,适合入门方案。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">永磁同步电机 PMSM</span><span class="term-en">Permanent Magnet Synchronous Motor</span><div class="term-desc">反电动势为正弦波,配合 FOC 正弦驱动,转矩脉动小,高性能关节首选。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">反电动势</span><span class="term-en">Back-EMF</span><div class="term-desc">转子旋转在绕组中感应出的电压,幅值与转速成正比,波形区分 BLDC 与 PMSM。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">极对数</span><span class="term-en">Pole Pairs</span><div class="term-desc">转子磁极的对数,电角度等于机械角度乘以极对数,决定换相频率。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">KV 值</span><span class="term-en">KV Rating</span><div class="term-desc">空载转速与电压之比(rpm/V),KV 高则转速高、同电压下扭矩小。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">齿槽转矩</span><span class="term-en">Cogging Torque</span><div class="term-desc">定子齿与永磁体间磁阻变化产生的定位力矩,低速运行时表现为顿挫感。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">霍尔传感器</span><span class="term-en">Hall Sensor</span><div class="term-desc">检测转子磁极位置,输出换相信号,用于 BLDC 方波驱动的换相。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">磁编码器</span><span class="term-en">Magnetic Encoder</span><div class="term-desc">利用磁阻或霍尔效应测量角度,抗油污粉尘、价格低,机器人关节主流选择。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">光电编码器</span><span class="term-en">Optical Encoder</span><div class="term-desc">基于光栅码盘的光学角度测量,精度高但怕污染,常用于高精度场合。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">绝对式编码器</span><span class="term-en">Absolute Encoder</span><div class="term-desc">上电即可读取绝对位置,断电不丢位置,有单圈与多圈规格可选。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">增量式编码器</span><span class="term-en">Incremental Encoder</span><div class="term-desc">输出脉冲相对计数获得位置,断电后位置丢失,需上电找零。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">力矩电机</span><span class="term-en">Torque Motor</span><div class="term-desc">低速大扭矩直驱电机,无减速器直接驱动,转矩脉动小,力控性能好。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">直驱电机</span><span class="term-en">Direct Drive Motor</span><div class="term-desc">电机直接驱动负载、中间无减速机构,响应快、传动无背隙。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">定子与转子</span><span class="term-en">Stator &amp; Rotor</span><div class="term-desc">定子固定并绕制绕组,转子安装永磁体旋转,构成电机的两大核心部件。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">绕组</span><span class="term-en">Windings</span><div class="term-desc">定子上的漆包线线圈,通电产生旋转磁场,匝数与线径决定电机特性。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">槽满率</span><span class="term-en">Slot Fill Factor</span><div class="term-desc">绕组铜线占定子槽面积的比率,影响铜阻、发热与功率密度。</div></div>
+
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">电机常数 Km</span><span class="term-en">Motor Constant</span><div class="term-desc">扭矩与发热损耗平方根的比值,衡量电机在给定热预算下的扭矩能力。</div></div>
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">自举电容</span><span class="term-en">Bootstrap Capacitor</span><div class="term-desc">为半桥上管栅极供电的电容,靠下管导通时充电,实现自举升压驱动。</div></div>
+  <div class="term-card" data-cat="电机与驱动"><span class="term-name">采样电阻</span><span class="term-en">Sense Resistor</span><div class="term-desc">串在功率回路的毫欧级精密电阻,把电流转为小电压供 ADC 采样。</div></div>
+  </div>
+
+  <!-- ================= 三、控制算法 ================= -->
+  <div class="gloss-sec">
+  <h2><span class="h2-num">3</span> 控制算法</h2>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">FOC 磁场定向控制</span><span class="term-en">Field-Oriented Control</span><div class="term-desc">将定子电流解耦为励磁与转矩分量(dq 轴)分别控制,实现平滑精确的力矩控制。<a class="term-link" href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">动画演示 →</a></div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">SVPWM 空间矢量脉宽调制</span><span class="term-en">Space Vector PWM</span><div class="term-desc">用八个基本电压矢量合成任意目标矢量,母线电压利用率比 SPWM 高约 15%。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">Clark 变换</span><span class="term-en">Clarke Transform</span><div class="term-desc">将三相静止坐标系(abc)电流变换到两相静止坐标系(αβ)。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">Park 变换</span><span class="term-en">Park Transform</span><div class="term-desc">将 αβ 静止系电流变换到随转子旋转的 dq 坐标系,需实时转子角度。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">死区时间</span><span class="term-en">Dead Time</span><div class="term-desc">互补开关管导通之间插入的延迟,防止上下桥臂直通短路。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">栅极驱动器</span><span class="term-en">Gate Driver</span><div class="term-desc">将 MCU 控制信号放大为高压大电流驱动 MOSFET 栅极,含自举与保护电路。<a class="term-link" href="../01_理论入门/03_驱动电路模块认知_交互式图解.html">电路图解 →</a></div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">母线电压</span><span class="term-en">Bus Voltage</span><div class="term-desc">直流母线上的电压,决定逆变器输出能力与电机最高转速。<a class="term-link" href="../03_项目实操/11_电源管理功率链路分析/index.html">功率链路 →</a></div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">相电流采样</span><span class="term-en">Phase Current Sensing</span><div class="term-desc">采集电机两相或三相电流供 FOC 闭环使用,采样精度直接影响控制品质。<a class="term-link" href="../02_硬件基础/04_硬件设计通用要点_避坑指南.html">避坑指南 →</a></div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">三环控制</span><span class="term-en">Three-Loop Control</span><div class="term-desc">电流环、速度环、位置环由内向外级联,是关节伺服控制的标准架构。<a class="term-link" href="../01_理论入门/02_核心原理动画演示_FOC_三环_减速器.html">动画演示 →</a></div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">PID 控制</span><span class="term-en">Proportional-Integral-Derivative</span><div class="term-desc">比例、积分、微分三项加权控制,结构简单,是工程中最常用的反馈控制器。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">前馈控制</span><span class="term-en">Feedforward Control</span><div class="term-desc">基于模型与指令提前给出补偿量,减小反馈滞后,提升跟踪精度。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">ADRC 自抗扰控制</span><span class="term-en">Active Disturbance Rejection Control</span><div class="term-desc">用扩张状态观测器估计并补偿总扰动,抗扰性强,近年关节控制应用增多。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">电流环带宽</span><span class="term-en">Current Loop Bandwidth</span><div class="term-desc">电流环可准确跟踪的最高频率,决定力矩响应速度,是关节力控关键指标。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">陷波滤波器</span><span class="term-en">Notch Filter</span><div class="term-desc">在特定频率处深度衰减的滤波器,用于抑制机械谐振峰引起的振荡。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">观测器</span><span class="term-en">Observer</span><div class="term-desc">基于模型与测量估计不可测状态,如用滑模观测器估计反电动势求转子位置。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">无感 FOC</span><span class="term-en">Sensorless FOC</span><div class="term-desc">不安装编码器,通过反电动势或磁链观测估计转子位置与速度。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">弱磁控制</span><span class="term-en">Flux Weakening</span><div class="term-desc">施加负直轴电流抵消永磁磁链,以牺牲扭矩换取超过额定转速的运行。</div></div>
+
+  <div class="term-card" data-cat="控制算法"><span class="term-name">三相逆变器</span><span class="term-en">Three-Phase Inverter</span><div class="term-desc">由三个半桥六个开关管组成,将直流母线电压变换为三相交流驱动电机。<a class="term-link" href="../01_理论入门/03_驱动电路模块认知_交互式图解.html">电路图解 →</a></div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">ZMP 零力矩点</span><span class="term-en">Zero Moment Point</span><div class="term-desc">地面反作用合力作用点,落在支撑多边形内即双足稳定行走的经典判据。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">捕获点</span><span class="term-en">Capture Point</span><div class="term-desc">与质心速度相关的"不倒点",迈一步即可停下,是步态调整的关键参考。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">WBC 全身控制</span><span class="term-en">Whole-Body Control</span><div class="term-desc">任务分层+逆动力学+QP 求解,协调多接触全身运动生成关节力矩。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">MPC 模型预测控制</span><span class="term-en">Model Predictive Control</span><div class="term-desc">用简化模型滚动优化未来一段时域的控制量,步态控制中算期望落脚与姿态。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">单刚体模型 SRBM</span><span class="term-en">Single Rigid Body Model</span><div class="term-desc">把整机近似为一个刚体做质心动力学,MPC 步态规划的主流简化模型。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">摆动相</span><span class="term-en">Swing Phase</span><div class="term-desc">步态周期中脚离地向前摆动的阶段,负责迈步与跨越障碍。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">支撑相</span><span class="term-en">Stance Phase</span><div class="term-desc">步态周期中脚与地面接触承重的阶段,承担推进与平衡。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">步态周期</span><span class="term-en">Gait Cycle</span><div class="term-desc">从一步开始到下一步开始的完整过程,含支撑相与摆动相的交替。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">雅可比矩阵</span><span class="term-en">Jacobian Matrix</span><div class="term-desc">关节速度到末端速度的映射矩阵,也用于力/力矩传递与奇异分析。</div></div>
+  <div class="term-card" data-cat="控制算法"><span class="term-name">逆动力学</span><span class="term-en">Inverse Dynamics</span><div class="term-desc">由期望运动反解所需力矩/力,是全身控制与力控的核心计算。</div></div>
+  </div>
+
+  <!-- ================= 四、通信总线 ================= -->
+  <div class="gloss-sec">
+  <h2><span class="h2-num">4</span> 通信总线</h2>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">CAN</span><span class="term-en">Controller Area Network</span><div class="term-desc">差分多主总线,带优先级仲裁,经典速率最高 1Mbps,多关节级联主流。<a class="term-link" href="../04_软件与算法/22_通信与控制算法升级路线.html">升级路线 →</a></div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">CAN FD</span><span class="term-en">CAN with Flexible Data-rate</span><div class="term-desc">数据段速率与长度灵活扩展,单帧最长 64 字节,速率可达 5Mbps 以上。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">EtherCAT</span><span class="term-en">Ethernet for Control Automation Technology</span><div class="term-desc">基于以太网的实时现场总线,分布式时钟同步,微秒级周期,适合多关节级联。<a class="term-link" href="../04_软件与算法/22_通信与控制算法升级路线.html">升级路线 →</a></div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">RS485</span><span class="term-en">EIA-485</span><div class="term-desc">差分半双工总线,抗干扰强、成本低,主从轮询,适合单关节调试与入门方案。<a class="term-link" href="../04_软件与算法/22_通信与控制算法升级路线.html">升级路线 →</a></div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">SPI</span><span class="term-en">Serial Peripheral Interface</span><div class="term-desc">同步全双工串行接口,主从模式、片选寻址,常用于编码器与传感器高速读数。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">I2C</span><span class="term-en">Inter-Integrated Circuit</span><div class="term-desc">两线制开漏总线,地址寻址、支持多主,速率较低,常用于板内低速外设。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">UART</span><span class="term-en">Universal Asynchronous Receiver/Transmitter</span><div class="term-desc">异步串行通信接口,点对点连接,常用于调试串口与简单传感器。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">帧格式</span><span class="term-en">Frame Format</span><div class="term-desc">报文结构定义,含帧头、ID、数据段与校验,保证收发双方解析一致。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">ID 仲裁</span><span class="term-en">ID Arbitration</span><div class="term-desc">CAN 报文按 ID 逐位仲裁,ID 数值越小优先级越高,多节点同时发送不冲突。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">菊花链</span><span class="term-en">Daisy Chain</span><div class="term-desc">设备首尾串联的拓扑,数据逐站转发,如 EtherCAT 从站链式连接。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">波特率</span><span class="term-en">Baud Rate</span><div class="term-desc">每秒传输的码元数,决定总线速率,收发双方必须配置一致。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">主从式</span><span class="term-en">Master-Slave</span><div class="term-desc">一个主站调度多个从站的通信模型,时序确定,便于冲突管理。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">分布式时钟</span><span class="term-en">Distributed Clocks</span><div class="term-desc">EtherCAT 从站时钟同步机制,可把各关节采样误差压缩到纳秒级。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">循环冗余校验 CRC</span><span class="term-en">Cyclic Redundancy Check</span><div class="term-desc">按多项式计算的检错码,附加在报文尾部,用于检测传输过程中的错误。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">同步帧</span><span class="term-en">Sync Frame</span><div class="term-desc">EtherCAT 周期起始的同步报文,各从站据此对齐采样与输出时刻。</div></div>
+
+  <div class="term-card" data-cat="通信总线"><span class="term-name">CANopen</span><span class="term-en">CANopen Protocol</span><div class="term-desc">基于 CAN 的应用层协议,用 PDO/SDO 与对象字典组织数据,工业设备通用。</div></div>
+  </div>
+
+  <!-- ================= 五、软件与仿真 ================= -->
+  <div class="gloss-sec">
+  <h2><span class="h2-num">5</span> 软件与仿真</h2>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">ROS 2</span><span class="term-en">Robot Operating System 2</span><div class="term-desc">开源机器人中间件,基于 DDS 通信,提供话题、服务与工具链,机器人开发事实标准。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">节点</span><span class="term-en">Node</span><div class="term-desc">ROS 2 中独立运行的可执行程序,通过话题、服务等与其他节点通信协作。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">话题</span><span class="term-en">Topic</span><div class="term-desc">节点间异步发布/订阅的数据通道,支持一对多、多对多,适合周期数据流。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">服务</span><span class="term-en">Service</span><div class="term-desc">节点间请求-响应式同步通信,适合调用一次即返回结果的交互。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">动作</span><span class="term-en">Action</span><div class="term-desc">面向长时间任务的通信模式,含目标、反馈与结果,可随时取消与查询进度。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">URDF</span><span class="term-en">Unified Robot Description Format</span><div class="term-desc">用 XML 描述机器人连杆、关节与传感器的标准格式,仿真与可视化通用。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">TF 坐标变换</span><span class="term-en">Transform Tree</span><div class="term-desc">ROS 中维护坐标系间变换关系的机制,是机器人各部件位姿统一计算的基础。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">MuJoCo</span><span class="term-en">Multi-Joint dynamics with Contact</span><div class="term-desc">高效率物理仿真引擎,接触求解稳定、速度快,机器人强化学习常用仿真器。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">Isaac Lab</span><span class="term-en">NVIDIA Isaac Lab</span><div class="term-desc">NVIDIA 基于 Isaac Sim 的机器人学习框架,提供场景搭建与并行训练环境。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">Sim-to-Real 仿真到现实迁移</span><span class="term-en">Simulation-to-Reality Transfer</span><div class="term-desc">把仿真中训练的策略迁移到真实机器人,核心挑战是仿真与现实的差距。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">域随机化</span><span class="term-en">Domain Randomization</span><div class="term-desc">随机化仿真中的摩擦、质量、光照等参数,训练出的策略对真实环境更鲁棒。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">PPO 近端策略优化</span><span class="term-en">Proximal Policy Optimization</span><div class="term-desc">裁剪目标函数限制更新步长的强化学习算法,稳定高效,机器人训练主流选择。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">强化学习</span><span class="term-en">Reinforcement Learning</span><div class="term-desc">智能体通过与环境试错交互、最大化累计奖励来学习策略的机器学习范式。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">奖励函数</span><span class="term-en">Reward Function</span><div class="term-desc">向智能体反馈行为好坏标量信号的函数,设计质量直接决定策略学到的行为。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">MoveIt 2</span><span class="term-en">MoveIt 2</span><div class="term-desc">ROS 2 机械臂运动规划框架,集成 OMPL 采样规划器与碰撞检测,用于任务级规划。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">colcon</span><span class="term-en">colcon build tool</span><div class="term-desc">ROS 2 官方构建工具,负责编译工作空间内的功能包并管理依赖。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">RViz</span><span class="term-en">RViz</span><div class="term-desc">ROS 可视化工具,可显示机器人模型、传感器数据、TF 与路径规划结果。</div></div>
+
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">Gazebo</span><span class="term-en">Gazebo</span><div class="term-desc">经典开源机器人仿真器,支持传感器模型与物理仿真,常用于算法验证。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">Nav2</span><span class="term-en">Navigation2</span><div class="term-desc">ROS2 官方导航栈,集成行为树、规划器、控制器、代价地图与定位。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">AMCL 定位</span><span class="term-en">Adaptive Monte Carlo Localization</span><div class="term-desc">粒子滤波定位算法,在已知地图上融合激光与里程计估计机器人位姿。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">代价地图</span><span class="term-en">Costmap</span><div class="term-desc">把障碍物与膨胀区域编码为代价的栅格地图,供全局/局部规划避障。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">行为树</span><span class="term-en">Behavior Tree</span><div class="term-desc">用树状节点组织任务逻辑(顺序/选择/条件),Nav2 导航流程的编排方式。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">全局路径规划</span><span class="term-en">Global Path Planning</span><div class="term-desc">在全局代价地图上规划起点到目标的无碰撞路径,如 A*、Navfn。</div></div>
+  <div class="term-card" data-cat="软件与仿真"><span class="term-name">局部路径规划</span><span class="term-en">Local Path Planning</span><div class="term-desc">在局部代价地图上实时生成平滑轨迹并避让动态障碍,如 DWB、TEB。</div></div>
+  </div>
+
+  <!-- ================= 六、感知与AI ================= -->
+  <div class="gloss-sec">
+  <h2><span class="h2-num">6</span> 感知与AI</h2>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">VLA 视觉-语言-动作模型</span><span class="term-en">Vision-Language-Action Model</span><div class="term-desc">以视觉与语言指令为输入、直接输出机器人动作的端到端大模型。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">世界模型</span><span class="term-en">World Model</span><div class="term-desc">学习环境状态转移与动力学的模型,可预测未来状态,辅助规划与决策。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">SLAM 同步定位与建图</span><span class="term-en">Simultaneous Localization and Mapping</span><div class="term-desc">在未知环境中同时估计自身位姿并构建地图,是移动与操作的基础能力。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">IMU 惯性测量单元</span><span class="term-en">Inertial Measurement Unit</span><div class="term-desc">集成加速度计与陀螺仪(常含磁力计)的传感器,测量加速度与角速度。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">六维力传感器</span><span class="term-en">6-Axis Force/Torque Sensor</span><div class="term-desc">同时测量三维力与三维力矩,是关节力控与柔顺操作的关键传感。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">触觉传感</span><span class="term-en">Tactile Sensing</span><div class="term-desc">检测接触力、压力分布与滑动的传感技术,用于精细抓取与操作。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">电子皮肤</span><span class="term-en">E-Skin</span><div class="term-desc">覆盖机器人表面的大面积柔性触觉阵列,提供分布式接触感知能力。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">遥操作</span><span class="term-en">Teleoperation</span><div class="term-desc">人类操作员通过主手、VR 等设备远程控制机器人,常用于示教与危险环境。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">具身智能</span><span class="term-en">Embodied Intelligence</span><div class="term-desc">智能体通过身体与物理世界交互来感知与学习,强调感知-决策-行动闭环。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">视觉语言模型</span><span class="term-en">Vision-Language Model</span><div class="term-desc">同时理解图像与文本的多模态模型,为机器人提供场景理解与指令推理。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">动作捕捉</span><span class="term-en">Motion Capture</span><div class="term-desc">记录人体或物体运动轨迹的技术,光学与惯性方案为主,用于示教数据采集。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">视觉伺服</span><span class="term-en">Visual Servoing</span><div class="term-desc">利用视觉反馈构成闭环控制,引导末端执行器对准目标,提高操作精度。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">点云</span><span class="term-en">Point Cloud</span><div class="term-desc">三维空间中点的集合,表征物体表面几何,是深度相机与激光雷达的输出。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">深度相机</span><span class="term-en">Depth Camera</span><div class="term-desc">同时输出彩色图像与深度图的相机,常见结构光与 ToF 两种原理。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">模仿学习</span><span class="term-en">Imitation Learning</span><div class="term-desc">从专家示教数据中学习策略,常用于机器人操作技能的学习。</div></div>
+
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">端到端学习</span><span class="term-en">End-to-End Learning</span><div class="term-desc">从原始感知输入直接学习到动作输出的范式,省略中间模块的手工设计。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">相机标定</span><span class="term-en">Camera Calibration</span><div class="term-desc">求解相机内参(焦距/主点/畸变)与外参(位姿)的过程,常用棋盘格法。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">畸变校正</span><span class="term-en">Distortion Correction</span><div class="term-desc">修正镜头径向/切向畸变造成的图像变形,还原真实投影关系。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">体素降采样</span><span class="term-en">Voxel Downsampling</span><div class="term-desc">把点云空间划分成体素格子、每格保留一个代表点,大幅减点降计算量。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">ICP 配准</span><span class="term-en">Iterative Closest Point</span><div class="term-desc">迭代最近点算法,通过最小化点对距离对齐两片点云,用于位姿估计。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">RANSAC</span><span class="term-en">Random Sample Consensus</span><div class="term-desc">随机采样一致性算法,从含噪点云中稳健拟合平面/球等几何模型。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">陀螺仪</span><span class="term-en">Gyroscope</span><div class="term-desc">测量角速度的 MEMS 传感器,积分可得姿态,是 IMU 的核心部件。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">加速度计</span><span class="term-en">Accelerometer</span><div class="term-desc">测量线性加速度的 MEMS 传感器,静态时可用重力方向估计倾角。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">应变片</span><span class="term-en">Strain Gauge</span><div class="term-desc">随形变改变电阻的传感元件,粘贴在弹性体上即可测力/力矩。</div></div>
+  <div class="term-card" data-cat="感知与AI"><span class="term-name">惠斯通电桥</span><span class="term-en">Wheatstone Bridge</span><div class="term-desc">四个电阻构成的差分测量电路,把应变片的微小阻变转为电压信号。</div></div>
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本页小结:</b>本词典按机械结构、电机与驱动、控制算法、通信总线、软件与仿真、感知与AI 六大类收录了 100+ 条术语,每条均给出中英文对照与一句话解释。机械与电机是关节硬件基础,控制算法与通信总线构成"大脑与神经",软件仿真与 AI 决定智能上限——六类术语正好对应本站六个学习板块,遇到陌生词随时回来搜索即可。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 谐波减速器的"零背隙"优势,为什么会给 FOC 力控带来额外便利?反过来,传动柔顺(低刚度)又会给电流环带宽带来什么挑战?<br>
+    2. 从 RS485 升级到 CAN 再到 EtherCAT,通信周期的数量级各是多少?如果你的关节数量从 1 个增加到 40 个,你会在哪个阶段考虑换总线?
+  </div>
+
+  <!-- ================= 自测题 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 关于谐波减速器,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 靠普通齿轮啮合传递动力,存在明显背隙</button>
+      <button data-v="B">B. 靠柔轮弹性变形啮合传动,单级减速比大且背隙极小</button>
+      <button data-v="C">C. 必须与行星齿轮串联两级才能减速</button>
+      <button data-v="D">D. 减速比只能做到 3:1 以下</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:谐波减速器利用柔轮弹性变形与刚轮、波发生器啮合传动,单级即可获得 50 以上的大减速比,且啮合齿数多、背隙极小,是人形机器人关节最主流的减速方案。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. FOC 中的 Park 变换,需要以下哪个输入才能完成?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 转子实时电角度</button>
+      <button data-v="B">B. 母线电压幅值</button>
+      <button data-v="C">C. 电机绕组温度</button>
+      <button data-v="D">D. 当前负载扭矩</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Park 变换把 αβ 静止坐标系变换到随转子旋转的 dq 坐标系,必须知道转子电角度;因此 FOC 依赖编码器(或观测器估计)提供实时角度,这也是无感 FOC 的核心难点。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 关于 CAN 总线,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. CAN 只能点对点连接两个设备</button>
+      <button data-v="B">B. 经典 CAN 单帧数据长度固定为 64 字节</button>
+      <button data-v="C">C. 多节点可同时发送,由 ID 逐位仲裁决定优先级</button>
+      <button data-v="D">D. CAN 需要主站逐个轮询从站</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:CAN 是多主总线,多节点同时发送时按 ID 逐位仲裁(ID 数值小者优先),无需主站轮询;经典 CAN 单帧数据仅 8 字节,CAN FD 才支持最长 64 字节。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 无刷直流电机(BLDC)与永磁同步电机(PMSM)同为「无刷」,关于两者的区别,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 两者反电动势波形相同,只是叫法不同</button>
+      <button data-v="B">B. BLDC 反电动势为正弦波,转矩脉动比 PMSM 小</button>
+      <button data-v="C">C. BLDC 反电动势为梯形波、常用霍尔换相;PMSM 反电动势为正弦波、配 FOC 驱动</button>
+      <button data-v="D">D. PMSM 反电动势为梯形波,只能用方波驱动</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:BLDC 反电动势为梯形波,常用霍尔方波换相,结构简单、成本低,适合入门方案;PMSM 反电动势为正弦波,配合 FOC 正弦驱动,转矩脉动小,是高性能关节首选。常见误区是把两者完全等同或误认其反电动势波形。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于增量式编码器与绝对式编码器,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 增量式编码器断电后仍能保留绝对位置</button>
+      <button data-v="B">B. 绝对式编码器上电即可读出绝对位置,断电不丢位置</button>
+      <button data-v="C">C. 绝对式编码器断电后位置会丢失,需上电找零</button>
+      <button data-v="D">D. 两者都能在断电重启后直接恢复绝对位置</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:绝对式编码器上电即可读取绝对位置,断电不丢位置(有单圈与多圈规格);增量式编码器只输出脉冲相对计数,断电后位置丢失,需上电找零。常见误区是以为「有编码器就一定能记住位置」,选型时应根据是否需要上电即知位置来选择。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于 SVPWM 与 SPWM,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. SVPWM 的母线电压利用率比 SPWM 更低</button>
+      <button data-v="B">B. SVPWM 与 SPWM 的电压利用率完全相同</button>
+      <button data-v="C">C. SVPWM 用八个基本电压矢量合成目标矢量,母线电压利用率比 SPWM 高约 15%</button>
+      <button data-v="D">D. SVPWM 只需一个基本电压矢量即可输出任意电压</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SVPWM 用八个基本电压矢量(含零矢量)合成任意目标矢量,直流母线电压利用率比 SPWM 高约 15%。常见误区是认为两者只是实现方式不同、电压利用率相同,实际上 SVPWM 能更充分地利用母线电压。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 本词典按机械结构、电机与驱动、控制算法、通信总线、软件与仿真、感知与AI 六大类收录 100+ 术语,均含中英对照与一句话解释;② 机械:谐波减速器靠柔轮弹性变形实现大减速比与极小背隙,直驱/准直驱(QDD)传动无背隙、力控好;③ 电机与控制:BLDC 梯形波配霍尔、PMSM 正弦波配 FOC,Park 变换需转子电角度,SVPWM 母线电压利用率比 SPWM 高约 15%;④ 通信与 AI:CAN 多主 ID 仲裁、EtherCAT 微秒级同步,ROS 2 基于 DDS,PPO/域随机化支撑 Sim-to-Real。</div>
+
+</div><!-- /container -->
+
+<script>
+/* 术语词典筛选:输入框实时过滤 + 分类按钮高亮过滤(ES5) */
+(function () {
+  var input = document.getElementById("glossInput");
+  var btns = document.querySelectorAll("#glossCats button");
+  var cards = document.querySelectorAll(".term-card");
+  var secs = document.querySelectorAll(".gloss-sec");
+  var activeCat = "全部";
+
+  function apply() {
+    var kw = (input.value || "").trim().toLowerCase();
+    var all = activeCat === "全部";
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var hitCat = all || card.getAttribute("data-cat") === activeCat;
+      var hitKw = !kw || card.textContent.toLowerCase().indexOf(kw) !== -1;
+      card.style.display = (hitCat && hitKw) ? "" : "none";
+    }
+    for (var j = 0; j < secs.length; j++) {
+      var sec = secs[j];
+      var vis = false;
+      var secCards = sec.querySelectorAll(".term-card");
+      for (var k = 0; k < secCards.length; k++) {
+        if (secCards[k].style.display !== "none") { vis = true; break; }
+      }
+      sec.style.display = vis ? "" : "none";
+    }
+  }
+
+  input.addEventListener("input", apply);
+
+  for (var m = 0; m < btns.length; m++) {
+    (function (btn) {
+      btn.addEventListener("click", function () {
+        activeCat = btn.getAttribute("data-cat");
+        for (var n = 0; n < btns.length; n++) {
+          btns[n].className = (btns[n] === btn) ? "on" : "";
+        }
+        apply();
+      });
+    })(btns[m]);
+  }
+
+  if (btns.length > 0) { btns[0].className = "on"; }
+})();
+</script>
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

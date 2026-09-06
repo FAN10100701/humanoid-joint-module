@@ -9,8 +9,14 @@
 const fs = require("fs"), path = require("path");
 const cfg = JSON.parse(fs.readFileSync(process.argv[2] || "登记配置.json", "utf8"));
 const root = path.join(__dirname, "..");
-const R = p => fs.readFileSync(path.join(root, p), "utf8");
-const W = (p, s) => fs.writeFileSync(path.join(root, p), s);
+/* 路径Containment:配置里的 folder/file 拼进路径后必须仍落在项目根内,防 ../ 逃逸 */
+const insideRoot = p => {
+  const r = path.resolve(root, p);
+  if (r !== root && !r.startsWith(root + path.sep)) throw new Error("路径越出项目根: " + p);
+  return r;
+};
+const R = p => fs.readFileSync(insideRoot(p), "utf8");
+const W = (p, s) => fs.writeFileSync(insideRoot(p), s);
 const secKey = String(cfg.sec).length < 2 ? "0" + cfg.sec : String(cfg.sec);   /* 8 -> 08 */
 const urlPath = cfg.folder + "/" + cfg.file;
 
@@ -32,12 +38,12 @@ let head = s.slice(0, pmEnd).replace(/,\s*$/, "") + ",\n";
 s = head + '  "' + cfg.pageId + '": { time:"' + cfg.time + '", prereq:"' + cfg.prereq + '", updated:"' + new Date().toISOString().slice(0,10) + '", verified:"待人工复核", goals:' + JSON.stringify(cfg.goals) + ' }\n};\n';
 W("_assets/page-meta.js", s);
 
-/* 4) 学习地图: 在 08-15 节点后插入 */
-s = R("08_学习工具/06_学习地图.html");
-const mapAnchor = '{ id: "08-15", t: "全站体检", u: "../08_学习工具/15_全站体检.html" },';
+/* 4) 学习地图: 在 06-15 节点后插入 */
+s = R("06_学习工具/06_学习地图.html");
+const mapAnchor = '{ id: "06-15", t: "全站体检", u: "../06_学习工具/15_全站体检.html" },';
 if(s.indexOf(mapAnchor) < 0){ console.error("学习地图锚点未找到,请手动加节点"); }
 else s = s.replace(mapAnchor, mapAnchor + '\n    { id: "' + cfg.pageId + '", t: "' + cfg.title + '", u: "../' + urlPath + '" },');
-W("08_学习工具/06_学习地图.html", s);
+W("06_学习工具/06_学习地图.html", s);
 
 /* 5) index.html: SITE_SECTIONS 该组 ids 追加 + sec 网格末尾插卡片 */
 s = R("index.html");

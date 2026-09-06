@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 自测题库</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(带前缀避免与全局冲突) */
+  .qz-scorebar{max-width:1080px;background:linear-gradient(135deg,rgba(37,99,235,.28),rgba(22,27,34,.6));border:1px solid rgba(59,130,246,.5);border-radius:12px;padding:12px 18px;text-align:center;font-size:15px;font-weight:700;color:#fff;margin:18px 0 4px;letter-spacing:.5px}
+  .qz-scorebar .qz-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:8px;box-shadow:0 0 8px rgba(34,197,94,.8)}
+  .qz-group-intro{font-size:14px;color:#9aa4b2;margin:8px 0 6px}
+</style>
+<script>
+  /* ============================================================
+     window.PAGE 配置:pageId / root / breadcrumb / prev / next
+     ============================================================ */
+  window.PAGE = {
+    pageId: "06-03",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec6" }, { t: "自测题库" } ],
+    prev: { t: "常见问答 FAQ", u: "02_常见问答FAQ.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>✅ 自测题库</h1>
+    <div class="sub">按章节检验学习成果,点击选项即时判分;答错自动显示解析并回链对应章节,把知识盲区逐个消灭。</div>
+    <div class="tags">
+      <span class="tag">4 组</span>
+      <span class="tag">60 题</span>
+      <span class="tag">即时反馈</span>
+    </div>
+  </div>
+
+  <!-- ================= 得分栏 ================= -->
+  <div class="qz-scorebar" id="scoreBar"><span class="qz-dot"></span>已答 0/60 · 答对 0</div>
+
+  <!-- ================= 今日复习(间隔重复 SRS) ================= -->
+  <div class="srs-wrap">
+    <h2><span class="h2-num">S</span> 今日复习 · 间隔重复 SRS</h2>
+    <p style="font-size:13px;color:#9aa4b2">基于本页 60 题题库,按"学-练-测-复习"闭环自动安排复习:答对间隔逐级拉长(30分钟→1天→2天→4天→8天→16天),答错 30 分钟后重试。进度保存在本地浏览器。</p>
+    <div id="srsPanel"></div>
+  </div>
+
+  <!-- ================= 学习目标与使用说明 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 完成 4 组共 40 道自测题,覆盖理论 / 硬件 / 软件 / 前沿四大板块,检验第 1~7 部分的学习成果<br>
+    2. 建立个人知识盲区清单,掌握「错题 → 回链章节 → 复读 → 重测」的复习闭环<br>
+    3. 通过解析中的知识回顾,把零散概念串成完整体系,为项目实操打底<br>
+    <b>建议用时:</b>约 20~30 分钟
+  </div>
+
+  <div class="box box-tip">
+    <b>💡 使用说明:</b><br>
+    ① 点击选项即时判分,每题只计第一次作答,作答后该题锁定计分;<br>
+    ② 每题解析在作答后自动显示,答错的同学请顺着解析里的链接回到对应章节复习;<br>
+    ③ 顶部得分栏实时统计「已答 X/60 · 答对 Y」,建议正确率 ≥ 70% 再进入下一部分学习。
+  </div>
+
+  <!-- V2.1.4:题目改为运行时读 quiz-bank.js 渲染(单源,不再手工镜像) -->
+  <div id="quizMount" data-runtime-quiz="quiz-bank"></div>
+  <script>
+  (function(){
+    document.addEventListener("DOMContentLoaded", function(){
+      var bank = window.QUIZ_BANK || [];
+      var mount = document.getElementById("quizMount");
+      if(!mount || !bank.length){ mount.innerHTML = "<div class='box box-warn'>题库数据加载失败,请刷新重试</div>"; return; }
+      /* 按组顺序渲染(保持首现顺序) */
+      var order = [], byG = {};
+      bank.forEach(function(q){
+        if(!byG[q.g]){ byG[q.g] = []; order.push(q.g); }
+        byG[q.g].push(q);
+      });
+      var html = "", no = 0;
+      order.forEach(function(g, gi){
+        html += "<h2><span class='h2-num'>" + (gi+1) + "</span> 组" + "一二三四五六七八九十"[gi] + " · " + g + "</h2>";
+        byG[g].forEach(function(q){
+          no++;
+          var opts = "";
+          q.o.forEach(function(o){ opts += "<button data-v='" + o.charAt(0) + "'>" + o + "</button>"; });
+          html += "<div class='quiz'><div class='quiz-q'>" + no + ". " + q.q + "</div>" +
+            "<div class='quiz-options' data-answer='" + q.a + "'>" + opts + "</div>" +
+            "<div class='quiz-feedback'></div><div class='quiz-explain'>💡 " + q.e + "</div></div>";
+        });
+      });
+      mount.innerHTML = html;
+    });
+  })();
+  </script>
+<script src="../_assets/quiz-bank.js"></script>
+<script src="../_assets/srs.js"></script>
+
+<!-- 共享脚本:导航 / 面包屑 / 前后翻页 / 页脚 / 自测判分 / 搜索 / 打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

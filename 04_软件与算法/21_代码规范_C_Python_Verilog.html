@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 04-22 代码规范: C / Python / Verilog + Git 协作
+  结构严格遵循 _assets/页面模板.html
+  本页聚焦: 规范的工程价值 / C(MISRA+volatile) / Python(PEP8+类型注解) /
+  Verilog(可综合+阻塞非阻塞) / Git 协作 / 检查清单 /
+  常见误区 / 自测 6 题,与 04-21(FreeRTOS)、20(C 框架对比)互链
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 代码规范_C_Python_Verilog</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<script>
+  window.PAGE = {
+    pageId: "04-22",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec4" },
+      { t: "代码规范:C / Python / Verilog" }
+    ],
+    prev: { t: "FreeRTOS 任务调度与实时性", u: "20_FreeRTOS任务调度与实时性.html" },
+    next: { t: "通信与控制算法升级路线", u: "22_通信与控制算法升级路线.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>📐 代码规范:C / Python / Verilog</h1>
+    <div class="sub">规范不是"强迫症",是团队协作的通信协议与半年后自救的时光机 —— 从 code review 视角讲清三种语言各自的规范要点:C 的命名与防御式编程与 MISRA 高频条款、Python 的 PEP8 与类型注解与项目结构、Verilog 的可综合写法与阻塞/非阻塞分界,外加 Git 协作规范与一份可打印的检查清单。</div>
+    <div class="tags">
+      <span class="tag">MISRA C</span>
+      <span class="tag">PEP8 / 类型注解</span>
+      <span class="tag">Verilog 可综合</span>
+      <span class="tag">Git 协作</span>
+      <span class="tag">Code Review</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能从"半年后的自己"与"reviewer"两个视角,说出规范到底在解决什么问题<br>
+    2. 能按命名约定表整理 C 代码,写出带参数检查与返回值处理的防御式函数,并说出 volatile 的正确与错误用法<br>
+    3. 能用 PEP8 + 类型注解整理 Python 项目,搭出标准的目录结构与依赖 pin 版本<br>
+    4. 能区分 Verilog 阻塞/非阻塞的适用场景,写出可综合风格统一的 RTL<br>
+    5. 能按 commit message 格式与 feature→PR→review 分支模型参与团队协作,并拿检查清单自查代码<br>
+    <b>建议用时:</b>约 40 分钟(适合作为提交第一个 PR 前的"预习课")
+  </div>
+
+  <!-- ================= 1 为什么规范是工程能力 ================= -->
+  <h2><span class="h2-num">1</span> 为什么规范是工程能力:code review 视角</h2>
+
+  <p><b>是什么:</b>代码规范(coding standard)是团队对"代码长什么样、什么能做什么不能做"的书面约定。<b>它解决的不是"好看",而是三个真金白银的问题:</b></p>
+  <ol>
+    <li><b>降低阅读成本:</b>人读代码的时间远多于写的时间。统一命名与结构后,读任何人的代码都像读自己的 —— 新人入职、半年后的你自己回来改 bug,受益的都是"阅读者"。学术界常引的比例:软件生命周期里维护占 60% 以上成本,可读性就是钱;</li>
+    <li><b>消灭整类错误:</b>好规范是"用规则封死一类 bug"—— 比如"所有公共函数入口必须检查指针参数"封死空指针解引用,"比较浮点必须用误差带"封死 <code>==</code> 误用,"ISR 里不许调用非 FromISR API"(见 <a href="20_FreeRTOS任务调度与实时性.html">04-21 页</a>)封死内核崩溃;</li>
+    <li><b>让 review 聚焦逻辑:</b>没有规范时,review 意见一半是"这里缩进不对、变量名看不懂"这类噪音;有规范 + 自动化检查(clang-format、ruff、verilog-lint)后,格式问题机器消化,人的注意力留给算法与边界条件 —— 这才是 review 的真正价值。</li>
+  </ol>
+  <div class="table-wrap"><table>
+    <tr><th>视角</th><th>没有规范</th><th>有规范</th></tr>
+    <tr><td>reviewer 的意见</td><td>一半在挑命名/格式/魔数,真正逻辑问题被淹没</td><td>格式机器检查,意见聚焦设计、边界、并发</td></tr>
+    <tr><td>三个月后的自己</td><td>"这行是谁写的?为什么这么写?"(是自己写的)</td><td>结构可预期,凭命名与注释即可恢复上下文</td></tr>
+    <tr><td>多人并行开发</td><td>合并冲突里全是格式 diff,没人敢 rebase</td><td>格式化器统一,diff 只含真实改动</td></tr>
+    <tr><td>交接与开源</td><td>代码只有作者能维护</td><td>风格接近行业惯例,外部贡献者也能提 PR</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>"你的代码规范习惯是什么?为什么要有规范?"——干答"命名驼峰、缩进 4 格"只值及格分;高分答法是<b>说出规范的三层价值(阅读成本 / 整类消灭 bug / review 聚焦逻辑)+ 举一个自己被规范救过的具体例子</b>(例如"review 同事指出我没有检查 malloc 返回值,后来那条路径真的 OOM 了")。</p>
+  <div class="box box-tip"><b>💡 站内关联:</b>本页是"怎么写好代码";"写什么代码"见 <a href="20_工程电机控制框架对比_流程与选型.html">04-20 工程电机控制框架对比</a>(读别人源码的路线)与 <a href="20_FreeRTOS任务调度与实时性.html">04-21 FreeRTOS 页</a>(嵌入式 C 的并发正确性)。三页合起来是嵌入式/机器人软件的基本功三角。</div>
+
+  <!-- ================= 2 C 语言规范 ================= -->
+  <h2><span class="h2-num">2</span> C 语言规范:命名、头文件、防御式编程、MISRA 与 volatile</h2>
+
+  <h3>2.1 命名约定与头文件组织</h3>
+  <p><b>怎么做:</b>嵌入式 C 社区(FreeRTOS、Zephyr、各家 SDK)的主流约定基本一致 —— <b>一致性比具体选哪种更重要</b>。常用映射表:</p>
+  <div class="table-wrap"><table>
+    <tr><th>实体</th><th>推荐约定</th><th>示例</th></tr>
+    <tr><td>函数(公共)</td><td>模块前缀 + snake_case</td><td><code>motor_set_torque()</code>、<code>encoder_get_angle()</code></td></tr>
+    <tr><td>函数(模块内私有)</td><td>static + 同风格(或不加前缀)</td><td><code>static int16_t iir_step(...)</code></td></tr>
+    <tr><td>类型/结构体</td><td>snake_case + <code>_t</code> 后缀(或前缀)</td><td><code>typedef struct { ... } pid_t;</code></td></tr>
+    <tr><td>全局变量(文件内)</td><td>static + g 前缀</td><td><code>static pid_t g_vloop;</code></td></tr>
+    <tr><td>宏/枚举常量</td><td>全大写 + 下划线 + 模块前缀</td><td><code>#define MOTOR_PWM_FREQ_HZ 20000u</code></td></tr>
+    <tr><td>局部变量</td><td>snake_case,短而有意义</td><td><code>iq_ref</code>、<code>theta_mech</code>(别用 <code>a</code>、<code>tmp2</code>)</td></tr>
+  </table></div>
+  <p><b>头文件三原则:</b>①<b>头文件只放"接口"</b> —— 函数声明、类型、公共宏;禁止在 .h 里定义变量或写函数体(inline 除外);②<b>include guard 必须有</b>,防止重复包含:</p>
+  <pre><code>/* ============ motor.h —— 头文件模板(接口与实现分离) ============ */
+#ifndef MOTOR_H            /* include guard: 防止重复包含 */
+#define MOTOR_H
+
+#include &lt;stdint.h&gt;        /* .h 只包含自己用到的头, 越少越好 */
+#include &lt;stdbool.h&gt;
+
+/* ---- 公共类型 ---- */
+typedef struct {
+    float    kp, ki;       /* PI 增益 */
+    float    integ;        /* 积分累加器 */
+    float    out_max;      /* 输出限幅 */
+} motor_pi_t;
+
+/* ---- 公共函数(带参数方向注释) ---- */
+void  motor_init(float pwm_freq_hz);
+/* @brief 设置转矩指令  @param iq_a 相电流指令[A]  @return 0=ok, -1=非法值 */
+int   motor_set_torque(float iq_a);
+float motor_get_angle_rad(void);
+
+#endif /* MOTOR_H */
+
+/* ============ motor.c —— 实现文件 ============ */
+#include "motor.h"
+/* 私有函数与变量全部 static: 作用域不出本文件, 不污染全局命名空间 */
+static float s_pwm_freq;
+static int16_t iir_step(int16_t x) { /* ... */ }</code></pre>
+  <h3>2.2 防御式编程:参数检查与返回值处理</h3>
+  <p><b>是什么:</b>防御式编程(defensive programming)= <b>不信任任何输入</b>:公共函数入口检查参数合法性、所有返回值要么检查要么显式声明"故意忽略"。两条实践:①入口检查用断言 + 错误码组合 —— 开发期 <code>configASSERT(p)</code> 快速暴露调用方 bug,量产期返回错误码让调用者兜底;②错误码统一约定(0 = 成功、负数 = 错误),全工程一致,禁止有时返回 -1 有时返回 bool 有时静默吞掉。特别注意<b>动态内存与外设返回值</b>:malloc/calloc 返回值必须判 NULL;HAL 函数返回的 HAL_StatusTypeDef 在关键路径(初始化)必须检查。</p>
+  <pre><code>/* ============ 防御式示例: 公共 API 的标准骨架 ============ */
+int motor_set_torque(float iq_a)
+{
+    /* 1) 参数检查: 非法输入立即拒绝, 不带病运行 */
+    if (!(iq_a &gt; -MAX_PHASE_CURRENT &amp;&amp; iq_a &lt; MAX_PHASE_CURRENT)) {
+        return -1;                      /* NaN 也会被这条条件拦住(比较为假) */
+    }
+    if (!s_motor_enabled) {
+        return -2;                      /* 状态检查: 未使能时拒绝指令 */
+    }
+
+    /* 2) 核心: 限幅后执行, 限幅值来自编译期常量而非魔法数 */
+    float iq_clamped = CLAMP(iq_a, -MAX_PHASE_CURRENT, MAX_PHASE_CURRENT);
+    foc_update_iq_ref(iq_clamped);
+
+    /* 3) 关键外设调用必须检查返回值 */
+    if (HAL_OK != foc_start_pwm_update()) {
+        log_error("pwm update fail");   /* 失败路径也要有明确出口 */
+        return -3;
+    }
+    return 0;
+}
+
+/* 调用方: 返回值要么检查, 要么注释说明"故意忽略" */
+if (0 != motor_set_torque(cmd)) { safe_shutdown(); }</code></pre>
+  <h3>2.3 MISRA C:2012 高频 8 条(工程摘要)</h3>
+  <p><b>是什么:</b>MISRA C 是汽车/工业界为"安全攸关 C 代码"制定的语言子集标准,2012 版含 143 条规则 + 16 条指令。机器人关节驱动器虽不必全量过认证,但以下高频条款能直接封死一类事故(摘要为便于记忆的工程转述,精确条文以 MISRA C:2012 原文为准):</p>
+  <ul>
+    <li><b>Rule 1.3:</b>不得出现未定义/未指明行为(越界、有符号溢出、野指针)—— 所有其他规则的"总纲";</li>
+    <li><b>Rule 8.4:</b>有外部链接的函数/对象必须有可见的兼容声明 —— 头文件与实现强一致,编译器替你查签名;</li>
+    <li><b>Rule 8.7:</b>不被外部引用的函数/对象不得有外部链接 —— 尽量 static,收窄作用域;</li>
+    <li><b>Rule 10.x 系:</b>不同类型(尤其是有符号/无符号、不同宽度)之间禁止隐式转换 —— 显式 cast + 统一使用 stdint 类型(uint16_t/int32_t);</li>
+    <li><b>Rule 11.x 系:</b>指针类型之间的强制转换严格受限(void* 除外)—— 杜绝"把 int 当指针地址"的黑魔法;</li>
+    <li><b>Rule 13.5:</b>逻辑与/或的右操作数不得有副作用(<code>if (f(p) &amp;&amp; p-&gt;n++)</code> 禁止)—— 短路求值不可依赖;</li>
+    <li><b>Rule 15.x 系:</b>控制流清晰 —— switch 必须有 default;禁止 goto(15.2/15.3 受限使用);函数单一出口优先;</li>
+    <li><b>Rule 17.7:</b>非 void 函数的返回值不得忽略 —— 对应 2.2 节防御式编程。</li>
+  </ul>
+  <h3>2.4 volatile 正确用法</h3>
+  <p><b>是什么:</b>volatile 告诉编译器"这个变量可能被程序流之外的因素改变,<b>禁止缓存到寄存器、禁止跨访问合并/重排优化</b>"。三个正确场景与一个常见误解:</p>
+  <ul>
+    <li><b>✅ 硬件寄存器映射:</b><code>volatile uint32_t *reg = (volatile uint32_t *)0x40020000;</code> —— 读寄存器每次必须真的发生;</li>
+    <li><b>✅ ISR 与主程序共享的标志:</b><code>volatile bool g_frame_ready;</code> —— 不加 volatile,主循环 <code>while (!g_frame_ready)</code> 可能被优化成死循环;</li>
+    <li><b>✅ 多任务共享且访问原子的单个变量</b>(单个机器字长):可用 volatile + 注释说明约定的读写方;</li>
+    <li><b>❌ 常见误解:volatile 不保证原子性、不构成同步机制</b> —— 32 位平台上的 64 位变量、多字段结构体,volatile 照样会被"撕裂"读写;任务间共享多字节数据的 正确工具是临界区/互斥量/队列(04-21 页第 3 节)。<b>volatile ≠ 线程安全。</b></li>
+  </ul>
+  <p><b>面试怎么问:</b>"volatile 和原子性是什么关系?volatile 变量还需要加锁吗?"——答:volatile 只禁优化、不保原子,多字节数据仍需锁/队列;只有"单字长 + 单写多读"的标志位可仅靠 volatile + 明确注释。能再补一句"寄存器访问还依赖编译器的 strict 别名处理,标准做法是 __IO 类型"更佳。</p>
+
+  <!-- ================= 3 Python 规范 ================= -->
+  <h2><span class="h2-num">3</span> Python 规范:PEP8、类型注解与项目结构</h2>
+
+  <h3>3.1 PEP8 要点表</h3>
+  <p><b>是什么:</b>PEP8(Python Enhancement Proposal 8)是 Python 官方风格指南 —— 别背,记住"工具会替你执行":ruff / flake8 查违规、black / ruff-format 自动格式化。人工只需记住高频几条:</p>
+  <div class="table-wrap"><table>
+    <tr><th>条目</th><th>规则</th><th>示例</th></tr>
+    <tr><td>缩进</td><td>4 空格,禁 Tab</td><td>—</td></tr>
+    <tr><td>行宽</td><td>代码 ≤ 79~88(团队可放宽到 100),文档注释 ≤ 72</td><td>—</td></tr>
+    <tr><td>命名</td><td>函数/变量 lower_snake_case;类 CapWords;常量 UPPER_CASE;私有前缀单下划线</td><td><code>load_model()</code>、<code>JointController</code>、<code>MAX_TORQUE</code>、<code>_cache</code></td></tr>
+    <tr><td>导入</td><td>顶部三组:标准库 / 三方 / 本项目,组间空行;禁 <code>from x import *</code></td><td>见下代码块</td></tr>
+    <tr><td>比较</td><td>用 <code>is None</code> / <code>is not None</code>,别 <code>== None</code></td><td>—</td></tr>
+    <tr><td>文档字符串</td><td>公共模块/类/函数写 docstring(一句话摘要 + 参数 + 返回)</td><td>Google/NumPy 风格二选一,全库统一</td></tr>
+  </table></div>
+  <h3>3.2 类型注解与项目目录</h3>
+  <pre><code>"""joint_control: 人形机器人关节上位控制库(项目入口模块示例)。"""
+
+# ---- 导入三段式: 标准库 / 三方库 / 本项目, 组间空行 ----
+import time
+from dataclasses import dataclass
+
+import numpy as np
+
+from joint_control.transport import CanBus
+
+
+@dataclass
+class JointState:
+    """单个关节的实时状态(单位 SI)。"""
+    position: float   # rad
+    velocity: float   # rad/s
+    torque:   float   # N·m
+
+
+def plan_trajectory(q_start: np.ndarray,
+                    q_goal: np.ndarray,
+                    duration: float) -&gt; np.ndarray:
+    """五次多项式插值。
+
+    Args:
+        q_start: 起始关节角向量 [n_joint]
+        q_goal:  目标关节角向量 [n_joint]
+        duration: 时长(秒), 必须 &gt; 0
+
+    Returns:
+        形状 [n_joint, n_step] 的轨迹矩阵。
+
+    Raises:
+        ValueError: duration 非正时抛出。
+    """
+    if duration &lt;= 0:
+        raise ValueError(f"duration must be positive, got {duration}")
+    ...  # 返回 np.ndarray: 类型注解让 IDE/mypy 提前抓住 shape/单位错误</code></pre>
+  <pre><code># ============ 推荐项目目录结构(src 布局) ============
+joint_robot/
+├── pyproject.toml            # 项目元数据 + 依赖声明(现代标准)
+├── requirements.txt          # 或 requirements 系文件, 版本必须 pin
+├── README.md
+├── src/
+│   └── joint_control/
+│       ├── __init__.py
+│       ├── controller.py     # 控制逻辑
+│       ├── transport.py      # CAN/串口 通信
+│       └── utils.py
+├── tests/                    # pytest 测试, 与源码一一对应
+│   ├── test_controller.py
+│   └── test_transport.py
+└── scripts/                  # 一次性脚本别混进库代码
+    └── calibrate_zero.py</code></pre>
+  <p><b>依赖 pin 版本:</b><code>requirements.txt</code> 里写精确版本(<code>numpy==1.26.4</code>)而不是开放范围(<code>numpy</code> 或 <code>numpy&gt;=1.20</code>)—— 机器人上位机依赖 ROS2/PyTorch 等重依赖库,上游小版本更新就可能破坏 API;<b>可复现环境是实验科学的基本要求</b>:半年后回滚复现实验结果,依赖不一致会让你怀疑人生。进阶:用 <code>pyproject.toml + uv/poetry</code> 的 lock 文件管理,原理相同。</p>
+  <p><b>面试怎么问:</b>"你的 Python 项目怎么组织?依赖怎么管理?"——答 src 布局 + tests 分离 + 依赖 pin/lock;能补"mypy 静态检查类型注解、ruff 查 lint"说明工具链意识。</p>
+
+  <!-- ================= 4 Verilog 规范 ================= -->
+  <h2><span class="h2-num">4</span> Verilog 规范:可综合、复位、命名与阻塞/非阻塞</h2>
+
+  <h3>4.1 可综合写法清单</h3>
+  <p><b>是什么:</b>Verilog 一半是硬件描述、一半是仿真脚本 —— <b>可综合子集</b>是"能被综合器变成真实电路"的那部分,写 RTL 必须守住清单:</p>
+  <ul>
+    <li>时序逻辑统一模板:<code>always @(posedge clk ...)</code> + 非阻塞赋值 <code>&lt;=</code>;</li>
+    <li>组合逻辑统一模板:<code>always @(*)</code> + 阻塞赋值 <code>=</code>,<b>所有分支都要给输出赋值</b>(否则推断出锁存器 —— "锁存器意外"是新手 RTL 报告里最常见的警告);</li>
+    <li>禁止(不可综合或综合结果不可控):<code>#delay</code> 延时、无限循环 while(无静态边界)、任务内事件等待、<code>initial</code> 里做功能逻辑(FPGA RAM 初始化等少数例外);</li>
+    <li>跨模块异步信号先同步:外部输入/亚稳态敏感信号用两级触发器打拍(synchronizer),<b>cdc(跨时钟域)处理是数字设计的头号事故源</b>;</li>
+    <li>位宽显式:给常量写全位宽(<code>16'd40</code> 而非 <code>40</code>),比较两侧位宽一致,避免隐式截断。</li>
+  </ul>
+  <h3>4.2 复位风格统一与命名后缀</h3>
+  <p><b>怎么做:</b>一个设计里<b>异步复位与同步复位只能二选一</b>(工程主流:异步复位、同步释放 async reset / sync de-assert,兼顾可靠释放与起跑状态明确),模板全库统一:</p>
+  <pre><code>/* ============ 统一模板: 异步复位、同步释放的时序逻辑 ============ */
+module encoder_counter #(parameter integer CNT_W = 14) (
+    input  wire             clk,        // 采样时钟
+    input  wire             rst_n,      // 低有效异步复位(全库统一低有效 _n)
+    input  wire             cnt_en,     // 计数使能
+    output logic [CNT_W-1:0] cnt_o      // 输出寄存器: _o 后缀
+);
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            cnt_o &lt;= {CNT_W{1'b0}};           // 复位值显式写出
+        else if (cnt_en)
+            cnt_o &lt;= cnt_o + 1'b1;            // 非阻塞: 时序逻辑唯一写法
+    end
+endmodule</code></pre>
+  <p><b>命名后缀约定(与 4.1 模板配套):</b>组合逻辑驱动的信号加 <code>_w</code>(wire),寄存器输出加 <code>_r</code> 或 <code>_o</code>,低有效信号加 <code>_n</code>,跨时钟域信号加 <code>_sync</code> —— 一眼分清"这根线是组合毛刺还是打拍后的稳定值",review 时省一半脑力。</p>
+  <h3>4.3 阻塞 / 非阻塞使用场景表</h3>
+  <div class="table-wrap"><table>
+    <tr><th>赋值</th><th>语义</th><th>适用场景</th><th>用错的后果</th></tr>
+    <tr><td><code>=</code> 阻塞</td><td>顺序执行,本句完成才走下一句(像 C)</td><td><b>组合逻辑 always @(*)</b>、testbench 激励</td><td>用在时序逻辑:仿真与综合行为不一致,竞争冒险,门级对不上</td></tr>
+    <tr><td><code>&lt;=</code> 非阻塞</td><td>本时刻统一调度,所有更新在时钟沿"同时"生效</td><td><b>时序逻辑 always @(posedge clk)</b>(触发器阵列的真实语义)</td><td>用在组合逻辑:输出滞后一拍,组合环/仿真不收敛</td></tr>
+  </table></div>
+  <p>口诀(Cummings 论文流传最广):<b>"时序用非阻塞、组合用阻塞、同一个 always 块里不混用"</b>。同一模块里既写时序又写组合时,拆成两个 always 块,各自的赋值风格不交叉。</p>
+  <p><b>面试怎么问:</b>"阻塞与非阻塞赋值的区别?混用会发生什么?"——答:阻塞像软件顺序执行,非阻塞模拟触发器"时钟沿统一切换"的真实硬件行为;时序块里用阻塞会造成仿真与综合不一致(仿真先更新,综合出的触发器却同时切换),潜在竞争;补一句"所有触发器仿真模型都是 NBA update 区更新"是深度信号。</p>
+
+  <!-- ================= 5 Git 协作规范 ================= -->
+  <h2><span class="h2-num">5</span> Git 协作规范:commit 格式、分支模型与 .gitignore</h2>
+
+  <h3>5.1 commit message 格式</h3>
+  <p><b>怎么做:</b>主流约定(Conventional Commits 简化版):<code>&lt;type&gt;: &lt;一句话摘要&gt;</code>,type 常用 <b>feat(新功能)/ fix(修 bug)/ refactor(重构不改行为)/ docs / test / chore(构建与杂项)</b>。摘要 50 字内、祈使句("add" 而不是 "added")、说明"做了什么"而不是"怎么做的";复杂改动空一行后写正文,说清<b>动机与副作用</b>。示例:</p>
+  <pre><code>fix: clamp iq reference before PWM update to prevent overcurrent
+
+iq 指令未经限幅直接下发, 在急停恢复瞬间可达 1.8 倍额定电流。
+本改动在 foc_update_iq_ref() 入口统一 CLAMP 到 ±MAX_PHASE_CURRENT,
+并新增边界测试 test_set_torque_boundary。
+
+Refs: #42</code></pre>
+  <h3>5.2 分支模型:feature → PR → review → main</h3>
+  <p><b>是什么:</b>小团队够用的简化流:①<code>main</code> 永远可编译可测(CI 红了优先修);②任何改动从 main 拉出 <code>feature/xxx</code> 或 <code>fix/xxx</code> 短命分支;③完成后提 <b>PR(合并请求)</b>,至少一人 review 通过 + CI 通过才合并;④合并后删分支。<b>PR 的自我修养:</b>标题即 commit 规范、描述写清"为什么改 + 怎么验证的"、<b>控制体量</b> —— 500 行以上的 PR 大概率被敷衍通过,review 的有效性随体量指数下降,"小步快跑"比"憋大招"快得多。</p>
+  <h3>5.3 .gitignore 要点</h3>
+  <p>原则:<b>仓库只进"源",不进"产物与机器配置"</b>。常见该忽略项:编译产物(<code>build/</code>、<code>*.o</code>、<code>*.elf</code>、<code>*.bin</code>)、IDE/编辑器配置(<code>.vscode/</code> 视团队约定、<code>.idea/</code>)、Python 的 <code>__pycache__/</code>、<code>.venv/</code>、Verilog 仿真产物(<code>work/</code>、<code>*.vcd</code>、<code>xsim.dir/</code>)。<b>两个血泪条款:</b>①<code>node_modules</code> / 大模型权重 / 数据集绝不入库(用 LFS 或外部存储);②<b>密钥、密码、板卡序列号等机密永不入库</b> —— 即使后续删除,Git 历史里仍在,必须用环境变量或密钥管理工具。</p>
+  <p><b>面试怎么问:</b>"讲讲你们的 Git 工作流。PR 里 reviewer 主要看什么?"——答分支模型 + commit 规范 + "小 PR"原则;reviewer 视角:先看<b>测试有没有覆盖新逻辑</b>,再看边界条件与并发,最后才是实现细节(参考第 6 节清单)。</p>
+
+  <!-- ================= 6 代码检查清单 ================= -->
+  <h2><span class="h2-num">6</span> 代码检查清单(可打印,提 PR 前自查)</h2>
+  <div class="box box-ok">
+    <b>✅ 通用(每次提交)</b>
+    <ul>
+      <li>格式化器/静态检查零警告(clang-format、ruff、verilog-lint 已跑)</li>
+      <li>命名与团队约定一致,无魔法数(数值有名字、有单位注释)</li>
+      <li>新逻辑有测试;修 bug 附带"回归测试"(防止再犯)</li>
+      <li>commit message 符合 type: 摘要 格式,PR 描述写清动机与验证方法</li>
+      <li>无残留调试代码(printf、断点、注释掉的大段逻辑)</li>
+    </ul>
+    <b>✅ C / 嵌入式(对应 04-21 FreeRTOS 页)</b>
+    <ul>
+      <li>公共函数入口检查参数;返回值检查或显式"故意忽略"</li>
+      <li>中断里只用 FromISR API;临界区短且配对</li>
+      <li>共享资源有锁/队列保护;volatile 仅用于寄存器/单字标志</li>
+      <li>无动态内存(或 malloc 返回值必查);栈大小经高水位回填</li>
+    </ul>
+    <b>✅ Python</b>
+    <ul>
+      <li>类型注解覆盖公共 API;mypy 通过</li>
+      <li>依赖 pin 精确版本;无 <code>import *</code></li>
+      <li>函数单一职责;docstring 说明单位(rad? N·m?)</li>
+    </ul>
+    <b>✅ Verilog</b>
+    <ul>
+      <li>时序块非阻塞、组合块阻塞,块内不混用</li>
+      <li>组合 always 全分支赋值(无意外锁存器);case 有 default</li>
+      <li>跨时钟域信号两级同步;常量位宽显式</li>
+      <li>复位风格全库统一(低有效 _n + 统一模板)</li>
+    </ul>
+  </div>
+
+  <!-- ================= 7 常见误区 ================= -->
+  <h2><span class="h2-num">7</span> 常见误区:规范的三种"走样"</h2>
+
+  <h3>7.1 规范 ≠ 教条:团队一致性优先</h3>
+  <p><b>误区:</b>把某本书/某大厂的规范当圣经逐字执行,与团队现状冲突就硬掰。<b>正解:</b>规范的最高准则是<b>一致性</b> —— 一个 80 分但全队统一的标准,胜过 100 分但每人一个版本的标准;引入新规则要走团队讨论 + 落进自动化检查(否则三天就会漂移)。与既有代码库共存时"进新代码先达标,旧代码顺手改、不专门翻新"是务实的折中。</p>
+  <h3>7.2 注释解释 why,不是 what</h3>
+  <p><b>误区:</b><code>i++;  /* i 加 1 */</code> 这类注释是噪音,而真正该写的"为什么"却缺失。<b>正解:</b>代码表达"做什么",注释解释<b>"为什么这么做、为什么不用更显然的方案、单位与量纲、约束来源"</b>。高价值注释示例:<code>/* PWM 中心对齐点采样: 开关沿已结束, 电流纹波最小 —— 见 04-19 页 3.2 节 */</code>。删除代码时同步删注释;过时注释比没注释更害人。</p>
+  <h3>7.3 魔数必须命名</h3>
+  <p><b>误区:</b><code>if (v &gt; 24) ...</code> —— 24 是什么?温度上限?电压?写的人三个月后也答不上来。<b>正解:</b>数值常量一律具名(<code>#define OVERTEMP_LIMIT_C 24</code> 或 constexpr/枚举),名字里带<b>物理量与单位</b>;同一魔数出现两处时尤其危险 —— 只改一处、漏掉另一处是最隐蔽的 bug。特例:0、1、-1 等结构常量可不命名,数组下标 0 不需要宏。</p>
+  <div class="table-wrap"><table>
+    <tr><th>误区</th><th>危害</th><th>正解</th></tr>
+    <tr><td>规范当教条逐字执行</td><td>团队内耗、效率下降</td><td>一致性优先;规则进自动化检查而非口头约定</td></tr>
+    <tr><td>注释复述代码(what)</td><td>噪音 + 过时注释误导</td><td>注释解释 why、单位、约束来源</td></tr>
+    <tr><td>魔数散落代码各处</td><td>改一漏一、不可维护</td><td>具名常量带单位;同值两处必须同名同源</td></tr>
+  </table></div>
+  <p><b>面试怎么问:</b>"你觉得公司某条规范不合理,你会怎么做?"——考察协作成熟度:先理解规则背后的动机(多数规则都有事故史),仍有异议则带着具体案例在团队渠道提议修订,而不是悄悄违反或阳奉阴违。</p>
+
+  <!-- ================= 8 小结与思考 ================= -->
+  <div class="box box-tip"><b>📌 本节小结:</b>规范买的是三样东西:可读性(维护占软件成本大头)、整类 bug 的消灭(规则封死一类错误)、review 质量(格式噪音交给机器)。C 侧四件事:模块前缀命名 + 头文件只放接口 + include guard、防御式编程(参数检查 + 返回值处理)、MISRA 高频条款(static 收窄作用域、显式类型转换、switch 带 default)、volatile 只管"防优化"不管原子性。Python 侧:PEP8 交给 ruff/black,人工记住命名与导入三段式;类型注解 + src 布局 + 依赖 pin 版本是可复现实验的地基。Verilog 侧:时序非阻塞、组合阻塞、全分支赋值防锁存器、复位风格全库统一、跨时钟域两级同步。Git 侧:type: 摘要 的 commit、feature→PR→review 短命分支、小 PR 原则、机密永不入库。最后记住规范走样的三种方式:教条化、注释复述代码、魔数散落。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>
+    1. 把 04-21 页的 FreeRTOS 示例代码当"review 对象":用本页清单逐项过一遍,你能找出几处可改进(命名、魔法数、注释、错误处理)?<br>
+    2. 你的团队只有一个大仓库、每人都直接往 main 提交,合并冲突频发 —— 用本页分支模型设计一个渐进式改造方案(不能一步到位时先落哪条?)<br>
+    3. volatile bool 标志位在"1kHz 任务写、主循环读"的场景安全,换成"两个任务互相写 64 位计数器"为什么不行?给出三种正确的替代方案。
+  </div>
+
+  <!-- ================= 9 本节自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 关于 volatile 关键字,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 加了 volatile 的变量读写就是原子的,不需要其他同步手段</button>
+      <button data-v="B">B. volatile 用于任务间同步,可以替代互斥量</button>
+      <button data-v="C">C. 只有 ISR 里访问的变量才需要 volatile,普通全局变量不需要</button>
+      <button data-v="D">D. volatile 禁止编译器把变量缓存进寄存器或合并/重排访问,适用于硬件寄存器与 ISR 共享标志</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 D:volatile 的语义边界就是"禁优化" —— 每次访问必须真实发生、访问不被合并或重排,所以三类场景正确:MMIO 硬件寄存器、ISR 共享标志、程序流之外(如 DMA)修改的变量。逐项点评:<br><b>A(错):</b>混淆了"可见性"与"原子性" —— 即使每次读都真实发生,32 位平台上的 64 位变量、多字段结构体仍可能被"撕裂"(读写进行到一半被另一方打断);原子性要靠对齐字长的硬件保证或锁来提供,volatile 一项都保证不了,把两者划等号是并发认知的第一课。<br><b>B(错):</b>把两个层次不同的机制混为一谈 —— 任务间同步需要"互斥 + 内存语义 + 阻塞等待"三件事,volatile 一件都不提供;任务间共享数据的正确工具是临界区、互斥量或队列(见 04-21 页),用 volatile 替代锁是教科书级的并发 bug 来源,编译器不会警告、测试也难以复现。<br><b>C(错):</b>判断标准写得过窄 —— 正确判据是"是否被程序流之外的因素修改",而不是"谁在访问":主循环 while(!flag) 死等 ISR 置位时,标志同样会被优化成寄存器缓存导致死循环;DMA 往内存写数据、其他核修改变量,这些场景下"普通全局变量"也必须 volatile。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. Verilog 中,以下哪种写法符合可综合 RTL 的规范?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="C">C. 时序逻辑 always_ff @(posedge clk) 里全部用非阻塞赋值 &lt;=,组合逻辑 always @(*) 里全部用阻塞赋值 =</button>
+      <button data-v="A">A. 时序逻辑里用阻塞赋值 =,因为仿真时序更直观</button>
+      <button data-v="B">B. 组合逻辑的 if-else 可以不给所有分支赋值,综合器会自动补齐</button>
+      <button data-v="D">D. 在 always 块里用 #5 延时控制信号先后顺序,综合器会忽略延时</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 C:这是 Cummings 口诀的标准形态 —— 非阻塞模拟"所有触发器在时钟沿同时更新"的真实硬件行为,阻塞模拟组合逻辑的顺序求值,两者各归其位后仿真与综合才能一致。逐项看错误选项:A 是最经典的"仿真对、上板错" —— 时序块用阻塞后,仿真里语句顺序执行、后续语句读到的是"已更新"的值,而综合出的触发器阵列实际同沿切换,门级与 RTL 行为分叉,这种 bug 在仿真阶段完全暴露不出来;B 错在"自动补齐"的想象 —— if-else / case 缺分支时,综合器只能保持旧值,推断出<b>锁存器</b>,时序逻辑里混入电平敏感单元,STA 无法收敛、行为诡异,正确做法是补 default/else 或先给默认值;D 的 #delay 是仿真调度用语法,综合器虽会忽略它,但依赖延时排出的"先后顺序"在硬件里根本不存在 —— 硬件只有时钟沿与数据依赖,需要顺序应该用状态机或流水线寄存器表达,而不是仿真延时,这类代码仿真通过、综合出的电路功能错误。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. Python 项目 requirements.txt 里写 numpy 而不写精确版本,主要风险是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="B">B. 依赖上游发布新版本后环境不可复现,半年后重装可能装到不兼容版本,实验结果无法复现</button>
+      <button data-v="A">A. 安装速度会显著变慢</button>
+      <button data-v="C">C. numpy 是标准库,不写版本会与其他标准库冲突</button>
+      <button data-v="D">D. 不写版本会导致 import 时直接报错,项目根本跑不起来</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 B:不 pin 版本时 pip 会安装"当前最新兼容版",时间一变环境就变 —— numpy 2.x 对 1.x 有 ABI/API 破坏性变更,PyTorch/ROS2 等生态对 numpy 版本高度敏感,新环境装到新版本后旧代码报错或数值行为改变,复现实验、回滚部署全部失去基础。逐项点评:<br><b>A(错):</b>与事实相反 —— 解析精确版本反而更快更确定,开放范围才需要现场解析整棵依赖树;而且"慢"从来不是主要风险,真正的代价是环境随时间漂移导致的不可复现,把工程问题误判成性能问题是选项里隐含的第二重错误。<br><b>C(错):</b>概念张冠李戴 —— numpy 是第三方包,不是标准库(标准库随解释器自带、无需 pip 安装),"标准库冲突"的说法本身不成立;分清标准库与三方包是 Python 依赖管理的基本功,这个选项的错误层面前置到概念而非风险判断。<br><b>D(错):</b>也不成立 —— import 是否报错取决于装到的版本与代码的兼容性,多数情况下旧代码在新版本上要么正常运行、要么在用到被移除 API 时才报错,不会因为"requirements 里没写版本号"就必然启动失败;问题的本质是环境漂移的延迟爆炸,不是立即可见的崩溃。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 以下哪个 commit message 最符合团队规范?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. fix: clamp iq reference before PWM update to prevent overcurrent(正文说明动机与验证方式)</button>
+      <button data-v="B">B. update(一句话都没有,先提交再说)</button>
+      <button data-v="C">C. 修改了电机控制代码和一部分别的文件,具体见 diff(正文很长,但都是流水账)</button>
+      <button data-v="D">D. feat: 重构了整个固件框架并顺带修改了电机参数、更新了文档、修了三个 bug</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 A:type(fix)表明性质、摘要说清"做了什么、为什么"(限幅防过流)、正文交代动机与验证方式 —— 半年后 git log 一行就能定位这次改动,reviewer 也能针对性检查限幅逻辑。逐项点评:<br><b>B(错):</b>"update"是零信息量提交 —— git log 里出现十条 update 等于没有历史,回溯只能逐个 diff 查看内容,这正是 commit 规范要消灭的头号反模式;摘要必须回答"改了什么、为什么",哪怕短也要有信息量,而不是用万能动词搪塞过去。<br><b>C(错):</b>问题在"流水账" —— commit 应该解释 why(为什么改),逐行复述 diff(改了什么)是浪费:reviewer 与未来的读者都能自己看 diff,流水账正文提供的增量信息为零;真正缺的"动机、影响范围、验证方法"反而一条没写,信息密度全错位。<br><b>D(错):</b>"大杂烩提交"破坏可回滚性 —— 一个 commit 混合重构 + 调参 + 文档 + 三个 bug 修复,出问题时无法用 git bisect 定位、无法单独回滚某个改动、review 噪音巨大;正确做法是拆成多个独立 commit,每个 type 单独成立,"一个 commit 一件事"是版本历史可维护性的根基。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于 MISRA C 与防御式编程,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="C">C. 公共函数入口应检查参数合法性,关键外设调用返回值必须检查;MISRA 条款如 switch 必须有 default、尽量 static 收窄作用域</button>
+      <button data-v="A">A. 防御式检查只对"外部用户输入"需要,内部模块间调用可以完全省略</button>
+      <button data-v="B">B. MISRA C 要求禁用一切指针,机器人固件应改用无指针写法</button>
+      <button data-v="D">D. malloc 返回值不必检查,因为 STM32 上内存足够大不会失败</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 C:这正是 2.2/2.3 节的标准组合 —— 入口检查(非法输入立即拒绝、NaN 也会被范围条件拦截)+ 返回值处理(0 成功/负数失败的统一错误码),叠加 MISRA 高频条款(switch 带 default、Rule 8.7 尽量 static、显式类型转换),构成嵌入式 C 的基本卫生习惯。逐项看错误选项:A 的"信任边界"划得过于乐观 —— 内部模块调用同样会因调用方演化而传错参数(单位搞混 rad/deg、指针未初始化),公共 API 统一检查的成本极低而收益是"把 bug 拦在案发现场",开发期断言 + 量产期错误码的组合正是为此设计;B 严重失实 —— MISRA 对指针是"受限使用"(限制指针算术、指针类型转换,Rule 11.x/18.x),不是禁用,嵌入式固件离不开寄存器映射指针,完全无指针写法既不可能也无必要;D 是典型的侥幸心理 —— 即使静态内存充裕,堆仍会因碎片化、递归分配、遗漏释放而耗尽,malloc 返回 NULL 后继续解引用就是空指针崩溃,MISRA Rule 21.x 系与防御式编程都把它列为必查项,"内存够大"在长跑固件里从来不是成立的前提。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于代码注释与魔数,下列做法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="B">B. 注释解释"为什么这么做、约束来源、单位量纲";数值常量用具名宏/常量表示且名字带单位</button>
+      <button data-v="A">A. 注释越多越好,每行代码都配上"这行做了什么"的说明</button>
+      <button data-v="C">C. 魔数只要在旁边写上注释说明含义,就可以直接内联在代码里使用</button>
+      <button data-v="D">D. 0、1 这类常量也必须定义成宏,否则违反规范</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 正确答案 B:这是 7.2/7.3 节的正解 —— 高价值注释回答"为什么这么做、约束来源、单位量纲",而"做什么"由代码自解释;魔数具名且带单位(OVERTEMP_LIMIT_C、PWM_FREQ_HZ)让"改一处漏一处"的隐蔽 bug 失去存在土壤,具名常量是编译器保证的单一事实源。逐项点评:<br><b>A(错):</b>"注释越多越好"方向反了 —— 复述代码的注释是纯噪音,而且代码改动后注释极易过时,过时的错误注释比没注释更害人;正确的密度是"接口、诡异写法、约束来源处必注,显然之处不注",让每条注释都值得读。<br><b>C(错):</b>用注释代替命名治标不治本 —— 注释与代码之间没有任何强制关联,改代码忘改注释后就成了误导;而具名常量是编译器强制同步的,同一数值出现在多处时,具名常量保证同源修改,内联魔数 + 注释的组合依然是"改一漏一"的温床。<br><b>D(错):</b>走到教条化极端 —— 0/1/-1 等结构常量(数组下标、循环起止)语义自明,强行命名(ARRAY_START_INDEX=0)反而增加噪音;规范的精髓是"有物理含义的数值必须具名",而不是"所有数字都必须具名",这正是 7.1 节"规范 ≠ 教条"的最好注脚。</div>
+  </div>
+
+  <!-- ================= 10 参考来源 ================= -->
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://misra.org.uk/" target="_blank" rel="noopener">MISRA 官方网站(misra.org.uk)</a> —— MISRA C:2012(+ AMD1/AMD2 修订)条文的权威来源;本页 8 条为工程摘要,精确表述以官方出版物《MISRA C:2012 Guidelines for the use of the C language in critical systems》为准。</li>
+    <li><a href="https://peps.python.org/pep-0008/" target="_blank" rel="noopener">PEP 8 —— Style Guide for Python Code</a> —— Python 官方风格指南原文,命名、导入、文档字符串规则的出处。</li>
+    <li><a href="https://google.github.io/styleguide/" target="_blank" rel="noopener">Google Style Guides</a> —— 含 C++/Python/Java 等多语言风格指南与 docstring 规范,工业界风格的代表参考。</li>
+    <li><a href="https://www.conventionalcommits.org/" target="_blank" rel="noopener">Conventional Commits 规范</a> —— 本页 commit message 格式(feat/fix/...)的社区标准来源。</li>
+    <li>Cummings, "Coding and Scripting Techniques for FSM Designs in Synthesizable VHDL/Verilog"(Sunburst Design 论文系列)—— 阻塞/非阻塞、锁存器推断、FSM 模板等 RTL 规范细节的经典参考。</li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡/KaTeX 公式渲染 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

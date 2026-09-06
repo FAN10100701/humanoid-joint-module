@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 新页面标准模板
+  ★ 所有新页面必须严格按本模板的结构与注释编写 ★
+  本页: 05-07 开源整机与仓库深度解析
+  结构: 学习目标 / 为什么开源整机重要(生态·学习价值·对比商业机) /
+        深度解析一·宇树开源生态(unitree_sdk2/unitree_ros2/unitree_rl_gym/unitree_rl_lab) /
+        深度解析二·智元开源(AgiBot World·灵犀X1·Genie Sim) /
+        深度解析三·OpenLoong(青龙·OpenLoong-Dyn-Control) /
+        其他值得关注的开源(SO-ARM100·Robotis·MIT Cheetah·Isaac·HumanML3D) /
+        从开源整机开始的学习路线(step-flow) /
+        许可证与合规(MIT/Apache/GPL/CC-NC) / 常见误区 /
+        小结与思考 / 自测 / 参考来源
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 开源整机与仓库深度解析</title>
+<!-- 共享样式:二级目录页面用 ../_assets/site.css;根目录页面用 _assets/site.css -->
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(可选),命名加前缀避免冲突 */
+  .or-repo{font-size:14px;color:#c9d1d9;margin:12px 0;line-height:1.8}
+  .or-repo b{color:#fff}
+  .or-repo .meta{color:#6b7280;font-size:12.5px}
+  .or-badge{display:inline-block;font-size:11.5px;padding:1px 9px;border-radius:999px;border:1px solid;margin-left:6px;vertical-align:middle}
+  .or-lang{color:#93c5fd;border-color:rgba(59,130,246,.45);background:rgba(59,130,246,.1)}
+  .or-lic{color:#fcd34d;border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.08)}
+  .or-link{font-size:12.5px}
+  .or-note{font-size:12.5px;color:#8b949e;line-height:1.7}
+</style>
+<script>
+  /* ============================================================
+     window.PAGE 配置(★ 每页必填 ★)
+     pageId    : 05-07,用于"标记完成"打卡
+     root      : ".."(二级目录页面)
+     breadcrumb: 前沿知识库 > 开源整机与仓库深度解析
+     prev/next : 同章节按编号互链(本章最后一页)
+     ============================================================ */
+  window.PAGE = {
+    pageId: "05-07",
+    root: "..",
+    breadcrumb: [ { t: "前沿知识库", u: "../index.html#sec5" }, { t: "开源整机与仓库深度解析" } ],
+    prev: { t: "灵巧操作与抓取规划", u: "06_灵巧操作与抓取规划.html" },
+    next: { t: "具身智能数据集与评测专题", u: "08_具身智能数据集与评测专题.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧩 开源整机与仓库深度解析:从"白嫖代码"到"读懂一台机器人"</h1>
+    <div class="sub">"论文读完了、数据集也下了,但真机从哪开始?"本页把当前最有代表性的开源人形整机生态——<br>宇树、智元、OpenLoong(青龙)以及一批低成本手臂/四足/仿真项目逐个拆开讲清:<b>它开源了什么、用什么语言写的、什么许可证、你又能从里面真正学到什么</b>。<br>读完你能回答:"我想上手人形机器人,该 fork 哪个仓库、从哪一行代码读起"。</div>
+    <div class="tags">
+      <span class="tag">宇树 Unitree</span>
+      <span class="tag">智元 AgiBot</span>
+      <span class="tag">OpenLoong 青龙</span>
+      <span class="tag">SO-ARM100</span>
+      <span class="tag">MIT Cheetah</span>
+      <span class="tag">许可证合规</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说出"开源整机"生态的三大价值(降低门槛、统一基准、社区共建),并对比开源机与商业机的差异与边界<br>
+    2. 能逐个讲清宇树四大仓库 <code>unitree_sdk2</code> / <code>unitree_ros2</code> / <code>unitree_rl_gym</code> / <code>unitree_rl_lab</code> 的用途、语言、许可证,并准确说明 G1/H1"开源的是软件栈而非机械本体"这一关键事实<br>
+    3. 能说明智元 AgiBot World 数据集的规模与 CC-BY-NC-SA 许可边界、灵犀 X1 的"软硬件全套开源"含义(衔接 <a href="06_灵巧操作与抓取规划.html">05-06 AgiBot World</a>)<br>
+    4. 能介绍 OpenLoong 项目背景(青龙公版机、开放原子开源基金会)、软硬件开源范围与 OpenLoong-Dyn-Control 全身动力学控制仓库的定位<br>
+    5. 能列举 SO-ARM100/SO-100、Robotis、MIT Cheetah、NVIDIA Isaac、HumanML3D 等项目的用途与"能学到什么",并据此规划一条"选型→仿真→改硬件→自研关节"的学习路线(衔接 <a href="../03_项目实操/08_完整学习手册_备查用.html">03 实操手册</a> 与 <a href="../04_软件与算法/09_ROS2入门实战_第一个节点.html">04-09</a>、<a href="../04_软件与算法/10_ROS2实战进阶_URDF与MoveIt2.html">04-10</a>)<br>
+    6. 能区分 MIT / Apache-2.0 / GPL / CC-BY-NC(-SA) 的商用边界,并用"开源 ≠ 免费商用"的原则规避常见合规误区<br>
+    <b>建议用时:</b>约 55 分钟(建议先读 <a href="03_论文_数据集_开源社区.html">05-03 论文·数据集·开源社区</a> 建立"怎么找仓库"的方法,再回到本页深读具体项目)
+  </div>
+
+  <!-- ================= 1 为什么开源整机重要 ================= -->
+  <h2><span class="h2-num">1</span> 为什么"开源整机"值得深挖:生态、学习价值与商业机对比</h2>
+  <p>在具身智能(embodied AI)爆发之前,机器人的"护城河"主要是<b>机械本体 + 运控算法</b>,厂商几乎不公开内部细节;而近两年一个显著变化是:头部厂商开始<b>主动开源</b>——从 SDK、仿真模型到强化学习训练仓库,再到整机图纸。为什么?因为人形机器人的瓶颈已经从"单台能不能动"转向"软件算法能不能规模化泛化",谁能让更多开发者在自己的平台上跑起来,谁就掌握了人才、数据与生态。对学习者来说,这等于把"厂商内部工程"变成了"可读的公开教材"。</p>
+
+  <h3>1.1 三大价值:门槛、基准、社区</h3>
+  <ul>
+    <li><b>降低上手门槛:</b>没有真机也能学。宇树放出的 URDF/网格模型 + 强化学习仓库,让零预算的人能在 Isaac/MuJoCo 里训练 G1/H1 的走路策略;SO-ARM100 把"拥有一台可遥操作机械臂"的成本压到千元级。</li>
+    <li><b>统一比较基准(benchmark):</b>开源整机给了社区"同一台机器、同一套接口",论文里的行走速度、抗扰动、操作成功率才可比、可复现。OpenLoong 的定位正是"人形机器人的 ROS 时刻"——用一台公版机让算法横向对比。</li>
+    <li><b>社区共建与人才池:</b>厂商开源不是做慈善,而是把"调试成本"和"长尾需求"外包给社区,同时沉淀训练数据与开发者心智。你 fork 一个仓库,就是在参与这个生态。</li>
+  </ul>
+
+  <h3>1.2 开源机 vs 商业机:不是"取代"而是"互补"</h3>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>开源整机/生态</th><th>商业整机(宇树 G1/H1、智元远征等)</th></tr>
+    <tr><td><b>可获取性</b></td><td>代码/图纸公开,部分可自行复刻或低成本组装</td><td>需购买整机,单价数十万级(人民币,约)</td></tr>
+    <tr><td><b>学到什么</b></td><td>底层通信、控制框架、强化学习训练、结构设计全链路</td><td>以 SDK 二次开发为主,机械/固件内部细节多不透明</td></tr>
+    <tr><td><b>可靠性与售后</b></td><td>自担风险,版本迭代与文档质量参差</td><td>量产可靠性、保修、技术支持</td></tr>
+    <tr><td><b>适合人群</b></td><td>学习、科研复现、算法原型、教育</td><td>产品化、真实场景部署、规模化数据采集</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 关键认知:</b>本页所说的"开源整机",多数是<b>"开源软件生态 + (部分)开源硬件"</b>的组合,而非"全部免费造一台"。读任何仓库,第一件事是打开它的 <code>LICENSE</code> 和 <code>README</code> 末尾的"开源范围"声明——分清楚<b>代码、数据、图纸、固件</b>四样东西各自是否开放、以什么协议开放。这是后面三节反复要用到的视角。
+  </div>
+
+  <!-- ================= 2 深度解析一 · 宇树 ================= -->
+  <h2><span class="h2-num">2</span> 深度解析一 · 宇树(Unitree)开源生态</h2>
+  <p>宇树(Unitree Robotics)是国内开源动作最积极的人形/四足厂商之一,其 GitHub 组织 <code>github.com/unitreerobotics</code> 下有十余个仓库。对人形方向的学习者,最重要的是下面四个,它们恰好构成一条"<b>底层驱动 → ROS 接入 → 强化学习训练</b>"的完整链路。下面逐个拆解(用途 / 语言 / 许可证 / 能学到什么),许可证以各仓库 <code>LICENSE</code> 文件为准。</p>
+
+  <div class="or-repo"><b>① unitree_sdk2</b><span class="or-badge or-lang">C++ / CMake</span><span class="or-badge or-lic">BSD-3-Clause(约)</span><br>
+    <span class="meta">用途:官方第二代跨平台 SDK,统一控制 G1/H1 人形机与 Go2/B2 四足机;底层通信与硬件接口。</span><br>
+    <b>能学到什么:</b>这是理解"厂商怎么和机器人本体对话"的最佳入口。它基于 DDS(Cyclone DDS)实现高性能低延迟通信,封装了关节电机指令、电机使能/失能、零位标定、IMU 与足端传感器读取、低电平(Low Level)直控关节力矩/位置等接口。读它的 <code>lowlevel</code> 示例,你会第一次看清"一条走路指令是如何变成每个关节电机的电流命令"的。<br>
+    <span class="or-note">仓库:<a class="or-link" href="https://github.com/unitreerobotics/unitree_sdk2" target="_blank" rel="noopener">github.com/unitreerobotics/unitree_sdk2 →</a>(官方;BSD-3-Clause 为约值,以仓库 LICENSE 为准)</span>
+  </div>
+
+  <div class="or-repo"><b>② unitree_ros2</b><span class="or-badge or-lang">C++ / Python</span><span class="or-badge or-lic">BSD-3-Clause(约)</span><br>
+    <span class="meta">用途:把宇树机器人接入 ROS2(Humble)生态:自定义消息、话题桥接、示例节点、rviz 可视化。</span><br>
+    <b>能学到什么:</b>如果说 sdk2 是"点对点"驱动,unitree_ros2 就是把数据"翻译"成 ROS2 标准话题(如 <code>/joint_states</code>、里程计、IMU)。它定义了 <code>unitree_go</code>、<code>unitree_api</code> 等消息包,并给出订阅/发布、状态机、遥控示例。读它等于上一堂"真实机器人如何融入 ROS2 图"的实战课——直接衔接本站 <a href="../04_软件与算法/03_ROS2与机器人软件栈.html">04-03 ROS2 软件栈</a> 与 <a href="../04_软件与算法/09_ROS2入门实战_第一个节点.html">04-09 第一个节点</a>。<br>
+    <span class="or-note">仓库:<a class="or-link" href="https://github.com/unitreerobotics/unitree_ros2" target="_blank" rel="noopener">github.com/unitreerobotics/unitree_ros2 →</a></span>
+  </div>
+
+  <div class="or-repo"><b>③ unitree_rl_gym</b><span class="or-badge or-lang">Python</span><span class="or-badge or-lic">BSD-3-Clause(约)</span><br>
+    <span class="meta">用途:基于 NVIDIA Isaac Gym + legged_gym 框架的强化学习训练仓库,支持 Go2/G1/H1 的 locomotion(运动)策略。</span><br>
+    <b>能学到什么:</b>这是"零真机学走路控制"的经典入口。它继承 legged_gym 的 PPO 训练管线,把机器人运动建模成"观测(关节角/角速度/基座姿态/指令)→ 动作(关节位置目标)"的策略网络,靠大规模 GPU 并行仿真 + domain randomization 训出可 sim2real 的策略。读它你会理解<b>奖励函数怎么设计、动作空间为什么用位置增量、扰动/摩擦随机化如何提升迁移性</b>——正是 <a href="../04_软件与算法/04_仿真与强化学习_MuJoCo_Isaac.html">04-04 强化学习</a> 与 <a href="../04_软件与算法/07_sim2real部署步骤拆解.html">04-07 sim2real</a> 的落地案例。<br>
+    <span class="or-note">仓库:<a class="or-link" href="https://github.com/unitreerobotics/unitree_rl_gym" target="_blank" rel="noopener">github.com/unitreerobotics/unitree_rl_gym →</a>(依赖已停更的 Isaac Gym 预览版)</span>
+  </div>
+
+  <div class="or-repo"><b>④ unitree_rl_lab</b><span class="or-badge or-lang">Python</span><span class="or-badge or-lic">BSD-3-Clause(约)</span><br>
+    <span class="meta">用途:基于 IsaacLab(Isaac Sim)的强化学习实现,支持 Go2/G1/H1/H1-2,任务从 locomotion 扩展到全身运动与操作。</span><br>
+    <b>能学到什么:</b>这是宇树当前主推的训练仓库,也是 unitree_rl_gym 的"升级替代"。它基于更现代的 IsaacLab 环境抽象,支持多机器人并行、课程学习(curriculum)、上下半身协同(行走 + 抓取)等。相比 rl_gym,它的代码组织更工程化、任务目录更清晰(不同机型/任务分文件夹),是学习"如何把 RL 训练工程化、可复现、可扩展"的优质范本。宇树另有基于 MuJoCo 的 <code>unitree_rl_mjlab</code>(约 2024 后推出),可对照理解"同一训练目标在不同仿真后端下怎么表达"。<br>
+    <span class="or-note">仓库:<a class="or-link" href="https://github.com/unitreerobotics/unitree_rl_lab" target="_blank" rel="noopener">github.com/unitreerobotics/unitree_rl_lab →</a> · <a class="or-link" href="https://github.com/unitreerobotics/unitree_rl_mjlab" target="_blank" rel="noopener">unitree_rl_mjlab →</a></span>
+  </div>
+
+  <h3>2.1 G1 / H1 的"开源程度"到底有多少</h3>
+  <p>一个高频误区是"宇树开源了 G1/H1,所以我能在家里造一台"。<b>实际开源的是软件栈、算法与仿真资产,而非机械本体。</b>具体拆开看:</p>
+  <div class="table-wrap"><table>
+    <tr><th>资产类型</th><th>是否开源</th><th>说明</th></tr>
+    <tr><td>SDK / 底层通信(sdk2)</td><td>✅ 开源</td><td>BSD-3-Clause(约),可直接二次开发</td></tr>
+    <tr><td>ROS2 支持(unitree_ros2)</td><td>✅ 开源</td><td>消息、桥接、示例全公开</td></tr>
+    <tr><td>强化学习训练仓库</td><td>✅ 开源</td><td>rl_gym / rl_lab / rl_mjlab,策略与配置公开</td></tr>
+    <tr><td>URDF / 网格模型(仿真用)</td><td>✅ 部分开源</td><td>用于 MuJoCo/Isaac 加载仿真,精度以官方为准</td></tr>
+    <tr><td>整机结构图纸 / 关节模组 CAD</td><td>❌ 未开源</td><td>关节电机、减速器、结构件内部设计不公开</td></tr>
+    <tr><td>固件源码(电机驱动器等)</td><td>❌ 基本未开源</td><td>只提供编译好的固件与升级工具</td></tr>
+  </table></div>
+  <div class="box box-warn">
+    <b>⚠️ 结论:</b>对"想学整机结构、自研关节模组"的人,宇树 G1/H1 只能提供<b>控制与算法</b>层面的参照,无法提供机械本体图纸。若要"软硬件都开源的人形整机",请转向下一节的灵犀 X1 与第 4 节的 OpenLoong(青龙)。
+  </div>
+
+  <p><b>上手命令速查(unitree_sdk2 → 编译 → 跑示例):</b></p>
+  <pre><code># 1. 克隆 SDK(含 C++ 头文件/库与示例;也可用 unitree_ros2 走 ROS2 路线)
+git clone https://github.com/unitreerobotics/unitree_sdk2.git
+cd unitree_sdk2
+
+# 2. 编译(标准 CMake 流程)
+mkdir build && cd build
+cmake ..
+cmake --build .          # 或 make -j$(nproc)
+
+# 3. 跑官方示例(只读话题不需要机器人,写指令请务必先空载/架起测试!)
+#    示例二进制与参数名以仓库 README 为准,不同版本子路径可能不同
+./example/hello_world    # DDS 通信自检
+# 仿真/真机都走同一套接口:真机网口直连(网卡名如 enp3s0)
+sudo ./example/low_level # 低层关节示例(危险操作,先读 README)</code></pre>
+
+  <!-- ================= 3 深度解析二 · 智元 ================= -->
+  <h2><span class="h2-num">3</span> 深度解析二 · 智元(Agibot)开源</h2>
+  <p>智元机器人(Agibot,创始人是人称"稚晖君"的彭志辉)在开源上的策略是"<b>数据 + 整机 + 仿真</b>"三线并进:用百万级真机数据集抢占具身智能的"数据高地",用灵犀 X1 的软硬件全套开源抢占"整机复刻"入口,再用 Genie 仿真平台降低训练数据成本。对人形学习者,最重要的是前两者。</p>
+
+  <h3>3.1 AgiBot World:百万级真机操作轨迹数据集</h3>
+  <p>AgiBot World 是智元联合 OpenDriveLab 等团队于 2024 年 12 月首开源的<b>大规模真实机器人操作数据集</b>(官方称 100 万+ 条轨迹,使用 100+ 台机器人、覆盖 100+ 场景,含夹爪与灵巧手、单臂与双臂等多种形态)。任务覆盖抓取、叠放、插拔、收纳、工具使用等,是 VLA / 模仿学习训练的"ImageNet 时刻"级素材(衔接 <a href="06_灵巧操作与抓取规划.html">05-06 中关于 AgiBot World 的用途</a>)。</p>
+  <ul>
+    <li><b>能学到什么:</b>一是"高质量真机操作数据怎么采"——数据采集器、遥操作、多相机/触觉多模态同步标注;二是"真实数据训练出的策略长什么样";三是数据清洗、质量评估与任务划分的工程方法。</li>
+    <li><b>许可与商用边界(重点):</b>Alpha 版本采用较严格的自定义协议;<b>Beta 版本标注为 CC-BY-NC-SA 4.0</b>——即"署名 + 非商业性使用 + 相同方式共享"。这意味着你可以用于学习、科研、非商业复现,但<b>不能直接把数据用于商业产品训练</b>,衍生数据也须以相同协议开放。商用需与官方单独授权。</li>
+    <li><b>配套:</b>官方后续还发布了合成数据方向的 AgiBot Digital World / Colosseo 与 LLM 驱动的开源仿真平台 Genie Sim(约 2026 年初报道),用于低成本生成训练数据;细节以官方发布为准。</li>
+  </ul>
+  <div class="or-note">仓库:<a class="or-link" href="https://github.com/OpenDriveLab/AgiBot-World" target="_blank" rel="noopener">github.com/OpenDriveLab/AgiBot-World →</a> · 官方公告:<a class="or-link" href="https://www.agibot.com.cn/article/315/detail/148.html" target="_blank" rel="noopener">智元开源 AgiBot World →</a></div>
+
+  <h3>3.2 灵犀 X1:软硬件全套开源的人形机器人</h3>
+  <p>灵犀 X1(Lingxi X1)是智元面向开发者推出的<b>全尺寸开源人形机器人</b>(约 2024 年 10 月起陆续开放),与 AgiBot World 不同,它开源的是<b>整机本身</b>——官方称"软硬件全套图纸和代码"公开,包括结构设计(CAD)、硬件设计(关节模组、驱动器、传感器布局)、固件与软件,允许开发者复刻、改造。</p>
+  <ul>
+    <li><b>能学到什么:</b>这是"想自研人形整机"最接近的一手教材——你可以直接读它的<b>关节模组布局与选型</b>、<b>灵巧手结构设计</b>、<b>整机自由度分配</b>、<b>装配与调试流程</b>,把本站 <a href="../02_硬件基础/07_电机选型计算专题.html">02 电机选型</a> 与 <a href="../03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html">03 Hdrive 关节模组项目</a> 的知识串成一条完整实物链。</li>
+    <li><b>许可与商用边界:</b>整机图纸/代码面向"开发与研究"开放,具体商用条款需逐仓库核对官方 LICENSE 与说明,不可默认"免费商用"。</li>
+    <li><b>入口:</b>官方 GitHub 组织 <code>AgibotTech</code>(<a class="or-link" href="https://github.com/AgibotTech" target="_blank" rel="noopener">github.com/AgibotTech →</a>)下可找到灵犀 X1 相关仓库;仓库命名与目录以官方组织页为准。</li>
+  </ul>
+  <div class="box box-tip">
+    <b>💡 宇树 vs 智元,一句话对比:</b>宇树开源的是"<b>控制与算法生态</b>"(软件多、本体闭),智元开源的是"<b>数据 + 整机</b>"(数据非商用、整机软硬件开放)。你的目标决定你该先 fork 谁——想学运控/RL 走宇树,想学整机结构/数据走智元。
+  </div>
+
+  <p><b>上手命令速查(数据集下载 + 整机仓库 clone):</b></p>
+  <pre><code># 1. 安装 HuggingFace CLI(AgiBot World 托管在 HF 数据集仓)
+pip install -U "huggingface_hub[cli]"
+
+# 2. 下载 AgiBot World 数据(体量很大,建议先下子集试水;
+#    具体数据集名/版本以 OpenDriveLab/AgiBot-World 仓库 README 为准)
+huggingface-cli download agibot-world/AgiBot-World-beta \
+    --repo-type dataset --local-dir ./agibot_world
+# 只下某个分片可用 --include "observation/**" 之类过滤
+
+# 3. 克隆灵犀 X1 相关仓库(组织 AgibotTech,子仓库名/路径以组织页 README 为准)
+git clone https://github.com/AgibotTech/x1_description.git   # URDF/结构描述
+# git clone https://github.com/AgibotTech/<其他子仓库>.git   # 固件/上位机等,见组织页</code></pre>
+
+  <!-- ================= 4 深度解析三 · OpenLoong ================= -->
+  <h2><span class="h2-num">4</span> 深度解析三 · OpenLoong(开源人形整机公版)</h2>
+  <p>OpenLoong 是<b>上海人形机器人创新中心</b>(国家地方共建人形机器人创新中心)主导、联合多所高校与企业共建的开源人形机器人公版项目,其参考整机"<b>青龙</b>"是国产首款全尺寸通用人形机器人公版机(全尺寸、数十自由度),项目已入选<b>开放原子开源基金会(OpenAtom)</b>。它的定位被社区比作"人形机器人的 ROS 时刻"——用一套统一的公版硬件与软件栈,让不同团队的算法能在同一台机器上公平对比。</p>
+
+  <h3>4.1 项目背景与开源范围</h3>
+  <ul>
+    <li><b>背景:</b>2024 年 WAIC 首度亮相,旨在解决人形机器人领域"各自为战、软硬件不互通"的碎片化问题。青龙公版机提供整机结构、关节模组、硬件设计、软件栈与文档。</li>
+    <li><b>软硬件开源范围:</b>整机结构设计、关节模组/驱动器硬件、软件栈(全身动力学控制、状态估计、仿真、遥操作、ROS 接入)、开发文档等成体系开放,供社区复刻与二次开发。</li>
+    <li><b>许可:</b>受开放原子开源基金会治理,各仓库协议以 <code>LICENSE</code> 为准(多为宽松型开源协议,商用边界需逐仓库确认)。</li>
+  </ul>
+
+  <h3>4.2 OpenLoong-Dyn-Control:全身动力学控制软件包</h3>
+  <p>这是 OpenLoong 生态里最有"硬核学习价值"的仓库之一:<b>面向人形机器人的全身动力学控制(whole-body dynamics control)软件包</b>,采用 C++ 编写,实现站立、行走、抗扰动等全身运动控制。它把"人形机器人怎么靠全身协调保持平衡并行走"这件事落成了可读代码:</p>
+  <ul>
+    <li><b>能学到什么:</b>全身动力学建模(浮动基座动力学)、任务空间/接触约束表达、MPC-WBC(模型预测控制 + 全身控制)框架、足式机器人接触相切换与质心动量控制。这是从"单个关节 FOC"(本站 02/03 章)跃升到"整机运控"的关键一跳,也是理解宇树/智元行走策略背后原理的理论底座。</li>
+    <li><b>学习建议:</b>先跑通它附带的仿真示例,再对照论文/文档读"模型 → 优化问题 → 求解 → 力矩指令"这条链路,不必一开始就啃透全部数学。</li>
+  </ul>
+  <div class="or-note">仓库:<a class="or-link" href="https://github.com/loongOpen/OpenLoong" target="_blank" rel="noopener">github.com/loongOpen/OpenLoong →</a> · <a class="or-link" href="https://github.com/loongOpen/OpenLoong-Dyn-Control" target="_blank" rel="noopener">github.com/loongOpen/OpenLoong-Dyn-Control →</a></div>
+
+  <p><b>上手命令速查(青龙 Dyn-Control 包 clone + 编译运行):</b></p>
+  <pre><code># 1. 克隆全身动力学控制包(子目录与构建方式以仓库 README 为准)
+git clone https://github.com/loongOpen/OpenLoong-Dyn-Control.git
+cd OpenLoong-Dyn-Control
+
+# 2. 安装依赖(Eigen / Pinocchio / MuJoCo 等,版本要求见 README)
+sudo apt install libeigen3-dev
+# Pinocchio / MuJoCo 建议按官方文档用 robotpkg 或 pip 安装
+
+# 3. 编译(标准 CMake 流程)
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+
+# 4. 运行仿真示例(青龙仿真环境,具体可执行名以 README 为准)
+./simulation          # 或 ros2 launch 对应的 launch 文件
+# 提示:先在 MuJoCo 仿真里跑通"站立→行走",再考虑真机/同构平台移植</code></pre>
+
+  <!-- ================= 5 其他值得关注的开源 ================= -->
+  <h2><span class="h2-num">5</span> 其他值得关注的开源项目(手臂 · 四足 · 仿真 · 数据)</h2>
+  <p>除了三大整机生态,还有一批"小而精"的开源项目,是低成本上手与补齐某块技能的最佳跳板。</p>
+  <div class="table-wrap"><table>
+    <tr><th>项目</th><th>一句话用途</th><th>能学到什么</th><th>入口</th></tr>
+    <tr>
+      <td><b>SO-ARM100 / SO-100</b><br>(The Robot Studio)</td>
+      <td>低成本开源 6 自由度舵机机械臂(单臂约百美元级,约 $100~$300),兼容 Hugging Face LeRobot</td>
+      <td>低成本手臂搭建、舵机控制、遥操作、模仿学习(ACT/扩散策略)全流程</td>
+      <td><a href="https://github.com/TheRobotStudio/SO-ARM100" target="_blank" rel="noopener">GitHub →</a></td>
+    </tr>
+    <tr>
+      <td><b>Robotis 系列</b><br>(OpenManipulator-X / Dynamixel SDK)</td>
+      <td>成熟的教育/科研机械臂 + 舵机生态,ROS/MoveIt 支持完善</td>
+      <td>Dynamixel 舵机协议、ROS 机械臂控制、MoveIt 运动规划</td>
+      <td><a href="https://github.com/ROBOTIS-GIT/DynamixelSDK" target="_blank" rel="noopener">DynamixelSDK →</a> · <a href="https://emanual.robotis.com/docs/en/platform/openmanipulator_x/overview/" target="_blank" rel="noopener">OpenManipulator-X →</a></td>
+    </tr>
+    <tr>
+      <td><b>MIT Cheetah Software</b><br>(mit-biomimetics)</td>
+      <td>麻省理工四足机器人控制器,QP 型 MPC 的经典实现</td>
+      <td>MPC 步态控制、摆动/支撑相、阻抗控制——宇树/OpenLoong 运控的"祖师爷"</td>
+      <td><a href="https://github.com/mit-biomimetics/Cheetah-Software" target="_blank" rel="noopener">GitHub →</a></td>
+    </tr>
+    <tr>
+      <td><b>NVIDIA Isaac</b><br>(Isaac Sim / Isaac Lab / Isaac Gym)</td>
+      <td>GPU 并行机器人仿真 + 强化学习训练框架(宇树 rl_lab 的底座)</td>
+      <td>GPU 大规模仿真、RL 环境抽象、sim2real 训练管线</td>
+      <td><a href="https://github.com/isaac-sim/IsaacLab" target="_blank" rel="noopener">IsaacLab →</a></td>
+    </tr>
+    <tr>
+      <td><b>HumanML3D</b><br>(EricGuoICT)</td>
+      <td>文本-人体运动数据集(约 14,616 个动作,基于 AMASS),text-to-motion 的基准</td>
+      <td>SMPL 人体运动表示、文本-动作对齐、人形动作生成的数据基础</td>
+      <td><a href="https://github.com/EricGuoICT/HumanML3D" target="_blank" rel="noopener">GitHub →</a></td>
+    </tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 选型速记:</b>预算最紧、想练"遥操作+模仿学习"→ SO-ARM100;<b>想学经典运控</b>→ MIT Cheetah + OpenLoong-Dyn-Control;<b>想做 RL/仿真</b>→ Isaac Lab + unitree_rl_lab;<b>想做人形动作生成</b>→ HumanML3D 打底。
+  </div>
+
+  <!-- ================= 6 学习路线 ================= -->
+  <h2><span class="h2-num">6</span> 从开源整机开始的学习路线:选型 → 仿真 → 改硬件 → 自研关节</h2>
+  <p>把上面所有仓库串成一条可执行路径,目标不是"收集 star",而是"每步都有可交付的产出"。</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>选型定目标</b><br>按预算与目标选入口:练操作→SO-ARM100;练运控/RL→宇树仿真+Isaac;学整机结构→灵犀 X1 / 青龙图纸。</div>
+    <div class="step-item"><span class="n">2</span><b>跑通仿真</b><br>在 MuJoCo/Isaac 加载 URDF,跑通 ROS2 关节话题,复现 unitree_rl_lab 的走路 demo(衔接 04-09/04-10)。</div>
+    <div class="step-item"><span class="n">3</span><b>改硬件</b><br>在开源手臂/人形上加传感器、换关节模组,验证自己的控制改动(衔接 03 项目实操)。</div>
+    <div class="step-item"><span class="n">4</span><b>自研关节</b><br>吃透开源整机的关节选型后,自己设计电机+减速器+编码器+FOC 驱动,替换进整机(衔接 03 实操)。</div>
+  </div>
+  <div class="box box-ok">
+    <b>✅ 里程碑建议:</b>第 2 步结束时你应能"在仿真里让 G1 稳定行走并调奖励函数";第 4 步结束时你应能"拿出一个自己设计的关节模组并让它跑 FOC 闭环"。这条路线把本页的"看仓库"与本站 02/03 章的"做硬件"、06 章的"写软件"闭合了起来。
+  </div>
+
+  <!-- ================= 7 许可证与合规 ================= -->
+  <h2><span class="h2-num">7</span> 许可证与合规:开源 ≠ 免费商用</h2>
+  <p>fork 仓库之前,必须先看懂它挂的许可证。机器人项目常见四大类,商用边界差异极大。</p>
+  <div class="table-wrap"><table>
+    <tr><th>许可证</th><th>能否商用</th><th>核心要求</th><th>机器人领域典型</th></tr>
+    <tr><td><b>MIT</b></td><td>✅ 可</td><td>保留版权与许可声明即可,几乎无其他限制</td><td>部分 SDK、Cheetah-Software(约)</td></tr>
+    <tr><td><b>Apache-2.0</b></td><td>✅ 可</td><td>保留声明 + 明确专利授权 + 商标不授权</td><td>ROS2、LeRobot、Dynamixel SDK(约)</td></tr>
+    <tr><td><b>GPL(GPLv3)</b></td><td>⚠️ 可但受限</td><td>"传染性"copyleft:修改后分发须以 GPL 开源衍生源码</td><td>部分 Linux 内核相关、少数运控库</td></tr>
+    <tr><td><b>CC-BY-NC(-SA) 4.0</b></td><td>❌ 非商用</td><td>署名(BY)+ 非商业(NC)+ 相同方式共享(SA)</td><td>AgiBot World Beta 数据集</td></tr>
+  </table></div>
+  <ul>
+    <li><b>MIT / Apache-2.0 是"商用友好"宽松协议:</b>可改、可闭源、可商用,核心义务是保留版权声明;Apache-2.0 额外给了专利授权、并明确"不授权商标使用权"。</li>
+    <li><b>GPL 是"传染性"强 copyleft:</b>你能用、能卖,但一旦<b>修改并分发</b>,衍生作品也须开源(GPL 兼容协议)。把 GPL 代码混进闭源产品是常见翻车点。</li>
+    <li><b>CC-BY-NC 的 NC(非商业)是硬边界:</b>AgiBot World Beta 的 CC-BY-NC-SA 4.0 明确禁止商业用途,且 SA 要求衍生数据同样开放——用于论文/学习没问题,用于商业模型训练不行。</li>
+    <li><b>数据与代码的许可证要分开看:</b>一个仓库可能"代码 MIT、数据 CC-BY-NC",甚至数据还叠加第三方(如 AMASS)协议。逐仓库、逐资产类型核对,才是合规的正确姿势。</li>
+  </ul>
+
+  <!-- ================= 8 常见误区 ================= -->
+  <h2><span class="h2-num">8</span> 常见误区:这些坑别踩</h2>
+  <div class="box box-warn">
+    <b>❌ 误区一:"开源 = 可以随便商用"。</b><br>
+    真相:MIT/Apache-2.0 可商用,但 GPL 有传染性、CC-BY-NC 明确非商用;即便宽松协议也要求保留版权声明。商用前必须逐条读 LICENSE。
+  </div>
+  <div class="box box-warn">
+    <b>❌ 误区二:"宇树 G1/H1 开源了,所以能自己造一台"。</b><br>
+    真相:开源的是 SDK/ROS2/RL 训练与仿真资产,机械本体图纸、关节模组 CAD、固件源码未开放。想"软硬件都开源"看灵犀 X1 与青龙。
+  </div>
+  <div class="box box-warn">
+    <b>❌ 误区三:"fork 下来不保留 LICENSE 也没关系"。</b><br>
+    真相:即使是最宽松的 MIT/Apache-2.0,义务也是"保留版权与许可声明";删掉 LICENSE 再分发即构成侵权。
+  </div>
+  <div class="box box-warn">
+    <b>❌ 误区四:"数据集的代码许可 = 数据许可"。</b><br>
+    真相:两者常分开授权(如 HumanML3D 数据基于 AMASS、AgiBot World 数据为 CC-NC)。用数据训练模型前,要看的是<b>数据</b>的协议,不是仓库顶层那个 LICENSE。
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>开源整机生态的价值在于"降低门槛、统一基准、共建生态"。宇树开的是<b>控制与算法</b>(sdk2/ros2/rl_gym/rl_lab 四件套),智元开的是<b>数据 + 整机</b>(AgiBot World 非商用 + 灵犀 X1 软硬件开源),OpenLoong 开的是<b>公版整机 + 全身动力学控制</b>(青龙 / OpenLoong-Dyn-Control),再加上 SO-ARM100、MIT Cheetah、Isaac、HumanML3D 等"小而精"跳板。上手路径是"选型 → 仿真 → 改硬件 → 自研关节",而每一步都要先读懂 MIT/Apache/GPL/CC-NC 的<b>商用边界</b>——记住:开源 ≠ 免费商用。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果你只有 2000 元预算想学"人形机器人操作",你会选 SO-ARM100 还是订阅宇树 G1 的仿真?请说明理由,并列出你会用到本页哪些仓库。<br>
+    2. 你想用 AgiBot World 训练一个 VLA 做家务,但公司要求商业化——许可证层面你会遇到什么问题?有哪些合规路径?<br>
+    3. 对比 OpenLoong-Dyn-Control(模型化 MPC/WBC)与 unitree_rl_lab(强化学习)两条走路控制路线,各自的优劣与适用场景是什么?你更想先学哪条,为什么?
+  </div>
+
+  <!-- ================= 9 自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 关于宇树(Unitree)开源生态,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. unitree_sdk2 是官方 C++ 底层 SDK(基于 DDS 通信),unitree_rl_lab 基于 IsaacLab 训练 Go2/G1/H1 的策略</button>
+      <button data-v="B">B. unitree_rl_gym 基于 MuJoCo 仿真,unitree_ros2 只支持 ROS1</button>
+      <button data-v="C">C. G1/H1 的整机结构图纸与关节模组 CAD 已完全开源,可在家里复刻</button>
+      <button data-v="D">D. 宇树开源仓库统一采用 GPLv3 许可,修改后必须全部开源</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:sdk2 是 C++ 底层 SDK(基于 DDS/Cyclone DDS 通信)、rl_lab 基于 IsaacLab,均正确。B 错——rl_gym 基于 Isaac Gym(非 MuJoCo)、ros2 面向 ROS2 Humble;C 错——宇树开源的是软件栈,机械本体图纸未开放;D 错——宇树仓库多为 BSD-3-Clause(约)。故选 A。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 关于智元 AgiBot World 数据集,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 它只包含纯仿真合成数据,不含任何真实机器人轨迹</button>
+      <button data-v="B">B. 它采用 Apache-2.0 许可,可无条件用于商业训练</button>
+      <button data-v="C">C. 它是百万级真实机器人操作轨迹数据集,Beta 版采用 CC-BY-NC-SA 4.0(非商用)许可</button>
+      <button data-v="D">D. 它只收录单臂固定桌面场景,不含灵巧手与双臂数据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:AgiBot World 是 2024 年 12 月开源的真机操作轨迹数据集(官方称 100 万+ 条、100+ 机器人、100+ 场景),覆盖夹爪/灵巧手、单臂/双臂;Beta 版标注 CC-BY-NC-SA 4.0,禁止商业使用。A/B/D 均与事实不符。故选 C。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 关于 OpenLoong 项目,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. OpenLoong 是宇树科技发起的四足机器人项目</button>
+      <button data-v="B">B. 它由上海人形机器人创新中心主导,参考整机为"青龙",OpenLoong-Dyn-Control 是全身动力学控制软件包</button>
+      <button data-v="C">C. OpenLoong-Dyn-Control 是一个标注好的操作数据集,而非控制代码</button>
+      <button data-v="D">D. OpenLoong 只开源硬件图纸,软件栈不开放</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:OpenLoong 由上海人形机器人创新中心主导、入选开放原子开源基金会,公版机为"青龙";OpenLoong-Dyn-Control 是 C++ 编写的全身动力学控制软件包。A(非宇树)、C(是控制代码)、D(软硬件成体系开源)均错。故选 B。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 关于开源许可证与商用边界,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 只要仓库开源,就可以随意商用,不需要看 LICENSE</button>
+      <button data-v="B">B. GPL 协议没有任何限制,可以混入闭源商业产品而无需开源</button>
+      <button data-v="C">C. CC-BY-NC 中的 NC 表示"可以用于任何商业用途"</button>
+      <button data-v="D">D. MIT/Apache-2.0 允许商用(需保留版权声明),GPL 有传染性,CC-BY-NC 禁止商业用途——开源 ≠ 免费商用</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:宽松协议(MIT/Apache-2.0)可商用但须保留声明;GPL 是强 copyleft,修改分发需开源衍生;CC-BY-NC 的 NC 即"非商业"。因此"开源 ≠ 免费商用",需逐仓库核对协议。A/B/C 均误解了相应协议。故选 D。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于灵犀 X1(智元)与宇树 G1/H1 的"开源程度"对比,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 灵犀 X1 官方称"软硬件全套图纸和代码"公开(含整机结构、关节模组、驱动器、固件与软件),而宇树 G1/H1 只开源软件栈与仿真资产、机械本体图纸未开放</button>
+      <button data-v="B">B. 灵犀 X1 只开源了 AgiBot World 数据集,整机本体并不开放</button>
+      <button data-v="C">C. 宇树 G1/H1 的关节模组 CAD 与固件源码也已完全公开,可在家复刻整机</button>
+      <button data-v="D">D. 两者都只提供 SDK 二次开发接口,机械本体与软件栈一律封闭</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:灵犀 X1 是智元"软硬件全套开源"的人形整机,开源的是整机本身(结构/硬件/固件/软件,见第 3.2 节);而宇树 G1/H1 开源的是"控制与算法生态",整机结构图纸、关节模组 CAD、固件源码未开放(见第 2.1 节)。B 把灵犀 X1 与 AgiBot World 混为一谈;C 正是"误区二";D 与两者实际开源情况都不符。故选 A。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于第 5 节"小而精"开源项目的选型,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. MIT Cheetah Software 是一个 GPU 并行强化学习训练框架</button>
+      <button data-v="B">B. 预算最紧、想练"遥操作 + 模仿学习"可选 SO-ARM100;想学经典运控可选 MIT Cheetah + OpenLoong-Dyn-Control</button>
+      <button data-v="C">C. HumanML3D 是一种舵机通信控制协议,用于驱动机械臂关节</button>
+      <button data-v="D">D. SO-ARM100 是宇树科技推出的全尺寸人形整机公版机</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 5 节"选型速记"明确:预算最紧练"遥操作+模仿学习"→ SO-ARM100(低成本 6 自由度舵机臂);想学经典运控→ MIT Cheetah(MPC)+ OpenLoong-Dyn-Control。A 错——MIT Cheetah 是 QP 型 MPC 四足控制器,不是 RL 训练框架;C 错——HumanML3D 是"文本-人体运动"数据集;D 错——SO-ARM100 来自 The Robot Studio,非宇树公版机。故选 B。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于开源合规的"常见误区",下列哪种认知是【正确】的(不会踩坑)?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. fork 仓库后删除 LICENSE 再分发没关系,反正代码已经开源了</button>
+      <button data-v="B">B. CC-BY-NC 中的 NC 表示"可任意用于商业产品训练"</button>
+      <button data-v="C">C. 只要仓库顶层 LICENSE 是 MIT,仓库里的数据就一定可以随便商用</button>
+      <button data-v="D">D. 用数据集训练模型前,要看"数据本身"的协议,而不能默认它等于仓库顶层的代码 LICENSE</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:误区三与误区四强调——即便最宽松的 MIT/Apache-2.0 也要求"保留版权与许可声明",删 LICENSE 再分发即侵权(排除 A);NC 是"非商业"硬边界(排除 B);"数据集的代码许可 ≠ 数据许可",两者常分开授权(如 AgiBot World 数据为 CC-BY-NC、HumanML3D 数据基于 AMASS),故 D 正确。故选 D。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>① 开源整机三大价值:降低门槛、统一基准、社区共建;② 宇树开"控制与算法"(unitree_sdk2→ROS2→rl_gym→rl_lab 四件套),本体图纸与固件未开源;③ 智元开"数据 + 整机":AgiBot World(百万级真机轨迹,CC-BY-NC-SA 非商用)+ 灵犀 X1(软硬件全套开源);④ OpenLoong 是"人形机器人的 ROS 时刻",青龙公版机 + OpenLoong-Dyn-Control 全身动力学控制;⑤ 学习路线:选型 → 仿真 → 改硬件 → 自研关节;⑥ 许可证边界:MIT/Apache 可商用、GPL 传染性、CC-NC 非商用——开源 ≠ 免费商用。</div>
+
+  <!-- ================= 10 参考来源 ================= -->
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <p>以下链接均经 web_search 核实为官方 / 稳定地址;仓库许可证、数据集规模等以各仓库页面的 LICENSE 与 README 为准,文中已对不确定处标注"约"。</p>
+  <ul>
+    <li><b>宇树开源生态:</b><a href="https://github.com/unitreerobotics/unitree_sdk2" target="_blank" rel="noopener">unitree_sdk2 →</a> · <a href="https://github.com/unitreerobotics/unitree_ros2" target="_blank" rel="noopener">unitree_ros2 →</a> · <a href="https://github.com/unitreerobotics/unitree_rl_gym" target="_blank" rel="noopener">unitree_rl_gym →</a> · <a href="https://github.com/unitreerobotics/unitree_rl_lab" target="_blank" rel="noopener">unitree_rl_lab →</a> · <a href="https://github.com/unitreerobotics/unitree_rl_mjlab" target="_blank" rel="noopener">unitree_rl_mjlab →</a> · <a href="https://github.com/unitreerobotics" target="_blank" rel="noopener">unitreerobotics 组织页 →</a></li>
+    <li><b>AgiBot World:</b><a href="https://github.com/OpenDriveLab/AgiBot-World" target="_blank" rel="noopener">github.com/OpenDriveLab/AgiBot-World →</a> · <a href="https://www.agibot.com.cn/article/315/detail/148.html" target="_blank" rel="noopener">智元官方:开源 AgiBot World 数据集 →</a></li>
+    <li><b>灵犀 X1 开源:</b><a href="https://www.ithome.com/0/804/935.htm" target="_blank" rel="noopener">IT之家:智元宣布灵犀 X1 面向全球开源 →</a> · <a href="https://github.com/AgibotTech" target="_blank" rel="noopener">github.com/AgibotTech(组织)→</a></li>
+    <li><b>OpenLoong / 青龙:</b><a href="https://github.com/loongOpen/OpenLoong" target="_blank" rel="noopener">github.com/loongOpen/OpenLoong →</a> · <a href="https://github.com/loongOpen/OpenLoong-Dyn-Control" target="_blank" rel="noopener">OpenLoong-Dyn-Control →</a> · <a href="https://www.leaderobot.com/news/5038" target="_blank" rel="noopener">OpenLoong 入选开放原子开源基金会(leaderobot)→</a></li>
+    <li><b>SO-ARM100:</b><a href="https://github.com/TheRobotStudio/SO-ARM100" target="_blank" rel="noopener">github.com/TheRobotStudio/SO-ARM100 →</a> · <a href="https://github.com/huggingface/lerobot" target="_blank" rel="noopener">HuggingFace LeRobot →</a></li>
+    <li><b>Robotis:</b><a href="https://github.com/ROBOTIS-GIT/DynamixelSDK" target="_blank" rel="noopener">DynamixelSDK →</a> · <a href="https://emanual.robotis.com/docs/en/platform/openmanipulator_x/overview/" target="_blank" rel="noopener">OpenManipulator-X e-Manual →</a></li>
+    <li><b>MIT Cheetah Software:</b><a href="https://github.com/mit-biomimetics/Cheetah-Software" target="_blank" rel="noopener">github.com/mit-biomimetics/Cheetah-Software →</a></li>
+    <li><b>NVIDIA Isaac:</b><a href="https://github.com/isaac-sim/IsaacLab" target="_blank" rel="noopener">github.com/isaac-sim/IsaacLab →</a></li>
+    <li><b>HumanML3D:</b><a href="https://github.com/EricGuoICT/HumanML3D" target="_blank" rel="noopener">github.com/EricGuoICT/HumanML3D →</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效
+     全站搜索索引(_assets/search-index.js)由 site.js 自动加载,无需手动引入 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

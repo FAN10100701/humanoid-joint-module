@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 新页面标准模板
+  ★ 所有新页面必须严格按本模板的结构与注释编写 ★
+  本页: 05-08 具身智能数据集与评测专题
+  结构: 学习目标 / 为什么数据是具身智能的命脉(数据饥渴·Scaling Law·行为克隆 vs 潜动作预训练) /
+        操作数据集逐个拆解(OXE·DROID·AgiBot World·宇树 G1-Dex1·BridgeData V2·RoboMimic·RLBench) /
+        运动与仿真数据集(AMASS·HumanML3D·CMU MoCap·DM Control/SMPL) /
+        评测基准拆解(SIMPLER·RoboBench 类·真实世界评测难点·常用指标·仿真器环境) /
+        数据采集方式对比(遥操作·动捕映射·仿真生成·世界模型合成·互联网视频) /
+        数据质量与处理(清洗·动作标注·时间对齐·跨具身归一化) /
+        数据版权与合规 / 学习路线(openpi·LeRobot 微调 π0) /
+        小结与思考 / 自测 / 参考来源
+  说明: 本页与 05-03(论文/数据集/社区总览)不同,聚焦「数据集细节对比 + 评测基准」,
+        并深入数据采集、清洗、归一化与合规,供想真正训练策略的读者使用。
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 具身智能数据集与评测专题</title>
+<!-- 共享样式:二级目录页面用 ../_assets/site.css -->
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式,统一 my- 前缀避免冲突 */
+  .my-ds{font-size:14px;color:#c9d1d9;margin:14px 0;line-height:1.85;padding:10px 14px;border-left:3px solid rgba(59,130,246,.4);background:rgba(59,130,246,.05);border-radius:6px}
+  .my-ds b{color:#fff}
+  .my-ds .my-meta{color:#6b7280;font-size:12.5px}
+  .my-ds a{font-size:12.5px}
+  .my-badge{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;border:1px solid;margin-right:5px;vertical-align:middle}
+  .my-scale{color:#86efac;border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.08)}
+  .my-sensor{color:#93c5fd;border-color:rgba(59,130,246,.45);background:rgba(59,130,246,.08)}
+  .my-lic{color:#fcd34d;border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.08)}
+  .my-note{font-size:12.5px;color:#8b949e;line-height:1.7}
+  /* SVG 双主题文字类(与全站钦定口径一致) */
+  .my-lg{fill:#26303b}html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-sub-b{fill:#1d4ed8}html[data-theme-early='dark'] .my-sub-b{fill:#9ecbff}
+  .my-sub-o{fill:#b45309}html[data-theme-early='dark'] .my-sub-o{fill:#fcd34d}
+  .my-grn{fill:#15803d}html[data-theme-early='dark'] .my-grn{fill:#86efac}
+  .my-bwd{fill:#991b1b}html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
+</style>
+<script>
+  /* ============================================================
+     window.PAGE 配置(★ 每页必填 ★)
+     pageId    : 05-08,用于「标记完成」打卡
+     root      : ".."(二级目录页面)
+     breadcrumb: 前沿知识库 > 具身智能数据集与评测专题
+     prev      : 指向同章节上一页 05-07(开源整机与仓库深度解析)
+     next      : 本章最后一页,不写 next 字段
+     ============================================================ */
+  window.PAGE = {
+    pageId: "05-08",
+    root: "..",
+    breadcrumb: [ { t: "前沿知识库", u: "../index.html#sec5" }, { t: "具身智能数据集与评测专题" } ],
+    prev: { t: "开源整机与仓库深度解析", u: "07_开源整机与仓库深度解析.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🤖 具身智能数据集与评测专题:机器人「数据从哪来、怎么评」</h1>
+    <div class="sub">上一页讲了「开源整机与仓库怎么挑」,这一页回答更底层的问题:<b>训练一个会干活的机器人策略,数据从哪来、各数据集怎么选、训练出来后用什么基准、用什么指标来评?</b><br>本页把 Open X-Embodiment、DROID、AgiBot World、宇树 G1-Dex1、BridgeData V2 等操作数据集逐个拆到「机构 / 规模 / 采集方式 / 传感器 / 任务 / 获取 / 局限」七项,<br>再对比遥操作、动捕、仿真、合成数据、互联网视频五种数据来源,并讲清 SIMPLER 等评测基准与成功率类指标。读完你能回答:「我该下载哪个数据集、怎么加载、怎么评它好不好」。</div>
+    <div class="tags">
+      <span class="tag">Open X-Embodiment</span>
+      <span class="tag">DROID</span>
+      <span class="tag">AgiBot World</span>
+      <span class="tag">SIMPLER 评测</span>
+      <span class="tag">数据采集</span>
+      <span class="tag">π0 / openpi</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能解释「数据饥渴」与具身智能 Scaling Law 的关系,并说清 VLA 训练里<b>行为克隆(BC)</b>与<b>潜动作预训练(latent action pretraining)</b>两条数据路线的差异<br>
+    2. 能按「机构 / 规模 / 采集方式 / 传感器 / 任务类型 / 获取方式 / 局限」七项,逐个讲清 OXE、DROID、AgiBot World、宇树 G1-Dex1、BridgeData V2、RoboMimic、RLBench 的核心事实与选型边界(在 <a href="03_论文_数据集_开源社区.html">05-03 数据集总览</a> 基础上深入细节,不重复堆列表)<br>
+    3. 能区分 AMASS / HumanML3D / CMU MoCap 三个「人体运动」数据源与 DM Control/SMPL 等「运动仿真」工具的用途与规模<br>
+    4. 能说明 SIMPLER 等仿真统一评测的动机与局限,列举任务成功率、平均完成度、首次动作准确率、操作时长等常用指标,并知道 RLBench / Meta-World / Franka Kitchen / Isaac 各评测环境的定位<br>
+    5. 能对比五种数据采集方式的成本与 sim2real 代价,说出数据清洗、动作标注、时间对齐、跨具身动作空间归一化的处理要点<br>
+    6. 能正确理解数据版权(CC-BY-NC-SA 的「非商用」边界、数据与代码许可分开看),并用 openpi / LeRobot 加载 OXE 子集微调 π0 走通一条最小上手路径<br>
+    <b>建议用时:</b>约 60 分钟(第 2 节逐个数据集对比是重点,可配合浏览器打开各官方页边读边查)
+  </div>
+
+  <!-- ================= 1 为什么数据是命脉 ================= -->
+  <h2><span class="h2-num">1</span> 为什么数据是具身智能的命脉:数据饥渴与 Scaling Law</h2>
+  <p>大语言模型(LLM)靠「互联网上现成的海量文本」吃到了 Scaling Law 的红利;但机器人<b>没有</b>这样现成的数据源——真实机器人的「观测→动作」配对数据必须靠人一台台遥操作采出来,又贵又慢。这就是具身智能的<b>数据饥渴(data hunger)</b>:模型的规模可以无限堆,但喂给它的真机数据跟不上,性能就卡在数据上。近两年头部玩家(AgiBot World、宇树、Physical Intelligence 等)的竞争,本质上已经从「谁模型大」转向「谁手里有更大、更高质量的真机操作数据」。</p>
+
+  <h3>1.1 数据与 Scaling Law:机器人也在「吃数据」</h3>
+  <ul>
+    <li><b>RT-1 阶段(2022):</b>Google 用 13 台机器人、130k 条示教轨迹、700+ 任务训出 Robotics Transformer,首次证明「大模型思路搬到机器人上,数据量是关键变量」。</li>
+    <li><b>Open X-Embodiment 阶段(2023):</b>把 20 余家机构、22 种形态、百万级轨迹汇聚统一格式,训出的 RT-X 在陌生任务上明显超过单一机构数据训出的模型——直接验证了「跨本体、跨场景数据规模越大,泛化越好」。</li>
+    <li><b>VLA 阶段(2024 起):</b>OpenVLA(7B)在 OXE 约 97 万条片段上预训练;π0(3.3B)在 OXE + 自采灵巧数据上预训练。规模仍是第一生产力,但数据<b>多样性(形态、场景、任务)</b>开始比纯数量更重要。</li>
+  </ul>
+  <div class="box box-tip">
+    <b>💡 一句话结论:</b>具身智能的 Scaling Law 是「<b>模型规模 × 数据规模 × 数据多样性</b>」三者耦合,而数据是当前最紧的瓶颈。所以「选对、选够、选干净数据」比「调大模型」更优先。
+  </div>
+
+  <h3>1.2 VLA 对数据的两条路线:行为克隆 vs 潜动作预训练</h3>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>行为克隆(Behavior Cloning, BC)</th><th>潜动作预训练(Latent Action Pretraining)</th></tr>
+    <tr><td><b>核心思想</b></td><td>把示范当成监督样本,直接学「观测 → 动作」的回归/分类映射</td><td>先把连续动作压缩成潜动作(latent action),在更大规模数据上预训练,再对齐到真机动作</td></tr>
+    <tr><td><b>数据需求</b></td><td>海量「观测-动作」配对真机遥操作数据,格式需统一</td><td>可额外利用互联网视频等<b>无动作标注</b>数据,缓解数据饥渴</td></tr>
+    <tr><td><b>代表方法</b></td><td>RT-1 / ACT / 扩散策略(Diffusion Policy)</td><td>π0(流匹配 flow matching 在潜动作空间建模)、智元 GO-1(ViLLA 架构)</td></tr>
+    <tr><td><b>优点</b></td><td>简单直接、小数据也能起步、可解释性强</td><td>能吃到互联网级数据红利,泛化与长程任务更强</td></tr>
+    <tr><td><b>代价</b></td><td>过拟合示范、分布外易崩、数据成本高</td><td>训练复杂、需 VQ 潜动作码本与「预训练→微调」两阶段工程</td></tr>
+  </table></div>
+  <div class="box box-warn">
+    <b>⚠️ 别把它们对立:</b>现在的主流做法是「<b>潜动作预训练 + 真机微调</b>」组合拳——先用视频/海量数据学「世界怎么运作、动作怎么表达」,再用少量真机示范对齐到具体机器人。你上手时可以先从纯 BC 理解全流程,再进阶到 π0/GO-1 的潜动作路线。
+  </div>
+
+  <!-- ================= 2 操作数据集逐个拆解 ================= -->
+  <h2><span class="h2-num">2</span> 操作数据集逐个拆解:机构 / 规模 / 采集 / 传感器 / 任务 / 获取 / 局限</h2>
+  <p>操作(manipulation)数据集是当前 VLA 训练的「主粮」。下面按「真实大规模 → 细分真实 → 仿真基准」的顺序逐个拆解,每个都落到七个字段,方便你对着官方页复核。规模与许可均以各官方 README/论文为准,不确定处已标注「约」。</p>
+
+  <!-- OXE -->
+  <div class="my-ds">
+    <b>① Open X-Embodiment(OXE)</b><span class="my-badge my-scale">100 万+ 轨迹</span><span class="my-badge my-sensor">22 种形态</span><span class="my-badge my-lic">数据许可逐库不同</span><br>
+    <span class="my-meta">机构:Google DeepMind 牵头,联合约 21 家高校与企业(Stanford、Berkeley、CMU、ETH 等)· 2023 年 10 月发布,论文 ICRA 2024</span><br>
+    <b>规模:</b>100 万+ 轨迹片段、22 种机器人形态、60+ 个子数据集、527 种技能(统一为 RLDS 格式)。<br>
+    <b>采集方式:</b>并非新采,而是<b>汇聚</b>各机构已有的遥操作 / 自主策略数据集,统一观测-动作字段后合并。<br>
+    <b>传感器:</b>高度异构——以多相机 RGB(-D) + 关节状态 + 末端位姿/夹爪为主,各子库细节不同。<br>
+    <b>任务类型:</b>抓取、放置、桌面操作、开门抽屉、灵巧操作等 527 种技能,覆盖「跨本体通用策略」训练。<br>
+    <b>获取方式:</b>官方页 <a href="https://robotics-transformer-x.github.io" target="_blank" rel="noopener">robotics-transformer-x.github.io →</a>(经 Google Cloud Storage 下载,提供统一工具)。<br>
+    <b>局限:</b>①形态异构导致「跨本体泛化」仍需训混合模型(如 RT-X);②各子库质量、相机视角、动作频率参差;③<b>整体无统一单一许可证</b>,商用须逐子库核对来源许可。
+  </div>
+
+  <!-- DROID -->
+  <div class="my-ds">
+    <b>② DROID</b><span class="my-badge my-scale">约 7.6 万轨迹</span><span class="my-badge my-sensor">Franka 双臂+移动底座</span><span class="my-badge my-lic">开放研究用(以官方为准)</span><br>
+    <span class="my-meta">机构:Stanford / Google / UT Austin / UC Berkeley 等联合 · RSS 2024</span><br>
+    <b>规模:</b>约 7.6 万条真实遥操作轨迹、564 个场景、86 个任务、约 350 小时(官方论文数据)。<br>
+    <b>采集方式:</b>人类<b>遥操作</b> Franka Panda 机械臂,整套装置可搬进真实家庭/办公室,故名「in-the-wild(野外)」。<br>
+    <b>传感器:</b>2~3 个 RGB 摄像头(第三视角 + 腕部视角)、关节角度、夹爪开合。<br>
+    <b>任务类型:</b>拧瓶盖、插 USB、叠毛巾、开关抽屉、整理物品等真实日常操作。<br>
+    <b>获取方式:</b>官方页 <a href="https://droid-dataset.github.io" target="_blank" rel="noopener">droid-dataset.github.io →</a>。<br>
+    <b>局限:</b>①语言指令标注相对较弱;②本体固定为 Franka,换本体需做动作空间适配;③场景以家庭/办公为主,工业类任务少。
+  </div>
+
+  <!-- AgiBot World -->
+  <div class="my-ds">
+    <b>③ AgiBot World</b><span class="my-badge my-scale">100 万+ 轨迹</span><span class="my-badge my-sensor">多相机+触觉</span><span class="my-badge my-lic">Beta: CC-BY-NC-SA 4.0</span><br>
+    <span class="my-meta">机构:智元(Agibot)联合 OpenDriveLab 等 · 2024 年 12 月开源</span><br>
+    <b>规模:</b>100 万+ 轨迹、100+ 台机器人、100+ 场景、217+ 任务(官方口径)。<br>
+    <b>采集方式:</b>真机<b>遥操作</b>,覆盖夹爪/灵巧手、单臂/双臂/移动等多种形态。<br>
+    <b>传感器:</b>多相机 RGB(-D) + 指尖触觉 + 本体感受(关节/末端),多模态同步标注。<br>
+    <b>任务类型:</b>家务、桌面操作、工具使用、收纳等偏<b>长程、日常</b>的任务。<br>
+    <b>获取方式:</b>仓库 <a href="https://github.com/OpenDriveLab/AgiBot-World" target="_blank" rel="noopener">github.com/OpenDriveLab/AgiBot-World →</a> · Hugging Face 的 AgiBotWorld-Beta(需同意条款)。<br>
+    <b>局限:</b>①<b>Beta 版为 CC-BY-NC-SA 4.0(非商用)</b>,商用须单独授权;②数据量大、下载与预处理成本高;③后续合成平台 AgiBot World Colosseo / Genie Sim 的细节以官方发布为准。
+  </div>
+
+  <!-- 宇树 G1-Dex1 -->
+  <div class="my-ds">
+    <b>④ 宇树 G1-Dex1 数据集(UnifoLM)</b><span class="my-badge my-scale">规模以官方 HF 为准</span><span class="my-badge my-sensor">G1 灵巧手+相机</span><span class="my-badge my-lic">以官方 HF 页为准</span><br>
+    <span class="my-meta">机构:宇树(Unitree)· 随 UnifoLM 项目发布</span><br>
+    <b>规模:</b>官方在 Hugging Face 以集合形式发布,轨迹数量<b>官方未在新闻稿统一公布</b>,以数据集页为准。<br>
+    <b>采集方式:</b>G1 人形机器人<b>双臂灵巧手遥操作</b>,配套 <code>unitree_lerobot</code>(<code>unitree_il_lerobot</code>)训练框架。<br>
+    <b>传感器:</b>灵巧手关节 + 相机(G1 本体传感器)。<br>
+    <b>任务类型:</b>叠毛巾、倒水、精细抓取等灵巧操作(如「fold towel」)。<br>
+    <b>获取方式:</b>Hugging Face 组织页 <a href="https://huggingface.co/collections/unitreerobotics/unifolm-g1-dex1-dataset" target="_blank" rel="noopener">UnifoLM_G1_Dex1_Dataset →</a> · 训练框架 <a href="https://github.com/unitreerobotics/unitree_lerobot" target="_blank" rel="noopener">unitree_lerobot →</a>。<br>
+    <b>局限:</b>①以 G1 本体为主,跨本体泛化需自行适配;②规模与协议公开度不如 OXE/AgiBot World 高,商用前须逐条核对。
+  </div>
+
+  <!-- BridgeData V2 -->
+  <div class="my-ds">
+    <b>⑤ BridgeData V2</b><span class="my-badge my-scale">约 6 万轨迹</span><span class="my-badge my-sensor">WidowX 250 低成本臂</span><span class="my-badge my-lic">CC-BY(约,以官方为准)</span><br>
+    <span class="my-meta">机构:UC Berkeley(RAIL)+ Toyota Research Institute · CoRL 2023</span><br>
+    <b>规模:</b>约 6 万条轨迹(60,096)、24 个环境、13 种技能、73 个物体。<br>
+    <b>采集方式:</b>遥操作 + 半自主脚本 + 演示,采用低成本 WidowX 250 机械臂。<br>
+    <b>传感器:</b>第三方 RGB 相机(全身 + 腕部)、关节、夹爪。<br>
+    <b>任务类型:</b>抓取、放置、推、扫、叠放等桌面操作。<br>
+    <b>获取方式:</b>官方页 <a href="https://rail-berkeley.github.io/bridgedata/" target="_blank" rel="noopener">rail-berkeley.github.io/bridgedata →</a>。<br>
+    <b>局限:</b>①单臂、桌面为主,场景相对受限;②本体为低成本舵机/小型臂,与灵巧手/移动操作有差距。
+  </div>
+
+  <!-- RoboMimic -->
+  <div class="my-ds">
+    <b>⑥ RoboMimic(仿真基准)</b><span class="my-badge my-scale">5 任务 / 3 机器人</span><span class="my-badge my-sensor">仿真 RGB+关节</span><span class="my-badge my-lic">代码开源(以仓库为准)</span><br>
+    <span class="my-meta">机构:Stanford / UT Austin 等 · NeurIPS 2022</span><br>
+    <b>规模:</b>5 个任务(Lift / Can / Square / Transport / Tool Hang)、3 种机器人(Franka Panda / Sawyer / iiwa)、多种控制器,数千条人类遥操作 + 机器生成示教。<br>
+    <b>采集方式:</b>基于 robosuite/MuJoCo 的<b>仿真</b>采集(遥操作接口 + 脚本策略)。<br>
+    <b>传感器:</b>仿真 RGB 相机 + 关节/末端状态。<br>
+    <b>任务类型:</b>抓取、装箱、搬运、穿线等高难度模仿学习基准任务。<br>
+    <b>获取方式:</b>官方页 <a href="https://robomimic.github.io" target="_blank" rel="noopener">robomimic.github.io →</a>(数据集+代码)。<br>
+    <b>局限:</b>纯仿真,无真实物理噪声;适合做「方法对比」,不能替代真机泛化评测。
+  </div>
+
+  <!-- RLBench -->
+  <div class="my-ds">
+    <b>⑦ RLBench(仿真基准)</b><span class="my-badge my-scale">100 个任务</span><span class="my-badge my-sensor">CoppeliaSim + Franka</span><span class="my-badge my-lic">代码开源(以仓库为准)</span><br>
+    <span class="my-meta">机构:Imperial College London(Stephen James)· 2020(RA-L)</span><br>
+    <b>规模:</b>100 个任务,基于 CoppeliaSim(原 V-REP),Franka Panda 机械臂,支持语言指令与多任务/少样本设置。<br>
+    <b>采集方式:</b>仿真内 waypoint + 运动规划自动生成示教,可批量产生带语言标注的数据。<br>
+    <b>传感器:</b>仿真相机(多视角)+ 关节状态。<br>
+    <b>任务类型:</b>开抽屉、堆叠、插销、按按钮等 100 种桌面操作,是 RL/模仿学习多任务评测的常用基准。<br>
+    <b>获取方式:</b>仓库 <a href="https://github.com/stepjam/RLBench" target="_blank" rel="noopener">github.com/stepjam/RLBench →</a>。<br>
+    <b>局限:</b>仿真;部分任务依赖运动规划求解,学习信号与真实感知存在差距。
+  </div>
+
+  <div class="box box-tip">
+    <b>💡 操作数据集选型速记:</b>想做「跨本体通用 VLA」→ 先 OXE;想要「真实家庭/办公场景」→ DROID;想做「长程家务+灵巧」且能接受非商用 → AgiBot World;做「低成本桌面操作」→ BridgeData V2;纯「算法对比、无真机预算」→ RoboMimic / RLBench 起步。
+  </div>
+
+  <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 330" role="img" aria-label="六大操作数据集轨迹规模与模态对比图" font-family="Microsoft YaHei,sans-serif">
+    <text x="8" y="22" font-size="10.5" fill="#64748b">数据集</text>
+    <text x="170" y="22" font-size="10.5" fill="#64748b">轨迹规模(线性刻度)</text>
+    <text x="600" y="22" font-size="10.5" fill="#64748b">模态与形态</text>
+    <line x1="158" y1="30" x2="158" y2="252" stroke="#64748b" stroke-opacity=".18"/>
+    <rect x="170" y="53" width="360" height="18" rx="3" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b"/>
+    <text x="8" y="67" font-size="11.5" class="my-lg">Open X-Embodiment</text>
+    <text x="538" y="67" font-size="10.5" fill="#64748b">100 万+</text>
+    <text x="600" y="63" font-size="9.5" fill="#64748b">22 形态 · 60+ 子集 · 527 技能</text>
+    <text x="600" y="77" font-size="9.5" fill="#64748b">RGB(-D)+关节状态</text>
+    <rect x="170" y="89" width="360" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
+    <text x="8" y="103" font-size="11.5" class="my-lg">AgiBot World</text>
+    <text x="538" y="103" font-size="10.5" fill="#64748b">100 万+</text>
+    <text x="600" y="99" font-size="9.5" fill="#64748b">100+ 台真机 · 217+ 任务</text>
+    <text x="600" y="113" font-size="9.5" fill="#64748b">RGB-D+触觉+本体感受</text>
+    <rect x="170" y="125" width="27" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
+    <text x="8" y="139" font-size="11.5" class="my-lg">DROID</text>
+    <text x="205" y="139" font-size="10.5" fill="#64748b">约 7.6 万</text>
+    <text x="600" y="135" font-size="9.5" fill="#64748b">564 场景 · 86 任务 · 约 350 h</text>
+    <text x="600" y="149" font-size="9.5" fill="#64748b">RGB×2~3+关节+夹爪</text>
+    <rect x="170" y="161" width="22" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
+    <text x="8" y="175" font-size="11.5" class="my-lg">BridgeData V2</text>
+    <text x="200" y="175" font-size="10.5" fill="#64748b">约 6.0 万</text>
+    <text x="600" y="171" font-size="9.5" fill="#64748b">24 环境 · 73 物体 · WidowX</text>
+    <text x="600" y="185" font-size="9.5" fill="#64748b">RGB+关节+夹爪</text>
+    <rect x="170" y="197" width="5" height="18" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
+    <text x="8" y="211" font-size="11.5" class="my-lg">RoboMimic</text>
+    <text x="183" y="211" font-size="10.5" fill="#64748b">数千条示教</text>
+    <text x="600" y="207" font-size="9.5" fill="#64748b">5 任务 · 3 机器人</text>
+    <text x="600" y="221" font-size="9.5" fill="#64748b">仿真 RGB+关节</text>
+    <rect x="170" y="233" width="5" height="18" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
+    <text x="8" y="247" font-size="11.5" class="my-lg">RLBench</text>
+    <text x="183" y="247" font-size="10.5" fill="#64748b">以任务数计:100 任务</text>
+    <text x="600" y="243" font-size="9.5" fill="#64748b">CoppeliaSim+Franka</text>
+    <text x="600" y="257" font-size="9.5" fill="#64748b">仿真相机+关节</text>
+    <rect x="170" y="282" width="12" height="12" rx="2" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
+    <text x="188" y="292" font-size="10" fill="#64748b">真机遥操作</text>
+    <rect x="286" y="282" width="12" height="12" rx="2" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b"/>
+    <text x="304" y="292" font-size="10" fill="#64748b">汇聚已有数据集</text>
+    <rect x="424" y="282" width="12" height="12" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
+    <text x="442" y="292" font-size="10" fill="#64748b">仿真基准</text>
+    <text x="170" y="316" font-size="9.5" fill="#64748b">条形按轨迹数线性刻度;宇树 G1-Dex1 规模官方未统一公布,未入图;仿真基准不以轨迹规模计。</text>
+  </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:六大操作数据集规模与模态对比——条形为轨迹规模(线性刻度),颜色区分采集方式;OXE 靠「汇聚」做到百万级,AgiBot World 为真机新采同量级,DROID / BridgeData 是中小规模真机遥操作,仿真基准不以轨迹数计</div></div>
+
+  <!-- ================= 3 运动与仿真数据集 ================= -->
+  <h2><span class="h2-num">3</span> 运动 / 仿真数据集:人体运动与连续控制基准</h2>
+  <p>除了「操作」,人形机器人的「动起来」还需要另一类数据——<b>人体运动捕捉(motion capture)</b>与<b>连续控制仿真基准</b>。前者给人形提供运动先验与动作生成素材,后者用于评测强化学习算法本身。</p>
+
+  <h3>3.1 人体运动捕捉:AMASS / HumanML3D / CMU MoCap</h3>
+  <div class="table-wrap"><table>
+    <tr><th>数据集</th><th>机构 / 年份</th><th>规模(约)</th><th>用途</th><th>获取</th></tr>
+    <tr><td><b>AMASS</b></td><td>MPI·ICCV 2019</td><td>合并 15+ 动捕库、300+ 受试者、1.1 万+ 动作序列、40+ 小时</td><td>统一为 SMPL/SMPL-X 人体模型,运动生成、重定向、运动先验的「底座」</td><td><a href="https://amass.is.tue.mpg.de" target="_blank" rel="noopener">amass.is.tue.mpg.de →</a>(注册申请)</td></tr>
+    <tr><td><b>HumanML3D</b></td><td>北大/港中文·CVPR 2022</td><td>14,616 段动作、44,970 条文本描述</td><td>文本-动作配对,Text-to-Motion 生成训练与评测</td><td><a href="https://github.com/EricGuo5513/HumanML3D" target="_blank" rel="noopener">GitHub →</a>(申请下载)</td></tr>
+    <tr><td><b>CMU MoCap</b></td><td>CMU 图形实验室·长期维护</td><td>约 2,600 段光学动捕试验(多受试者)</td><td>最老牌的公开人体动捕库,行走/跑跳/舞蹈等运动数据源</td><td><a href="http://mocap.cs.cmu.edu" target="_blank" rel="noopener">mocap.cs.cmu.edu →</a></td></tr>
+  </table></div>
+  <div class="box box-warn">
+    <b>⚠️ 用动捕数据前先问格式:</b>AMASS/HumanML3D 给的是<b>SMPL 人体参数</b>(体型+姿态参数),而你的机器人是<b>URDF 关节角</b>——中间隔着一步「运动重定向(retargeting)」。先评估「SMPL → 自家关节」的映射成本,再决定是否投入。
+  </div>
+
+  <h3>3.2 连续控制仿真:DM Control 与 SMPL 相关</h3>
+  <ul>
+    <li><b>DeepMind Control Suite(DM Control):</b>DeepMind 2018 年发布的连续控制基准,基于 MuJoCo,含 30+ 任务(倒立摆、行走、操作等),是「RL 算法本身好不好」的经典试金石,<b>不是机器人数据集</b>,而是评测环境。</li>
+    <li><b>SMPL / SMPL-X:</b>本身是「人体参数化模型」(体型 + 姿态参数),不是数据集,但它是 AMASS/HumanML3D 等运动数据集的<b>统一表示基础</b>——理解它,才能理解运动数据「存的是什么」。</li>
+    <li><b>Isaac 场景(Isaac Sim / Isaac Lab / Isaac Gym):</b>NVIDIA 的 GPU 并行仿真生态,是「生成仿真数据 + 训 RL」的现役主力平台,可与本页第 4 节的评测环境联动使用。</li>
+  </ul>
+
+  <!-- ================= 4 评测基准拆解 ================= -->
+  <h2><span class="h2-num">4</span> 评测基准拆解:训练出来后怎么「评」</h2>
+  <p>「模型训出来了」不等于「真的会干活」。具身智能评测的难点在于:<b>真实世界评测又贵又慢、且各家各用一套机器人一套任务,结果不可比</b>。于是社区发展出两条路:一是在仿真里尽量「统一 + 复现」真实评测,二是约定一套可移植的成功率类指标。</p>
+
+  <h3>4.1 SIMPLER:在仿真里统一评测 VLA 策略</h3>
+  <p>SIMPLER(Simulated Environments for Real-world Policy Evaluation,论文《Evaluating Real-World Robot Manipulation Policies in Simulation》,2024)由 Stanford 等提出,核心动机是:VLA 模型(如 RT-1 / RT-1-X / Octo / OpenVLA)在真实机器人上评测成本极高、难以复现。SIMPLER 的做法是——<b>用真实机器人采集场景时同步重建到仿真</b>,让策略在「和真机视觉高度一致的仿真环境」里跑,从而用成功率近似真实性能。它提供 Google Robot 与 WidowX+Bridge 两个主流本体 setup。</p>
+  <ul>
+    <li><b>价值:</b>论文证明 SIMPLER 里的成功率与真实机器人成功率<b>高度相关</b>,让「零真机」也能初步评测 VLA;配套 <code>SimplerEnv</code> 代码可直接跑 OpenVLA/Octo。</li>
+    <li><b>局限:</b>只覆盖有限本体与任务;视觉/物理仍有 gap,不能完全替代真机;不同论文对同一模型的「仿真成功率」未必同口径,引用时须看 setup。</li>
+  </ul>
+  <div class="my-note">代码:<a href="https://github.com/simpler-env/SimplerEnv" target="_blank" rel="noopener">github.com/simpler-env/SimplerEnv →</a> · 论文 arXiv:2405.05941</div>
+
+  <h3>4.2 RoboBench 类:统一「打榜」评测平台</h3>
+  <p>在 SIMPLER 之后,社区出现了一批「<b>把多个 VLA/机器人策略放到统一云端环境里跑同一批任务</b>」的评测平台(可统称 RoboBench 类,以各平台官方口径为准),目标是像 LLM 的 Chatbot Arena 一样做横向「打榜」。这类平台的共同点:固定任务集 + 固定指标 + 自动跑批,试图解决「每家用自己任务、不可比」的老问题。</p>
+  <div class="box box-warn">
+    <b>⚠️ 真实世界评测为什么难:</b>①<b>硬件不可复现</b>——换一台机器人、换一个相机角度,成功率就可能差 20 个点;②<b>任务不可比</b>——「捡起杯子」在不同桌面、不同杯子上难度天差地别;③<b>数据泄露</b>——训练数据若与评测场景重合,分数虚高;④<b>统计口径</b>——试几次算成功率、是否允许重试,都会改变结论。读任何评测报告,先问清这四点。
+  </div>
+
+  <h3>4.3 常用指标:从「成功率」到「首次动作准不准」</h3>
+  <div class="table-wrap"><table>
+    <tr><th>指标</th><th>含义</th><th>适用场景</th><th>注意</th></tr>
+    <tr><td><b>任务成功率(success rate)</b></td><td>完成任务的试验占比(可含 Top-k:允许 k 次尝试)</td><td>几乎所有操作任务</td><td>口径差异大:是否允许重试、单次还是多次</td></tr>
+    <tr><td><b>平均完成度(average completion / progress)</b></td><td>按子步骤给分(如 0/0.25/0.5/1),取平均</td><td>长程任务(家务、多步组装)</td><td>能区分「差一点成功」与「完全没动」</td></tr>
+    <tr><td><b>首次动作准确率(first-action / action-chunk accuracy)</b></td><td>预测动作块与示范动作的一致程度</td><td>BC / 扩散策略的离线评测</td><td>离线指标,与真实成功率不完全等价</td></tr>
+    <tr><td><b>操作时长 / 完成时间(time-to-completion)</b></td><td>从开始到完成的耗时(或是否超时)</td><td>效率敏感的抓取/装配</td><td>常与成功率一起看,快而不稳也不行</td></tr>
+    <tr><td><b>成功率 @K / 平均轨迹长度</b></td><td>多次尝试内成功率 / 平均用了多少步</td><td>RL 与长程任务</td><td>反映稳定性与样本效率</td></tr>
+  </table></div>
+
+  <h3>4.4 仿真器评测环境:RLBench / Meta-World / Franka Kitchen / Isaac</h3>
+  <div class="table-wrap"><table>
+    <tr><th>环境</th><th>本体 / 引擎</th><th>任务规模(约)</th><th>定位</th></tr>
+    <tr><td><b>RLBench</b></td><td>Franka Panda / CoppeliaSim</td><td>100 任务</td><td>多任务、语言条件、few-shot 的 RL/模仿学习评测</td></tr>
+    <tr><td><b>Meta-World</b></td><td>Sawyer / MuJoCo</td><td>50 任务</td><td>多任务与元学习(meta-RL)标准基准</td></tr>
+    <tr><td><b>Franka Kitchen</b></td><td>Franka / MuJoCo(D4RL 内置)</td><td>7 个厨房子任务</td><td>目标条件、离线 RL/模仿学习的厨房多任务基准</td></tr>
+    <tr><td><b>Isaac(Sim / Lab / Gym)</b></td><td>多本体 / 自建</td><td>可无限扩展</td><td>GPU 并行仿真 + RL 训练,自定义评测的主平台</td></tr>
+  </table></div>
+
+  <!-- ================= 5 数据采集方式对比 ================= -->
+  <h2><span class="h2-num">5</span> 数据采集方式对比:五条「造数据」的路</h2>
+  <p>「数据从哪来」的答案不止「人肉遥操作」。五种方式在成本、质量、规模、sim2real 代价上各有取舍,实际项目常是组合使用。</p>
+  <div class="table-wrap"><table>
+    <tr><th>采集方式</th><th>代表</th><th>优点</th><th>缺点</th><th>适合</th></tr>
+    <tr><td><b>遥操作(人肉采集)</b></td><td>DROID、AgiBot World、宇树 G1-Dex1</td><td>质量最高、物理真实</td><td>贵、慢、难规模化</td><td>核心真机数据、微调对齐</td></tr>
+    <tr><td><b>动捕映射(retargeting)</b></td><td>AMASS、DeepMimic 类</td><td>复用人体运动、自然度高</td><td>需做「人→机」映射、易有接触/动力学 gap</td><td>人形运动、灵巧手姿态</td></tr>
+    <tr><td><b>仿真生成</b></td><td>RLBench、RoboMimic、Isaac</td><td>便宜、可无限规模化、可标注</td><td>有 sim2real gap、缺真实噪声</td><td>RL 训练、方法对比、冷启动</td></tr>
+    <tr><td><b>世界模型合成</b></td><td>Genie Sim、AgiBot World Colosseo</td><td>低成本大规模、可编辑场景</td><td>合成数据可能放大偏差、真实性存疑</td><td>数据增广、长尾场景覆盖</td></tr>
+    <tr><td><b>互联网视频学习(潜动作)</b></td><td>π0、GO-1 的预训练阶段</td><td>数据量近乎无限、缓解饥渴</td><td>无动作标注,需潜动作对齐、易学到偏见</td><td>VLA 大规模预训练</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 实务建议:</b>主流团队基本是「<b>遥操作采真机核心数据 + 仿真/合成数据增广 + 互联网视频预训练</b>」三管齐下。个人学习阶段,先用仿真(RLBench/RoboMimic)和公开真机子集(OXE 小库)把管线跑通,再考虑自采。
+  </div>
+
+  <!-- ================= 6 数据质量与处理 ================= -->
+  <h2><span class="h2-num">6</span> 数据质量与处理:数据不是「采完就能用」</h2>
+  <p>公开数据集看着「开箱即用」,但真正训练前通常要过四道处理关。这也是「数据工程」在具身智能里越来越值钱的原因。</p>
+  <ul>
+    <li><b>数据清洗(cleaning):</b>剔除抖动/漂移轨迹、失败演示、传感器掉帧片段;统一时间戳与关键帧。清洗质量直接决定策略上限。</li>
+    <li><b>动作标注(action labeling):</b>给轨迹配语言指令(自然语言任务描述)、切分动作块(action chunk)、标注成功/失败与子步骤。DROID 相对弱、AgiBot World 相对强的语言标注,会直接影响「语言条件策略」的表现。</li>
+    <li><b>时间对齐(temporal alignment):</b>多相机、触觉、关节角来自不同频率的传感器,须对齐到统一时间轴并重采样(如 10Hz / 30Hz),否则多模态数据「张冠李戴」。</li>
+    <li><b>跨具身归一化(embodiment normalization):</b>把不同机器人的动作统一到可比较的空间——常见做法:末端位姿用<b>相对增量(delta)</b>、关节角统一量纲、夹爪统一到 [0,1]。OXE 能训出 RT-X 的关键,就是把 22 种形态「归一化到一套动作字段」。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠️ 动作空间统一是「跨本体」的地基:</b>如果 A 机器人的「抓」是关节角、B 是笛卡尔末端位姿、C 是灵巧手 12 自由度,直接混训几乎必崩。先用「末端位姿 delta + 夹爪开合」这类<b>本体无关的表示</b>做统一,再考虑更细的关节级对齐。
+  </div>
+
+  <!-- ================= 7 数据版权与合规 ================= -->
+  <h2><span class="h2-num">7</span> 数据版权与合规:数据 ≠ 代码,许可分开看</h2>
+  <p>数据集的「版权」比代码更容易被忽略,而踩坑代价更高。核心原则:<b>数据许可和代码许可要分开看</b>,且「开源数据集」不等于「免费商用」。</p>
+  <ul>
+    <li><b>开源协议速查:</b>MIT / Apache-2.0 可商用(保留声明);CC-BY 署名即可商用;CC-BY-NC / CC-BY-NC-SA 带「NC = 非商业」,<b>禁止商业用途</b>;GPL 对数据不直接适用,但对代码有传染性。</li>
+    <li><b>AgiBot World 的商用边界(重点):</b>Beta 版标注 <b>CC-BY-NC-SA 4.0</b>——可用于学习/科研/非商业复现,<b>不能直接把数据用于商业模型训练</b>,衍生数据也须相同方式共享(SA)。商用需与官方单独授权。</li>
+    <li><b>AMASS / HumanML3D 等:</b>需注册申请,协议多为研究用途,商用须逐条确认原始动捕库的许可(AMASS 是多个库的合并,许可可能叠加)。</li>
+    <li><b>合成数据的伦理与合规:</b>世界模型/Genie 类生成的合成数据可能<b>放大训练数据中的偏差</b>、引入「幻觉式」不合理动作;若合成数据模仿了受版权保护的视频/图像,还存在版权争议;同时要注意合成数据训练出的策略在真实场景下的安全边界。</li>
+  </ul>
+  <div class="box box-warn">
+    <b>⚠️ 给「想商用」的你一句话:</b>下载任何数据集前,先看它「数据」的 LICENSE(不是仓库顶层代码 LICENSE);带 NC 的一律不能直接商用;不确定就问官方要书面授权,别赌。
+  </div>
+
+  <!-- ================= 8 学习路线 ================= -->
+  <h2><span class="h2-num">8</span> 学习路线:用 openpi / LeRobot 加载 OXE 子集微调 π0</h2>
+  <p>知道「有哪些数据、怎么评」之后,一条最小可跑通的上手路径如下(目标:在自己电脑上完成「加载子集 → 微调 → 评测」闭环)。</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>选一个小 OXE 子集</b><br>先别下百万级全集。用 LeRobot 内置的小数据集(如 <code>pusht</code>、<code>aloha</code> 相关子集)跑通,理解 RLDS/HF 数据格式。</div>
+    <div class="step-item"><span class="n">2</span><b>搭环境</b><br>安装 Hugging Face <code>lerobot</code> 与 Physical Intelligence <code>openpi</code>;无 NVIDIA GPU 就先用小模型/CPU 预览,正式微调用云端 GPU(≥24GB 更稳)。</div>
+    <div class="step-item"><span class="n">3</span><b>加载 OXE 子集微调 π0</b><br>用 openpi 的 LoRA 微调接口,在选定子集上对 π0 做小规模微调;先跑通损失下降,再谈效果。</div>
+    <div class="step-item"><span class="n">4</span><b>评测</b><br>用 SIMPLER(SimplerEnv)或 LeRobot 自带的 rollout 脚本,输出任务成功率 / 平均完成度,和 baseline(微调前)对比。</div>
+  </div>
+  <div class="box box-ok">
+    <b>✅ 里程碑建议:</b>第 3 步结束,你应能「说清 OXE 子集的观测/动作字段长什么样、自己微调后成功率变化了多少」;第 4 步结束,你能「用统一指标对比两个策略」——这比单纯「跑通 demo」有价值得多。相关环境与显卡配置可回看 <a href="03_论文_数据集_开源社区.html">05-03 的下载与部署提示</a>。
+  </div>
+
+  <!-- ================= 8.5 常见误区 ================= -->
+  <h2><span class="h2-num" style="font-size:0.8em;">+</span> 常见误区:五条「想当然」</h2>
+  <div class="box box-warn">
+    <b>⚠️ 误区一:「数据规模大 = 数据质量高」。</b><br>
+    百万条低质量轨迹不如一万条高质量轨迹。遥操作真机数据的成功率、场景多样性、标注一致性,比总条数更能决定 VLA 下游表现;混入大量「失败未清洗」「任务分布单一」的数据反而拉低效果。看数据集先看采集协议与质检流程,再看规模。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 误区二:「跨本体数据直接混训没问题」。</b><br>
+    不同机器人的关节空间、自由度、末端控制频率差异巨大,直接把动作序列拼在一起混训,模型学不到统一的动作语义。正确做法是走统一的动作表示(如末端位姿/速度、动作 chunk)并做跨具身归一化对齐(见第 6 节),或至少按本体分库、共享视觉-语言主干。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 误区三:「都是成功率 80%,分数可以直接比」。</b><br>
+    成功率的口径太重要了:允许重试几次、成功率按「整任务」还是「子步骤」计、相机视角与摆放随机化程度、评测了几个 seed——口径不同源,80% 与 80% 不是一回事。横向对比前先核对统计口径,否则结论无意义。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 误区四:「仓库顶层 LICENSE 就是数据的使用协议」。</b><br>
+    代码与数据经常分开授权:仓库顶层可能是 MIT/Apache,但数据集本体另走 CC-BY-NC 之类的协议(如 AgiBot World Beta 数据为 CC-BY-NC-SA 4.0)。商用前要查的是<b>数据文件随附的许可声明</b>,不是 README 顶层的那个 LICENSE(详见第 7 节)。
+  </div>
+  <div class="box box-warn">
+    <b>⚠️ 误区五:「仿真评测高分 = 真机能跑」。</b><br>
+    SIMPLER 这类仿真评测与真机成功率只是「相关」,不是「等价」:视觉纹理、物理噪声、执行器延迟都可能让仿真 90% 的策略真机只有 40%。仿真分数适合做快速迭代与筛选,最终结论必须回到真机 rollout,并报告评测硬件与流程。
+  </div>
+
+  <!-- ================= 小结与思考 ================= -->
+  <h2><span class="h2-num" style="font-size:0.8em;">+</span> 小结与思考</h2>
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>具身智能卡在「数据饥渴」——模型能吃 Scaling Law,但真机数据又贵又慢。VLA 有两条数据路线:<b>行为克隆</b>(直接模仿,吃海量真机示范)与<b>潜动作预训练</b>(π0/GO-1 先在大规模视频上预训练再对齐,缓解饥渴)。操作数据集按需选:跨本体通用→OXE(100 万+、22 形态、21 家机构),真实家庭场景→DROID(约 7.6 万轨迹),长程家务+灵巧但非商用→AgiBot World(CC-BY-NC-SA),低成本桌面→BridgeData V2,算法对比→RoboMimic/RLBench。运动数据看 AMASS/HumanML3D/CMU MoCap(注意 SMPL→URDF 的重定向)。评测用 SIMPLER 等仿真统一评测逼近真机,指标看成功率/完成度/首次动作准确率/操作时长。五种采集方式各有取舍,数据还要过清洗/标注/对齐/跨具身归一化四关,商用前务必核对<b>数据</b>许可证。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 你想做一个「捡起杯子放桌上」的策略,预算有限、只有 CPU。你会选 OXE 全集、BridgeData V2 还是 RoboMimic?为什么?评估一下各自的 sim2real 代价。<br>
+    2. 公司要做「叠衣服」的商业化机器人,你看到 AgiBot World 有大量相关数据——许可证层面你会遇到什么问题?有哪些合规路径(如换数据集、自采、单独授权)?<br>
+    3. 两个团队都报「任务成功率 80%」,但一个允许重试 3 次、一个只允许 1 次,还用了不同相机视角。为什么这个 80% 不能直接比?你会怎么设计一个可比的评测?
+  </div>
+
+  <!-- ================= 9 自测 ================= -->
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 关于 Open X-Embodiment(OXE),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 它由单一机构全量新采,只有一种机器人形态</button>
+      <button data-v="B">B. 它整体采用统一的 CC-BY-NC-SA 许可证,可放心商用</button>
+      <button data-v="C">C. 它由 Google DeepMind 牵头、联合约 21 家机构,汇聚 22 种形态、60+ 子库、100 万+ 轨迹,是 RT-X 的训练基础</button>
+      <button data-v="D">D. 它只包含仿真数据,不含真实机器人轨迹</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:OXE 是「汇聚」型数据集——把约 21 家机构已有的真实操作数据统一成 RLDS 格式(22 种形态、60+ 子库、100 万+ 轨迹、527 种技能),训出 RT-X。它<b>不是</b>新采单一形态数据,也无单一许可证,商用须逐子库核对。故选 C。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 关于 DROID 数据集的采集方式与规模,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 它是纯仿真生成的数据集,规模超过百万条轨迹</button>
+      <button data-v="B">B. 它由 Stanford 等机构用 Franka Panda 在真实家庭/办公场景遥操作采集,约 7.6 万条轨迹、564 个场景</button>
+      <button data-v="C">C. 它由宇树 G1 灵巧手采集,专门用于人形运动</button>
+      <button data-v="D">D. 它采用 CC-BY-NC-SA 4.0 许可,禁止所有研究用途</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:DROID 是「in-the-wild」真实操作数据集:人类遥操作 Franka 机械臂在真实家庭/办公室采集,官方论文约 7.6 万条轨迹、564 个场景、86 个任务。它不是仿真、也不是宇树采集。故选 B。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 关于智元 AgiBot World 数据集,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 它是百万级真实机器人操作轨迹数据集,GO-1 的训练基础,Beta 版采用 CC-BY-NC-SA 4.0(非商用)</button>
+      <button data-v="B">B. 它采用 Apache-2.0,可无条件商用</button>
+      <button data-v="C">C. 它只包含纯仿真合成数据,不含真实轨迹</button>
+      <button data-v="D">D. 它只支持单臂固定桌面,不含灵巧手与双臂数据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:AgiBot World 是 2024 年 12 月开源的百万级真机操作轨迹(100+ 机器人、100+ 场景、217+ 任务),覆盖夹爪/灵巧手、单臂/双臂,是智元 GO-1(Genie Operator 1)的训练基础;Beta 版为 CC-BY-NC-SA 4.0,禁止商业用途。B/C/D 均与事实不符。故选 A。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 SIMPLER 评测基准,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 它是唯一能完全替代真实机器人评测的基准,可 100% 复现真机性能</button>
+      <button data-v="B">B. 它只能评测 RL 算法,不支持 VLA 模型</button>
+      <button data-v="C">C. 它是纯离线指标,与真实成功率毫无关系</button>
+      <button data-v="D">D. 它在仿真里用与真机高度一致的视觉环境统一评测 VLA(如 RT-1-X/OpenVLA),仿真成功率与真实成功率高度相关</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SIMPLER 把真实场景重建到仿真,让 RT-1/RT-1-X/Octo/OpenVLA 等 VLA 在统一环境里跑,论文证明其成功率与真机高度相关,但<b>不能完全替代</b>真机。它面向 VLA,不是纯离线指标。故选 D。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于「行为克隆(BC)」与「潜动作预训练(latent action pretraining)」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 行为克隆可以从无动作标注的互联网视频直接学习,不需要真机数据</button>
+      <button data-v="B">B. 行为克隆直接学「观测→动作」映射、依赖海量真机示范;潜动作预训练先把动作压缩到潜空间,能利用互联网视频等数据预训练</button>
+      <button data-v="C">C. 潜动作预训练完全不需要任何真机微调</button>
+      <button data-v="D">D. 两者是同一回事,只是叫法不同</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:BC 是直接模仿示范动作,吃「观测-动作」配对真机数据;潜动作预训练(π0 的 flow matching、GO-1 的 ViLLA)先把动作映射到潜空间,从而能利用互联网视频等无动作标注数据预训练,但最终仍需真机数据对齐/微调。故选 B。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 关于数据集「商用边界」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 只要数据集公开可下载,就能无条件商用</button>
+      <button data-v="B">B. 数据集的许可证一定和仓库顶层代码的 LICENSE 相同</button>
+      <button data-v="C">C. 数据许可与代码许可要分开看;CC-BY-NC-SA 的「NC」表示禁止商业用途,商用前须逐条核对数据本身的许可证</button>
+      <button data-v="D">D. MIT 协议的数据集一定禁止商业使用</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:数据集的「数据」许可常与仓库顶层「代码」许可不同(如 AgiBot World 代码开源、数据为 CC-BY-NC-SA)。CC-BY-NC 的 NC = 非商业,禁止商用;MIT/Apache-2.0 才是商用友好。故选 C。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">7. 关于 AMASS / HumanML3D / CMU MoCap 三者,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. AMASS 合并多个动捕库并统一为 SMPL 表示;HumanML3D 提供文本-动作配对;CMU MoCap 是老牌光学动捕库</button>
+      <button data-v="B">B. 三者都是机器人操作数据集,可直接训练 VLA</button>
+      <button data-v="C">C. HumanML3D 是纯文本语料库,与人体运动无关</button>
+      <button data-v="D">D. AMASS 是 NVIDIA 发布的仿真环境,不是数据</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:AMASS(MPI,ICCV 2019)合并 15+ 动捕库并统一为 SMPL/SMPL-X;HumanML3D(北大/港中文,CVPR 2022)给 14,616 段动作配 44,970 条文本;CMU MoCap 是老牌光学动捕库。三者都是<b>人体运动</b>数据,不是机器人操作数据。故选 A。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">8. 关于五种数据采集方式,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 遥操作采到的数据质量最高、物理最真实,但贵、慢、难规模化</button>
+      <button data-v="B">B. 仿真生成的数据没有 sim2real gap,可完全替代真机数据</button>
+      <button data-v="C">C. 互联网视频自带「观测-动作」标注,可直接用于行为克隆</button>
+      <button data-v="D">D. 动捕映射不需要做「人→机」映射,拿来即可用于机器人</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 5 节表格——遥操作质量最高、物理真实,但贵、慢、难规模化;仿真便宜可规模化但存在 sim2real gap、缺真实噪声;互联网视频无动作标注,需潜动作对齐(不能直接 BC);动捕映射需做「人→机」retargeting。故选 A。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">9. 关于数据质量与处理中的「跨具身归一化」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 直接把不同机器人的原始关节角混在一起训练,就能自然泛化</button>
+      <button data-v="B">B. 应把不同本体动作统一到可比较空间,如末端位姿用相对增量(delta)、夹爪统一到 [0,1]</button>
+      <button data-v="C">C. 归一化只处理图像分辨率,与动作空间无关</button>
+      <button data-v="D">D. 归一化会丢弃时间戳,导致多模态数据「张冠李戴」</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 6 节——OXE 能训出 RT-X 的关键,是把 22 种形态归一化到一套动作字段:末端位姿用相对增量(delta)、关节角统一量纲、夹爪统一到 [0,1]。A 直接混训几乎必崩;C 错,归一化的核心正是动作空间;D 描述的是「时间对齐」缺失的后果,不是归一化。故选 B。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">10. 关于评测中的「任务成功率」,下列哪种理解是正确的?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 只要两家都报 80% 成功率,就说明两个策略完全等价、可直接比较</button>
+      <button data-v="B">B. 成功率口径差异很大:是否允许重试、试几次、相机视角不同,都会改变结论,比较前须先对齐口径</button>
+      <button data-v="C">C. 成功率只适用于强化学习,不适用于操作任务</button>
+      <button data-v="D">D. 「平均完成度」和「任务成功率」是同一个指标的不同叫法</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 4.2/4.3 节——真实世界评测难在「统计口径」不可比(是否允许重试、试几次、相机视角、硬件都影响结果),所以 80% 不能直接横比,须先对齐口径;成功率恰恰是操作任务最常用指标;平均完成度是按子步骤打分,与成功率是两个不同指标。故选 B。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节要点速查:</b>①数据饥渴下,VLA 两条路线——行为克隆(BC,吃海量真机示范)与潜动作预训练(π0/GO-1,可借互联网视频预训练再真机对齐);②操作数据集按需选:跨本体通用→OXE(100 万+、22 形态),真实家庭→DROID(约 7.6 万轨迹),长程家务+灵巧但非商用→AgiBot World(CC-BY-NC-SA),低成本桌面→BridgeData V2,纯算法对比→RoboMimic/RLBench;③运动数据 AMASS/HumanML3D/CMU MoCap 都是人体运动源,用前注意 SMPL→URDF 的「运动重定向」;④评测用 SIMPLER 等仿真统一评测逼近真机,指标看成功率/完成度/首次动作准确率/操作时长,比较前先对齐「重试次数、相机、硬件」等口径;⑤数据要过清洗/标注/时间对齐/跨具身归一化四关(末端位姿用 delta、夹爪统一到 [0,1]);⑥商用前务必核对<b>数据</b>许可证——NC = 非商业,不可直接商用。</div>
+
+  <!-- ================= 10 参考来源 ================= -->
+  <h2><span class="h2-num">10</span> 参考来源</h2>
+  <p>以下链接均经 web_search 核实为官方/稳定地址;各数据集规模、许可证以官方 README 与论文为准,文中不确定处已标注「约」。<b>资料整理更新至 2026-08</b>。</p>
+  <ul>
+    <li><b>Open X-Embodiment / RT-X:</b><a href="https://robotics-transformer-x.github.io" target="_blank" rel="noopener">robotics-transformer-x.github.io →</a> · <a href="https://arxiv.org/abs/2310.08864" target="_blank" rel="noopener">arXiv:2310.08864 →</a> · <a href="https://deepmind.google/blog/scaling-up-learning-across-many-different-robot-types/" target="_blank" rel="noopener">Google DeepMind 官方博客 →</a></li>
+    <li><b>DROID:</b><a href="https://droid-dataset.github.io" target="_blank" rel="noopener">droid-dataset.github.io →</a> · <a href="https://arxiv.org/abs/2403.12945" target="_blank" rel="noopener">arXiv:2403.12945 →</a></li>
+    <li><b>AgiBot World / GO-1:</b><a href="https://github.com/OpenDriveLab/AgiBot-World" target="_blank" rel="noopener">github.com/OpenDriveLab/AgiBot-World →</a> · <a href="https://opendrivelab.com/AgiBot-World/" target="_blank" rel="noopener">官方项目页 →</a> · <a href="https://huggingface.co/datasets/agibot-world/AgiBotWorld-Beta" target="_blank" rel="noopener">AgiBotWorld-Beta(HF)→</a> · <a href="https://www.agibot.com.cn/article/188/detail/79.html" target="_blank" rel="noopener">智元官方:GO-1 →</a></li>
+    <li><b>宇树 G1-Dex1 / UnifoLM:</b><a href="https://huggingface.co/collections/unitreerobotics/unifolm-g1-dex1-dataset" target="_blank" rel="noopener">UnifoLM_G1_Dex1_Dataset(HF)→</a> · <a href="https://github.com/unitreerobotics/unitree_lerobot" target="_blank" rel="noopener">unitree_lerobot →</a></li>
+    <li><b>BridgeData V2:</b><a href="https://rail-berkeley.github.io/bridgedata/" target="_blank" rel="noopener">rail-berkeley.github.io/bridgedata →</a> · <a href="https://arxiv.org/abs/2308.12952" target="_blank" rel="noopener">arXiv:2308.12952 →</a></li>
+    <li><b>RoboMimic:</b><a href="https://robomimic.github.io" target="_blank" rel="noopener">robomimic.github.io →</a> · <a href="https://github.com/ARISE-Initiative/robomimic" target="_blank" rel="noopener">GitHub →</a></li>
+    <li><b>RLBench:</b><a href="https://github.com/stepjam/RLBench" target="_blank" rel="noopener">github.com/stepjam/RLBench →</a> · <a href="https://arxiv.org/abs/1909.12271" target="_blank" rel="noopener">arXiv:1909.12271 →</a></li>
+    <li><b>AMASS / HumanML3D / CMU MoCap:</b><a href="https://amass.is.tue.mpg.de" target="_blank" rel="noopener">AMASS →</a> · <a href="https://github.com/EricGuo5513/HumanML3D" target="_blank" rel="noopener">HumanML3D →</a> · <a href="http://mocap.cs.cmu.edu" target="_blank" rel="noopener">CMU MoCap →</a></li>
+    <li><b>DM Control:</b><a href="https://github.com/google-deepmind/dm_control" target="_blank" rel="noopener">github.com/google-deepmind/dm_control →</a> · <a href="https://arxiv.org/abs/1801.00690" target="_blank" rel="noopener">arXiv:1801.00690 →</a></li>
+    <li><b>SIMPLER:</b><a href="https://github.com/simpler-env/SimplerEnv" target="_blank" rel="noopener">github.com/simpler-env/SimplerEnv →</a> · <a href="https://arxiv.org/abs/2405.05941" target="_blank" rel="noopener">arXiv:2405.05941 →</a></li>
+    <li><b>π0 / openpi / LeRobot:</b><a href="https://arxiv.org/abs/2410.24164" target="_blank" rel="noopener">π0 论文 arXiv:2410.24164 →</a> · <a href="https://github.com/Physical-Intelligence/openpi" target="_blank" rel="noopener">openpi →</a> · <a href="https://github.com/huggingface/lerobot" target="_blank" rel="noopener">HuggingFace LeRobot →</a></li>
+    <li><b>Meta-World / Franka Kitchen:</b><a href="https://meta-world.github.io" target="_blank" rel="noopener">Meta-World →</a> · <a href="https://github.com/Farama-Foundation/D4RL" target="_blank" rel="noopener">D4RL(含 Franka Kitchen)→</a></li>
+  </ul>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效
+     全站搜索索引(_assets/search-index.js)由 site.js 自动加载,无需手动引入 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

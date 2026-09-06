@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 整机电气架构与安全设计</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  .my-esn{border:1px solid rgba(239,68,68,.35);border-radius:14px;padding:16px;margin:16px 0;background:rgba(15,23,42,.45)}
+  html:not([data-theme-early="dark"]) .my-esn{background:rgba(255,255,255,.65)}
+  .my-esn .my-st{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+  .my-esn .my-st button{border:1px solid #334155;background:rgba(30,41,59,.7);color:#cbd5e1;border-radius:8px;padding:6px 13px;cursor:pointer;font-size:13px;font-family:inherit}
+  html:not([data-theme-early="dark"]) .my-esn .my-st button{background:#fff;color:#334155}
+  .my-esn .my-st button.on{background:#16a34a;color:#fff;border-color:#16a34a}
+  html:not([data-theme-early="dark"]) .my-esn .my-st button.on{background:#16a34a;color:#fff;border-color:#16a34a}
+  .my-esn svg{max-width:100%;height:auto}
+  .my-zone{border-left:3px solid #f59e0b;padding:10px 14px;margin:12px 0;background:rgba(245,158,11,.06);border-radius:0 8px 8px 0;line-height:1.9;font-size:13.5px}
+  html:not([data-theme-early="dark"]) .my-zone{border-left-color:#b45309;background:rgba(245,158,11,.1)}
+  /* 急停链 SVG 主题配色:深色主题沿用原色,浅色主题切深色系 */
+  .esn-r{fill:var(--c,#3b82f6);stroke:var(--c,#3b82f6);fill-opacity:.18;stroke-width:2.5}
+  .esn-g[data-ni="0"]{--c:#3b82f6}
+  .esn-g[data-ni="1"]{--c:#f59e0b}
+  .esn-g[data-ni="2"]{--c:#ef4444}
+  .esn-g[data-ni="3"]{--c:#f97316}
+  .esn-g[data-ni="4"]{--c:#dc2626}
+  .esn-t{fill:#e2e8f0}
+  .esn-line{stroke:#475569}
+  .esn-line.live{stroke:#f97316}
+  .esn-arrow{fill:#f97316}
+  html:not([data-theme-early="dark"]) .esn-g[data-ni="0"]{--c:#1d4ed8}
+  html:not([data-theme-early="dark"]) .esn-g[data-ni="1"]{--c:#b45309}
+  html:not([data-theme-early="dark"]) .esn-g[data-ni="2"]{--c:#b91c1c}
+  html:not([data-theme-early="dark"]) .esn-g[data-ni="3"]{--c:#c2410c}
+  html:not([data-theme-early="dark"]) .esn-g[data-ni="4"]{--c:#991b1b}
+  html:not([data-theme-early="dark"]) .esn-t{fill:#0f172a}
+  html:not([data-theme-early="dark"]) .esn-line{stroke:#334155}
+  html:not([data-theme-early="dark"]) .esn-line.live{stroke:#ea580c}
+  html:not([data-theme-early="dark"]) .esn-arrow{fill:#ea580c}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-25",
+    root: "..",
+    breadcrumb: [ { t: "软件与算法", u: "../index.html#sec4" }, { t: "整机电气架构与安全设计" } ],
+    prev: { t: "全身控制与步态规划", u: "23_全身控制与步态规划_WBC与MPC.html" },
+    next: { t: "全球人形机器人机型全景", u: "../05_前沿知识库/01_全球人形机器人机型全景.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>⚡ 整机电气架构与安全设计</h1>
+    <div class="sub">从"一块驱动板"到"一台机器人":高低压分区、电源树与线束、急停链设计、电池与实验室安全——工程事故的第一道防线都在这一页。</div>
+    <div class="tags"><span class="tag">电气架构</span><span class="tag">急停链</span><span class="tag">线束</span><span class="tag">功能安全</span></div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出一台人形机器人的标准电源树(动力/通信/低压三域)并说明分区理由<br>
+    2. 理解急停链的"硬件优先、多层降级"设计,能设计一条双通道急停回路<br>
+    3. 掌握电池、高压、实验室三类高频安全红线<br>
+    <b>建议用时:</b>约 30 分钟
+  </div>
+
+  <h2><span class="h2-num">1</span> 三域电气架构:动力、低压、通信</h2>
+  <p>把整机电气分成三个"域",每个域有自己的电压等级、布线规则与故障边界——<strong>分域的目的:一个域出故障,不该殃及另外两个域</strong>。</p>
+  <div class="table-wrap"><table>
+    <tr><th>域</th><th>典型电压</th><th>包含</th><th>布线/保护要点</th></tr>
+    <tr><td><b>动力域</b></td><td>24~60V(人形常见 48V)</td><td>电池→配电→各关节驱动板功率级</td><td>最短回路、大线径、独立熔断/过流,远离开关信号;母线电容按逆变脉动+制动回灌设计(见 02-11 计算器)</td></tr>
+    <tr><td><b>低压域</b></td><td>12V/5V/3.3V</td><td>主控/IMU/编码器/散热风扇/屏幕</td><td>由动力域 DCDC 隔离降压;数字地与功率地单点相连;上电时序防浪涌</td></tr>
+    <tr><td><b>通信域</b></td><td>CAN(5V 差分)/EtherCAT</td><td>关节总线、主控-驱动指令链</td><td>双绞+屏蔽,双端 120Ω;与动力线分开走线槽;心跳超时→关节自动进入安全态</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💡 电源树设计三原则:</b>①<strong>逐级保护</strong>:电池出口熔断 → 分路 eFuse/过流 → 板内自恢复保险;②<strong>单点接地</strong>:各驱动板功率地在星型点汇合,避免"地环路"把噪声灌进编码器;③<strong>预算余量</strong>:峰值电流按"单关节峰值×3 + 其余持续"估,锂电池倍率留 1.5 倍——关节同时起跳的浪涌是烧配电板的头号原因。</div>
+
+  <h3>数值算例:峰值电流预算与熔断规格(手推)</h3>
+  <p><b>给定:</b>整机 12 个关节,每个关节按功率口径记峰值 25 A × 12 V 等效 = <b>300 W</b>;主控 + 传感 + 通信共 <b>60 W</b>(由 48 V 母线 DC-DC 降压取电);同时系数取 <b>0.6</b>(步态相位决定了不会 12 个关节同时满峰值,起跳/最恶劣瞬间按 60% 同时率估)。逐行推一遍:</p>
+  <div class="table-wrap"><table>
+    <tr><th>步骤</th><th>计算</th><th>结果</th></tr>
+    <tr><td>① 关节峰值总功率</td><td>300 W × 12 × 0.6 = 2160 W</td><td><b>2160 W</b></td></tr>
+    <tr><td>② 加上低压域</td><td>2160 + 60 = 2220 W</td><td><b>2220 W</b>(峰值总功率)</td></tr>
+    <tr><td>③ 48 V 母线峰值电流</td><td>2220 ÷ 48 = 46.25 A</td><td><b>≈ 46.3 A</b>(理想口径;若给 DC-DC 留 90% 效率,校核按 ~51 A 更稳)</td></tr>
+    <tr><td>④ 电池放电倍率校核</td><td>10 Ah × 48 V = 480 Wh,峰值 C 率 = 2220 ÷ 480 ≈ 4.6(1C 即 480 W)</td><td><b>≈ 4.6C</b> &lt; 电芯 10C 持续规格 ✅(低温、并联不均时还要再打折,留意余量)</td></tr>
+    <tr><td>⑤ 熔断规格选取</td><td>1.25 × 46.3 ≈ 57.9 A → 取标准值</td><td><b>63 A</b> 熔断器</td></tr>
+  </table></div>
+  <p><b>为什么熔断额定 ≈ 1.25×峰值且要落在"窗口"里:</b>额定低于峰值电流,起跳/抗扰的正常瞬间就会误熔断(机器人动不动断电);额定太高,故障短路大电流要先烤热线束才熔断,失去保护意义。所以必须满足 <b>I<sub>正常峰值</sub>(46.3 A) &lt; I<sub>熔断额定</sub>(63 A) &lt; I<sub>线束烟化电流</sub></b>——第 2 节按 4~6 A/mm² 电流密度给 63 A 配 16 mm² 硅胶动力线(持续载流 ≥ 80 A),烟化电流远高于 63 A,窗口成立。这个"三电流排队"就是第 1 节「逐级保护」原则的定量版:电池出口 63 A 总熔断 → 各关节驱动板 eFuse 按 1.25×单关节峰值(≈31 A 档)再分级。</p>
+  <div class="box box-tip"><b>📌 自检:</b>把数字换成你的电机参数重算一遍(提示:关节峰值功率、同时系数、电池容量三个数换了之后,①~⑤ 每一行都要重推,重点核对 C 率和熔断窗口是否仍成立)。</div>
+
+  <h2><span class="h2-num">2</span> 线束与接插件:被低估的可靠性主角</h2>
+  <ul>
+    <li><strong>线径:</strong>按电流密度 4~6 A/mm² 选,关节往复运动段用高柔线(硅橡胶/铁氟龙多股),寿命按"百万次弯折"评估;</li>
+    <li><strong>走线:</strong>关节旋转轴处留螺旋余量(不绷紧、不受扭);动力与信号线禁止同槽,交叉必须 90°;</li>
+    <li><strong>接插件:</strong>动力用带锁扣的(XT30/XT60、M8 圆针);编码器/传感器优先带屏蔽壳;所有插头贴标签——<b> debugging 时插错一根线烧一片是真实事故模式</b>;</li>
+    <li><strong>应变释放:</strong>每根线束进出板卡处固定,不把应力传到焊盘上。</li>
+  </ul>
+
+  <h2><span class="h2-num">3</span> 急停链:硬件优先、多层降级(交互演示)</h2>
+  <p>急停(E-Stop)的核心思想:<strong>安全功能不能依赖软件</strong>——软件会死机、会 bug,硬件断链不会。点击下面的步骤,看一条标准急停链每一环做什么:</p>
+  <div class="my-esn">
+    <div class="my-st" id="esnBtns"></div>
+    <svg viewBox="0 0 760 150" role="img" aria-label="整机电气架构与急停链安全分区交互图" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <g id="esnChain"></g>
+    </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图:整机电气架构与急停链安全分区交互图——点击各分区查看供电、通信与安全设计要求</div>
+    <div class="my-zone" id="esnDesc"></div>
+  </div>
+  <div class="box box-danger"><b>🚨 急停链设计五铁律:</b>①急停按钮用<b>常闭(NC)</b>触点串进接触器线圈回路——断线=自动断电(fail-safe);②双通道冗余+短路监测(最简实现:两根线分别串继电器,PL d 级安全继电器成品件);③急停断"动力"不断"低压"——主控必须活着才能记录状态、抱闸有序落下;④断电后关节必须有<b>机械抱闸或阻尼下落</b>,否则人形机器人像一袋土豆砸下来;⑤复位急停<b>不允许</b>自动恢复动力,必须人工确认+单独按恢复钮。</div>
+
+  <h2><span class="h2-num">4</span> 电池与充电安全</h2>
+  <div class="table-wrap"><table>
+    <tr><th>风险</th><th>前兆信号</th><th>处置</th></tr>
+    <tr><td>电芯过放(&lt;2.8V/节)</td><td>电压快速下跌、容量骤减</td><td>立即停用;不可再充电,按报废处理</td></tr>
+    <tr><td>鼓包/产气</td><td>外壳凸起、异味</td><td><b>移到室外/防爆箱</b>,禁用禁充;穿刺放能由专业流程处理</td></tr>
+    <tr><td>热失控连锁</td><td>单节温度异常升高(&gt;60℃)</td><td>断负载、隔离、沙土/灭火毯(锂火严禁用水)</td></tr>
+    <tr><td>充电过流/过压</td><td>充电器/平衡头发热</td><td>必须用带平衡口的专用充电器,充电全程有人值守,充电区放灭火毯</td></tr>
+  </table></div>
+  <div class="box box-warn"><b>⚠️ 人形机器人电池特别项:</b>整机电池组=高倍率放电+关节堵转冲击+跌落风险三重叠加。设计要求:BMS 具备过流/短路/过压/欠压/温度五重保护且保护动作先于电芯受损;电池仓做机械防护(摔机不起火是量产底线);长期存放至 40~60% 电量并每月补电。</div>
+
+  <h2><span class="h2-num">5</span> 实验室操作规程(个人清单)</h2>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>上电三查</b><br>急停在手边、限流电源先上、手指离开传动路径。</div>
+    <div class="step-item"><span class="n">2</span><b>首次闭环</b><br>电流限幅 30%、断开负载、一个人操作一个人监督。</div>
+    <div class="step-item"><span class="n">3</span><b>大功率测试</b><br>吊挂/架起整机,轮子离地;区域内无易燃物;灭火毯在 3 步以内。</div>
+    <div class="step-item"><span class="n">4</span><b>固件刷写</b><br>刷写前关节进阻尼模式;刷写失败预案=机械抱闸能手动落下。</div>
+    <div class="step-item"><span class="n">5</span><b>收工</b><br>断动力→确认抱闸→电池取下存放;异常(发热/异响/焦味)当天书面记录。</div>
+  </div>
+
+  <h2><span class="h2-num">6</span> 功能安全一页入门</h2>
+  <p>家用/商用机器人最终绕不开功能安全标准(ISO 13849 机械安全 / IEC 61508 电气电子系统)。工程初学者只需要先建立三个概念:<strong>①风险等级(PL a~e)</strong>按"伤害严重度×暴露频率×可避性"评估,急停通常要求 PL d;<strong>②安全回路的每个元件都要"可靠到指标"</strong>——继电器触点寿命、双通道的一致性,都有 MTTF<sub>d</sub> 计算式;<strong>③诊断覆盖率(DC)</strong>:冗余通道互相监督的比例。入门动作:给自己项目画一张急停链框图,标出每个元件失效时的后果——这就是最朴素的安全分析(FMEA)。</p>
+
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 急停按钮为什么必须用常闭(NC)触点?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 常闭触点更便宜</button>
+      <button data-v="B">B. 断线时回路断开=自动断电(fail-safe);常开触点断线后按钮失效且无人察觉</button>
+      <button data-v="C">C. 常闭触点寿命长</button>
+      <button data-v="D">D. 为了省电</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:安全设计核心是"失效也要倒向安全侧"(fail-safe)。常闭串联回路里,任何一根线断掉都等价于按下急停;常开触点断线后,真正的急停事件将无法传达——隐患静默存在。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 按下急停后,以下哪种做法是对的?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 全系统断电,包括主控低压</button>
+      <button data-v="B">B. 软件里把所有关节目标位置设为 0</button>
+      <button data-v="C">C. 硬件切断动力,保留低压让主控记录状态、控制抱闸有序落下;恢复需人工确认</button>
+      <button data-v="D">D. 急停复位后立即自动恢复运行,减少停机</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:断低压=主控失明,抱闸时序失控,机器人砸落更危险;软件路径不可靠(可能已死机);自动恢复是标准明令禁止的(误触急停后突然动起来会伤人)。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 锂电池起火,正确的灭火方式?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 大量浇水降温</button>
+      <button data-v="B">B. 泡沫灭火器</button>
+      <button data-v="C">C. 干粉灭火器喷完就走</button>
+      <button data-v="D">D. 隔离+灭火毯/沙土覆盖,移到通风处,必要时专业处置(锂火严禁水)</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:锂电热失控是内部氧化还原自供氧,水会加剧短路与氢气风险;灭火毯/沙土隔离氧气+降温最有效,且要持续观察(复燃常见)。预防(隔离充电、防爆箱)永远优于扑救。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①整机电气三域分离:动力/低压/通信,故障不串联;②电源树逐级保护+单点接地+峰值预算 1.5 倍;③急停链硬件优先:常闭双通道、断动力保低压、机械抱闸兜底、人工复位;④电池五重保护+防爆机械设计,锂火禁水;⑤功能安全入门=给自己的急停链做一次 FMEA。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>1. 你的机器人断电后各关节会怎样?设计一个"断电安全姿态"策略(提示:哪些关节必须带抱闸,哪些可以靠减速器自锁)?<br>2. 如果 CAN 总线在急停瞬间被干扰,关节侧的"心跳超时保护"应该把电机置于什么状态?阈值设多少合适?</div>
+
+  <h2><span class="h2-num">M</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://www.iso.org/standard/69896.html" target="_blank" rel="noopener">ISO 13849-1 · Safety-related parts of control systems(PL 等级与安全回路)</a></li>
+    <li><a href="https://docs.ros.org/en/rolling/p/ros2_controllers" target="_blank" rel="noopener">ROS2 Controllers 文档中的 controller_manager 看门狗与 deactivate 链(软件层安全态参考)</a></li>
+  </ul>
+
+</div><!-- /container -->
+<script>
+/* ============ 急停链交互 ============ */
+var ESN = [
+  { t:"① 正常运行", d:"急停常闭触点闭合 → 安全继电器线圈得电 → 主接触器吸合 → 动力母线上电。主控心跳正常,各关节使能。此时双通道回路持续自检(周期性微脉冲监测短路/断线)。", on:[0,1,2,3] },
+  { t:"② 拍下急停", d:"常闭触点断开 → 安全继电器失电(双通道同时确认,防单点粘连)→ 主接触器线圈断电。<b>这一步是纯硬件路径,不经过任何软件</b>——主控死机也照样断。", on:[4,5,3] },
+  { t:"③ 动力断、低压在", d:"接触器触点断开 → 母线电压下跌(注意续流/泻放回路)→ 驱动板功率级失电。低压域(主控/编码器)由独立 DCDC 维持,主控记录急停时刻各关节状态。", on:[4,6] },
+  { t:"④ 安全姿态", d:"失压抱闸器(或主控有序指令)让带闸关节刹车;无闸关节靠驱动板母线残压做一次阻尼制动,或依赖减速器自锁。机器人以可控速度落到最低位/吊挂位。", on:[4,7] },
+  { t:"⑤ 人工复位", d:"急停按钮机械自锁,需旋转/拔起复位;再按独立的'恢复'钮 → 安全继电器重新自检双通道 → 接触器吸合。<b>不存在自动恢复路径</b>;恢复前操作员确认现场无人处于危险区。", on:[0,1,2,3] }
+];
+(function(){
+  var bar = document.getElementById('esnBtns'), chain = document.getElementById('esnChain'), desc = document.getElementById('esnDesc');
+  var NODES = [["主控\n(低压)",80],["安全继电器\n双通道",230],["主接触器\n动力",380],["母线/关节\n动力",530],["急停 NC\n(断)",650]];
+  var html = '';
+  NODES.forEach(function(n,i){
+    html += '<g class="esn-g" data-ni="'+i+'" id="esnN'+i+'">';
+    html += '<rect class="esn-r" x="'+(n[1]-62)+'" y="52" width="124" height="46" rx="10"/>';
+    html += '<text class="esn-t" x="'+n[1]+'" y="80" text-anchor="middle" font-size="13" font-weight="bold">'+n[0].replace('\n',' ')+'</text>';
+    html += '</g>';
+  });
+  for(var k=0;k<NODES.length-1;k++){
+    html += '<line class="esn-line" id="esnL'+k+'" x1="'+(NODES[k][1]+64)+'" y1="75" x2="'+(NODES[k+1][1]-66)+'" y2="75" stroke-width="3"/>';
+    html += '<text class="esn-arrow" id="esnA'+k+'" x="'+((NODES[k][1]+NODES[k+1][1])/2)+'" y="66" text-anchor="middle" font-size="15" opacity="0">▶</text>';
+  }
+  chain.innerHTML = html;
+  ESN.forEach(function(st, i){
+    var b = document.createElement('button');
+    b.textContent = st.t;
+    b.onclick = function(){
+      document.querySelectorAll('.my-st button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      desc.innerHTML = '<b>'+st.t+'</b><br>' + st.d;
+      /* 点亮相关节点与连线 */
+      var active = st.on;
+      NODES.forEach(function(_, ni){ document.getElementById('esnN'+ni).setAttribute('opacity', active.indexOf(ni)>=0 ? '1' : '0.25'); });
+      for(k=0;k<NODES.length-1;k++){
+        var live = active.indexOf(k)>=0 && active.indexOf(k+1)>=0;
+        document.getElementById('esnL'+k).classList.toggle('live', live);
+        document.getElementById('esnA'+k).setAttribute('opacity', live ? '1' : '0');
+      }
+    };
+    bar.appendChild(b);
+  });
+  bar.children[0].click();
+})();
+</script>
+<script src="../_assets/site.js"></script>
+</body>
+</html>

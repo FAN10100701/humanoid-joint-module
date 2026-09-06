@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 08-03 Verilog 语法核心与状态机设计
+  板块:NPU与数字IC设计 · 第一阶段 第 2 页
+  内容: 数据类型/模块/always/阻塞非阻塞/条件循环/task函数/generate
+        三段式状态机 + 序列检测器「1011」实战 + 可综合子集 + 常见坑
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · Verilog语法与状态机设计</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名加 my- 前缀,避免与全局冲突) ===== */
+
+  /* SVG 图形容器 */
+  .my-fig{margin:18px 0;padding:14px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(13,17,23,.72);text-align:center;overflow-x:auto}
+  .my-fig svg{max-width:100%;height:auto}
+  .my-fig figcaption{font-size:12.5px;color:#8b98a9;margin-top:8px;line-height:1.6}
+
+  /* 资源卡片(复制自 02_硬件基础/05_参考资料汇总) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+  /* 徽章配色 */
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+  .my-badge-code{background:linear-gradient(135deg,#fff7ed,#ffedd5)}
+
+  /* 标签 */
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-zhihu{background:#dbeafe;color:#1e40af}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-gitcode{background:#fef3c7;color:#92400e}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-1{background:#dcfce7;color:#166534}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+  .my-tag-plain{background:#e2e8f0;color:#475569}
+
+  /* 浅色主题适配(与 site.css 玻璃风格一致) */
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-03",
+    root: "..",
+    breadcrumb: [
+      { t: "NPU与数字IC设计", u: "../index.html#sec8" },
+      { t: "Verilog语法与状态机设计" }
+    ],
+    prev: { t: "数字设计环境与工具链", u: "02_数字设计环境与工具链.html" },
+    next: { t: "FIFO设计与跨时钟域CDC", u: "04_FIFO设计与跨时钟域CDC.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>⚙️ Verilog 语法核心与状态机设计</h1>
+    <div class="sub">数字电路的"母语" —— 从 wire/reg 到三段式状态机,11 个核心知识点 + 1 个完整实战,为 NPU 的 RTL 实现打地基。读完你能看懂并手写规范的可综合 Verilog。</div>
+    <div class="tags">
+      <span class="tag">Verilog HDL</span>
+      <span class="tag">阻塞/非阻塞</span>
+      <span class="tag">三段式状态机</span>
+      <span class="tag">序列检测器实战</span>
+      <span class="tag">可综合子集</span>
+      <span class="tag">NPU 前置</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说清 wire/reg、阻塞/非阻塞赋值(=/&lt;=)的区别,并写出不会"吞拍"的移位寄存器<br>
+    2. 能默写三段式状态机标准模板,说出工程上强制三段式的三条理由<br>
+    3. 能独立完成序列检测器「1011」:画状态转移图 → 写三段式 RTL → 写 testbench → 对仿真波形<br>
+    4. 能一眼识别 latch 意外生成、多驱动、仿真-综合不一致等 6 类经典坑<br>
+    <b>建议用时:</b>约 60 分钟(通读 40 分钟 + 自测 20 分钟;强烈建议同步在 HDLBits 或 iverilog 上敲一遍)
+  </div>
+
+  <!-- ================= 1. Verilog 是什么 ================= -->
+  <h2><span class="h2-num">1</span> Verilog 是什么:写"电路"而不是写"程序"</h2>
+  <p><b>是什么:</b>Verilog(IEEE 1364 标准)是一种<b>硬件描述语言(HDL)</b>:它看起来像 C,但描述的不是"按步骤执行的指令",而是<b>一堆同时存在的连线、寄存器和组合逻辑</b>。你写的每一行代码,最终由综合器(如 Yosys / Design Compiler / Vivado)翻译成门级网表,再落到 FPGA 或流片成 ASIC 芯片。</p>
+  <p><b>为什么 NPU 工程师必须会:</b>NPU 的本体就是 RTL——几百个乘加单元(PE)组成的脉动阵列、数据搬运通路、指令译码与调度状态机,全部用 Verilog/SystemVerilog 描述。看不懂 Verilog,就看不懂 NPU 的微架构论文和开源实现(如 picorv32、NN 硬化加速器);想做 AI 芯片相关工作(设计/验证/性能建模),这是入场券。</p>
+  <p><b>怎么做——建立两条思维铁律:</b></p>
+  <ul>
+    <li><b>并行铁律:</b>模块里所有 <code>always</code> 块和 <code>assign</code> 是<b>同时工作</b>的,没有"先执行第 1 行再执行第 2 行"——只有"这根线连到哪、哪个时钟沿采样什么"。</li>
+    <li><b>可综合铁律:</b>代码分"仿真看得懂"和"综合器认得"两个子集,写 RTL 时只能用可综合子集(第 5 节详述)。</li>
+  </ul>
+  <p>最直观的对比:同样的"两个数相加并打一拍",C 语言和 Verilog 的写法差异——</p>
+  <pre><code>// C 语言:CPU 在某个时刻"执行"这一行,算完就完了
+int y = a + b;
+
+// Verilog:描述一个"永远存在的电路"——一个加法器 + 一个 D 触发器
+module adder_pipe #(parameter W = 16)(
+    input  clk,
+    input  [W-1:0] a, b,     // 两位宽为 W 的输入总线
+    output reg  [W-1:0] y    // reg:在 always 中被赋值
+);
+    always @(posedge clk)    // 每个时钟上升沿
+        y &lt;= a + b;          // 采样加法器结果,存入寄存器(非阻塞赋值)
+endmodule</code></pre>
+  <p>综合结果 = 1 个 W 位加法器 + 1 个 W 位寄存器。<b>它不是"运行一次",而是每个时钟周期都在算。</b></p>
+  <div class="box box-tip"><b>💼 工程怎么用 / 面试怎么问:</b>面试官常问「Verilog 和 C 语言的本质区别是什么?」——标准答案:C 描述的是<b>时间上串行的计算过程</b>(跑在现成 CPU 上);Verilog 描述的是<b>空间上并行的电路结构</b>(综合成 actual 电路)。追问「同样的代码在仿真器和真实芯片上行为可能不同吗?」→ 能答出"仿真-综合不一致"(第 6.5 节)即为加分项。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>把 Verilog 当 C 写是新手第一大坑——用 for 循环"等一秒"、想用变量"存个中间结果再改"、以为代码有先后顺序。写每行代码前先问自己:<b>这对应一根线、一个多选器,还是一组触发器?</b></div>
+
+  <!-- ================= 2. 语法核心七讲 ================= -->
+  <h2><span class="h2-num">2</span> 语法核心七讲:从数据类型到 generate</h2>
+
+  <h3>2.1 数据类型与位宽:wire/reg、向量与参数</h3>
+  <p><b>是什么:</b>Verilog 里真正常用的数据类型只有两大类四小类——</p>
+  <div class="table-wrap"><table>
+    <tr><th>类型</th><th>是什么</th><th>谁来驱动</th><th>综合成什么</th></tr>
+    <tr><td><code>wire</code>(net 型)</td><td>物理连线,自身不存值</td><td><code>assign</code> 连续赋值、模块输出端口</td><td>一根线 / 组合逻辑输出</td></tr>
+    <tr><td><code>reg</code>(variable 型)</td><td>always 块中的"变量"</td><td>过程赋值(= 或 &lt;=)</td><td>取决于上下文:时序块→触发器;<b>组合块→纯组合逻辑,不是寄存器!</b></td></tr>
+    <tr><td><code>parameter / localparam</code></td><td>编译期常量</td><td>—</td><td>不占硬件,综合时按常量展开;parameter 可被例化覆盖,localparam 只能模块内部用</td></tr>
+    <tr><td><code>integer / genvar / real</code></td><td>辅助类型</td><td>—</td><td>integer 用于循环/genvar 用于 generate;real 不可综合</td></tr>
+  </table></div>
+  <p><b>为什么 reg ≠ 寄存器:</b>这是全 Verilog 最容易误解的一点。<code>reg</code> 只是"可以被过程赋值的变量"这个语法角色;它变成触发器还是组合逻辑,完全看 always 的敏感列表。<b>wire 只能被连续赋值驱动,reg 只能被过程赋值驱动</b>——output 端口既可以是 wire(默认)也可以声明成 <code>output reg</code>。</p>
+  <p><b>怎么做——位宽规则(面试笔试必考):</b></p>
+  <ul>
+    <li>向量声明 <code>[7:0] a</code> 是 8 位,MSB 在左;没声明范围的 <code>wire x</code> 是 1 位。</li>
+    <li><b>表达式位宽 = max(所有操作数位宽, 赋值目标位宽)</b>;裸整数常量默认按 32 位(有符号)参与运算。</li>
+    <li><b>扩展:</b>赋给更宽目标时,无符号数高位补 0;有符号数(<code>signed</code> / signed 字面量如 <code>-2</code>)做符号扩展。</li>
+    <li><b>截断:</b>赋给更窄目标时,<b>静默丢弃高位</b>——不报错,只给 warning,这是无数 bug 的源头。</li>
+  </ul>
+  <pre><code>module width_demo();
+    reg [3:0] a, b;
+    reg [4:0] sum5;
+    reg [7:0] wide;
+    reg signed [7:0] s8;
+
+    // ★ 经典位宽 bug:进位被截断
+    assign sum5 = a + b;             // OK:目标 5 位,表达式按 5 位算,进位保留在 bit4
+    wire [3:0] bad = a + b;          // BUG:a=9,b=8 时真值 17,截断后 bad=4'b0001,进位静默丢失
+    wire [4:0] fix = {1'b0, a} + b;  // 手动扩位:把 a 扩到 5 位再相加,进位不丢
+
+    assign wide = a;                 // 零扩展:高 4 位补 0
+    assign wide = s8;                // 符号扩展:s8 为负时高 4 位补 1(因为 s8 是 signed)
+
+    // 有符号比较陷阱:只要有一个操作数无符号,整个表达式按无符号比
+    wire c1 = (s8 &lt; 4'd9);           // s8 = -1 时,4'd9 无符号 → 整体无符号比较,-1(8'hFF)被当成 255!
+    wire c2 = (s8 &lt; $signed(4'd9));  // 两侧都 signed → 有符号比较,结果才正确
+endmodule</code></pre>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>①「reg 一定综合成寄存器吗?」——不一定,组合 always 中的 reg 是组合逻辑;②「a+b 怎么写才能不丢进位?」——<code>{1'b0,a}+b</code> 或让目标位宽为 N+1;③「parameter 和 localparam 区别?」——parameter 可从例化处 <code>#(.W(8))</code> 覆盖,localparam 由 parameter 推导、对外只读,防止下游乱改派生常量。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①4 位 + 4 位赋给 4 位目标,进位静默丢失(仿真和真机都错);②有符号数和无符号数混在同一个比较/运算里,整个表达式退化成无符号,<b>负数瞬间变大</b>;③忘写位宽的 <code>wire x</code> 默认 1 位,接到 8 位总线上只连 1 根线且常常无 warning。</div>
+
+  <h3>2.2 模块与端口:数字世界的"函数签名"</h3>
+  <p><b>是什么:</b><code>module...endmodule</code> 定义一个电路单元,是 Verilog 的基本复用与层次单位。端口三兄弟:<code>input</code>(只进)、<code>output</code>(只出)、<code>inout</code>(双向,必须声明为 wire/net 型,综合成三态门——<b>片内逻辑禁用</b>,只用于 I2C 这类真实双向总线)。</p>
+  <p><b>为什么重要:</b>数字设计 = <b>层次化分解</b>。一个 NPU 不是一口气写出来的:ALU → PE 单元 → PE 阵列 → 乘加核 → NPU Top,每层都是一个 module,靠端口连接。模块接口(端口名+位宽+方向)就是你和团队/未来的自己签的"合同",接口定了,内部随便重构。</p>
+  <p><b>怎么做——两种端口连接方式:</b></p>
+  <pre><code>// 子模块:可参数化的加法器
+module adder #(parameter W = 8)(   // #(...) 参数列表
+    input  [W-1:0] a, b,
+    input  cin,
+    output [W-1:0] sum,
+    output cout
+);
+    assign {cout, sum} = a + b + cin;   // 位拼接:{cout,sum} 组成 W+1 位,进位自然落到 cout
+endmodule
+
+// 顶层:两种例化方式
+module top();
+    reg  [7:0] x, y;
+    wire [7:0] s;
+    wire  c;
+
+    // ① 位置关联(不推荐):按端口声明顺序一一对应
+    // 隐患:端口顺序一变,连接全错,且 8 位接 1 位位宽错配难以发现
+    adder u1 (x, y, 1'b0, s, c);
+
+    // ② 命名关联(工程标准):.端口名(信号名),顺序无关、一眼可查
+    adder #(.W(8)) u2 (          // #(.W(8)) 参数化:覆盖默认位宽
+        .a    (x),
+        .b    (y),
+        .cin  (1'b0),
+        .sum  (s),
+        .cout (c)
+    );
+endmodule</code></pre>
+  <p><b>层次化设计三条军规:</b>① 上层模块只做"连接与调度",不做具体运算;② 每个子模块有独立 testbench 验证后再集成(自底向上验证);③ 端口命名全队统一(如 <code>clk/rst_n/i_/o_</code> 前缀),命名关联例化让 code review 能逐端口对上。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「inout 端口为什么不能是 reg?」——inout 需要三态高阻能力,只有 net 型(wire)支持多驱动与 z 值;reg 是过程赋值变量,无高阻语义。又问「为什么不推荐位置关联?」——端口重排/扩位时编译器可能不报错,连线悄悄错位,这类 bug 在大项目里极难定位。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①例化时位宽不匹配(子模块 8 位、顶层接了 6 位信号)只给 warning 不报错,高位被截;②output 默认是 wire,想在 always 里给 output 赋值必须写 <code>output reg</code>,否则编译报错;③给 input 悬空/接 z,综合出意外逻辑——例化时所有端口都要显式连接,不用就接 <code>'d0</code> 或注释说明。</div>
+
+  <h3>2.3 always 块与 assign:组合与时序的两条主干道</h3>
+  <p><b>是什么:</b>可综合 RTL 的"运动形态"只有三种,对应组合电路和时序电路两大物种:</p>
+  <div class="table-wrap"><table>
+    <tr><th>写法</th><th>描述什么</th><th>被驱动对象</th><th>赋值符号</th></tr>
+    <tr><td><code>assign f = ...;</code></td><td>连续赋值:纯组合连线,右侧任何信号变化立即(0 延迟)传播</td><td>wire</td><td>=</td></tr>
+    <tr><td><code>always @*</code></td><td>组合逻辑(多路器、译码器、ALU)</td><td>reg(变量)</td><td>=</td></tr>
+    <tr><td><code>always @(posedge clk)</code></td><td>时序逻辑:时钟沿采样,输出保持到下一个沿</td><td>reg(变量)</td><td>&lt;=</td></tr>
+  </table></div>
+  <p><b>什么时候用哪个——判断口诀:</b>这个值需要"记住"(打一拍)吗?需要 → 时序 always;不需要、只是组合运算/选择 → 能一行写完用 <code>assign</code>,带分支用 <code>always @*</code>。同一个输出<b>绝不能既被 assign 又被 always 驱动</b>(多驱动,见 6.2)。</p>
+  <pre><code>// 同一个"三选一"逻辑的三种等价写法
+// ① assign + 条件运算符:适合单层选择
+assign dout = sel_a ? a : sel_b ? b : c;
+
+// ② always @* + if-else:组合分支,reg 但综合出纯组合逻辑
+always @* begin
+    if      (sel_a) dout2 = a;
+    else if (sel_b) dout2 = b;
+    else            dout2 = c;      // ★ 每个 if 都必须收尾,否则 latch(见 6.1)
+end
+
+// ③ always @* + case:多分支并行选择(无优先级)
+always @* begin
+    case ({sel_b, sel_a})           // 拼接成选择码
+        2'b00:   dout3 = c;
+        2'b01:   dout3 = a;
+        2'b10:   dout3 = b;
+        default: dout3 = c;         // ★ case 必须有 default
+    endcase
+end
+
+// 时序:时钟沿采样并保持
+always @(posedge clk or negedge rst_n) begin   // 异步低有效复位(见 6.3)
+    if (!rst_n) dout_q &lt;= 3'd0;
+    else        dout_q &lt;= dout;     // 把组合结果打一拍 → 寄存器
+end</code></pre>
+  <p><b>敏感列表怎么写:</b>组合块一律用 <code>always @*</code>(自动包含所有读取的信号)——手写 <code>always @(a or b)</code> 漏一个信号就会仿真-综合不一致(仿真里不触发,综合却按完整组合处理)。时序块只写时钟沿与(可选的)异步复位沿,<b>绝不把数据信号放进时序敏感列表</b>。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「always @* 里被赋值的 reg 综合成什么?」——纯组合逻辑,reg 只是语法变量。又问「assign 和 always @* 能互相替换吗?」——能,描述的都是组合逻辑,选哪个只看可读性;但同一信号只能被其中一处驱动。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①组合 always 里读了信号却没进敏感列表(手写列表漏项)→ 仿真波形"卡住"、综合结果却正常,典型的仿真-综合不一致;②时序块敏感列表写成 <code>posedge clk or rst_n</code>(漏了 negedge / 写成 posedge)会让复位极性错;③一个信号两处驱动,综合直接报 multiple driver 错误。</div>
+
+  <h3>2.4 阻塞赋值 = vs 非阻塞赋值 &lt;=:最容易犯的错</h3>
+  <p><b>是什么:</b>两种过程赋值的<b>调度时机</b>不同——</p>
+  <ul>
+    <li><b>阻塞赋值 <code>=</code>:</b>语句立即生效,下一行立刻看到新值,像 C 一样顺序执行。<b>用于组合 always。</b></li>
+    <li><b>非阻塞赋值 <code>&lt;=</code>:</b>先算好右边(RHS)暂存,在<b>当前时间步结束时统一更新</b>左边(IEEE 调度中的 NBA 区域)。<b>用于时序 always。</b>精确模拟了"所有触发器在同一个时钟沿同时采样旧值"。</li>
+  </ul>
+  <p><b>为什么"组合用 = 、时序用 &lt;=":</b>组合电路是"输入一变、输出立即变"——阻塞语义正好;寄存器是"时钟沿集体采样旧值"——非阻塞语义正好。这不是风格偏好,而是调度语义决定仿真结果是否与真实电路一致。</p>
+  <p><b>对比表:</b></p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>阻塞赋值 =</th><th>非阻塞赋值 &lt;=</th></tr>
+    <tr><td>生效时机</td><td>语句执行完立即更新,阻塞后续语句</td><td>当前时间步末尾统一更新</td></tr>
+    <tr><td>后续语句看到的值</td><td>刚写入的新值</td><td>更新前的旧值</td></tr>
+    <tr><td>模拟的硬件行为</td><td>组合逻辑的立即传播</td><td>触发器时钟沿集体采样</td></tr>
+    <tr><td>正确使用场景</td><td>always @* 组合逻辑 / testbench 激励顺序</td><td>always @(posedge clk) 时序逻辑</td></tr>
+    <tr><td>用错的典型症状</td><td>时序块用 = → 移位寄存器"吞拍",仿真一级变一级穿透</td><td>组合块用 &lt;= → 输出晚一拍、块内自依赖死循环或错误保持</td></tr>
+    <tr><td>工程规范</td><td colspan="2" style="text-align:center">同一 always 块内<b>禁止混用</b>(IEEE 1364 声明混用结果不确定;综合器会直接报错或给出不可预期结构)</td></tr>
+  </table></div>
+  <p><b>经典 bug 示例——时序块误用阻塞赋值:</b></p>
+  <pre><code>// 目标:三级移位寄存器 d → q1 → q2 → q3
+// ★ 错误写法:阻塞赋值,时钟沿到来时语句顺序执行
+always @(posedge clk) begin
+    q1 = d;      // q1 立即变成 d
+    q2 = q1;     // 读到的是"新 q1"= d,而不是时钟沿前的旧 q1!
+    q3 = q2;     // 同理 q3 也 = d
+end
+// 仿真结果:q1=q2=q3 全部等于 d,三级流水变成"直通",综合器虽可能强行
+// 推断出三级触发器,但仿真模型已和硬件行为不一致 —— 仿真不可信了。
+
+// ★ 正确写法:非阻塞赋值,三条语句同时用"时钟沿前的旧值"更新
+always @(posedge clk) begin
+    q1 &lt;= d;
+    q2 &lt;= q1;    // 旧 q1
+    q3 &lt;= q2;    // 旧 q2
+end
+// 仿真结果:d 延迟三拍出现在 q3 —— 与三级触发器电路完全一致。</code></pre>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>几乎每场数字笔试必考。①「= 和 &lt;= 的区别?」答调度语义(立即 vs 时间步末统一更新);②「为什么时序逻辑必须用 &lt;=?」答"触发器同时采样旧值"+ 吞拍反例;③「同一块里混用会怎样?」答标准未定义、综合器报错,团队规范一律禁止;④进阶「&lt;= 的 RHS 什么时候计算?」——立即计算、时间步末更新(NBA 先算后存)。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①一个 always 块里一半 = 一半 &lt;=,有的仿真器"碰巧"能跑,综合器直接报错——不要赌;②testbench 里用 &lt;= 做激励会产生微妙的竞争,激励代码建议用 = 配 # 延迟;③吞拍 bug 在两级以上流水才明显,单级 DFF 用 = 也能"看起来对",于是留下了定时炸弹。</div>
+
+  <h3>2.5 条件与循环的可综合性:if/case/for</h3>
+  <p><b>是什么:</b>软件里的 if/case/for 在 Verilog 里描述的是<b>多选器树、译码器和复制粘贴的硬件</b>,不是运行时分支。能否综合、综合成什么,规则如下:</p>
+  <ul>
+    <li><b>if-else:</b>综合成<b>优先级链</b>(先判的条件优先)——适合"仲裁/抢占"语义;嵌套太深会串出长链,影响时序。写 if 必须配 else(或先给默认值)。</li>
+    <li><b>case:</b>分支互斥时综合成<b>并行多选器</b>(无优先级),比等价的 if-else 链更快;必须写 <code>default</code>。</li>
+    <li><b>casez:</b>把 z(和 ?)当通配符——用 <code>4'b1???</code> 匹配"最高位为 1"一类模式;<b>casex 连 x 也当通配,仿真中会掩盖真实 x 态,工程禁用</b>,要用 casez 并只让"字面量"带 ?。</li>
+    <li><b>for 循环:</b><b>可综合!</b>综合器在编译期把循环<b>静态展开</b>(复制 N 份硬件)。前提:循环边界必须是编译期常量(参数/常量),不能依赖运行时输入。适合描述"对一组位做同样的事"(异或树、位计数)。</li>
+    <li><b>generate for:</b>用于<b>模块例化级</b>的复制(genvar + generate...endgenerate),与 2.7 配合。</li>
+  </ul>
+  <pre><code>// for 循环可综合示例:8 位输入中 1 的个数(popcount)
+// 综合结果:一个加法树(7 个加法器),不是"循环执行的程序"
+module popcount8 (
+    input  [7:0] din,
+    output reg [3:0] cnt
+);
+    integer i;                       // 循环变量用 integer
+    always @* begin
+        cnt = 4'd0;                  // ★ 先默认赋值,防 latch
+        for (i = 0; i &lt; 8; i = i + 1)
+            cnt = cnt + din[i];      // 展开为 cnt = d0+d1+...+d7 的加法树
+    end
+endmodule
+
+// casez 模式匹配:指令译码(顺带为 NPU 译码模块铺垫)
+always @* begin
+    imm = 32'd0;                     // 默认值
+    casez (instr[31:20])             // 只在"字面量"一侧用 ? 做通配
+        12'b0000001?????: imm = instr[31:20];  // 匹配 LOAD 类
+        12'b0000010???1?: imm = 32'd4;         // 部分位固定才匹配
+        default        : imm = 32'd0;
+    endcase
+end</code></pre>
+  <p><b>if-else 与 case 的选择标准:</b>条件有天然的优先顺序(如中断抢占、越界保护优先)→ if-else;条件互斥(状态译码、选择码)→ case,综合器能并行化,时序更好。SystemVerilog 还有 <code>unique case / priority case</code> 显式声明意图,综合器与 lint 工具能帮你检查漏分支。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>①「Verilog 的 for 能综合吗?」——能,静态展开,边界必须常量;②「if-else 和 case 综合结果区别?」——优先级链 vs 并行多选器;③「casez 和 casex 区别?为什么 casex 被禁?」——casex 把输入中的 x 也当通配,真实电路的未知态会被"匹配掉",仿真误判;④「case 不写 default 会怎样?」——组合块生成 latch,状态机块状态非法时锁死。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①for 边界用了输入信号 → 综合报错(没法展开);②循环内不写默认赋值、又漏条件 → latch;③casez 的通配符写在了"信号"一侧(应写在 case 表达式的字面量上),语义反转;④在时序 always 里写 for 时忘记非阻塞赋值,又踩回 2.4 的坑。</div>
+
+  <h3>2.6 任务与函数:task vs function</h3>
+  <p><b>是什么:</b>两者都是"把一段常用逻辑封装起来反复调用",但定位完全不同:</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>function 函数</th><th>task 任务</th></tr>
+    <tr><td>仿真耗时</td><td>必须为 0 时间(内部不能有 #/@/wait)</td><td>可包含时延、事件等待(可"跑一段时间")</td></tr>
+    <tr><td>输入输出</td><td>至少 1 个输入,恰好 1 个返回值(函数名即返回变量)</td><td>可有 0~多个 input/output/inout(适合多输出)</td></tr>
+    <tr><td>能否调用 task</td><td>不能</td><td>能调用 function 与其他 task</td></tr>
+    <tr><td>可综合性</td><td>可综合(综合为纯组合逻辑)——前提:不包含不可综合结构</td><td>含时序控制则<b>不可综合</b>,只用于 testbench;纯组合 task 部分综合器可能支持,但工程上不当 RTL 用</td></tr>
+    <tr><td>典型用途</td><td>RTL 里复用纯组合表达式:饱和裁剪、补码转换、奇偶校验、C 计算</td><td>testbench 里封装激励序列、总线读写、打拍等待</td></tr>
+  </table></div>
+  <p><b>automatic 是什么:</b>Verilog-2001 引入。<code>function automatic</code> / <code>task automatic</code> 让局部变量<b>动态分配</b>——函数可被<b>递归调用/多处并发调用</b>而不互相踩变量。静态(默认)函数的局部变量只有一份,递归会出错;testbench 里的 task 也建议加 automatic,防止多处调用共用局部变量引发竞争。</p>
+  <pre><code>// RTL 中的 function:饱和裁剪(神经网络量化后常用的 clamp)
+// 综合结果:一组比较器 + 多选器,纯组合
+function automatic signed [15:0] sat16(input signed [16:0] acc);
+    if      (acc &gt; $signed(32767))  sat16 =  16'sd32767;  // 正饱和
+    else if (acc &lt; -$signed(32768)) sat16 = -16'sd32768;  // 负饱和
+    else                            sat16 = acc[15:0];
+endfunction
+
+// 在时序逻辑中调用:累加并限幅(一个 MAC 单元的输出级)
+always @(posedge clk)
+    accum_q &lt;= sat16(accum_q + mult_result);   // 像调用函数一样复用
+
+// testbench 中的 task:封装一次总线写(可含时延,不可综合)
+task automatic axi_write(input [31:0] addr, input [31:0] data);
+begin
+    @(posedge clk); awvalid = 1; awaddr = addr;
+    @(posedge clk); awvalid = 0; wvalid = 1; wdata = data;
+    @(posedge clk); wvalid = 0;
+    $display("[%0t] write %h = %h", $time, addr, data);
+end
+endtask</code></pre>
+  <p><b>什么时候用:</b>RTL 中出现<b>同样的组合表达式写第二遍</b>时,就该抽成 function(或用参数化子模块,当逻辑大到需要寄存器边界时)。testbench 中凡是"要重复敲三遍以上的激励序列",抽成 task。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>①「function 和 task 三个区别?」——时间(0 耗时 vs 可延时)、端口(单返回 vs 多输出)、可综合性(可综合 vs 通常仅仿真);②「automatic 关键字干嘛的?」——局部变量动态分配,支持递归/并发重入;③「function 里能用 always 吗?」——不能,function 内只允许过程语句、不能例化模块或包含always/事件。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①忘了 function 名就是返回变量,声明了 input 却从不给函数名赋值 → 返回 x;②function 里写了 # 延迟 → 编译/综合直接报错;③在多个 always 块里调用同一个静态(非 automatic)function 且有局部中间变量 → 并发调用互相覆盖,仿真出现玄学错误;④把 task 用进 RTL 期待综合 —— 不可综合。</div>
+
+  <h3>2.7 模块例化与 generate:为 NPU 阵列铺路</h3>
+  <p><b>是什么:</b><code>generate</code> 让"例化多少个、例化哪个模块"成为<b>编译期可编程</b>的决策,配合 <code>#(.W(8))</code> 参数化例化,是硬件复用的终极手段。三种形式:<code>generate-if</code>(按参数选结构)、<code>generate-for</code>(阵列复制)、<code>generate-case</code>(多选一结构)。</p>
+  <p><b>为什么是 NPU 的关键:</b>NPU 的核心就是"同一个 PE(处理单元)复制 N 份排成阵列"。手写 64 个例化不可能,必须用 generate-for;位宽(数据 W 位、累加 AW 位)必须用 parameter 贯穿全设计——改一个参数就能出 8 位版/16 位版。</p>
+  <pre><code>// 一个 NPU 的最小 PE 单元:乘法 + 累加(可参数化位宽)
+module pe_unit #(parameter W = 8, parameter AW = 32)(
+    input                    clk, rst_n,
+    input  signed [W-1:0]    ifmap,     // 激活值
+    input  signed [W-1:0]    weight,    // 权重
+    input  signed [AW-1:0]   psum_in,   // 上游传来的部分和(脉动/级联)
+    output signed [AW-1:0]   psum_out   // 累加后的部分和
+);
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) psum_out &lt;= 'd0;
+        else        psum_out &lt;= psum_in + ifmap * weight;  // MAC
+    end
+endmodule
+
+// 顶层:用 generate-for 例化 4 个 PE,级联成一条 MAC 链
+module mac_chain #(parameter N = 4, parameter W = 8, parameter AW = 32)(
+    input                     clk, rst_n,
+    input  signed [W-1:0]     act,                    // 广播给所有 PE
+    input  signed [N*W-1:0]   weights,                // N 个权重打包成一条总线
+    output signed [AW-1:0]    result
+);
+    wire signed [AW-1:0] psum [0:N];                  // N+1 级部分和
+    assign psum[0] = 'd0;
+
+    genvar i;
+    generate
+        for (i = 0; i &lt; N; i = i + 1) begin : g_pe   // ★ 必须命名 label
+            pe_unit #(.W(W), .AW(AW)) u_pe (
+                .clk      (clk),
+                .rst_n    (rst_n),
+                .ifmap    (act),
+                .weight   (weights[i*W +: W]),        // 切出第 i 个权重
+                .psum_in  (psum[i]),
+                .psum_out (psum[i+1])
+            );
+        end
+    endgenerate
+
+    assign result = psum[N];
+endmodule
+// 把 N 改成 64,一条 64 级 MAC 链即刻生成 —— 二维排布 + 层间互连,
+// 就是一个 NPU 脉动阵列的雏形(见本板块后续页面)。</code></pre>
+  <p><b>generate-if 用法:</b>按参数裁剪结构,如 <code>if (PIPELINE) begin: g_pipe ... end else begin: g_nop ... end</code>——被裁掉的分支完全不参与综合,常用于"调试逻辑/流水寄存器可选"。注意 generate 块内例化必须带命名 label(<code>begin : 名字</code>),层次路径形如 <code>u_top.g_pe[3].u_pe.xxx</code>,波形调试全靠它定位。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>①「generate for 和普通 for 区别?」——普通 for 展开的是<b>语句</b>(逻辑),generate for 复制的是<b>例化实例</b>(模块);②「defparam 还能用吗?」——能但已废弃,工程一律用 <code>#(.W(8))</code> 内联参数;③开放题「怎么把一条 MAC 链改成 4×4 阵列?」——两层嵌套 generate-for + 行/列索引互连,考察层次化建模能力。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①genvar 循环体内引用 <code>i</code> 做位选择没问题,但<i>循环变量不能被过程赋值修改</i>(它不是运行时变量);②忘写 <code>begin : label</code>,部分工具报错、调试时实例名不可预测;③参数没贯穿——顶层 #(.W(8)) 改了,子模块内部却写死 8'd0,改参数等于没改;④generate for 里所有实例输出同名信号冲突(要用索引化 wire 数组)。</div>
+
+  <!-- ================= 3. 状态机设计 ================= -->
+  <h2><span class="h2-num">3</span> 状态机设计:三段式是工程标配</h2>
+
+  <h3>3.1 Moore vs Mealy:输出什么时候"看"输入</h3>
+  <p><b>是什么:</b>有限状态机(FSM)= 状态寄存器 + 次态逻辑 + 输出逻辑,是所有数字控制通路(握手、仲裁、指令译码、DDR 控制器、NPU 分发调度)的骨架。按输出怎么产生分两派:</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>Moore 型</th><th>Mealy 型</th></tr>
+    <tr><td>输出依赖</td><td>只依赖当前状态:out = g(state)</td><td>依赖状态 + 当前输入:out = g(state, in)</td></tr>
+    <tr><td>输出时序</td><td>与时钟对齐、稳定(状态变它才变)</td><td>输入一变输出立即变,可能带组合毛刺</td></tr>
+    <tr><td>响应速度</td><td>慢一拍(先转移状态再反映输出)</td><td>快一拍(当前周期就能反映输入)</td></tr>
+    <tr><td>状态数</td><td>通常更多</td><td>通常更少</td></tr>
+    <tr><td>典型场景</td><td>对外接口控制、需要输出干净稳定的场合</td><td>高速数据通路、需要当拍响应的握手</td></tr>
+  </table></div>
+  <p><b>怎么做——设计流程五步法:</b>① 画状态转移图(先圈出"需要记住的信息",每种记忆 = 一个状态)→ ② 列状态转移表 → ③ 状态编码(状态少用 one-hot 利时序,状态多用二进制省寄存器;FPGA 常用 one-hot,工具可自动重编码)→ ④ 选写法(下节)→ ⑤ 写 RTL + testbench 逐状态验证。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「Moore 和 Mealy 怎么选?」——答输出时序要求:要"与时钟严格对齐、无毛刺"选 Moore;要"对输入当拍响应、省一个状态"选 Mealy,但输出要打一拍寄存后再用。追问「同一功能两派状态数谁多?」——Mealy 通常少(Moore 要用状态"记住"输入历史)。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①Mealy 输出直接接长组合路径到下游寄存器,时序违例;②状态编码数不够(4 状态用了 1 位)或编码位数冗余却没处理非法态(缺 default 回安全态);③把"输出逻辑"和"次态逻辑"搅在一个 case 里,后期没法改。</div>
+
+  <h3>3.2 一段式 / 两段式 / 三段式:写法对比</h3>
+  <p><b>是什么:</b>同一个状态机按"代码怎么组织"有一段式、两段式、三段式三种写法——功能等价,工程价值天差地别:</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>一段式(单 always)</th><th>两段式(时序+组合)</th><th>三段式(时序+组合+输出)★</th></tr>
+    <tr><td>代码结构</td><td>状态转移+输出全塞一个时序 always,case 套 case</td><td>always① 时序:state &lt;= next_state;always② 组合:次态+输出一起算</td><td>always① 时序:state 寄存;always② 组合:次态译码;always③ 输出(常为时序寄存)</td></tr>
+    <tr><td>可读性/可维护性</td><td>差:状态多时嵌套爆炸,转移条件藏在输出里</td><td>中:转移集中,但输出是组合、直接外翻</td><td>好:三大职责各占一块,review/改条件/加状态互不干扰</td></tr>
+    <tr><td>输出质量</td><td>寄存输出但逻辑纠缠</td><td>组合输出:可能有毛刺,驱动下游长路径</td><td>可寄存输出:滤毛刺、下游 Tsu 余量大</td></tr>
+    <tr><td>代价</td><td>—</td><td>—</td><td>输出寄存晚一拍;面积几乎不变</td></tr>
+    <tr><td>工程态度</td><td>教材演示用,<b>严禁</b>进代码库</td><td>小模块可用,团队规范多不推荐</td><td><b>团队强制标准</b></td></tr>
+  </table></div>
+  <p><b>为什么工程强制三段式(三条硬理由):</b>① <b>代码同构</b>——所有状态机长得一模一样,任何人接手 3 分钟看懂,review 只需盯第二段的转移条件;② <b>时序可控</b>——输出经寄存器打出,组合路径被切成两段,高频设计(≥500MHz)基本必须;③ <b>验证友好</b>——状态、次态、输出三层信号在波形里一目了然,覆盖率按状态/翻转统计都有标准做法(见 04 页 CDC 与验证部分)。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「三种写法都见过吗?为什么你们团队用三段式?」——按上表三层作答,并补一句"两段式的组合输出在高频下容易成为关键路径";若被追问"三段式输出慢一拍怎么办"——答:把输出对齐需求纳入协议设计(提前一拍发、或用组合输出版本的三段式)。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>把三段式写成"第一段时序、第二段组合、第三段又去算次态"——次态逻辑必须只在第二段;两段都碰 state 赋值会造成多驱动。第三段若用组合输出,别忘它仍是"输出逻辑",不是第二个次态块。</div>
+
+  <h3>3.3 三段式标准模板:逐段拆解</h3>
+  <p><b>怎么做——先看结构,再背模板。</b>三段式状态机的硬件框架只有三块,数据流自左向右,<code>state</code> 反馈回次态逻辑:</p>
+  <figure class="my-fig">
+  <svg viewBox="0 0 640 280" role="img" aria-label="三段式状态机框架图:第二段次态组合逻辑根据现态与输入计算次态,第一段状态寄存器在时钟沿打一拍,第三段输出逻辑寄存输出,state 反馈回次态逻辑" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <defs>
+      <marker id="arwB" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#58a6ff"/></marker>
+      <marker id="arwO" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#f59e0b"/></marker>
+      <marker id="arwG" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#22c55e"/></marker>
+      <marker id="arwY" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#8b98a9"/></marker>
+    </defs>
+    <!-- din 输入 -->
+    <text x="8" y="84" fill="#8b98a9" font-size="12">din</text>
+    <line x1="14" y1="92" x2="54" y2="92" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwO)"/>
+    <!-- 第二段:次态组合 -->
+    <rect x="60" y="60" width="160" height="84" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="140" y="84" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">第二段 · 次态组合</text>
+    <text x="140" y="102" text-anchor="middle" fill="#8b98a9" font-size="10.5">always @*</text>
+    <text x="140" y="118" text-anchor="middle" fill="#8b98a9" font-size="10.5">next_state = f(state,din)</text>
+    <!-- A→B -->
+    <line x1="220" y1="102" x2="260" y2="102" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwB)"/>
+    <text x="240" y="92" text-anchor="middle" fill="#58a6ff" font-size="9.5">next_state</text>
+    <!-- 第一段:状态寄存器 -->
+    <rect x="266" y="60" width="170" height="84" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="351" y="84" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">第一段 · 状态寄存器</text>
+    <text x="351" y="102" text-anchor="middle" fill="#8b98a9" font-size="10.5">always @(posedge clk)</text>
+    <text x="351" y="118" text-anchor="middle" fill="#8b98a9" font-size="10.5">state &lt;= next_state</text>
+    <!-- B→C -->
+    <line x1="436" y1="102" x2="494" y2="102" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwG)"/>
+    <text x="465" y="92" text-anchor="middle" fill="#22c55e" font-size="9.5">state</text>
+    <!-- 第三段:输出逻辑 -->
+    <rect x="500" y="60" width="126" height="84" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="563" y="84" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">第三段 · 输出</text>
+    <text x="563" y="102" text-anchor="middle" fill="#8b98a9" font-size="9.5">always @(posedge clk)</text>
+    <text x="563" y="118" text-anchor="middle" fill="#8b98a9" font-size="9.5">dout &lt;= g(state,din)</text>
+    <!-- dout 输出 -->
+    <line x1="563" y1="144" x2="563" y2="196" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwG)"/>
+    <text x="571" y="180" fill="#8b98a9" font-size="11">dout</text>
+    <!-- state 反馈 -->
+    <path d="M300,144 L300,206 L100,206 L100,146" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwO)"/>
+    <text x="200" y="220" text-anchor="middle" fill="#f59e0b" font-size="10">state(现态反馈)</text>
+    <!-- clk -->
+    <line x1="351" y1="250" x2="351" y2="148" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#arwY)"/>
+    <text x="359" y="242" fill="#8b98a9" font-size="11">clk</text>
+    <!-- din 到第三段(Mealy) -->
+    <path d="M14,44 L540,44 L540,56" fill="none" stroke="#f59e0b" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#arwO)"/>
+    <text x="262" y="36" text-anchor="middle" fill="#f59e0b" font-size="10">din(Mealy 型输出时才引入,Moore 型无此线)</text>
+  </svg>
+  <figcaption>图① 三段式状态机框架:第二段(组合)算次态 → 第一段(时序)时钟沿打一拍 → 第三段输出。Moore 型输出只看 state;引入虚线即成 Mealy 型。</figcaption>
+  </figure>
+  <p><b>标准模板(背下来,所有团队代码都是它的变体):</b></p>
+  <pre><code>module fsm_template (
+    input  wire clk,
+    input  wire rst_n,        // 低有效复位(策略见 6.3)
+    input  wire din,
+    output reg  dout          // 第三段寄存输出 → output reg
+);
+    // 状态编码:localparam 只读;小状态机用 one-hot 亦常见
+    localparam [1:0] S_IDLE = 2'd0,
+                     S_RUN  = 2'd1,
+                     S_DONE = 2'd2,
+                     S_ERR  = 2'd3;   // ★ 永远留一个"安全态/错误态"
+
+    reg  [1:0] state, next_state;    // 现态 / 次态
+
+    // ── 第一段:状态寄存器(时序,只会"打一拍",永不写逻辑) ──
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) state &lt;= S_IDLE;
+        else        state &lt;= next_state;
+    end
+
+    // ── 第二段:次态组合(所有转移条件集中在这一个 case 里) ──
+    always @* begin
+        next_state = S_IDLE;         // ★ 先给默认值(回安全态):防 latch + 防非法态锁死
+        case (state)
+            S_IDLE: if (din)      next_state = S_RUN;
+            S_RUN : if (!din)     next_state = S_DONE;
+                    else          next_state = S_ERR;
+            S_DONE:               next_state = S_IDLE;
+            default:              next_state = S_IDLE;  // 非法态自动恢复
+        endcase
+    end
+
+    // ── 第三段:输出逻辑(推荐寄存输出,滤毛刺、改善下游时序) ──
+    always @(posedge clk or negedge rst_n) begin
+        if      (!rst_n)     dout &lt;= 1'b0;
+        else if (state == S_DONE) dout &lt;= 1'b1;   // Moore:只看 state
+        else                 dout &lt;= 1'b0;
+    end
+endmodule</code></pre>
+  <p><b>逐段讲解:</b></p>
+  <ul>
+    <li><b>第一段(状态寄存器)</b>——全设计唯一允许给 <code>state</code> 赋值的地方,内容永远不变(复位回 IDLE、否则打一拍)。它把组合的次态"冻结"成现态,是状态机的"心脏"。用非阻塞 <code>&lt;=</code>。</li>
+    <li><b>第二段(次态组合)</b>——<code>always @*</code> + 阻塞 <code>=</code>;入口先写 <code>next_state = 安全态</code> 默认值:一举两得(组合不完整赋值 → 防 latch;非法编码 → 自动回安全态)。所有转移条件集中在唯一一个 case 里,加状态只改这一段。</li>
+    <li><b>第三段(输出逻辑)</b>——Moore 型只 <code>case(state)</code>;Mealy 型条件里可含 <code>din</code>。推荐用时序块寄存输出(<code>dout &lt;= ...</code>):代价是晚一拍,收益是输出无毛刺、下游时序余量大;对响应当拍有要求的场合可改用 <code>always @*</code> 组合输出版本,但要评估毛刺与关键路径。</li>
+  </ul>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「手撕一个状态机」是数字前端面试的保留节目(常考:序列检测、电梯控制、握手协议)。评分点:①是否三段式;②第二段有无默认赋值;③有无 default/安全态;④输出是否寄存。本节模板+下一节实战就是满分答卷的骨架。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①第一段里顺手写了转移逻辑(两段合一又回到一段式);②第二段在某个分支忘了赋 next_state 且无默认值 → latch;③复位值不是 IDLE/安全态,上电乱跳;④状态用了 parameter 却在例化处被覆盖出重复编码——应使用 localparam。</div>
+
+  <!-- ================= 4. 实战:序列检测器 1011 ================= -->
+  <h2><span class="h2-num">4</span> 实战:序列检测器「1011」</h2>
+
+  <h3>4.1 第一步:画状态转移图</h3>
+  <p><b>是什么:</b>序列检测器是状态机的"Hello World",也是数字前端面试出镜率最高的手撕题:输入端每个时钟周期串行来 1 bit,检测到目标序列「1011」时输出 <code>dout</code> 拉高一个周期,并要求<b>支持重叠检测</b>(如输入 1011011 要命中两次,第二次复用上一次的尾巴)。</p>
+  <p><b>为什么状态 = "已匹配的最长前缀":</b>判断"下一个 bit 该算命中还是继续等",只需要知道<b>当前已经匹配到目标序列的哪个前缀</b>。「1011」的全部前缀:∅、"1"、"10"、"101"、"1011"——恰好 5 种,每种一个状态。这就是状态机设计的核心思维:<b>状态是用来"记住历史"的最少信息</b>。</p>
+  <p><b>怎么做——状态转移三条规则:</b>① 新 bit 到来时,若前缀延长成功 → 前进到下一状态;② 失配 → <b>回退到"旧后缀仍是新前缀"的那个状态</b>(不是粗暴回 S0!这是重叠检测的关键);③ 到达「1011」→ 检测成功,同样按规则②回退。完整转移图:</p>
+  <figure class="my-fig">
+  <svg viewBox="0 0 640 420" role="img" aria-label="1011 序列检测器状态转移图:五个状态 S0 到 S4,S0 为空闲,S1 到 S3 分别表示已匹配前缀 1、10、101,S4 为检测成功;蓝色箭头为匹配前进,橙色箭头为失配回退,红色箭头为检测到 1011" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <defs>
+      <marker id="arw2B" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#58a6ff"/></marker>
+      <marker id="arw2O" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#f59e0b"/></marker>
+      <marker id="arw2R" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ef4444"/></marker>
+      <marker id="arw2Y" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#8b98a9"/></marker>
+    </defs>
+    <!-- 复位入口 -->
+    <text x="8" y="158" fill="#8b98a9" font-size="10.5">复位</text>
+    <line x1="14" y1="170" x2="44" y2="170" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#arw2Y)"/>
+    <!-- S0 -->
+    <circle cx="90" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
+    <text x="90" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S0</text>
+    <text x="90" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">IDLE(空)</text>
+    <!-- S1 -->
+    <circle cx="240" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
+    <text x="240" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S1</text>
+    <text x="240" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:1</text>
+    <!-- S2 -->
+    <circle cx="390" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
+    <text x="390" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S2</text>
+    <text x="390" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:10</text>
+    <!-- S3 -->
+    <circle cx="540" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
+    <text x="540" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S3</text>
+    <text x="540" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:101</text>
+    <!-- S4 检测成功 -->
+    <circle cx="540" cy="340" r="44" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="2"/>
+    <text x="540" y="336" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="bold">S4 ✓</text>
+    <text x="540" y="352" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:1011</text>
+    <text x="540" y="366" text-anchor="middle" fill="#22c55e" font-size="9.5">dout=1</text>
+    <!-- 前进边(蓝) -->
+    <line x1="130" y1="170" x2="194" y2="170" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arw2B)"/>
+    <text x="162" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=1</text>
+    <line x1="280" y1="170" x2="344" y2="170" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arw2B)"/>
+    <text x="312" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=0</text>
+    <line x1="430" y1="170" x2="494" y2="170" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arw2B)"/>
+    <text x="462" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=1</text>
+    <!-- 检测成功(红) -->
+    <line x1="540" y1="210" x2="540" y2="290" stroke="#ef4444" stroke-width="1.8" marker-end="url(#arw2R)"/>
+    <text x="552" y="242" fill="#ef4444" font-size="10.5">din=1</text>
+    <text x="552" y="258" fill="#ef4444" font-size="10.5">命中!</text>
+    <!-- 自环 -->
+    <path d="M224,133 C210,90 290,90 256,133" fill="none" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arw2B)"/>
+    <text x="240" y="86" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=1</text>
+    <path d="M76,133 C62,90 118,90 104,133" fill="none" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arw2B)"/>
+    <text x="90" y="86" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=0</text>
+    <!-- 回退边(橙) -->
+    <path d="M512,142 C500,66 430,66 418,138" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arw2O)"/>
+    <text x="465" y="76" text-anchor="middle" fill="#f59e0b" font-size="10.5">din=0 回退</text>
+    <path d="M362,198 C330,270 150,270 118,202" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arw2O)"/>
+    <text x="240" y="252" text-anchor="middle" fill="#f59e0b" font-size="10.5">din=0 回退</text>
+    <path d="M496,340 L390,340 L390,214" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arw2O)"/>
+    <text x="446" y="330" text-anchor="middle" fill="#f59e0b" font-size="10.5">din=0 回退</text>
+    <path d="M540,384 L540,398 L240,398 L240,214" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arw2O)"/>
+    <text x="392" y="392" text-anchor="middle" fill="#f59e0b" font-size="10.5">din=1 回退(重叠:旧后缀 1 仍是前缀)</text>
+  </svg>
+  <figcaption>图② 「1011」序列检测器(Moore 型、可重叠)状态转移图。圆内 = 状态与已匹配的最长前缀;蓝 = 前进,橙 = 失配回退,红 = 命中。回退边才是本题的灵魂:如收到 1010,后缀 "10" 仍是前缀,回 S2 而非 S0。</figcaption>
+  </figure>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①失配时无脑回 S0 → 丢失重叠命中("1011011" 只报一次);②忘记 S1 收到 1 应保持 S1("11" 的后缀 "1" 仍是前缀),而不是回 S0;③把"命中"设计成停在 S4 等复位——题目要求的是脉冲输出、检测器继续工作。</div>
+
+  <h3>4.2 第二步:三段式 RTL 完整实现</h3>
+  <p><b>怎么做:</b>把 4.1 的状态图逐边翻译成三段式——第一段打一拍、第二段搬转移条件、第三段寄存输出。注意每一段只干自己的事:</p>
+  <pre><code>module seq_det_1011 (
+    input  wire clk,
+    input  wire rst_n,        // 低有效复位(策略见 6.3)
+    input  wire din,          // 串行输入比特,每个 clk 上升沿采样
+    output reg  dout          // 检测到 1011 → 拉高一个周期
+);
+    // 状态编码:3 bit 覆盖 5 个状态(2^3=8 ≥ 5),留足非法态余量
+    localparam [2:0] S0 = 3'd0,    // 未匹配任何前缀
+                     S1 = 3'd1,    // 已匹配 "1"
+                     S2 = 3'd2,    // 已匹配 "10"
+                     S3 = 3'd3,    // 已匹配 "101"
+                     S4 = 3'd4;    // 已匹配 "1011" → 命中
+
+    reg [2:0] state, next_state;   // 现态 / 次态
+
+    // ── 第一段:状态寄存器(时序,永远只打一拍) ──
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) state &lt;= S0;
+        else        state &lt;= next_state;
+    end
+
+    // ── 第二段:次态组合(重叠检测的精髓全在"回退到哪") ──
+    always @* begin
+        next_state = S0;                     // 默认回安全态:防 latch + 防非法态锁死
+        case (state)
+            S0: next_state = din ? S1 : S0;
+            S1: next_state = din ? S1 : S2;  // 收 1:"11" 的后缀 "1" 仍是前缀,保持
+            S2: next_state = din ? S3 : S0;  // 收 0:"100" 无有效后缀,清零
+            S3: next_state = din ? S4 : S2;  // 收 0:"1010" 的后缀 "10" 仍是前缀!
+            S4: next_state = din ? S1 : S2;  // 命中后继续检测,复用旧后缀
+            default: next_state = S0;        // 非法编码(3'd5~7)自动恢复
+        endcase
+    end
+
+    // ── 第三段:输出逻辑(Moore:只看 state;寄存输出,高一个周期) ──
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) dout &lt;= 1'b0;
+        else        dout &lt;= (state == S4);   // state 进入 S4 的下一拍,dout 打出去
+    end
+endmodule</code></pre>
+  <p><b>代码自查清单(交卷前过一遍):</b>①三段边界清晰,state 只在第一段赋值?②第二段有默认赋值 + default?③输出寄存且复位值正确?④状态编码 localparam、位宽足够?⑤所有赋值符号:组合 = 、时序 &lt;= ?全对,这份 RTL 就可以进代码库。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>写完常被追问三连:①「支持重叠吗?改哪?」——指向 S3 收 0 回 S2、S4 的两条回退边;②「改成 Mealy 减状态?」——输出改 g(state,din),S4 可并入 S3(收 1 且 state=S3 时当拍出 1),5 态缩 4 态,但输出未经寄存;③「检测 8 位序列呢?」——9 个状态,状态编码改 one-hot 或直接用移位寄存器 + 比较器(<code>dout_r &lt;= (shift_reg == 8'b1011_0000)</code> 类思路),后者在序列变长时代码量不涨,工程更常用。</div>
+
+  <h3>4.3 第三步:testbench 与预期波形</h3>
+  <p><b>怎么做——testbench 四件套:时钟、复位、激励 task、结果观测。</b>激励用 <code>task</code> 封装(见 2.6),观测用 <code>$display</code> 逐沿打印 + 查看波形(GTKWave / Vivado / ModelSim)。</p>
+  <pre><code>`timescale 1ns/1ps
+module tb_seq_det_1011();
+    reg  clk, rst_n, din;
+    wire dout;
+
+    // ① 例化 DUT(命名关联)
+    seq_det_1011 u_dut (.clk(clk), .rst_n(rst_n), .din(din), .dout(dout));
+
+    // ② 100 MHz 时钟:周期 10 ns
+    initial clk = 1'b0;
+    always #5 clk = ~clk;
+
+    // ③ 激励 task:高位先发,逐位注入
+    task automatic send_bits(input [7:0] data, input integer n);
+        integer k;
+        begin
+            for (k = n - 1; k &gt;= 0; k = k - 1) begin
+                din = data[k];          // 阻塞赋值设置激励
+                @(posedge clk);         // 等到上升沿:该 bit 被采样
+            end
+        end
+    endtask
+
+    // ④ 观测:每个时钟沿打印状态(dut.state 为层次引用)
+    always @(posedge clk)
+        $display("t=%0t ns | din=%b | state=%0d | dout=%b",
+                 $time, din, u_dut.state, dout);
+
+    initial begin
+        $dumpfile("tb_seq_det_1011.vcd");   // 生成波形,GTKWave 打开
+        $dumpvars(0, tb_seq_det_1011);
+
+        // 复位:释放时刻(13ns)避开时钟沿,模拟真实异步复位
+        rst_n = 0; din = 0;
+        #13 rst_n = 1;
+        repeat (2) @(posedge clk);
+
+        // ── 测试 1:主用例 1 0 1 1 0 1 1 0 → 预期两次命中(重叠) ──
+        send_bits(8'b1011_0110, 8);
+        repeat (2) @(posedge clk);
+
+        // ── 测试 2:全 0 / 全 1 负用例 → 预期一次也不命中 ──
+        send_bits(8'b0000_0000, 8);
+        send_bits(8'b1111_1111, 8);
+        repeat (2) @(posedge clk);
+
+        $display("==== 仿真结束 ====");
+        $finish;
+    end
+endmodule
+// 运行(参考 08-02 页的 iverilog 工具链):
+//   iverilog -o sim tb_seq_det_1011.v seq_det_1011.v &amp;&amp; vvp sim
+//   gtkwave tb_seq_det_1011.vcd</code></pre>
+  <p><b>仿真预期波形(以主用例 8 bit 为例,行内数字均为"该时钟沿采样/更新后的值"):</b></p>
+  <div class="table-wrap"><table>
+    <tr><th>采样沿</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th></tr>
+    <tr><td>din</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>—</td></tr>
+    <tr><td>state(沿后)</td><td>S1</td><td>S2</td><td>S3</td><td><b>S4</b></td><td>S2</td><td>S3</td><td><b>S4</b></td><td>S2</td><td>S0</td></tr>
+    <tr><td>dout(沿后)</td><td>0</td><td>0</td><td>0</td><td>0</td><td><b style="color:#22c55e">1</b></td><td>0</td><td>0</td><td><b style="color:#22c55e">1</b></td><td>0</td></tr>
+  </table></div>
+  <p>读波形要点:①沿 4 时 state 已进 S4,但寄存输出让 <code>dout</code> 在<b>沿 5</b> 才拉高——正好持续一个完整周期,供下游安全采样;②沿 5 收 0 回退到 S2(后缀 "10" 复用),沿 7 再次进 S4、沿 8 第二个脉冲——<b>重叠检测成功</b>;③负用例全 0/全 1 全程 dout=0,复位后 state 从 S0 出发。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「你的 testbench 怎么证明设计对了?」——答三层:定向用例(命中/重叠/全 0 全 1 负例)+ 逐沿日志比对预期表 + 波形检查;进阶答随机约束激励 + 参考模型(C 语言/Python 算法模型)自动比对,即"自校验 testbench",这正是 08-05 验证页的主题。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①激励在 <code>@(posedge clk)</code> 之后紧挨着改 din,和时钟沿"零建立时间",高频仿真会出现采样歧义——习惯上让激励变化与沿错开(如 <code>@(negedge clk)</code> 处更新);②复位释放放在整时钟沿上(<code>#10</code>),异步复位与时钟沿竞争,不同仿真器结果不同——错开几 ns;③忘了 <code>$dumpvars</code> 或层次路径写错,打开波形一片空白。</div>
+
+  <!-- ================= 5. 可综合 vs 不可综合 ================= -->
+  <h2><span class="h2-num">5</span> 可综合 vs 不可综合:综合器视角看代码</h2>
+  <p><b>是什么:</b>Verilog 语法全集 ≠ 综合器认得的子集。<b>综合器(综合视角)</b>只把"能唯一对应成电路结构"的语法翻译成门和触发器;凡是涉及"仿真时间流逝"或"验证专用"的语句,一律被忽略或报错。<b>判断口诀:这句话描述的是"电路长什么样"还是"仿真怎么跑"?前者可综合,后者不可。</b></p>
+  <div class="table-wrap"><table>
+    <tr><th>语法结构</th><th>本来用途</th><th>可综合?</th><th>综合器实际处理</th></tr>
+    <tr><td><code>initial</code> 块</td><td>仿真 0 时刻初始化激励</td><td>ASIC:否 / FPGA:部分支持</td><td>ASIC 综合报错;Xilinx/Altera 对 FPGA 可把 reg 初值写进配置,但<b>不可移植</b>,RTL 初值仍推荐靠复位</td></tr>
+    <tr><td><code>#delay</code>(如 <code>#5 a=1;</code>)</td><td>仿真延时</td><td>否</td><td>综合时<b>静默丢弃</b>——仿真里"看起来有节奏",综合后一点节奏都没有,仿真-综合不一致的重灾区</td></tr>
+    <tr><td><code>fork...join</code></td><td>并行仿真进程</td><td>否</td><td>报错/不支持</td></tr>
+    <tr><td><code>wait / @事件</code></td><td>等待事件</td><td>否</td><td>报错(testbench 专用)</td></tr>
+    <tr><td><code>force / release</code></td><td>强制信号(调试)</td><td>否</td><td>仅仿真</td></tr>
+    <tr><td><code>$display/$monitor/$finish</code> 等系统任务</td><td>打印/结束仿真</td><td>否</td><td>忽略或报错</td></tr>
+    <tr><td><code>real / 浮点运算</code></td><td>实数计算</td><td>基本否</td><td>数字前端用定点化,浮点交给专门的 FPU IP</td></tr>
+    <tr><td>assign / always / if / case / for(常量边界)/ function / generate</td><td>RTL 描述</td><td><b>是</b></td><td>翻译为组合逻辑、触发器、存储器等</td></tr>
+  </table></div>
+  <p><b>综合器视角再看两件事:</b>① <b>代码 = 约束</b>:你写的每个 <code>case</code> 分支、"不可能发生"的假设,综合器都可能照单全收做成硬件——所以别指望"运行时条件不满足就不会执行"这种软件思维;② <b>延迟不参与综合</b>:想控制速度靠流水线、约束(SDC)与工艺库,不是 <code>#3</code>。</p>
+  <pre><code>// 典型的"仿真正常、综合翻车"代码
+always @(posedge clk) begin
+    en = 1;          // ← 时序块用阻塞赋值(2.4 的坑)
+    #3  data = din;  // ← #3 被综合丢弃:仿真里 data 晚 3ns 变化,
+                     //    综合后 data 与 din 之间没有任何延时结构
+end
+// 正确姿势:把"晚一拍"写成真正的寄存器,data &lt;= din;</code></pre>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>①「initial 能综合吗?」——分 ASIC(否)/ FPGA(特定写法可作初值,但不可移植,复位仍不可省)两层答;②「#5 在综合后还存在吗?」——不存在,静默忽略,这正是仿真-综合不一致的来源;③「为什么 for 能综合而 fork-join 不能?」——for 是编译期展开成电路结构,fork-join 描述的是仿真进程的时间并发,没有电路对应物。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①在 RTL 里用 #delay "设计时序",上板完全失效;②依赖 initial 给 ASIC 寄存器上电初值,流片后上电值随机;③lint 工具(Spyglass 等)报的不可综合/可移植性 warning 不当回事,综合阶段才爆出几百个 error。</div>
+
+  <!-- ================= 6. 常见坑与面试高频 ================= -->
+  <h2><span class="h2-num">6</span> 常见坑与面试高频</h2>
+
+  <h3>6.1 latch 意外生成:组合 always 不完整赋值</h3>
+  <p><b>是什么/为什么:</b>latch(锁存器)是电平敏感的存储单元——使能有效期间输出"跟随"输入,失效时"锁住"。它不是你想要的触发器:无法做静态时序分析、对毛刺敏感、ASIC 库中品质差。它几乎总是<b>无意生成</b>的:在组合 <code>always @*</code> 块中,只要存在"某些输入组合下输出没被赋值"的路径,综合器就只能用 latch "记住上次值"。</p>
+  <p><b>怎么做——三大生成场景与修复:</b></p>
+  <pre><code>// 场景① if 缺 else
+always @* begin
+    if (sel) y = a;              // sel=0 时 y 没人管 → latch!
+end
+// 修复:补 else y = 1'b0;  或块首默认赋值 y = 1'b0;
+
+// 场景② case 缺分支或缺 default
+always @* begin
+    case (op)
+        2'b00: y = a + b;
+        2'b01: y = a - b;        // 10/11 没写 → latch!
+    endcase
+end
+// 修复:补 default: y = 1'b0;(或先 y = 默认值)
+
+// 场景③ 输出赋给了自己(反馈)且部分路径漏赋值
+always @* begin
+    if (en) y = y &amp; din;         // en=0 时保持 → 这是刻意的 latch/或综合报错
+end
+// 若真要"保持"语义:说明你需要的是时序逻辑,改用 always @(posedge clk)</code></pre>
+  <p><b>工程防线:</b>①组合块入口先做默认赋值;②if 必配 else、case 必配 default;③打开综合/lint 工具的 latch 检查告警(Quartus/Vivado 会直接列出推断出的 latch,一个都不该有)。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「latch 是怎么无意生成的?怎么避免?」——必考题,答"组合 always 中赋值路径不完整"+ 三场景 + 默认赋值/补全分支两招;进阶问「latch 和触发器区别?」——电平敏感 vs 边沿敏感,latch 无法静态时序分析。</div>
+
+  <h3>6.2 多驱动冲突:一根线只能有一个"嗓门"</h3>
+  <p><b>是什么:</b>一根 wire 同一时刻只能被<b>一个</b>驱动源驱动。两个 <code>assign</code>、两个 always、或"assign + 模块输出"同时驱动同一信号,就是多驱动冲突:</p>
+  <pre><code>assign busy = flag_a | flag_b;
+always @(posedge clk) busy &lt;= done;   // ★ busy 被第二处驱动 → 综合直接报错
+                                      //   multiple (or conflicting) drivers
+
+// 仿真里更隐蔽:多驱动 net 会发生"线或/线与"式的 x 值竞争,
+// 波形上表现为信号莫名变 x、时对时错 —— bug 藏得极深。</code></pre>
+  <p><b>怎么做:</b>①一个信号一个驱动源;多个来源需要"汇合"时,显式写出合并逻辑(<code>|</code>、mux、总线仲裁器);②真要多驱动只有两种合法场景——三态总线(<code>inout</code> + <code>1'bz</code>)与 testbench 的 force,<b>片内逻辑禁用三态</b>(FPGA 内部三态会被转换为 mux,ASIC 库也不提供内部三态);③拼接写法容易误驱动:output reg 已在 always 驱动,又在别处 assign,编译器有的报错、有的只 warning——把 warning 当 error 处理。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「什么时候允许一个 wire 有多个驱动?」——仅三态总线(片间/与 IP 对接)和验证强制;「片内为什么禁止内部三态?」——电荷共享/测试困难,FPGA 会转 mux,ASIC 标准单元库内部没有三态单元,芯片级总线走 mux 复用。</div>
+
+  <h3>6.3 复位策略:同步复位 vs 异步复位</h3>
+  <p><b>是什么:</b>复位让电路进入确定的初始状态。两大流派:</p>
+  <div class="table-wrap"><table>
+    <tr><th>对比项</th><th>同步复位(复位只出现在 always 的数据条件里)</th><th>异步复位(敏感列表含复位沿,如 negedge rst_n)</th></tr>
+    <tr><td>写法特征</td><td><code>always @(posedge clk) if(!rst_n) q&lt;=0; else ...</code></td><td><code>always @(posedge clk or negedge rst_n) if(!rst_n) q&lt;=0; else ...</code></td></tr>
+    <tr><td>时钟未起时能复位?</td><td>不能(需要时钟采样复位)</td><td>能(复位立即生效,上电即可用)</td></tr>
+    <tr><td>抗毛刺</td><td>好(复位被时钟过滤)</td><td>差(复位线上的毛刺直接打入寄存器)</td></tr>
+    <tr><td>数据路径开销</td><td>复位信号进数据选择逻辑,增加 D 端组合</td><td>专用复位端,数据路径干净</td></tr>
+    <tr><td>典型选择</td><td>ASIC 高频设计/复位可同步化的场合</td><td>FPGA 与多数工程默认(器件有专用异步复位网络)</td></tr>
+  </table></div>
+  <p><b>怎么做——"异步复位、同步释放"工程标准:</b>异步复位有两大隐患:①<b>恢复/移除违例</b>(release 时刻离时钟沿太近,部分寄存器"看到"复位、部分没看到,状态机解体);②复位毛刺敏感。标准解法是用两拍寄存器同步复位释放:</p>
+  <pre><code>// 异步复位同步释放(Async reset, sync release)——每个时钟域一套
+module reset_sync #(parameter W = 1)(   // 简化:单bit演示
+    input clk, async_rst_n,
+    output reg rst_sync_n
+);
+    reg rst_meta;
+    always @(posedge clk or negedge async_rst_n) begin
+        if (!async_rst_n) begin
+            {rst_sync_n, rst_meta} &lt;= 2'b00;    // 复位立即有效(异步)
+        end else begin
+            {rst_sync_n, rst_meta} &lt;= {rst_meta, 1'b1};  // 释放打两拍(同步)
+        end
+    end
+endmodule
+// 复位树:每个时钟域一套 reset_sync;大设计还要考虑复位顺序(先核内后接口)。</code></pre>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>①「同步/异步复位怎么选?」——按上表答四点并给出团队默认;②「异步复位为什么会出 recovery/removal 违例?怎么办?」——答异步复位同步释放;③「异步复位高有效还是低有效?为什么工程偏爱低有效?」——历史与上电安全(上电瞬间无时钟、复位默认有效)。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①同一个 always 敏感列表写 <code>posedge clk or rst_n</code>(漏 negedge)→ 复位极性错,综合器推断出置位/清零逻辑错乱;②组合逻辑输出的复位(如 <code>rst_n = en &amp; rst_raw</code>)带毛刺直接当异步复位用;③跨时钟域的复位没按域同步( rigor 见下一页 CDC)。</div>
+
+  <h3>6.4 跨模块位宽不匹配:被"静默"吞掉的比特</h3>
+  <p><b>是什么:</b>例化时子模块端口位宽与实际连接信号位宽不一致,Verilog <b>不报 error</b>:宽度不匹配会做隐式的零扩展/截断,只给一条容易淹没在编译日志里的 warning。</p>
+  <pre><code>module counter #(parameter W = 8)(input clk, output reg [W-1:0] cnt);
+    always @(posedge clk) cnt &lt;= cnt + 1'b1;
+endmodule
+
+// 顶层不小心接了 4 位信号:
+wire [3:0] small_cnt;
+counter #(.W(8)) u_cnt (.clk(clk), .cnt(small_cnt));
+// 真实电路:计数器 8 位,但只引出低 4 位 → 上游读到的是"被截断的计数"
+// 高位继续在芯片里翻转,白白耗功耗;仿真对比 golden 模型时"数值对不上"。
+
+// 更阴险的是反方向:给 8 位端口接 1 位信号
+counter #(.W(8)) u2 (.clk(clk), .cnt({7'b0, tick}));   // 显式拼接,意图清晰</code></pre>
+  <p><b>怎么做:</b>①端口位宽从参数推导(<code>#(.W(8))</code> 与信号声明 <code>[W-1:0]</code> 用同一参数),禁止手写两处数字;②lint 工具(Spyglass/Verilator <code>-Wall</code>)开 <b>WIDTH</b> 类告警并零容忍;③实在需要收窄/扩展,用显式的位选择或拼接写出意图,让 review 一眼看到。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「位宽不匹配综合器怎么处理?」——隐式扩展按无符号补零/有符号扩展,截断丢高位,均只 warning;追问「为什么大厂 CI 强制 Verilator -Wall 无告警?」——位宽告警背后常常是真实的数据损坏,宁可误报不可漏报。</div>
+
+  <h3>6.5 仿真-综合不一致:仿真过了、上板翻车</h3>
+  <p><b>是什么:</b>RTL 仿真全部通过,综合/上板后行为不同甚至彻底失效。它不是单一 bug,而是一类"代码在两个世界语义不同"的问题。前文已埋了四颗雷,这里汇总成排查清单:</p>
+  <div class="table-wrap"><table>
+    <tr><th>根因</th><th>仿真表现</th><th>上板/综合表现</th><th>预防</th></tr>
+    <tr><td>时序块用阻塞赋值(2.4)</td><td>语句顺序执行,"碰巧"对</td><td>触发器级数/行为与仿真模型不符</td><td>组合 = / 时序 &lt;= 铁律</td></tr>
+    <tr><td>#delay 参与"功能"(第 5 节)</td><td>有延时节奏</td><td>延时被静默丢弃,节奏消失</td><td>延拍一律用寄存器打拍实现</td></tr>
+    <tr><td>手写敏感列表漏信号(2.3)</td><td>信号不变不触发,波形"卡住"或滞后</td><td>综合按完整组合逻辑生成,行为不同</td><td>组合块一律 always @*</td></tr>
+    <tr><td>依赖 x 态/initial 初值</td><td>x 传播或初值为 0/1</td><td>上电随机值,行为不确定</td><td>所有状态有真实复位;仿真加 x 检查</td></tr>
+    <tr><td>异步复位释放违例(6.3)</td><td>复位释放与沿的关系理想化</td><td>个别寄存器晚一拍复位,状态机解体</td><td>异步复位同步释放 + STA 检查</td></tr>
+  </table></div>
+  <p><b>怎么做——三条工程习惯:</b>①RTL 只用"最小可综合子集"+ 固定的赋值/敏感列表规范,让两个世界"没有发挥空间";②仿真采用 gate-level 回归(综合后网表仿真)或至少跑综合后形式等价检查(LEC),抓结构性偏差;③把 lint(Spyglass/Verilator)与综合 warning 清零纳入提交门槛——绝大多数不一致在 warning 阶段就有信号。</p>
+  <div class="box box-tip"><b>💼 面试怎么问:</b>「举出三种仿真-综合不一致的场景及根因」——按上表任答三条并能展开机理即优秀;进阶:「为什么 blocking 赋值的时序块是重灾区?」——仿真调度按语句顺序、综合按电路结构,两者根本没有共同的语义基准。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>把"仿真过 = 设计对"当真理。仿真只是抽查了激励覆盖到的路径;唯一可信的证据链 = 定向用例 + 随机回归 + lint 零告警 + 形式验证/网表仿真。</div>
+
+  <!-- ================= 7. 本节自测 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 关于 wire 和 reg,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. reg 一定综合成触发器(寄存器)</button>
+      <button data-v="B">B. wire 可以在 always 块里用 = 赋值</button>
+      <button data-v="C">C. reg 是 always 块中的变量,组合 always 里的 reg 会综合成组合逻辑</button>
+      <button data-v="D">D. wire 只能用于时序逻辑,reg 只能用于组合逻辑</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 reg 只是"always 块中被过程赋值的变量",它综合成触发器还是组合逻辑,取决于 always 的触发方式:always @(posedge clk) → 触发器;always @* → 组合逻辑。wire 由 assign 或模块输出连续驱动。故 A 错(经典误区)、B 错(wire 不能过程赋值)、D 反了。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 下面哪段代码能正确综合出"三级移位寄存器"(d 延迟三拍到 q3)?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. always @(posedge clk) begin q1 = d; q2 = q1; q3 = q2; end</button>
+      <button data-v="B">B. always @(posedge clk) begin q1 &lt;= d; q2 &lt;= q1; q3 &lt;= q2; end</button>
+      <button data-v="C">C. always @(*) begin q1 &lt;= d; q2 &lt;= q1; q3 &lt;= q2; end</button>
+      <button data-v="D">D. assign q1 = d; assign q2 = q1; assign q3 = q2;</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 时序逻辑必须用非阻塞赋值 &lt;=:所有 RHS 在时钟沿"同时采样旧值",q1/q2/q3 才是真正的三级流水。A 用阻塞 = 会在同一时刻把 d "穿透"到 q3(仿真吞拍);C 敏感列表是 @* 却写非阻塞,综合器可能报错或生成意外结构;D 是纯组合连线,一根线直通,没有寄存。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 组合 always 块中出现下面哪种情况,综合器会生成 latch?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 用了 case 语句且分支写全了</button>
+      <button data-v="B">B. 开头先给所有输出赋默认值,再写分支</button>
+      <button data-v="C">C. 敏感列表写成 always @*(自动补全)</button>
+      <button data-v="D">D. 某个 if 分支缺少对应的 else,输出在部分条件下"保持原值"</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 组合逻辑要求"任何输入都有确定的输出"。当 if 缺 else、case 缺分支或缺 default 时,输出在某些条件下只能"记住上次的值"——"记住"就是存储,综合成锁存器(latch)。修复方法:补全分支/default,或块首先做默认赋值。A/B/C 都是防 latch 的正确写法。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 工程上强制使用三段式状态机,最主要的原因是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 状态转移、状态寄存、输出三者职责分离:可读可维护,且输出经寄存器打出,时序更好、毛刺更少</button>
+      <button data-v="B">B. 三段式综合后占用面积一定最小</button>
+      <button data-v="C">C. 一段式和两段式根本无法综合</button>
+      <button data-v="D">D. 三段式不需要写状态转移条件,自动生成</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 三段式的核心价值是"结构与职责分离":第一段只管打一拍(全部团队代码长得一样),第二段集中管理所有转移条件(评审/约束/调试都在一处),第三段寄存输出(输出打一拍后毛刺被滤掉,Tsu/Tco 路径更短)。它不是面积最优(A 输出寄存反而多一级),也不是"唯一可综合"——选它是工程可维护性与时序质量的权衡,而非功能必需。</div>
+  </div>
+
+  <!-- ================= 8. 小结与思考 ================= -->
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>①Verilog 描述的是并行存在的电路而非顺序执行的程序——wire=连线、reg=always 变量(≠寄存器),位宽扩展补零/截断丢位、有符号无符号混用是三大位宽陷阱;②组合逻辑(assign / always@* + 阻塞 = )与时序逻辑(always@(posedge clk) + 非阻塞 &lt;= )两条主干道不可混;③三段式状态机 = 状态寄存器 + 次态组合 + 输出逻辑,职责分离、输出寄存,是团队强制标准;④「1011」序列检测器完整走通"状态图 → 三段式 RTL → testbench → 波形比对",状态的本质是"记住历史的最少信息";⑤只写可综合子集,并盯死六大坑:latch 意外生成、多驱动、阻塞非阻塞混用、复位策略、跨模块位宽、仿真-综合不一致。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 把「1011」检测器改成检测「1101」,状态图要怎么改?哪些"回退边"会变化?<br>
+    2. 如果要求检测到「1011」后连续输出计数(统计出现次数),需要在三段式之外加什么?<br>
+    3. 你的 NPU 译码模块需要一个"指令分发状态机"(IDLE→LOAD→COMPUTE→STORE),用本页模板把骨架写出来需要几个状态、哪些转移条件?
+  </div>
+
+  <!-- ================= 9. 资源与参考来源 ================= -->
+  <h2><span class="h2-num">8</span> 资源与参考来源</h2>
+  <div class="box box-tip">
+    <b>💡 使用建议:</b>先跟一个视频/文字教程过一遍语法(资源 5-7),然后立刻去 HDLBits 刷 Verilog Language 与 FSM 两章(资源 1-2)——Verilog 是"动手学科",只看不写必然翻车。读优秀开源 RTL(资源 3-4)能快速建立"规范代码"的手感。
+  </div>
+  <a class="my-res-card" href="https://hdlbits.01xz.net/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🛠️</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ HDLBits · Verilog 在线刷题平台(强烈推荐)</div>
+      <div class="my-res-desc">全球 Verilog 学习者的"LeetCode":浏览器里写代码、在线仿真判题,按 Verilog Language / Combinational Logic / Sequential Logic / FSM 分章。学完本页立刻去刷前两章,配合 3.3/4 节的状态机题(Fsm3 系列)。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">免费·免注册可用</span>
+        <span class="my-tag my-tag-recommend">⭐ 必刷</span>
+        <span class="my-tag my-tag-diff-1">入门友好</span>
+        <span class="my-tag my-tag-plain">在线判题</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://hdlbits.01xz.net/wiki/Fsm3comb" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">HDLBits · FSM 状态机专题(Fsm3 系列)</div>
+      <div class="my-res-desc">与 3.3 节三段式模板无缝衔接的练习集:Fsm3comb 只写次态/输出组合逻辑,Fsm3s 加异步复位——正好对应本页模板的三段拆分,刷完状态机手感立成。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">配套练习</span>
+        <span class="my-tag my-tag-diff-2">进阶</span>
+        <span class="my-tag my-tag-plain">Moore 状态机</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.runoob.com/w3cnote/verilog-tutorial.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📗</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ 菜鸟教程 · Verilog 教程(中文系统教程)</div>
+      <div class="my-res-desc">最适合中文零基础的系统教程:数据类型、模块端口、条件循环、阻塞非阻塞逐节讲透,末尾还有 FIR/FFT 等设计实例。本页 2.x 各小节都有对应章节可深读。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">中文</span>
+        <span class="my-tag my-tag-recommend">⭐ 入门首选</span>
+        <span class="my-tag my-tag-diff-1">零基础</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.runoob.com/w3cnote/verilog-fsm.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📗</div>
+    <div class="my-res-info">
+      <div class="my-res-title">菜鸟教程 · 6.3 Verilog 状态机(三段式中文精讲)</div>
+      <div class="my-res-desc">用"自动售卖机"完整演示 Moore 三段式:一段式/两段式/三段式写法对比 + testbench + 波形分析,和本页 3.2/3.3 互为印证,作者另有 6.4 竞争与冒险可顺读。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">中文</span>
+        <span class="my-tag my-tag-diff-2">进阶</span>
+        <span class="my-tag my-tag-plain">三段式实例</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1X741127Qg/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ B站 · 夏宇闻《Verilog 视频教程》(16 集)</div>
+      <div class="my-res-desc">北航夏宇闻教授(国内 Verilog 教材奠基人)亲授系列:从"硬件描述语言是什么"讲到 ModelSim/Quartus 上手,配合其经典教材《Verilog 数字系统设计教程》食用最佳。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-bili">B站</span>
+        <span class="my-tag my-tag-recommend">⭐ 名师入门</span>
+        <span class="my-tag my-tag-diff-1">零基础</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://search.bilibili.com/all?keyword=Verilog%E5%85%A5%E9%97%A8" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站搜索:「Verilog 入门」高播放量系列</div>
+      <div class="my-res-desc">按播放量排序挑选适合自己节奏的视频课(野火 FPGA、正点原子、硬件语言筑基等系列都有完整语法+实战章节);视频适合建立直觉,代码一定要自己敲。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-bili">B站搜索</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+        <span class="my-tag my-tag-plain">按热度筛选</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.asic-world.com/verilog/index.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ASIC World · Verilog 教程(经典英文参考)</div>
+      <div class="my-res-desc">1998 年至今持续维护的数字设计老牌站点:语法、例子、FAQ、面试题一应俱全,是英文世界引用率最高的 Verilog 免费教程之一,适合当"语法字典"随查随用。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">英文经典</span>
+        <span class="my-tag my-tag-diff-2">进阶</span>
+        <span class="my-tag my-tag-plain">随查字典</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.chipverify.com/verilog/verilog-tutorial" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ChipVerify · Verilog Tutorial 系列</div>
+      <div class="my-res-desc">现代排版、讲解清晰的英文系列教程:从"Verilog 与 C 的区别"讲起,覆盖数据类型、FSM、testbench 直到面试题集,与本页"是什么→怎么做→面试怎么问"的结构互为补充。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">英文</span>
+        <span class="my-tag my-tag-diff-1">入门友好</span>
+        <span class="my-tag my-tag-plain">含面试题集</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/406289405" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏 ·(Verilog 基础篇)6.3 Verilog 状态机</div>
+      <div class="my-res-desc">知乎高赞系统文章:用自动售卖机实例对比 Moore/Mealy 与一段式/两段式/三段式,结论与 3.2 节一致——工程上用得最多的是 Mealy 型三段式,可作中文复习材料。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎</span>
+        <span class="my-tag my-tag-diff-2">进阶</span>
+        <span class="my-tag my-tag-plain">三段式</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/458310675" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏 · verilog 有限状态机的基本概念和三种写法介绍</div>
+      <div class="my-res-desc">state_c(现态)/state_n(次态)命名风格的三种写法对照:第一段时序描述现态、第二段组合算次态、第三段描述输出,短平快讲清三段式骨架,适合面试前速览。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+        <span class="my-tag my-tag-plain">速览</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://blog.csdn.net/weixin_43070186/article/details/82085463" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN · 三段式状态机理解浅析</div>
+      <div class="my-res-desc">对比 Moore/Mealy 适用场景并逐段拆解三段式写法的高赞博客,补充了"为什么输出要打一拍"的时序视角,与本页 3.3 的"逐段讲解"对照阅读收获更大。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-csdn">CSDN</span>
+        <span class="my-tag my-tag-diff-2">进阶</span>
+        <span class="my-tag my-tag-plain">Moore/Mealy</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://staff.ustc.edu.cn/~wyu0725/personal_guide/2-FPGA_Logic/2-2-3Logic_3process_fsm.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">中科大个人指南 · 三段式状态机:一点经验</div>
+      <div class="my-res-desc">来自一线工程师的工程化总结:第一段状态跳转、第二段组合转移、第三段信号输出的代码范式与踩坑心得,口吻务实,适合写代码前通读一遍建立"团队规范感"。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">工程经验</span>
+        <span class="my-tag my-tag-diff-3">硬核</span>
+        <span class="my-tag my-tag-plain">代码范式</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/YosysHQ/picorv32" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">📦</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ GitHub · picorv32:开源 RISC-V CPU(优秀 RTL 范本)</div>
+      <div class="my-res-desc">YosysHQ 出品的尺寸优化 RISC-V RV32IMC 内核,核心就一个 picorv32.v:状态机控制的取指/译码/执行、参数化位宽、干净的 always 结构,是"可综合规范 RTL"的最佳阅读材料——学完本页即可开始啃。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-github">GitHub</span>
+        <span class="my-tag my-tag-recommend">⭐ RTL 范本</span>
+        <span class="my-tag my-tag-diff-3">硬核</span>
+        <span class="my-tag my-tag-plain">RISC-V</span>
+      </div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://gitcode.com/gh_mirrors/pic/picorv32" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">📦</div>
+    <div class="my-res-info">
+      <div class="my-res-title">GitCode · picorv32 国内镜像(访问更稳)</div>
+      <div class="my-res-desc">GitHub 仓库的 GitCode 自动镜像,国内网络可稳定浏览 picorv32 源码与文档;配合本页 2.7 的 generate 阵列思路,观察真实项目如何组织层次化 RTL。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-gitcode">GitCode 镜像</span>
+        <span class="my-tag my-tag-diff-3">硬核</span>
+        <span class="my-tag my-tag-plain">国内可达</span>
+      </div>
+    </div>
+  </a>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

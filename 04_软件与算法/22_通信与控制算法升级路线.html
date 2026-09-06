@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 通信与控制算法升级路线
+  结构严格遵循 _assets/页面模板.html
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 通信与控制算法升级路线</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(全部 my- 前缀,避免与全局冲突) ===== */
+  /* 彩色小标签(表格 / 阶段标题内使用) */
+  .my-tag{display:inline-block;padding:1px 10px;border-radius:6px;font-size:11.5px;font-weight:700;white-space:nowrap;line-height:1.7;vertical-align:middle}
+  .my-tag-green{background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.4)}
+  .my-tag-blue{background:rgba(59,130,246,.15);color:#9ecbff;border:1px solid rgba(59,130,246,.42)}
+  .my-tag-purple{background:rgba(139,92,246,.16);color:#ddd6fe;border:1px solid rgba(139,92,246,.45)}
+  .my-tag-orange{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.45)}
+  .my-tag-red{background:rgba(239,68,68,.14);color:#fca5a5;border:1px solid rgba(239,68,68,.45)}
+  .my-tag-gray{background:rgba(148,163,184,.12);color:#cbd5e1;border:1px solid rgba(148,163,184,.35)}
+  /* 五阶段升级卡片 */
+  .my-stage{background:rgba(13,17,23,.45);border:1px solid rgba(255,255,255,.09);border-left:4px solid #3b82f6;border-radius:12px;padding:15px 18px;margin:12px 0}
+  .my-stage-green{border-left-color:#22c55e}
+  .my-stage-blue{border-left-color:#3b82f6}
+  .my-stage-purple{border-left-color:#8b5cf6}
+  .my-stage-orange{border-left-color:#f59e0b}
+  .my-stage-red{border-left-color:#ef4444}
+  .my-stage-title{font-size:15.5px;font-weight:700;color:#fff;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .my-stage-desc{font-size:13.5px;color:#9aa4b2;line-height:1.7}
+  .my-stage-detail{margin-top:7px;font-size:13px;color:#c9d1d9;line-height:1.8}
+  /* 列表圆点配色 */
+  .my-list li::marker{color:#f59e0b}
+  .my-list-blue li::marker{color:#3b82f6}
+  /* ===== 浅色主题适配(与 site.css 的 body:not([data-theme]) 约定一致) ===== */
+  html:not([data-theme-early="dark"]) .my-tag-green {background:rgba(34,197,94,.12);color:#15803d;border-color:rgba(34,197,94,.35)}
+  html:not([data-theme-early="dark"]) .my-tag-blue {background:rgba(37,99,235,.1);color:#1d4ed8;border-color:rgba(37,99,235,.3)}
+  html:not([data-theme-early="dark"]) .my-tag-purple {background:rgba(139,92,246,.1);color:#6d28d9;border-color:rgba(139,92,246,.35)}
+  html:not([data-theme-early="dark"]) .my-tag-orange {background:rgba(245,158,11,.12);color:#b45309;border-color:rgba(245,158,11,.4)}
+  html:not([data-theme-early="dark"]) .my-tag-red {background:rgba(239,68,68,.1);color:#b91c1c;border-color:rgba(239,68,68,.35)}
+  html:not([data-theme-early="dark"]) .my-tag-gray {background:rgba(100,116,139,.1);color:#475569;border-color:rgba(100,116,139,.3)}
+  html:not([data-theme-early="dark"]) .my-stage {background:rgba(255,255,255,.6);border-color:rgba(60,80,120,.14)}
+  html:not([data-theme-early="dark"]) .my-stage-title {color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-stage-desc {color:#5a6a85}
+  html:not([data-theme-early="dark"]) .my-stage-detail {color:#3a4759}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-23",
+    root: "..",
+    breadcrumb: [ { t: "软件与算法", u: "../index.html#sec4" }, { t: "通信与控制算法升级路线" } ],
+    prev: { t: "代码规范:C / Python / Verilog", u: "21_代码规范_C_Python_Verilog.html" },
+    next: { t: "全身控制与步态规划", u: "23_全身控制与步态规划_WBC与MPC.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🚀 通信与控制算法升级路线:RS485 → CAN → EtherCAT → SPE</h1>
+    <div class="sub">从「Hdrive V1.1 入门方案」到「量产级关节」的演进路径。主控:STM32G431CBU6 · 当前:RS485 + 三环 PID。本页讲清两条升级主线——通信总线(RS485 → CAN → EtherCAT → SPE)与控制算法(三环 PID → ADRC → MPC/WBC/RL),适合已跑通 FOC 三环、准备规划关节模组量产演进的读者。</div>
+    <div class="tags">
+      <span class="tag">通信升级</span>
+      <span class="tag">CAN / EtherCAT / SPE</span>
+      <span class="tag">ADRC 自抗扰控制</span>
+      <span class="tag">MPC / WBC / RL</span>
+      <span class="tag">五阶段路线图</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能说出当前 Hdrive V1.1 方案(STM32G431CBU6 + RS485 + 三环 PID)中各环节的定位,判断哪些「已到位」、哪些「入门级」<br>
+    2. 能讲清通信主线 RS485 → CAN → EtherCAT → SPE 的带宽 / 周期 / 成本对比,并解释为什么 RS485 量产出局、SPE 是未来趋势<br>
+    3. 能解释 ADRC(自抗扰控制)如何用 ESO 在三环每一环注入「总扰动补偿」,以及三种主流变体(A/B/C)的区别与工业界选择<br>
+    4. 能复述「五阶段升级路线」的顺序与各阶段目标,知道 MPC/WBC/RL 应跑在躯干级控制器而非关节 MCU 上<br>
+    5. 能说出前沿技术现状(SPE、ADRC 落地、分布式智能关节、准直驱双环)的落地依据<br>
+    <b>建议用时:</b>约 40 分钟
+  </div>
+
+  <!-- ================= 1 当前方案定位 ================= -->
+  <h2><span class="h2-num">1</span> 当前方案定位(Hdrive V1.1 对齐版)</h2>
+  <p>先明确你现在站的位置,才知道往哪升级。</p>
+  <div class="table-wrap"><table>
+    <tr><th>项目</th><th>当前方案</th><th>定位</th></tr>
+    <tr><td><strong>主控</strong></td><td>STM32G431CBU6(170MHz Cortex-M4F + FPU + Cordic)</td><td><span class="my-tag my-tag-green">已到位</span> 足够支持到单关节 ADRC + CAN</td></tr>
+    <tr><td><strong>栅极驱动</strong></td><td>FD6288T(峰岹,6路半桥)</td><td><span class="my-tag my-tag-green">已到位</span></td></tr>
+    <tr><td><strong>编码器</strong></td><td>MT6701(麦歌恩,SPI/ABI)</td><td><span class="my-tag my-tag-green">已到位</span></td></tr>
+    <tr><td><strong>通信</strong></td><td>RS485(SP3485)</td><td><span class="my-tag my-tag-orange">入门级</span> 学习够用,量产需升级</td></tr>
+    <tr><td><strong>控制算法</strong></td><td>三环 PID(电流/速度/位置)</td><td><span class="my-tag my-tag-orange">入门级</span> 先跑通,再逐步换 ADRC</td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 结论:</b>这套方案是<b>正确的入门起点</b>。不要因为看到「RS485 出局」就焦虑——单关节跑 FOC,RS485 完全够用,而且 STM32G431 自带 FDCAN 控制器,升级 CAN 只换一个收发器芯片,成本极低。
+  </div>
+
+  <!-- ================= 2 通信升级路线 ================= -->
+  <h2><span class="h2-num">2</span> 通信升级路线:RS485 → CAN → EtherCAT → SPE</h2>
+  <p>人形机器人 40+ 关节,通信实时性和可靠性是第一门槛。</p>
+  <div class="table-wrap"><table>
+    <tr><th>阶段</th><th>总线</th><th>通信周期</th><th>带宽</th><th>硬件成本</th><th>适用场景</th></tr>
+    <tr>
+      <td><span class="my-tag my-tag-gray">当前</span></td>
+      <td><strong>RS485</strong></td><td>轮询,节点多实时性差</td><td>≤1Mbps</td><td>极低</td>
+      <td>单关节调试、学习</td>
+    </tr>
+    <tr>
+      <td><span class="my-tag my-tag-green">下一步</span></td>
+      <td><strong>CAN / CANopen</strong></td><td>1ms / 0.5ms</td><td>1Mbps(FD 5Mbps)</td><td>低(换 TJA1051)</td>
+      <td>多关节级联、低成本量产</td>
+    </tr>
+    <tr>
+      <td><span class="my-tag my-tag-blue">量产主流</span></td>
+      <td><strong>EtherCAT</strong></td><td>125μs~1ms</td><td>100Mbps</td><td>中(加 LAN9252/AX58100 ESC)</td>
+      <td>多关节实时同步、人形机器人</td>
+    </tr>
+    <tr>
+      <td><span class="my-tag my-tag-red">未来趋势</span></td>
+      <td><strong>SPE 单对以太网</strong></td><td>IEEE 802.1AS 同步 1-15ns</td><td>100M~1Gbps</td><td>PHY 芯片(DP83TC817S-Q1 等)</td>
+      <td>下一代,线束减重、高带宽</td>
+    </tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 关键判断:</b>RS485 基本出局(量产)、CAN 是底线、EtherCAT/SPE 才是高端方向——这一判断正确,TI 官方已明确「CAN/RS485 带宽不满足机器人需求」,并推出面向人形机器人的 SPE PHY 芯片。
+  </div>
+  <ul class="my-list-blue">
+    <li><strong>为什么 RS485 出局:</strong>主从轮询架构在 40+ 节点时实时性崩盘;一个节点「babbling」会拖垮整条总线;通信周期跟不上 1-4kHz 要求。</li>
+    <li><strong>为什么 SPE 是未来:</strong>单对双绞线,线束重量远轻于 CAN,100BASE-T1/1000BASE-T1 支持 100M/1G 带宽,还支持 PoDL 供电。</li>
+    <li><strong>你的升级第一步:</strong>STM32G431 自带 FDCAN,换 SP3485 → TJA1051 即可,PCB 和代码改动都很小。</li>
+  </ul>
+
+  <!-- ================= 3 控制算法升级 ================= -->
+  <h2><span class="h2-num">3</span> 控制算法升级:三环 PID → 三环 ADRC</h2>
+  <p>三环结构保留,每一环的控制器从 PID 升级为 ADRC。</p>
+  <div class="table-wrap"><table>
+    <tr><th>控制环</th><th>频率</th><th>传统方案</th><th>前沿方案</th><th>G431 能跑吗</th></tr>
+    <tr><td><strong>电流环</strong></td><td>20kHz</td><td>PI</td><td>一阶 ADRC(ESO 估计电流扰动补偿)</td><td><span class="my-tag my-tag-green">✅ 轻松</span></td></tr>
+    <tr><td><strong>速度环</strong></td><td>2kHz</td><td>PI</td><td>二阶 ADRC 或 PI + 前馈</td><td><span class="my-tag my-tag-green">✅ 可以</span></td></tr>
+    <tr><td><strong>位置环</strong></td><td>1kHz</td><td>PID</td><td>PD + 前馈 / 三阶 ADRC</td><td><span class="my-tag my-tag-orange">⚠️ 勉强</span></td></tr>
+    <tr><td><strong>全身协同</strong></td><td>500-1000Hz</td><td>—</td><td>MPC / WBC(躯干级控制器)</td><td><span class="my-tag my-tag-red">❌ 不在关节 MCU 上跑</span></td></tr>
+  </table></div>
+  <div class="box box-tip">
+    <b>💡 核心理解:</b>ADRC(自抗扰控制)不是取代三环,而是在三环的每一环注入更聪明的算法——用 ESO(扩张状态观测器)实时估计「总扰动」(重力、摩擦、负载变化、未建模动态)并主动补偿,鲁棒性比 PID 强。
+  </div>
+  <h3>三种主流变体</h3>
+  <div class="table-wrap"><table>
+    <tr><th>变体</th><th>方案</th><th>特点</th><th>现状</th></tr>
+    <tr><td><strong>A</strong></td><td>三环全 ADRC(电流一阶/速度二阶/位置三阶)</td><td>鲁棒性最强,但计算量大</td><td><span class="my-tag my-tag-purple">学术研究热门</span></td></tr>
+    <tr><td><strong>B</strong></td><td>双环 ADRC(电流 PI + 位置-速度一体化二阶 ADRC)</td><td>计算量适中,调参复杂</td><td><span class="my-tag my-tag-blue">工程落地</span></td></tr>
+    <tr><td><strong>C</strong></td><td>三环 PID + 上层 MPC + 单关节 ADRC 增强</td><td>工程成熟,调试简单</td><td><span class="my-tag my-tag-green">⭐ 工业主流</span></td></tr>
+  </table></div>
+  <div class="box box-danger">
+    <b>⚠️ 工业界现状:</b>宇树、优必选、智元等主流采用<b>变体 C</b>(PID 三环 + 选择性 ADRC 增强 + MPC 外层),学术和高端实验平台(MIT Cheetah 衍生)倾向变体 A/B。未来 3-5 年会形成「底层 ADRC + 上层 MPC + 顶层 RL」的混合架构。
+  </div>
+
+  <!-- ================= 4 五阶段升级路线 ================= -->
+  <h2><span class="h2-num">4</span> 五阶段升级路线图(结合 G431 实际算力)</h2>
+  <p>按顺序走,别跳阶段。</p>
+
+  <div class="my-stage my-stage-green">
+    <div class="my-stage-title"><span class="my-tag my-tag-green">阶段① 入门</span> 现在 · RS485 + 三环 PID</div>
+    <div class="my-stage-desc">目标:把 FOC 三环跑通,电机平稳转动。</div>
+    <div class="my-stage-detail">通信 RS485 · 三环 PID · 单关节 · 先跑通最重要,这是所有升级的地基。</div>
+  </div>
+
+  <div class="my-stage my-stage-blue">
+    <div class="my-stage-title"><span class="my-tag my-tag-blue">阶段② 工程化</span> CAN + PID 增强</div>
+    <div class="my-stage-desc">目标:多关节级联,通信周期到 1ms。</div>
+    <div class="my-stage-detail">通信 RS485→CAN(换 TJA1051)· 电流环 PI + 速度/位置环加前馈、抗积分饱和 · 加力矩传感器、双编码器闭环。</div>
+  </div>
+
+  <div class="my-stage my-stage-purple">
+    <div class="my-stage-title"><span class="my-tag my-tag-purple">阶段③ 单关节进阶</span> CAN + 电流环/速度环 ADRC</div>
+    <div class="my-stage-desc">目标:扰动抑制能力提升,鲁棒性增强。</div>
+    <div class="my-stage-detail">电流环一阶 ADRC + 速度环二阶 ADRC · ESO 计算量不大,G431 的 FPU 完全够用。</div>
+  </div>
+
+  <div class="my-stage my-stage-orange">
+    <div class="my-stage-title"><span class="my-tag my-tag-orange">阶段④ 对标量产</span> EtherCAT + 全三环 ADRC</div>
+    <div class="my-stage-desc">目标:多关节实时同步,通信周期 125μs~1ms。</div>
+    <div class="my-stage-detail">通信 CAN→EtherCAT(加 LAN9252/AX58100 ESC 芯片)· 全三环 ADRC(位置环三阶 ADRC 吃算力,G431 勉强)。</div>
+  </div>
+
+  <div class="my-stage my-stage-red">
+    <div class="my-stage-title"><span class="my-tag my-tag-red">阶段⑤ 全身协同</span> EtherCAT/SPE + MPC/WBC/RL</div>
+    <div class="my-stage-desc">目标:整机全身协调,动态平衡、任务决策。</div>
+    <div class="my-stage-detail">MPC/WBC(500-1000Hz)在<strong>躯干级控制器</strong>(更强算力 MCU/SoC)上跑,RL 策略网络(10-100Hz)做任务决策。<strong>这一层不在关节 MCU 上,无需操心</strong>——关节只需做好「接收力矩/位置指令 + 本地 ADRC 执行」。</div>
+  </div>
+
+  <!-- ================= 5 前沿技术现状 ================= -->
+  <h2><span class="h2-num">5</span> 前沿技术现状(已核实)</h2>
+  <p>这些不是空谈,都有落地依据。</p>
+  <ul class="my-list">
+    <li><strong>SPE 单对以太网:</strong>TI 已推出面向人形机器人的 SPE PHY(DP83TG721S-Q1 1000BASE-T1、DP83TC817S-Q1 100BASE-T1),集成 IEEE 802.1AS 时间同步,同步精度 1-15ns,线束重量远轻于 CAN。</li>
+    <li><strong>ADRC 工业落地:</strong>已在 PMSM 伺服、机器人关节模组中广泛应用。东南大学专门发表「改进 ADRC 提升机器人关节模组精度」论文,哈工大等也有 PMSM 弱磁 ADRC 研究。</li>
+    <li><strong>分布式智能关节:</strong>高端方案(特斯拉 Optimus、宇树 H1)采用分布式控制——躯干做 MPC/WBC,每个关节 MCU 本地跑 ADRC + 电流环,即使主控断连,关节也能维持站立平衡 12 秒以上。</li>
+    <li><strong>准直驱双环:</strong>低减速比准直驱关节(腿部高动态)简化为「电流环 + 位置环 PD」,速度环省略,天然适合阻抗控制、足端柔顺吸能。</li>
+  </ul>
+  <div class="box box-tip">
+    <b>💡 给你的实操建议:</b>① 现阶段别纠结 RS485「出局」,先跑通三环 PID;② 下一步升级 CAN 最划算;③ 控制算法先把三环 PID 调稳,再只在<b>电流环</b>试一阶 ADRC,性价比最高;④ EtherCAT/SPE 是 3-5 年后的量产目标,等关节转起来、多关节协同有需求了再说。
+  </div>
+
+  <!-- ================= 6 小结与思考 ================= -->
+  <h2><span class="h2-num">6</span> 小结与思考</h2>
+  <div class="box box-tip">
+    <b>📌 本节小结:</b>本页解决「从入门到量产」的两条主线——通信从 RS485 升级到 CAN(换 TJA1051、G431 自带 FDCAN,成本最低)再到 EtherCAT/SPE(多关节实时同步);控制算法在保留三环结构的前提下,把每一环从 PID 升级为 ADRC(用 ESO 估计并补偿总扰动),主流工业界采用「PID 三环 + 选择性 ADRC + 上层 MPC」的变体 C。五阶段路线强调「别跳阶段」:先跑通三环 PID,再换 CAN、加 ADRC,最后才谈 EtherCAT 与全身协同;而 MPC/WBC/RL 跑在躯干级控制器上,关节 MCU 只需做好「接收指令 + 本地 ADRC 执行」。前沿技术(SPE、ADRC 落地、分布式智能关节、准直驱双环)均有明确落地依据。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 为什么 RS485 在单关节调试时完全够用,一到 40+ 关节量产就会「崩盘」?「babbling」节点如何拖垮整条总线?<br>
+    2. ADRC 的 ESO 估计的「总扰动」包含哪些成分?为什么它能让电流环/速度环的鲁棒性比 PID 强?<br>
+    3. 阶段⑤的 MPC/WBC/RL 为什么不放在 G431 上跑?你的 Hdrive 关节在全身系统里的角色是什么?
+  </div>
+
+  <!-- ================= 7 本节自测 ================= -->
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 关于「RS485 → CAN → EtherCAT → SPE」通信升级路线,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. RS485 主从轮询在 40+ 节点时实时性会崩盘,量产需升级</button>
+      <button data-v="B">B. CAN 带宽足以支撑人形机器人全部关节的高带宽需求,无需再升级</button>
+      <button data-v="C">C. EtherCAT 通信周期无法低于 1ms</button>
+      <button data-v="D">D. SPE 单对以太网不支持 PoDL 供电</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:RS485 主从轮询在节点多时实时性崩盘,是它量产出局的根本原因,选 A。B 错:TI 官方已明确「CAN/RS485 带宽不满足机器人需求」;C 错:EtherCAT 周期可达 125μs~1ms;D 错:SPE 支持 PoDL 供电。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 为什么说「升级 CAN 很划算」?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. STM32G431 自带 FDCAN 控制器,只需把收发器 SP3485 换成 TJA1051,PCB 与代码改动小</button>
+      <button data-v="B">B. 必须更换主控芯片才能支持 CAN</button>
+      <button data-v="C">C. 需要重写全部 FOC 代码</button>
+      <button data-v="D">D. CAN 的带宽比 EtherCAT 还高</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:STM32G431 内置 FDCAN 控制器,升级 CAN 只需换收发器芯片(SP3485 → TJA1051),PCB 与代码改动都很小,选 A。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 关于 ADRC(自抗扰控制),下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. ADRC 取代三环结构,不再需要电流/速度/位置环</button>
+      <button data-v="B">B. ADRC 用 ESO(扩张状态观测器)实时估计「总扰动」并主动补偿,在三环每一环注入更强算法</button>
+      <button data-v="C">C. ADRC 只能跑在躯干级控制器上</button>
+      <button data-v="D">D. G431 无法运行任何一阶 ADRC</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:ADRC 不是取代三环,而是在每一环用 ESO 估计「总扰动」并补偿,选 B。A 错:三环结构保留;C 错:单关节 ADRC 就跑在关节 MCU 上;D 错:G431 的 FPU 足够跑电流环一阶/速度环二阶 ADRC。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 主流工业界(宇树、优必选、智元等)在控制算法上更倾向哪种变体?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 三环全 ADRC(变体 A)</button>
+      <button data-v="B">B. 双环 ADRC(变体 B)</button>
+      <button data-v="C">C. 三环 PID + 上层 MPC + 单关节 ADRC 增强(变体 C)</button>
+      <button data-v="D">D. 纯强化学习,彻底不用 PID</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:工业主流是变体 C(PID 三环 + 选择性 ADRC 增强 + MPC 外层),工程成熟、调试简单,选 C。变体 A/B 更偏向学术与高端实验平台。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">5. 五阶段路线中,「全身协同」(阶段⑤)的 MPC/WBC/RL 算法跑在哪里?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 关节 MCU(G431)上</button>
+      <button data-v="B">B. 躯干级控制器(更强算力 MCU/SoC)上</button>
+      <button data-v="C">C. 云端服务器上</button>
+      <button data-v="D">D. 手机上</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:MPC/WBC(500-1000Hz)与 RL 策略网络跑在躯干级控制器上,这一层不在关节 MCU 上,关节只需做好「接收力矩/位置指令 + 本地 ADRC 执行」,选 B。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">6. 关于「分布式智能关节」,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 每个关节 MCU 本地跑 ADRC + 电流环,即使主控断连,关节也能维持站立平衡一段时间</button>
+      <button data-v="B">B. 所有计算都集中在躯干,关节只做 PWM 输出</button>
+      <button data-v="C">C. 分布式控制会降低系统可靠性</button>
+      <button data-v="D">D. 特斯拉 Optimus 和宇树 H1 都采用纯集中式控制</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:分布式智能关节让每个关节 MCU 本地跑 ADRC + 电流环,主控断连后仍能维持站立平衡 12 秒以上,选 A。这也是特斯拉 Optimus、宇树 H1 等高端方案的做法。</div>
+  </div>
+
+  <!-- ================= 8 参考来源 ================= -->
+  <h2><span class="h2-num">8</span> 参考来源</h2>
+  <ul>
+    <li><a href="https://www.ti.com/document-viewer/ja-jp/lit/html/SNLA482" target="_blank" rel="noopener">TI 应用简报《Advancing Humanoid Robotics with Single Pair Ethernet》(SNLA482,英文)</a>——TI 官方「CAN/RS485 带宽不满足机器人需求」及 SPE PHY 选型依据</li>
+    <li><a href="https://www.ti.com.cn/document-viewer/cn/lit/html/ZHCAEU3" target="_blank" rel="noopener">TI 应用简报《使用单对以太网推动人形机器人发展》(ZHCAEU3,中文)</a></li>
+    <li><a href="https://www.ti.com/product/DP83TG721S-Q1" target="_blank" rel="noopener">TI DP83TG721S-Q1(1000BASE-T1 单对以太网 PHY)产品页</a></li>
+    <li><a href="https://www.ti.com/product/DP83TC817S-Q1" target="_blank" rel="noopener">TI DP83TC817S-Q1(100BASE-T1 单对以太网 PHY)产品页</a></li>
+    <li><a href="https://www.ti.com/solution/zh-tw/humanoid-robot-system-controller" target="_blank" rel="noopener">TI 人形机器人系统控制器方案页</a></li>
+    <li><a href="https://www.st.com/en/microcontrollers-microprocessors/stm32g431cb.html" target="_blank" rel="noopener">ST STM32G431CB 产品页</a>(内置 FDCAN 控制器,升级 CAN 的硬件基础)</li>
+    <li>东南大学「改进 ADRC 提升机器人关节模组精度」论文、哈工大 PMSM 弱磁 ADRC 研究——可经 <a href="https://scholar.google.com/scholar?q=improved+ADRC+robot+joint+module+precision" target="_blank" rel="noopener">Google Scholar</a> 检索获取</li>
+  </ul>
+  <div class="box box-ok">
+    <b>📅 资料整理更新至 2026-08:</b>本页通信总线参数(带宽、周期、同步精度)与 SPE PHY 型号均依据 TI 官方资料核对;ADRC 工业落地与「分布式智能关节」判断依据东南大学、哈工大相关研究与特斯拉 Optimus、宇树 H1 公开信息。
+  </div>
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>

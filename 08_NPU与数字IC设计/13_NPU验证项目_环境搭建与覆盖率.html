@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 08-13 NPU 验证项目:环境搭建与覆盖率
+  板块:NPU与数字IC设计 · 第四阶段 第 2 页(收尾页)
+  内容: 需求拆解 / 接口信号 / 验证计划 / 定向-随机-回归 /
+        UVM 环境 / refmodel / scoreboard / 用例 / 调试 /
+        功能覆盖率 / 代码覆盖率 / 覆盖率收敛 / 签核复盘
+  贯穿项目: LeNet-5 INT8 推理加速器(08-10 Spec + 08-12 SV/UVM)
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · NPU验证项目:环境与覆盖率</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名加 my- 前缀,避免与全局冲突) ===== */
+
+  /* SVG 图形容器 */
+  .my-fig{margin:18px 0;padding:14px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(13,17,23,.72);text-align:center;overflow-x:auto}
+  .my-fig svg{max-width:100%;height:auto}
+  .my-fig figcaption{font-size:12.5px;color:#8b98a9;margin-top:8px;line-height:1.6}
+
+  /* 资源卡片(复制自 02_硬件基础/05_参考资料汇总) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-desc a{color:#58a6ff}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+  /* 徽章配色 */
+  .my-badge-video{background:linear-gradient(135deg,#fef2f2,#fecaca)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+  .my-badge-code{background:linear-gradient(135deg,#fff7ed,#ffedd5)}
+  .my-badge-book{background:linear-gradient(135deg,#fdf4ff,#fae8ff)}
+
+  /* 标签 */
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-csdn{background:#fed7aa;color:#9a3412}
+  .my-tag-zhihu{background:#dbeafe;color:#1e40af}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-1{background:#dcfce7;color:#166534}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+  .my-tag-plain{background:#e2e8f0;color:#475569}
+
+  /* 浅色主题适配(与 site.css 玻璃风格一致) */
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "08-13",
+    root: "..",
+    breadcrumb: [
+      { t: "NPU与数字IC设计", u: "../index.html#sec8" },
+      { t: "NPU验证项目:环境与覆盖率" }
+    ],
+    prev: { t: "SystemVerilog与UVM架构", u: "12_SystemVerilog与UVM架构.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🔧 NPU 验证项目:UVM 环境搭建与覆盖率收敛</h1>
+    <div class="sub">给 08-10 的「LeNet-5 INT8 推理加速器」配一套完整验证环境 —— 13 个知识点:需求拆解、接口检查点、验证计划、定向/随机/回归策略,UVM 环境 + 参考模型 + scoreboard + 四类用例 + 调试定位,最后用功能/代码双覆盖率把它收敛到签核。这也是一个可以写进简历并扛住追问的完整闭环。</div>
+    <div class="tags">
+      <span class="tag">UVM 项目实战</span>
+      <span class="tag">APB Agent</span>
+      <span class="tag">Reference Model</span>
+      <span class="tag">Scoreboard</span>
+      <span class="tag">功能覆盖率</span>
+      <span class="tag">覆盖率收敛</span>
+      <span class="tag">IC 验证岗</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能把 08-10 的 NPU Spec 拆成一张"验证点表",并为每个验证点配验证方法与用例名<br>
+    2. 能在 08-12 的组件树骨架上,搭出本项目的完整环境:apb_agent + irq_monitor + refmodel + scoreboard + env + test<br>
+    3. 能写出 smoke / 功能 / 随机 / 异常四类用例,并掌握"挂死、数据错、中断不来"三类失败的定位流程<br>
+    4. 能用 covergroup 建模功能覆盖率、跑出代码覆盖率,走完"分析未覆盖 → 补用例 → 收敛 → 签核"的完整闭环<br>
+    <b>建议用时:</b>约 100 分钟(通读 60 分钟 + 代码精读 25 分钟 + 自测 15 分钟;前置:08-10 Spec、08-12 SV/UVM)
+  </div>
+
+  <!-- ================= 1. 需求拆解 / 接口 / 计划 / 策略 ================= -->
+  <h2><span class="h2-num">1</span> 从 Spec 到验证点:需求拆解、接口分析与验证计划</h2>
+  <p>验证项目的第一步不是搭环境,而是<b>读 Spec</b>。08-10 已经冻结了 DUT 的边界:APB 从机 + 11 个寄存器、卷积(3×3/5×5, stride=1)、2×2 最大池化、全连接、ReLU、INT32 累加 + requant、特征图乒乓双缓冲、完成中断。本节把这些"功能描述"翻译成可执行、可追踪、可度量的验证点 —— 这张表会贯穿整个项目,也是面试里"你怎么从一个 Spec 开始验证"的标准答案。</p>
+
+  <h3>1.1 NPU 验证需求拆解:把每一条 Spec 翻译成验证点</h3>
+  <p><b>是什么:</b>需求拆解 = 逐行读 Spec,为每条功能/每类边界提出三个问题:<b>①怎么激励它</b>(写什么寄存器、灌什么数据)?<b>②怎么检查它</b>(和谁比、在哪一层检查)?<b>③怎么度量它</b>(哪个覆盖率 bin 标记"测过了")?拆解的产出就是<b>验证点表格</b>。</p>
+  <p><b>为什么:</b>不拆解就开写用例,必然漏测"不显眼"的功能 —— 中断使能、读清除语义、非法层类型、N−1 编码边界(0 表示 1 通道),这些恰恰是流片后最难补的洞。拆解表还能当"验证完成"的裁判:表上每行都有对应的用例与覆盖 bin,全部绿了才算做完。</p>
+  <p><b>怎么做 —— 本项目 11 条验证点(可直接抄进你的验证计划):</b></p>
+  <div class="table-wrap"><table>
+    <tr><th>点号</th><th>DUT 特性(Spec 依据)</th><th>验证方法</th><th>用例名</th></tr>
+    <tr><td>V1</td><td>寄存器读写属性 / 复位值(11 个寄存器,VERSION=0x0001_0000)</td><td>RAL 前门读写 + 复位值检查 + bit-bash 序列</td><td>reg_reset_test / reg_bitbash_test</td></tr>
+    <tr><td>V2</td><td>卷积 3×3 stride=1(+bias+requant)</td><td>固定数据定向比对 golden(SV refmodel)</td><td>smoke_conv3x3_test</td></tr>
+    <tr><td>V3</td><td>卷积 5×5(k5=1)</td><td>定向 + 随机尺寸/通道,refmodel 比对</td><td>conv5x5_test</td></tr>
+    <tr><td>V4</td><td>2×2 最大池化(layer_type=001)</td><td>定向已知矩阵(手算期望)</td><td>pool_max2x2_test</td></tr>
+    <tr><td>V5</td><td>全连接(layer_type=010)</td><td>定向 1×N 向量 × 矩阵,refmodel 比对</td><td>fc_test</td></tr>
+    <tr><td>V6</td><td>ReLU 使能(relu_en 0/1)</td><td>同一层数据开关 relu 各跑一次,负数输出应翻转</td><td>relu_on_off_test</td></tr>
+    <tr><td>V7</td><td>乒乓切换 + back-to-back 层间接力</td><td>连续 start 两层,输出块地址交换正确、无读写冲突</td><td>pingpong_b2b_test</td></tr>
+    <tr><td>V8</td><td>中断行为(ie 门控、电平 irq、done 读清除)</td><td>定向中断序列 + SVA 断言(见 1.2)</td><td>irq_level_test</td></tr>
+    <tr><td>V9</td><td>异常配置:非法 layer_type(3'b011/1xx)、idle=0 时写 start、地址未对齐</td><td>异常用例:期待 pslverr / start 被忽略 / 无 panic</td><td>illegal_cfg_test</td></tr>
+    <tr><td>V10</td><td>边界尺寸:fm_in=1、1 通道、256 通道(N−1 满量程)、特征图 RAM 16K 边界</td><td>随机约束边界取值优先 + 定向极值</td><td>boundary_test</td></tr>
+    <tr><td>V11</td><td>随机层组合整体行为(LeNet 五层全流水)</td><td>约束随机回归 N 个 seed,refmodel 全比对</td><td>rand_all_test(回归)</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>面试官问「验证点怎么来的?」—— 答三步:①<b>功能点</b>:Spec 每个"动词"一条(算卷积/切乒乓/发中断);②<b>属性点</b>:每个寄存器位域的 RW/复位值/特殊语义(读清除、HW 自清、N−1 编码)各一条;③<b>异常点</b>:每个"硬件会怎么处理非法输入"一条。再补一句「每条验证点都要能回答:用什么激励、和谁比、用哪个 bin 度量」就是满分结构。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①只拆"正常功能"不拆"异常与边界" —— V9/V10 才是区分新手与熟手的地方;②验证点写得不可度量(「验证卷积正确」),无法关联覆盖率;③忘了 VERSION 这类"顺手寄存器"也要验复位值 —— 驱动第一行就靠它探测 IP,错了系统直接起不来。</div>
+
+  <h3>1.2 接口信号分析:APB 检查点、中断语义与时钟复位</h3>
+  <p><b>是什么:</b>搭环境前必须先回答"接口上每一根信号,验证要盯它什么"。本项目对外只有三组信号:<b>APB 从机口</b>(psel/penable/pwrite/paddr[7:0]/pwdata/prdata/pready/pslverr)、<b>irq 中断</b>、<b>clk/rst_n</b>。每组的检查点如下。</p>
+  <ul>
+    <li><b>APB 检查点 1 · PREADY 等待:</b>PSLVERR 与 PREADY 是从机的"话语权"。寄存器通路本项目设计为 0 等待(pready 恒 1),但 RAM 写通路在计算中可能拉低 pready 插等待态 —— <b>driver 必须实现"等 pready 才结束一次传输"</b>的循环,不能写死两拍。</li>
+    <li><b>APB 检查点 2 · PSLVERR:</b>两种错误源:计算中写权重 RAM / 正被读取的特征图块(写口互斥被拒);访问未定义地址(译码 miss)。monitor 要把 <code>pslverr &amp;&amp; psel &amp;&amp; penable</code> 采成带地址的错误事务,scoreboard 期待表比对 —— <b>错误响应本身也是被验证的功能</b>,不是环境报错。</li>
+    <li><b>APB 检查点 3 · 地址对齐:</b>APB 数据访问要求 <code>paddr[1:0]==2'b00</code>;RAM 通路里 BIAS_ADDR 必须按 INT32 4 字节对齐(08-10 寄存器表备注)。对齐违例用 SVA 断言最合适(见下)。</li>
+    <li><b>中断接口 · 脉冲 vs 电平:</b>本项目 08-10 定的是<b>电平中断</b>:done 置位且 ie=1 时 irq 拉高,<b>读 STATUS 清 done 即撤 irq</b>。电平的好处:轮询 CPU 不会错过、对 GIC 电平触发友好;脉冲的坑:CPU 关中断 1 拍就永久丢失。验证检查点:①ie=0 时 done 置位但 irq 不动;②读 STATUS 后 1~2 拍内 irq 撤销;③连续两层完成、中间不清 done,irq 应保持(电平语义)。</li>
+    <li><b>时钟复位检查点:</b>复位期间 APB 输出(psel/penable)应为 0、irq 为 0;复位释放后所有寄存器呈复位值(接 V1 的 reg_reset_test);异步复位、同步释放(与 08-08 的复位风格一致),复位期间敲 APB 不应挂死。</li>
+  </ul>
+  <pre><code>// 三条最值钱的接口断言(SVA,写在 bind 到 npu_top 的 checker 里)
+property p_apb_align;
+    @(posedge clk) disable iff (!rst_n)
+    (psel &amp;&amp; penable) |-&gt; (paddr[1:0] == 2'b00);          // 地址 4 字节对齐
+endproperty
+property p_pslverr_only_in_access;
+    @(posedge clk) disable iff (!rst_n)
+    pslverr |-&gt; (psel &amp;&amp; penable);                         // 错误只准在 ACCESS 相报
+endproperty
+property p_irq_level_semantics;
+    @(posedge clk) disable iff (!rst_n)
+    (irq &amp;&amp; rst_n) |=&gt; (irq until_with (psel &amp;&amp; penable &amp;&amp; !pwrite &amp;&amp;
+                        (paddr == 8'h04)));                // 电平中断:读到 STATUS 才许撤
+endproperty
+// 使用:assert property (p_apb_align) else `uvm_error("SVA", "paddr 未对齐")</code></pre>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「PSLVERR 什么时候采?」—— 只在 <code>psel &amp;&amp; penable &amp;&amp; pready</code> 的 ACCESS 相采样,SETUP 相的信号无意义;monitor 里写成 <code>if (psel &amp;&amp; penable &amp;&amp; pready)</code> 一个 if 覆盖读写两路。「为什么选电平中断?」—— 轮询与中断控制器都友好、不会因 CPU 关中断丢事件,代价是要有明确的清除动作(读 STATUS),这个"清除契约"必须进验证点 V8。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①driver 等待态写死两拍,一旦 DUT 拉低 pready 就数据错位;②把 pslverr 当环境错误 <code>uvm_fatal</code>,异常用例根本没法跑 —— 它是<b>期待中的响应</b>;③断言写在 class 里编译不过(SVA 必须在 module/Checker/interface 中,用 bind 注入 DUT);④irq 电平语义验成"每层一个脉冲",与 Spec 契约不符。</div>
+
+  <h3>1.3 验证计划与四层追踪:需求 → 验证点 → 用例 → 覆盖率</h3>
+  <p><b>是什么:</b>验证计划(vPlan/test plan)是验证项目的"施工图":一张表把 <b>Spec 需求编号 → 验证点 → 激励/检查方法 → 用例名 → 覆盖率 bin → 状态</b> 六列锁死,任何一行改动都可追踪、可 review。</p>
+  <div class="table-wrap"><table>
+    <tr><th>列</th><th>内容示例(V8 行)</th><th>为什么要有这列</th></tr>
+    <tr><td>需求编号</td><td>REQ-06(08-10 Spec「完成以中断通知」)</td><td>追溯到 Spec 原文,防"凭记忆验证"</td></tr>
+    <tr><td>验证点</td><td>ie 门控 / 电平 irq / done 读清除</td><td>把需求拆成可检查的最小单元</td></tr>
+    <tr><td>检查方法</td><td>定向序列 + SVA p_irq_level_semantics + scoreboard 记录</td><td>明确"谁负责判错"</td></tr>
+    <tr><td>用例</td><td>irq_level_test(ie=0 与 ie=1 两段)</td><td>落到可执行的代码</td></tr>
+    <tr><td>覆盖率</td><td>cg_irq:ie 2 bins × done 事件 cross</td><td>落到可度量的 bin(闭环的终点)</td></tr>
+    <tr><td>状态</td><td>未开始 / 已运行 / 通过 / 覆盖收敛</td><td>进度管理与每日站会汇报</td></tr>
+  </table></div>
+  <p><b>review 流程怎么做:</b>①<b>计划评审</b>(设计 + 验证 + 架构三方 30 分钟):逐行过表,设计者补"你没注意到的角"(如 start 的忽略语义),验证者补"你没验到的角";②<b>用例评审</b>:每个用例头部注释必须写清"对应哪条验证点、期待什么现象";③<b>每日覆盖率评审</b>:回归结果 + 覆盖率增量,绿了销项,红了排期。真实公司里 vPlan 常挂在 Cadence vManager / Synopsys Verdi-Manager,个人项目一张 Excel/Markdown 表足矣。</p>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「需求、验证点、用例、覆盖率怎么串起来?」—— 答"四层追踪":Spec 每条需求映射 ≥1 个验证点,每个验证点映射 ≥1 个用例,用例运行产生覆盖率样本反填 bin;查询方向双行 —— 从需求往下能找到"谁在验它",从覆盖率反查能上溯"它保护哪条需求"。<b>覆盖率 100% 而某条需求没有 bin,就是追踪断裂</b>。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①验证计划写完从不更新状态,回归跑完表还是"未开始";②用例与验证点多对多乱映射,一个 bug 出来无法定位"哪个验证点失守";③覆盖率 bin 不在计划里定义,收敛时才发现"关键模式根本没有 bin 可采"。</div>
+
+  <h3>1.4 验证策略:定向、随机、回归各管一段</h3>
+  <p><b>是什么:</b>同一个环境上跑三种激励:<b>定向</b>(directed)是手工构造的精确场景;<b>随机</b>(constrained-random)是约束驱动的批量场景;<b>回归</b>(regression)是把前两者批量化的运行机制(多 seed、自动判成败、自动归档)。</p>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>定向用例</th><th>随机用例(约束随机 CRV)</th></tr>
+    <tr><td>干什么</td><td>smoke 通路、每算子关键路径、异常/边界精确复现</td><td>参数空间扫荡:层类型×尺寸×通道×地址×relu/k5/requant</td></tr>
+    <tr><td>为什么</td><td>确定性结果可手算、可 debug、环境坏了第一个发现</td><td>覆盖工程师想不到的组合,撞出 corner bug</td></tr>
+    <tr><td>本项目</td><td>V1~V9 的 smoke/算子/异常/边界用例</td><td>V10/V11:rand_all_test + 边界加权约束</td></tr>
+    <tr><td>占比经验</td><td>约 20%,但决定环境能不能跑</td><td>约 80% 的仿真机时,决定覆盖能不能收敛</td></tr>
+  </table></div>
+  <p><b>回归管理怎么做:</b>①用 <b>seed 控制</b>可复现:<code>./simv +UVM_TESTNAME=rand_all_test +ntb_random_seed=42</code>,每个失败必须记录 seed;②<b>夜间回归</b>跑满随机用例 × N 个 seed(如 50),按 UVM report server 的 UVM_ERROR 计数自动判 pass/fail;③<b>失败自动归档</b>:脚本把失败的 log、波形、coverage 快照、seed、DUT/TB 的 git commit 号打包进 <code>regr_fail/&lt;date&gt;_&lt;test&gt;_&lt;seed&gt;/</code>,第二天只看归档目录 —— 没有这一步,夜间 50 个失败会淹没你的邮箱。</p>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「什么用定向、什么用随机?」—— 一句话:<b>「可推理的确定性场景用定向,不可枚举的参数空间用随机」</b>;再补:定向负责"验对",随机负责"验全",回归负责"持续验",三者共用同一套 env/比对器,只是 sequence 与 seed 不同。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①随机用例失败但没记 seed,bug 无法复现等于白测;②回归判成败看"log 里有没有 FAIL 字样"而不是 UVM_ERROR 计数,日志措辞一改脚本就失效;③随机用例里塞了无约束的非法配置,refmodel 也算不出期望,出现"两边都错"的假比对。</div>
+
+
+
+  <!-- ================= 2. UVM 环境搭建 ================= -->
+  <h2><span class="h2-num">2</span> UVM 环境搭建:agent、参考模型、scoreboard 与四类用例</h2>
+  <p>08-12 的最小环境在这里升格为"NPU 项目版":总线侧换成 <b>APB agent</b>(读写 11 个寄存器 + RAM 写通路),新增一路 <b>irq_monitor</b> 观察完成中断,新增 <b>refmodel</b> 行为级黄金模型与 <b>scoreboard</b> 逐块比对。组件树不变 —— 还是 test/env/agent 那棵树,变的只是"插在树上的零件"。</p>
+
+  <h3>2.1 环境整体搭建:组件、连线、目录与编译</h3>
+  <p><b>是什么:</b>本项目环境共 7 类组件:<b>apb_agent</b>(active:sequencer + driver + monitor,负责全部 APB 事务)、<b>irq_monitor</b>(passive,采样 irq 与 done,广播"层完成事件")、<b>refmodel</b>(镜像寄存器与两块 RAM,算出期望输出块)、<b>npu_scoreboard</b>(期望块 vs 实际块逐字节比对)、<b>npu_coverage</b>(订阅完成事件采 covergroup)、<b>npu_env</b>(装配容器)、<b>npu_base_test + 各 test</b>(配置与激励策略)。</p>
+  <figure class="my-fig">
+  <svg viewBox="0 0 640 430" role="img" aria-label="NPU UVM 验证环境框图:my_test 顶层创建 npu_env,npu_env 内含 apb_agent(sequencer、driver、monitor)、irq_monitor、npu_refmodel、npu_scoreboard 与 npu_coverage;driver 驱动 DUT npu_top 的 APB 引脚,DUT 的 irq 电平送到 irq_monitor,apb_monitor 通过 analysis_port 把 APB 事务广播给 refmodel 与 scoreboard,irq_monitor 广播层完成事件,refmodel 输出期望块给 scoreboard,coverage 订阅广播采样 covergroup" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <defs>
+      <marker id="arwE1B" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#58a6ff"/></marker>
+      <marker id="arwE1G" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#22c55e"/></marker>
+      <marker id="arwE1O" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#f59e0b"/></marker>
+      <marker id="arwE1R" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ef4444"/></marker>
+    </defs>
+    <!-- test -->
+    <rect x="230" y="12" width="180" height="42" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.7"/>
+    <text x="320" y="30" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">my_test(uvm_test_top)</text>
+    <text x="320" y="46" text-anchor="middle" fill="#8b98a9" font-size="9">选 seq(smoke/随机/异常)+ 配置开关</text>
+    <line x1="320" y1="54" x2="320" y2="72" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwE1B)"/>
+    <!-- env 容器 -->
+    <rect x="20" y="74" width="600" height="238" rx="12" fill="rgba(88,166,255,.04)" stroke="#58a6ff" stroke-width="1.2" stroke-dasharray="6,4"/>
+    <text x="36" y="92" fill="#58a6ff" font-size="11" font-weight="bold">npu_env(uvm_env)</text>
+    <!-- apb_agent -->
+    <rect x="36" y="100" width="188" height="196" rx="10" fill="rgba(88,166,255,.07)" stroke="#58a6ff" stroke-width="1.5"/>
+    <text x="130" y="118" text-anchor="middle" fill="#58a6ff" font-size="11.5" font-weight="bold">apb_agent(active)</text>
+    <rect x="48" y="126" width="74" height="34" rx="7" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.2"/>
+    <text x="85" y="147" text-anchor="middle" fill="#f59e0b" font-size="10.5">sequencer</text>
+    <rect x="134" y="126" width="78" height="34" rx="7" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.2"/>
+    <text x="173" y="147" text-anchor="middle" fill="#f59e0b" font-size="10.5">driver</text>
+    <line x1="122" y1="143" x2="132" y2="143" stroke="#8b98a9" stroke-width="1.3" stroke-dasharray="3,3" marker-end="url(#arwE1B)"/>
+    <text x="127" y="136" text-anchor="middle" fill="#8b98a9" font-size="8.5">seq_item</text>
+    <rect x="48" y="232" width="164" height="42" rx="7" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.2"/>
+    <text x="130" y="250" text-anchor="middle" fill="#f59e0b" font-size="10.5">apb_monitor(纯被动)</text>
+    <text x="130" y="264" text-anchor="middle" fill="#8b98a9" font-size="8.5">ap : analysis_port # (apb_txn)</text>
+    <!-- irq_monitor -->
+    <rect x="246" y="100" width="150" height="58" rx="10" fill="rgba(239,68,68,.07)" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="321" y="120" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="bold">irq_monitor</text>
+    <text x="321" y="136" text-anchor="middle" fill="#8b98a9" font-size="8.5">采样 irq / STATUS.done</text>
+    <text x="321" y="150" text-anchor="middle" fill="#8b98a9" font-size="8.5">广播「层完成事件」</text>
+    <!-- refmodel -->
+    <rect x="246" y="176" width="150" height="70" rx="10" fill="rgba(245,158,11,.07)" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="321" y="196" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">npu_refmodel</text>
+    <text x="321" y="212" text-anchor="middle" fill="#8b98a9" font-size="8.5">镜像寄存器 + RAM</text>
+    <text x="321" y="226" text-anchor="middle" fill="#8b98a9" font-size="8.5">行为级卷积/池化/FC</text>
+    <text x="321" y="240" text-anchor="middle" fill="#8b98a9" font-size="8.5">exp_ap : 期望块广播</text>
+    <!-- scoreboard -->
+    <rect x="436" y="100" width="168" height="70" rx="10" fill="rgba(34,197,94,.07)" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="520" y="120" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">npu_scoreboard</text>
+    <text x="520" y="136" text-anchor="middle" fill="#8b98a9" font-size="8.5">期望块 vs 实际块</text>
+    <text x="520" y="150" text-anchor="middle" fill="#8b98a9" font-size="8.5">逐字节比对 + 定位打印</text>
+    <text x="520" y="164" text-anchor="middle" fill="#8b98a9" font-size="8.5">imp: apb / irq / exp</text>
+    <!-- coverage -->
+    <rect x="436" y="192" width="168" height="54" rx="10" fill="rgba(34,197,94,.07)" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="520" y="212" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">npu_coverage</text>
+    <text x="520" y="228" text-anchor="middle" fill="#8b98a9" font-size="8.5">covergroup 建模(第 4 节)</text>
+    <text x="520" y="242" text-anchor="middle" fill="#8b98a9" font-size="8.5">订阅完成事件采样</text>
+    <!-- DUT -->
+    <rect x="210" y="342" width="220" height="56" rx="10" fill="rgba(139,152,169,.10)" stroke="#c9d1d9" stroke-width="1.6"/>
+    <text x="320" y="364" text-anchor="middle" fill="#8b98a9" font-size="12" font-weight="bold">DUT:npu_top</text>
+    <text x="320" y="380" text-anchor="middle" fill="#8b98a9" font-size="8.5">LeNet-5 INT8:APB 从机 + 11 寄存器 + 卷积/池化/FC + 乒乓 RAM</text>
+    <text x="320" y="393" text-anchor="middle" fill="#8b98a9" font-size="8.5">clk / rst_n</text>
+    <!-- driver → DUT APB -->
+    <path d="M173,296 L173,322 L240,322 L240,340" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwE1B)"/>
+    <text x="150" y="318" fill="#58a6ff" font-size="9">APB 引脚级驱动</text>
+    <text x="150" y="330" fill="#58a6ff" font-size="9">(等 pready)</text>
+    <!-- DUT → monitor 采样 -->
+    <path d="M290,340 L290,320 L130,320 L130,276" fill="none" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="5,4" marker-end="url(#arwE1G)"/>
+    <text x="296" y="336" fill="#22c55e" font-size="9">monitor 旁路采样</text>
+    <!-- DUT → irq_monitor -->
+    <path d="M400,340 L400,300 L300,300 L300,160" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arwE1R)"/>
+    <text x="406" y="316" fill="#ef4444" font-size="9">irq(电平,ie 门控)</text>
+    <!-- mon.ap → refmodel -->
+    <path d="M216,252 L232,252 L232,210 L244,210" fill="none" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#arwE1O)"/>
+    <text x="222" y="200" fill="#f59e0b" font-size="8.5">APB 写事务</text>
+    <!-- mon.ap 广播主干 → scoreboard -->
+    <path d="M216,252 L420,252 L420,138 L434,138" fill="none" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="5,4" marker-end="url(#arwE1G)"/>
+    <circle cx="406" cy="252" r="3" fill="#22c55e"/>
+    <text x="330" y="246" fill="#22c55e" font-size="8.5">analysis 广播(同一事务,多订阅者)</text>
+    <!-- 广播分叉 → coverage -->
+    <path d="M406,252 L406,220 L434,220" fill="none" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="5,4" marker-end="url(#arwE1G)"/>
+    <!-- irq_monitor → scoreboard -->
+    <path d="M396,124 L434,124" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="5,4" marker-end="url(#arwE1R)"/>
+    <text x="415" y="96" text-anchor="middle" fill="#ef4444" font-size="8.5">完成事件</text>
+    <!-- refmodel → scoreboard -->
+    <path d="M396,204 L416,204 L416,158 L434,158" fill="none" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arwE1O)"/>
+    <text x="416" y="180" text-anchor="middle" fill="#f59e0b" font-size="8.5">期望块</text>
+    <!-- 图例 -->
+    <text x="320" y="424" text-anchor="middle" fill="#8b98a9" font-size="9.5">蓝实线:结构挂树 / 引脚驱动 绿虚线:TLM analysis 广播 橙:期望数据流 红:irq / 完成事件</text>
+  </svg>
+  <figcaption>图① NPU UVM 验证环境框图:driver 单向打 APB 波形,monitor 与 irq_monitor 双路旁路采样;refmodel 订阅 APB 写镜像状态、经 exp_ap 给 scoreboard 供期望;coverage 挂在广播总线上采样。</figcaption>
+  </figure>
+  <p><b>目录结构与编译(工程化最低配置):</b></p>
+  <pre><code>npu_dv/                          ← 与 RTL 仓库分开,dv = design verification
+├── tb/                           ← 顶层连接(静态世界)
+│   ├── npu_if.sv                 ← APB + irq + clk/rst_n 接口,clocking block
+│   └── tb_top.sv                 ← 例化 DUT/接口,config_db 注入,run_test()
+├── sv/                           ← 组件(动态类世界)
+│   ├── npu_txn.sv                ← apb_txn / irq_evt / exp_blk 三个事务类
+│   ├── npu_ral.sv                ← RAL 寄存器模型 + adapter(08-12 §7.2 直接复用)
+│   ├── apb_agent/                ← apb_cfg / apb_driver / apb_sequencer / apb_monitor
+│   ├── irq_monitor.sv
+│   ├── npu_refmodel.sv           ← 行为级黄金模型(本页 2.2)
+│   ├── npu_scoreboard.sv         ← (本页 2.3)
+│   ├── npu_coverage.sv           ← (本页 4.1)
+│   ├── npu_env.sv
+│   └── npu_tests/                ← smoke/算子/随机/异常 各用例(本页 2.4)
+├── sim/
+│   ├── filelist.f                ← 文件清单,编译脚本只认它
+│   ├── run_vcs.sh / Makefile     ← 一键编译仿真
+│   └── regr/                     ← 夜间回归脚本 + 失败自动归档目录
+└── doc/                          ← 验证计划表 / 签核报告 / 复盘文档</code></pre>
+  <pre><code># VCS(商用,验证岗主流):UVM 库 + 全覆盖率开起来一行
+vcs -sverilog -ntb_opts uvm-1.2 -full64 \
+    -cm line+cond+fsm+tgl+branch -cm_hier cover.cfg \
+    -f sim/filelist.f -o simv -debug_access+all -l comp.log
+./simv +UVM_TESTNAME=smoke_conv3x3_test -cm_dir cov/smoke.vdb -l sim.log
+
+# iverilog 一句话差异:开源 iverilog(-g2012)支持大部分 SV 语法,
+# 但没有官方 UVM 类库,跑不了标准 UVM 环境 —— 学习期用 EDA Playground
+# 云端仿真器(Questa/VCS 可选)或学校/公司 license,本项目默认 VCS 语法。</code></pre>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「为什么 irq_monitor 单独一路而不塞进 apb_agent?」—— agent 与"一路物理接口"绑定;irq 是另一组无握手的单向信号,生命周期与 APB 无关,单独 monitor 才能在 chip 级复用(总 interrupt 控制器侧还要继续听它)。「为什么 refmodel 是 component 而不是 object?」—— 它要订阅 monitor 的 TLM(有 imp)、有自己的采样线程与 phase,是常驻树上的"活组件"。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①driver/monitor 共用 clocking block 之外还直接读原始信号,采样时刻不一致;②refmodel 的 RAM 镜像和真实 DUT 前门写入不同步(漏听 RAM 写通路事务),比对全错却查不到 bug;③filelist.f 忘了 UVM 库(某些流程要 -ntb_opts 显式声明)或文件顺序错(宏/包未先编译),编译报"uvm_pkg not found"。</div>
+
+  <h3>2.2 参考模型 refmodel:SV 行为级黄金模型(两条实现路线)</h3>
+  <p><b>是什么:</b>refmodel(golden model)是一个<b>不关心时序、只关心数值</b>的软件模型:它和 DUT 听同样的配置(镜像寄存器与 RAM),算出"理论上正确的输出",交给 scoreboard 当比对基准。本项目两条实现路线:<b>路线 A</b> 纯 SystemVerilog 行为级(队列 + 数组 + 三重循环),<b>路线 B</b> DPI-C 调 Python/NumPy(复用 08-08 的量化脚本)。</p>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>路线 A:SV 行为级</th><th>路线 B:DPI-C 调 Python/NumPy</th></tr>
+    <tr><td>开发效率</td><td>三重循环几十行,和 RTL 结构一一对应,好教好查</td><td><code>np.convolve/matmul</code> 数行搞定,算法人一读就懂</td></tr>
+    <tr><td>数值契约</td><td>INT8 饱和 / requant 算术右移用 <code>$signed/&gt;&gt;&gt;</code> 精确复现</td><td>要自己复刻 INT8 饱和与舍入规则,NumPy 默认浮点易"对不上"</td></tr>
+    <tr><td>环境依赖</td><td>零依赖,仿真器直接编译</td><td>需编译 C 壳 + Python 运行时,跨机回归要装环境</td></tr>
+    <tr><td>调试体验</td><td>与 DUT 同一波形窗口、同一日志系统,逐层可打印</td><td>两边调试割裂,需打印中间张量人工对照</td></tr>
+    <tr><td>适用场景</td><td><b>学习项目 / 中小 IP(推荐)</b></td><td>大网络、算法团队已有一致性脚本(08-08)时可复用</td></tr>
+  </table></div>
+  <p><b>怎么做 —— 路线 A 骨架(镜像 + 计算两段):</b></p>
+  <pre><code>class npu_refmodel extends uvm_component;
+    `uvm_component_utils(npu_refmodel)
+    // —— 镜像区:与 DUT "记同一本账" ——
+    bit [31:0] regs   [bit [7:0]];      // 寄存器镜像:按 0x00~0x28 偏移
+    bit [7:0]  wram   [bit [15:0]];     // 权重 RAM 镜像(64K×8)
+    bit [7:0]  fram   [bit [17:0]];     // 特征图 RAM 镜像(A/B 乒乓统一编址)
+    uvm_analysis_port #(npu_exp_blk) exp_ap;
+    uvm_analysis_imp #(apb_txn, npu_refmodel) bus_imp;   // 订阅 APB 写
+
+    function void write(apb_txn t);                       // monitor 广播进来
+        if (!t.pwrite || !t.pready) return;               // 只关心有效写
+        regs[t.paddr] = t.pwdata;                         // 寄存器通路
+        // RAM 写通路(0x80 段起):同步写 wram/fram 镜像,含 pslverr 拒绝逻辑
+    endfunction
+
+    task run_layer(int layer_no);                         // 收到"完成事件"前的期望计算
+        npu_exp_blk blk = npu_exp_blk::type_id::create("blk");
+        int fm_in  = (regs[8'h20] &amp; 32'hFF) + 1;          // ★ N−1 编码还原
+        int fm_out = (regs[8'h20] &gt;&gt; 8 &amp; 32'hFF) + 1;
+        int ch_in  = (regs[8'h1C] &amp; 32'hFF) + 1;
+        int ch_out = (regs[8'h1C] &gt;&gt; 8 &amp; 32'hFF) + 1;
+        int K      = (regs[8'h18] &amp; 32'h10) ? 5 : 3;      // k5 位选核
+        bit relu   = (regs[8'h18] &amp; 32'h08) != 0;
+        int mult   = regs[8'h24] &amp; 32'hFFFF;
+        int shift  = (regs[8'h24] &gt;&gt; 16) &amp; 32'h1F;
+        blk.type_name = LAYER_NAME[regs[8'h18] &amp; 7];      // conv/pool/fc
+        blk.layer_no  = layer_no;
+        // —— 逐输出点累加(队列/数组充当行缓冲,行为级不追周期) ——
+        for (int oy = 0; oy &lt; fm_out; oy++)
+        for (int ox = 0; ox &lt; fm_out; ox++)
+        for (int oc = 0; oc &lt; ch_out; oc++) begin
+            int acc = 0;
+            for (int ic = 0; ic &lt; ch_in; ic++)
+            for (int ky = 0; ky &lt; K; ky++)
+            for (int kx = 0; kx &lt; K; kx++)
+                acc += $signed(fram[ifm_addr(ox+kx, oy+ky, ic)]) *
+                       $signed(wram [w_addr  (kx, ky, ic, oc)]);
+            acc += $signed(regs[8'h14] ? bias_ld(oc) : 32'sd0);  // INT32 bias
+            acc = (acc * mult) &gt;&gt;&gt; shift;                          // requant 算术右移
+            if      (acc &gt; 127)  acc = 127;                        // INT8 双向饱和
+            else if (acc &lt; -128) acc = -128;
+            if (relu &amp;&amp; acc &lt; 0) acc = 0;                          // ReLU 在饱和之后
+            blk.dat[ofm_idx(ox, oy, oc)] = acc[7:0];
+        end
+        exp_ap.write(blk);                                // 期望块 → scoreboard
+    endtask
+endclass</code></pre>
+  <ul>
+    <li><b>镜像语义:</b>refmodel 只做"值正确"的事,不模拟 FSM 与拍数 —— 这是行为级与 RTL 的分工;周期精确是性能仿真器的事,不是功能比对的事。</li>
+    <li><b>两个必考点:</b>①N−1 编码还原(+1);②运算顺序必须与 RTL 逐位一致 —— requant 的 <code>(acc*M)&gt;&gt;shift</code> 是算术右移、饱和在 ReLU 之前还是之后要翻回 08-12/08-08 的 Spec,顺序错一位,randomize 一跑满屏 mismatch。</li>
+    <li><b>自检手段:</b>给 refmodel 单独写一个小 module_tb,喂固定 4×4 输入与手算卷积结果,先证明"尺子是对的",再去量 DUT。</li>
+  </ul>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「golden model 怎么验证它自己?」—— 三招:①极小向量手算(2×2 输入 3×3 核,纸上出结果);②与 Python/NumPy 脚本(08-08 量化链路)交叉对照一批随机向量;③模型与 RTL 不一致时,<b>默认先怀疑模型</b> —— 用"模型对、RTL 错"的假设排障,排除完再翻案。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①把 requant 写成逻辑右移(负数全错),SV 里带符号右移必须 <code>&gt;&gt;&gt;</code> 且左操作数是 int;②饱和与 ReLU 顺序颠倒,负数边界值比对全挂;③镜像忘了处理 pslverr 被拒的写(DUT 拒收,模型却记账);④乒乓块地址换算错,A/B 在模型与 RTL 里编址不一致。</div>
+
+  <h3>2.3 scoreboard 比对策略:逐块 vs 逐 beat、失败定位打印、容差立场</h3>
+  <p><b>是什么:</b>scoreboard 是终审裁判。比对粒度有两种:<b>逐事务/逐块</b>(一个高层事务完成后,整块数据一次比对)与<b>逐 beat/逐字节</b>(数据流每拍到达即比)。本项目数据流是"配置 → start → done → 整块输出",天然适合<b>层完成事件触发的逐块比对</b>:irq_monitor 广播完成事件 → scoreboard 取 refmodel 期望块 → 与特征图 RAM 镜像(DUT 实际写回)逐字节扫。</p>
+  <div class="table-wrap"><table>
+    <tr><th>策略</th><th>触发时机</th><th>适用接口</th><th>本项目取舍</th></tr>
+    <tr><td>逐事务/逐块比对</td><td>完成事件/握手后整块比对</td><td>带"完成"语义的加速器、帧协议</td><td><b>采用</b>:done 事件触发,出错一次看全块</td></tr>
+    <tr><td>逐 beat 比对</td><td>每个数据拍即到即比</td><td>AXI-Stream / FIFO 等流式接口</td><td>不采用:本 DUT 输出经片内 RAM,总线上看不到逐拍数据</td></tr>
+    <tr><td>端到端分数检查</td><td>全网五层跑完比对最终 10 类输出</td><td>回归冒烟、模型一致性</td><td>补充:rand_all_test 附加终检,快但定位粗</td></tr>
+  </table></div>
+  <p><b>失败打印要"一屏定位":</b>报错必须自带 <b>层号、层类型、出错坐标、期望值、实际值、差值</b>,配合波形文件行号直接跳现场:</p>
+  <pre><code>function void npu_scoreboard::compare_layer(npu_exp_blk exp);
+    int unsigned first_err = exp.dat.size();
+    int          err_cnt   = 0;
+    foreach (exp.dat[i]) begin
+        bit [7:0] act = rm.fram[exp.ofm_base + i];     // DUT 实际写回的特征图 RAM
+        if (act !== exp.dat[i]) begin
+            int ox, oy, oc;
+            exp.decode_idx(i, ox, oy, oc);             // 线性地址反解回 (x,y,channel)
+            `uvm_error("SCB", $sformatf(
+                "[layer#%0d %s] idx=%0d (ox=%0d,oy=%0d,oc=%0d) exp=%02h act=%02h diff=%0d",
+                exp.layer_no, exp.type_name, i, ox, oy, oc, exp.dat[i], act,
+                $signed({1'b0, act}) - $signed({1'b0, exp.dat[i]}))))
+            if (first_err == exp.dat.size()) first_err = i;
+            if (++err_cnt == 8) begin
+                `uvm_warning("SCB", "同类错误满 8 个,截断打印(先修首错)")
+                break;
+            end
+        end
+    end
+    err_total += err_cnt;
+    `uvm_info("SCB", $sformatf("layer#%0d 比对完成: %0d/%0d 字节错, 首错 idx=%0d",
+              exp.layer_no, err_cnt, exp.dat.size(), first_err), UVM_LOW)
+endfunction</code></pre>
+  <p><b>容差立场 —— INT8 量化网络必须位精确(exact):</b>同一份输入 + 同一运算顺序,量化行为是确定的,<code>!==</code> 一个 bit 都不许差;<b>容差(±1、相对误差)只属于浮点/训练网络</b>。工程红线:发现 mismatch 就给比对加"允许差 1"的容差,等于亲手把裁判变成摆设 —— 差 1 的背后可能是 requant 移位错一位或饱和边界错,全是真 bug。</p>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「你的 scoreboard 怎么设计的?」—— 按"三个输入、一个动作"答:订阅 apb_monitor(配置记账)、irq_monitor(完成触发)、refmodel exp_ap(期望值);动作是逐字节 exact 比对 + 结构化报错;再补一句"比对失败先怀疑 refmodel,单测通过后才怀疑 RTL",体现排障素养。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①期望块与实际块<b>基地址</b>没对齐(乒乓切换后 ofm_base 记的是上层的),首层全对后层全错;②共享对象被多方改写(refmodel 广播的 blk 又被 coverage 改),比对基准失真 —— 广播对象遵循"只读,要改先 clone";③mismatch 打印不带坐标,只能肉眼扫波形;④用 <code>==</code> 比数据遇到 x 值漏判,4 态比对用 <code>!==</code>。</div>
+
+  <h3>2.4 测试用例编写:smoke、功能、随机、异常四类(关键代码)</h3>
+  <p><b>怎么做:</b>先写一个 <code>npu_base_test</code> 集中装配(env 创建、vif 注入、公共 sequence 库),各用例只覆写"配置 + 激励策略"。四类用例的分工:smoke 保环境通路、功能用例保 Spec 每条算子、随机用例扫参数空间、异常用例保 Spec 的"拒绝语义"。</p>
+  <pre><code>// —— 基类:所有用例的公共底座 ——
+class npu_base_test extends uvm_test;
+    `uvm_component_utils(npu_base_test)
+    npu_env env;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        env = npu_env::type_id::create("env", this);   // vif 由 tb_top config_db 注入
+    endfunction
+endclass
+
+// —— ① smoke:单层 3×3 卷积固定数据,验"环境通路 + 中断 + 比对闭环" ——
+class smoke_conv3x3_test extends npu_base_test;
+    `uvm_component_utils(smoke_conv3x3_test)
+    task run_phase(uvm_phase phase);
+        npu_direct_seq seq;
+        phase.raise_objection(this);
+        seq = npu_direct_seq::type_id::create("seq");
+        seq.fixed_layer(.type(3'd0), .k5(0), .fm_in(8), .ch_in(1),
+                        .ch_out(2), .relu(1), .seed_data(8'h5A));  // 固定伪随机填充
+        seq.start(env.agt.sqr);        // 配寄存器 → start → 等完成事件
+        phase.drop_objection(this);
+    endtask
+    function void report_phase(uvm_phase phase);
+        if (env.scb.err_total == 0 &amp;&amp; env.irq_mon.done_events == 1)
+             `uvm_info("PASS", "smoke 通路 OK: 1 层完成 + 0 mismatch", UVM_NONE)
+        else `uvm_error("FAIL", $sformatf("err=%0d done_evt=%0d",
+                        env.scb.err_total, env.irq_mon.done_events))
+    endfunction
+endclass
+
+// —— ② 功能用例:每算子一个,与验证点表 V2~V7 一一对应(以池化为例) ——
+class pool_max2x2_test extends npu_base_test;
+    `uvm_component_utils(pool_max2x2_test)
+    task run_phase(uvm_phase phase);
+        npu_direct_seq seq;
+        phase.raise_objection(this);
+        seq = npu_direct_seq::type_id::create("seq");
+        seq.fixed_layer(.type(3'd1), .fm_in(8), .ch_in(2), .ch_out(2));  // 8×8 → 4×4
+        seq.start(env.agt.sqr);
+        phase.drop_objection(this);
+    endtask
+endclass
+
+// —— ③ 随机用例:约束 = "Spec 允许的参数空间",边界值加权出现 ——
+class npu_rand_layer_seq extends uvm_sequence #(apb_txn);
+    `uvm_object_utils(npu_rand_layer_seq)
+    rand bit [2:0] layer_type;
+    rand int       fm_in, ch_in, ch_out;
+    rand bit       relu_en, k5;
+    constraint c_type { layer_type inside {3'd0, 3'd1, 3'd2}; }        // 合法三类
+    constraint c_fm   { fm_in inside {[1:32]};
+                        layer_type == 3'd1 -&gt; fm_in[0] == 1'b0; }      // pool 需偶边长
+    constraint c_hot  { ch_in  dist {1 := 3, [2:15] := 1, 16 := 2, 256 := 2}; // 边界加权
+                        ch_out dist {1 := 3, 6 := 2, [2:15] := 1, 256 := 2}; }
+    constraint c_k5   { layer_type == 3'd0 -&gt; k5 inside {0, 1};        // k5 仅 conv
+                        layer_type != 3'd0 -&gt; k5 == 0; }
+    // body():逐条写寄存器 → 载入随机数据到镜像 RAM → start → 等完成
+endclass</code></pre>
+  <pre><code>// —— ④ 异常用例:验"拒绝语义",每一步都写明期待 ——
+class illegal_cfg_test extends npu_base_test;
+    `uvm_component_utils(illegal_cfg_test)
+    task run_phase(uvm_phase phase);
+        npu_err_seq seq;
+        phase.raise_objection(this);
+        seq = npu_err_seq::type_id::create("seq");
+        seq.start(env.agt.sqr);
+        phase.drop_objection(this);
+    endtask
+endclass
+
+class npu_err_seq extends uvm_sequence #(apb_txn);
+    `uvm_object_utils(npu_err_seq)
+    task body();
+        // 场景 1:非法层类型 layer_type=3'b110(Spec 只定义 000/001/010)
+        wr_reg(8'h18, 32'h0000_0006);
+        wr_reg(8'h00, 32'h0000_0001);      // start
+        // 期待:FSM 拒绝启动(STATUS.idle 保持 1)或按约定 pslverr;不挂死、无 irq
+        // 场景 2:计算中再次 start(idle=0 期间)
+        wr_reg(8'h18, 32'h0000_0000);      // 合法 conv 配置
+        wr_reg(8'h00, 32'h0000_0001);      // 第一次 start → FSM 离开 IDLE
+        wr_reg(8'h00, 32'h0000_0001);      // 第二次 start:期待被忽略
+        // 期待:只完成 1 层,irq_mon.done_events == 1,start 自动清零
+        // 场景 3:done 读清除契约(1.2 节电平中断)
+        // 读 STATUS 两次:第一次 done=1(同时清),第二次 done=0 且 irq 撤销
+    endtask
+endclass</code></pre>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「你的用例为什么这么分层?」—— base_test 管"环境怎么搭",sequence 管"激励长什么样",test 管"这次回归跑什么剧情";好处:新增一个场景 = 新增一个 test/sequence 而不动 env(复用);面试官问"加一个 7×7 卷积要改多少代码" —— 答案应该是"改约束里的 K 表,其他不动"。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①smoke 用随机数据 —— 首次跑通必须固定数据,否则"环境错还是 RTL 错"无从判断;②异常用例只发激励不写"期待",等于白测;③随机用例约束漏了 pool 偶数边长,refmodel 与 RTL 各算各的,满屏假 mismatch;④run_phase 忘 raise/drop objection,激励没发完仿真就退出。</div>
+
+
+
+  <!-- ================= 3. 仿真调试 ================= -->
+  <h2><span class="h2-num">3</span> 仿真调试:日志、波形与三类失败的定位流程</h2>
+  <h3>3.1 仿真调试方法:先把仪器调好,再谈定位</h3>
+  <p><b>是什么:</b>UVM 调试的三大仪器:<b>report 日志</b>(分级过滤,代替满屏 $display)、<b>波形</b>(RTL 信号级真相)、<b>失败定位流程</b>(按现象走固定路线,不靠玄学)。NPU 验证的失败现象 90% 归入三类:<b>挂死、数据错、中断不来</b>。</p>
+  <ul>
+    <li><b>日志分级过滤:</b>日常回归保持 <code>+UVM_VERBOSITY=UVM_MEDIUM</code>;复跑失败用例提到 <code>UVM_HIGH</code> 看 driver/monitor 握手细节,不用改一行代码。控制总量:<code>+UVM_MAX_QUIT_COUNT=10</code> 让首个失败后尽早停止(满屏重复错只会淹没首错现场);按组件静音:<code>env.scb.set_report_severity_id_override(...)</code> 或命令行 <code>+uvm_set_verbosity=&lt;comp&gt;,&lt;id&gt;,&lt;verb&gt;,&lt;phase&gt;</code>。</li>
+    <li><b>波形 dump 配置:</b>VCS 加 <code>-debug_access+all</code> 编译,仿真中经 ucli/verdi 控制 dump 范围(FSDB 格式 + Verdi 看);开源流程在 tb_top 里 <code>$dumpfile("wave.vcd"); $dumpvars(0, tb_top);</code>(VCD 全量,大设计慎用)。经验:失败用例<b>只 dump 失败时段</b>(时间窗 + 层次范围),波形文件可缩小一个量级。</li>
+    <li><b>失败自动归档的用法:</b>打开归档目录 → 读 <code>sim.log</code> 首个 <code>UVM_ERROR</code>(scoreboard 的结构化打印给出层号/坐标/期望/实际)→ 带着坐标开波形,直接跳到该层完成时刻。</li>
+  </ul>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>现象分类</b><br>挂死(仿真不结束)/ 数据 mismatch / 中断不来 —— 三类走三条路线,先归类再动手</div>
+    <div class="step-item"><span class="n">2</span><b>挂死线</b><br>①objection 泄漏(raise 没 drop)→ ②driver 忘 item_done,sequencer 永久等 → ③APB 等 PREADY:DUT 没拉高(查 FSM 是否真在等 RAM)</div>
+    <div class="step-item"><span class="n">3</span><b>数据错线</b><br>第一步先单测 refmodel(黄金向量离线比对)排除"尺子错";模型对,再回波形按六级对照:寄存器写入 → FSM 跳转 → 引擎读 RAM 地址 → 累加器 → requant/饱和 → 写回地址</div>
+    <div class="step-item"><span class="n">4</span><b>中断不来线</b><br>done 置位了吗(FSM 真到 DONE 态?)→ ie 使能了吗 → 是不是被提前读 STATUS 清掉了(顺序竞态)→ irq 门控组合逻辑</div>
+    <div class="step-item"><span class="n">5</span><b>复现与缩小</b><br>固定 seed 重跑必现 → 二分法砍层/砍参数/砍约束,缩到 10 行的最小复现用例 → 修完挂回全回归确认无副作用</div>
+  </div>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「仿真挂死怎么查?」—— 按第 2 步顺序答,并给出杀手锏:VCS 里 Ctrl+C 后 <code>where</code>/Verdi 的 hang 分析看线程停在哪一行 —— 90% 停在 <code>get_next_item</code>(没人发激励)或 <code>do @(vif.drv_cb) while(!pready)</code>(DUT 没握手)。「数据错先查谁?」—— <b>先查 refmodel</b>:尺子错了量什么都是错的;模型单测通过后,再用"六级对照法"在波形里找第一处与模型分叉的信号。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①一失败就把 verbosity 拉满全量重跑,日志大到打不开 —— 先看首错,再定向提级;②把 <code>uvm_fatal</code> 用在可恢复错误上,现场没收集完仿真就退了;③VCD 忘了关,夜间回归磁盘被写爆;④修 bug 只验证了失败用例,没挂回全回归 —— 修好 A 环节坏了 B,是回归存在的全部意义。</div>
+
+
+
+  <!-- ================= 4. 覆盖率 ================= -->
+  <h2><span class="h2-num">4</span> 覆盖率:建模、双指标、收敛闭环与签核</h2>
+  <p>覆盖率回答一个问题:<b>"验证做完了吗?"</b>它把"我感觉差不多了"变成"两张报告 + 一张排除表"。本节依次解决:功能覆盖率怎么建模(covergroup)、代码覆盖率怎么开、两张报告怎么分析合并、以及什么条件才配说"签核"。</p>
+
+  <h3>4.1 功能覆盖率:covergroup 建模、bins 设计与采样时机</h3>
+  <p><b>是什么:</b>功能覆盖率是<b>人写的</b>度量:把 1.1 节验证点表里"什么算测过了"翻译成 covergroup/coverpoint/cross。它度量的是<b>意图</b>(Spec 的功能有没有被激励到),与 4.2 节度量<b>实现</b>(RTL 代码有没有被执行)的代码覆盖率互补。</p>
+  <p><b>为什么这样设计 bins:</b>每个 coverpoint 对应寄存器/参数的一个维度,bins 划分遵循"边界值单独成 bin + 中间区间收敛 + 非法值进 illegal_bins" —— N−1 编码的 0(1 通道)、满量程 255(256 通道)是必中目标,中间值测一个和测一百个意义相同。</p>
+  <pre><code>class npu_coverage extends uvm_subscriber #(irq_evt);
+    `uvm_component_utils(npu_coverage)
+    npu_refmodel rm;                     // env connect_phase 注入,采样时读镜像
+    bit [2:0]    layer_type;  bit relu_en, k5;
+    int          fm_in, ch_in, ch_out;  int addr_in, addr_out;
+
+    covergroup cg_layer @(posedge done_event);          // 事件触发采样(见下)
+        option.per_instance = 1;  option.at_least = 1;
+        cp_type: coverpoint layer_type {
+            bins conv = {3'd0};  bins pool = {3'd1};  bins fc = {3'd2};
+            illegal_bins bad = default;                // 非法层类型出现即报警
+        }
+        cp_relu: coverpoint relu_en { bins off = {0}; bins on = {1}; }
+        cp_k5:   coverpoint k5       { bins k3 = {0}; bins k5 = {1}; }
+        cp_fmin: coverpoint fm_in {
+            bins min1   = {1};                         // 最小边界
+            bins small  = {[2:8]};
+            bins mid    = {[9:24]};
+            bins large  = {[25:31]};  bins max32 = {32};
+        }
+        cp_chin: coverpoint ch_in {
+            bins one  = {1};                           // N−1:0 → 1 通道
+            bins mid  = {[2:127]};
+            bins full = {256};                         // 满量程(N−1 编码 255)
+            ignore_bins rsvd = {[257:65535]};          // Spec 不支持的值
+        }
+        cp_addr: coverpoint (addr_in[13:0] + blk_words(addr_in)) {
+            bins in_a   = {0};
+            bins cross  = {[1:16'h3FFF]};
+            bins hit_bd = {16'h4000};                  // 触到 16K 边界
+        }
+        // 组合空间:层类型 × ReLU × 核尺寸 —— 乒乓接力要求的"模式全覆盖"
+        cx_mode: cross cp_type, cp_relu, cp_k5 {
+            ignore_bins pool_no_k5 = binsof(cp_k5.k5) &amp;&amp; binsof(cp_type.pool);
+            ignore_bins fc_no_k5   = binsof(cp_k5.k5) &amp;&amp; binsof(cp_type.fc);
+        }
+        cx_io: cross cp_fmin, cp_chin;                 // 尺寸 × 通道热区
+    endgroup
+    function void write(irq_evt e);                    // 订阅完成事件 → 读 rm 镜像 → sample
+        layer_type = rm.regs[8'h18] &amp; 7;  relu_en = rm.regs[8'h18][3];
+        k5 = rm.regs[8'h18][4];  fm_in = (rm.regs[8'h20] &amp; 'hFF) + 1;
+        ch_in = (rm.regs[8'h1C] &amp; 'hFF) + 1;  ch_out = (rm.regs[8'h1C] &gt;&gt; 8) + 1;
+        cg_layer.sample();
+    endfunction
+endclass</code></pre>
+  <p><b>采样时机 —— 三选一,别混用:</b>①<code>covergroup ... @(event)</code> 事件触发(本项目:irq_monitor 的层完成事件,<b>最推荐</b> —— 一层一采,天然对齐"配置生效"时刻);②显式 <code>cg.sample()</code>(write() 里备好采样快照后调用,可控性最强);③<code>coverpoint ... iff(cond)</code> 条件内联采样。反面教材:在 driver 里采激励侧数据 —— <b>覆盖率必须采"观察到的 DUT 行为",不是"发出过的激励"</b>。</p>
+  <div class="table-wrap"><table>
+    <tr><th>覆盖点</th><th>bins 划分</th><th>保护的验证点</th></tr>
+    <tr><td>cp_type</td><td>conv/pool/fc + illegal_bins</td><td>V2~V5、V9(非法层类型有人盯)</td></tr>
+    <tr><td>cp_relu / cp_k5</td><td>各 0/1 两 bin</td><td>V3、V6(开关两态都试过)</td></tr>
+    <tr><td>cp_fmin</td><td>1 / 2~8 / 9~24 / 25~31 / 32</td><td>V10(边界尺寸单独成 bin)</td></tr>
+    <tr><td>cp_chin</td><td>1 / 2~127 / 256(ignore 保留域)</td><td>V10(N−1 编码 0 与满量程)</td></tr>
+    <tr><td>cx_mode</td><td>type × relu × k5(剔除非法组合)</td><td>V11(模式组合全覆盖)</td></tr>
+    <tr><td>cx_io</td><td>fm_in × ch_in</td><td>V11(尺寸与通道的热区交叉)</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「coverage 采在 driver 还是 monitor?」—— <b>必须 monitor/完成事件侧</b>:覆盖率是"DUT 被测到什么"的证据,激励可能被 DUT 拒绝(start 被忽略),采激励会虚报。「bins 怎么定边界?」—— 看 Spec 参数表:最小值、最大值、特殊编码(N−1 的 0)单独成 bin,中间收敛;非法域 illegal_bins(出现了就是 bug)。「cross 太大跑不完怎么办?」—— ignore_bins 剔除物理不可能组合,或把大区间再收敛,先保"模式覆盖"再谈密度。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①忘了 <code>option.per_instance=1</code>,多实例共享计数,报告看不出哪个 collector 采的;②在 build_phase 里 <code>new</code> covergroup 之外还在 class 里重复声明成员变量却没在 write() 里赋值 —— 采出来全是 0;③把 ignore_bins 写成 illegal_bins(或反之),前者是"不算",后者是"出现即错";④采样太早(配置还没写完就采),镜像值是旧配置。</div>
+
+  <h3>4.2 代码覆盖率:五类指标、工具开关与功能/代码之辨</h3>
+  <p><b>是什么:</b>代码覆盖率是<b>仿真器自动统计</b>的"RTL 执行痕迹",五类指标各有打击面:</p>
+  <div class="table-wrap"><table>
+    <tr><th>指标</th><th>统计什么</th><th>能抓什么 bug</th><th>本项目例子</th></tr>
+    <tr><td>行 / 语句(line)</td><td>每行 RTL 是否执行过</td><td>死代码 / 没跑到的分支体</td><td>pslverr 拒写逻辑一行没执行 → 没测过"计算中写 RAM"</td></tr>
+    <tr><td>分支(branch)</td><td>if/case 的每个走向</td><td>只走了 true 没走 false</td><td>relu_en 只测过 1,else 分支空白</td></tr>
+    <tr><td>条件(condition/expression)</td><td>布尔子表达式的真假组合</td><td>短路组合隐藏的半个条件</td><td><code>start &amp;&amp; idle</code> 只遇过 idle=1 的组合</td></tr>
+    <tr><td>翻转(toggle)</td><td>每个 bit 0→1 与 1→0</td><td>常 0/常 1 的悬空位、位宽浪费</td><td>STATUS[7:5] 从未翻转 → 保留域该确认</td></tr>
+    <tr><td>FSM(state + transition)</td><td>状态到达 + 状态跳转对</td><td>从未进入的状态、缺失的跳转</td><td>五态主 FSM 的 ERROR 态没到过 → V9 没生效</td></tr>
+  </table></div>
+  <p><b>工具开关一句话:</b>VCS 编译 <code>-cm line+cond+fsm+tgl+branch</code>(配 <code>-cm_hier</code> 排除 TB 层次),仿真 <code>-cm_dir cov/&lt;test&gt;.vdb</code>,出报告 <code>urg -dir cov/*.vdb -report urgReport</code>;Questa 对应 <code>vsim -coverage</code> + <code>vcover merge/report</code>。报告里真正要看的不是总百分比,而是 <b>hits=0 的明细列表</b> —— 那是 4.3 节分析的输入。</p>
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>功能覆盖率</th><th>代码覆盖率</th></tr>
+    <tr><td>谁写的</td><td>工程师手写 covergroup(意图)</td><td>工具自动插桩(实现)</td></tr>
+    <tr><td>度量对象</td><td>Spec 功能点有没有被激励到</td><td>RTL 代码有没有被执行</td></tr>
+    <tr><td>100% 意味着</td><td>计划内功能场景全测过</td><td>所有代码/分支跑过(≠功能对!)</td></tr>
+    <tr><td>盲区</td><td>忘了建模的功能点测一万遍也记 0 分</td><td>每行都跑过但结果错 —— 它不管对错</td></tr>
+    <tr><td>关系</td><td colspan="2">双 100% 才敢谈签核;功能覆盖补"对不对、全不全",代码覆盖补"有没有漏执行的角落"</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「功能覆盖率和代码覆盖率区别?哪个到 100% 更难?」—— 答"意图 vs 实现"那张表,再补:<b>代码 100% 容易且必要</b>(跑够多回归自然到),<b>功能 100% 难</b>,因为 bin 是人设计的,漏建模的盲区两个指标都看不见 —— 这正是 1.3 节四层追踪存在的意义:需求 → bin 的映射防漏建。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①TB/时钟复位代码也被算进代码覆盖率,怎么跑都到不了 100% —— 用 <code>-cm_hier</code>/exclude 文件剔除 TB 与 wrapper;②把代码覆盖率当签核唯一标准 —— 它不检查数据正确性;③toggle 覆盖把伪路径/保留位也要求翻转,永远缺一口(排除并注释)。</div>
+
+  <h3>4.3 覆盖率收集、分析与补全:覆盖率驱动验证的迭代闭环</h3>
+  <p><b>怎么做 —— 收集与合并:</b>每个用例跑完产出独立数据库(VCS 是 <code>.vdb</code>,Questa 是 <code>.ucdb</code>),回归脚本最后一步合并:<code>urg -dir cov/</code>(VCS)或 <code>vcover merge total.ucdb run1.ucdb run2.ucdb ...</code>(Questa)。合并后才谈覆盖率 —— 单用例覆盖 80% 没有意义,50 个 seed 合并后通常能到 90%+,剩下的是"难啃的骨头"。</p>
+  <p><b>未覆盖原因分析 —— 每行 hits=0 只有两种归宿:</b></p>
+  <ul>
+    <li><b>不可达 / 不该达:</b>物理不可能的组合(Spec 未定义的 layer_type 与 start 同时有效)、TB 层次、防御性代码、保留位。→ 写进 <b>exclusion(排除文件)</b>,<b>每条必须带注释</b>(谁排除的、为什么不可达),签核时排除表随报告一起 review —— "裸排除"等于篡改成绩单。</li>
+    <li><b>可达但没测到:</b>约束没覆盖到某区间(如 ch_in=256 权重太低)、用例没跑够 seed、缺一个定向场景。→ 动作依次是:<b>调约束加权 → 补定向用例 → 加 seed</b>,然后重跑回归看增量。</li>
+  </ul>
+  <figure class="my-fig">
+  <svg viewBox="0 0 640 300" role="img" aria-label="覆盖率驱动验证闭环图:验证计划、用例开发、回归运行、覆盖率收集、差异分析、补用例与调约束六个节点首尾相接构成循环,循环出口是达到签核标准,旁边标注功能覆盖率与代码覆盖率双指标以及排除表" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+    <defs>
+      <marker id="arwC2B" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#58a6ff"/></marker>
+      <marker id="arwC2O" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#f59e0b"/></marker>
+      <marker id="arwC2G" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#22c55e"/></marker>
+    </defs>
+    <!-- 六个环节:环状布局 -->
+    <rect x="250" y="16" width="140" height="46" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="320" y="36" text-anchor="middle" fill="#58a6ff" font-size="11.5" font-weight="bold">① 验证计划</text>
+    <text x="320" y="52" text-anchor="middle" fill="#8b98a9" font-size="8.5">vPlan:需求→bin 映射</text>
+    <rect x="60" y="110" width="140" height="46" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="130" y="130" text-anchor="middle" fill="#58a6ff" font-size="11.5" font-weight="bold">② 用例开发</text>
+    <text x="130" y="146" text-anchor="middle" fill="#8b98a9" font-size="8.5">定向 + 随机 + 异常</text>
+    <rect x="60" y="216" width="140" height="46" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
+    <text x="130" y="236" text-anchor="middle" fill="#58a6ff" font-size="11.5" font-weight="bold">③ 回归运行</text>
+    <text x="130" y="252" text-anchor="middle" fill="#8b98a9" font-size="8.5">多 seed 夜间回归+归档</text>
+    <rect x="250" y="216" width="140" height="46" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="320" y="236" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">④ 覆盖率收集</text>
+    <text x="320" y="252" text-anchor="middle" fill="#8b98a9" font-size="8.5">合并 vdb/ucdb 出报告</text>
+    <rect x="440" y="216" width="140" height="46" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.6"/>
+    <text x="510" y="236" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">⑤ 差异分析</text>
+    <text x="510" y="252" text-anchor="middle" fill="#8b98a9" font-size="8.5">hits=0:可达?不可达?</text>
+    <rect x="440" y="110" width="140" height="46" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="510" y="130" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">⑥ 补激励</text>
+    <text x="510" y="146" text-anchor="middle" fill="#8b98a9" font-size="8.5">加约束/补用例/排 exclusion</text>
+    <!-- 顺时针箭头 -->
+    <path d="M250,39 L204,39 L204,108" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwC2B)"/>
+    <path d="M130,156 L130,214" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwC2B)"/>
+    <path d="M202,239 L248,239" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwC2B)"/>
+    <path d="M392,239 L438,239" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwC2G)"/>
+    <path d="M510,214 L510,158" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwC2O)"/>
+    <!-- 回到计划(收敛)与继续循环 -->
+    <path d="M440,133 L204,133" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#arwC2O)"/>
+    <text x="322" y="127" text-anchor="middle" fill="#f59e0b" font-size="9">未达标:再跑一轮(每轮覆盖率单调上升)</text>
+    <!-- 出口 -->
+    <path d="M390,39 L520,39 L520,72 L560,72" fill="none" stroke="#22c55e" stroke-width="1.8" marker-end="url(#arwC2G)"/>
+    <rect x="464" y="52" width="0" height="0" fill="none"/>
+    <text x="452" y="28" fill="#22c55e" font-size="10" font-weight="bold">达标 → 出口:签核(4.4 节)</text>
+    <text x="330" y="90" text-anchor="middle" fill="#8b98a9" font-size="9.5">双指标看板:功能覆盖 0→100% · 代码覆盖 0→95%+ · exclusion 逐条注释</text>
+    <text x="320" y="292" text-anchor="middle" fill="#8b98a9" font-size="9.5">蓝:计划→激励→运行 绿:度量→分析 橙:补全回路(每轮迭代都必须带来覆盖率增量,否则停止加 seed、改为人工分析)</text>
+  </svg>
+  <figcaption>图② 覆盖率驱动验证(CDV)闭环:计划定目标 → 用例/回归产样本 → 合并度量 → 分析 hits=0 → 补约束/用例或排除 → 循环直至双指标达标,从"达标出口"进入签核。</figcaption>
+  </figure>
+  <div class="box box-tip"><b>💼 工程怎么问:</b>「覆盖率 99% 差 1% 卡了两周,你怎么办?」—— 高频压 internals 题。答案框架:①逐条看 hits=0 明细,分"不可达/可达";②不可达 → 走 exclusion 流程带注释 review;③可达 → 先查约束(是不是 dist 权重把它饿死了),再补定向,最后才加 seed;<b>盲刷 seed 是下策</b>,因为最后 1% 往往是"特定组合",随机撞到的概率指数衰减。</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①各用例的 vdb/ucdb 忘了合并就汇报覆盖率 —— 数字严重偏低误导排期;②exclusion 不写注释,下个项目没人敢删也不敢信;③只盯功能覆盖率不看代码覆盖率,某段防御逻辑从未执行都不知道;④覆盖率收敛后还继续改激励/约束 —— 收敛后环境进入"冻结"状态,再改要重新评估全回归。</div>
+
+  <h3>4.4 验证签核与复盘:检查清单、复盘文档与 3 分钟面试话术</h3>
+  <p><b>是什么:</b>签核(sign-off)是"验证完成"的正式宣告,靠清单不靠感觉;复盘是把项目经验变成个人资产的最后一环 —— 也是把这个项目写进简历、扛住面试追问的最后一公里。</p>
+  <div class="table-wrap"><table>
+    <tr><th>检查项</th><th>签核标准(本项目)</th><th>不达标怎么办</th></tr>
+    <tr><td>功能覆盖率</td><td>100%(所有 illegal_bins 之外全 hit)</td><td>回到 4.3 闭环;exclusion 逐条 review</td></tr>
+    <tr><td>代码覆盖率</td><td>line/branch/cond/FSM &gt; 95%,toggle &gt; 90%,剩余逐条论证或排除</td><td>可达缺口补用例;不可达写注释排除</td></tr>
+    <tr><td>回归结果</td><td>全部用例 × N 个 seed,0 UVM_ERROR,0 UVM_FATAL</td><td>失败归档 → 定位 → 修复 → 全回归</td></tr>
+    <tr><td>断言</td><td>1.2 节 SVA 全部通过,无未兑现的 assert</td><td>断言失败即 bug,不许 "关断言跑绿"</td></tr>
+    <tr><td>追踪完整性</td><td>vPlan 每行状态 = 收敛;需求 → bin 无断链</td><td>补 bin 或补用例,禁止"先签核后补表"</td></tr>
+    <tr><td>遗留项</td><td>无悬空 TODO / FIXME / 临时 workaround;已知问题(issues)全部登记并评估影响</td><td>能修则修,不能修转 issue 并写入签核报告"风险栏"</td></tr>
+  </table></div>
+  <p><b>复盘文档怎么写(一页,四个小节):</b>①<b>结果</b>:验证点表完成率、双覆盖率最终数字、回归规模(X 用例 × Y seed)、抓到的 bug 清单(按引入阶段分类);②<b>根因</b>:每个 bug 复盘"哪条验证点漏了/约束缺了/断言没建" —— bug 不是白抓的,每一条都应反哺覆盖率模型;③<b>工时与偏差</b>:环境搭建/用例/收敛各花多久,哪段估计错了(常见:覆盖率最后 5% 的时间被低估 3 倍);④<b>可复用资产</b>:apb_agent、RAL、比对框架打包成小 IP,下个项目(比如给这个 NPU 加 AXI-Lite 口)直接搬。</p>
+  <div class="box box-tip"><b>💼 面试 3 分钟话术 —— 「讲讲你怎么验证一个 NPU」:</b>"项目是一颗 LeNet-5 INT8 推理加速器,APB 从机接口、卷积/池化/全连接三算子、乒乓双缓冲、中断完成。我先做需求拆解:把 Spec 逐条翻成 11 条验证点 —— 寄存器复位值、每算子正确性、乒乓接力、中断电平语义、非法配置与边界尺寸,每条绑定用例名和覆盖率 bin,形成四层追踪的计划表。环境用 UVM:APB agent 负责激励,irq_monitor 采完成事件,一个 SystemVerilog 行为级 refmodel 镜像寄存器和 RAM、离线算期望块,scoreboard 在每层完成时逐字节位精确比对,报错自带层号和坐标。策略上是定向保通路、约束随机扫参数空间、夜间回归多 seed 且失败自动归档。调试上三类现象走固定流程:挂死查 objection 和 PREADY,数据错先单测 refmodel 再回波形六级对照,中断不来查 done/ie/读清除。收敛上,covergroup 按边界值和 cross 建模,采在完成事件上;每轮回归合并数据库分析 hits=0,可达的补约束补用例,不可达的带注释排除。最终功能覆盖 100%、代码覆盖 95% 以上,回归零失败,按签核清单放行。" —— (约 220 字,正好 3 分钟,每个短语背后都是本页一节,追问任何一处都有实料。)</div>
+  <div class="box box-warn"><b>⚠️ 易错点:</b>①把"覆盖率达标"当签核唯一条件 —— 回归通过率、断言、追踪完整性缺一不可;②复盘写成流水账("这周修了三个 bug"),没有根因分类和可复用结论;③面试讲述背成"我用过 UVM"的名词堆砌 —— 面试官追问"irq 为什么是电平"或"最后 1% 覆盖率怎么收敛的"才是真正的分水岭。</div>
+
+
+
+  <!-- ================= 5. 本节自测 ================= -->
+  <h2><span class="h2-num">5</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. 本项目(08-10 Spec)采用<b>电平中断</b>:CTRL.ie=1 且一层计算完成时 irq 拉高。关于 irq 的撤销,正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. irq 是一个周期脉冲,完成下一拍自动撤销</button>
+      <button data-v="B">B. 写 CTRL 清除 ie 后 irq 立即永久保持</button>
+      <button data-v="C">C. 读 STATUS 会清 done 标志,从而撤下 irq</button>
+      <button data-v="D">D. 复位以外的任何操作都不能撤销 irq</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 本项目契约:STATUS[1] done 为"读清除"(RC)位,读本寄存器即清 done 并撤 irq(见 1.2 节与 V8 验证点)。A 是脉冲中断的语义(正是 08-10 否掉的方案,轮询 CPU 会错过);ie 只做门控,清 ie 不是清除契约的主体;D 与"读清除"矛盾。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 回归中出现卷积输出数据 mismatch(scoreboard 报层号与坐标)。按 3.1 节流程,<b>第一步</b>应该做什么?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 直接在波形里逐拍检查累加器每一位</button>
+      <button data-v="B">B. 先单独测试 refmodel:用黄金向量离线比对,排除"尺子本身错"</button>
+      <button data-v="C">C. 把比对加上 ±1 容差先让回归变绿</button>
+      <button data-v="D">D. 把 verbosity 调到 FULL 全量重跑 50 个 seed</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 数据错线第一步是"先怀疑尺子":refmodel 单测通过后,才回波形按六级对照找 RTL 第一处分叉。加容差(C)会把 requant 移位/饱和这类真 bug 掩盖掉 —— INT8 量化网络必须位精确;全量重跑(D)和直接逐拍查(A)都跳过了"排除模型错"这个最廉价的检查。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 关于功能覆盖率(covergroup)的采样位置与时机,正确的是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 在 driver 里采,激励发得越多覆盖率越高</button>
+      <button data-v="B">B. 在 sequence 里采,随机约束和 bins 放一起好维护</button>
+      <button data-v="C">C. 在 test 的 final_phase 一次性补采,效率最高</button>
+      <button data-v="D">D. 在 monitor/完成事件侧采,度量"DUT 实际被测到的行为"</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 覆盖率是"DUT 被测到什么"的证据,必须采观察侧(monitor / 层完成事件)。激励可能被 DUT 拒绝(如 idle=0 时 start 被忽略),在 driver/sequence(A/B)采会虚报;final_phase 补采(C)拿不到历史行为,且镜像已变。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. 多轮回归合并后功能覆盖率卡在 99%,代码覆盖率 96%。下列做法<b>最不推荐</b>的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 逐条分析 hits=0,先区分"不可达"与"可达但没测到"</button>
+      <button data-v="B">B. 不可达项写入 exclusion 文件并附注释,签核时随报告 review</button>
+      <button data-v="C">C. 把随机 seed 从 50 加到 5000,让机器自己撞完最后 1%</button>
+      <button data-v="D">D. 检查约束权重:是不是 dist 把某边界值"饿死"了</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 最后 1% 往往是特定组合,随机撞中的概率指数衰减,盲刷 seed 是下策 —— 正确路线是 4.3 节闭环:分析可达性 → 可达的调约束/补定向,不可达的带注释排除(A/B/D 都是标准动作)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 关于本项目验证环境的仿真器选择,说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. iverilog 加 -g2012 就能完整跑 UVM 环境,和 VCS 无差别</button>
+      <button data-v="B">B. VCS 用 -sverilog -ntb_opts uvm-1.2 起 UVM,iverilog 无官方 UVM 类库跑不了标准 UVM</button>
+      <button data-v="C">C. UVM 环境必须上 FPGA 才能仿真</button>
+      <button data-v="D">D. 只有 Synopsys 家仿真器支持 UVM,其他 EDA 厂商都不支持</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 UVM 是 SV 类库(IEEE 1800.2),VCS(-ntb_opts uvm-1.2)、Questa、Xcelium 都支持;开源 iverilog 虽支持大部分 SV 语法但无官方 UVM 库,学习期可用 EDA Playground 云端仿真器替代(见 2.1 节与参考资源)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>①验证项目从"拆"开始:11 条验证点 = 功能点 + 寄存器属性点 + 异常/边界点,每条绑定激励、检查方法与覆盖 bin,形成需求→验证点→用例→覆盖率的四层追踪;②环境 = APB agent(active)+ irq_monitor(passive)+ refmodel(镜像寄存器/RAM,行为级算期望)+ scoreboard(层完成触发、逐字节位精确比对、报错带坐标)+ coverage + env/test;③激励三分天下:定向保通路与关键路径,约束随机扫参数空间,回归多 seed 管质量,失败自动归档带 seed;④调试三类线:挂死查 objection/item_done/PREADY,数据错先单测 refmodel 再回波形六级对照,中断不来查 done/ie/读清除;⑤覆盖率双指标:功能覆盖率(人建模,采观察侧,边界值单独成 bin + cross)度量意图,代码覆盖率(工具插桩,line/branch/cond/toggle/FSM)度量实现;⑥收敛靠闭环:合并数据库 → 分析 hits=0 → 可达补激励/不可达注释排除 → 循环至功能 100%、代码 95%+,连同回归零失败、无悬空 TODO 一起签核,最后用复盘文档沉淀资产。</div>
+
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. 如果把本项目的中断改成"脉冲式"(done 置位同拍发一个 1 周期脉冲),V8 验证点和 1.2 节的 SVA 要怎么改?轮询驱动会不会出问题?<br>
+    2. rand_all_test 里 refmodel 与 RTL 同时"算错成同一个结果"(比如两边的 requant 都写成逻辑右移),覆盖率 100%、回归全绿 —— 这种情况怎么防?(提示:refmodel 单测、与 Python 链路交叉对照各防什么)<br>
+    3. 假设下一版 NPU 把 APB 换成 AXI-Lite、卷积核支持 7×7,你的环境里哪些组件原样复用、哪些要改、验证点表里哪些行新增哪些作废?
+  </div>
+
+  <!-- ================= 6. 参考来源与延伸资源 ================= -->
+  <h2><span class="h2-num">6</span> 参考来源与延伸资源</h2>
+  <p>以下资源均经核实可访问(2026-09);按"官方 → 教程 → 中文社区 → 开源代码 → 视频"排序,配合本页第 1~4 节对照食用:coverage 系列对应 4.1~4.3,APB/UVM 工程对应第 2 节,NPU 开源仓库对应贯穿项目本身。</p>
+
+  <a class="my-res-card" href="https://verificationacademy.com/cookbook/coverage/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ Verification Academy:Coverage Cookbook(覆盖率方法论圣经)</div>
+      <div class="my-res-desc">Siemens EDA 官方免费"覆盖率食谱":功能覆盖率度量与流程、testplan 到 covergroup 的映射方法、从 Spec 建立覆盖模型的完整过程,并附 APB3/UART 等真实 worked example —— 本页 4.1~4.3 节方法论的标准出处。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">官方·免费</span>
+        <span class="my-tag my-tag-recommend">⭐ 覆盖率首推</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.verificationacademy.com/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">🎓</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Verification Academy(Siemens EDA)—— UVM/覆盖率系列课程</div>
+      <div class="my-res-desc">免费注册可学 Functional Verification of Digital Logic(约束随机 + 覆盖率驱动的 SV/UVM 课程)、Formal Coverage 等 track,配套 UVM Cookbook,是验证工程师公认的第一学习站。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">官方课程</span>
+        <span class="my-tag my-tag-diff-1">入门~高级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://accellera.org/downloads/standards/uvm" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📐</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Accellera UVM 官方标准与参考实现(IEEE 1800.2)</div>
+      <div class="my-res-desc">UVM 类库各版本源码与 Class Reference / User Guide 官方下载页(现为 2020-3.x 系列,Apache 2.0 开源);scoreboard/coverage 相关类 API 以这里的 Class Reference 为准。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-official">官方标准</span>
+        <span class="my-tag my-tag-plain">IEEE 1800.2</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://chipverify.com/uvm/uvm-verification-testbench-example" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ ChipVerify:UVM Verification Testbench Example(完整实战范例)</div>
+      <div class="my-res-desc">一个序列检测 DUT 的完整 UVM 平台实战:scoreboard 连抓 5 个设计版本的 bug 直到零 error,完整演示"环境 → 用例 → 比对 → 修 bug"闭环,与本页第 2~3 节的叙事一一对应。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-recommend">⭐ 实战闭环</span>
+        <span class="my-tag my-tag-plain">英文教程</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://chipverify.com/systemverilog/systemverilog-functional-coverage" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ChipVerify:SystemVerilog Functional Coverage</div>
+      <div class="my-res-desc">covergroup / coverpoint / bins / 采样触发(事件与 sample())/ iff 条件覆盖的系统讲义,本页 4.1 节 covergroup 语法的免费参考书。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">英文教程</span>
+        <span class="my-tag my-tag-diff-1">入门~中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://verificationguide.com/uvm/uvm-tutorial/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Verification Guide:UVM Tutorial(按组件索引 + 示例)</div>
+      <div class="my-res-desc">sequencer/driver/monitor/agent/scoreboard/environment 逐组件教程,每篇带可运行最小示例(配套 EDA Playground 链接),写 2.4 节那类用例代码时随查随抄。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">英文教程</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://verificationguide.com/uvm/uvm-scoreboard-example/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">Verification Guide:UVM Scoreboard Example</div>
+      <div class="my-res-desc">mem_scoreboard 完整代码:analysis_imp 声明、与 monitor 连线、write() 里查关联数组比对 —— 本页 2.3 节"期望队列 + 比对"模式的最小可跑版。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">示例代码</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://blog.csdn.net/weixin_42557768/article/details/161220762" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CSDN:UVM 验证中 Scoreboard 的设计原理与实战实现</div>
+      <div class="my-res-desc">中文系统讲解 scoreboard 作为"裁判系统"的三件事(predict/compare/report):TLM 端口接线、队列/关联数组/参考模型三种期望数据结构、错误上报,配合本页 2.3 节互补阅读。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-csdn">CSDN 文章</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/141622593" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:运算 DUT 的 SystemVerilog 验证工程(三)功能覆盖率/随机化</div>
+      <div class="my-res-desc">一个真实运算 DUT 验证工程连载:covergroup 随事件采样、monitor 触发 sample 的写法、随机化与约束组织 —— 和本页"运算类加速器"场景几乎同构,值得整篇精读。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎专栏</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://zhuanlan.zhihu.com/p/573638990" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎专栏:SystemVerilog 实用知识点 —— Function Coverage(看即会用)</div>
+      <div class="my-res-desc">coverpoint/bins/illegal_bins/ignore_bins、cross、option.per_instance 等语法速成中文文,读完就能看懂并手写本页 4.1 节的 cg_layer covergroup。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-zhihu">知乎专栏</span>
+        <span class="my-tag my-tag-diff-1">入门</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/courageheart/AMBA_APB_SRAM" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">GitHub:AMBA_APB_SRAM(APB 从机 + SV/UVM 验证环境,200+ star)</div>
+      <div class="my-res-desc">APB v1.0 规范兼容的 SRAM 从机及其 UVM 验证环境,可直接当 standalone VIP 复用 —— 本项目 apb_agent 的"别人写好的参考实现",目录组织也值得抄。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-github">GitHub 开源</span>
+        <span class="my-tag my-tag-recommend">⭐ APB UVM 范例</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/tuandam0712/npu-uvm-verificationNxN" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-code">🧬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">GitHub:npu-uvm-verificationNxN(NPU 脉动阵列的 UVM + SVA + 覆盖率验证)</div>
+      <div class="my-res-desc">参数化 NxN 脉动阵列 NPU(SystemVerilog RTL)的完整验证:UVM 环境、SVA 断言、定向测试、功能覆盖率与多配置回归 —— 与本页"给 NPU 搭环境并收敛覆盖率"是同一个故事的开源版。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-github">GitHub 开源</span>
+        <span class="my-tag my-tag-diff-3">进阶</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://github.com/lulinchen/cnn_open" target="_blank" rel="noopener">
+      <div class="my-res-badge my-badge-code">🧬</div>
+      <div class="my-res-info">
+      <div class="my-res-title">GitHub:cnn_open(LeNet-5 CNN 的 Verilog/FPGA 硬件实现,260+ star)</div>
+      <div class="my-res-desc">与贯穿项目同款 LeNet-5 的开源 RTL 实现:卷积/池化数据通路可对照 08-11 的运算模块设计,也适合作为验证对象的"第二参照实现"来交叉排查。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-github">GitHub 开源</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="my-res-card" href="https://www.bilibili.com/video/BV1ev41167fr/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-video">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ B站:UVM 实战 —— APB-SPI 项目实战(21 集)</div>
+      <div class="my-res-desc">以 APB-SPI 模块验证为主线走完整项目流程:SPEC 与 TESTPLAN 讲解、验证计划编写、UVM-RAL 平台搭建 —— "从 Spec 到验证计划到环境"的完整视频版,与本页第 1~2 节同构。</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-bili">B站视频</span>
+        <span class="my-tag my-tag-recommend">⭐ 项目流程</span>
+        <span class="my-tag my-tag-diff-2">中级</span>
+      </div>
+    </div>
+  </a>
+
+  <div class="my-res-card">
+    <div class="my-res-badge my-badge-book">📖</div>
+    <div class="my-res-info">
+      <div class="my-res-title">书籍:《芯片验证漫游指南》(刘斌/路桑 著)·《UVM 实战》(张强 著)</div>
+      <div class="my-res-desc">"验证红皮书"讲验证策略与覆盖率驱动方法的顶层思想(对应本页第 1、4 节),《UVM 实战》给可照抄的完整平台代码(对应第 2 节);两本配合本站 08-12 页使用。(纯文字条目,购书请自行搜索书名)</div>
+      <div class="my-res-meta">
+        <span class="my-tag my-tag-plain">书籍</span>
+        <span class="my-tag my-tag-diff-2">入门~高级</span>
+      </div>
+    </div>
+  </div>
+
+
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

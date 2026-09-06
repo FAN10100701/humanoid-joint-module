@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 闯关学习
+  结构遵循 _assets/页面模板.html;数据来自 _assets/quest-data.js + quiz-bank.js + ib-data-a/b.js(按需加载)
+  玩法: 5 大陆 21 关卡,顺序解锁;普通关 6 题(Boss 10~15 题);70%(Boss 80%)及格;
+        1星及格 / 2星≥90% / 3星全对;XP 与 7 枚徽章;进度存 localStorage(仅本机)
+============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 闯关学习(5 大陆 21 关卡)</title>
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem("site-theme") || "light";
+    document.documentElement.setAttribute("data-theme-early", t === "dark" ? "dark" : "light");
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+/* ---------- 页面级样式(前缀 qg-) ---------- */
+.qg-stats{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 20px;margin:16px 0}
+.qg-stats-row{display:flex;gap:26px;flex-wrap:wrap;align-items:center;justify-content:center;text-align:center}
+.qg-num{font-size:24px;font-weight:900;color:#3b82f6}
+.qg-num.gold{color:#f59e0b}.qg-num.purple{color:#a78bfa}.qg-num.green{color:#22c55e}
+.qg-num-k{font-size:12px;color:#6b7280;margin-top:2px}
+.qg-world{background:rgba(22,27,34,.78);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:18px 20px;margin:16px 0;position:relative;overflow:hidden}
+.qg-world::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--wc,#3b82f6)}
+.qg-world h3{margin:0 0 4px;display:flex;align-items:center;gap:8px;font-size:17px;color:#fff}
+.qg-world .qg-wsub{font-size:12.5px;color:#9aa4b2;margin-bottom:12px}
+.qg-wprog{font-size:11.5px;color:#86efac;margin-left:auto;white-space:nowrap}
+.qg-map{position:relative;padding:4px 0 4px 8px}
+.qg-node{display:flex;gap:12px;align-items:center;background:rgba(13,17,23,.7);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:12px 16px;margin:10px 0;cursor:pointer;transition:.2s;position:relative}
+.qg-node:nth-child(even){margin-left:min(11%,72px)}
+.qg-node:hover{transform:translateY(-2px) scale(1.012);border-color:var(--wc,#3b82f6)}
+.qg-node.locked{opacity:.45;cursor:not-allowed;filter:grayscale(.6)}
+.qg-node.locked:hover{transform:none}
+.qg-node.current{border-color:var(--wc,#3b82f6);box-shadow:0 0 0 3px color-mix(in srgb,var(--wc,#3b82f6) 22%,transparent)}
+.qg-node.boss{background:linear-gradient(135deg,rgba(239,68,68,.13),rgba(13,17,23,.7))}
+.qg-nnum{width:40px;height:40px;border-radius:12px;background:var(--wc,#3b82f6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-weight:800}
+.qg-node.locked .qg-nnum{background:rgba(255,255,255,.12)}
+.qg-nbody{flex:1;min-width:0}
+.qg-nname{font-size:15px;font-weight:700;color:#e6edf3}
+.qg-ndesc{font-size:12px;color:#9aa4b2;margin-top:2px;line-height:1.6}
+.qg-nmeta{display:flex;gap:10px;align-items:center;margin-top:5px;flex-wrap:wrap}
+.qg-stars{font-size:13px;color:#f59e0b;letter-spacing:2px}
+.qg-best{font-size:11px;color:#6b7280}
+.qg-lock{font-size:20px}
+.qg-qtag{font-size:10.5px;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#9aa4b2}
+.qg-boss .qg-qtag{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#fca5a5}
+/* 徽章墙 */
+.qg-badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin:14px 0}
+.qg-badge{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:14px 10px;text-align:center;transition:.2s}
+.qg-badge.got{border-color:rgba(245,158,11,.55);background:linear-gradient(160deg,rgba(245,158,11,.14),rgba(22,27,34,.8));box-shadow:0 8px 26px rgba(245,158,11,.12)}
+.qg-badge .bi{font-size:26px;filter:grayscale(1);opacity:.4}
+.qg-badge.got .bi{filter:none;opacity:1}
+.qg-badge .bn{font-size:12.5px;font-weight:700;color:#c9d1d9;margin-top:6px}
+.qg-badge .bd{font-size:10.5px;color:#6b7280;margin-top:3px;line-height:1.6}
+/* 挑战弹层 */
+.qg-ov{display:none;position:fixed;inset:0;background:rgba(4,8,14,.86);backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center;padding:16px}
+.qg-ov.show{display:flex}
+.qg-modal{width:100%;max-width:680px;max-height:88vh;overflow-y:auto;background:linear-gradient(165deg,#161d2a,#0d1117);border:1px solid rgba(59,130,246,.45);border-radius:20px;padding:26px 26px 20px;box-shadow:0 30px 90px rgba(0,0,0,.6)}
+.qg-mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.qg-mtitle{font-size:17px;font-weight:800;color:#fff;display:flex;gap:8px;align-items:center}
+.qg-close{cursor:pointer;background:rgba(255,255,255,.08);border:none;color:#c9d1d9;width:32px;height:32px;border-radius:9px;font-size:14px}
+.qg-close:hover{background:rgba(239,68,68,.3)}
+.qg-pbar{height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin:8px 0 4px}
+.qg-pbar i{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#22c55e);border-radius:99px;transition:width .3s}
+.qg-pmeta{display:flex;justify-content:space-between;font-size:11.5px;color:#6b7280;margin-bottom:12px}
+.qg-streak{color:#f59e0b;font-weight:700}
+.qg-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px 20px}
+.qg-qtext{font-size:15.5px;font-weight:700;color:#fff;line-height:1.8}
+.qg-srctag{font-size:10.5px;color:#9aa4b2;margin-bottom:8px}
+.qg-opts{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.qg-opts button{text-align:left;background:rgba(13,17,23,.85);border:1px solid rgba(255,255,255,.13);color:#c9d1d9;font-size:14px;padding:11px 15px;border-radius:10px;cursor:pointer;font-family:inherit;transition:.15s}
+.qg-opts button:hover:not(:disabled){border-color:#3b82f6;color:#fff;transform:translateX(3px)}
+.qg-opts button.correct{border-color:#22c55e;background:rgba(34,197,94,.16);color:#86efac;font-weight:700}
+.qg-opts button.wrong{border-color:#ef4444;background:rgba(239,68,68,.15);color:#fca5a5}
+.qg-explain{display:none;margin-top:14px;padding:12px 16px;background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 10px 10px 0;font-size:13px;color:#aab8c8;line-height:1.9}
+.qg-explain.show{display:block}
+.qg-flashbtns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.qg-flashbtns button{font-size:13.5px;padding:10px 18px;border-radius:10px;cursor:pointer;font-family:inherit;border:1px solid;font-weight:700}
+.qg-f-yes{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.5);color:#86efac}
+.qg-f-no{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.5);color:#fca5a5}
+.qg-nextrow{display:flex;justify-content:flex-end;margin-top:14px}
+.qg-next{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:14px;font-weight:700;padding:10px 24px;border-radius:10px;cursor:pointer;font-family:inherit}
+.qg-next:hover{filter:brightness(1.15)}
+.qg-fb{margin-top:12px;font-size:13.5px;font-weight:700}
+.qg-fb.ok{color:#86efac}.qg-fb.no{color:#fca5a5}
+.qg-result{text-align:center;padding:14px 0 6px}
+.qg-bigstars{font-size:44px;letter-spacing:8px;margin:10px 0;color:#f59e0b;min-height:60px}
+.qg-bigstars span{display:inline-block;opacity:0;transform:scale(.2);animation:qgpop .5s forwards}
+@keyframes qgpop{to{opacity:1;transform:scale(1)}}
+.qg-rscore{font-size:15px;color:#c9d1d9;font-weight:700}
+.qg-rxp{font-size:13px;color:#86efac;margin-top:6px}
+.qg-rbadges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.qg-rbadge{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.5);color:#fbbf24;font-size:12.5px;padding:6px 14px;border-radius:999px;font-weight:700}
+.qg-rbtns{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.qg-rbtns button{font-size:14px;padding:10px 22px;border-radius:10px;cursor:pointer;font-family:inherit;border:1px solid;font-weight:700}
+.qg-ghost{background:transparent;border-color:rgba(255,255,255,.2);color:#9aa4b2}
+.qg-main{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff}
+.qg-ai-link{display:inline-block;margin-top:8px;font-size:12px;color:#86efac}
+.qg-answer{margin-top:12px;font-size:13.5px;color:#9aa4b2;line-height:1.9;border-top:1px dashed rgba(255,255,255,.1);padding-top:12px}
+.qg-answer .formula{margin:10px 0}
+.qg-svg{margin:10px 0;color:#c9d1d9}.qg-svg svg{width:100%;height:auto;display:block}
+.qg-info-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:#9aa4b2;margin:10px 0}
+.qg-info-meta b{color:#e6edf3}
+/* ---------- 浅色主题 ---------- */
+html:not([data-theme-early="dark"]) .qg-stats,
+html:not([data-theme-early="dark"]) .qg-world,
+html:not([data-theme-early="dark"]) .qg-badge{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+html:not([data-theme-early="dark"]) .qg-world h3{color:#0f172a}
+html:not([data-theme-early="dark"]) .qg-wsub{color:#5a6a85}
+html:not([data-theme-early="dark"]) .qg-node{background:rgba(255,255,255,.75);border-color:rgba(60,80,120,.14)}
+html:not([data-theme-early="dark"]) .qg-node.boss{background:linear-gradient(135deg,rgba(239,68,68,.09),rgba(255,255,255,.8))}
+html:not([data-theme-early="dark"]) .qg-nname{color:#0f172a}
+html:not([data-theme-early="dark"]) .qg-ndesc{color:#5a6a85}
+html:not([data-theme-early="dark"]) .qg-badge .bn{color:#334155}
+html:not([data-theme-early="dark"]) .qg-modal{background:linear-gradient(165deg,#ffffff,#eef3fb);border-color:rgba(37,99,235,.35)}
+html:not([data-theme-early="dark"]) .qg-mtitle{color:#0f172a}
+html:not([data-theme-early="dark"]) .qg-qtext{color:#0f172a}
+html:not([data-theme-early="dark"]) .qg-opts button{background:rgba(255,255,255,.85);border-color:rgba(60,80,120,.16);color:#334155}
+html:not([data-theme-early="dark"]) .qg-explain{background:rgba(37,99,235,.07);color:#4b5c74;border-left-color:#2563eb}
+html:not([data-theme-early="dark"]) .qg-answer{color:#4b5c74;border-top-color:rgba(60,80,120,.14)}
+html:not([data-theme-early="dark"]) .qg-svg{color:#334155}
+html:not([data-theme-early="dark"]) .qg-card{background:rgba(37,99,235,.04);border-color:rgba(60,80,120,.12)}
+@media print{.qg-ov{display:none!important}}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-12",
+    root: "..",
+    breadcrumb: [ { t: "学习工具", u: "../index.html#sec6" }, { t: "闯关学习" } ],
+    prev: { t: "AI Agent 介绍", u: "17_AI_Agent介绍.html" },
+    next: { t: "AI 答疑助手", u: "13_AI答疑助手.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-head">
+    <h1>🎯 闯关学习</h1>
+    <div class="sub">5 大陆 · 21 关卡 · 星级评价与徽章收集 · 复试冲刺大陆直接调用面试题库<br>
+    把 66 页知识变成一场通关之旅:答错不扣分,但要看解析、去复习、再来一次</div>
+    <div class="tags">
+      <span class="tag">🗺️ 5 大陆</span><span class="tag">⭐ 三星评价</span><span class="tag">🏅 7 枚徽章</span><span class="tag">🔓 顺序解锁</span><span class="tag">💾 本机存档</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 按大陆顺序闯关,检验各板块知识的掌握程度<br>
+    2. 每关 70% 及格(BOSS 80%),全对拿三星;答错立即看解析并给"去复习"链接<br>
+    3. 在"复试冲刺大陆"用快问快答模式练口述能力,最终通过全真模拟关<br>
+    <b>建议用时:</b>每关 5~10 分钟,全图约 3 小时 · 进度只存在本机浏览器
+  </div>
+
+  <h2><span class="h2-num">1</span> 我的战绩</h2>
+  <div class="qg-stats">
+    <div class="qg-stats-row">
+      <div><div class="qg-num gold" id="qgStars">0</div><div class="qg-num-k">⭐ 总星数</div></div>
+      <div><div class="qg-num" id="qgXP">0</div><div class="qg-num-k">⚡ 经验值 XP</div></div>
+      <div><div class="qg-num purple" id="qgBadges">0/7</div><div class="qg-num-k">🏅 徽章</div></div>
+      <div><div class="qg-num green" id="qgCleared">0/21</div><div class="qg-num-k">✓ 已通关</div></div>
+      <button class="srs-btn ghost" id="qgReset" title="清空闯关存档(不影响其它学习进度)">重置存档</button>
+    </div>
+  </div>
+
+  <h2><span class="h2-num">2</span> 闯关地图</h2>
+  <p>关卡按顺序解锁:通过当前关卡,下一关自动开锁;<b>BOSS 综合关</b>需要及格率 80%。带 <span class="qg-qtag">口述自评</span> 标签的关卡使用面试题库快问卡——先自己口述答案,再看参考答案自评。</p>
+  <div id="qgMap"><div class="ib-empty" style="padding:30px;text-align:center;color:#94a3b8">地图加载中…</div></div>
+
+  <h2><span class="h2-num">3</span> 徽章墙</h2>
+  <div class="qg-badges" id="qgBadgeWall"></div>
+
+  <h2><span class="h2-num">4</span> 配套资源</h2>
+  <div class="grid">
+    <a class="card" href="11_保研复试面试题库.html"><span class="go">进入 →</span><div class="ic">🎓</div><div class="t">保研复试面试题库</div><div class="d">19 学科 180 题图文详解(含综合/英语/数学/科研素养通用面 + 工程实践题),闯关遇到的知识点在这里深挖。</div></a>
+    <a class="card" href="13_AI答疑助手.html?persona=interviewer"><span class="go">进入 →</span><div class="ic">🤖</div><div class="t">AI 复试考官</div><div class="d">让 AI 模拟考官逐题追问,点评你的口述回答。</div></a>
+    <a class="card" href="06_学习地图.html"><span class="go">进入 →</span><div class="ic">🗺️</div><div class="t">学习地图</div><div class="d">闯关受阻?回到地图找到对应知识页系统复习再战。</div></a>
+  </div>
+  <div class="box box-tip">
+    <b>📌 通关策略:</b>先学后闯——每个大陆对应站内一个板块,通关失败时看解析里的"去复习"链接;BOSS 关是对整个大陆的检阅,建议把该大陆普通关全部三星后再挑战。
+  </div>
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>1. 哪个大陆的正确率最低?它对应的正是你的知识盲区。2. 快问快答关卡里,你能不看答案把"参考回答"的框架口述出来吗?
+  </div>
+
+</div><!-- /container -->
+
+<!-- 挑战弹层 -->
+<div class="qg-ov" id="qgOv">
+  <div class="qg-modal" id="qgModal"></div>
+</div>
+
+<script src="../_assets/site.js"></script>
+<script>
+/* ============================================================
+   闯关页交互(ES5,零依赖;数据按需加载)
+============================================================ */
+(function(){
+  "use strict";
+  var KEY = "humanoid-quest-v1";
+  var LV = [], W = [], Q = {}, QB = [], IB = {};
+  var save = null;          /* 存档 */
+  var run = null;           /* 进行中的挑战 */
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- 存档 ---------- */
+  function loadSave(){
+    try{ return JSON.parse(localStorage.getItem(KEY) || "{}"); }catch(e){ return {}; }
+  }
+  function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(save)); }catch(e){} }
+  /* V2.1.18:esc/脚本加载器收敛 site.js 单源(AUDIT A-22)——本页不再持副本;site.js 为全站壳依赖,缺失时页面本不可用 */
+  var esc = Site.esc;
+
+  /* 学习活动打卡(V2.1.7 起)复用 site.js 的 Site.logActivity 单源实现
+     (首页热力图数据 humanoid-site-activity-v1),本页不再持副本 */
+
+  /* ---------- 数据加载（V2.1.18 改走 Site.loadScript 单源） ---------- */
+  var loadScript = Site.loadScript;
+  var pending = 4;
+  function onReady(){ if(--pending) return; init(); }
+  loadScript("../_assets/quest-data.js", onReady);
+  loadScript("../_assets/quiz-bank.js", onReady);
+  loadScript("../_assets/ib-data-a.js", onReady);
+  loadScript("../_assets/ib-data-b.js", onReady);
+
+  function init(){
+    var D = window.QUEST_BANK || {};
+    W = D.worlds || []; LV = D.levels || []; Q = D.Q || {};
+    QB = window.QUIZ_BANK || [];
+    IB = {};
+    var A = window.IB_A || {items:[]}, B = window.IB_B || {items:[]};
+    var all = A.items.concat(B.items);
+    for(var i = 0; i < all.length; i++) IB[all[i].id] = all[i];
+    save = loadSave();
+    if(!save.lv) save.lv = {};
+    if(!save.xp) save.xp = 0;
+    if(!save.bd) save.bd = [];
+    buildMap();
+    buildBadges();
+    renderStats();
+    $("qgReset").onclick = function(){
+      if(!confirm("确定清空闯关存档(星级/XP/徽章全部重置)?")) return;
+      save = { lv:{}, xp:0, bd:[] };
+      persist(); buildMap(); buildBadges(); renderStats();
+    };
+  }
+
+  /* ---------- 解锁与状态 ---------- */
+  function cleared(id){ return save.lv[id] && save.lv[id].s > 0; }
+  function unlocked(idx){ return idx === 0 || cleared(LV[idx-1].id); }
+
+  /* ---------- 地图 ---------- */
+  function buildMap(){
+    var box = $("qgMap"), html = "";
+    for(var w = 0; w < W.length; w++){
+      var got = 0, tot = 0;
+      var inner = "";
+      for(var i = 0; i < LV.length; i++){
+        if(LV[i].w !== w) continue;
+        tot++;
+        var st = save.lv[LV[i].id];
+        if(st && st.s > 0) got++;
+        var open = unlocked(i);
+        var cls = "qg-node" + (LV[i].type === "boss" ? " boss" : "") +
+                  (!open ? " locked" : (st && st.s > 0 ? "" : " current"));
+        var nMeta = "";
+        if(st && st.s > 0){
+          var s3 = "";
+          for(var k = 0; k < 3; k++) s3 += (k < st.s ? "⭐" : "☆");
+          nMeta = "<span class='qg-stars'>" + s3 + "</span><span class='qg-best'>最佳 " + st.best + "%</span>";
+        }else if(open){
+          nMeta = "<span class='qg-best' style='color:#86efac'>▶ 待挑战</span>";
+        }else{
+          nMeta = "<span class='qg-best'>通过上一关解锁</span>";
+        }
+        inner += "<div class='" + cls + "' data-i='" + i + "' style='--wc:" + W[w].color + "'>" +
+          "<div class='qg-nnum'>" + (open ? LV[i].icon : "🔒") + "</div>" +
+          "<div class='qg-nbody'><div class='qg-nname'>" + esc(LV[i].name) +
+          (LV[i].type === "boss" ? " <span class='qg-qtag'>BOSS</span>" : "") + "</div>" +
+          "<div class='qg-ndesc'>" + esc(LV[i].desc) + "</div>" +
+          "<div class='qg-nmeta'>" + nMeta +
+          "<span class='qg-qtag'>" + LV[i].qs.length + " 题 · 及格 " + Math.round(LV[i].pass*100) + "% · " + LV[i].exp + "XP</span>" +
+          "</div></div></div>";
+      }
+      html += "<div class='qg-world' style='--wc:" + W[w].color + "'><h3>" + W[w].icon + " " + W[w].name +
+        " <span class='qg-wprog'>" + got + " / " + tot + " 已通关</span></h3>" +
+        "<div class='qg-wsub'>" + esc(W[w].desc) + "</div>" +
+        "<div class='qg-map'>" + inner + "</div></div>";
+    }
+    box.innerHTML = html;
+    var nodes = box.querySelectorAll(".qg-node");
+    for(var j = 0; j < nodes.length; j++){
+      nodes[j].onclick = function(){
+        var i = +this.getAttribute("data-i");
+        if(!unlocked(i)){
+          this.animate ? this.animate([{transform:"translateX(0)"},{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"translateX(0)"}],{duration:220}) : 0;
+          return;
+        }
+        openInfo(i);
+      };
+    }
+  }
+
+  /* ---------- 徽章 ---------- */
+  var BADGES = [
+    { id:'b_first',   i:'🏆', n:'初出茅庐', d:'通关任意一关' },
+    { id:'b_star3',   i:'⭐', n:'三星达人', d:'任意关卡获得三星' },
+    { id:'b_world',   i:'🗺️', n:'大陆征服者', d:'通关任意 BOSS 关' },
+    { id:'b_streak',  i:'🔥', n:'五连对', d:'单次挑战连对 5 题' },
+    { id:'b_allworld',i:'👑', n:'五洲称霸', d:'通关全部 {LVLEN} 关' },
+    { id:'b_final',   i:'🎓', n:'复试之星', d:'全真模拟 ≥{FINM1}/{FINLEN}' },
+    { id:'b_allstar', i:'🌟', n:'满星传奇', d:'全部关卡三星' }
+  ];
+  function buildBadges(){
+    /* V2.1.7:关数与全真模拟题数由 quest-data 动态解析,文案不再写死 */
+    var fin = null;
+    for(var f = 0; f < LV.length; f++){ if(LV[f].id === "FIN"){ fin = LV[f]; break; } }
+    var finLen = (fin && fin.qs) ? fin.qs.length : 15;
+    var html = "";
+    for(var i = 0; i < BADGES.length; i++){
+      var got = save.bd.indexOf(BADGES[i].id) >= 0;
+      var bd = BADGES[i].d.replace("{LVLEN}", LV.length)
+                         .replace("{FINM1}", Math.max(finLen - 1, 1))
+                         .replace("{FINLEN}", finLen);
+      html += "<div class='qg-badge" + (got ? " got" : "") + "'><div class='bi'>" + BADGES[i].i +
+        "</div><div class='bn'>" + BADGES[i].n + "</div><div class='bd'>" + bd + "</div></div>";
+    }
+    $("qgBadgeWall").innerHTML = html;
+  }
+  function grant(id){
+    if(save.bd.indexOf(id) >= 0) return null;
+    save.bd.push(id);
+    for(var i = 0; i < BADGES.length; i++) if(BADGES[i].id === id) return BADGES[i];
+    return null;
+  }
+
+  /* ---------- 统计 ---------- */
+  function renderStats(){
+    var stars = 0, clearedN = 0;
+    for(var i = 0; i < LV.length; i++){
+      var st = save.lv[LV[i].id];
+      if(st && st.s > 0){ clearedN++; stars += st.s; }
+    }
+    $("qgStars").textContent = stars;
+    $("qgXP").textContent = save.xp;
+    $("qgBadges").textContent = save.bd.length + "/7";
+    $("qgCleared").textContent = clearedN + "/" + LV.length;
+  }
+
+  /* ---------- 弹层 ---------- */
+  function showModal(html){ $("qgModal").innerHTML = html; $("qgOv").classList.add("show"); }
+  function hideModal(){ $("qgOv").classList.remove("show"); }
+  $("qgOv").onclick = function(e){ if(e.target === this && !run) hideModal(); if(e.target === this && run && confirm('正在挑战中,确定退出?(本次进度作废)')){ run = null; hideModal(); } };
+
+  /* ---------- 关卡信息页 ---------- */
+  function openInfo(idx){
+    var L = LV[idx], st = save.lv[L.id];
+    showModal(
+      "<div class='qg-mhead'><div class='qg-mtitle'>" + (L.type === 'boss' ? '👑 ' : '') + L.icon + " " + esc(L.name) + "</div>" +
+      "<button class='qg-close' onclick='qgClose()'>✕</button></div>" +
+      "<p style='color:#9aa4b2;font-size:13.5px'>" + esc(L.desc) + "</p>" +
+      "<div class='qg-info-meta'>" +
+        "<span>题目数 <b>" + L.qs.length + "</b></span>" +
+        "<span>及格线 <b>" + Math.round(L.pass*100) + "%</b></span>" +
+        "<span>经验 <b>" + L.exp + " XP</b>(重复通关 10XP)</span>" +
+        (st && st.s ? "<span>历史最佳 <b>" + st.best + "%</b> · <b>" + "⭐".repeat(st.s) + "</b></span>" : "") +
+      "</div>" +
+      "<div class='box box-tip' style='font-size:12.5px'>三种题型:选择题(自动判分)/ 官方题库题(自动判分)/ 口述自评卡(显示参考答案后自评)。星级:及格 ⭐ · ≥90% ⭐⭐ · 全对 ⭐⭐⭐。</div>" +
+      "<div class='qg-rbtns'><button class='qg-ghost' onclick='qgClose()'>返回地图</button>" +
+      "<button class='qg-main' onclick='qgStart(" + idx + ")'>🚀 " + (st && st.s ? "再战一局" : "开始挑战") + "</button></div>"
+    );
+  }
+  window.qgClose = hideModal;
+
+  /* ---------- 题目解析 ---------- */
+  function resolve(ref){
+    if(ref.indexOf("q:") === 0){
+      var q = Q[ref.slice(2)];
+      return q ? { kind:'choice', q:q.q, o:q.o, a:q.a, e:q.e, link:q.link, src:'闯关题库' } : null;
+    }
+    if(ref.indexOf("qb:") === 0){
+      var id = +ref.slice(3);
+      for(var i = 0; i < QB.length; i++)
+        if(QB[i].id === id) return { kind:'choice', q:QB[i].q, o:QB[i].o, a:QB[i].a, e:QB[i].e, src:'官方自测题库 · ' + QB[i].g };
+      return null;
+    }
+    if(ref.indexOf("ref:") === 0){
+      var it = IB[ref.slice(4)];
+      return it ? { kind:'flash', q:it.q, ans:flashAnsHTML(it), src:'复试面试题库 · 快问快答' } : null;
+    }
+    return null;
+  }
+  function flashAnsHTML(it){
+    var h = "";
+    if(it.a) h += it.a;
+    if(it.formula) h += "<div class='formula'>" + esc(it.formula) + "</div>";
+    if(it.svg) h += "<div class='qg-svg'>" + it.svg + "</div>";
+    if(it.code) h += "<pre><code>" + esc(it.code) + "</code></pre>";
+    if(it.a2) h += it.a2;
+    return h;
+  }
+
+  /* ---------- 挑战流程 ---------- */
+  window.qgStart = function(idx){
+    var L = LV[idx];
+    run = { idx:idx, L:L, i:0, right:0, total:L.qs.length, streak:0, bestStreak:0, newBd:[] };
+    renderQ();
+  };
+  function renderQ(){
+    var r = run, ref = r.L.qs[r.i], q = resolve(ref);
+    if(!q){ r.i++; if(r.i >= r.total){ finish(); } else { renderQ(); } return; }
+    var body = "";
+    if(q.kind === 'choice'){
+      var opts = "";
+      for(var j = 0; j < q.o.length; j++)
+        opts += "<button data-v='" + q.o[j].charAt(0) + "'>" + esc(q.o[j]) + "</button>";
+      body = "<div class='qg-card'><div class='qg-srctag'>📜 " + esc(q.src) + "</div>" +
+        "<div class='qg-qtext'>" + r.L.icon + " " + esc(q.q) + "</div>" +
+        "<div class='qg-opts' id='qgOpts'>" + opts + "</div>" +
+        "<div class='qg-fb' id='qgFb'></div>" +
+        "<div class='qg-explain' id='qgEx'>💡 " + esc(q.e || '') +
+          (q.link ? "<br><a href='" + q.link.u + "'>📖 去复习:" + esc(q.link.t) + "</a> · " : "") +
+          "<a class='qg-ai-link' href='13_AI答疑助手.html?q=" + encodeURIComponent(q.q) + "' target='_blank'>🤖 还不懂?问 AI</a>" +
+        "</div></div>";
+      showModal(headHTML() + body);
+      var btns = $("qgOpts").querySelectorAll("button");
+      for(var k = 0; k < btns.length; k++){
+        btns[k].onclick = function(){
+          var v = this.getAttribute("data-v"), ok = (v === q.a);
+          for(var m = 0; m < btns.length; m++) btns[m].disabled = true;
+          this.classList.add(ok ? "correct" : "wrong");
+          if(!ok) for(var m2 = 0; m2 < btns.length; m2++)
+            if(btns[m2].getAttribute("data-v") === q.a) btns[m2].classList.add("correct");
+          $("qgFb").className = "qg-fb " + (ok ? "ok" : "no");
+          $("qgFb").textContent = ok ? "✓ 回答正确!" : "✗ 回答错误,正确答案 " + q.a;
+          $("qgEx").classList.add("show");
+          answer(ok);
+          renderFormulas($("qgEx"));
+        };
+      }
+    }else{ /* flash 口述自评 */
+      body = "<div class='qg-card'><div class='qg-srctag'>🎤 " + esc(q.src) + " — 先口述 30 秒,再自评</div>" +
+        "<div class='qg-qtext'>" + r.L.icon + " " + esc(q.q) + "</div>" +
+        "<div id='qgFlashArea'><div class='qg-flashbtns' style='margin-top:16px'>" +
+          "<button class='qg-ghost' id='qgReveal'>👁 显示参考答案</button></div>" +
+        "<div class='qg-answer' id='qgAns' style='display:none'>" + q.ans + "</div>" +
+        "<div class='qg-flashbtns' id='qgSelfBtns' style='display:none'>" +
+          "<button class='qg-f-yes' id='qgFy'>✓ 我答到了要点</button>" +
+          "<button class='qg-f-no' id='qgFn'>✗ 没答好,继续学</button></div>" +
+        "<div id='qgNextSlot'></div></div></div>";
+      showModal(headHTML() + body);
+      $("qgReveal").onclick = function(){
+        $("qgAns").style.display = "block";
+        $("qgSelfBtns").style.display = "flex";
+        this.parentNode.style.display = "none";
+        renderFormulas($("qgAns"));
+      };
+      $("qgFy").onclick = function(){ selfJudge(true); };
+      $("qgFn").onclick = function(){ selfJudge(false); };
+    }
+  }
+  function selfJudge(ok){
+    $("qgNextSlot").innerHTML = "<div class='qg-fb " + (ok ? "ok" : "no") + "'>已记录:" +
+      (ok ? "答到要点 ✓" : "未答好 ✗(看看参考回答的框架,回地图复习)") + "</div>" + nextBtn();
+    $("qgFy").disabled = $("qgFn").disabled = true;
+    answer(ok);
+  }
+  function nextBtn(){
+    return "<div class='qg-nextrow'><button class='qg-next' onclick='qgNext()'>" +
+      (run.i + 1 >= run.total ? "查看结果 →" : "下一题 →") + "</button></div>";
+  }
+  window.qgNext = function(){
+    run.i++;
+    if(run.i >= run.total) finish();
+    else renderQ();
+  };
+  function answer(ok){
+    if(ok){ run.right++; run.streak++; if(run.streak > run.bestStreak) run.bestStreak = run.streak; }
+    else run.streak = 0;
+    if(run.bestStreak >= 5){ var b = grant('b_streak'); if(b) run.newBd.push(b); }
+    /* 选择题答完后追加下一题按钮(flash 已有自己的) */
+    if($("qgEx") && $("qgEx").classList.contains("show")){
+      var slot = document.getElementById("qgNextSlot");
+      if(!slot){
+        var div = document.createElement("div"); div.id = "qgNextSlot";
+        document.querySelector(".qg-card").appendChild(div);
+      }
+      document.getElementById("qgNextSlot").innerHTML = nextBtn();
+    }
+  }
+  function headHTML(){
+    var pct = Math.round(run.i * 100 / run.total);
+    return "<div class='qg-mhead'><div class='qg-mtitle'>" + run.L.icon + " " + esc(run.L.name) + "</div>" +
+      "<button class='qg-close' onclick='qgQuit()'>✕</button></div>" +
+      "<div class='qg-pbar'><i style='width:" + pct + "%'></i></div>" +
+      "<div class='qg-pmeta'><span>第 " + (run.i+1) + " / " + run.total + " 题 · 已对 " + run.right + "</span>" +
+      "<span class='qg-streak'>" + (run.streak >= 2 ? "🔥 连对 " + run.streak : "") + "</span></div>";
+  }
+  window.qgQuit = function(){
+    if(confirm("正在挑战中,确定退出?(本次进度作废)")){ run = null; hideModal(); }
+  };
+
+  /* ---------- V2.1.11 零依赖彩带(通关/徽章解锁):canvas 粒子播完自毁,
+     prefers-reduced-motion 时跳过 ---------- */
+  function confetti(mode){
+    try{
+      if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var cv = document.createElement("canvas");
+      cv.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:999";
+      cv.width = innerWidth; cv.height = innerHeight;
+      document.body.appendChild(cv);
+      var ctx = cv.getContext("2d");
+      var big = mode === "win";
+      var N = big ? 140 : 46;
+      var cols = big ? ["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#38bdf8"] : ["#f59e0b","#fbbf24","#fde68a"];
+      var ox = big ? innerWidth / 2 : innerWidth - 90;      /* 徽章:右下角小喷 */
+      var oy = big ? innerHeight * 0.35 : innerHeight - 90;
+      var parts = [];
+      for(var i = 0; i < N; i++){
+        var ang = big ? (Math.random() * Math.PI * 2) : (-Math.PI * (0.25 + Math.random() * 0.5));
+        var sp = (big ? 7 : 5.5) * (0.5 + Math.random());
+        parts.push({ x: ox, y: oy, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - (big ? 3 : 4),
+          w: 5 + Math.random() * 5, h: 3 + Math.random() * 4, rot: Math.random() * 6.28,
+          vr: (Math.random() - 0.5) * 0.35, c: cols[i % cols.length] });
+      }
+      var frames = 0;
+      (function step(){
+        frames++;
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        var alive = 0;
+        for(var k = 0; k < parts.length; k++){
+          var p = parts[k];
+          p.vy += 0.18; p.vx *= 0.992; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+          if(p.y < cv.height + 20) alive++;
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+          ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        if(alive > 0 && frames < 240) requestAnimationFrame(step);
+        else if(cv.parentNode) cv.parentNode.removeChild(cv);
+      })();
+    }catch(e){}
+  }
+
+  /* ---------- 结算 ---------- */
+  function finish(){
+    var L = run.L, pct = Math.round(run.right * 100 / run.total);
+    var pass = run.right / run.total >= L.pass;
+    if(pass) confetti("win");
+    var stars = 0;
+    if(pass){
+      stars = (run.right === run.total) ? 3 : (pct >= 90 ? 2 : 1);
+      var old = save.lv[L.id] || { s:0, best:0, n:0 };
+      var first = old.s === 0;
+      save.lv[L.id] = { s: Math.max(old.s, stars), best: Math.max(old.best, pct), n: (old.n||0)+1 };
+      save.xp += first ? L.exp : 10;
+      if(first && window.Site && Site.logActivity) Site.logActivity();
+      var nb = grant('b_first');
+      if(nb) run.newBd.push(nb);
+      if(stars === 3){ var b3 = grant('b_star3'); if(b3) run.newBd.push(b3); }
+      if(L.type === 'boss'){ var bw = grant('b_world'); if(bw) run.newBd.push(bw); }
+      /* V2.1.7:达标线改为 FIN 关题数-1(数据驱动),与徽章文案同源 */
+      if(L.id === 'FIN'){
+        var finL = null;
+        for(var fi = 0; fi < LV.length; fi++){ if(LV[fi].id === 'FIN'){ finL = LV[fi]; break; } }
+        var finPass = ((finL && finL.qs) ? finL.qs.length : 15) - 1;
+        if(run.right >= finPass){ var bf = grant('b_final'); if(bf) run.newBd.push(bf); }
+      }
+      var allClear = true, allStar = true;
+      for(var i = 0; i < LV.length; i++){
+        var st = save.lv[LV[i].id];
+        if(!st || st.s === 0){ allClear = false; allStar = false; }
+        else if(st.s < 3) allStar = false;
+      }
+      if(allClear){ var ba = grant('b_allworld'); if(ba) run.newBd.push(ba); }
+      if(allStar){ var bs = grant('b_allstar'); if(bs) run.newBd.push(bs); }
+    }
+    persist(); buildMap(); buildBadges(); renderStats();
+    /* V2.1.11:解锁新徽章时右下角金色小彩带 */
+    if(run.newBd.length) setTimeout(function(){ confetti("badge"); }, 500);
+    var starHtml = "";
+    for(var k = 0; k < 3; k++)
+      starHtml += "<span style='animation-delay:" + (k*0.25) + "s'>" + (k < stars ? "⭐" : "☆") + "</span>";
+    var bdHtml = "";
+    for(var m = 0; m < run.newBd.length; m++)
+      bdHtml += "<span class='qg-rbadge'>" + run.newBd[m].i + " " + run.newBd[m].n + "</span>";
+    var nextHint = "";
+    if(pass && run.idx + 1 < LV.length) nextHint = "<div style='margin-top:10px;font-size:12.5px;color:#86efac'>🔓 已解锁下一关:" + esc(LV[run.idx+1].name) + "</div>";
+    showModal(
+      "<div class='qg-mhead'><div class='qg-mtitle'>" + (pass ? "🎉 通关成功" : "💪 差一点点") + "</div><button class='qg-close' onclick='qgClose()'>✕</button></div>" +
+      "<div class='qg-result'>" +
+        "<div class='qg-bigstars'>" + starHtml + "</div>" +
+        "<div class='qg-rscore'>答对 " + run.right + " / " + run.total + "(正确率 " + pct + "%,及格线 " + Math.round(L.pass*100) + "%)</div>" +
+        (pass ? "<div class='qg-rxp'>⚡ +" + (save.lv[L.id] && save.lv[L.id].n === 1 ? L.exp : 10) + " XP · 总 XP " + save.xp + "</div>" :
+                "<div class='qg-rxp' style='color:#fca5a5'>看解析、去复习,再来一局就过了!</div>") +
+        (bdHtml ? "<div class='qg-rbadges'>" + bdHtml + "</div>" : "") +
+        nextHint +
+        "<div class='qg-rbtns'>" +
+          "<button class='qg-ghost' onclick='qgClose()'>返回地图</button>" +
+          "<button class='qg-main' onclick='qgStart(" + run.idx + ")'>" + (pass ? "再战刷星" : "再挑战") + "</button>" +
+        "</div>" +
+      "</div>"
+    );
+    run = null;
+  }
+
+  /* ---------- KaTeX(动态内容补渲染,同题库页)
+     V2.1.7:统一走 site.js 的 KatexLoader 单源加载器(JS+CSS 四级回退,
+     全挂保持 LaTeX 原文);此前本处为 npmmirror 单源,与 site.js 漂移 ---------- */
+  function renderFormulas(scope){
+    var els = (scope || document).querySelectorAll(".formula:not([data-katex])");
+    if(!els.length) return;
+    for(var i = 0; i < els.length; i++) els[i].setAttribute("data-katex", "1");
+    function doRender(){
+      var all = document.querySelectorAll(".formula[data-katex='1']");
+      for(var i = 0; i < all.length; i++){
+        try{ window.katex.render(all[i].textContent, all[i], { throwOnError:false, displayMode:true }); }catch(e){}
+        all[i].setAttribute("data-katex", "2");
+      }
+    }
+    if(window.katex){ doRender(); return; }
+    (window.KatexLoader || { ensure:function(cb){ cb(); } }).ensure(doRender);
+  }
+})();
+</script>
+</body>
+</html>

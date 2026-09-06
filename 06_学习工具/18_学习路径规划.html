@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 学习路径规划</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(前缀 my- 避免与全局冲突) */
+  .my-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 6px}
+  .my-tabs button{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:13px;padding:7px 15px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.15s}
+  .my-tabs button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);border-color:transparent;color:#fff;font-weight:700}
+  html:not([data-theme-early="dark"]) .my-tabs button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#64748b}
+  html:not([data-theme-early="dark"]) .my-tabs button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
+  .my-path{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:20px 22px;margin:18px 0}
+  html:not([data-theme-early="dark"]) .my-path{background:rgba(255,255,255,.87);border-color:rgba(255,255,255,.9);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  .my-path-head{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .my-path-ic{font-size:26px;line-height:1.2}
+  .my-path-title{font-size:18px;font-weight:800;color:#fff}
+  html:not([data-theme-early="dark"]) .my-path-title{color:#0f172a}
+  .my-path-desc{font-size:13px;color:#9aa4b2;margin-top:4px;line-height:1.7}
+  html:not([data-theme-early="dark"]) .my-path-desc{color:#5a6a85}
+  .my-path-meta{margin-left:auto;text-align:right;font-size:12px;color:#6b7280;flex-shrink:0}
+  .my-path-meta b{color:#3b82f6;font-size:15px}
+  .my-bar{height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin:14px 0 6px}
+  .my-bar i{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#22c55e);border-radius:99px;transition:width .4s}
+  html:not([data-theme-early="dark"]) .my-bar{background:rgba(15,23,42,.08)}
+  .my-stage{margin:16px 0 4px;font-size:13px;font-weight:700;color:#9ecbff}
+  html:not([data-theme-early="dark"]) .my-stage{color:#2563eb}
+  .my-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;margin:5px 0;text-decoration:none;transition:.15s;border:1px solid transparent}
+  .my-item:hover{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.35);text-decoration:none}
+  .my-item .my-dot{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:rgba(59,130,246,.16);color:#9ecbff;border:1px solid rgba(59,130,246,.4)}
+  .my-item.done .my-dot{background:rgba(34,197,94,.18);color:#86efac;border-color:rgba(34,197,94,.5)}
+  .my-item .my-t{font-size:14px;color:#c9d1d9;flex:1}
+  html:not([data-theme-early="dark"]) .my-item .my-t{color:#334155}
+  .my-item.done .my-t{color:#86efac}
+  html:not([data-theme-early="dark"]) .my-item.done .my-t{color:#15803d}
+  .my-item .my-id{font-size:11px;color:#6b7280;font-family:Consolas,monospace}
+  .my-next{display:inline-block;margin:8px 0 0;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.45);color:#86efac;font-size:12.5px;padding:6px 14px;border-radius:999px;text-decoration:none;font-weight:700}
+  .my-next:hover{background:rgba(34,197,94,.3);color:#fff;text-decoration:none}
+  html:not([data-theme-early="dark"]) .my-next{background:rgba(34,197,94,.1);color:#15803d}
+  html:not([data-theme-early="dark"]) .my-next:hover{background:rgba(34,197,94,.25);color:#fff}
+  .my-sum{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+  .my-sum a{flex:1;min-width:150px;text-decoration:none;color:inherit;background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:12px 14px;transition:.15s}
+  .my-sum a:hover{border-color:rgba(59,130,246,.5);text-decoration:none}
+  html:not([data-theme-early="dark"]) .my-sum a{background:rgba(255,255,255,.87);border-color:rgba(255,255,255,.9)}
+  .my-sum .n{font-size:13px;font-weight:700;color:#fff}
+  html:not([data-theme-early="dark"]) .my-sum .n{color:#0f172a}
+  .my-sum .p{font-size:12px;color:#9aa4b2;margin-top:2px}
+  html:not([data-theme-early="dark"]) .my-sum .p{color:#5a6a85}
+</style>
+<script src="../_assets/path-data.js"></script>
+<script src="../_assets/search-index.js"></script>
+<script>
+  window.PAGE = {
+    pageId: "06-18",
+    root: "..",
+    breadcrumb: [
+      { t: "学习工具", u: "../index.html#sec6" },
+      { t: "学习路径规划" }
+    ],
+    prev: { t: "AI Agent 介绍(写给高校教师)", u: "17_AI_Agent介绍.html" },
+    next: { t: "AI 答疑助手", u: "13_AI答疑助手.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🛤️ 学习路径规划</h1>
+    <div class="sub">6 条有序学习路径 × 阶段关卡 × 打卡进度联动 —— 不用再猜"下一步学什么",跟着路径走就行</div>
+    <div class="tags">
+      <span class="tag">6 条路径</span>
+      <span class="tag">阶段关卡</span>
+      <span class="tag">进度联动</span>
+      <span class="tag">一页总览</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 选定一条与自己目标匹配的路径,并说清它的阶段顺序与产出物<br>
+    2. 用打卡进度找到自己在路径上的"当前站位"与"下一站"<br>
+    3. 理解路径与板块的关系:路径是"顺序",板块是"图书馆"<br>
+    <b>建议用时:</b>约 10 分钟(选路径)+ 跟随路径的完整学习周期
+  </div>
+
+  <!-- ================= 路径总览(动态渲染) ================= -->
+  <h2><span class="h2-num">1</span> 六条路径总览:先选方向</h2>
+  <p>下面六张卡片按<b>学习目标</b>划分,点卡片直接跳到对应路径详情。同一页面可能出现在多条路径里(一页可以服务多个目标),打卡进度全站互通。</p>
+  <div class="my-sum" id="mySum"></div>
+
+  <!-- ================= 路径详情(动态渲染) ================= -->
+  <h2><span class="h2-num">2</span> 路径详情与阶段关卡</h2>
+  <div class="my-tabs" id="myTabs"></div>
+  <div id="myBoard"></div>
+
+  <h2><span class="h2-num">3</span> 怎么用:三步闭环</h2>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>选路径</b><br>按目标点上方卡片,通读"适合人群"与阶段顺序,别跳阶段。</div>
+    <div class="step-item"><span class="n">2</span><b>逐页学 + 打卡</b><br>每学完一页,点该页右上角「✓ 完成」打卡——本页的关卡点会实时变绿。</div>
+    <div class="step-item"><span class="n">3</span><b>跟"下一站"走</b><br>每条路径的「继续学习 →」永远指向你的第一个未完成页,学完回来刷新即更新。</div>
+  </div>
+  <div class="box box-tip"><b>📌 路径 vs 板块 vs 地图:</b>路径(本页)回答<b>"按什么顺序学"</b>;板块(首页)回答<b>"某类内容在哪"</b>;<a href="06_学习地图.html">学习地图</a>回答<b>"全站学了多少"</b>;三者共用同一份打卡进度,随时交叉使用。</div>
+
+  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 想做关节模组的电机驱动与控制,应该选哪条路径?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">具身智能与大模型</button>
+      <button data-v="B">关节驱动与控制工程师</button>
+      <button data-v="C">机器人软件工程师</button>
+      <button data-v="D">数字 IC 与 NPU 设计</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">关节驱动主线 = 驱动硬件 → FOC 固件 → 控制理论深化(现代控制/观测器/ADRC)→ 通信升级,对应「⚙️ 关节驱动与控制工程师」路径。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 路径里的"继续学习 →"按钮指向哪里?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">路径的第一个页面</button>
+      <button data-v="B">随机一个没学过的页面</button>
+      <button data-v="C">按顺序数的第一个未打卡页面</button>
+      <button data-v="D">全网最热门的页面</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">"继续学习"按路径顺序找到第一个未打卡页面作为"下一站",打卡后自动前移。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 路径、板块、学习地图三者的关系,哪句是对的?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">路径管顺序,板块管归类,地图管总进度,三者共用同一份打卡进度</button>
+      <button data-v="B">三者是三套独立进度,互不相通</button>
+      <button data-v="C">必须先学完板块才能解锁路径</button>
+      <button data-v="D">路径只给保研考生使用</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">打卡数据只有一份(pageId 维度),路径/板块/地图只是三种视图。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>六条路径 = 新手入门 🌱 / 关节驱动与控制 ⚙️ / 数字 IC 与 NPU 🔬 / 机器人软件 🤖 / 具身智能与大模型 🧠 / 保研复试冲刺 🎓;每条路径都是"阶段关卡 + 顺序清单 + 进度联动",配合首页打卡就是完整的课程表。</div>
+  <div class="box box-warn"><b>🤔 思考题:</b>如果让你为自己的半年规划一条新路径,阶段怎么划?每阶段的"通关产出物"是什么?想清楚这两个问题,比多刷十页内容更有用。</div>
+
+  <h2><span class="h2-num">5</span> 相关工具</h2>
+  <div class="grid">
+    <a class="card" href="06_学习地图.html"><span class="go">进入 →</span><div class="ic">🗺️</div><div class="t">学习地图</div><div class="d">全站页面一张图:按板块分组的完成度总览。</div></a>
+    <a class="card" href="10_学习数据分析.html"><span class="go">进入 →</span><div class="ic">📊</div><div class="t">学习数据分析</div><div class="d">打卡数据的多维统计与可视化。</div></a>
+    <a class="card" href="12_闯关学习.html"><span class="go">进入 →</span><div class="ic">🎯</div><div class="t">闯关学习</div><div class="d">用关卡制检验阶段学习成果。</div></a>
+  </div>
+
+  <h2><span class="h2-num">6</span> 参考来源与延伸资源</h2>
+  <p>本页为站内导航工具页,数据与进度均来自本站自身;路径的课程设计参考了下列公开课程体系(均已在对应内容页的"参考来源"中逐一核实标注):</p>
+  <ul>
+    <li>NPU 四阶段课程设计参照开源社区主流数字 IC 培养路线(详见 <a href="../08_NPU与数字IC设计/01_板块总览与学习路线.html">08-01 板块总览</a> 的资源导航总表)</li>
+    <li>控制理论主线参照 DR_CAN 系列课程与 Underactuated Robotics(详见 <a href="../04_软件与算法/16_现代控制理论_状态空间到MPC.html">04-16 现代控制理论</a> 参考来源)</li>
+    <li>机器人软件主线参照 ROS 2 官方教程与 Nav2/moveit2 官方文档(详见对应页面参考来源)</li>
+  </ul>
+</div>
+
+<script>
+/* 路径渲染:数据来自 _assets/path-data.js,标题从 search-index 按 u 解析,进度来自打卡存储 */
+(function(){
+  var STORE = "humanoid-site-progress-v1";
+  function getProgress(){ try{ return JSON.parse(localStorage.getItem(STORE) || "{}"); }catch(e){ return {}; } }
+
+  function titleMap(){
+    var m = {};
+    (window.SITE_SEARCH_INDEX || []).forEach(function(it){ m[it.u] = it.t; });
+    return m;
+  }
+  function fmtU(u, root){ return (root ? root + "/" : "") + u; }
+
+  function pathStats(p, prog){
+    var total = 0, done = 0, firstPending = null;
+    p.stages.forEach(function(st){
+      st.pages.forEach(function(pg){
+        total++;
+        if(prog[pg.id]) done++;
+        else if(!firstPending) firstPending = pg;
+      });
+    });
+    return { total: total, done: done, first: firstPending,
+             pct: total ? Math.round(done / total * 100) : 0 };
+  }
+
+  function render(){
+    var root = "..";
+    var prog = getProgress();
+    var tmap = titleMap();
+    var paths = window.SITE_PATHS || [];
+
+    /* 总览卡片 */
+    var sum = document.getElementById("mySum");
+    if(sum){
+      sum.innerHTML = paths.map(function(p){
+        var st = pathStats(p, prog);
+        return '<a href="#path-' + p.id + '">' +
+          '<div class="n">' + p.icon + ' ' + p.name + '</div>' +
+          '<div class="p">' + p.fil + ' · 已完成 ' + st.done + '/' + st.total + ' (' + st.pct + '%)</div></a>';
+      }).join("");
+    }
+
+    /* 标签 */
+    var tabs = document.getElementById("myTabs");
+    if(tabs){
+      tabs.innerHTML = '<button class="on" data-p="all">全部路径</button>' +
+        paths.map(function(p){ return '<button data-p="' + p.id + '">' + p.icon + ' ' + p.name + '</button>'; }).join("");
+    }
+
+    /* 详情板 */
+    var board = document.getElementById("myBoard");
+    if(!board) return;
+    board.innerHTML = paths.map(function(p){
+      var st = pathStats(p, prog);
+      var stagesHtml = p.stages.map(function(stg, si){
+        var rows = stg.pages.map(function(pg, pi){
+          var isDone = !!prog[pg.id];
+          var t = tmap[pg.u] || decodeURIComponent(pg.u.split("?")[0].split("/").pop().replace(/\.html$/, ""));
+          return '<a class="my-item' + (isDone ? ' done' : '') + '" href="' + fmtU(pg.u, root) + '">' +
+            '<span class="my-dot">' + (isDone ? '✓' : (si + 1) + '.' + (pi + 1)) + '</span>' +
+            '<span class="my-t">' + t + '</span>' +
+            '<span class="my-id">' + pg.id + '</span></a>';
+        }).join("");
+        return '<div class="my-stage">' + stg.name + '</div>' + rows;
+      }).join("");
+      var nextBtn = st.first
+        ? '<a class="my-next" href="' + fmtU(st.first.u, root) + '">▶ 继续学习:' + (tmap[st.first.u] || st.first.id) + ' →</a>'
+        : '<span class="my-next" style="background:rgba(34,197,94,.25)">🏆 该路径已全部完成!</span>';
+      return '<div class="my-path" id="path-' + p.id + '">' +
+        '<div class="my-path-head">' +
+          '<div class="my-path-ic">' + p.icon + '</div>' +
+          '<div><div class="my-path-title">' + p.name + '</div>' +
+          '<div class="my-path-desc">' + p.desc + '<br><b>适合:</b>' + p.fil + ' · <b>' + p.weeks + '</b></div></div>' +
+          '<div class="my-path-meta"><b>' + st.pct + '%</b><br>已完成 ' + st.done + '/' + st.total + ' 页</div>' +
+        '</div>' +
+        '<div class="my-bar"><i style="width:' + st.pct + '%"></i></div>' +
+        stagesHtml + nextBtn +
+      '</div>';
+    }).join("");
+  }
+
+  render();
+  document.getElementById("myTabs").addEventListener("click", function(ev){
+    var b = ev.target;
+    if(!b || b.tagName !== "BUTTON") return;
+    [...this.querySelectorAll("button")].forEach(function(x){ x.classList.toggle("on", x === b); });
+    var pid = b.getAttribute("data-p");
+    document.querySelectorAll("#myBoard .my-path").forEach(function(card){
+      card.style.display = (pid === "all" || card.id === "path-" + pid) ? "" : "none";
+    });
+  });
+  /* 其他标签页打卡后,自动刷新本页进度 */
+  window.addEventListener("storage", function(e){ if(e.key === STORE) render(); });
+})();
+</script>
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

@@ -66,7 +66,7 @@ git checkout -b feat/新页面
 
 # 3. 改代码
 # 4. 只提交自己改的文件
-git add 08_学习工具/新页面.html
+git add 06_学习工具/新页面.html
 git commit -m "feat: 新增xx页"
 git push origin feat/新页面
 

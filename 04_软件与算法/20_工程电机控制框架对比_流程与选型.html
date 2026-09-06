@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  人形机器人学习站 · 04-20 工程电机控制框架对比与选型
+  内容: 六大工程电机控制框架(SimpleFOC / ODrive / VESC / ST MC SDK /
+        TI InstaSPIN-FOC / MIT Mini Cheetah 范式)的代码流程图差异、
+        架构差异、优缺点横向对比与选型决策树
+  定位: 与 04-02(SimpleFOC/ODrive/MotorOS 三家简介)互补——
+        本页深挖「代码流程与架构」并以选型落地;FOC 基础流程见 04-19
+  结构遵循 _assets/页面模板.html,样式复用 _assets/site.css
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 工程电机控制框架对比与选型</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级补充样式(命名一律 my- 前缀,避免与 site.css 冲突) ===== */
+  /* 图形容器(SVG 流程图/状态机) */
+  .my-fig{background:rgba(13,17,23,.78);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 12px;margin:16px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:520px;max-width:100%;height:auto;margin:0 auto}
+  .my-fig-cap{font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6}
+  html:not([data-theme-early="dark"]) .my-fig{background:#ffffff;border-color:rgba(60,80,120,.14)}
+
+  /* 资源卡片(参照 02-05 参考资料汇总页) */
+  .my-res-card{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(22,27,34,.75);margin:10px 0;text-decoration:none;color:inherit;transition:transform .22s cubic-bezier(.2,.8,.3,1.18),border-color .2s,background .2s,box-shadow .2s}
+  a.my-res-card:hover{border-color:rgba(59,130,246,.55);background:rgba(30,41,59,.85);transform:translateX(4px);text-decoration:none}
+  .my-res-badge{flex-shrink:0;width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .my-res-info{flex:1;min-width:0}
+  .my-res-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;line-height:1.45}
+  .my-res-desc{font-size:13px;color:#9aa4b2;line-height:1.7;margin-bottom:8px}
+  .my-res-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .my-badge-doc{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+  .my-badge-tool{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+  .my-badge-article{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+  .my-tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:5px;font-weight:500}
+  .my-tag-github{background:#e5e7eb;color:#374151}
+  .my-tag-official{background:#bbf7d0;color:#166534}
+  .my-tag-bili{background:#fecaca;color:#991b1b}
+  .my-tag-zhihu{background:#dbeafe;color:#1e40af}
+  .my-tag-recommend{background:#fde047;color:#854d0e;font-weight:700}
+  .my-tag-diff-2{background:#fef9c3;color:#854d0e}
+  .my-tag-diff-3{background:#fecaca;color:#991b1b}
+  html:not([data-theme-early="dark"]) .my-res-card{background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(255,255,255,.85);box-shadow:0 10px 34px rgba(50,80,140,.09)}
+  html:not([data-theme-early="dark"]) a.my-res-card:hover{border-color:rgba(37,99,235,.35);background:rgba(255,255,255,.9);box-shadow:0 18px 44px rgba(40,80,160,.16)}
+  html:not([data-theme-early="dark"]) .my-res-title{color:#0f172a}
+  html:not([data-theme-early="dark"]) .my-res-desc{color:#5a6a85}
+
+  /* 框架章节导航小胶囊 */
+  .my-fw-nav{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .my-fw-nav a{font-size:12.5px;padding:5px 12px;border-radius:999px;border:1px solid rgba(88,166,255,.35);color:#58a6ff;text-decoration:none;transition:.15s}
+  .my-fw-nav a:hover{background:rgba(88,166,255,.15)}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "04-20",
+    root: "..",
+    breadcrumb: [
+      { t: "软件与算法", u: "../index.html#sec4" },
+      { t: "工程电机控制框架对比与选型" }
+    ],
+    prev: { t: "FOC算法完全图解:流程与运行图", u: "19_FOC算法完全图解_流程与运行图.html" },
+    next: { t: "FreeRTOS 任务调度与实时性", u: "20_FreeRTOS任务调度与实时性.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🏭 工程电机控制框架对比与选型</h1>
+    <div class="sub">六大工程界常用电机控制框架 —— SimpleFOC · ODrive · VESC · ST MC SDK · TI InstaSPIN-FOC · MIT Mini Cheetah 范式。
+      每家给一张代码流程/状态机图,讲清「电流环放在哪、状态机怎么转、优缺点是什么」,最后落到一张横向对比大表和一棵选型决策树。</div>
+    <div class="tags">
+      <span class="tag">六大框架</span>
+      <span class="tag">代码流程图</span>
+      <span class="tag">状态机</span>
+      <span class="tag">横向对比</span>
+      <span class="tag">选型决策</span>
+      <span class="tag">读源码路线</span>
+    </div>
+  </div>
+
+  <!-- ================= 学习目标 ================= -->
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能画出 SimpleFOC「loopFOC()+move() 两段式主循环」与 ODrive「ADC 中断电流环 + 轴状态机」两种代码结构的差异<br>
+    2. 能说出六大框架各自的「电流环位置、状态机形态、观测器与参数辨识方式、开源许可」<br>
+    3. 能对照横向对比大表(≥12 个维度),为自己的场景(学习 / DIY / 轮足 / 产品化 / 无感 / 人形关节自研)选对框架<br>
+    4. 能按「找 ISR 入口 → 电流环 → 状态机 → 通信层」四步路线,独立读懂任一框架的源码<br>
+    <b>建议用时:</b>约 45 分钟(通读)+ 1~2 小时(对照源码精读)
+  </div>
+
+  <div class="my-fw-nav">
+    <a href="#sec-simplefoc">① SimpleFOC</a>
+    <a href="#sec-odrive">② ODrive</a>
+    <a href="#sec-vesc">③ VESC</a>
+    <a href="#sec-mcsdk">④ ST MC SDK</a>
+    <a href="#sec-instaspin">⑤ InstaSPIN</a>
+    <a href="#sec-minicheetah">⑥ Mini Cheetah</a>
+    <a href="#sec-table">⑦ 对比大表</a>
+    <a href="#sec-tree">⑧ 选型决策树</a>
+    <a href="#sec-readsrc">⑨ 读源码</a>
+    <a href="#sec-diy">⑩ 自研建议</a>
+  </div>
+
+  <!-- ================= 1 六框架全景 ================= -->
+  <h2><span class="h2-num">1</span> 全景:六个框架各自是谁,差别到底在哪?</h2>
+  <p><a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">04-02 页</a>已经介绍过 SimpleFOC / ODrive 的基本盘;本页把镜头拉近到<b>「代码长什么样、跑在哪个中断里」</b>,并把阵容扩到工程界最常打交道的六家:两家开源社区(SimpleFOC、ODrive)、一家功率场景老将(VESC)、两家芯片原厂(ST MC SDK、TI InstaSPIN-FOC),以及一个学术开源范式(MIT Mini Cheetah 关节驱动)。</p>
+  <p>同一个 FOC,六种「装法」。它们的数学内核几乎一样(采样 → Clark → Park → PI → 逆 Park → SVPWM,<a href="19_FOC算法完全图解_流程与运行图.html">见 04-19 完整流程图</a>),真正的差别集中在四个问题上:</p>
+  <ul>
+    <li><b>电流环放在哪?</b>——主循环轮询、ADC 中断、RTOS 线程,还是芯片 ROM 里的固化代码?这决定了实时性与性能天花板。</li>
+    <li><b>状态机长什么样?</b>——有没有显式的轴状态机(axis state machine)?状态转换是手写 switch 还是任务链(task chain)?这决定了可靠性与产品化程度。</li>
+    <li><b>参数从哪来?</b>——手填、Motor Profiler 自测、FAST 在线辨识,还是校准序列自动量?这决定了上手的难易。</li>
+    <li><b>许可绑定谁?</b>——MIT 随便改、GPLv3 要传染、还是专有库绑定芯片?这决定了能不能商用、能不能移植。</li>
+  </ul>
+
+  <h3>1.1 六框架速览表</h3>
+  <div class="table-wrap"><table>
+    <tr><th>框架</th><th>一句话定位</th><th>开源许可</th><th>典型场景</th><th>门槛</th></tr>
+    <tr><td><b>SimpleFOC</b></td><td>教学优先的 Arduino FOC 库,20 行让电机转起来</td><td>MIT</td><td>学习 / 云台 / 低速</td><td>★</td></tr>
+    <tr><td><b>ODrive</b></td><td>高性能开源伺服驱动(板+固件+上位机)</td><td>MIT(经典 v3.x)</td><td>机械臂关节 / 高性能 DIY</td><td>★★★</td></tr>
+    <tr><td><b>VESC</b></td><td>大功率功率电子生态(滑板到电航)</td><td>GPLv3(固件)</td><td>轮足 / 滑板 / 中型关节</td><td>★★★☆</td></tr>
+    <tr><td><b>ST MC SDK 6.x</b></td><td>ST 官方产品化 FOC 固件库 + Workbench</td><td>专有许可 · 免费下载</td><td>家电 / 工业产品化</td><td>★★★</td></tr>
+    <tr><td><b>TI InstaSPIN-FOC</b></td><td>ROM 固化 FAST 观测器,参数全自动辨识</td><td>专有(ROM 黑盒)</td><td>白电 / 泵 / 风机无感</td><td>★★</td></tr>
+    <tr><td><b>Mini Cheetah 范式</b></td><td>学术开源关节驱动范式 + 「MIT 模式」CAN 协议</td><td>MIT(Cheetah-Software)</td><td>足式 / 人形关节自研参照</td><td>★★★★</td></tr>
+  </table></div>
+  <div class="box box-tip"><b>💡 学习锚点:</b>六家其实排在一条「<b>易用 ⇄ 性能</b>」的轴上:SimpleFOC 最易用但性能天花板最低;ODrive/VESC 往性能走;ST/TI 面向量产;Mini Cheetah 范式则回答「如果这些都先用,自己写一个要长什么样」。读后面每节时,始终带着第 1 节开头的四个问题去看图。</div>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 620 420" role="img" aria-label="六框架架构差异总图:左列从上到下为SimpleFOC主循环轮询、ODrive的ADC中断加轴状态机、VESC的RTOS分层,右列为ST MC SDK的任务调度、InstaSPIN的ROM固化FAST、MiniCheetah的ISR加CAN命令层,中间用纵轴标注从主循环到硬件中断的实时性递进">
+      <defs>
+        <marker id="mc-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="mc-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="mc-arr-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+        <marker id="mc-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+        <marker id="mc-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+      </defs>
+      <!-- 实时性纵轴 -->
+      <line x1="40" y1="60" x2="40" y2="380" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#mc-arr)"/>
+      <text x="22" y="60" fill="#8b98a9" font-size="11">实时性低</text>
+      <text x="22" y="392" fill="#8b98a9" font-size="11">高</text>
+      <text x="14" y="228" fill="#8b98a9" font-size="11" transform="rotate(-90 14 228)">实时性 / 电流环位置</text>
+
+      <!-- 左列 3 框 -->
+      <rect x="70" y="52" width="250" height="92" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="195" y="76" fill="#22c55e" font-size="13.5" font-weight="bold" text-anchor="middle">① SimpleFOC(MIT)</text>
+      <text x="195" y="96" fill="#8b98a9" font-size="11.5" text-anchor="middle">main loop 轮询 loopFOC() + move()</text>
+      <text x="195" y="114" fill="#8b98a9" font-size="11.5" text-anchor="middle">无硬实时 ISR 依赖 · 电流环多数不闭环</text>
+      <text x="195" y="132" fill="#22c55e" font-size="11.5" text-anchor="middle">教学 / 云台 / 低速</text>
+
+      <rect x="70" y="172" width="250" height="92" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="195" y="196" fill="#58a6ff" font-size="13.5" font-weight="bold" text-anchor="middle">② ODrive(MIT)</text>
+      <text x="195" y="216" fill="#8b98a9" font-size="11.5" text-anchor="middle">ADC 中断跑电流环(数 kHz~数十 kHz)</text>
+      <text x="195" y="234" fill="#8b98a9" font-size="11.5" text-anchor="middle">轴状态机 task chain + 观测器</text>
+      <text x="195" y="252" fill="#58a6ff" font-size="11.5" text-anchor="middle">机械臂 / 高性能 DIY</text>
+
+      <rect x="70" y="292" width="250" height="92" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="195" y="316" fill="#f59e0b" font-size="13.5" font-weight="bold" text-anchor="middle">③ VESC(GPLv3)</text>
+      <text x="195" y="336" fill="#8b98a9" font-size="11.5" text-anchor="middle">mcpwm_foc ISR + ChibiOS 分层</text>
+      <text x="195" y="354" fill="#8b98a9" font-size="11.5" text-anchor="middle">applications / comm 应用任务 + VESC Tool</text>
+      <text x="195" y="372" fill="#f59e0b" font-size="11.5" text-anchor="middle">轮足 / 滑板 / 大功率</text>
+
+      <!-- 右列 3 框 -->
+      <rect x="360" y="52" width="250" height="92" rx="10" fill="rgba(139,152,169,.10)" stroke="#8b98a9" stroke-width="1.6"/>
+      <text x="485" y="76" fill="#8b98a9" font-size="13.5" font-weight="bold" text-anchor="middle">④ ST MC SDK 6.x(专有)</text>
+      <text x="485" y="96" fill="#8b98a9" font-size="11.5" text-anchor="middle">HF 任务(电流环)+ MF 任务 + 背景</text>
+      <text x="485" y="114" fill="#8b98a9" font-size="11.5" text-anchor="middle">STOP→IDLE→ALIGNMENT→START→RUN</text>
+      <text x="485" y="132" fill="#8b98a9" font-size="11.5" text-anchor="middle">家电 / 工业产品化</text>
+
+      <rect x="360" y="172" width="250" height="92" rx="10" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="485" y="196" fill="#ef4444" font-size="13.5" font-weight="bold" text-anchor="middle">⑤ TI InstaSPIN-FOC(专有)</text>
+      <text x="485" y="216" fill="#8b98a9" font-size="11.5" text-anchor="middle">FAST 观测器固化在 F2806x 片内 ROM</text>
+      <text x="485" y="234" fill="#8b98a9" font-size="11.5" text-anchor="middle">Rs/L/磁链在线自辨识 · 无感</text>
+      <text x="485" y="252" fill="#ef4444" font-size="11.5" text-anchor="middle">白电 / 泵 / 风机</text>
+
+      <rect x="360" y="292" width="250" height="92" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="485" y="316" fill="#58a6ff" font-size="13.5" font-weight="bold" text-anchor="middle">⑥ Mini Cheetah 范式(MIT)</text>
+      <text x="485" y="336" fill="#8b98a9" font-size="11.5" text-anchor="middle">关节内 STM32 电流环 + CAN 命令层</text>
+      <text x="485" y="354" fill="#8b98a9" font-size="11.5" text-anchor="middle">MIT 模式: kp/kd/p_des/v_des/i_des</text>
+      <text x="485" y="372" fill="#58a6ff" font-size="11.5" text-anchor="middle">足式 / 人形关节自研参照</text>
+
+      <!-- 趋势箭头 -->
+      <path d="M335 98 C 348 98 348 218 335 218" fill="none" stroke="#8b98a9" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#mc-arr)"/>
+      <path d="M335 218 C 348 218 348 338 335 338" fill="none" stroke="#8b98a9" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#mc-arr)"/>
+    </svg>
+    <div class="my-fig-cap">图 1-1 六框架架构差异总图:纵轴大致代表"电流环离硬件有多近",沿左列自上而下是易用→性能→量产→自研的谱系。越靠下/靠右,实时性要求越高、越接近产品化或自研范式。</div>
+  </div>
+
+
+  <!-- ================= 2 SimpleFOC ================= -->
+  <h2 id="sec-simplefoc"><span class="h2-num">2</span> SimpleFOC:教学优先的两段式主循环</h2>
+
+  <h3>2.1 定位与代码架构</h3>
+  <p><b>定位:</b>把 FOC「去神秘化」的 Arduino 库。官方目标是 <i>Demystify FOC algorithm and make a robust but simple Arduino library</i>,MIT 许可,文档(docs.simplefoc.com)与社区教程是六家里最全的。它回答的问题是:<b>怎么用最少的代码、最普通的硬件(ESP32/Arduino + 驱动板 + 磁编码器),第一次让 FOC 闭环转起来。</b></p>
+  <p><b>代码架构:</b>面向对象三层——<code>Motor(BLDCMotor 等)· Driver(功率驱动)· Sensor(编码器)</code>,C++ 类互相 <code>link</code>。所有电机类继承自 <code>FOCMotor</code> 基类,<b>核心两段式入口 <code>loopFOC()</code> 与 <code>move()</code> 就定义在基类 <code>FOCMotor.cpp</code> 里</b>(BLDCMotor/StepperMotor 继承复用);SVPWM/正弦/梯形调制在 <code>setPhaseVoltage()</code> 里实现。运动控制在库里抽象为 <code>MotionControlType</code>(力矩/速度/位置/开环),由 <code>move()</code> 按 controller 类型分派。</p>
+  <pre><code>// SimpleFOC 用户视角的全部骨架(六家里最短)
+#include &lt;SimpleFOC.h&gt;
+BLDCMotor motor = BLDCMotor(7);          // 极对数
+BLDCDriver3PWM driver = BLDCDriver3PWM(32, 33, 25);
+MagneticSensorI2C sensor = MagneticSensorI2C(AS5600_I2C);  // 或 Encoder/ABI
+
+void setup() {
+  driver.init();  motor.linkDriver(&amp;driver);
+  sensor.init();  motor.linkSensor(&amp;sensor);
+  motor.controller = MotionControlType::velocity;  // 力矩/速度/位置
+  motor.init();   motor.initFOC();                 // 校准电角度零偏
+}
+void loop() {
+  motor.loopFOC();   // ① 低层 FOC: 读角度→(采样)→电流计算→SVPWM 出波
+  motor.move(5.0f);  // ② 高层运动: 按控制模式把目标换算成电压/电流指令
+}</code></pre>
+
+  <h3>2.2 中断结构与核心流程</h3>
+  <p><b>中断结构:</b>SimpleFOC 的主控制链默认跑在 <b>Arduino 主循环的普通调用栈</b>里,不依赖硬实时 ISR——这正是它好懂的原因,也是它性能天花板的根源(执行周期抖动大、频率受 loop 其他代码拖累)。需要注意的例外:ABI 增量编码器的 A/B 相计数用 GPIO 中断回调;低边电流采样(<code>LowsideCurrentSense</code>)在某些平台会挂 ADC 中断回调。但对最常见的「电压模式 + 磁编码器」配置,整个系统就是"主循环 + 一点点中断"。</p>
+  <p><b>核心流程:</b><code>loopFOC()</code> 读编码器角度 → (若有电流采样则做相电流计算)→ 依据当前力矩指令经逆 Park/SVPWM 输出三相电压;<code>move()</code> 则按速度/位置环 PID 把目标值换算成下一拍力矩指令。<b>关键短板:</b>绝大多数入门配置<b>没有相电流采样硬件,电流环并不闭环</b>——库用「电压 ≈ 力矩」的近似(或估算电流),力矩精度与电流谐波抑制天然弱于闭环电流环方案;即使加装 inline/lowside 采样,受平台定时器资源限制,电流环频率也远低于 ODrive/VESC 类方案。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 560 430" role="img" aria-label="SimpleFOC 主循环两段式流程图:setup 里初始化驱动器传感器并执行initFOC校准,然后 loop 里先执行 loopFOC 低层FOC再执行 move 高层运动控制,loopFOC 内部为读编码器到SVPWM输出,move 内部为按控制模式分派到力矩速度位置开环">
+      <defs>
+        <marker id="mc2-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="mc2-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+        <marker id="mc2-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="mc2-arr-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+      </defs>
+      <!-- setup 列 -->
+      <text x="120" y="34" fill="#22c55e" font-size="13" font-weight="bold" text-anchor="middle">setup()(上电一次)</text>
+      <rect x="40" y="48" width="160" height="46" rx="9" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="120" y="68" fill="#22c55e" font-size="11.5" text-anchor="middle">driver / sensor / motor</text>
+      <text x="120" y="84" fill="#8b98a9" font-size="11" text-anchor="middle">.init() + link()</text>
+      <line x1="120" y1="94" x2="120" y2="112" stroke="#22c55e" stroke-width="1.8" marker-end="url(#mc2-arr-g)"/>
+      <rect x="40" y="116" width="160" height="46" rx="9" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="120" y="136" fill="#22c55e" font-size="11.5" text-anchor="middle">motor.initFOC()</text>
+      <text x="120" y="152" fill="#8b98a9" font-size="11" text-anchor="middle">电角度零偏校准</text>
+      <line x1="120" y1="162" x2="120" y2="188" stroke="#22c55e" stroke-width="1.8" marker-end="url(#mc2-arr-g)"/>
+      <rect x="40" y="192" width="160" height="40" rx="9" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.4" stroke-dasharray="5 3"/>
+      <text x="120" y="217" fill="#8b98a9" font-size="11.5" text-anchor="middle">进入 loop()(周期轮询)</text>
+
+      <!-- loop 循环大框 -->
+      <rect x="34" y="244" width="492" height="164" rx="12" fill="none" stroke="#58a6ff" stroke-width="1.3" stroke-dasharray="6 4"/>
+      <text x="52" y="266" fill="#58a6ff" font-size="12.5" font-weight="bold">loop() · 每圈顺序执行(无硬实时 ISR 依赖)</text>
+      <rect x="52" y="278" width="200" height="104" rx="9" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="152" y="298" fill="#58a6ff" font-size="12" font-weight="bold" text-anchor="middle">① motor.loopFOC()</text>
+      <text x="152" y="318" fill="#8b98a9" font-size="11" text-anchor="middle">读编码器电角度 θ</text>
+      <text x="152" y="335" fill="#8b98a9" font-size="11" text-anchor="middle">(有电流采样→相电流计算)</text>
+      <text x="152" y="352" fill="#8b98a9" font-size="11" text-anchor="middle">逆 Park → SVPWM 出三相电压</text>
+      <line x1="252" y1="330" x2="292" y2="330" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#mc2-arr-b)"/>
+      <rect x="296" y="278" width="212" height="104" rx="9" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="402" y="298" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">② motor.move(target)</text>
+      <text x="402" y="318" fill="#8b98a9" font-size="11" text-anchor="middle">按 MotionControlType 分派:</text>
+      <text x="402" y="335" fill="#8b98a9" font-size="11" text-anchor="middle">力矩(电压/电流)· 速度 · 位置 · 开环</text>
+      <text x="402" y="352" fill="#8b98a9" font-size="11" text-anchor="middle">外环 PID → 输出下一拍力矩指令</text>
+      <!-- 循环回路箭头 -->
+      <path d="M402 382 L402 396 L152 396 L152 382" fill="none" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#mc2-arr)"/>
+      <text x="277" y="392" fill="#8b98a9" font-size="10.5" text-anchor="middle">下一圈循环(默认无硬件定时器节拍)</text>
+
+      <!-- 编码器中断旁注 -->
+      <rect x="236" y="48" width="290" height="84" rx="9" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.3" stroke-dasharray="5 3"/>
+      <text x="381" y="70" fill="#f59e0b" font-size="11.5" font-weight="bold" text-anchor="middle">仅有的中断: 编码器 A/B 相 GPIO 中断计数</text>
+      <text x="381" y="90" fill="#8b98a9" font-size="11" text-anchor="middle">(低边电流采样时另有 ADC 回调)</text>
+      <text x="381" y="110" fill="#8b98a9" font-size="11" text-anchor="middle">控制链本身不压在硬实时中断里</text>
+      <line x1="236" y1="139" x2="200" y2="186" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#mc2-arr-o)"/>
+    </svg>
+    <div class="my-fig-cap">图 2-1 SimpleFOC 主循环两段式流程:setup 做校准,loop 里 loopFOC()(低层出波)+ move()(高层分派)顺序轮询。结构 = 「六家里最好懂」,代价是节拍抖动与性能天花板。</div>
+  </div>
+
+  <h3>2.3 优缺点与适用</h3>
+  <div class="table-wrap"><table>
+    <tr><th>✔ 优点</th><th>✘ 缺点</th></tr>
+    <tr><td>20 行上手,文档/社区/示例六家最全;硬件无关(Arduino/STM32/ESP32/Teensy/RP2040…);类结构清晰,读源码是学 FOC 工程化的最佳教材;MIT 许可随便改</td><td>多数配置无相电流检测,<b>电流环不闭环</b>(电压近似力矩);主循环轮询节拍抖动,速度/力矩纹波偏大;实时性与功率上限低,不适合关节级高带宽力控</td></tr>
+  </table></div>
+  <p><b>适用:</b>FOC 入门教学、云台/低速平稳运动、算法原型验证、读源码学架构。<b>不适用:</b>需要高带宽电流环的关节力控。想先动手跑通的读者,直接照 04-02 页第 3 节的最小示例开工。</p>
+
+
+  <!-- ================= 3 ODrive ================= -->
+  <h2 id="sec-odrive"><span class="h2-num">3</span> ODrive:状态机驱动的高性能开源伺服</h2>
+
+  <h3>3.1 定位与代码架构</h3>
+  <p><b>定位:</b>「高性能 hobby/prosumer」路线的代表作——硬件 + 固件 + 上位机全开源(MIT),把工业伺服的三环结构塞进一块双轴板子。注意两点事实(截至本文核实):<b>① 开源固件对应经典 v3.x 硬件,官方已标记 NRND(不再积极开发),新款 Pro/S1/Micro 的固件源码未公开;</b>② 虽然如此,v3.x 固件仍是学习「产品级 FOC 固件怎么组织」的最佳文本之一。</p>
+  <p><b>代码架构:</b>核心抽象是 <b>Axis(轴)</b>——一块板两个 Axis,每个 Axis 聚合 <code>Motor</code>(FOC 电流环)、<code>Encoder</code>(位置/速度估计)、<code>Controller</code>(位置/速度环)、<code>Trapezoidal Trajectory</code>(轨迹规划)等组件。每个组件有各自的后台线程(FreeRTOS),而<b>电流环独占最高实时性</b>:挂在 PWM 同步的 ADC 采样完成中断/最高优先级线程里,频率与 PWM 同量级——严谨地说在<b>数 kHz 到数十 kHz</b> 之间(依配置与硬件代次而变,不建议背具体数,面试说区间即可)。</p>
+  <pre><code>// ODrive 固件阅读地图(v3.x 固件, 以仓库当前版本为准)
+Firmware/MotorControl/
+├── axis.cpp        // 轴状态机: Axis::run_state_machine_loop() + task chain
+├── motor.cpp       // 电流环核心: Motor::FOC_current(Id_des, Iq_des, ...)
+├── controller.cpp  // 位置环/速度环 + 轨迹跟踪
+├── encoder.cpp     // 编码器计数 / 速度估计 / 校准
+├── low_level.cpp   // ADC 采样启动(start_adc_pwm)· 模拟量 · 母线
+└── sensorless_estimator.cpp / acim_estimator.cpp  // 可选无感/异步机估计</code></pre>
+
+  <h3>3.2 中断结构与轴状态机</h3>
+  <p><b>中断结构:</b>电流环在 PWM 周期驱动的采样中断里闭环(采两相电流 → FOC → 更新比较寄存器);位置/速度环跑在低一些频率的线程里;USB/CAN 通信又是更低优先级的线程。这是典型的「<b>三层时间尺度</b>」结构,几乎所有的产品级关节固件都是这个形状。</p>
+  <p><b>状态机:</b>每个 Axis 有一个显式的 <code>AxisState</code> 状态机,上位机通过写 <code>requested_state</code> 请求切换。官方定义的状态包括:<code>UNDEFINED / IDLE / STARTUP_SEQUENCE / FULL_CALIBRATION_SEQUENCE / MOTOR_CALIBRATION / ENCODER_INDEX_SEARCH / ENCODER_OFFSET_CALIBRATION / CLOSED_LOOP_CONTROL / LOCKIN_SPIN / ENCODER_DIR_FIND / HOMING / ENCODER_HALL_POLARITY_CALIBRATION / ENCODER_HALL_PHASE_CALIBRATION</code> 等。上电启动链(STARTUP_SEQUENCE)会按配置依次串起「电机参数测量 → 编码器索引搜索 → 编码器零偏校准 → 进入闭环」,在固件里实现为一条 <b>task chain(任务链)</b>依次执行——这是 ODrive 架构里最值得抄的设计之一。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 580 440" role="img" aria-label="ODrive 轴状态机图:上电进入 UNDEFINED 到 IDLE,由上位机请求 requested_state,经过 FULL_CALIBRATION_SEQUENCE 展开为电机参数测量、编码器索引搜索、编码器零偏校准的任务链,然后进入 CLOSED_LOOP_CONTROL 闭环控制,出错进入 disarm 回 IDLE,右侧为位置速度力矩三类输入指令">
+      <defs>
+        <marker id="mc3-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="mc3-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="mc3-arr-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+        <marker id="mc3-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+        <marker id="mc3-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- 上电 -->
+      <rect x="36" y="40" width="120" height="40" rx="20" fill="rgba(139,152,169,.15)" stroke="#8b98a9" stroke-width="1.5"/>
+      <text x="96" y="65" fill="#8b98a9" font-size="12" text-anchor="middle">上电 · UNDEFINED</text>
+      <line x1="96" y1="80" x2="96" y2="102" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#mc3-arr)"/>
+      <!-- IDLE -->
+      <rect x="36" y="106" width="120" height="40" rx="9" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="96" y="131" fill="#22c55e" font-size="12.5" font-weight="bold" text-anchor="middle">IDLE(待机)</text>
+      <!-- 请求闭环 -->
+      <line x1="156" y1="126" x2="216" y2="126" stroke="#22c55e" stroke-width="1.6" marker-end="url(#mc3-arr-g)"/>
+      <text x="188" y="93" fill="#22c55e" font-size="10.5" text-anchor="middle">requested_state</text>
+
+      <!-- FULL CAL -->
+      <rect x="220" y="100" width="180" height="52" rx="9" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="310" y="121" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">FULL_CALIBRATION_SEQUENCE</text>
+      <text x="310" y="140" fill="#8b98a9" font-size="10.5" text-anchor="middle">(首次使用 · task chain 依次展开 ↓)</text>
+
+      <!-- 校准链 -->
+      <rect x="216" y="176" width="86" height="58" rx="9" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.3"/>
+      <text x="259" y="199" fill="#f59e0b" font-size="10.8" text-anchor="middle">MOTOR_</text>
+      <text x="259" y="215" fill="#f59e0b" font-size="10.8" text-anchor="middle">CALIBRATION</text>
+      <text x="259" y="228" fill="#8b98a9" font-size="9.5" text-anchor="middle">测 R/L</text>
+      <rect x="316" y="176" width="86" height="58" rx="9" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.3"/>
+      <text x="359" y="199" fill="#f59e0b" font-size="10.8" text-anchor="middle">ENCODER_INDEX_</text>
+      <text x="359" y="215" fill="#f59e0b" font-size="10.8" text-anchor="middle">SEARCH</text>
+      <text x="359" y="228" fill="#8b98a9" font-size="9.5" text-anchor="middle">(增量码盘)</text>
+      <rect x="416" y="176" width="92" height="58" rx="9" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.3"/>
+      <text x="462" y="199" fill="#f59e0b" font-size="10.8" text-anchor="middle">ENCODER_OFFSET_</text>
+      <text x="462" y="215" fill="#f59e0b" font-size="10.8" text-anchor="middle">CALIBRATION</text>
+      <text x="462" y="228" fill="#8b98a9" font-size="9.5" text-anchor="middle">电角度零偏</text>
+      <line x1="302" y1="205" x2="316" y2="205" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#mc3-arr-o)"/>
+      <line x1="402" y1="205" x2="416" y2="205" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#mc3-arr-o)"/>
+      <!-- 汇入闭环 -->
+      <path d="M462 234 L462 268" fill="none" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#mc3-arr-o)"/>
+      <path d="M96 146 L96 172 L196 172 L196 292 L212 292" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#mc3-arr-g)"/>
+      <text x="192" y="282" fill="#22c55e" font-size="10.5" text-anchor="end">再次上电可直接 CLOSED_LOOP</text>
+      <text x="192" y="300" fill="#22c55e" font-size="10.5" text-anchor="end">(配置 startup)</text>
+
+      <!-- 闭环大框 -->
+      <rect x="216" y="272" width="292" height="82" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.8"/>
+      <text x="362" y="296" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle">CLOSED_LOOP_CONTROL(闭环运行)</text>
+      <text x="362" y="316" fill="#8b98a9" font-size="10.8" text-anchor="middle">电流环: ADC 采样中断 · 数 kHz~数十 kHz · FOC_current()</text>
+      <text x="362" y="332" fill="#8b98a9" font-size="10.8" text-anchor="middle">速度/位置环: 线程级低频 + 观测器(编码器 / 可选无感)</text>
+      <text x="362" y="348" fill="#8b98a9" font-size="10.8" text-anchor="middle">输入: input_pos / input_vel / input_torque</text>
+
+      <!-- 出错 -->
+      <rect x="216" y="382" width="292" height="40" rx="9" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="362" y="407" fill="#ef4444" font-size="11.5" text-anchor="middle">故障(过流/过压/超时)→ disarm → IDLE + error 码</text>
+      <path d="M330 354 L330 382" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#mc3-arr-r)"/>
+      <!-- 通信旁注 -->
+      <rect x="36" y="200" width="150" height="66" rx="9" fill="rgba(139,152,169,.10)" stroke="#8b98a9" stroke-width="1.3" stroke-dasharray="5 3"/>
+      <text x="111" y="221" fill="#8b98a9" font-size="10.8" text-anchor="middle">上位机接口层</text>
+      <text x="111" y="239" fill="#8b98a9" font-size="10.8" text-anchor="middle">USB / UART / CAN</text>
+      <text x="111" y="255" fill="#8b98a9" font-size="10.8" text-anchor="middle">odrivetool(Python)</text>
+      <line x1="156" y1="216" x2="220" y2="140" stroke="#8b98a9" stroke-width="1.1" stroke-dasharray="4 3" marker-end="url(#mc3-arr)"/>
+    </svg>
+    <div class="my-fig-cap">图 3-1 ODrive 轴状态机(据 v3.x 固件 AxisState 枚举整理):校准是一次性资产,任务链串完直接进闭环;运行期任何故障走 disarm 回 IDLE。上位机永远只做一件事——写 requested_state 与 input_*。</div>
+  </div>
+
+  <h3>3.3 优缺点与适用</h3>
+  <div class="table-wrap"><table>
+    <tr><th>✔ 优点</th><th>✘ 缺点</th></tr>
+    <tr><td>真正闭环的电流环(高带宽力控);显式轴状态机 + task chain,工程化程度高;观测器体系完整(编码器为主、可选无感/异步机);USB/UART/CAN 生态 + odrivetool 调参舒适;MIT 许可</td><td>硬件绑定(自家板卡);调参复杂(三环+编码器+滤波器全套);经典 v3.x 已 NRND、新代次固件不开源——长期项目要有心理准备;上手成本远高于 SimpleFOC</td></tr>
+  </table></div>
+  <p><b>适用:</b>机械臂关节原型、四足/人形单腿样机、高性能 DIY(轮式平衡、云台直驱)。配置步骤见 <a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">04-02 页第 4 节</a>(odrivetool 校准与 Python 控制)。</p>
+
+
+  <!-- ================= 4 VESC ================= -->
+  <h2 id="sec-vesc"><span class="h2-num">4</span> VESC:大功率场景的 RTOS 分层架构</h2>
+
+  <h3>4.1 定位与代码架构</h3>
+  <p><b>定位:</b>Benjamin Vedder 的开源功率电子生态,从几十瓦的云台电机到上百千瓦的电航应用都在用(官网口径),电动滑板/EBike/轮式机器人是最大用户群。功率等级、成熟度、工具链(VESC Tool 全家桶)是它的名片。<b>许可要如实记:固件 GPLv3</b>——商用整机要考虑 GPL 传染条款,这一点和 MIT 系完全不同。</p>
+  <p><b>代码架构(vedderb/bldc 仓库):</b>跑在 <b>ChibiOS(RTOS)</b> 上,层次分明:</p>
+  <ul>
+    <li><b>实时内核级</b>:<code>motor/mcpwm_foc.c</code> 里的 FOC 中断服务(<code>mcpwm_foc_isr_motor()</code>)——电流采样 + FOC + SVPWM 都压在与 PWM 同步的 ISR 里,这是全系统最硬的实时部分;</li>
+    <li><b>应用任务层</b>:<code>applications/</code> 目录(app_canbus、app_adc、app_uartcomm、app_nunchuk 等)——每种输入源一个任务,把「外部世界」翻译成电机目标值;</li>
+    <li><b>通信层</b>:<code>comm/</code>(USB/UART/CAN 包协议与终端命令),加 <code>terminal.c</code> 命令行;</li>
+    <li><b>配置与硬件抽象</b>:<code>hwconf/</code>(几十种官方/社区硬件板配置)、<code>conf_general</code>(参数管理)。</li>
+  </ul>
+  <p>高级调制策略上,VESC 内置<b>弱磁(field weakening)与 MTPA(最大转矩电流比)</b>一类的高速/高效策略(具体开关以所用版本固件为准),这是 SimpleFOC 完全没有、ODrive 也较少触及的功率域功能。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 580 430" role="img" aria-label="VESC 分层架构图:底层为与PWM同步的mcpwm_foc ISR电流环和SVPWM驱动三相桥,中层为ChibiOS RTOS线程跑电机目标管理观测器与弱磁MTPA,上层为applications应用任务app_canbus app_adc app_uartcomm和comm通信层,顶部为VESC Tool上位机,功率输出箭头指向电机">
+      <defs>
+        <marker id="mc4-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="mc4-arr-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/></marker>
+        <marker id="mc4-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="mc4-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+      </defs>
+      <!-- 顶层 VESC Tool -->
+      <rect x="180" y="34" width="220" height="44" rx="9" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.5"/>
+      <text x="290" y="53" fill="#8b98a9" font-size="12" font-weight="bold" text-anchor="middle">VESC Tool(配置/调参/固件升级)</text>
+      <text x="290" y="70" fill="#8b98a9" font-size="10.5" text-anchor="middle">电机向导 · 实时数据 · 示波器</text>
+      <line x1="290" y1="78" x2="290" y2="98" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#mc4-arr)"/>
+
+      <!-- 通信层 -->
+      <rect x="96" y="102" width="388" height="46" rx="9" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="290" y="121" fill="#58a6ff" font-size="12" font-weight="bold" text-anchor="middle">comm/ 通信层 + terminal 命令行</text>
+      <text x="290" y="139" fill="#8b98a9" font-size="10.5" text-anchor="middle">USB 包协议 · UART · CAN 帧转发(可组网多控制器)</text>
+
+      <!-- 应用任务层 -->
+      <rect x="96" y="162" width="388" height="46" rx="9" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="290" y="181" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">applications/ 应用任务(每种输入源一个任务)</text>
+      <text x="290" y="199" fill="#8b98a9" font-size="10.5" text-anchor="middle">app_canbus(机器人常用)· app_adc(油门)· app_uartcomm · app_ppm/nunchuk</text>
+
+      <!-- RTOS 中间层 -->
+      <rect x="96" y="222" width="388" height="52" rx="9" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="290" y="242" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">电机目标管理 + 观测/保护(ChibiOS 线程)</text>
+      <text x="290" y="260" fill="#8b98a9" font-size="10.5" text-anchor="middle">目标值仲裁 · 速度/位置环 · 弱磁 / MTPA · 过流过温保护 · 状态超时</text>
+
+      <!-- ISR 底层 -->
+      <rect x="96" y="288" width="388" height="52" rx="9" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="290" y="308" fill="#ef4444" font-size="12" font-weight="bold" text-anchor="middle">mcpwm_foc ISR(PWM 同步 · 最硬实时)</text>
+      <text x="290" y="326" fill="#8b98a9" font-size="10.5" text-anchor="middle">相电流采样 → Clark/Park → 电流 PI → 逆 Park → SVPWM → 比较寄存器</text>
+
+      <!-- 硬件 -->
+      <rect x="96" y="354" width="388" height="40" rx="9" fill="rgba(139,152,169,.10)" stroke="#8b98a9" stroke-width="1.4"/>
+      <text x="290" y="379" fill="#8b98a9" font-size="11.5" text-anchor="middle">三相功率桥 → 电机(大功率)· hwconf/ 板级配置</text>
+      <line x1="290" y1="340" x2="290" y2="354" stroke="#ef4444" stroke-width="1.5" marker-end="url(#mc4-arr-r)"/>
+      <line x1="290" y1="208" x2="290" y2="222" stroke="#22c55e" stroke-width="1.5" marker-end="url(#mc4-arr)"/>
+      <line x1="290" y1="274" x2="290" y2="288" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#mc4-arr-o)"/>
+      <line x1="290" y1="148" x2="290" y2="162" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#mc4-arr-b)"/>
+    </svg>
+    <div class="my-fig-cap">图 4-1 VESC 分层架构(据 vedderb/bldc 仓库结构整理):ISR 只做电流环,其余全部下放到 RTOS 线程与任务——「最硬的尽量少、其余尽量分层」是大功率固件的通用哲学。</div>
+  </div>
+
+  <h3>4.2 优缺点与适用</h3>
+  <div class="table-wrap"><table>
+    <tr><th>✔ 优点</th><th>✘ 缺点</th></tr>
+    <tr><td>大功率场景久经考验(滑板→轮足→中型关节);VESC Tool 工具链全(向导/示波器/固件升级);弱磁/MTPA 等功率域策略内置;硬件配置(HW 版本)生态丰富,社区成熟</td><td><b>固件 GPLv3</b>(商用传染条款要想清楚);代码庞杂、历史包袱重,学习曲线六家里最陡;为滑板场景设计,关节伺服语义(如关节级力控接口)要自己封装</td></tr>
+  </table></div>
+  <p><b>适用:</b>轮式/轮足机器人大功率轮毂驱动、电动滑板、中大功率关节(需自行封装力控语义)。B站搜「VESC 电机」有大量中文上手视频(见文末资源卡)。</p>
+
+
+  <!-- ================= 5 ST MC SDK ================= -->
+  <h2 id="sec-mcsdk"><span class="h2-num">5</span> ST MC SDK 6.x:芯片原厂的产品化 FOC 库</h2>
+
+  <h3>5.1 定位与代码架构</h3>
+  <p><b>定位:</b>ST 官方电机控制 SDK(X-CUBE-MCSDK,当前 6.x 代),面向<b>产品化</b>——家电、工业、泵类、工具。免费下载(走 ST 官网申请流程),但属<b>专有许可</b>,和开源社区的 MIT 系不同。它回答的问题是:「我要把一台未知电机做成可靠量产的产品,谁来替我把参数、代码、调试工具一次配齐?」</p>
+  <p><b>代码架构与工具链:</b>三大件——</p>
+  <ul>
+    <li><b>Motor Profiler</b>:接上未知电机自动测 Rs/Ls/反电动势常数等参数(官方叫 Motor profiler 与 one-touch tuning),解决了「参数从哪来」的问题;</li>
+    <li><b>Motor Control Workbench + CubeMX 集成</b>:图形化选电机、选功率板、配外设,直接生成工程代码——代码是「生成的」,不鼓励你手改结构;</li>
+    <li><b>固件库本体</b>:观测器支持齐全(有感编码器/霍尔 + 无感状态观测器,SMO 类),利用 STM32(G4 等)的 CORDIC/FPU 加速坐标变换与三角运算。</li>
+  </ul>
+
+  <h3>5.2 任务调度与状态机</h3>
+  <p><b>任务调度:</b>MC SDK 把工作切成三个时间尺度——<b>高频任务</b>(电流环,跟随 PWM 更新节拍执行)、<b>中频任务</b>(速度/位置控制与状态推进,固定毫秒级周期)、<b>后台任务</b>(通信协议栈、监控、调试变量)。这套 HF/MF/背景划分与 ODrive 的「ISR/线程/通信」异曲同工,但更「库化」:入口函数、回调点、状态推进都由框架约定好。</p>
+  <p><b>状态机:</b>电机控制状态机围绕一条主链运转:<code>STOP → IDLE → ALIGNMENT(编码器/观测器对齐)→ START(启动序列)→ RUN → STOP</code>,另有 ICLWAIT(过流等待)、充电自举电容、故障态等辅助状态。所有启动/停止指令(MC_StartMotor1 / MC_StopMotor1)都只是向状态机发请求,真正的时序由状态机统一推进——这正是产品代码需要的「谁都不能绕过状态机乱来」的纪律。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 580 400" role="img" aria-label="ST MC SDK 状态机与任务调度图:上方状态链 STOP 到 IDLE 到 ALIGNMENT 到 START 到 RUN 再回 STOP,故障态红色旁挂;下方三个任务条,高频任务电流环随PWM更新,中频任务速度位置控制与状态推进毫秒级,后台任务通信监控调试">
+      <defs>
+        <marker id="mc5-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="mc5-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="mc5-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+      </defs>
+      <!-- 状态链 -->
+      <text x="290" y="30" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle">电机控制状态机(主链)</text>
+      <rect x="34" y="46" width="80" height="42" rx="9" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.5"/>
+      <text x="74" y="72" fill="#8b98a9" font-size="12" font-weight="bold" text-anchor="middle">STOP</text>
+      <rect x="138" y="46" width="80" height="42" rx="9" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="178" y="72" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">IDLE</text>
+      <rect x="242" y="46" width="106" height="42" rx="9" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="295" y="66" fill="#f59e0b" font-size="11.5" font-weight="bold" text-anchor="middle">ALIGNMENT</text>
+      <text x="295" y="82" fill="#8b98a9" font-size="9.8" text-anchor="middle">对齐/观测器初始化</text>
+      <rect x="372" y="46" width="80" height="42" rx="9" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="412" y="72" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">START</text>
+      <rect x="476" y="46" width="80" height="42" rx="9" fill="rgba(88,166,255,.14)" stroke="#58a6ff" stroke-width="1.8"/>
+      <text x="516" y="72" fill="#58a6ff" font-size="12" font-weight="bold" text-anchor="middle">RUN</text>
+      <line x1="114" y1="67" x2="138" y2="67" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#mc5-arr)"/>
+      <line x1="218" y1="67" x2="242" y2="67" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#mc5-arr)"/>
+      <line x1="348" y1="67" x2="372" y2="67" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#mc5-arr)"/>
+      <line x1="452" y1="67" x2="476" y2="67" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#mc5-arr)"/>
+      <!-- 停止回环 + 故障 -->
+      <path d="M516 88 L516 108 L74 108 L74 88" fill="none" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#mc5-arr)"/>
+      <text x="295" y="103" fill="#8b98a9" font-size="10" text-anchor="middle">MC_StopMotor1 → 回 STOP</text>
+      <rect x="216" y="128" width="160" height="34" rx="9" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="296" y="149" fill="#ef4444" font-size="11" text-anchor="middle">FAULT(过流/过压/堵转)→ 急停</text>
+      <path d="M420 88 L420 145 L376 145" fill="none" stroke="#ef4444" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#mc5-arr-r)"/>
+
+      <!-- 任务调度 -->
+      <text x="290" y="196" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle">三个时间尺度的任务调度</text>
+      <rect x="34" y="212" width="512" height="52" rx="9" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="58" y="233" fill="#ef4444" font-size="12" font-weight="bold">高频任务(电流环)</text>
+      <text x="58" y="251" fill="#8b98a9" font-size="10.5">跟随 PWM 更新节拍执行: 采样→FOC→SVPWM</text>
+      <text x="520" y="238" fill="#ef4444" font-size="10.5" text-anchor="end">最高实时性</text>
+      <rect x="34" y="276" width="512" height="52" rx="9" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="58" y="297" fill="#f59e0b" font-size="12" font-weight="bold">中频任务(速度/位置)</text>
+      <text x="58" y="315" fill="#8b98a9" font-size="10.5">固定毫秒级周期: 外环 PID · 状态机推进 · 斜坡/轨迹</text>
+      <text x="520" y="302" fill="#f59e0b" font-size="10.5" text-anchor="end">ms 级周期</text>
+      <rect x="34" y="340" width="512" height="46" rx="9" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="58" y="360" fill="#58a6ff" font-size="12" font-weight="bold">后台任务(通信/监控)</text>
+      <text x="58" y="377" fill="#8b98a9" font-size="10.5">UART/USB 协议 · 调试变量 · Motor Profiler 数据交换</text>
+      <line x1="290" y1="332" x2="290" y2="340" stroke="#8b98a9" stroke-width="1.3" marker-end="url(#mc5-arr)"/>
+    </svg>
+    <div class="my-fig-cap">图 5-1 ST MC SDK 状态机与任务调度:上半是「谁都不能绕过」的状态主链(STOP→IDLE→ALIGNMENT→START→RUN),下半是 HF/MF/后台三尺度任务。产品代码要的纪律感,这张图就是答案。</div>
+  </div>
+
+  <h3>5.3 优缺点与适用</h3>
+  <div class="table-wrap"><table>
+    <tr><th>✔ 优点</th><th>✘ 缺点</th></tr>
+    <tr><td>商业级文档/支持/稳定性背书;Motor Profiler + 一键整定,新电机出活快;CubeMX 代码生成,外设配置零踩坑;无感观测器与硬件加速(CORDIC)齐备;免费</td><td>代码量大、生成式代码可读性一般;深度定制受框架约束;<b>绑定 ST 芯片生态</b>;许可为专有协议(以随包协议为准),不能像 MIT 那样随意嵌入自研商业固件</td></tr>
+  </table></div>
+  <p><b>适用:</b>家电/电动工具/工业辅助动力等产品化项目;用 ST 芯片自研关节固件时,它的状态机与任务划分也是最好的「抄作业」对象(见第 11 节)。</p>
+
+
+  <!-- ================= 6 TI InstaSPIN-FOC ================= -->
+  <h2 id="sec-instaspin"><span class="h2-num">6</span> TI InstaSPIN-FOC:ROM 里的 FAST 观测器与参数自辨识</h2>
+
+  <h3>6.1 定位与架构:把「最难的脑子」焊死在芯片里</h3>
+  <p><b>定位:</b>TI 面向白电/泵/风机等<b>无感(one-wire 或 zero-sensor)</b>量产场景的 FOC 方案。它的杀手锏是 <b>FAST 估计器(Flux, Angle, Speed, Torque)</b>:一个统一的电机观测器,<b>直接固化在 TMS320F2806x(F/M)等特定 Piccolo 型号的片内 ROM 里</b>(TI 官方口径:FAST 仅以 ROM 形式提供于特定器件),配合 MotorWare 软件框架与引导 GUI 使用。</p>
+  <p><b>架构特点:</b>你写的应用代码调用 ROM 里的 FAST 句柄;FAST 输出磁链、角度、转速、转矩四个量,FOC 电流环用它做无感换相。<b>参数辨识是全自动的:</b>上电跑一遍辨识流程,电机电阻 Rs、电感 L(以及感应电机的 Rr、额定磁链 V/Hz)直接量出来——这是它「五分钟出活」的核心卖点。代价也很明确:<b>黑盒(ROM 代码不可读不可改)+ 绑定 TI 特定型号</b>,换平台就归零。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 580 430" role="img" aria-label="InstaSPIN 参数辨识与无感运行流程图:上电后用户查询电机参数,若有参数则加载否则进入辨识,辨识依次测电机电阻、电感、磁链,结束后保存参数,进入无感FOC运行,FAST观测器从相电流电压估计磁链角度转速转矩输出给电流环,标注FAST固化在F2806x片内ROM">
+      <defs>
+        <marker id="mc6-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="mc6-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+        <marker id="mc6-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="mc6-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+      </defs>
+      <!-- 流程开始 -->
+      <rect x="200" y="30" width="180" height="40" rx="20" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.5"/>
+      <text x="290" y="55" fill="#8b98a9" font-size="12" text-anchor="middle">上电 · 连接 GUI</text>
+      <line x1="290" y1="70" x2="290" y2="90" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#mc6-arr)"/>
+      <text x="410" y="84" fill="#8b98a9" font-size="10.5">已有参数?</text>
+      <path d="M290 90 L290 108" fill="none" stroke="#8b98a9" stroke-width="1.4"/>
+      <polygon points="290,124 278,108 302,108" fill="rgba(139,152,169,.2)" stroke="#8b98a9" stroke-width="1.3"/>
+      <text x="304" y="120" fill="#22c55e" font-size="10">是→加载</text>
+      <text x="278" y="120" fill="#ef4444" font-size="10" text-anchor="end">否→辨识</text>
+      <path d="M278 116 L278 146" fill="none" stroke="#ef4444" stroke-width="1.4" marker-end="url(#mc6-arr-r)"/>
+
+      <!-- 辨识链 -->
+      <rect x="176" y="150" width="90" height="40" rx="9" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="221" y="167" fill="#ef4444" font-size="11" text-anchor="middle">测电机电阻</text>
+      <text x="221" y="182" fill="#8b98a9" font-size="9.8" text-anchor="middle">Rs · 直流注入</text>
+      <rect x="280" y="150" width="90" height="40" rx="9" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="325" y="167" fill="#ef4444" font-size="11" text-anchor="middle">测电感</text>
+      <text x="325" y="182" fill="#8b98a9" font-size="9.8" text-anchor="middle">L(高频激励)</text>
+      <rect x="384" y="150" width="106" height="40" rx="9" fill="rgba(239,68,68,.10)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="437" y="167" fill="#ef4444" font-size="11" text-anchor="middle">测额定磁链</text>
+      <text x="437" y="182" fill="#8b98a9" font-size="9.8" text-anchor="middle">Flux(V/Hz)· 拖动</text>
+      <line x1="266" y1="170" x2="280" y2="170" stroke="#ef4444" stroke-width="1.4" marker-end="url(#mc6-arr-r)"/>
+      <line x1="370" y1="170" x2="384" y2="170" stroke="#ef4444" stroke-width="1.4" marker-end="url(#mc6-arr-r)"/>
+      <path d="M437 190 L437 216 L290 216" fill="none" stroke="#ef4444" stroke-width="1.4" marker-end="url(#mc6-arr-r)"/>
+      <rect x="200" y="222" width="180" height="36" rx="9" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.4"/>
+      <text x="290" y="245" fill="#22c55e" font-size="11.5" text-anchor="middle">参数保存 → 进入无感 FOC 运行</text>
+
+      <!-- 运行框 -->
+      <rect x="34" y="280" width="512" height="120" rx="12" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="290" y="302" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">无感运行环(每 PWM 周期)</text>
+      <rect x="56" y="316" width="150" height="66" rx="9" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="131" y="338" fill="#ef4444" font-size="11.5" font-weight="bold" text-anchor="middle">FAST 观测器(ROM)</text>
+      <text x="131" y="356" fill="#8b98a9" font-size="10" text-anchor="middle">输入: 相电压/相电流</text>
+      <text x="131" y="372" fill="#8b98a9" font-size="10" text-anchor="middle">输出: 磁链·角度·转速·转矩</text>
+      <line x1="206" y1="349" x2="248" y2="349" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#mc6-arr-b)"/>
+      <rect x="252" y="316" width="140" height="66" rx="9" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="322" y="338" fill="#58a6ff" font-size="11.5" font-weight="bold" text-anchor="middle">FOC 电流环</text>
+      <text x="322" y="356" fill="#8b98a9" font-size="10" text-anchor="middle">用 FAST 角度做 Park</text>
+      <text x="322" y="372" fill="#8b98a9" font-size="10" text-anchor="middle">Id/Iq PI → 逆 Park</text>
+      <line x1="392" y1="349" x2="424" y2="349" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#mc6-arr-b)"/>
+      <rect x="428" y="316" width="96" height="66" rx="9" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.4"/>
+      <text x="476" y="338" fill="#8b98a9" font-size="11.5" font-weight="bold" text-anchor="middle">SVPWM</text>
+      <text x="476" y="356" fill="#8b98a9" font-size="10" text-anchor="middle">→ 逆变器</text>
+      <text x="476" y="372" fill="#8b98a9" font-size="10" text-anchor="middle">→ 电机</text>
+      <text x="290" y="390" fill="#8b98a9" font-size="10" text-anchor="middle">FAST 以 ROM 形式固化于特定 F2806x 型号 · 应用代码经句柄调用</text>
+    </svg>
+    <div class="my-fig-cap">图 6-1 InstaSPIN-FOC 辨识与无感运行流程(据 TI SPRUHI9/SPRUHJ1 系列文档整理):辨识三步自动量出 Rs/L/磁链,FAST 观测器全程接管角度——「没有编码器,也没有调参地狱」。</div>
+  </div>
+
+  <h3>6.2 优缺点与适用</h3>
+  <div class="table-wrap"><table>
+    <tr><th>✔ 优点</th><th>✘ 缺点</th></tr>
+    <tr><td>参数辨识全自动,上电即用;无感性能在「风机/泵」这类负载画像上表现好;ROM 固化不占用户 Flash/CPU,一致性好;GUI 引导式上手,门槛低</td><td>ROM 黑盒,不可读不可改,出问题只能绕;<b>强绑定 TI C2000 特定型号</b>(F2806x F/M 等),不可移植;机器人关节场景(低速大转矩、频繁正反转)不是它的设计画像</td></tr>
+  </table></div>
+  <p><b>适用:</b>白电(空调风机/洗衣机)、泵类、风扇等标量负载的无感量产。对机器人工程师,它值得学的不是「拿来用」,而是<b>「参数自辨识 + 统一观测器」的产品思路</b>——无感观测器的算法族谱见 <a href="17_状态观测器全解_龙伯格_EKF_SMO.html">04-17 状态观测器全解</a>。</p>
+
+
+  <!-- ================= 7 Mini Cheetah ================= -->
+  <h2 id="sec-minicheetah"><span class="h2-num">7</span> MIT Mini Cheetah:学术开源范式与「MIT 模式」CAN 命令</h2>
+
+  <h3>7.1 定位:不是「一个库」,而是一套被产业复刻的关节范式</h3>
+  <p><b>定位:</b>MIT Biomimetics Robotics Lab 的 Mini Cheetah 四足机器人展示了「准直驱关节 + 高带宽力控」能跑能跳能后空翻。其开源仓库 <b>Cheetah-Software(MIT 许可)</b>包含整机控制(robot)与仿真(sim)软件栈;<b>注意:关节内部的电流环固件并未随该仓库开源</b>,但它的<b>关节接口协议被产业界原样复刻</b>——CubeMars AK 系列、T-Motor、达妙、宇树 GO 系列执行器等都提供「MIT 模式」,使它成为足式/人形关节自研绕不开的参照系。</p>
+
+  <h3>7.2 层级结构与「MIT 模式」报文</h3>
+  <p><b>层级:</b>关节内,FOC 电流环跑在 STM32 的 PWM 同步采样中断里,频率为<b>数十 kHz 量级</b>(保证电流带宽);关节外,整机控制器以<b>固定高频</b>(如 1kHz 量级)通过 CAN 广播每个关节的目标。<b>命令层就是著名的「MIT 模式」:</b>把 5 个控制量打包进一个 8 字节 CAN 数据帧——</p>
+  <pre><code>// 「MIT 模式」CAN 命令帧(8 字节, 产业通行的打包约定)
+// 五个控制量按固定位宽压缩: 位置 16bit + 速度/Kp/Kd/前馈电流 各 12bit
+p_des(16bit) | v_des(12bit) | kp(12bit) | kd(12bit) | i_des(12bit)
+
+// 语义是「软件刚度-阻尼 + 前馈」的关节级 PD:
+tau_cmd = kp * (p_des - p) + kd * (v_des - v) + i_des
+
+// 三个量全给 0 → 纯力矩(前馈)模式,即 tau = i_des
+// kp/kd 给大、i_des=0 → 变成位置伺服(刚度阻尼由 kp/kd 决定)</code></pre>
+  <p>这条公式是理解人形/四足关节的钥匙:<b>整机控制器在 1kHz 发「目标+刚度+阻尼」,关节内的电流环把它变成真正的电磁转矩</b>——力控的「力」是两层合作出来的(整机侧的 WBC/MPC 算关节力矩,关节侧保证力矩准确,见 <a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">04-02</a> 第 5.4 节)。宇树的执行器 SDK 就是这套模式的工程化封装。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 580 420" role="img" aria-label="MiniCheetah 范式 ISR 与 CAN 命令层级图:左侧整机控制器每 1ms 经 CAN 广播 MIT 模式 8 字节帧,内含 p_des v_des kp kd i_des 按位宽打包;右侧关节驱动板 STM32 的数十kHz电流环 ISR 接收目标,执行采样FOC输出三相桥,并回传位置速度转矩帧,底部公式 tau 等于 kp 乘位置误差加 kd 乘速度误差加 i_des">
+      <defs>
+        <marker id="mc7-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+        <marker id="mc7-arr-b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="mc7-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
+        <marker id="mc7-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
+      </defs>
+      <!-- 整机控制器 -->
+      <rect x="34" y="120" width="170" height="120" rx="12" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="119" y="146" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">整机控制器</text>
+      <text x="119" y="167" fill="#8b98a9" font-size="10.8" text-anchor="middle">步态 / MPC / WBC</text>
+      <text x="119" y="185" fill="#8b98a9" font-size="10.8" text-anchor="middle">每 ~1ms 算出各关节</text>
+      <text x="119" y="201" fill="#8b98a9" font-size="10.8" text-anchor="middle">p_des v_des kp kd i_des</text>
+      <text x="119" y="224" fill="#58a6ff" font-size="10.2" text-anchor="middle">(Cheetah-Software · MIT 许可)</text>
+
+      <!-- CAN 命令帧 -->
+      <rect x="232" y="96" width="150" height="168" rx="12" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="307" y="120" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">CAN 命令帧(8B)</text>
+      <rect x="246" y="132" width="122" height="22" rx="5" fill="rgba(88,166,255,.18)" stroke="#58a6ff" stroke-width="1.2"/>
+      <text x="307" y="147" fill="#58a6ff" font-size="10.5" text-anchor="middle">p_des · 16 bit</text>
+      <rect x="246" y="158" width="122" height="20" rx="5" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="1.2"/>
+      <text x="307" y="172" fill="#22c55e" font-size="10.5" text-anchor="middle">v_des · 12 bit</text>
+      <rect x="246" y="182" width="122" height="20" rx="5" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="1.2"/>
+      <text x="307" y="196" fill="#22c55e" font-size="10.5" text-anchor="middle">kp · 12 bit</text>
+      <rect x="246" y="206" width="122" height="20" rx="5" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="1.2"/>
+      <text x="307" y="220" fill="#22c55e" font-size="10.5" text-anchor="middle">kd · 12 bit</text>
+      <rect x="246" y="230" width="122" height="20" rx="5" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="1.2"/>
+      <text x="307" y="244" fill="#22c55e" font-size="10.5" text-anchor="middle">i_des · 12 bit</text>
+      <text x="307" y="268" fill="#8b98a9" font-size="9.8" text-anchor="middle">「MIT 模式」打包约定</text>
+
+      <!-- 关节驱动板 -->
+      <rect x="410" y="66" width="146" height="228" rx="12" fill="rgba(239,68,68,.08)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="483" y="90" fill="#ef4444" font-size="12.5" font-weight="bold" text-anchor="middle">关节驱动板(STM32)</text>
+      <rect x="424" y="104" width="118" height="64" rx="8" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.4"/>
+      <text x="483" y="124" fill="#ef4444" font-size="10.8" font-weight="bold" text-anchor="middle">电流环 ISR</text>
+      <text x="483" y="141" fill="#8b98a9" font-size="9.8" text-anchor="middle">数十 kHz 量级</text>
+      <text x="483" y="157" fill="#8b98a9" font-size="9.8" text-anchor="middle">采样→FOC→SVPWM</text>
+      <rect x="424" y="178" width="118" height="44" rx="8" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.3"/>
+      <text x="483" y="196" fill="#8b98a9" font-size="10.2" text-anchor="middle">三相桥 → 无框电机</text>
+      <text x="483" y="212" fill="#8b98a9" font-size="10.2" text-anchor="middle">+ 编码器/减速器</text>
+      <rect x="424" y="232" width="118" height="48" rx="8" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.3"/>
+      <text x="483" y="251" fill="#22c55e" font-size="10.4" font-weight="bold" text-anchor="middle">回传帧</text>
+      <text x="483" y="268" fill="#8b98a9" font-size="9.8" text-anchor="middle">p · v · i(实测)</text>
+
+      <!-- 箭头 -->
+      <line x1="204" y1="160" x2="232" y2="160" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#mc7-arr-b)"/>
+      <line x1="382" y1="150" x2="410" y2="150" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#mc7-arr)"/>
+      <text x="396" y="142" fill="#f59e0b" font-size="9.5" text-anchor="middle">指令</text>
+      <path d="M483 294 L483 312 L483 294" fill="none" stroke="#22c55e" stroke-width="1.6"/>
+      <path d="M430 268 C 410 300 220 300 150 240" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#mc7-arr-g)"/>
+      <text x="286" y="296" fill="#22c55e" font-size="10">回传实测 p/v/i(供状态估计)</text>
+
+      <!-- 公式条 -->
+      <rect x="34" y="340" width="522" height="56" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.4"/>
+      <text x="295" y="363" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">tau_cmd = kp·(p_des − p) + kd·(v_des − v) + i_des</text>
+      <text x="295" y="383" fill="#8b98a9" font-size="10.3" text-anchor="middle">kp=kd=0 → 纯前馈力矩模式; i_des=0 → 纯位置伺服; 组合即「可编程关节刚度/阻尼」</text>
+    </svg>
+    <div class="my-fig-cap">图 7-1 Mini Cheetah 范式:整机 1kHz 发「MIT 模式」命令,关节内数十 kHz 电流环执行并回传实测。一条公式打通人形机器人「大脑→关节」的全部语义。</div>
+  </div>
+
+  <h3>7.3 优缺点与适用</h3>
+  <div class="table-wrap"><table>
+    <tr><th>✔ 优点</th><th>✘ 缺点</th></tr>
+    <tr><td>关节控制范式的事实标准(「MIT 模式」),产业模组直接兼容;接口语义干净(5 个数定义一个关节),整机算法与关节固件解耦;代码精炼(Cheetah-Software 为 MIT 许可,可自由研读)</td><td>关节内电流环固件未随仓库开源,要自己写(或用商业模组);没有现成的配置工具链/上位机;从范式到产品,中间隔着供电、保护、标定、多关节同步等所有工程细节</td></tr>
+  </table></div>
+  <p><b>适用:</b>足式/人形机器人关节<b>自研</b>的接口与架构参照。选定该范式后,第 11 节的自研建议直接可用;商业关节模组怎么按此协议使用,见 <a href="../02_硬件基础/05_参考资料汇总_视频_开源项目.html">02-05 参考资料汇总</a>的关节模组产品清单。</p>
+
+
+  <!-- ================= 8 横向对比大表 ================= -->
+  <h2 id="sec-table"><span class="h2-num">8</span> 横向对比大表:13 个维度一表定乾坤</h2>
+  <p>面试与选型都靠这张表。维度看着多,记法是把它们分成四组:<b>实时性组</b>(电流环位置/频率、采样要求)、<b>算法组</b>(观测器、参数辨识、SVPWM)、<b>工程组</b>(状态机、通信、代码规模、学习曲线)、<b>合规组</b>(许可、硬件绑定、场景)。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>维度</th><th>SimpleFOC</th><th>ODrive</th><th>VESC</th><th>ST MC SDK 6.x</th><th>InstaSPIN-FOC</th><th>Mini Cheetah 范式</th></tr>
+    <tr><td><b>定位</b></td><td>教学/原型库</td><td>高性能开源伺服</td><td>大功率生态</td><td>产品化 FOC 库</td><td>无感量产方案</td><td>关节自研范式</td></tr>
+    <tr><td><b>许可</b></td><td>MIT</td><td>MIT(v3.x 固件)</td><td>GPLv3(固件)</td><td>专有 · 免费</td><td>专有(ROM 黑盒)</td><td>MIT(Cheetah-Software)</td></tr>
+    <tr><td><b>电流环位置</b></td><td>主循环轮询</td><td>ADC 采样中断</td><td>mcpwm_foc ISR</td><td>HF 任务(随 PWM)</td><td>FOC 调 ROM FAST</td><td>关节内 PWM 同步 ISR</td></tr>
+    <tr><td><b>电流环频率量级</b></td><td>依 loop 速度,无硬节拍</td><td>数 kHz~数十 kHz</td><td>数十 kHz 量级(依板)</td><td>随 PWM 频率</td><td>随 PWM 频率</td><td>数十 kHz 量级</td></tr>
+    <tr><td><b>电流采样要求</b></td><td>可选(多数配置无)</td><td>低边采样电阻×2</td><td>低边/相采样(依板)</td><td>1~3 电阻可配</td><td>必需(无感依赖)</td><td>必需(力控基础)</td></tr>
+    <tr><td><b>观测器</b></td><td>无(编码器直读)</td><td>编码器为主 + 可选无感估计器</td><td>编码器 / 无感(观测器、HFI 低速注入)</td><td>SMO 等状态观测器</td><td>FAST(ROM 固化)</td><td>编码器 + 电流环直出力矩</td></tr>
+    <tr><td><b>参数辨识</b></td><td>手填(可测电阻)</td><td>校准序列自动测 R/L/零偏</td><td>VESC Tool 向导检测</td><td>Motor Profiler 自测</td><td>FAST 在线自辨识</td><td>模组出厂标定/自研</td></tr>
+    <tr><td><b>SVPWM 实现</b></td><td>软件法(整数/浮点)</td><td>软件 + 高级定时器</td><td>软件 + 高级定时器</td><td>库内实现 + CORDIC 加速</td><td>库内实现</td><td>自实现(精炼)</td></tr>
+    <tr><td><b>状态机复杂度</b></td><td>无显式状态机(模式枚举)</td><td>轴状态机 + task chain</td><td>状态/超时管理(RTOS)</td><td>STOP→…→RUN 主链完整</td><td>辨识/运行两段式</td><td>精简(使能/错误)</td></tr>
+    <tr><td><b>通信与上位机</b></td><td>Serial/Commander,SimpleFOCStudio</td><td>USB/UART/CAN,odrivetool</td><td>USB/UART/CAN,VESC Tool</td><td>GUI/串口协议(Workbench)</td><td>GUI 引导</td><td>「MIT 模式」CAN(自定)</td></tr>
+    <tr><td><b>代码规模</b></td><td>小(库)</td><td>中(固件工程)</td><td>大(庞杂)</td><td>大(生成式)</td><td>中(调 ROM)</td><td>小(范式级)</td></tr>
+    <tr><td><b>学习曲线 / 硬件绑定</b></td><td>极平缓 / 几乎不绑定</td><td>陡 / 绑定自家板</td><td>最陡 / 绑定 VESC 板</td><td>中 / 绑定 ST 芯片</td><td>平缓 / 绑定 TI 型号</td><td>陡 / 不绑定(自己造)</td></tr>
+    <tr><td><b>适用功率与场景</b></td><td>小功率·学习/云台</td><td>中小功率·机械臂/DIY</td><td>中大功率·轮足/滑板</td><td>家电/工业量产</td><td>白电/泵/风机无感</td><td>足式/人形关节自研</td></tr>
+  </table></div>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 580 330" role="img" aria-label="六框架实时执行模型对比图:六个横向泳道分别展示SimpleFOC主循环loopFOC move循环、ODrive三层ADC中断线程通信、VESC的ISR线程应用任务通信分层、ST MC SDK高频中频后台三任务、InstaSPIN应用层调用ROM中FAST、MiniCheetah关节ISR与整机1kHz命令层,右侧标注实时性递增">
+      <defs>
+        <marker id="mc8-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+      </defs>
+      <!-- 表头 -->
+      <text x="130" y="22" fill="#8b98a9" font-size="10.5" text-anchor="middle">慢(10ms 级)</text>
+      <text x="320" y="22" fill="#8b98a9" font-size="10.5" text-anchor="middle">快(1ms 级)</text>
+      <text x="520" y="22" fill="#8b98a9" font-size="10.5" text-anchor="middle">最快(100μs 级)</text>
+      <line x1="520" y1="28" x2="520" y2="300" stroke="#8b98a9" stroke-width="1" stroke-dasharray="4 3"/>
+
+      <!-- SimpleFOC -->
+      <text x="12" y="52" fill="#22c55e" font-size="11" font-weight="bold">SimpleFOC</text>
+      <rect x="90" y="38" width="180" height="24" rx="6" fill="rgba(34,197,94,.15)" stroke="#22c55e" stroke-width="1.2"/>
+      <text x="180" y="54" fill="#22c55e" font-size="10" text-anchor="middle">主循环 loopFOC()+move()</text>
+      <text x="290" y="54" fill="#8b98a9" font-size="10">(无硬节拍)</text>
+
+      <!-- ODrive -->
+      <text x="12" y="94" fill="#58a6ff" font-size="11" font-weight="bold">ODrive</text>
+      <rect x="90" y="80" width="130" height="24" rx="6" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.2"/>
+      <text x="155" y="96" fill="#8b98a9" font-size="10" text-anchor="middle">USB/CAN 通信</text>
+      <rect x="230" y="80" width="120" height="24" rx="6" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="1.2"/>
+      <text x="290" y="96" fill="#f59e0b" font-size="10" text-anchor="middle">位置/速度环线程</text>
+      <rect x="360" y="80" width="150" height="24" rx="6" fill="rgba(88,166,255,.18)" stroke="#58a6ff" stroke-width="1.3"/>
+      <text x="435" y="96" fill="#58a6ff" font-size="10" text-anchor="middle">ADC 中断电流环 FOC</text>
+
+      <!-- VESC -->
+      <text x="12" y="136" fill="#f59e0b" font-size="11" font-weight="bold">VESC</text>
+      <rect x="90" y="122" width="150" height="24" rx="6" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.2"/>
+      <text x="165" y="138" fill="#58a6ff" font-size="10" text-anchor="middle">comm/ + VESC Tool</text>
+      <rect x="250" y="122" width="110" height="24" rx="6" fill="rgba(34,197,94,.15)" stroke="#22c55e" stroke-width="1.2"/>
+      <text x="305" y="138" fill="#22c55e" font-size="10" text-anchor="middle">app_* 任务(ChibiOS)</text>
+      <rect x="370" y="122" width="140" height="24" rx="6" fill="rgba(239,68,68,.16)" stroke="#ef4444" stroke-width="1.3"/>
+      <text x="440" y="138" fill="#ef4444" font-size="10" text-anchor="middle">mcpwm_foc ISR</text>
+
+      <!-- ST MC SDK -->
+      <text x="12" y="178" fill="#8b98a9" font-size="11" font-weight="bold">ST MCSDK</text>
+      <rect x="90" y="164" width="130" height="24" rx="6" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.2"/>
+      <text x="155" y="180" fill="#58a6ff" font-size="10" text-anchor="middle">后台: 通信/监控</text>
+      <rect x="240" y="164" width="130" height="24" rx="6" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="1.2"/>
+      <text x="305" y="180" fill="#f59e0b" font-size="10" text-anchor="middle">中频: 速度/位置 ms 级</text>
+      <rect x="380" y="164" width="130" height="24" rx="6" fill="rgba(239,68,68,.16)" stroke="#ef4444" stroke-width="1.3"/>
+      <text x="445" y="180" fill="#ef4444" font-size="10" text-anchor="middle">高频: 电流环随 PWM</text>
+
+      <!-- InstaSPIN -->
+      <text x="12" y="220" fill="#ef4444" font-size="11" font-weight="bold">InstaSPIN</text>
+      <rect x="90" y="206" width="180" height="24" rx="6" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.2"/>
+      <text x="180" y="222" fill="#8b98a9" font-size="10" text-anchor="middle">GUI / MotorWare 应用层</text>
+      <rect x="300" y="206" width="210" height="24" rx="6" fill="rgba(239,68,68,.14)" stroke="#ef4444" stroke-width="1.3"/>
+      <text x="405" y="222" fill="#ef4444" font-size="10" text-anchor="middle">FOC 调用 ROM 内 FAST(黑盒)</text>
+
+      <!-- MiniCheetah -->
+      <text x="12" y="262" fill="#58a6ff" font-size="11" font-weight="bold">MiniCheetah</text>
+      <rect x="90" y="248" width="230" height="24" rx="6" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.2"/>
+      <text x="205" y="264" fill="#58a6ff" font-size="10" text-anchor="middle">整机控制器 ~1kHz 广播 MIT 模式命令</text>
+      <rect x="360" y="248" width="150" height="24" rx="6" fill="rgba(239,68,68,.16)" stroke="#ef4444" stroke-width="1.3"/>
+      <text x="435" y="264" fill="#ef4444" font-size="10" text-anchor="middle">关节内电流环 ISR</text>
+
+      <!-- 实时性箭头 -->
+      <line x1="546" y1="40" x2="546" y2="284" stroke="#8b98a9" stroke-width="1.3" marker-end="url(#mc8-arr)"/>
+      <text x="562" y="164" fill="#8b98a9" font-size="10.5" transform="rotate(-90 562 164)" text-anchor="middle">电流环实时性递增</text>
+    </svg>
+    <div class="my-fig-cap">图 8-1 六框架实时执行模型对比(示意,横向为时间尺度):每个框架都把「最硬实时」的那一小块推到最右边——<b>电流环永远是最右边的那个色块</b>。SimpleFOC 是唯一的例外(最右只有主循环自己)。</div>
+  </div>
+
+
+  <!-- ================= 9 选型决策树 ================= -->
+  <h2 id="sec-tree"><span class="h2-num">9</span> 选型决策树:六个问题定去向</h2>
+  <p>选型不要背表,问自己六个问题:目标是什么 → 有没有力控要求 → 功率多大 → 要不要产品化 → 有没有编码器 → 是不是整机关节阵列。走一遍下面的树:</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 600 470" role="img" aria-label="电机控制框架选型决策树:根节点为你的目标是什么,第一层分支为学习原理选SimpleFOC、机器人项目继续分流,第二层按高性能关节选ODrive、大功率轮足选VESC、产品化家电工业选ST MC SDK、无编码器无感选InstaSPIN、足式人形关节自研选MiniCheetah范式,每个叶节点下方标注选择理由">
+      <defs>
+        <marker id="mc9-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8b98a9"/></marker>
+      </defs>
+      <!-- 根 -->
+      <rect x="210" y="20" width="180" height="42" rx="21" fill="rgba(88,166,255,.14)" stroke="#58a6ff" stroke-width="1.7"/>
+      <text x="300" y="46" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle">你的目标是什么?</text>
+
+      <!-- 分支1 学习 -->
+      <line x1="235" y1="62" x2="92" y2="102" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#mc9-arr)"/>
+      <text x="130" y="80" fill="#8b98a9" font-size="10.5">先学会 FOC</text>
+      <rect x="24" y="106" width="140" height="62" rx="9" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="1.6"/>
+      <text x="94" y="125" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">SimpleFOC</text>
+      <text x="94" y="142" fill="#8b98a9" font-size="9.6" text-anchor="middle">理由: 20行上手·文档最全</text>
+      <text x="94" y="156" fill="#8b98a9" font-size="9.6" text-anchor="middle">MIT·不绑硬件</text>
+
+      <!-- 分支2 机器人项目 -->
+      <line x1="365" y1="62" x2="510" y2="102" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#mc9-arr)"/>
+      <text x="470" y="80" fill="#8b98a9" font-size="10.5">做机器人项目</text>
+      <rect x="424" y="106" width="152" height="40" rx="9" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.4" stroke-dasharray="5 3"/>
+      <text x="500" y="131" fill="#8b98a9" font-size="11" text-anchor="middle">按下面四个场景再分流</text>
+
+      <!-- 场景分支 -->
+      <line x1="424" y1="126" x2="120" y2="188" stroke="#8b98a9" stroke-width="1.3" marker-end="url(#mc9-arr)"/>
+      <line x1="440" y1="146" x2="240" y2="188" stroke="#8b98a9" stroke-width="1.3" marker-end="url(#mc9-arr)"/>
+      <line x1="470" y1="146" x2="370" y2="188" stroke="#8b98a9" stroke-width="1.3" marker-end="url(#mc9-arr)"/>
+      <line x1="510" y1="146" x2="510" y2="188" stroke="#8b98a9" stroke-width="1.3" marker-end="url(#mc9-arr)"/>
+
+      <!-- 叶1 机械臂 -->
+      <rect x="34" y="192" width="172" height="88" rx="9" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
+      <text x="120" y="212" fill="#58a6ff" font-size="11.8" font-weight="bold" text-anchor="middle">高性能 DIY / 机械臂关节</text>
+      <text x="120" y="230" fill="#58a6ff" font-size="11.5" font-weight="bold" text-anchor="middle">→ ODrive</text>
+      <text x="120" y="248" fill="#8b98a9" font-size="9.5" text-anchor="middle">理由: 真闭环电流环·状态机成熟</text>
+      <text x="120" y="262" fill="#8b98a9" font-size="9.5" text-anchor="middle">odrivetool 调参顺·MIT</text>
+      <text x="120" y="276" fill="#8b98a9" font-size="9.3" text-anchor="middle">(注意 v3.x NRND)</text>
+
+      <!-- 叶2 轮足 -->
+      <rect x="220" y="192" width="160" height="88" rx="9" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="300" y="212" fill="#f59e0b" font-size="11.8" font-weight="bold" text-anchor="middle">大功率轮足/滑板</text>
+      <text x="300" y="230" fill="#f59e0b" font-size="11.5" font-weight="bold" text-anchor="middle">→ VESC</text>
+      <text x="300" y="248" fill="#8b98a9" font-size="9.5" text-anchor="middle">理由: 大功率久经考验</text>
+      <text x="300" y="262" fill="#8b98a9" font-size="9.5" text-anchor="middle">弱磁/MTPA·VESC Tool 全</text>
+      <text x="300" y="276" fill="#8b98a9" font-size="9.3" text-anchor="middle">(GPLv3 商用注意)</text>
+
+      <!-- 叶3 产品化 -->
+      <rect x="394" y="192" width="88" height="88" rx="9" fill="rgba(139,152,169,.12)" stroke="#8b98a9" stroke-width="1.6"/>
+      <text x="438" y="212" fill="#8b98a9" font-size="11.2" font-weight="bold" text-anchor="middle">产品化</text>
+      <text x="438" y="230" fill="#8b98a9" font-size="10.5" font-weight="bold" text-anchor="middle">家电/工业</text>
+      <text x="438" y="248" fill="#8b98a9" font-size="10.5" font-weight="bold" text-anchor="middle">→ ST MC SDK</text>
+      <text x="438" y="266" fill="#8b98a9" font-size="9.3" text-anchor="middle">Motor Profiler</text>
+      <text x="438" y="278" fill="#8b98a9" font-size="9.3" text-anchor="middle">商业支持</text>
+
+      <!-- 叶4 无感 -->
+      <rect x="496" y="192" width="90" height="88" rx="9" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="541" y="212" fill="#ef4444" font-size="11.2" font-weight="bold" text-anchor="middle">无编码器</text>
+      <text x="541" y="230" fill="#ef4444" font-size="10.5" font-weight="bold" text-anchor="middle">无感场景</text>
+      <text x="541" y="248" fill="#ef4444" font-size="10.5" font-weight="bold" text-anchor="middle">→ InstaSPIN</text>
+      <text x="541" y="266" fill="#8b98a9" font-size="9.3" text-anchor="middle">FAST 自辨识</text>
+      <text x="541" y="278" fill="#8b98a9" font-size="9.3" text-anchor="middle">绑 TI 型号</text>
+
+      <!-- 底部: 人形关节自研 -->
+      <line x1="300" y1="280" x2="300" y2="330" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#mc9-arr)"/>
+      <text x="294" y="312" fill="#8b98a9" font-size="10.5" text-anchor="end">以上都不满足: 自研一批人形/足式关节?</text>
+      <rect x="130" y="334" width="340" height="86" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.8"/>
+      <text x="300" y="358" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">足式 / 人形关节自研 → Mini Cheetah 范式</text>
+      <text x="300" y="378" fill="#8b98a9" font-size="9.8" text-anchor="middle">理由: 「MIT 模式」是关节接口事实标准, 商业模组直接兼容;</text>
+      <text x="300" y="394" fill="#8b98a9" font-size="9.8" text-anchor="middle">中断骨架抄 ODrive, 状态机学 MC SDK, 命令协议学 MIT 模式;</text>
+      <text x="300" y="410" fill="#8b98a9" font-size="9.8" text-anchor="middle">先用商业模组验证整机, 再逐关节替换自研(见第 11 节)</text>
+      <line x1="438" y1="280" x2="400" y2="330" stroke="#8b98a9" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#mc9-arr)"/>
+    </svg>
+    <div class="my-fig-cap">图 9-1 选型决策树:六片叶子各配一条「为什么」。注意分支顺序——先问目标(学习 vs 项目),再问场景(性能/功率/量产/无感),最后问是否自研。</div>
+  </div>
+
+  <div class="box box-warn"><b>⚠️ 选型三条反直觉忠告:</b>
+    ① <b>别用选型逃避动手</b>——学习期纠结「SimpleFOC 还是 ODrive」超过一天,直接 SimpleFOC 开跑;<br>
+    ② <b>别拿教学库做关节</b>——SimpleFOC 的架构天花板决定了它撑不起关节级力控,升级时是架构级重写而不是调参;<br>
+    ③ <b>别忽视许可</b>——GPLv3(VESC)与专有许可(ST/TI)在商用产品的合规成本,要从立项第一天算进去。
+  </div>
+
+
+  <!-- ================= 10 如何读源码 ================= -->
+  <h2 id="sec-readsrc"><span class="h2-num">10</span> 如何读源码:通用四步路线 + 两个起点</h2>
+  <p>读任何电机控制固件,都按同一条路线走,不要从 <code>main.c</code> 顺着读到尾:</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>找 ISR 入口</b><br>搜 <code>ADC_IRQHandler / ISR / ADC callback / start_adc_pwm</code>,电流环一定挂在 PWM 同步的采样点上</div>
+    <div class="step-item"><span class="n">2</span><b>读电流环</b><br>确认采样→Clark/Park→PI→逆 Park→SVPWM 五步都在 ISR 里,记下执行频率</div>
+    <div class="step-item"><span class="n">3</span><b>读状态机</b><br>找 <code>state / run / task chain</code>,画出状态转移图(本章每家的图就是作业答案)</div>
+    <div class="step-item"><span class="n">4</span><b>读通信层</b><br>命令怎么进来(帧格式/校验)、数据怎么出去,注意与状态机的写入权限边界</div>
+  </div>
+
+  <h3>10.1 起点一:SimpleFOC(先读懂「教学版骨架」)</h3>
+  <ul>
+    <li>入口:<code>src/common/base_classes/FOCMotor.cpp</code> —— <code>FOCMotor::loopFOC()</code> 与 <code>FOCMotor::move()</code>(两段式的真正定义处,BLDCMotor 只是继承);</li>
+    <li>调制:<code>src/BLDCMotor.cpp</code> 的 <code>setPhaseVoltage()</code> —— 梯形/正弦/SVPWM 三种调制怎么切换;</li>
+    <li>外环:<code>src/common/pid.cpp</code>(PID 实现)与 <code>lowpass_filter.cpp</code>(一阶低通)——最小可读的控制器参考实现;</li>
+    <li>通信:<code>src/communication/Commander.cpp</code> —— 串口命令协议的极简范本。</li>
+  </ul>
+  <p>读完检验:能不看书手画「loopFOC + move」的数据流图,能说出角度 θ 从传感器到 SVPWM 的完整路径。</p>
+
+  <h3>10.2 起点二:ODrive(再读懂「产品级骨架」)</h3>
+  <pre><code>// ODrive v3.x 固件(路径与函数名以仓库当前版本为准)
+Firmware/MotorControl/
+├── axis.cpp        → Axis::run_state_machine_loop()   // ③ 状态机: requested_state 队列 + task chain
+├── motor.cpp       → Motor::FOC_current(Id, Iq, ...)  // ② 电流环核心
+├── low_level.cpp   → start_adc_pwm()                  // ① ISR 入口: PWM 触发 ADC 采样的启动配置
+├── controller.cpp  → Controller::update()             // ②' 位置/速度外环
+└── encoder.cpp     → Encoder 校准/估计                 // 观测与标定</code></pre>
+  <p>读完检验:能说出「一条 <code>input_torque</code> 指令从 CAN/USB 进来,经过哪些层、变成哪几组 PWM 比较寄存器的值」;能解释 <code>CLOSED_LOOP_CONTROL</code> 与 <code>IDLE</code> 之间会经过哪些状态。这一套读下来,再看 VESC 的 <code>mcpwm_foc.c</code> 或 MC SDK 生成的代码,只是「换个文件夹名」而已。</p>
+  <div class="box box-tip"><b>💡 阅读纪律:</b>每次只带着一个问题读(如「电流环在哪被调用」),用 IDE 全局搜索而不是顺序阅读;把每次找到的「ISR 入口→状态机→通信层」路径记进笔记,读三个仓库后,第 11 节的自研骨架自然长出来。</div>
+
+
+  <!-- ================= 11 自研建议 ================= -->
+  <h2 id="sec-diy"><span class="h2-num">11</span> 自研建议:从哪抄架构,checklist 管住风险</h2>
+
+  <h3>11.1 三件「值得直接抄」的设计</h3>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">A</span><b>中断骨架抄 ODrive</b><br>「PWM 同步 ADC 采样 → 最高优先级跑电流环 → 外环放线程 → 通信最低」的三层时间尺度,是被反复验证的形状;再加 ODrive 式 task chain 校准序列</div>
+    <div class="step-item"><span class="n">B</span><b>状态机学 MC SDK</b><br>STOP→IDLE→ALIGNMENT→START→RUN 主链 + 故障态旁挂:任何指令都只对状态机「发请求」,时序由状态机统一推进,谁都不能绕过</div>
+    <div class="step-item"><span class="n">C</span><b>命令协议学 MIT 模式</b><br>p_des/v_des/kp/kd/i_des 五元组 + 固定位宽打包:接口语义十年不变,商业模组即插即用,整机算法换代不用动关节固件</div>
+  </div>
+  <p>把它们拼起来,就是一个合格的自研关节固件雏形:<b>ODrive 的实时骨架 + MC SDK 的状态纪律 + MIT 模式的接口</b>。观测器与参数辨识可以后置(先用编码器 + 出厂标定,无感留给 04-17 的算法储备)。</p>
+
+  <h3>11.2 自研工程 checklist(立项就贴墙上)</h3>
+  <ul>
+    <li><b>实时性:</b>电流环是否独占最高优先级?最坏情况执行时间(而非平均值)是否测过?电流环频率是否 ≥ 速度环 5 倍以上?</li>
+    <li><b>采样:</b>ADC 是否 PWM 中心对齐同步触发?低边采样的窗口是否避开开关沿?双电阻丢一相时是否有降级策略?</li>
+    <li><b>安全:</b>过流(逐波限流+软件阈值)、过压/欠压、过温降额、超时通信丢失回 IDLE——四类保护是否全部独立于通信层生效?上电默认状态是否为 IDLE?</li>
+    <li><b>校准:</b>电角度零偏、电阻电感、编码器方向——校准序列是否有 task chain 式的顺序与失败回退?</li>
+    <li><b>接口:</b>CAN 命令是否兼容「MIT 模式」语义?帧 ID/字节序/回传频率是否写进协议文档?固件版本号是否可查?</li>
+    <li><b>许可:</b>抄的代码是什么许可?GPLv3 部分是否与专有代码隔离?商用法务是否过目?</li>
+  </ul>
+  <div class="box box-ok"><b>✅ 落地路线建议:</b>先用 SimpleFOC 验证原理 → 用商业模组(MIT 模式类,CyberGear/AK/RobStride 等)搭整机打通运动控制 → 需要降本/定制时,按「第 11.1 节三件套」自研单关节 → 一关节打通后再复制阵列。每一步都有退路,而不是一步跳进「固件 + 整机 + 结构」三线作战。</div>
+
+
+  <!-- ================= 12 本节自测 ================= -->
+  <h2><span class="h2-num">12</span> 本节自测</h2>
+
+  <div class="quiz">
+    <div class="quiz-q">1. SimpleFOC 与 ODrive 在「电流环放在哪」这一架构点上的本质区别是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. SimpleFOC 用电流环而 ODrive 不用</button>
+      <button data-v="B">B. 两者都把电流环放在 ADC 中断里,只是语言不同</button>
+      <button data-v="C">C. SimpleFOC 默认主循环轮询、多数配置无相电流检测(电流环不闭环);ODrive 把电流环压在 PWM 同步的 ADC 采样中断里真正闭环</button>
+      <button data-v="D">D. ODrive 的电流环跑在 Python 上位机里</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SimpleFOC 的 loopFOC()+move() 两段式跑在主循环轮询栈上,无硬实时 ISR 依赖,常见配置没有相电流采样、用电压近似力矩;ODrive 的电流环在 PWM 同步的 ADC 采样中断里执行,频率达数 kHz~数十 kHz 量级,是真正闭环的电流控制——这正是两者性能天花板差异的根源(第 2、3 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">2. 关于六个框架的开源许可,下列对应关系正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. VESC 采用 MIT 许可,可随意闭源商用</button>
+      <button data-v="B">B. SimpleFOC / ODrive / Cheetah-Software 为 MIT,VESC 固件为 GPLv3,ST MC SDK 与 TI InstaSPIN 为专有许可</button>
+      <button data-v="C">C. 六个框架全部是 MIT 许可</button>
+      <button data-v="D">D. ST MC SDK 是 GPL 许可,必须开源用户代码</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:经各官方仓库/文档核实:SimpleFOC(MIT)、ODrive v3.x 固件(MIT)、Cheetah-Software(MIT);VESC 固件为 GPLv3(商用有传染条款);ST X-CUBE-MCSDK 免费下载但走 ST 专有协议;TI 的 FAST 观测器更是 ROM 黑盒(专有)。许可差异直接影响商用合规(第 1、4、5、6 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">3. 「MIT 模式」CAN 命令帧中,五个控制量的打包与力矩语义是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 只发一个 32 位力矩值,其余量由关节固件自行估计</button>
+      <button data-v="B">B. p_des/v_des/kp/kd/i_des 各占 8 位,共 40 位</button>
+      <button data-v="C">C. 位置直接用浮点双精度发 4 字节,其余用文本编码</button>
+      <button data-v="D">D. 8 字节帧打包 p_des(16bit)+ v_des/kp/kd/i_des(各 12bit),力矩语义为 tau = kp·(p_des−p) + kd·(v_des−v) + i_des</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:「MIT 模式」把 5 个控制量按固定位宽压缩进 8 字节 CAN 帧:位置 16bit,速度/Kp/Kd/前馈电流各 12bit;关节按 tau = kp·(p_des−p)+kd·(v_des−v)+i_des 解释。kp=kd=0 退化为纯前馈力矩模式,i_des=0 则是纯位置伺服(第 7 节)。该约定被 CubeMars AK、达妙、宇树等模组广泛沿用。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">4. TI InstaSPIN-FOC 最大的卖点与最大的代价分别是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 卖点是 FAST 观测器固化在特定 TI 芯片 ROM 里、Rs/L/磁链在线自辨识、无感好用;代价是黑盒不可改且强绑定 TI 特定型号</button>
+      <button data-v="B">B. 卖点是开源全部观测器源码;代价是文档少</button>
+      <button data-v="C">C. 卖点是力控带宽高于 Mini Cheetah;代价是价格贵</button>
+      <button data-v="D">D. 卖点是支持任意 MCU 移植;代价是速度慢</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:据 TI 官方文档(SPRUHI9 等):FAST(Flux/Angle/Speed/Torque)估计器仅以 ROM 形式提供于特定 F2806x(F/M)等器件,配合自动参数辨识实现「上电即用」的无感 FOC;但 ROM 代码不可读改、平台不可移植(第 6 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">5. 要自研一批人形机器人关节固件,按本页建议的「三件套抄法」是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 全部从 SimpleFOC 改,电流环频率调高即可</button>
+      <button data-v="B">B. 直接把 VESC 固件改个通信协议就能用,不用管许可</button>
+      <button data-v="C">C. 中断骨架抄 ODrive(ADC 中断电流环+三层时间尺度)、状态机学 ST MC SDK(主链+故障态)、命令协议学 MIT 模式(五元组打包),观测器与无感后置</button>
+      <button data-v="D">D. 六个框架各抄一部分代码混编,越复杂越好</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:第 11 节给出明确建议:实时骨架(ADC 中断电流环、ISR/线程/通信三层)抄 ODrive;状态机纪律(STOP→IDLE→ALIGNMENT→START→RUN 主链+故障态、指令只发请求)学 MC SDK;接口用「MIT 模式」五元组保证产业兼容。SimpleFOC 的架构撑不起关节级力控,VESC 需注意 GPLv3 合规(第 9、11 节)。</div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">6. 按「如何读源码」一节,读 ODrive 固件找电流环的正确起点组合是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 从 GUI 代码读起,顺着界面按钮找</button>
+      <button data-v="B">B. low_level.cpp 的 start_adc_pwm()(采样入口)→ motor.cpp 的 FOC_current()(电流环)→ axis.cpp 的 run_state_machine_loop()(状态机)→ 通信层(路径以仓库当前版本为准)</button>
+      <button data-v="C">C. 从 README 读到 CONTRIBUTING 再读 LICENSE</button>
+      <button data-v="D">D. 先通读全部源码再做笔记,不允许跳读</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:通用四步路线是「找 ISR 入口 → 电流环 → 状态机 → 通信层」。对 ODrive v3.x 固件,对应入口即 low_level.cpp(ADC/PWM 采样启动)、motor.cpp 的 FOC_current、axis.cpp 的轴状态机循环(第 10 节;具体文件名随版本可能变化,以仓库为准)。</div>
+  </div>
+
+  <div class="box box-tip"><b>📌 本节小结:</b>六大家庭 = SimpleFOC(主循环两段式、教学、MIT)、ODrive(ADC 中断电流环 + 轴状态机/task chain、MIT)、VESC(RTOS 分层 + mcpwm ISR、大功率、GPLv3)、ST MC SDK(HF/MF/后台三尺度任务 + 状态主链 + Motor Profiler、专有免费)、TI InstaSPIN(ROM 固化 FAST、参数自辨识、无感、黑盒绑定 TI)、Mini Cheetah 范式(数十 kHz 电流环 + 「MIT 模式」五元组 CAN 命令、MIT)。它们共同的骨架都是「ISR 电流环 → 状态机 → 通信层」三件套;选型按「目标→性能→功率→量产→无感→自研」六问走决策树;自研则抄 ODrive 的骨架、MC SDK 的纪律、MIT 模式的接口。</div>
+
+  <div class="box box-warn">
+    <b>🤔 思考题:</b>
+    1. SimpleFOC 如果要升级成关节级力控,是「调参问题」还是「架构问题」?具体要动哪几层?<br>
+    2. 你的团队要量产一款服务机器人腰部关节(有编码器、48V、额定 30N·m):在 VESC 方案(GPLv3)与自研(MC SDK 状态机 + MIT 模式接口)之间,你会怎么权衡许可、人力与进度?<br>
+    3. 「MIT 模式」把 kp/kd 放在命令里由整机实时下发,而不是固化为关节内部参数——这种「可编程刚度」设计对步态控制(如落地缓冲)有什么好处?有什么风险?
+  </div>
+
+  <!-- ================= 参考来源与延伸资源 ================= -->
+  <h2><span class="h2-num">13</span> 参考来源与延伸资源</h2>
+  <p style="color:#8b98a9;font-size:12.5px;">以下链接均经检索核实可达(2026-09 核实;其中知乎站内搜索需在浏览器中打开)。站内配套:三家简介见 <a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">04-02 固件与电机控制</a>,FOC 完整流程图见 <a href="19_FOC算法完全图解_流程与运行图.html">04-19 FOC 算法完全图解</a>,观测器深入见 04-17,面试问法见 <a href="../06_学习工具/11_保研复试面试题库.html">06-11 保研复试面试题库</a>。</p>
+
+  <a class="my-res-card" href="https://docs.simplefoc.com/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ SimpleFOC 官方文档(docs.simplefoc.com)</div>
+      <div class="my-res-desc">两段式 API、控制模式、支持板卡与 SimpleFOCStudio 全说明;MIT 许可与「Demystify FOC」定位的官方出处。学习入口第一站。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-recommend">⭐ 必读</span><span class="my-tag my-tag-diff-2">入门</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/simplefoc/Arduino-FOC" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🔧</div>
+    <div class="my-res-info">
+      <div class="my-res-title">SimpleFOC 源码仓库(simplefoc/Arduino-FOC)</div>
+      <div class="my-res-desc">读源码起点:src/common/base_classes/FOCMotor.cpp(loopFOC/move 定义处)、BLDCMotor.cpp(setPhaseVoltage 调制)、communication/Commander.cpp。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-diff-2">读源码</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://docs.odriverobotics.com/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ODrive 官方文档(docs.odriverobotics.com)</div>
+      <div class="my-res-desc">odrivetool、轴状态(axis states)、校准与控制接口说明(站点为 JS 渲染,请在浏览器打开);经典 v3.x 与新款 Pro/S1/Micro 资料分区。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方文档</span><span class="my-tag my-tag-diff-2">配置必读</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/odriverobotics/ODrive" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🔧</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ ODrive 固件与硬件仓库(odriverobotics/ODrive)</div>
+      <div class="my-res-desc">v3.x 固件(MIT)阅读地图:axis.cpp 轴状态机、motor.cpp 的 FOC_current、low_level.cpp 的 ADC 启动。README 注明 v3.x 已 NRND,新款固件未开源——引用时请以仓库当前版本为准。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-recommend">⭐ 读源码起点</span><span class="my-tag my-tag-diff-3">中级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://vesc-project.com/" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">VESC Project 官网(vesc-project.com)</div>
+      <div class="my-res-desc">VESC Tool 下载、硬件文档、社区论坛;官方定位从几十瓦云台到上百千瓦电航的全功率覆盖,滑板/机器人是主力场景。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方站点</span><span class="my-tag my-tag-diff-2">大功率</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/vedderb/bldc" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🔧</div>
+    <div class="my-res-info">
+      <div class="my-res-title">VESC 固件仓库(vedderb/bldc · GPLv3)</div>
+      <div class="my-res-desc">阅读起点:motor/mcpwm_foc.c 的 ISR 电流环、applications/ 应用任务(app_canbus 等)、comm/ 通信层、ChibiOS RTOS。商用前务必确认 GPL 传染影响。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-diff-3">高级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.st.com/en/embedded-software/x-cube-mcsdk.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">📘</div>
+    <div class="my-res-info">
+      <div class="my-res-title">ST X-CUBE-MCSDK 产品页(st.com)</div>
+      <div class="my-res-desc">Motor Profiler 与一键整定、FOC 库、无感状态观测器、CubeMX 集成工作流的官方说明;免费下载(需走 ST 申请流程,专有许可以随包协议为准)。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">官方站点</span><span class="my-tag my-tag-diff-2">产品化</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.ti.com/lit/pdf/spruhi9" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">TI InstaSPIN-FOC 软件技术参考手册(SPRUHI9)</div>
+      <div class="my-res-desc">F2806xF 上 ROM 固化 FAST 估计器与软件架构的权威参考;配套 InstaSPIN 用户指南(SPRUHJ1)讲 Rs/L/磁链自辨识与无感调试全流程。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">TI 官方</span><span class="my-tag my-tag-diff-3">无感深入</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.ti.com/lit/ug/spruhj0b/spruhj0b.pdf" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">TI InstaSPIN-MOTION 用户指南(SPRUHJ0)</div>
+      <div class="my-res-desc">F2806xM 上的完整无感 FOC 方案(FAST + 电流/速度环在片内 ROM)用户手册,与 SPRUHI9 互为补充。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">TI 官方</span><span class="my-tag my-tag-diff-3">无感深入</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://github.com/mit-biomimetics/Cheetah-Software" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-tool">🔧</div>
+    <div class="my-res-info">
+      <div class="my-res-title">⭐ MIT Cheetah-Software 仓库(mit-biomimetics · MIT 许可)</div>
+      <div class="my-res-desc">Cheetah 3 / Mini Cheetah 的整机控制与仿真开源栈(robot/sim/common);注意关节内电流环固件不在仓库内,但「MIT 模式」接口被产业广泛复刻。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub</span><span class="my-tag my-tag-recommend">⭐ 人形关节参照</span><span class="my-tag my-tag-diff-3">高级</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.cubemars.com/setup-cubemars-ak60-6-kv80-for-mit-mode.html" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">📄</div>
+    <div class="my-res-info">
+      <div class="my-res-title">CubeMars AK60-6「MIT 模式」配置教程(官方)</div>
+      <div class="my-res-desc">以 AK 系列执行器为例演示 MIT 模式 CAN 配置与 C++ 控制——看「学术范式如何变成商业模组出厂功能」的最直接样本。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">厂商教程</span><span class="my-tag my-tag-diff-2">实操</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://search.bilibili.com/all?keyword=ODrive%20%E6%95%99%E7%A8%8B" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站搜索:ODrive 教程</div>
+      <div class="my-res-desc">中文视频最集中的 ODrive 上手渠道:环境搭建、固件烧写、odrivetool 调参与 FOC 讲解(如「灯哥教你入门 ODrive」系列等)。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站搜索</span><span class="my-tag my-tag-diff-2">视频</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://search.bilibili.com/all?keyword=VESC%20%E7%94%B5%E6%9C%BA" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-article">🎬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">B站搜索:VESC 电机</div>
+      <div class="my-res-desc">VESC Tool 使用、电机参数检测、滑板/轮足改装的中文实操视频入口,配合第 4 节分层架构理解更顺。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-bili">B站搜索</span><span class="my-tag my-tag-diff-2">视频</span></div>
+    </div>
+  </a>
+  <a class="my-res-card" href="https://www.zhihu.com/search?type=content&q=SimpleFOC%20ODrive%20%E5%AF%B9%E6%AF%94" target="_blank" rel="noopener">
+    <div class="my-res-badge my-badge-doc">💬</div>
+    <div class="my-res-info">
+      <div class="my-res-title">知乎搜索:SimpleFOC ODrive 对比(需浏览器打开)</div>
+      <div class="my-res-desc">中文社区对两个开源方案选型的实战讨论集;另一个值得搜的词是「电机控制框架」。注意甄别营销内容,以官方文档交叉验证。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-zhihu">知乎搜索</span><span class="my-tag my-tag-diff-2">社区讨论</span></div>
+    </div>
+  </a>
+  <div class="my-res-card">
+    <div class="my-res-badge my-badge-tool">🗺️</div>
+    <div class="my-res-info">
+      <div class="my-res-title">站内配套:MotorOS 核查 / FOC 流程 / 题库</div>
+      <div class="my-res-desc">「小米 MotorOS」传言的事实核查与三家简介见 <a href="02_固件与电机控制_SimpleFOC_ODrive_MotorOS.html">04-02 固件与电机控制</a>;ISR 级 FOC 流程与运行状态机大图见 <a href="19_FOC算法完全图解_流程与运行图.html">04-19 FOC 算法完全图解</a>;无感观测器族谱见 04-17;面试问法见 <a href="../06_学习工具/11_保研复试面试题库.html">06-11 保研复试面试题库</a>。</div>
+      <div class="my-res-meta"><span class="my-tag my-tag-official">站内链接</span><span class="my-tag my-tag-diff-2">配套学习</span></div>
+    </div>
+  </div>
+
+
+</div><!-- /container -->
+
+<!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效
+     全站搜索索引(_assets/search-index.js)由 site.js 自动加载,无需手动引入 -->
+<script src="../_assets/site.js"></script>
+</body>
+</html>
