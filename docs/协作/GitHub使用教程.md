@@ -132,9 +132,9 @@ git reset --hard origin/master  # 放弃本地一切,完全对齐云端
 
 ## 7. 维护者发版检查清单
 
-- [ ] CI `self-check` 通过(13 项全绿)
-- [ ] 新页面已登记五件套
-- [ ] 版本号四处同步(site.js / index.html / CHANGELOG.md / sw.js)
+- [ ] CI `self-check` 通过(全绿,项数以脚本输出为准)
+- [ ] 新页面已走完整登记清单(见根 `AGENTS.md`)
+- [ ] 版本号五处同步(site.js / index.html / CHANGELOG.md / sw.js / README.md)
 - [ ] 未误提交 `_视频素材/`、`.trae/`、`.zcode/`、个人功能页
 - [ ] 腾讯云 Twikoo 孤儿环境已确认停用
 - [ ] GitHub Pages 与 cyco.top 版本一致(fetch 页面查版本号,勿假设)

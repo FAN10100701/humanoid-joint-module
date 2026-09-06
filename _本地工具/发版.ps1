@@ -1,4 +1,4 @@
-﻿# 发版.ps1 — 一键版本同步(四处)+ CHANGELOG 头部校验
+﻿# 发版.ps1 — 一键版本同步(五处)+ CHANGELOG 头部校验
 # 用法: powershell -File 发版.ps1 -Version "V2.1.5" -Date "2026-08-29"
 param([string]$Version = "", [string]$Date = "")
 $ErrorActionPreference = "Stop"
@@ -26,4 +26,10 @@ $s = [IO.File]::ReadAllText($p, $enc)
 $s = [regex]::Replace($s, 'var\s+CACHE\s*=\s*"hrl-site-v[\d.]+"', ('var CACHE = "hrl-site-v' + $verNum + '"'))
 [IO.File]::WriteAllText($p, $s, (New-Object System.Text.UTF8Encoding($false)))
 
-Write-Host "✅ 四处已同步 $Version($Date)。请自行在 CHANGELOG.md 顶部补全本期条目,然后跑 一键自检.ps1。"
+# 4) README.md latest-version line (V2.1.20b: previously missed; self-check "README version follows site" would FAIL)
+$p = Join-Path $root "README.md"
+$s = [IO.File]::ReadAllText($p, $enc)
+$s = [regex]::Replace($s, [regex]::Escape('**') + 'V[\d.]+' + [regex]::Escape('**') + '\(\d{4}-\d{2}-\d{2}\)', ('**' + $Version + '**(' + $Date + ')'), 1)
+[IO.File]::WriteAllText($p, $s, (New-Object System.Text.UTF8Encoding($false)))
+
+Write-Host "✅ 五处已同步 $Version($Date)。请自行在 CHANGELOG.md 顶部补全本期条目,然后跑 一键自检.ps1。"

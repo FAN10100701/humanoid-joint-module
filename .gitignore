@@ -47,8 +47,10 @@ __pycache__/
 *.pyc
 
 # 本地工具运行数据与技能目录(扫描记录/缓存,严禁入库;.mimosa 含安全扫描键形记录)
+# .agents 仅 skills/ 入库(svg-diagram-check 是被 docs 引用的项目级工具),其余本地数据忽略
 .mimosa/
-.agents/
+.agents/*
+!.agents/skills/
 .v2c/
 .video_agent/
 .workbuddy/
