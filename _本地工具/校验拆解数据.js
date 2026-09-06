@@ -17,9 +17,12 @@ for (var i = start + 9; i < html.length; i++) {
 if (end < 0) { console.log('FATAL: DATA closing brace not found'); process.exit(1); }
 var dataSrc = html.slice(start + 9, end + 1);
 
-// html 属性里的引号已转义为单引号，可直接求值
+// html 属性里的引号已转义为单引号,可直接求值;用 vm 沙箱求值(无作用域/require/process 访问,超时熔断),不用 eval
 var DATA;
-try { DATA = eval('(' + dataSrc + ')'); }
+try {
+  var vm = require('vm');
+  DATA = vm.runInNewContext('(' + dataSrc + ')', {}, { timeout: 2000 });
+}
 catch (e) { console.log('FATAL: DATA eval failed: ' + e.message); process.exit(1); }
 
 console.log('DATA keys: ' + Object.keys(DATA).length);

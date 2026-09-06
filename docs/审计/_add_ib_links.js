@@ -23,8 +23,15 @@ const PLAN = [
 ];
 
 let fail = 0;
+/* Containment:拼出的路径必须仍落在项目根内 */
+const insideRoot = p => {
+  const r = path.resolve(p);
+  if (!r.startsWith(path.resolve(ROOT) + path.sep)) throw new Error("路径越出项目根: " + p);
+  return r;
+};
 for (const [file, id, add] of PLAN) {
-  const fp = path.join(ROOT, "_assets", file);
+  const fp = insideRoot(path.join(ROOT, "_assets", file));
+  if (!file.startsWith("ib-data-") || file.includes("/") || file.includes("\\")) throw new Error("非法文件名: " + file);
   let src = fs.readFileSync(fp, "utf8");
   const at = src.indexOf("id:'" + id + "'");
   if (at < 0) { console.log("FAIL 未找到", file, id); fail++; continue; }
