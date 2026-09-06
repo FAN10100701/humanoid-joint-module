@@ -8,7 +8,7 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const EXTS = new Set(['.html', '.htm', '.js', '.css', '.json', '.xml', '.md', '.txt', '.svg', '.webmanifest', '.ps1', '.bat', '.py', '.yml']);
-const SKIP = /(edge_prof|node_modules|\.git(\\|\/|$)|_视频素材|\.trae|\.zcode|\.edge_profile|\.browsers|\.venv|\.workbuddy|\.idea|\.vscode|_local-tool备份)/;
+const SKIP = /(edge_prof|node_modules|\.git(\\|\/|$)|_视频素材|\.trae|\.zcode|\.edge_profile|\.browsers|\.venv|\.workbuddy|\.idea|\.vscode|_local-tool备份|\.mimosa|\.v2c|\.video_agent|\.agents)/;
 
 // 白名单（已知且已接受项——新增例外先查 AUDIT.md 再加这里）
 const WL_EMAIL = ['2061624805@qq.com', 'jump@gw.company.com', 'zhangsan@', 'example@', 'user@', 'name@', 'your@', 'xxx@', 'email@example', 'you@example.com'];

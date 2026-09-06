@@ -200,7 +200,7 @@ endproperty
     <!-- test -->
     <rect x="230" y="12" width="180" height="42" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.7"/>
     <text x="320" y="30" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">my_test(uvm_test_top)</text>
-    <text x="320" y="46" text-anchor="middle" fill="#64748b" font-size="9">选 seq(smoke/随机/异常)+ 配置开关</text>
+    <text x="320" y="46" text-anchor="middle" fill="#8b98a9" font-size="9">选 seq(smoke/随机/异常)+ 配置开关</text>
     <line x1="320" y1="54" x2="320" y2="72" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwE1B)"/>
     <!-- env 容器 -->
     <rect x="20" y="74" width="600" height="238" rx="12" fill="rgba(88,166,255,.04)" stroke="#58a6ff" stroke-width="1.2" stroke-dasharray="6,4"/>
@@ -216,34 +216,34 @@ endproperty
     <text x="127" y="136" text-anchor="middle" fill="#8b98a9" font-size="8.5">seq_item</text>
     <rect x="48" y="232" width="164" height="42" rx="7" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.2"/>
     <text x="130" y="250" text-anchor="middle" fill="#f59e0b" font-size="10.5">apb_monitor(纯被动)</text>
-    <text x="130" y="264" text-anchor="middle" fill="#64748b" font-size="8.5">ap : analysis_port # (apb_txn)</text>
+    <text x="130" y="264" text-anchor="middle" fill="#8b98a9" font-size="8.5">ap : analysis_port # (apb_txn)</text>
     <!-- irq_monitor -->
     <rect x="246" y="100" width="150" height="58" rx="10" fill="rgba(239,68,68,.07)" stroke="#ef4444" stroke-width="1.5"/>
     <text x="321" y="120" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="bold">irq_monitor</text>
-    <text x="321" y="136" text-anchor="middle" fill="#64748b" font-size="8.5">采样 irq / STATUS.done</text>
-    <text x="321" y="150" text-anchor="middle" fill="#64748b" font-size="8.5">广播「层完成事件」</text>
+    <text x="321" y="136" text-anchor="middle" fill="#8b98a9" font-size="8.5">采样 irq / STATUS.done</text>
+    <text x="321" y="150" text-anchor="middle" fill="#8b98a9" font-size="8.5">广播「层完成事件」</text>
     <!-- refmodel -->
     <rect x="246" y="176" width="150" height="70" rx="10" fill="rgba(245,158,11,.07)" stroke="#f59e0b" stroke-width="1.5"/>
     <text x="321" y="196" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">npu_refmodel</text>
-    <text x="321" y="212" text-anchor="middle" fill="#64748b" font-size="8.5">镜像寄存器 + RAM</text>
-    <text x="321" y="226" text-anchor="middle" fill="#64748b" font-size="8.5">行为级卷积/池化/FC</text>
-    <text x="321" y="240" text-anchor="middle" fill="#64748b" font-size="8.5">exp_ap : 期望块广播</text>
+    <text x="321" y="212" text-anchor="middle" fill="#8b98a9" font-size="8.5">镜像寄存器 + RAM</text>
+    <text x="321" y="226" text-anchor="middle" fill="#8b98a9" font-size="8.5">行为级卷积/池化/FC</text>
+    <text x="321" y="240" text-anchor="middle" fill="#8b98a9" font-size="8.5">exp_ap : 期望块广播</text>
     <!-- scoreboard -->
     <rect x="436" y="100" width="168" height="70" rx="10" fill="rgba(34,197,94,.07)" stroke="#22c55e" stroke-width="1.5"/>
     <text x="520" y="120" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">npu_scoreboard</text>
-    <text x="520" y="136" text-anchor="middle" fill="#64748b" font-size="8.5">期望块 vs 实际块</text>
-    <text x="520" y="150" text-anchor="middle" fill="#64748b" font-size="8.5">逐字节比对 + 定位打印</text>
-    <text x="520" y="164" text-anchor="middle" fill="#64748b" font-size="8.5">imp: apb / irq / exp</text>
+    <text x="520" y="136" text-anchor="middle" fill="#8b98a9" font-size="8.5">期望块 vs 实际块</text>
+    <text x="520" y="150" text-anchor="middle" fill="#8b98a9" font-size="8.5">逐字节比对 + 定位打印</text>
+    <text x="520" y="164" text-anchor="middle" fill="#8b98a9" font-size="8.5">imp: apb / irq / exp</text>
     <!-- coverage -->
     <rect x="436" y="192" width="168" height="54" rx="10" fill="rgba(34,197,94,.07)" stroke="#22c55e" stroke-width="1.5"/>
     <text x="520" y="212" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">npu_coverage</text>
-    <text x="520" y="228" text-anchor="middle" fill="#64748b" font-size="8.5">covergroup 建模(第 4 节)</text>
-    <text x="520" y="242" text-anchor="middle" fill="#64748b" font-size="8.5">订阅完成事件采样</text>
+    <text x="520" y="228" text-anchor="middle" fill="#8b98a9" font-size="8.5">covergroup 建模(第 4 节)</text>
+    <text x="520" y="242" text-anchor="middle" fill="#8b98a9" font-size="8.5">订阅完成事件采样</text>
     <!-- DUT -->
     <rect x="210" y="342" width="220" height="56" rx="10" fill="rgba(139,152,169,.10)" stroke="#c9d1d9" stroke-width="1.6"/>
-    <text x="320" y="364" text-anchor="middle" fill="#64748b" font-size="12" font-weight="bold">DUT:npu_top</text>
-    <text x="320" y="380" text-anchor="middle" fill="#64748b" font-size="8.5">LeNet-5 INT8:APB 从机 + 11 寄存器 + 卷积/池化/FC + 乒乓 RAM</text>
-    <text x="320" y="393" text-anchor="middle" fill="#64748b" font-size="8.5">clk / rst_n</text>
+    <text x="320" y="364" text-anchor="middle" fill="#8b98a9" font-size="12" font-weight="bold">DUT:npu_top</text>
+    <text x="320" y="380" text-anchor="middle" fill="#8b98a9" font-size="8.5">LeNet-5 INT8:APB 从机 + 11 寄存器 + 卷积/池化/FC + 乒乓 RAM</text>
+    <text x="320" y="393" text-anchor="middle" fill="#8b98a9" font-size="8.5">clk / rst_n</text>
     <!-- driver → DUT APB -->
     <path d="M173,296 L173,322 L240,322 L240,340" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwE1B)"/>
     <text x="150" y="318" fill="#58a6ff" font-size="9">APB 引脚级驱动</text>
@@ -627,22 +627,22 @@ endclass</code></pre>
     <!-- 六个环节:环状布局 -->
     <rect x="250" y="16" width="140" height="46" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="320" y="36" text-anchor="middle" fill="#58a6ff" font-size="11.5" font-weight="bold">① 验证计划</text>
-    <text x="320" y="52" text-anchor="middle" fill="#64748b" font-size="8.5">vPlan:需求→bin 映射</text>
+    <text x="320" y="52" text-anchor="middle" fill="#8b98a9" font-size="8.5">vPlan:需求→bin 映射</text>
     <rect x="60" y="110" width="140" height="46" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="130" y="130" text-anchor="middle" fill="#58a6ff" font-size="11.5" font-weight="bold">② 用例开发</text>
-    <text x="130" y="146" text-anchor="middle" fill="#64748b" font-size="8.5">定向 + 随机 + 异常</text>
+    <text x="130" y="146" text-anchor="middle" fill="#8b98a9" font-size="8.5">定向 + 随机 + 异常</text>
     <rect x="60" y="216" width="140" height="46" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="130" y="236" text-anchor="middle" fill="#58a6ff" font-size="11.5" font-weight="bold">③ 回归运行</text>
-    <text x="130" y="252" text-anchor="middle" fill="#64748b" font-size="8.5">多 seed 夜间回归+归档</text>
+    <text x="130" y="252" text-anchor="middle" fill="#8b98a9" font-size="8.5">多 seed 夜间回归+归档</text>
     <rect x="250" y="216" width="140" height="46" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="320" y="236" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">④ 覆盖率收集</text>
-    <text x="320" y="252" text-anchor="middle" fill="#64748b" font-size="8.5">合并 vdb/ucdb 出报告</text>
+    <text x="320" y="252" text-anchor="middle" fill="#8b98a9" font-size="8.5">合并 vdb/ucdb 出报告</text>
     <rect x="440" y="216" width="140" height="46" rx="10" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="510" y="236" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">⑤ 差异分析</text>
-    <text x="510" y="252" text-anchor="middle" fill="#64748b" font-size="8.5">hits=0:可达?不可达?</text>
+    <text x="510" y="252" text-anchor="middle" fill="#8b98a9" font-size="8.5">hits=0:可达?不可达?</text>
     <rect x="440" y="110" width="140" height="46" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="510" y="130" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">⑥ 补激励</text>
-    <text x="510" y="146" text-anchor="middle" fill="#64748b" font-size="8.5">加约束/补用例/排 exclusion</text>
+    <text x="510" y="146" text-anchor="middle" fill="#8b98a9" font-size="8.5">加约束/补用例/排 exclusion</text>
     <!-- 顺时针箭头 -->
     <path d="M250,39 L204,39 L204,108" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwC2B)"/>
     <path d="M130,156 L130,214" fill="none" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwC2B)"/>
@@ -656,7 +656,7 @@ endclass</code></pre>
     <path d="M390,39 L520,39 L520,72 L560,72" fill="none" stroke="#22c55e" stroke-width="1.8" marker-end="url(#arwC2G)"/>
     <rect x="464" y="52" width="0" height="0" fill="none"/>
     <text x="452" y="28" fill="#22c55e" font-size="10" font-weight="bold">达标 → 出口:签核(4.4 节)</text>
-    <text x="330" y="90" text-anchor="middle" fill="#64748b" font-size="9.5">双指标看板:功能覆盖 0→100% · 代码覆盖 0→95%+ · exclusion 逐条注释</text>
+    <text x="330" y="90" text-anchor="middle" fill="#8b98a9" font-size="9.5">双指标看板:功能覆盖 0→100% · 代码覆盖 0→95%+ · exclusion 逐条注释</text>
     <text x="320" y="292" text-anchor="middle" fill="#8b98a9" font-size="9.5">蓝:计划→激励→运行 绿:度量→分析 橙:补全回路(每轮迭代都必须带来覆盖率增量,否则停止加 seed、改为人工分析)</text>
   </svg>
   <figcaption>图② 覆盖率驱动验证(CDV)闭环:计划定目标 → 用例/回归产样本 → 合并度量 → 分析 hits=0 → 补约束/用例或排除 → 循环直至双指标达标,从"达标出口"进入签核。</figcaption>

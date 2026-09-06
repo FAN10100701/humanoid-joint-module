@@ -442,32 +442,32 @@ endmodule
       <marker id="arwY" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#8b98a9"/></marker>
     </defs>
     <!-- din 输入 -->
-    <text x="8" y="84" fill="#64748b" font-size="12">din</text>
+    <text x="8" y="84" fill="#8b98a9" font-size="12">din</text>
     <line x1="14" y1="92" x2="54" y2="92" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwO)"/>
     <!-- 第二段:次态组合 -->
     <rect x="60" y="60" width="160" height="84" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="140" y="84" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">第二段 · 次态组合</text>
-    <text x="140" y="102" text-anchor="middle" fill="#64748b" font-size="10.5">always @*</text>
-    <text x="140" y="118" text-anchor="middle" fill="#64748b" font-size="10.5">next_state = f(state,din)</text>
+    <text x="140" y="102" text-anchor="middle" fill="#8b98a9" font-size="10.5">always @*</text>
+    <text x="140" y="118" text-anchor="middle" fill="#8b98a9" font-size="10.5">next_state = f(state,din)</text>
     <!-- A→B -->
     <line x1="220" y1="102" x2="260" y2="102" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwB)"/>
     <text x="240" y="92" text-anchor="middle" fill="#58a6ff" font-size="9.5">next_state</text>
     <!-- 第一段:状态寄存器 -->
     <rect x="266" y="60" width="170" height="84" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="351" y="84" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">第一段 · 状态寄存器</text>
-    <text x="351" y="102" text-anchor="middle" fill="#64748b" font-size="10.5">always @(posedge clk)</text>
-    <text x="351" y="118" text-anchor="middle" fill="#64748b" font-size="10.5">state &lt;= next_state</text>
+    <text x="351" y="102" text-anchor="middle" fill="#8b98a9" font-size="10.5">always @(posedge clk)</text>
+    <text x="351" y="118" text-anchor="middle" fill="#8b98a9" font-size="10.5">state &lt;= next_state</text>
     <!-- B→C -->
     <line x1="436" y1="102" x2="494" y2="102" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwG)"/>
     <text x="465" y="92" text-anchor="middle" fill="#22c55e" font-size="9.5">state</text>
     <!-- 第三段:输出逻辑 -->
     <rect x="500" y="60" width="126" height="84" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="563" y="84" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">第三段 · 输出</text>
-    <text x="563" y="102" text-anchor="middle" fill="#64748b" font-size="9.5">always @(posedge clk)</text>
-    <text x="563" y="118" text-anchor="middle" fill="#64748b" font-size="9.5">dout &lt;= g(state,din)</text>
+    <text x="563" y="102" text-anchor="middle" fill="#8b98a9" font-size="9.5">always @(posedge clk)</text>
+    <text x="563" y="118" text-anchor="middle" fill="#8b98a9" font-size="9.5">dout &lt;= g(state,din)</text>
     <!-- dout 输出 -->
     <line x1="563" y1="144" x2="563" y2="196" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwG)"/>
-    <text x="571" y="180" fill="#64748b" font-size="11">dout</text>
+    <text x="571" y="180" fill="#8b98a9" font-size="11">dout</text>
     <!-- state 反馈 -->
     <path d="M300,144 L300,206 L100,206 L100,146" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwO)"/>
     <text x="200" y="220" text-anchor="middle" fill="#f59e0b" font-size="10">state(现态反馈)</text>
@@ -549,24 +549,24 @@ endmodule</code></pre>
     <line x1="14" y1="170" x2="44" y2="170" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#arw2Y)"/>
     <!-- S0 -->
     <circle cx="90" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="90" y="168" text-anchor="middle" fill="#64748b" font-size="13" font-weight="bold">S0</text>
+    <text x="90" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S0</text>
     <text x="90" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">IDLE(空)</text>
     <!-- S1 -->
     <circle cx="240" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="240" y="168" text-anchor="middle" fill="#64748b" font-size="13" font-weight="bold">S1</text>
+    <text x="240" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S1</text>
     <text x="240" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:1</text>
     <!-- S2 -->
     <circle cx="390" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="390" y="168" text-anchor="middle" fill="#64748b" font-size="13" font-weight="bold">S2</text>
+    <text x="390" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S2</text>
     <text x="390" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:10</text>
     <!-- S3 -->
     <circle cx="540" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="540" y="168" text-anchor="middle" fill="#64748b" font-size="13" font-weight="bold">S3</text>
+    <text x="540" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S3</text>
     <text x="540" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:101</text>
     <!-- S4 检测成功 -->
     <circle cx="540" cy="340" r="44" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="2"/>
     <text x="540" y="336" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="bold">S4 ✓</text>
-    <text x="540" y="352" text-anchor="middle" fill="#64748b" font-size="9.5">已匹配:1011</text>
+    <text x="540" y="352" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:1011</text>
     <text x="540" y="366" text-anchor="middle" fill="#22c55e" font-size="9.5">dout=1</text>
     <!-- 前进边(蓝) -->
     <line x1="130" y1="170" x2="194" y2="170" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arw2B)"/>

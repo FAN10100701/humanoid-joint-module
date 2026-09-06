@@ -14,11 +14,11 @@
   .my-legend-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#9aa4b2}
   .my-legend-line{width:24px;height:3px;border-radius:2px}
 
-  /* ---- 交互区:左画布 + 右详情 ---- */
-  .my-interactive{display:flex;align-items:stretch;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;margin:16px 0;background:rgba(13,17,23,.5)}
+  /* ---- 交互区:上画布 + 下详情(1100 宽画布 SVG 压进左半幅时 11px 标签实际仅 ~4.6px 不可读,详情面板改为堆叠下方,画布占满全宽) ---- */
+  .my-interactive{display:flex;flex-direction:column;align-items:stretch;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;margin:16px 0;background:rgba(13,17,23,.5)}
   .my-canvas-panel{flex:1;min-width:0;padding:12px;overflow:auto;background:#0f172a}
   .my-canvas-panel svg{width:100%;height:auto;display:block}
-  .my-detail-panel{width:430px;flex-shrink:0;background:#1e293b;border-left:1px solid rgba(255,255,255,.08);overflow-y:auto;max-height:760px}
+  .my-detail-panel{width:auto;flex-shrink:0;background:#1e293b;border-top:1px solid rgba(255,255,255,.08);overflow-y:auto;max-height:none}
 
   /* ---- 详情面板 ---- */
   .my-detail-empty{padding:40px 24px;text-align:center;color:#64748b}
@@ -80,17 +80,22 @@
   .my-wire-power{stroke:#ef4444;stroke-width:2.5}
   .my-wire-signal{stroke:#3b82f6;stroke-width:1.5;stroke-dasharray:4,2}
   .my-wire-motor{stroke:#f97316;stroke-width:3}
-  .my-wire-label{font-size:10px;fill:#94a3b8;font-family:Consolas}
-  .my-label-text{font-size:11px;fill:#e2e8f0;font-weight:600;text-anchor:middle;pointer-events:none}
-  .my-label-sub{font-size:9px;fill:#94a3b8;text-anchor:middle;pointer-events:none}
+  .my-wire-label{font-size:12px;fill:#94a3b8;font-family:Consolas}
+  .my-label-text{font-size:13px;fill:#e2e8f0;font-weight:600;text-anchor:middle;pointer-events:none}
+  .my-label-sub{font-size:10.5px;fill:#94a3b8;text-anchor:middle;pointer-events:none}
   .my-icon-svg{text-anchor:middle;font-size:20px}
   .my-flow-arrow{fill:#64748b}
-  .my-voltage-label{font-size:10px;fill:#ef4444;font-weight:600;font-family:Consolas}
+  .my-voltage-label{font-size:12px;fill:#ef4444;font-weight:600;font-family:Consolas}
 
   /* ---- 响应式 ---- */
   @media (max-width:900px){
     .my-interactive{flex-direction:column}
     .my-detail-panel{width:auto;border-left:none;border-top:1px solid rgba(255,255,255,.08);max-height:none}
+  }
+  /* 窄屏:画布 SVG 不再整体缩小(321px 时标签 ~3px 等于不可读),改为 640px 最小宽 + 画布内横向滚动(与 10 板块 .my-fig svg{min-width:560px} 同一模式) */
+  @media (max-width:640px){
+    .my-canvas-panel{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .my-canvas-panel svg{min-width:640px}
   }
 
   /* ---- 浅色主题适配(默认日间模式) ---- */
@@ -185,7 +190,7 @@
 
   <div class="my-interactive">
     <div class="my-canvas-panel">
-      <svg viewBox="0 0 1100 680" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 1100 680" role="img" aria-label="关节驱动电路模块交互图:直流电源输入、电源管理、通信接口、硬件保护与主控 MCU 的连接关系" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
@@ -313,30 +318,32 @@
         <text class="my-voltage-label" x="470" y="54">12V功率电源</text>
 
         <path class="my-wire my-wire-power" d="M 370 145 L 390 145 L 390 230 L 410 230" marker-end="url(#arrow-power)"/>
-        <text class="my-voltage-label" x="388" y="190" text-anchor="end">3.3V/5V</text>
+        <text class="my-voltage-label" x="396" y="170">3.3V/5V</text>
 
         <path class="my-wire my-wire-power" d="M 790 255 L 805 255 L 805 190 L 830 190" marker-end="url(#arrow-motor)"/>
-        <text class="my-wire-label" x="803" y="225" fill="#f97316" text-anchor="end">U/V/W</text>
+        <text class="my-wire-label" x="803" y="204" fill="#f97316" text-anchor="end">U/V/W</text>
 
         <!-- ===== 连接线:信号(蓝虚线) ===== -->
         <path class="my-wire my-wire-signal" d="M 370 265 L 410 290" marker-end="url(#arrow-signal)"/>
         <text class="my-wire-label" x="372" y="272" fill="#06b6d4">RS485</text>
 
         <path class="my-wire my-wire-signal" d="M 580 240 L 600 240 L 600 140 L 620 140" marker-end="url(#arrow-signal)"/>
-        <text class="my-wire-label" x="598" y="195" fill="#a855f7" text-anchor="end">PWM×6</text>
+        <text class="my-wire-label" x="598" y="168" fill="#a855f7" text-anchor="end">PWM×6</text>
 
         <path class="my-wire my-wire-signal" d="M 705 190 L 705 210" marker-end="url(#arrow-signal)"/>
 
         <path class="my-wire my-wire-signal" d="M 705 300 L 705 320" marker-end="url(#arrow-signal)"/>
 
         <path class="my-wire my-wire-signal" d="M 620 360 L 590 360 L 590 300 L 580 300" marker-end="url(#arrow-signal)"/>
-        <text class="my-wire-label" x="588" y="335" fill="#10b981" text-anchor="end">电流反馈</text>
+        <text class="my-wire-label" x="594" y="330" fill="#10b981">电流</text>
+        <text class="my-wire-label" x="594" y="344" fill="#10b981">反馈</text>
 
         <path class="my-wire my-wire-signal" d="M 620 475 L 610 475 L 610 350 L 580 350" marker-end="url(#arrow-signal)"/>
         <text class="my-wire-label" x="608" y="415" fill="#34d399" text-anchor="end">位置反馈</text>
 
         <path class="my-wire my-wire-signal" d="M 370 375 L 410 350" marker-end="url(#arrow-signal)"/>
-        <text class="my-wire-label" x="372" y="368" fill="#eab308">故障状态</text>
+        <text class="my-wire-label" x="374" y="392" fill="#eab308">故障</text>
+        <text class="my-wire-label" x="374" y="406" fill="#eab308">状态</text>
 
         <!-- ===== 连接线:保护关断(黄虚线) ===== -->
         <path d="M 310 330 L 310 40 L 680 40 L 680 110" stroke="#eab308" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#arrow-protect)"/>
@@ -348,19 +355,19 @@
 
         <!-- ===== 连接线:编码器(绿) ===== -->
         <path d="M 830 240 L 795 240 L 795 475 L 790 475" stroke="#34d399" stroke-width="2" fill="none" marker-end="url(#arrow-enc)"/>
-        <text class="my-wire-label" x="796" y="360" fill="#34d399">电机端编码器</text>
+        <text class="my-wire-label" x="800" y="264" fill="#34d399">电机端编码器</text>
 
-        <path d="M 905 240 L 905 400" stroke="#34d399" stroke-width="2" fill="none" marker-end="url(#arrow-enc)"/>
-        <text class="my-wire-label" x="912" y="330" fill="#34d399">输出编码器</text>
+        <path d="M 905 240 L 905 260 L 1002 260 L 1002 380 L 905 380 L 905 400" stroke="#34d399" stroke-width="2" fill="none" marker-end="url(#arrow-enc)"/>
+        <text class="my-wire-label" x="1008" y="320" fill="#34d399">输出编码器</text>
 
         <!-- ===== 接插件标注 ===== -->
         <circle cx="30" cy="155" r="6" fill="#ef4444"/>
         <text class="my-wire-label" x="10" y="230">电源接口</text>
         <text class="my-wire-label" x="10" y="244">XT30/XT60</text>
 
-        <circle cx="285" cy="265" r="6" fill="#06b6d4"/>
-        <text class="my-wire-label" x="206" y="300">总线接口</text>
-        <text class="my-wire-label" x="206" y="314">4pin/A/B</text>
+        <circle cx="200" cy="265" r="6" fill="#06b6d4"/>
+        <text class="my-wire-label" x="194" y="260" text-anchor="end">总线接口</text>
+        <text class="my-wire-label" x="194" y="274" text-anchor="end">4pin/A/B</text>
       </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图:驱动电路核心模块交互认知图——点击各模块查看功能、常见选型与设计要点</div>
     </div>
 

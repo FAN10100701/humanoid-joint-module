@@ -151,7 +151,7 @@
     <!-- 底注 -->
     <text x="320" y="322" text-anchor="middle" fill="#64748b" font-size="11">CPU 配置 NPU 寄存器: AHB 写 → 桥翻译成 APB 两拍传输(SETUP→ACCESS)</text>
   </svg>
-  <div class="my-fig-cap">图④ SoC 总线分层结构:CPU/DMA 挂 AHB,慢速外设挂 APB,桥是 APB 域唯一主机(本文实战代码的目标场景)</div>
+  <div class="my-fig-cap">图① SoC 总线分层结构:CPU/DMA 挂 AHB,慢速外设挂 APB,桥是 APB 域唯一主机(本文实战代码的目标场景)</div>
   </div>
 
   <div class="table-wrap"><table>
@@ -229,7 +229,7 @@
     <!-- 底注 -->
     <text x="300" y="302" text-anchor="middle" fill="#64748b" font-size="11">工程上常把 ACCESS 中 PREADY=0 的自循环单独画成 WAIT 态 —— 逻辑上是同一个 ACCESS 态</text>
   </svg>
-  <div class="my-fig-cap">图③ APB 主机(桥/主控)状态机:蓝色为协议必需的三状态,橙色 WAIT 是 ACCESS 中 PREADY=0 的自循环展开</div>
+  <div class="my-fig-cap">图② APB 主机(桥/主控)状态机:蓝色为协议必需的三状态,橙色 WAIT 是 ACCESS 中 PREADY=0 的自循环展开</div>
   </div>
 
   <div class="box box-tip"><b>💼 面试怎么问:</b>"描述一下 APB 传输的状态机""为什么 APB 要有 SETUP 态?没有会怎样?" —— 应答要点:三状态转移 + 每个状态的 PSEL/PENABLE 取值要脱口而出;SETUP 的意义 = 给译码/从机准备窗口 + 区分新传输与等待态 + 支撑背靠背;没有 SETUP,从机无法检测"新传输起始沿",且地址在两笔之间没有稳定过渡,背靠背传输无法实现。</div>
@@ -297,7 +297,7 @@
     <text x="190" y="324" text-anchor="middle" fill="#f59e0b" font-size="11">② 使能→③ 完成采样</text>
     <text x="290" y="324" text-anchor="middle" fill="#64748b" font-size="11">④ 撤销 PSEL 回 IDLE</text>
   </svg>
-  <div class="my-fig-cap">图① APB 写传输波形(零等待):T1=SETUP(PSEL=1/PENABLE=0),T2=ACCESS(PENABLE=1),T3 沿 PREADY=1 完成写入,T4 起回 IDLE;PADDR/PWRITE/PWDATA 从 SETUP 起保持不变</div>
+  <div class="my-fig-cap">图③ APB 写传输波形(零等待):T1=SETUP(PSEL=1/PENABLE=0),T2=ACCESS(PENABLE=1),T3 沿 PREADY=1 完成写入,T4 起回 IDLE;PADDR/PWRITE/PWDATA 从 SETUP 起保持不变</div>
   </div>
 
   <div class="box box-tip"><b>💼 面试怎么问:</b>"画一下 APB 写传输时序,一笔最少几拍?" —— 先说结论"最少 2 拍(SETUP+ACCESS)",再按 T1/T2/T3 三沿讲完,最后补一句"若无等待,写数据与地址一样从 SETUP 拍保持到完成沿"就能拿满分。若面试官追问"完成沿从机做什么动作":答"在 PSEL&amp;PENABLE&amp;PWRITE&amp;PREADY 的时钟沿把 PWDATA 写入译码出的寄存器"。</div>
@@ -360,10 +360,10 @@
     <text x="250" y="306" text-anchor="middle" class="my-tick">T4</text>
     <text x="310" y="306" text-anchor="middle" class="my-tick">T5</text>
     <text x="100" y="324" text-anchor="middle" fill="#58a6ff" font-size="11">① 地址上线(PWRITE=0)</text>
-    <text x="205" y="324" text-anchor="middle" fill="#f59e0b" font-size="11">② ACCESS+等待 ③ 数据有效</text>
-    <text x="330" y="324" text-anchor="middle" fill="#64748b" font-size="11">④ 完成采样回 IDLE</text>
+    <text x="255" y="324" text-anchor="middle" fill="#f59e0b" font-size="11">② ACCESS+等待 ③ 数据有效</text>
+    <text x="430" y="324" text-anchor="middle" fill="#64748b" font-size="11">④ 完成采样回 IDLE</text>
   </svg>
-  <div class="my-fig-cap">图② APB 读传输波形(含 1 个等待状态):T2 进 ACCESS 后 PREADY 先低 1 拍,T3 起从机给出 PREADY=1 与 PRDATA=0x5A,T4 沿主机完成采样 —— 等待期间全部控制信号保持不变</div>
+  <div class="my-fig-cap">图④ APB 读传输波形(含 1 个等待状态):T2 进 ACCESS 后 PREADY 先低 1 拍,T3 起从机给出 PREADY=1 与 PRDATA=0x5A,T4 沿主机完成采样 —— 等待期间全部控制信号保持不变</div>
   </div>
 
   <div class="box box-tip"><b>💼 面试怎么问:</b>"读和写时序差别在哪?读数据什么时候必须有效?" —— 差别:①PWRITE=0;②PWDATA 无效、PRDATA 由从机驱动;③PRDATA 只需在 PREADY=1 的最后一个 ACCESS 拍有效(等待期间可乱)。若追问"主机什么沿采样读数据":PREADY=1 且 PENABLE=1 的那个 PCLK 上升沿。</div>
@@ -802,7 +802,7 @@ endmodule</code></pre>
     <div class="my-res-badge my-badge-doc">📗</div>
     <div class="my-res-info">
       <div class="my-res-title">⭐ ARM 官方规范:AMBA APB Protocol Specification(IHI0024)</div>
-      <div class="my-res-desc">APB 协议的唯一权威定义:信号定义、SETUP/ACCESS 状态机、PREADY 等待与 PSLVERR 的全部合法时序图都在这份免费 PDF 里。本文图①②的拍序就是按它画的,面试前建议至少通读第 2 章。</div>
+      <div class="my-res-desc">APB 协议的唯一权威定义:信号定义、SETUP/ACCESS 状态机、PREADY 等待与 PSLVERR 的全部合法时序图都在这份免费 PDF 里。本文图③②的拍序就是按它画的,面试前建议至少通读第 2 章。</div>
       <div class="my-res-meta"><span class="my-tag my-tag-official">ARM 官方</span><span class="my-tag my-tag-recommend">⭐ 必读</span><span class="my-tag my-tag-diff-3">难度:硬核</span></div>
     </div>
   </a>
@@ -883,7 +883,7 @@ endmodule</code></pre>
     <div class="my-res-badge my-badge-video">🎬</div>
     <div class="my-res-info">
       <div class="my-res-title">⭐ B站:AMBA SoC 验证项目 · 第 2 集 AHB/APB/AXI 协议介绍</div>
-      <div class="my-res-desc">以完整 SoC 验证项目为背景讲三总线定位与协议细节,和本文图④的 SoC 分层结构互相印证;适合"看视频找感觉、读本文抠细节"的搭配学法。</div>
+      <div class="my-res-desc">以完整 SoC 验证项目为背景讲三总线定位与协议细节,和本文图①的 SoC 分层结构互相印证;适合"看视频找感觉、读本文抠细节"的搭配学法。</div>
       <div class="my-res-meta"><span class="my-tag my-tag-bili">B站视频</span><span class="my-tag my-tag-recommend">⭐ 推荐</span><span class="my-tag my-tag-diff-1">难度:入门</span></div>
     </div>
   </a>
@@ -910,7 +910,7 @@ endmodule</code></pre>
     <div class="my-res-badge my-badge-code">💻</div>
     <div class="my-res-info">
       <div class="my-res-title">GitHub:prajwalgekkouga/AHB-to-APB-Bridge(约 83 star)</div>
-      <div class="my-res-desc">经典 AHB→APB 桥开源实现:桥作为 AHB 从机、APB 域唯一主机,把 AHB 读写转成等效 APB 传输 —— 正是图④里"桥"方框内部的最佳参考实现。</div>
+      <div class="my-res-desc">经典 AHB→APB 桥开源实现:桥作为 AHB 从机、APB 域唯一主机,把 AHB 读写转成等效 APB 传输 —— 正是图①里"桥"方框内部的最佳参考实现。</div>
       <div class="my-res-meta"><span class="my-tag my-tag-github">GitHub 开源</span><span class="my-tag my-tag-diff-3">难度:进阶</span></div>
     </div>
   </a>

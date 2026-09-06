@@ -710,7 +710,7 @@ assign fm_rdata = buf_sel ? rdata_b : rdata_a;   // 引擎永远读 buf_sel 块<
     <path d="M 597 140 C 597 210 60 210 54 142" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#a2b)"/>
     <text x="322" y="204" text-anchor="middle" font-size="10.5" fill="#58a6ff">INT8 写回「对侧」乒乓块 · 写口 8bit · 全部像素写完 → pe_done</text>
     <!-- 底注 -->
-    <text x="14" y="38" font-size="10" fill="#f59e0b">requant 内部: 32b×16b → 48b 中间结果(图上标 48b)</text>
+    <text x="14" y="38" font-size="10" fill="#f59e0b">requant: 32b×16b → 48b 中间结果</text>
     <text x="14" y="228" font-size="10" fill="#64748b">全网 8 层 = 5×(本链全开) + 池化层(卷积循环旁路) + 输出层(ReLU 关、池化关);每层由主机写一次参数 + start</text>
   </svg>
   <div class="my-fig-cap">图 4 · 数据通路全链与位宽: 8b 像素进、8b 结果出,中间乘积 16b、累加 32b、requant 中间 48b;这是贴在你工位上那张图的最终版</div>
@@ -793,7 +793,7 @@ assign fm_rdata = buf_sel ? rdata_b : rdata_a;   // 引擎永远读 buf_sel 块<
     <line x1="534" y1="68" x2="550" y2="68" stroke="#ef4444" stroke-width="1.8" marker-end="url(#a4r)"/>
     <text x="542" y="58" text-anchor="middle" font-size="9" fill="#ef4444">FAIL</text>
     <path d="M 591 110 C 591 136 56 136 56 112" fill="none" stroke="#22c55e" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#a4g)"/>
-    <text x="322" y="132" text-anchor="middle" font-size="9.5" fill="#22c55e">定位改完 → 从③重跑(脚本化, 一条 make 命令)</text>
+    <text x="322" y="145" text-anchor="middle" font-size="9.5" fill="#22c55e">定位改完 → 从③重跑(脚本化, 一条 make 命令)</text>
     <text x="322" y="26" text-anchor="middle" font-size="10.5" fill="#64748b">定点计算确定 → 六步全部脚本化, 改一次 RTL 只需重跑 ③④⑤</text>
   </svg>
   <div class="my-fig-cap">图 5 · 黄金数据比对闭环: ③④⑤ 必须脚本化,让"改一行 RTL → 60 秒内知道对不对"成为日常</div>

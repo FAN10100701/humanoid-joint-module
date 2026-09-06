@@ -225,19 +225,19 @@ $display("%0d", (t == b));  // → 1:同一个对象;内容比较请用 t.compar
     <!-- 基类 -->
     <rect x="190" y="18" width="260" height="84" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="320" y="40" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="bold">class my_txn(基类)</text>
-    <text x="320" y="60" text-anchor="middle" fill="#64748b" font-size="10.5">rand bit[31:0] addr, wdata; rand bit[3:0] len</text>
-    <text x="320" y="77" text-anchor="middle" fill="#64748b" font-size="10.5">function new() / constraint c_legal</text>
-    <text x="320" y="94" text-anchor="middle" fill="#64748b" font-size="10.5">virtual show() · virtual compare()</text>
+    <text x="320" y="60" text-anchor="middle" fill="#8b98a9" font-size="10.5">rand bit[31:0] addr, wdata; rand bit[3:0] len</text>
+    <text x="320" y="77" text-anchor="middle" fill="#8b98a9" font-size="10.5">function new() / constraint c_legal</text>
+    <text x="320" y="94" text-anchor="middle" fill="#8b98a9" font-size="10.5">virtual show() · virtual compare()</text>
     <!-- 子类左 -->
     <rect x="40" y="168" width="250" height="66" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="165" y="190" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">class my_burst_txn extends my_txn</text>
-    <text x="165" y="208" text-anchor="middle" fill="#64748b" font-size="10.5">+ rand bit[2:0] burst</text>
-    <text x="165" y="224" text-anchor="middle" fill="#64748b" font-size="10.5">show() 覆盖:追加 burst 显示</text>
+    <text x="165" y="208" text-anchor="middle" fill="#8b98a9" font-size="10.5">+ rand bit[2:0] burst</text>
+    <text x="165" y="224" text-anchor="middle" fill="#8b98a9" font-size="10.5">show() 覆盖:追加 burst 显示</text>
     <!-- 子类右 -->
     <rect x="350" y="168" width="250" height="66" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="475" y="190" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">class my_crc_txn extends my_txn</text>
-    <text x="475" y="208" text-anchor="middle" fill="#64748b" font-size="10.5">+ bit[15:0] crc</text>
-    <text x="475" y="224" text-anchor="middle" fill="#64748b" font-size="10.5">show() 覆盖:追加 crc 显示</text>
+    <text x="475" y="208" text-anchor="middle" fill="#8b98a9" font-size="10.5">+ bit[15:0] crc</text>
+    <text x="475" y="224" text-anchor="middle" fill="#8b98a9" font-size="10.5">show() 覆盖:追加 crc 显示</text>
     <!-- extends 箭头 -->
     <line x1="165" y1="166" x2="290" y2="106" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwI3O)"/>
     <text x="196" y="130" fill="#f59e0b" font-size="10">extends</text>
@@ -245,7 +245,7 @@ $display("%0d", (t == b));  // → 1:同一个对象;内容比较请用 t.compar
     <text x="428" y="130" fill="#22c55e" font-size="10">extends</text>
     <!-- 多态注解 -->
     <text x="320" y="126" text-anchor="middle" fill="#8b98a9" font-size="9.5">virtual 方法</text>
-    <text x="320" y="252" text-anchor="middle" fill="#64748b" font-size="10.5">多态:my_txn t; t = b; t.show() → 走子类版本(show 是 virtual,运行期绑定)</text>
+    <text x="320" y="252" text-anchor="middle" fill="#8b98a9" font-size="10.5">多态:my_txn t; t = b; t.show() → 走子类版本(show 是 virtual,运行期绑定)</text>
   </svg>
   <figcaption>图① SV OOP 继承与多态:子类 extends 基类后新增字段、覆盖 virtual 方法;父类句柄 + virtual = "一套代码,多种事务"。</figcaption>
   </figure>
@@ -421,33 +421,33 @@ my_driver::type_id::set_type_override(my_driver_v2::get_type());  // 类型替�
     <!-- test -->
     <rect x="220" y="14" width="200" height="42" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.7"/>
     <text x="320" y="32" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">my_test(uvm_test_top)</text>
-    <text x="320" y="48" text-anchor="middle" fill="#64748b" font-size="9.5">配置与用例选择</text>
+    <text x="320" y="48" text-anchor="middle" fill="#8b98a9" font-size="9.5">配置与用例选择</text>
     <!-- env -->
     <rect x="238" y="92" width="164" height="42" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="320" y="110" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">my_env(uvm_env)</text>
-    <text x="320" y="126" text-anchor="middle" fill="#64748b" font-size="9.5">容器:组装 agent + scoreboard</text>
+    <text x="320" y="126" text-anchor="middle" fill="#8b98a9" font-size="9.5">容器:组装 agent + scoreboard</text>
     <line x1="320" y1="56" x2="320" y2="90" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwT4B)"/>
     <text x="330" y="78" fill="#8b98a9" font-size="9">build 时 create 子组件</text>
     <!-- agent -->
-    <rect x="238" y="170" width="164" height="42" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
+    <rect x="222" y="170" width="216" height="42" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="320" y="188" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">my_agent(uvm_agent)</text>
-    <text x="320" y="204" text-anchor="middle" fill="#64748b" font-size="9.5">active:driver+sqr+mon / passive:仅 mon</text>
+    <text x="320" y="204" text-anchor="middle" fill="#8b98a9" font-size="9.5">active:driver+sqr+mon / passive:仅 mon</text>
     <line x1="320" y1="134" x2="320" y2="168" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwT4B)"/>
     <!-- scoreboard -->
     <rect x="474" y="170" width="146" height="42" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="547" y="188" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">my_scoreboard</text>
-    <text x="547" y="204" text-anchor="middle" fill="#64748b" font-size="9.5">参考模型 + 比对</text>
+    <text x="547" y="204" text-anchor="middle" fill="#8b98a9" font-size="9.5">参考模型 + 比对</text>
     <path d="M402,113 L547,113 L547,168" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwT4G)"/>
     <!-- agent 三个孩子 -->
     <rect x="24" y="274" width="132" height="48" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="90" y="294" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">my_driver</text>
-    <text x="90" y="310" text-anchor="middle" fill="#64748b" font-size="9">事务 → 引脚波形</text>
+    <text x="90" y="310" text-anchor="middle" fill="#8b98a9" font-size="9">事务 → 引脚波形</text>
     <rect x="186" y="274" width="132" height="48" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="252" y="294" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">my_sequencer</text>
-    <text x="252" y="310" text-anchor="middle" fill="#64748b" font-size="9">仲裁多条 sequence</text>
+    <text x="252" y="310" text-anchor="middle" fill="#8b98a9" font-size="9">仲裁多条 sequence</text>
     <rect x="348" y="274" width="132" height="48" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
     <text x="414" y="294" text-anchor="middle" fill="#f59e0b" font-size="11.5" font-weight="bold">my_monitor</text>
-    <text x="414" y="310" text-anchor="middle" fill="#64748b" font-size="9">引脚波形 → 事务广播</text>
+    <text x="414" y="310" text-anchor="middle" fill="#8b98a9" font-size="9">引脚波形 → 事务广播</text>
     <!-- 树线 -->
     <line x1="320" y1="212" x2="320" y2="242" stroke="#58a6ff" stroke-width="1.6"/>
     <line x1="90" y1="242" x2="414" y2="242" stroke="#58a6ff" stroke-width="1.6"/>
@@ -461,7 +461,7 @@ my_driver::type_id::set_type_override(my_driver_v2::get_type());  // 类型替�
     <!-- driver↔sqr -->
     <line x1="158" y1="298" x2="184" y2="298" stroke="#8b98a9" stroke-width="1.4" stroke-dasharray="3,3"/>
     <text x="171" y="332" text-anchor="middle" fill="#8b98a9" font-size="9">seq_item 握手(第 6 节)</text>
-    <text x="440" y="346" text-anchor="middle" fill="#64748b" font-size="10">蓝色实线:父子挂树(build/create) 绿色:数据流(TLM) 灰色:激励握手</text>
+    <text x="440" y="346" text-anchor="middle" fill="#8b98a9" font-size="10">蓝色实线:父子挂树(build/create) 绿色:数据流(TLM) 灰色:激励握手</text>
   </svg>
   <figcaption>图② UVM 组件树:test → env → agent →(driver / sequencer / monitor)+ scoreboard;monitor 经 analysis_port 把事务广播给 scoreboard。</figcaption>
   </figure>
@@ -523,15 +523,15 @@ uvm_config_db #(uvm_object_wrapper)::set(this, "env.agt.sqr.main_phase",
     <!-- sequence -->
     <rect x="230" y="18" width="190" height="54" rx="10" fill="rgba(245,158,11,.10)" stroke="#f59e0b" stroke-width="1.7"/>
     <text x="325" y="40" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">my_sequence</text>
-    <text x="325" y="58" text-anchor="middle" fill="#64748b" font-size="9.5">uvm_sequence #(my_txn) · 激励剧本</text>
+    <text x="325" y="58" text-anchor="middle" fill="#8b98a9" font-size="9.5">uvm_sequence #(my_txn) · 激励剧本</text>
     <!-- sequencer -->
     <rect x="60" y="240" width="180" height="54" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
     <text x="150" y="262" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">my_sequencer</text>
-    <text x="150" y="280" text-anchor="middle" fill="#64748b" font-size="9.5">缓存 + 仲裁多条 sequence</text>
+    <text x="150" y="280" text-anchor="middle" fill="#8b98a9" font-size="9.5">缓存 + 仲裁多条 sequence</text>
     <!-- driver -->
     <rect x="400" y="240" width="180" height="54" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
     <text x="490" y="262" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">my_driver</text>
-    <text x="490" y="280" text-anchor="middle" fill="#64748b" font-size="9.5">事务 → 引脚波形</text>
+    <text x="490" y="280" text-anchor="middle" fill="#8b98a9" font-size="9.5">事务 → 引脚波形</text>
     <!-- ① start_item -->
     <line x1="252" y1="72" x2="165" y2="236" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#arwS5B)"/>
     <text x="128" y="150" fill="#58a6ff" font-size="10.5">① start_item(req)</text>
@@ -539,7 +539,7 @@ uvm_config_db #(uvm_object_wrapper)::set(this, "env.agt.sqr.main_phase",
     <line x1="398" y1="72" x2="232" y2="236" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#arwS5O)"/>
     <text x="404" y="150" fill="#f59e0b" font-size="10.5">③ finish_item(req)</text>
     <!-- ② randomize -->
-    <text x="325" y="140" text-anchor="middle" fill="#64748b" font-size="10">② req.randomize()</text>
+    <text x="325" y="140" text-anchor="middle" fill="#8b98a9" font-size="10">② req.randomize()</text>
     <text x="325" y="156" text-anchor="middle" fill="#8b98a9" font-size="9.5">(start 与 finish 之间随机)</text>
     <!-- ④ get_next_item -->
     <line x1="244" y1="258" x2="396" y2="258" stroke="#22c55e" stroke-width="1.8" marker-end="url(#arwS5G)"/>
@@ -548,7 +548,7 @@ uvm_config_db #(uvm_object_wrapper)::set(this, "env.agt.sqr.main_phase",
     <line x1="396" y1="280" x2="244" y2="280" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="5,4" marker-end="url(#arwS5R)"/>
     <text x="320" y="298" text-anchor="middle" fill="#ef4444" font-size="10.5">item_done()(⑥ 报告完成)</text>
     <!-- 驱动注解 -->
-    <text x="490" y="314" text-anchor="middle" fill="#64748b" font-size="9.5">⑤ 驱动引脚若干拍(经 virtual interface)</text>
+    <text x="490" y="314" text-anchor="middle" fill="#8b98a9" font-size="9.5">⑤ 驱动引脚若干拍(经 virtual interface)</text>
     <!-- 底注 -->
     <text x="320" y="332" text-anchor="middle" fill="#8b98a9" font-size="9.5">多条 sequence 同时挂载时,由 sequencer 的仲裁算法(如 SEQ_ARB_FIFO / SEQ_ARB_STRICT)决定先后</text>
   </svg>

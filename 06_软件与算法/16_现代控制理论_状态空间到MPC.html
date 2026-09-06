@@ -390,7 +390,7 @@
       <!-- 状态向量 -->
       <text x="310" y="243" text-anchor="middle" class="my-t1">状态向量 x = [θ, ω, i]ᵀ  ·  蓝=电气域  橙=机械域  绿=测量  红=扰动</text>
     </svg>
-    <div class="my-fig-cap">图⑤ 关节电机单轴模型状态空间建模:两个物理方程 + 一条机电耦合反馈(反电动势/电磁转矩),状态选 [θ, ω, i]</div>
+    <div class="my-fig-cap">图① 关节电机单轴模型状态空间建模:两个物理方程 + 一条机电耦合反馈(反电动势/电磁转矩),状态选 [θ, ω, i]</div>
   </div>
 
   <p><b>含减速器怎么办:</b>关节端参数折算——等效惯量 J<sub>eff</sub> = J<sub>m</sub> + J<sub>L</sub>/n²,输出端角度 θ<sub>J</sub> = θ<sub>m</sub>/n,输出端转矩放大 n 倍(扣效率)。若你把状态定义在<b>输出端</b>,K<sub>t</sub> 项要除以 n;定义在<b>电机端</b>则不变。<b>先声明状态在哪个端,再写矩阵</b>,这是关节建模最容易踩的坑。</p>
@@ -579,7 +579,7 @@ print("K =", K, " 闭环特征值:", eig)
 sys_lqr = ct.ss(A - np.squeeze(B @ K), np.squeeze(B), C, 0)
 ct.step_response(sys_lqr)        # 扫 Q: 10 → 100 → 1000 观察变化</code></pre>
 
-  <!-- 图③ LQR 设计流程 step-flow -->
+  <!-- 图② LQR 设计流程 step-flow -->
   <div class="step-flow">
     <div class="step-item"><span class="n">1</span><b>建模</b><br>物理方程 → 状态空间 A,B,C(§3 关节电机例)</div>
     <div class="step-item"><span class="n">2</span><b>离散化</b><br>ZOH,采样率取带宽 10~20 倍(§5)</div>
@@ -589,7 +589,7 @@ ct.step_response(sys_lqr)        # 扫 Q: 10 → 100 → 1000 观察变化</code
     <div class="step-item"><span class="n">6</span><b>仿真验证</b><br>阶跃/抗扰/噪声注入,u 不饱和</div>
     <div class="step-item"><span class="n">7</span><b>实车迭代</b><br>参数辨识误差 → 回退 Q 或加前馈/观测器</div>
   </div>
-  <div class="my-fig-cap">图③ LQR 设计全流程:左半是「纸面推导」(1~5 可全部离线完成),右半是「仿真与实车」(6~7 才见真章),实车返回修正模型是常态闭环</div>
+  <div class="my-fig-cap">图② LQR 设计全流程:左半是「纸面推导」(1~5 可全部离线完成),右半是「仿真与实车」(6~7 才见真章),实车返回修正模型是常态闭环</div>
 
   <div class="box box-tip"><b>🎤 面试怎么问:</b>①「LQR 的 Q、R 怎么给?」——答物理意义(罚状态 vs 罚控制)+ Bryson 初值 + 固定 R 扫 Q 的实操,并补一句「最终以执行器饱和与噪声表现为约束」;②「LQR 一定稳定吗?」——模型准确且 (A,B) 可镇定时闭环渐近稳定,且有 ≥60° 相位裕度/6dB 增益裕度保证,但模型失配大时保证打折;③「LQR 跟 MPC 什么关系?」——无约束 LQR 可视为 MPC 的解析解基准(见 §11 对比表)。</div>
   <div class="box box-warn"><b>⚠️ 易错点:</b>①以为 Q、R 越大越好——R 大是「省力」不是「有力」,方向别记反;②Q 用单位阵不带量纲,机械状态(弧度)与电流状态(安培)权重差几个数量级,直接套模板必翻车;③全状态反馈假设在真机上不成立(θ 可测、i 可测,但「干净」的 ω 往往要微分/估计),引出下一节观测器。</div>
@@ -613,7 +613,7 @@ L = ct.place(A.T, C.T, P_obs).T     # 对偶设计
 print("L =", L)                     # 误差动态 A - L C 特征值检验
 print(ct.eigvals(A - L @ C))</code></pre>
 
-  <!-- 图② 状态反馈 + 观测器结构框图 SVG -->
+  <!-- 图③ 状态反馈 + 观测器结构框图 SVG -->
   <div class="my-fig">
     <svg viewBox="0 0 620 330" role="img" aria-label="状态反馈与龙伯格观测器结构框图:参考输入、对象、观测器、K 反馈增益">
       <defs>
@@ -633,7 +633,7 @@ print(ct.eigvals(A - L @ C))</code></pre>
       <line x1="108" y1="45" x2="167" y2="45" stroke="#58a6ff" stroke-width="2" marker-end="url(#fB)"/>
       <text x="128" y="34" fill="#58a6ff" font-size="12" font-weight="bold">u</text>
       <circle cx="140" cy="45" r="3" fill="#58a6ff"/>
-      <text x="420" y="30" fill="#64748b" font-size="10.5">u = −Kx̂ + Nr(N 为参考前馈)</text>
+      <text x="420" y="16" fill="#64748b" font-size="10.5">u = −Kx̂ + Nr(N 为参考前馈)</text>
       <!-- 对象 -->
       <rect x="170" y="20" width="160" height="62" rx="9" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
       <text x="250" y="40" text-anchor="middle" class="my-t1">对象(真实关节)</text>
@@ -671,7 +671,7 @@ print(ct.eigvals(A - L @ C))</code></pre>
       <!-- 图例 -->
       <text x="310" y="318" text-anchor="middle" class="my-t1">蓝 = 控制流(u) · 橙 = 估计/反馈流(x̂, −Kx̂) · 绿 = 测量流(y)</text>
     </svg>
-    <div class="my-fig-cap">图② 状态反馈 + 龙伯格观测器结构:x&#770; 代替不可全测的 x 进入 K 反馈;r 为参考输入(经 N 前馈),u 同时喂给对象与观测器的影子模型</div>
+    <div class="my-fig-cap">图③ 状态反馈 + 龙伯格观测器结构:x&#770; 代替不可全测的 x 进入 K 反馈;r 为参考输入(经 N 前馈),u 同时喂给对象与观测器的影子模型</div>
   </div>
 
   <p><b>分离原理与 LQG</b></p>

@@ -204,18 +204,17 @@
       <!-- 电机本体 -->
       <circle cx="508" cy="181" r="0" fill="none"/>
       <circle cx="470" cy="181" r="0" fill="none"/>
-      <circle cx="440" cy="181" r="26" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="2"/>
-      <text x="440" y="178" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">PMSM</text>
-      <text x="440" y="192" text-anchor="middle" fill="#22c55e" font-size="10">三相永磁同步</text>
-      <line x1="466" y1="181" x2="492" y2="181" stroke="#f59e0b" stroke-width="2"/>
+      <rect x="394" y="190" width="82" height="36" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="2"/>
+      <text x="435" y="205" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">PMSM</text>
+      <text x="435" y="220" text-anchor="middle" fill="#22c55e" font-size="10">三相永磁同步</text>
       <!-- 编码器 -->
       <rect x="404" y="252" width="110" height="30" rx="8" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
       <text x="459" y="271" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">编码器(θ/ω)</text>
-      <line x1="440" y1="207" x2="440" y2="252" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
+      <line x1="435" y1="226" x2="435" y2="252" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
       <!-- 反馈虚线 -->
       <path d="M404 267 C 360 267 330 250 316 228" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#hwArrG)"/>
       <path d="M62 182 C 62 226 130 252 238 210" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#hwArrG)"/>
-      <text x="66" y="246" fill="#22c55e" font-size="10.5">Ia/Ib 电压信号(上行反馈)</text>
+      <text x="100" y="260" fill="#22c55e" font-size="10.5">Ia/Ib 电压信号(上行反馈)</text>
       <!-- 正向箭头 -->
       <line x1="110" y1="152" x2="136" y2="152" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
       <line x1="212" y1="152" x2="238" y2="152" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
@@ -456,8 +455,8 @@ svpwm_update(valpha, vbeta, udc);            /* 内部写 TIM1-&gt;CCR1/2/3 */</
       <!-- 采样窗口 -->
       <rect x="176" y="56" width="38" height="196" fill="#22c55e" fill-opacity=".12"/>
       <rect x="426" y="56" width="38" height="196" fill="#22c55e" fill-opacity=".12"/>
-      <text x="195" y="290" text-anchor="middle" fill="#22c55e" font-size="10.5">安全采样窗口</text>
-      <text x="445" y="290" text-anchor="middle" fill="#22c55e" font-size="10.5">安全采样窗口</text>
+      <text x="195" y="295" text-anchor="middle" fill="#22c55e" font-size="10.5">安全采样窗口</text>
+      <text x="445" y="295" text-anchor="middle" fill="#22c55e" font-size="10.5">安全采样窗口</text>
       <!-- 波形: 中心对齐相电压 -->
       <path d="M70 70 H145 L155 190 H235 L245 70 H320 H395 L405 190 H485 L495 70 H600" fill="none" stroke="#f59e0b" stroke-width="2.6"/>
       <text x="66" y="66" text-anchor="end" fill="#f59e0b" font-size="11">高=上管导通</text>
@@ -478,7 +477,7 @@ svpwm_update(valpha, vbeta, udc);            /* 内部写 TIM1-&gt;CCR1/2/3 */</
       <line x1="70" y1="268" x2="320" y2="268" stroke="#94a3b8" stroke-width="1.2"/>
       <line x1="70" y1="263" x2="70" y2="273" stroke="#94a3b8" stroke-width="1.2"/>
       <line x1="320" y1="263" x2="320" y2="273" stroke="#94a3b8" stroke-width="1.2"/>
-      <text x="195" y="282" text-anchor="middle" fill="#64748b" font-size="10.5">1 × Tpwm(如 50μs @20kHz)</text>
+      <text x="195" y="279" text-anchor="middle" fill="#64748b" font-size="10.5">1 × Tpwm(50μs @20kHz)</text>
       <text x="60" y="46" fill="#64748b" font-size="11">相端电压</text>
     </svg>
     <div class="my-fig-cap">图③ 采样窗口示意:中心对齐 PWM 每周期正中心三相下管同时导通,此处采样 = 电流稳定 + 远离开关沿。触发后立刻进 ISR 完成①~⑧,波形写入影子寄存器、下个周期生效。</div>
@@ -588,19 +587,19 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
       <rect x="80" y="50" width="86" height="40" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.6"/>
       <text x="123" y="67" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">位置环</text>
       <text x="123" y="82" text-anchor="middle" fill="#22c55e" font-size="10">P(输出端反馈)</text>
-      <text x="123" y="106" text-anchor="middle" fill="#64748b" font-size="10">≈10~100Hz</text>
+      <text x="131" y="106" text-anchor="start" fill="#64748b" font-size="10">≈10~100Hz</text>
       <line x1="166" y1="70" x2="222" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
       <text x="194" y="62" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">ω*</text>
       <rect x="226" y="50" width="86" height="40" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
       <text x="269" y="67" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">速度环</text>
       <text x="269" y="82" text-anchor="middle" fill="#f59e0b" font-size="10">PI + 前馈</text>
-      <text x="269" y="106" text-anchor="middle" fill="#64748b" font-size="10">≈100~500Hz</text>
+      <text x="277" y="106" text-anchor="start" fill="#64748b" font-size="10">≈100~500Hz</text>
       <line x1="312" y1="70" x2="368" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
       <text x="340" y="62" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">Iq*</text>
       <rect x="372" y="50" width="86" height="40" rx="9" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
       <text x="415" y="67" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">电流环 ×2</text>
       <text x="415" y="82" text-anchor="middle" fill="#58a6ff" font-size="10">PI(d/q)+限幅圆</text>
-      <text x="415" y="106" text-anchor="middle" fill="#64748b" font-size="10">≈0.5~2kHz</text>
+      <text x="423" y="106" text-anchor="start" fill="#64748b" font-size="10">≈0.5~2kHz</text>
       <line x1="458" y1="70" x2="514" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
       <text x="486" y="62" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold">Vd,Vq</text>
       <rect x="518" y="50" width="86" height="40" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
@@ -650,12 +649,12 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
       <line x1="90" y1="170" x2="560" y2="170" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>
       <line x1="320" y1="290" x2="320" y2="46" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>
       <text x="552" y="162" fill="#64748b" font-size="11">α</text>
-      <text x="328" y="56" fill="#64748b" font-size="11">β</text>
+      <text x="328" y="44" fill="#64748b" font-size="11">β</text>
       <!-- 六边形 -->
       <polygon points="425,170 372,79 268,79 215,170 268,261 372,261" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-width="1.6"/>
       <!-- 内切圆 = 线性区 -->
       <circle cx="320" cy="170" r="91" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 3"/>
-      <text x="320" y="86" text-anchor="middle" fill="#f59e0b" font-size="10.5">内切圆 = Usmax = Udc/√3(线性区)</text>
+      <text x="320" y="58" text-anchor="middle" fill="#f59e0b" font-size="10.5">内切圆 = Usmax = Udc/√3(线性区)</text>
       <!-- 基本矢量 -->
       <g stroke="#ef4444" stroke-width="2.2" marker-end="url(#svArrG)">
         <line x1="320" y1="170" x2="418" y2="170"/>
@@ -911,7 +910,7 @@ duty_a += ia_comp;  duty_b += 0;  duty_c += 0;   /* 三相各算各的,再统一
       <!-- 截止线 -->
       <line x1="445" y1="150" x2="445" y2="228" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3 3"/>
       <line x1="570" y1="150" x2="570" y2="228" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="6 3"/>
-      <text x="545" y="178" text-anchor="middle" fill="#ef4444" font-size="10.5" font-weight="bold">下一拍截止</text>
+      <text x="542" y="172" text-anchor="middle" fill="#ef4444" font-size="10.5" font-weight="bold">下一拍截止</text>
       <!-- 行1: ADC 转换 -->
       <text x="60" y="70" text-anchor="end" fill="#58a6ff" font-size="11">ADC 转换</text>
       <rect x="195" y="56" width="12" height="20" rx="3" fill="#58a6ff" fill-opacity=".5" stroke="#58a6ff" stroke-width="1.4"/>
@@ -925,10 +924,10 @@ duty_a += ia_comp;  duty_b += 0;  duty_c += 0;   /* 三相各算各的,再统一
       <text x="60" y="152" text-anchor="end" fill="#ef4444" font-size="11">ISR 超时</text>
       <rect x="457" y="136" width="88" height="20" rx="4" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b" stroke-width="1.4"/>
       <rect x="545" y="136" width="40" height="20" rx="4" fill="#ef4444" fill-opacity=".55" stroke="#ef4444" stroke-width="1.5"/>
-      <text x="452" y="186" text-anchor="middle" fill="#ef4444" font-size="10.5">被更高优先级中断抢占/计算超支 → 跨过 570 处截止线</text>
+      <text x="438" y="186" text-anchor="end" fill="#ef4444" font-size="10.5">被更高优先级中断抢占/计算超支 → 跨过 570 处截止线</text>
       <!-- 波纹: 后果 -->
       <path d="M585 156 L585 196 L360 196" fill="none" stroke="#ef4444" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#tsArrR)"/>
-      <text x="352" y="200" text-anchor="end" fill="#ef4444" font-size="10.5">错过下一拍采样 → 电流重建错拍、θ 补偿失配 → 电流环啸叫/振荡</text>
+      <text x="352" y="210" text-anchor="end" fill="#ef4444" font-size="10.5">错过下一拍采样 → 电流重建错拍、θ 补偿失配 → 电流环啸叫/振荡</text>
       <!-- 时间轴 -->
       <line x1="66" y1="228" x2="600" y2="228" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#tsArrG)"/>
       <g stroke="#94a3b8" stroke-width="1.2">
@@ -940,7 +939,7 @@ duty_a += ia_comp;  duty_b += 0;  duty_c += 0;   /* 三相各算各的,再统一
         <text x="70" y="244">0</text><text x="195" y="244">25μs</text><text x="320" y="244">50μs</text>
         <text x="445" y="244">75μs</text><text x="570" y="244">100μs</text>
       </g>
-      <text x="620" y="248" text-anchor="end" fill="#64748b" font-size="10">例: 20kHz, Tpwm=50μs</text>
+      <text x="620" y="258" text-anchor="end" fill="#64748b" font-size="10">例: 20kHz, Tpwm=50μs</text>
     </svg>
     <div class="my-fig-cap">图⑨ PWM 中断时序:绿色=触发点,蓝=ADC 转换,橙=ISR 执行,红=越界部分。健康判据:ISR 结束时刻距下一拍触发仍有大段余量(至少留 40~50% 空闲给通信与其他中断)。</div>
   </div>

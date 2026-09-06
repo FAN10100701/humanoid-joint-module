@@ -186,9 +186,8 @@
       <!-- 趋势箭头 -->
       <path d="M335 98 C 348 98 348 218 335 218" fill="none" stroke="#8b98a9" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#mc-arr)"/>
       <path d="M335 218 C 348 218 348 338 335 338" fill="none" stroke="#8b98a9" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#mc-arr)"/>
-      <text x="310" y="230" fill="#8b98a9" font-size="10.5" text-anchor="end">易用→性能→量产→自研</text>
     </svg>
-    <div class="my-fig-cap">图 1-1 六框架架构差异总图:纵轴大致代表"电流环离硬件有多近"。越靠下/靠右,实时性要求越高、越接近产品化或自研范式。</div>
+    <div class="my-fig-cap">图 1-1 六框架架构差异总图:纵轴大致代表"电流环离硬件有多近",沿左列自上而下是易用→性能→量产→自研的谱系。越靠下/靠右,实时性要求越高、越接近产品化或自研范式。</div>
   </div>
 
 
@@ -313,7 +312,7 @@ Firmware/MotorControl/
       <text x="96" y="131" fill="#22c55e" font-size="12.5" font-weight="bold" text-anchor="middle">IDLE(待机)</text>
       <!-- 请求闭环 -->
       <line x1="156" y1="126" x2="216" y2="126" stroke="#22c55e" stroke-width="1.6" marker-end="url(#mc3-arr-g)"/>
-      <text x="188" y="118" fill="#22c55e" font-size="10.5" text-anchor="middle">requested_state</text>
+      <text x="188" y="93" fill="#22c55e" font-size="10.5" text-anchor="middle">requested_state</text>
 
       <!-- FULL CAL -->
       <rect x="220" y="100" width="180" height="52" rx="9" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.6"/>
@@ -337,8 +336,9 @@ Firmware/MotorControl/
       <line x1="402" y1="205" x2="416" y2="205" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#mc3-arr-o)"/>
       <!-- 汇入闭环 -->
       <path d="M462 234 L462 268" fill="none" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#mc3-arr-o)"/>
-      <path d="M96 146 L96 292 L212 292" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#mc3-arr-g)"/>
-      <text x="130" y="286" fill="#22c55e" font-size="10.5">再次上电可直接 CLOSED_LOOP(配置 startup)</text>
+      <path d="M96 146 L96 172 L196 172 L196 292 L212 292" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#mc3-arr-g)"/>
+      <text x="192" y="282" fill="#22c55e" font-size="10.5" text-anchor="end">再次上电可直接 CLOSED_LOOP</text>
+      <text x="192" y="300" fill="#22c55e" font-size="10.5" text-anchor="end">(配置 startup)</text>
 
       <!-- 闭环大框 -->
       <rect x="216" y="272" width="292" height="82" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.8"/>
@@ -772,7 +772,7 @@ tau_cmd = kp * (p_des - p) + kd * (v_des - v) + i_des
       <!-- 分支1 学习 -->
       <line x1="235" y1="62" x2="92" y2="102" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#mc9-arr)"/>
       <text x="130" y="80" fill="#8b98a9" font-size="10.5">先学会 FOC</text>
-      <rect x="24" y="106" width="140" height="46" rx="9" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="1.6"/>
+      <rect x="24" y="106" width="140" height="62" rx="9" fill="rgba(34,197,94,.14)" stroke="#22c55e" stroke-width="1.6"/>
       <text x="94" y="125" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">SimpleFOC</text>
       <text x="94" y="142" fill="#8b98a9" font-size="9.6" text-anchor="middle">理由: 20行上手·文档最全</text>
       <text x="94" y="156" fill="#8b98a9" font-size="9.6" text-anchor="middle">MIT·不绑硬件</text>
@@ -823,7 +823,7 @@ tau_cmd = kp * (p_des - p) + kd * (v_des - v) + i_des
 
       <!-- 底部: 人形关节自研 -->
       <line x1="300" y1="280" x2="300" y2="330" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#mc9-arr)"/>
-      <text x="308" y="312" fill="#8b98a9" font-size="10.5">以上都不满足: 自研一批人形/足式关节?</text>
+      <text x="294" y="312" fill="#8b98a9" font-size="10.5" text-anchor="end">以上都不满足: 自研一批人形/足式关节?</text>
       <rect x="130" y="334" width="340" height="86" rx="10" fill="rgba(88,166,255,.10)" stroke="#58a6ff" stroke-width="1.8"/>
       <text x="300" y="358" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">足式 / 人形关节自研 → Mini Cheetah 范式</text>
       <text x="300" y="378" fill="#8b98a9" font-size="9.8" text-anchor="middle">理由: 「MIT 模式」是关节接口事实标准, 商业模组直接兼容;</text>

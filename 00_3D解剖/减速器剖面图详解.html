@@ -100,6 +100,9 @@ body[data-theme="dark"] .svgbox [stroke="#dc2626"]{stroke:#f87171}
 body[data-theme="dark"] .svgbox [fill="#dc2626"]{fill:#f87171}
 body[data-theme="dark"] .svgbox [fill="#16a34a"]{fill:#4ade80}
 body[data-theme="dark"] .svgbox [stroke="#7c5a12"]{stroke:#d4a017}
+/* 橙色摆线盘上的文字:深色主题下仍须保持深色,否则浅字压橙底不可读 */
+.svgbox text.on-disc{fill:#334155}
+body[data-theme="dark"] .svgbox text.on-disc{fill:#78350f}
 </style>
 <style>
 /* 本节要点速查框:本页只引入 chrome.css,未含 .box/.box-tip 样式;补一套与浅色风格一致的样式(类名沿用全站约定) */
@@ -146,7 +149,7 @@ body[data-theme="dark"] .my-src{color:#8b949e}
     <h2>一、谐波减速器（Harmonic Drive）</h2>
     <div class="sub">STRAIN WAVE GEAR · 齿差2 · 同轴输入输出</div>
     <div class="svgbox">
-      <svg viewBox="-100 0 620 300" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <svg viewBox="-100 0 620 300" role="img" aria-label="谐波减速器剖面图:波发生器、柔轮与刚轮的装配关系" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
         <!-- 刚轮（外圈内齿） -->
         <circle cx="210" cy="150" r="108" fill="#e8edf5" stroke="#5b6472" stroke-width="3"/>
         <circle cx="210" cy="150" r="96" fill="none" stroke="#64748b" stroke-width="2"/>
@@ -170,7 +173,7 @@ body[data-theme="dark"] .my-src{color:#8b949e}
         <circle cx="130" cy="150" r="5" fill="#dc2626"/>
         <!-- 引线与标签 -->
         <g font-size="12" fill="#334155">
-          <line x1="318" y1="150" x2="360" y2="118" stroke="#5b6472" stroke-width="1"/>
+          <line x1="318" y1="150" x2="356" y2="118" stroke="#5b6472" stroke-width="1"/>
           <text x="362" y="122">刚轮 Circular Spline</text>
           <text x="362" y="136" font-size="10" fill="#64748b">刚性内齿圈 · 齿数比柔轮多2</text>
 
@@ -178,13 +181,13 @@ body[data-theme="dark"] .my-src{color:#8b949e}
           <text x="216" y="38">柔轮 Flexspline</text>
           <text x="216" y="52" font-size="10" fill="#64748b">薄壁弹性外齿 · 输出端</text>
 
-          <line x1="146" y1="150" x2="60" y2="120" stroke="#2563eb" stroke-width="1"/>
+          <line x1="146" y1="150" x2="66" y2="132" stroke="#2563eb" stroke-width="1"/>
           <text x="14" y="110">波发生器 Wave Generator</text>
           <text x="14" y="124" font-size="10" fill="#64748b">椭圆凸轮+柔性轴承 · 输入端</text>
         </g>
         <!-- 啮合点说明 -->
         <g font-size="11" fill="#dc2626">
-          <line x1="290" y1="150" x2="296" y2="96" stroke="#dc2626" stroke-width="1"/>
+          <line x1="290" y1="150" x2="294" y2="96" stroke="#dc2626" stroke-width="1"/>
           <text x="300" y="100">啮合区（长轴两端）</text>
         </g>
       </svg>
@@ -202,7 +205,7 @@ body[data-theme="dark"] .my-src{color:#8b949e}
     <h2>二、行星减速器（Planetary Gearbox）</h2>
     <div class="sub">EPICYCLIC · i = 1 + Z环/Z阳（内齿圈固定）</div>
     <div class="svgbox">
-      <svg viewBox="-100 0 620 300" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <svg viewBox="-100 0 620 300" role="img" aria-label="行星减速器剖面图:太阳轮、行星轮、内齿圈与行星架" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
         <!-- 内齿圈（外圈，固定） -->
         <circle cx="210" cy="150" r="110" fill="#e8edf5" stroke="#5b6472" stroke-width="3"/>
         <g fill="#6b7686">
@@ -228,17 +231,17 @@ body[data-theme="dark"] .my-src{color:#8b949e}
         <circle cx="210" cy="150" r="8" fill="#0f172a"/>
         <!-- 引线与标签 -->
         <g font-size="12" fill="#334155">
-          <line x1="210" y1="28" x2="210" y2="12" stroke="#2563eb" stroke-width="1"/>
+          <line x1="210" y1="28" x2="210" y2="20" stroke="#2563eb" stroke-width="1"/>
           <text x="120" y="16">太阳轮（输入 · 高速）</text>
 
-          <line x1="270" y1="185" x2="360" y2="170" stroke="#b8860b" stroke-width="1"/>
+          <line x1="270" y1="185" x2="356" y2="170" stroke="#b8860b" stroke-width="1"/>
           <text x="362" y="166">行星轮 ×3</text>
           <text x="362" y="180" font-size="10" fill="#64748b">既自转又公转 · 均布载荷</text>
 
-          <line x1="320" y1="150" x2="360" y2="230" stroke="#5b6472" stroke-width="1"/>
+          <line x1="320" y1="150" x2="356" y2="230" stroke="#5b6472" stroke-width="1"/>
           <text x="362" y="234">内齿圈（固定）</text>
 
-          <line x1="150" y1="185" x2="60" y2="220" stroke="#0f172a" stroke-width="1"/>
+          <line x1="150" y1="185" x2="66" y2="232" stroke="#0f172a" stroke-width="1"/>
           <text x="14" y="224">行星架（输出 · 低速）</text>
         </g>
       </svg>
@@ -257,7 +260,7 @@ body[data-theme="dark"] .my-src{color:#8b949e}
     <h2>三、摆线RV减速器（Cycloidal / RV）</h2>
     <div class="sub">CYCLOIDAL · 齿差1 · 减速比 = 针齿数</div>
     <div class="svgbox">
-      <svg viewBox="-100 0 620 300" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+      <svg viewBox="-100 0 620 300" role="img" aria-label="摆线针轮减速器剖面图:偏心轴、摆线轮、针齿与曲柄销" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
         <!-- 针齿圈（外圈圆柱销，固定） -->
         <circle cx="210" cy="150" r="108" fill="none" stroke="#5b6472" stroke-width="3"/>
         <g fill="#64748b">
@@ -285,16 +288,16 @@ body[data-theme="dark"] .my-src{color:#8b949e}
         <!-- 引线与标签 -->
         <g font-size="12" fill="#334155">
           <line x1="196" y1="134" x2="196" y2="108" stroke="#2563eb" stroke-width="1"/>
-          <text x="202" y="112">偏心轴（输入）</text>
+          <text x="202" y="112" class="on-disc">偏心轴（输入）</text>
 
-          <line x1="278" y1="110" x2="360" y2="80" stroke="#b8860b" stroke-width="1"/>
+          <line x1="278" y1="110" x2="356" y2="80" stroke="#b8860b" stroke-width="1"/>
           <text x="362" y="84">摆线盘 Cycloid Disc</text>
           <text x="362" y="98" font-size="10" fill="#64748b">外廓为摆线曲线 · 齿数=针齿数−1</text>
 
-          <line x1="316" y1="60" x2="360" y2="30" stroke="#5b6472" stroke-width="1"/>
+          <line x1="316" y1="60" x2="356" y2="30" stroke="#5b6472" stroke-width="1"/>
           <text x="362" y="34">针齿圈（固定圆柱销）</text>
 
-          <line x1="165" y1="195" x2="60" y2="240" stroke="#0f172a" stroke-width="1"/>
+          <line x1="165" y1="195" x2="60" y2="252" stroke="#0f172a" stroke-width="1"/>
           <text x="14" y="244">曲柄销孔（输出法兰）</text>
         </g>
       </svg>

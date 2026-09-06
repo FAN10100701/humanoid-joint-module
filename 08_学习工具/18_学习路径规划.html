@@ -219,7 +219,7 @@
       var stagesHtml = p.stages.map(function(stg, si){
         var rows = stg.pages.map(function(pg, pi){
           var isDone = !!prog[pg.id];
-          var t = tmap[pg.u] || decodeURIComponent(pg.u.split("/").pop().replace(/\.html$/, ""));
+          var t = tmap[pg.u] || decodeURIComponent(pg.u.split("?")[0].split("/").pop().replace(/\.html$/, ""));
           return '<a class="my-item' + (isDone ? ' done' : '') + '" href="' + fmtU(pg.u, root) + '">' +
             '<span class="my-dot">' + (isDone ? '✓' : (si + 1) + '.' + (pi + 1)) + '</span>' +
             '<span class="my-t">' + t + '</span>' +

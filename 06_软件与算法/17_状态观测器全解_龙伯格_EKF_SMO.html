@@ -171,8 +171,9 @@
       <!-- 误差 e 输出 -->
       <line x1="496" y1="152" x2="548" y2="152" stroke="#ef4444" stroke-width="2" marker-end="url(#lg-arr-r)"/>
       <text x="546" y="144" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="end">e = y − ŷ</text>
-      <!-- 反馈路径: 从求和点向左绕回观测器, 经 ×L 放大 -->
-      <path d="M464 152 L400 152 L400 252 L338 252" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#lg-arr-r)"/>
+      <!-- 反馈路径: 从求和点向左绕回观测器, 经 ×L 放大(进盒顶、出盒左,箭头段独立保留可见) -->
+      <path d="M464 152 L390 152 L390 236" fill="none" stroke="#ef4444" stroke-width="2"/>
+      <line x1="352" y1="252" x2="342" y2="252" stroke="#ef4444" stroke-width="2" marker-end="url(#lg-arr-r)"/>
       <rect x="352" y="236" width="76" height="32" rx="8" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.4"/>
       <text x="390" y="257" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle">× L</text>
       <text x="408" y="272" fill="#ef4444" font-size="11">误差反馈增益</text>
@@ -433,7 +434,7 @@ void ekf_step(ekf_t *e, const float u[2], const float y[2], float T)
       <text x="140" y="96" fill="#ef4444" font-size="10">−</text>
       <!-- 电流误差 → 饱和函数 -->
       <line x1="144" y1="74" x2="176" y2="74" stroke="#ef4444" stroke-width="2" marker-end="url(#sm-arr-r)"/>
-      <text x="112" y="106" fill="#ef4444" font-size="10.5">e = i − î(滑模面 s=0)</text>
+      <text x="124" y="106" text-anchor="end" fill="#ef4444" font-size="10.5">e = i − î(滑模面 s=0)</text>
       <rect x="178" y="50" width="86" height="48" rx="9" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.5"/>
       <text x="221" y="70" fill="#ef4444" font-size="12" font-weight="bold" text-anchor="middle">饱和函数</text>
       <text x="221" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle">z = k·sat(e/Δ)</text>
@@ -455,10 +456,10 @@ void ekf_step(ekf_t *e, const float u[2], const float y[2], float T)
       <text x="520" y="140" fill="#22c55e" font-size="11.5" text-anchor="middle">∫ω̂ → θ̂(wrap 0~2π)</text>
       <text x="520" y="166" fill="#8b98a9" font-size="10.5" text-anchor="middle">对相位误差闭环 = 又一层低通</text>
       <!-- PLL 输出 -->
-      <line x1="520" y1="184" x2="520" y2="214" stroke="#22c55e" stroke-width="2" marker-end="url(#sm-arr-g)"/>
+      <line x1="520" y1="184" x2="520" y2="192" stroke="#22c55e" stroke-width="2" marker-end="url(#sm-arr-g)"/>
       <text x="486" y="206" fill="#22c55e" font-size="11.5" font-weight="bold">θ̂ ω̂ → Park/速度环</text>
       <!-- sat 开关项反馈给电流观测器 -->
-      <path d="M221 98 L221 150" fill="none" stroke="#ef4444" stroke-width="1.6"/>
+      <path d="M221 98 L221 192" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#sm-arr-r)"/>
       <text x="228" y="146" fill="#ef4444" font-size="10.5">开关项 z</text>
       <!-- 电流观测器模型框 -->
       <rect x="150" y="196" width="220" height="62" rx="10" fill="rgba(88,166,255,.1)" stroke="#58a6ff" stroke-width="1.5"/>
@@ -575,16 +576,16 @@ void smo_step(smo_t *s, const float val[2], const float ial[2], float Ts)
       <!-- d 轴(磁极方向, 垂直向上) -->
       <line x1="150" y1="140" x2="150" y2="52" stroke="#ef4444" stroke-width="2.2" marker-end="url(#hf-arr)"/>
       <text x="158" y="66" fill="#ef4444" font-size="12.5" font-weight="bold">d 轴</text>
-      <text x="158" y="82" fill="#ef4444" font-size="11">磁阻大 → Ld 小</text>
       <!-- q 轴(水平) -->
       <line x1="150" y1="140" x2="242" y2="140" stroke="#22c55e" stroke-width="2.2" stroke-dasharray="6 4" marker-end="url(#hf-arr)"/>
       <text x="196" y="132" fill="#22c55e" font-size="12.5" font-weight="bold">q 轴</text>
-      <text x="184" y="116" fill="#22c55e" font-size="11">磁阻小 → Lq 大</text>
       <!-- 凸极示意: 双弧 -->
       <path d="M110 84 A 74 74 0 0 1 190 84" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="3 3"/>
       <path d="M100 140 A 50 32 0 0 0 200 140" fill="none" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="3 3"/>
       <text x="150" y="216" fill="#8b98a9" font-size="11.5" text-anchor="middle">凸极率 ρ = Lq/Ld &gt; 1(IPM)</text>
       <text x="150" y="234" fill="#8b98a9" font-size="11.5" text-anchor="middle">表贴式 SPM: ρ ≈ 1 → 无凸极,HFI 失效</text>
+      <text x="150" y="264" fill="#ef4444" font-size="11" text-anchor="middle">d 轴:磁阻大 → Ld 小</text>
+      <text x="150" y="282" fill="#22c55e" font-size="11" text-anchor="middle">q 轴:磁阻小 → Lq 大</text>
       <!-- 中间箭头 -->
       <line x1="272" y1="140" x2="318" y2="140" stroke="#8b98a9" stroke-width="2" marker-end="url(#hf-arr)"/>
       <text x="296" y="126" fill="#8b98a9" font-size="10.5" text-anchor="middle">注入 v_h</text>
@@ -596,7 +597,7 @@ void smo_step(smo_t *s, const float val[2], const float ial[2], float Ts)
       <text x="452" y="60" fill="#8b98a9" font-size="11" text-anchor="end">解调幅值</text>
       <!-- cos(2Δθ) 曲线 -->
       <path d="M340 230 C 368 230 396 88 460 88 C 524 88 552 230 580 230" fill="none" stroke="#58a6ff" stroke-width="2.4"/>
-      <text x="462" y="106" fill="#58a6ff" font-size="11.5" text-anchor="middle">∝ sin(2Δθ) 解调信号</text>
+      <text x="462" y="106" fill="#58a6ff" font-size="11.5" text-anchor="middle">幅值 ∝ cos(2Δθ)</text>
       <!-- 零差点 -->
       <circle cx="460" cy="88" r="5" fill="#f59e0b"/>
       <line x1="460" y1="88" x2="460" y2="230" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4 3"/>

@@ -45,3 +45,10 @@ _视频素材/
 .venv/
 __pycache__/
 *.pyc
+
+# 本地工具运行数据与技能目录(扫描记录/缓存,严禁入库;.mimosa 含安全扫描键形记录)
+.mimosa/
+.agents/
+.v2c/
+.video_agent/
+.workbuddy/

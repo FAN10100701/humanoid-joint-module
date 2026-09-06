@@ -660,13 +660,20 @@
       + ' · 👀 <span id="busuanzi_value_site_pv">--</span> 次访问';
     document.body.appendChild(ft);
     /* 不蒜子访问统计：零后端、懒加载；脚本不可达时移除节点、页脚保持 "--"，不影响页面 */
-    try{
-      var bs = document.createElement("script");
-      bs.async = true;
-      bs.src = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
-      bs.onerror = function(){ if(bs.parentNode) bs.parentNode.removeChild(bs); };
-      document.body.appendChild(bs);
-    }catch(e){}
+    /* V2.1.20: 延迟到 window load 之后注入——async 脚本仍会阻塞 load 事件,
+       busuanzi 服务不可达时(近年常见)每个子页 load 被拖 ~10s(2026-09-06 实测);
+       移到 load 后启动,计数到达后照常回填页脚 "--",永不阻塞页面加载 */
+    var startBusuanzi = function(){
+      try{
+        var bs = document.createElement("script");
+        bs.async = true;
+        bs.src = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+        bs.onerror = function(){ if(bs.parentNode) bs.parentNode.removeChild(bs); };
+        document.body.appendChild(bs);
+      }catch(e){}
+    };
+    if(document.readyState === "complete") startBusuanzi();
+    else window.addEventListener("load", function(){ setTimeout(startBusuanzi, 0); });
 
     if(P.pageId){
       var btn = document.querySelector(".nav-done");
@@ -880,7 +887,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.19(2026-09-05)";
+  S.VERSION = "V2.1.20(2026-09-06)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -939,7 +946,7 @@
     if(seen) return;
     /* V2.1.12:页数从 SITE_SECTIONS 单源计算(与首页统计/C5 同口径);
        原先读异步的 search-index,未就绪时长期落到 fallback 35 */
-    var nPages = 96;
+    var nPages = 99;
     try{
       if(window.SITE_SECTIONS){
         var tk2 = 0;
