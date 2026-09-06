@@ -203,8 +203,10 @@ $secOnly | Select-Object -First 8 | ForEach-Object { Write-Host "   SECTION-ONLY
 $ibA = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-a.js"), [Text.Encoding]::UTF8)
 $ibB = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-b.js"), [Text.Encoding]::UTF8)
 $ibC = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-c.js"), [Text.Encoding]::UTF8)
+$ibD = [IO.File]::ReadAllText((Join-Path $root "_assets\ib-data-d.js"), [Text.Encoding]::UTF8)
 # V2.1.7 fix: ib-data-c (added in V2.1.6) was missing from the count -> 117 vs 150 false FAIL
-$ibCount = ([regex]::Matches($ibA, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibB, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibC, "\{ id:'[a-z]+-\d+'")).Count
+# V2.1.22 fix: ib-data-d (control/mechatronics basics pack) added the same way
+$ibCount = ([regex]::Matches($ibA, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibB, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibC, "\{ id:'[a-z]+-\d+'") + [regex]::Matches($ibD, "\{ id:'[a-z]+-\d+'")).Count
 $ibPage = $pages | Where-Object { $_.FullName -match '\\06_[^\\]*\\11_[^\\]*\.html$' } | Select-Object -First 1
 $ibPageHas = $false
 $ibDecl = "?"
@@ -263,8 +265,8 @@ $katexStray | Select-Object -First 6 | ForEach-Object { Write-Host "   KATEX-STR
 # ---- 11) C3: SITE_STATS vs real ib-data counts (V2.1.7) ----
 $ibItemRe = "\{ id:'[a-z]+-\d+'"
 $ibSubjRe = "\{ id:'[a-z]+', name:"
-$ibTotal = ([regex]::Matches($ibA, $ibItemRe) + [regex]::Matches($ibB, $ibItemRe) + [regex]::Matches($ibC, $ibItemRe)).Count
-$ibSubj = ([regex]::Matches($ibA, $ibSubjRe) + [regex]::Matches($ibB, $ibSubjRe) + [regex]::Matches($ibC, $ibSubjRe)).Count
+$ibTotal = ([regex]::Matches($ibA, $ibItemRe) + [regex]::Matches($ibB, $ibItemRe) + [regex]::Matches($ibC, $ibItemRe) + [regex]::Matches($ibD, $ibItemRe)).Count
+$ibSubj = ([regex]::Matches($ibA, $ibSubjRe) + [regex]::Matches($ibB, $ibSubjRe) + [regex]::Matches($ibC, $ibSubjRe) + [regex]::Matches($ibD, $ibSubjRe)).Count
 $statsM = [regex]::Match($siteJs, 'S\.STATS\s*=\s*\{[^}]*ibSubjects:\s*(\d+)[^}]*ibItems:\s*(\d+)')
 $stOk = $statsM.Success -and ([int]$statsM.Groups[1].Value -eq $ibSubj) -and ([int]$statsM.Groups[2].Value -eq $ibTotal)
 Check "C3 SITE_STATS vs ib-data" $stOk ("stats=" + $statsM.Groups[1].Value + "subj/" + $statsM.Groups[2].Value + "items real=" + $ibSubj + "subj/" + $ibTotal + "items")
@@ -378,7 +380,7 @@ if(-not $hostDir){
 }
 $dataLinkMiss = @()
 if($hostDir){
-  foreach($df in @($ibA, $ibB, $ibC, $quizBank, $qst)){
+  foreach($df in @($ibA, $ibB, $ibC, $ibD, $quizBank, $qst)){
     foreach($m in [regex]::Matches($df, "u:\s*'([^']+)'")){
       $u = ($m.Groups[1].Value -split '\?')[0] -split '#'
       $u = $u[0]
@@ -402,7 +404,7 @@ $dataLinkMiss | Select-Object -First 8 | ForEach-Object { Write-Host ("   DATALI
 # 'ref:xx-nn' must exist in ib item ids; 'qb:N' must match a quiz-bank entry id (1..60);
 # 'q:qxxx' must exist in the Q object; every Q entry answer must be A-D with exactly 4 options.
 $ibIdList = @()
-foreach($m in [regex]::Matches(($ibA + $ibB + $ibC), "\{ id:'([a-z]+-\d+)'")){ $ibIdList += $m.Groups[1].Value }
+foreach($m in [regex]::Matches(($ibA + $ibB + $ibC + $ibD), "\{ id:'([a-z]+-\d+)'")){ $ibIdList += $m.Groups[1].Value }
 $qbIdList = @([regex]::Matches($quizBank, '\bid:(\d+)') | ForEach-Object { $_.Groups[1].Value })
 $qKeyList = @([regex]::Matches($qst, "(?m)^\s*(q\d+):\{") | ForEach-Object { $_.Groups[1].Value })
 $refBad = @(); $qbBad = @(); $qRefBad = @()

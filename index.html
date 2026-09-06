@@ -303,7 +303,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <div class="rm-step">
         <span class="rm-num">5</span>
         <h4>🎯 复试冲刺</h4>
-        <p>19 学科 180 道复试题(专业 15 科 + 综合/英语/数学/科研素养 4 科通用)刷题 → 闯关检验掌握度 → AI 考官模拟面试,一条龙备战保研复试</p>
+        <p>27 学科 254 道复试题(专业 23 科含电路/模电/数电/电机/电力电子/传感器/机械/力学基础课 + 综合/英语/数学/科研素养 4 科通用)刷题 → 闯关检验掌握度 → AI 考官模拟面试,一条龙备战保研复试</p>
         <p style="color:#6b7280">考前 2~4 周 · 查漏补缺</p>
         <div class="rm-links">
           <a href="06_学习工具/11_保研复试面试题库.html">复试题库</a>
@@ -816,8 +816,8 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <a class="card featured" href="06_学习工具/11_保研复试面试题库.html">
         <span class="go">进入 →</span>
         <div class="ic">🎓</div>
-        <div class="t">保研复试面试题库 · 19 学科 180 题(含工程实践题)</div>
-        <div class="d">自控原理 / PID / ADRC / 运控 / 现控 / 信号处理 / 硬件电路(防反接·运放) / 无人机电调 / ROS 多机编队 / C / C++ / 嵌入式 / FreeRTOS——图文解析、延伸追问、掌握度自评,配套闯关与 AI 考官。</div>
+        <div class="t">保研复试面试题库 · 27 学科 254 题(含工程实践题)</div>
+        <div class="d">自控原理 / PID / ADRC / 运控 / 现控 / 信号处理 / 硬件电路 / 无人机电调 / ROS 多机编队 / C / C++ / 嵌入式 / FreeRTOS / 电路 / 模电 / 数电 / 电机与拖动 / 电力电子 / 传感器检测 / 机械设计基础 / 理力与材力——图文解析、延伸追问、掌握度自评,配套闯关与 AI 考官。</div>
       </a>
       <a class="card featured" href="06_学习工具/16_保研英语面试.html">
         <span class="go">进入 →</span>
@@ -1029,10 +1029,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.21</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-06 · 板块编号连续化(00~08)+ 文件夹层面并入 + 学习路径真循环修复</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.22</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-06 · 保研题库 19→27 学科 180→254 题(新增控制工程/机电学院基础课 8 学科)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
                   <details class="faq" open>
+        <summary>🎓 V2.1.22 · 2026-09-06 · 保研复试题库大扩容:19→27 学科 180→254 题(控制工程/机电学院基础课 8 学科)</summary>
+        <div class="faq-a">🎓 <b>题库大扩容</b>:新增 ib-data-d.js——控制工程与机电学院基础课 8 学科 72 题,题源综合近年各校保研考研复试公开面经(知乎控制面试汇总/CSDN 模电数电知识点大总结/清华电机系/江苏大学电气等复试经验贴/牛客机械面经)。电路原理 10 题(基尔霍夫本质/戴维南匹配 50%/三要素/三相中线/功率因数补偿/谐振/相量/互感/受控源)、模电 10 题(PN 结/三工作区/三组态/Q 点/BJT vs MOS/负反馈四组态/积分微分/有源滤波/振荡/差分 CMRR)、数电 9 题(补码/OC 三态门/竞争冒险/MUX-LUT/锁存器触发器/计数器/ADC 四架构/DAC/555)、电机与拖动 10 题(换向器本质/直流三调速/起动/变压器实验/转差率/变频/异步同步 PMSM/Y-Δ 起动/三种制动/双闭环)、电力电子 8 题(器件谱系/相控逆变/伏秒平衡/正反激/SPWM/软开关 LLC/PFC/电压电流型)、传感器检测 8 题(静态五指标/应变电桥/热电偶/霍尔/压电/LVDT/调理链/不确定度)、机械设计基础 10 题(格拉霍夫/急回死点/凸轮/渐开线/重合度根切/齿轮失效/轴承 L10/防松/带传动/轴系)、理力材力 7 题(约束二力杆/三大定理达朗贝尔/基本变形/强度理论/压杆稳定/疲劳/刚度)。每题全解析+公式+拓展+追问+站内链接。➕ <b>自控补 2 题</b>:离散系统稳定性与最少拍、非线性系统描述函数相平面(哈工大华科高频考点)。🧩 <b>页面接入</b>:题库页加载第四数据文件、新增 24 道学科选择题并补齐 ic/llm 遗漏的 2 道进阶题、文案更新;统计十处锚点同步(27 学科 254 题);sw.js PRECACHE 增补并 bump v2.1.22;一键自检四处校验纳入 d 文件。</div>
+      </details>
+                  <details class="faq">
         <summary>🗂 V2.1.21 · 2026-09-06 · 板块编号连续化 + 文件夹层面并入 + 学习路径真循环修复</summary>
         <div class="faq-a">🔢 <b>板块编号连续化(9 板块 00~08)</b>:V2.1.3 的「板块重组 9→7」只合了显示层,编号 04/05 一直空缺,首页从 03 直接跳 06;现原 06 软件与算法→04、07 前沿知识库→05、08 学习工具→06、09 大模型与具身智能→07、10 NPU与数字IC设计→08——五个目录 git mv 改名,全站 103 个文件的页面 pageId(06-xx→04-xx 等)、翻页链、面包屑锚点(#secN)、搜索索引、学习目标、学习路径、题库互链、闯关链接、学习地图分组、首页导航/抽屉/下拉/板块标题一次性同步,首页板块从 01 到 08 连续不再跳号。🗂 <b>文件夹层面并入</b>:原 04_升级进阶 三页(通信升级路线/WBC 与 MPC/整机电气架构)物理移入 04_软件与算法(22~24 号,pageId 重编 04-23~25);原 05_HdriveV2工程 整体并入 03_项目实操/13_HdriveV2工程(两个重定向壳删除);翻页链全站拉直:03-06→04-01…04-25→05-01,顺带修复 4 处历史断链与 1 处环链(原 04-03 的"下一篇"曾回指 03-01、07-01 即今 05-01 的"上一篇"曾错挂 04-13)。🔗 <b>兼容与迁移</b>:404 页新增改名前五个目录与 04_升级进阶/05_HdriveV2工程 全部旧路径映射(并修复旧版映射键被本轮脚本误改的中文序号);老用户打卡进度 localStorage 键一次性自动迁移(守卫 humanoid-keymap-v21);sitemap/百度清单同步。🎠 <b>学习路径横滑「假循环」根治</b>:旧版每侧只克隆 2 张,桌面一屏可见 3~4 张,向右滚动最大位置永远够不到瞬移阈值,滚到底即硬停(左侧因 0 位置正常,极难察觉);现整组克隆(每侧 n 张)+ 瞬移窗口/圆点索引/初始位置同步,惯性滑行途中越界即瞬移,任意屏宽双向无缝循环。🛠 工具与文档同步:一键部署白名单、一键自检排除项、板块评分/教学评测/登记页面/SVG 审计目录映射、CONTRIBUTING/README/协作文档板块清单;学习地图删除 05-01/05-02 两个重定向别名节点,99 节点 9 分组。</div>
       </details>
@@ -1245,7 +1249,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.21(2026-09-06) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.22(2026-09-06) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

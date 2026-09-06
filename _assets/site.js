@@ -28,9 +28,9 @@
   ];
 
   /* 全站统计单源(V2.1.7):pages = site-sections.js 全部 pageId + 首页;
-     ibSubjects/ibItems 必须与 ib-data-a/b/c 实际计数一致(一键自检.ps1 C3 校验)。
+     ibSubjects/ibItems 必须与 ib-data-a/b/c/d 实际计数一致(一键自检.ps1 C3 校验)。
      改题库或增删页面时同步这里;新文案引用这里,别再写死数字 */
-  S.STATS = { pages: 99, ibSubjects: 19, ibItems: 180, quizItems: 60 };
+  S.STATS = { pages: 99, ibSubjects: 27, ibItems: 254, quizItems: 60 };
 
   function page(){ return window.PAGE || {}; }
 
@@ -846,6 +846,40 @@
       if(ok) scored.push({ s: score, h: it });
     }
     if(!scored.length){
+      /* V2.1.21 兜底:中文整词零命中时按 2 字滑窗拆词宽松匹配。
+         用户常直接输"谐波减速器",而关键词表是"谐波 行星 减速器"分写的,
+         单 token 连续子串匹配必然落空;拆成 谐波/波减/减速/速器 后按命中数阈值放行 */
+      var grams = [];
+      for(var gi = 0; gi < terms.length; gi++){
+        var gt = terms[gi];
+        if(/[\u4e00-\u9fff]/.test(gt) && gt.length >= 3){
+          for(var gp = 0; gp < gt.length - 1; gp++) grams.push(gt.substr(gp, 2));
+        } else grams.push(gt);
+      }
+      if(grams.length > terms.length){
+        var need = Math.max(2, grams.length - 1);
+        for(var li = 0; li < idx.length; li++){
+          var lit = idx[li];
+          var hay = (lit.t + " " + lit.s + " " + lit.d + " " + lit.k).toLowerCase();
+          var matched = 0;
+          for(var lj = 0; lj < grams.length; lj++) if(hay.indexOf(grams[lj]) >= 0) matched++;
+          if(matched >= need) scored.push({ s: matched * 2, h: lit });
+        }
+        if(scored.length){
+          scored.sort(function(a, b){ return b.s - a.s; });
+          var rootF = page().root || "";
+          var baseF = rootF ? rootF + "/" : "";
+          var htmlF = '<div class="search-count">共 ' + scored.length + ' 条结果(已自动按词组拆分匹配)</div>';
+          for(var lk = 0; lk < scored.length; lk++){
+            var lh = scored[lk].h;
+            htmlF += '<a class="search-hit" href="' + baseF + lh.u + '">'
+              + '<div class="hit-t">' + highlight(esc(lh.t), grams) + '</div>'
+              + '<div class="hit-meta">' + highlight(esc(lh.s) + " · " + esc(lh.d), grams) + '</div></a>';
+          }
+          box.innerHTML = htmlF;
+          return;
+        }
+      }
       var r0 = page().root || "";
       box.innerHTML = '<div class="search-empty">没有找到与「' + esc(q) + '」相关的内容,换个词试试<br>' +
         '<a class="search-ai-link" href="' + (r0 ? r0 + "/" : "") + '06_学习工具/13_AI答疑助手.html?q=' + encodeURIComponent(q) + '">🤖 让 AI 答疑试试 →</a></div>';
@@ -910,7 +944,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.21(2026-09-06)";
+  S.VERSION = "V2.1.22(2026-09-06)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){

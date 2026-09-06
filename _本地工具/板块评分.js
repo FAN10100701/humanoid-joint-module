@@ -44,7 +44,7 @@ const META_KEYS = new Set([...metaSrc.matchAll(/"(\d\d-\d\d)":\s*\{/g)].map((m) 
 const pathSrc = read("_assets/path-data.js");
 const PATH_IDS = new Set([...pathSrc.matchAll(/id:\s*"(\d\d-\d\d)"/g)].map((m) => m[1]));
 
-const ibSrc = read("_assets/ib-data-a.js") + read("_assets/ib-data-b.js") + read("_assets/ib-data-c.js");
+const ibSrc = read("_assets/ib-data-a.js") + read("_assets/ib-data-b.js") + read("_assets/ib-data-c.js") + read("_assets/ib-data-d.js");
 const qbSrc = read("_assets/quiz-bank.js");
 const qstSrc = read("_assets/quest-data.js");
 
