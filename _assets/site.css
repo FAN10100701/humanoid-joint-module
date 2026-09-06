@@ -243,7 +243,7 @@ html:not([data-theme-early="dark"]) .hero .sub .sub-meta {color:#94a3b8}
 .progress-panel{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px;margin:18px 0}
 .progress-panel h3{color:#fff;font-size:16px;margin-bottom:14px}
 .pbar-row{display:flex;align-items:center;gap:12px;margin:10px 0;font-size:13px}
-.pbar-row .pl{width:110px;color:#9aa4b2;flex-shrink:0}
+.pbar-row .pl{width:126px;white-space:nowrap;color:#9aa4b2;flex-shrink:0}  /* 126px:最长板块名9字x13px=117px(V2.1.20b,110px是8字时代定值,"软件算法与升级进阶"折行) */
 .pbar{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
 .pbar i{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#22c55e);border-radius:99px;transition:width .4s}
 .pbar-row .pv{width:44px;text-align:right;color:#6b7280;font-size:12px;flex-shrink:0}
