@@ -70,6 +70,28 @@
 .ib-svg{margin:12px 0;color:#c9d1d9}
 .ib-svg svg{width:100%;height:auto;display:block}
 .ib-follow{margin-top:12px;padding:10px 14px;background:rgba(245,158,11,.07);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;font-size:13px;color:#d9c58a;line-height:1.9}
+.ib-follow-tip{font-size:11.5px;opacity:.65}
+/* V2.1.22b:追问参考答案折叠项 */
+.ib-follow-item{margin:5px 0;border:1px solid rgba(245,158,11,.28);border-radius:8px;background:rgba(245,158,11,.04);overflow:hidden}
+.ib-follow-item summary{cursor:pointer;padding:7px 11px;font-size:13px;color:#d9c58a;list-style:none;line-height:1.7}
+.ib-follow-item summary::-webkit-details-marker{display:none}
+.ib-follow-item summary::before{content:"▸ ";color:#f59e0b;font-weight:800}
+.ib-follow-item[open] summary::before{content:"▾ "}
+.ib-follow-item summary:hover{background:rgba(245,158,11,.1)}
+.ib-follow-a{padding:0 13px 10px 25px;font-size:13px;line-height:1.85;color:#cbd5e1}
+.ib-follow-a b{color:#fde68a}
+/* V2.1.22b:每题笔记 */
+.ib-note{margin-top:12px}
+.ib-note-btn{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#86efac;font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .18s,color .18s}
+.ib-note-btn:hover{background:rgba(34,197,94,.25);color:#fff}
+.ib-note-box{margin-top:8px}
+.ib-note-ta{width:100%;min-height:86px;box-sizing:border-box;background:rgba(13,17,23,.65);border:1px solid rgba(255,255,255,.14);border-radius:9px;color:#e6edf3;font:inherit;font-size:13px;line-height:1.75;padding:9px 12px;resize:vertical}
+.ib-note-ta:focus{outline:none;border-color:#22c55e}
+.ib-note-meta{display:flex;gap:10px;align-items:center;margin-top:5px;font-size:11.5px;color:#6b7280}
+.ib-note-clear{background:none;border:1px solid rgba(239,68,68,.35);color:#fca5a5;font-size:11.5px;padding:2px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
+.ib-note-clear:hover{background:rgba(239,68,68,.15);color:#fff}
+.ib-note-hint{opacity:.75}
+.ib-note-chip{font-size:12px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.4);color:#86efac;padding:2px 8px;border-radius:999px;white-space:nowrap}
 /* 知识点拓展(V2.1.5:独立绿色区块,与「考官追问」的橙色区分) */
 .ib-extend{margin-top:12px;padding:10px 14px;background:rgba(34,197,94,.07);border-left:3px solid #22c55e;border-radius:0 8px 8px 0;font-size:13px;color:#a7e3bf;line-height:1.9}
 .ib-extend b{color:#86efac}
@@ -121,6 +143,18 @@ html:not([data-theme-early="dark"]) .ib-ans p,html:not([data-theme-early="dark"]
 html:not([data-theme-early="dark"]) .ib-tag{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.2);color:#5a6a85}
 html:not([data-theme-early="dark"]) .ib-svg{color:#334155}
 html:not([data-theme-early="dark"]) .ib-follow{background:rgba(245,158,11,.08);color:#7c5a12}
+/* V2.1.22b 浅色:追问折叠项 + 笔记 */
+html:not([data-theme-early="dark"]) .ib-follow-item{background:rgba(255,255,255,.6);border-color:rgba(245,158,11,.35)}
+html:not([data-theme-early="dark"]) .ib-follow-item summary{color:#7c5a12}
+html:not([data-theme-early="dark"]) .ib-follow-item summary:hover{background:rgba(245,158,11,.1)}
+html:not([data-theme-early="dark"]) .ib-follow-a{color:#5b4a1f}
+html:not([data-theme-early="dark"]) .ib-follow-a b{color:#92400e}
+html:not([data-theme-early="dark"]) .ib-note-btn{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.4);color:#15803d}
+html:not([data-theme-early="dark"]) .ib-note-btn:hover{background:rgba(34,197,94,.18);color:#14532d}
+html:not([data-theme-early="dark"]) .ib-note-ta{background:rgba(255,255,255,.92);border-color:rgba(60,80,120,.22);color:#1e293b}
+html:not([data-theme-early="dark"]) .ib-note-ta:focus{border-color:#22c55e}
+html:not([data-theme-early="dark"]) .ib-note-clear{color:#b91c1c;border-color:rgba(239,68,68,.35)}
+html:not([data-theme-early="dark"]) .ib-note-chip{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.45);color:#15803d}
 html:not([data-theme-early="dark"]) .ib-extend{background:rgba(34,197,94,.09);color:#14603a}
 html:not([data-theme-early="dark"]) .ib-extend b{color:#15803d}
 html:not([data-theme-early="dark"]) .ib-rel a,html:not([data-theme-early="dark"]) .ib-rel button{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.25);color:#1d4ed8}
@@ -185,14 +219,14 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
     编程与系统:ROS编队 / C / C++ / 嵌入式 / FreeRTOS / NPU与数字IC / 大模型与具身智能<br>
     通用类:综合素质面试 / 英语口语 / 数学基础 / 科研素养(任何专业保研都必问)</div>
     <div class="tags">
-      <span class="tag">🎯 保研复试</span><span class="tag">📚 27 学科</span><span class="tag">🗣 通用面全覆盖</span><span class="tag">📝 掌握度自评</span><span class="tag">🤖 AI 追问</span>
+      <span class="tag">🎯 保研复试</span><span class="tag">📚 27 学科</span><span class="tag">🗣 通用面全覆盖</span><span class="tag">📝 掌握度自评</span><span class="tag">✍️ 每题笔记</span><span class="tag">🔍 追问全解析</span><span class="tag">🤖 AI 追问</span>
     </div>
   </div>
 
   <div class="key-point">
     <div class="kp-title">🎯 本页学习目标</div>
     1. 按学科刷完高频复试题,掌握"结论先行→原理→公式图示→工程实例"的答题结构<br>
-    2. 用自测模式先想后看,自评掌握度,薄弱学科一目了然<br>
+    2. 用自测模式先想后看,自评掌握度,薄弱学科一目了然;追问也先自己想再点开参考答题思路<br>
     3. 结合站内学习页深挖原理,用 AI 考官进行模拟追问<br>
     <b>建议用时:</b>每学科 20~30 分钟 · 27 学科可分 12~15 次刷完(专业 23 科 + 通用 4 科;基础课 8 科按目标院校考查科目选刷)
   </div>
@@ -204,6 +238,7 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
       <div><div class="ib-num m" id="ibNYes">0</div><div class="ib-num-k">已掌握</div></div>
       <div><div class="ib-num v" id="ibNVague">0</div><div class="ib-num-k">模糊待巩固</div></div>
       <div><div class="ib-num u" id="ibNNo">0</div><div class="ib-num-k">未掌握 / 未刷</div></div>
+      <div><div class="ib-num t" id="ibNNote">0</div><div class="ib-num-k">我的笔记</div></div>
       <div class="ib-prog-wrap">
         <div class="ib-prog"><i id="ibProgBar"></i></div>
         <span class="ib-prog-pct" id="ibProgPct">0%</span>
@@ -212,8 +247,8 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
     </div>
   </div>
 
-  <h2><span class="h2-num">2</span> 十三学科 · 考点速览</h2>
-  <p>下表按"复试出场率"排序组织建议复习次序:控制类(自控/PID/运控)是机器人/电机方向的基本盘,硬件与嵌入式(运放/防反接/FreeRTOS)是项目面的拉分项。</p>
+  <h2><span class="h2-num">2</span> 27 学科 · 考点速览</h2>
+  <p>下表按"复试出场率"组织建议复习次序:控制类(自控/PID/运控)是机器人/电机方向的基本盘,硬件与嵌入式(运放/防反接/FreeRTOS)是项目面的拉分项,V2.1.22 新增的基础课 8 学科按目标院校考查科目选刷。</p>
   <div class="table-wrap"><table id="ibOverview">
     <tr><th>学科</th><th>题数</th><th>复试频率</th><th>最高频考点</th></tr>
   </table></div>
@@ -282,6 +317,10 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
   /* ---- 进度存取 ---- */
   function loadProg(){ try{ return JSON.parse(localStorage.getItem(KEY) || "{}"); }catch(e){ return {}; } }
   function saveProg(p){ try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){} }
+  /* ---- 笔记存取(V2.1.22b;重置进度不删笔记——笔记比自评更贵,误删不可逆) ---- */
+  var NKEY = "humanoid-ib-notes-v1";
+  function loadNotes(){ try{ return JSON.parse(localStorage.getItem(NKEY) || "{}"); }catch(e){ return {}; } }
+  function saveNotes(n){ try{ localStorage.setItem(NKEY, JSON.stringify(n)); }catch(e){} }
   /* V2.1.18:esc/脚本加载器收敛 site.js 单源(AUDIT A-22)——本页不再持副本;site.js 为全站壳依赖,缺失时页面本不可用 */
   var esc = Site.esc;
   /* V2.1.7:延伸阅读链接协议白名单 + 引号转义(数据虽为一方文件,纵深防御) */
@@ -393,10 +432,10 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
 
   /* ---- 题目渲染 ---- */
   function renderItems(){
-    var box = $("ibItems"), p = loadProg(), html = "";
+    var box = $("ibItems"), p = loadProg(), n = loadNotes(), html = "";
     var its = itemsOf(cur).filter(hit);
     if(!its.length){ box.innerHTML = "<div class='ib-empty'>本学科没有匹配「" + esc(kw) + "」的题目,换个关键词试试</div>"; return; }
-    for(var i = 0; i < its.length; i++) html += itemHTML(its[i], p);
+    for(var i = 0; i < its.length; i++) html += itemHTML(its[i], p, n);
     box.innerHTML = html;
     bindItems(box);
     renderFormulas(box);
@@ -406,17 +445,39 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
     var hay = (it.q + " " + (it.tags || []).join(" ") + " " + it.a).toLowerCase();
     return hay.indexOf(kw.toLowerCase()) >= 0;
   }
-  function itemHTML(it, p){
+  function itemHTML(it, p, n){
     var tags = "";
     (it.tags || []).forEach(function(t){ tags += "<span class='ib-tag'>" + esc(t) + "</span>"; });
     var body = answerHTML(it);
-    var g = p[it.id];
+    var g = p[it.id], note = n ? n[it.id] : "";
     return "<details class='ib-item' id='it-" + it.id + "'><summary>" +
       "<div class='ib-q'><b>" + esc(it.q) + "</b></div>" +
-      "<div class='ib-meta'><span class='ib-lv' title='复试频率'>复试频率 " + stars(it.lv) + "</span>" + tags + stateChip(g) + "</div></summary>" +
+      "<div class='ib-meta'><span class='ib-lv' title='复试频率'>复试频率 " + stars(it.lv) + "</span>" + tags + stateChip(g) +
+      (note ? "<span class='ib-note-chip' title='本题已有笔记'>📝</span>" : "") + "</div></summary>" +
       (mode === "self" ? "<div class='ib-reveal'><button data-reveal>👁 先自己想 30 秒,再显示参考答案</button></div>" : "") +
       "<div class='ib-ans" + (mode === "self" ? " ib-hidden-ans" : "") + "'>" +
-      body + gradeHTML(it.id, g) + "</div></details>";
+      body + gradeHTML(it.id, g) + noteHTML(it.id, note) + "</div></details>";
+  }
+  /* V2.1.22b:每题笔记(本机 localStorage,键 humanoid-ib-notes-v1,C4 白名单前缀内) */
+  function noteHTML(id, note){
+    return "<div class='ib-note'>" +
+      "<button type='button' class='ib-note-btn' data-note='" + id + "'>📝 " + (note ? "编辑笔记" : "记笔记") + "</button>" +
+      "<div class='ib-note-box' hidden>" +
+      "<textarea class='ib-note-ta' data-note-id='" + id + "' placeholder='用自己的话记:口述要点 / 易混点 / 追问触发的想法…(自动保存,仅存本机不上传)'>" + (note ? esc(note) : "") + "</textarea>" +
+      "<div class='ib-note-meta'><span class='ib-note-cnt'>" + (note ? note.length : 0) + " 字</span>" +
+      "<button type='button' class='ib-note-clear' data-note='" + id + "'>清空</button>" +
+      "<span class='ib-note-hint'>输入后自动保存 · 换浏览器不同步</span></div>" +
+      "</div></div>";
+  }
+  function updateNoteChip(id, has){
+    var item = document.getElementById("it-" + id);
+    if(!item) return;
+    var meta = item.querySelector(".ib-meta");
+    var chip = meta ? meta.querySelector(".ib-note-chip") : null;
+    if(has && !chip && meta) meta.insertAdjacentHTML("beforeend", "<span class='ib-note-chip' title='本题已有笔记'>📝</span>");
+    if(!has && chip && chip.parentNode) chip.parentNode.removeChild(chip);
+    var btn = item.querySelector(".ib-note-btn");
+    if(btn) btn.innerHTML = "📝 " + (has ? "编辑笔记" : "记笔记");
   }
   function answerHTML(it){
     var h = "";
@@ -427,8 +488,16 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
     if(it.a2) h += it.a2;
     if(it.extend) h += "<div class='ib-extend'>💡 <b>知识点拓展:</b><br>" + it.extend + "</div>";
     if(it.follow && it.follow.length){
-      h += "<div class='ib-follow'><b>🔍 考官可能这样追问:</b><br>";
-      for(var i = 0; i < it.follow.length; i++) h += (i + 1) + ". " + esc(it.follow[i]) + "<br>";
+      h += "<div class='ib-follow'><b>🔍 考官可能这样追问:</b> <span class='ib-follow-tip'>点开看参考答题思路</span><br>";
+      for(var i = 0; i < it.follow.length; i++){
+        var f = it.follow[i];
+        if(typeof f === "string"){
+          h += (i + 1) + ". " + esc(f) + "<br>";
+        }else{
+          h += "<details class='ib-follow-item'><summary>" + (i + 1) + ". <b>" + esc(f.q) + "</b></summary>" +
+               (f.a ? "<div class='ib-follow-a'>" + f.a + "</div>" : "") + "</details>";
+        }
+      }
       h += "</div>";
     }
     if(it.links && it.links.length){
@@ -502,6 +571,44 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
         renderStats(); refreshChips();
       };
     }
+    /* V2.1.22b:笔记交互——展开/收起、输入防抖自动保存(400ms)、清空、题行 📝 章同步 */
+    var nbs = box.querySelectorAll(".ib-note-btn");
+    for(var a = 0; a < nbs.length; a++){
+      nbs[a].onclick = function(){
+        var b = this.nextElementSibling;
+        if(!b) return;
+        if(b.hasAttribute("hidden")){ b.removeAttribute("hidden"); var ta = b.querySelector("textarea"); if(ta) ta.focus(); }
+        else b.setAttribute("hidden", "");
+      };
+    }
+    var tas = box.querySelectorAll(".ib-note-ta");
+    for(var b2 = 0; b2 < tas.length; b2++){
+      tas[b2].oninput = function(){
+        var ta = this, id = ta.getAttribute("data-note-id"), val = ta.value;
+        clearTimeout(ta._t);
+        ta._t = setTimeout(function(){
+          var n = loadNotes();
+          if(val) n[id] = val; else delete n[id];
+          saveNotes(n);
+          var cnt = ta.parentNode.querySelector(".ib-note-cnt");
+          if(cnt) cnt.textContent = (val ? val.length : 0) + " 字";
+          updateNoteChip(id, !!val);
+          renderStats();
+        }, 400);
+      };
+    }
+    var cls = box.querySelectorAll(".ib-note-clear");
+    for(var c2 = 0; c2 < cls.length; c2++){
+      cls[c2].onclick = function(){
+        var id = this.getAttribute("data-note");
+        var wrap = this.parentNode.parentNode, ta = wrap.querySelector("textarea");
+        if(ta){ ta.value = ""; clearTimeout(ta._t); }
+        var n = loadNotes(); delete n[id]; saveNotes(n);
+        var cnt = wrap.querySelector(".ib-note-cnt"); if(cnt) cnt.textContent = "0 字";
+        updateNoteChip(id, false);
+        renderStats();
+      };
+    }
   }
 
   /* ---- 统计 ---- */
@@ -513,6 +620,9 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
     }
     $("ibNTotal").textContent = ITEM.length;
     $("ibNYes").textContent = y; $("ibNVague").textContent = v; $("ibNNo").textContent = n;
+    var nt = loadNotes(), nn = 0;
+    for(var k in nt){ if(nt[k]) nn++; }
+    $("ibNNote").textContent = nn;
     var pct = ITEM.length ? Math.round(y * 100 / ITEM.length) : 0;
     $("ibProgBar").style.width = pct + "%";
     $("ibProgPct").textContent = pct + "%(" + y + "/" + ITEM.length + ")";
@@ -684,7 +794,7 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
     renderItems();
   }
   $("ibReset").onclick = function(){
-    if(!confirm("确定清空本题库全部掌握度记录?(不影响其它学习进度)")) return;
+    if(!confirm("确定清空本题库全部掌握度记录?(笔记与其它学习进度不受影响)")) return;
     saveProg({});
     renderItems(); renderStats(); refreshChips();
   };
