@@ -1031,10 +1031,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.24</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-07 · 大模型板块新增两页:演进全景(07-06)+ 结构实验室(07-07)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.25</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-07 · 全站专业英语词卡(左上角 ? 点击读音/全页点读)+ 演进页论文速查与 Agent 工作流知识</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
                   <details class="faq" open>
+        <summary>🔊 V2.1.25 · 2026-09-07 · 全站专业英语词卡:左上角「?」点击读音 + 全页点读模式</summary>
+        <div class="faq-a">🔊 <b>全站英语读音机制</b>:导航栏左上角新增「?」按钮,打开专业英语词卡面板——83 个术语按 5 分类(Transformer 与大模型 / Agent 与工作流 / 提示词与上下文 / 推理与部署 / 控制与具身智能),点卡片即朗读,默认<b>美式口音、优先本地音色零延迟</b>;面板内可开启<b>点读模式</b>:开启后点击任何页面上的英文单词即发音(光标变 🔊,链接内英文会拦截跳转防止误触);状态记忆在本机。所有页面带 <b>data-say</b> 标注的元素(如 07-06 架构图色块、新节的绿色虚线术语)点击即读,全局生效。🗺 <b>07-06 内容增强</b>:新增「里程碑论文速查表」(16 篇经典论文,含 arXiv 原文链接与一句话突破点:Transformer/GPT-3/Chinchilla/思维链/FlashAttention/LoRA/RoPE/LLaMA/Mamba/DeepSeek 三部曲等)、「一条直觉主线」十步串讲(参考闪客《一小时从 Transformer 到大模型》的直觉讲法)、「从模型到工作流」新节(Agent · 思维链 CoT · MCP · Skills · 提示词工程 · 上下文与提示词压缩,术语全部可点读),自测加至 10 题。📊 <b>板块评分升五维</b>:新增「专业英语 20 分」(词表与词卡同源,命中唯一术语数计分),档位同步 A≥102。</div>
+      </details>
+                  <details class="faq">
         <summary>🗺️🧪 V2.1.24 · 2026-09-07 · 大模型板块新增两页:演进全景(07-06)+ 结构实验室(07-07)</summary>
         <div class="faq-a">🗺 <b>07-06 大模型演进全景</b>:三时代演进时间线(2017 Transformer→2026 V4 稀疏注意力/Agent 原生);Decoder-only 收敛三原因;缩放定律 Kaplan vs Chinchilla 与涌现争议;五条架构工程线(RoPE→YaRN、MHA→MQA→GQA→MLA、FlashAttention 真相、RMSNorm、SwiGLU);MoE 稀疏化算例;推理范式转变(o1/R1/GPT-5 统一路由/思考档位);⭐ 当前工程十大问题专题(每问题「为什么难+工业界解法」)+ 推理两阶段瓶颈迁移图;6 幅双主题 SVG、自测 8 题,前沿事实联网核实更新至 2026-08。🧪 <b>07-07 大模型结构实验室</b>:四个浏览器内本地计算实验台——Tokenizer 切词台(strawberry 数不清 r 的根源)、注意力显微镜(「它→小猫」指代消解热力图+缩放温度效应+因果掩码)、前向传播六站动画(播放/单步/调速控制条)、KV Cache 计算器(MHA 40GB vs GQA 10GB vs MLA 5.6GB 实时对比);五段源码逐行精读;自测 6 题。🖼 07-06 补绘经典 Transformer 论文架构图(双语标注,色块可点击朗读英文,本地 TTS 离线可用);🔧 顺修登记页面.js 在 V2.1.21 单源化后找不到 SITE_SECTIONS 的 bug;S.STATS 99→101 页;学习路径/翻页链/地图/索引六处登记齐。</div>
       </details>
@@ -1259,7 +1263,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.24(2026-09-07) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.25(2026-09-07) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /* ============================================================
-   人形机器人学习站 · 板块四维评分(依据 docs/审计/板块评分规则.md V1.0)
+   人形机器人学习站 · 板块五维评分(依据 docs/审计/板块评分规则.md,V2.1.25 起加专业英语维度)
    用法: node _本地工具/板块评分.js
    输出: docs/审计/板块评分报告_<日期>.md
          docs/审计/_底表评分.csv
-   四维: 学习内容30 / 学习效果25 / 知识点掌握25 / 图片准确率20
+   五维: 学习内容30 / 学习效果25 / 知识点掌握25 / 图片准确率20 / 专业英语20(附加,词表 _assets/en-terms.js)
    ============================================================ */
 "use strict";
 const fs = require("fs");
@@ -47,6 +47,9 @@ const PATH_IDS = new Set([...pathSrc.matchAll(/id:\s*"(\d\d-\d\d)"/g)].map((m) =
 const ibSrc = read("_assets/ib-data-a.js") + read("_assets/ib-data-b.js") + read("_assets/ib-data-c.js") + read("_assets/ib-data-d.js");
 const qbSrc = read("_assets/quiz-bank.js");
 const qstSrc = read("_assets/quest-data.js");
+/* V2.1.25 专业英语词表(单源:与全站词卡面板共用 en-terms.js),长词优先防子串误判 */
+const enTermsSrc = read("_assets/en-terms.js");
+const EN_LIST = [...enTermsSrc.matchAll(/en:\s*"([^"]+)"/g)].map((m) => m[1]).sort((a, b) => b.length - a.length);
 
 /* ib 题目切块:每题从 { id:'xx-nn' 到下一个 { id: 之间 */
 const IB_ITEMS = [];
@@ -244,6 +247,8 @@ function analyze(html, rel, key) {
     const srcOK = !local || exists(path.join(path.dirname(path.join(ROOT, rel)), src.split("?")[0]));
     if (srcOK && hasAlt) imgOK++;
   }
+  const enBody = html.replace(/<script[\s\\S]*?<\/script>/gi, " ").replace(/<style[\s\\S]*?<\/style>/gi, " ").toLowerCase();
+  const enHits = EN_LIST.filter((t) => enBody.includes(t.toLowerCase())).length;
   const hasFormula = /class="formula"/.test(html);
   const usesSiteJs = /_assets\/site\.js/.test(html);
   const isTool = key === "08";
@@ -255,6 +260,7 @@ function analyze(html, rel, key) {
 
   return {
     rel, key, pageId, folder: rel.split("/")[0],
+    enHits,
     textLen: text.length,
     h2: cnt(/<h2[\s>]/gi), h3: cnt(/<h3[\s>]/gi),
     keyPoint: cnt(/class="[^"]*key-point/),
@@ -331,10 +337,13 @@ function pageEffect(p) { // 学习效果 25(页级部分,满分 13)
 function pageImg(p) { // 图片准确率 20(页级部分,满分 5;图注覆盖改板块级折算)
   return (p.imgAll ? (p.imgOK / p.imgAll) * 2.5 : 2.5) + (p.formulaOK ? 2.5 : 0);
 }
+function pageEn(p) { // 专业英语 20(附加维):命中全站词表的唯一术语数
+  return tiers(p.enHits, [25, 18, 12, 6], [20, 15, 10, 5, 0]);
+}
 
 const REPORT = [];
 const RISK = [];
-let csv = "\ufeff页面,板块,pageId,字数,h2,h3,自测题,解析均长,公式,SVG,图注,浅色字,溢出,注册,路径,交互\n";
+let csv = "\ufeff页面,板块,pageId,字数,h2,h3,自测题,解析均长,公式,SVG,图注,浅色字,溢出,注册,路径,交互,英语术语命中\n";
 
 for (const s of SECTIONS) {
   const ps = pages.filter((p) => p.key === s.key);
@@ -367,8 +376,11 @@ for (const s of SECTIONS) {
   const capRatio = totalSvg ? totalCaps / totalSvg : 1;
   const capScore = capRatio * 5 * (svgPageRatio > 0.5 ? 1 : svgPageRatio * 2);
   const img = avg(pageImg) + capScore + (light === 0 ? 5 : light <= 3 ? 3 : 1) + (over === 0 ? 5 : over <= 3 ? 3 : 1);
-  const total = content + effect + mastery + img;
-  const grade = total >= 85 ? "A" : total >= 70 ? "B" : total >= 55 ? "C" : "D";
+  /* 专业英语 20(附加):命中词表术语的页均唯一数 */
+  const en = avg(pageEn);
+  const enHitsAvg = ps.reduce((a, p) => a + p.enHits, 0) / n;
+  const total = content + effect + mastery + img + en;
+  const grade = total >= 102 ? "A" : total >= 84 ? "B" : total >= 66 ? "C" : "D";
 
   /* 建议生成 */
   const sug = [];
@@ -400,13 +412,13 @@ for (const s of SECTIONS) {
   ps.forEach((p) => {
     csv += [p.rel, s.key, p.pageId || "-", p.textLen, p.h2, p.h3, p.quiz, p.explainAvg, p.formula,
       p.svg, p.caps, p.lightFill, p.overflow,
-      (p.inSections && p.inMeta && p.inSearch) ? "Y" : "N", p.inPath ? "Y" : "N", p.interactive].join(",") + "\n";
+      (p.inSections && p.inMeta && p.inSearch) ? "Y" : "N", p.inPath ? "Y" : "N", p.interactive, p.enHits].join(",") + "\n";
     if (p.lightFill > 0 || p.overflow > 0 || !p.formulaOK || (p.svg > 0 && p.caps < p.svg)) RISK.push(p);
   });
 
   REPORT.push({
     key: s.key, name: s.name, pages: n, total, grade,
-    content, effect, mastery, img,
+    content, effect, mastery, img, en, enHitsAvg,
     detail: {
       reg: regRatio, path: pathRatio, quizLink: quizLinkRatio,
       ibCover, ibN, questCover, followAvg, light, over, svgPages
@@ -418,17 +430,18 @@ for (const s of SECTIONS) {
 /* ---------- 输出 ---------- */
 REPORT.sort((a, b) => (b.total || 0) - (a.total || 0));
 let md = `# 板块评分报告(${TODAY})\n\n`;
-md += `> 由 \`_本地工具/板块评分.js\` 自动生成,计分依据《板块评分规则.md》V1.0。四维:学习内容30 / 学习效果25 / 知识点掌握25 / 图片准确率20。档位:A≥85 B70-84 C55-69 D<55。\n\n`;
-md += `| 排名 | 板块 | 页数 | 学习内容/30 | 学习效果/25 | 知识点掌握/25 | 图片准确率/20 | 总分 | 档位 |\n|---|---|---|---|---|---|---|---|---|\n`;
+md += `> 由 \`_本地工具/板块评分.js\` 自动生成,计分依据《板块评分规则.md》(V2.1.25 起五维)。学习内容30 / 学习效果25 / 知识点掌握25 / 图片准确率20 / 专业英语20(附加,命中 _assets/en-terms.js 词表的唯一术语数)。档位:A≥102 B84-101 C66-83 D<66。\n\n`;
+md += `| 排名 | 板块 | 页数 | 学习内容/30 | 学习效果/25 | 知识点掌握/25 | 图片准确率/20 | 专业英语/20 | 总分 | 档位 |\n|---|---|---|---|---|---|---|---|---|---|\n`;
 REPORT.forEach((r, i) => {
-  md += `| ${i + 1} | ${r.key} ${r.name} | ${r.pages} | ${r.content.toFixed(1)} | ${r.effect.toFixed(1)} | ${r.mastery.toFixed(1)} | ${r.img.toFixed(1)} | **${r.total.toFixed(1)}** | ${r.grade} |\n`;
+  md += `| ${i + 1} | ${r.key} ${r.name} | ${r.pages} | ${r.content.toFixed(1)} | ${r.effect.toFixed(1)} | ${r.mastery.toFixed(1)} | ${r.img.toFixed(1)} | ${r.en.toFixed(1)} | **${r.total.toFixed(1)}** | ${r.grade} |\n`;
 });
 md += `\n## 分板块明细与修改建议\n\n`;
 for (const r of REPORT) {
   md += `### ${r.key} ${r.name} — ${r.total.toFixed(1)} 分(${r.grade})\n\n`;
   md += `- 学习内容 ${r.content.toFixed(1)}/30 · 学习效果 ${r.effect.toFixed(1)}/25(注册 ${Math.round(r.detail.reg * 100)}% / 路径 ${Math.round(r.detail.path * 100)}% / 练习联动 ${Math.round(r.detail.quizLink * 100)}%)`;
   md += ` · 知识点掌握 ${r.mastery.toFixed(1)}/25(题库指向 ${Math.round(r.detail.ibCover * 100)}%,题目 ${r.detail.ibN} 题,闯关 ${r.detail.questCover}/4,追问均 ${r.detail.followAvg.toFixed(1)})`;
-  md += ` · 图片准确率 ${r.img.toFixed(1)}/20(浅色字 ${r.detail.light} / 溢出 ${r.detail.over} / 含图页 ${r.detail.svgPages}/${r.pages})\n\n`;
+  md += ` · 图片准确率 ${r.img.toFixed(1)}/20(浅色字 ${r.detail.light} / 溢出 ${r.detail.over} / 含图页 ${r.detail.svgPages}/${r.pages})`;
+  md += ` · 专业英语 ${r.en.toFixed(1)}/20(页均命中术语 ${r.enHitsAvg.toFixed(1)},词表 ${EN_LIST.length} 条)\n\n`;
   if (r.suggestions.length) { r.suggestions.forEach((s, i) => { md += `${i + 1}. ${s}\n`; }); md += `\n`; }
 }
 md += `\n## 目检风险页清单(${RISK.length} 页,按图片准确率筛查)\n\n`;
@@ -439,7 +452,7 @@ fs.writeFileSync(path.join(ROOT, reportPath), md);
 fs.writeFileSync(path.join(ROOT, "docs/审计/_底表评分.csv"), csv);
 console.log(`板块评分完成 → ${reportPath}`);
 REPORT.forEach((r) => console.log(
-  `${r.key} ${r.name}: 内容${r.content.toFixed(1)} 效果${r.effect.toFixed(1)} 掌握${r.mastery.toFixed(1)} 图片${r.img.toFixed(1)} = ${r.total.toFixed(1)}(${r.grade})`));
+  `${r.key} ${r.name}: 内容${r.content.toFixed(1)} 效果${r.effect.toFixed(1)} 掌握${r.mastery.toFixed(1)} 图片${r.img.toFixed(1)} 英语${r.en.toFixed(1)} = ${r.total.toFixed(1)}(${r.grade})`));
 console.log(`风险页 ${RISK.length} 页(见报告末尾清单)`);
 if (process.argv.includes("--detail")) {
   console.log("\n--- 明细 ---");

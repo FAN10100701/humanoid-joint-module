@@ -5,9 +5,9 @@
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
-   - 版本: V2.1.24 · 2026-09-07(升级站点时改 CACHE 名以强制更新;本版大模型板块新增 06/07 两页,教学页走 SWR 无需进 PRECACHE)
+   - 版本: V2.1.25 · 2026-09-07(升级站点时改 CACHE 名以强制更新;本版新增 _assets/en-terms.js 进 PRECACHE,必 bump)
    ============================================================ */
-var CACHE = "hrl-site-v2.1.24";
+var CACHE = "hrl-site-v2.1.25";
 var PRECACHE = [
   "./index.html",
   "./404.html",
@@ -20,6 +20,7 @@ var PRECACHE = [
   "./_assets/ib-data-b.js",
   "./_assets/ib-data-c.js",
   "./_assets/ib-data-d.js",
+  "./_assets/en-terms.js",
   "./_assets/quest-data.js",
   "./_assets/ai-assistant.js",
   "./_assets/quiz-bank.js",

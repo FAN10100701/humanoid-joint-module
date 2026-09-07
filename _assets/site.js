@@ -569,6 +569,8 @@
     nav.className = "topnav";
     var html = '<div class="nav-inner">'
       + '<a class="nav-brand" href="' + root + '/index.html"><span class="brand-dot"></span>人形机器人学习站</a>'
+      /* V2.1.25:专业英语词卡(左上角「?」)——点击开词卡面板朗读;支持全页点读模式 */
+      + '<button class="nav-enq" type="button" onclick="Site.toggleEnPanel()" title="专业英语词卡:点击卡片读音 / 全页点读模式" aria-label="专业英语词卡">?</button>'
       + '<div class="nav-links">';
     /* 顶栏收纳(V2.1.0):仅保留高频直达,其余收进「板块 ▾」玻璃下拉 */
     var quickT = ["首页", "3D解剖", "理论入门", "软件算法", "学习工具"];
@@ -944,7 +946,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.24(2026-09-07)";
+  S.VERSION = "V2.1.25(2026-09-07)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -1197,13 +1199,217 @@
     });
   }
 
+  /* ---------- V2.1.25 全站专业英语词卡(点击朗读) ----------
+     ① 导航左上角「?」按钮开词卡面板(分类/搜索/点击卡片朗读,美式 en-US 优先本地音色)
+     ② 点读模式(localStorage site-en-tap):开启后点击页面任意英文单词即朗读
+     ③ 全局 [data-say] 委托:任何带 data-say 的元素点击即朗读(如 07-06 架构图色块)
+     数据源:_assets/en-terms.js(懒加载,同时供板块评分.js 做英语维度统计) */
+  var EN_VOICE = null;      /* 缓存选中的美式音色 */
+  var EN_VOICE_TRIED = false;
+  var ENP = null;           /* 面板 DOM */
+  var EN_TAB = "all";       /* 当前分类 */
+  var EN_Q = "";            /* 搜索词 */
+  function enPickVoice(){
+    try{
+      if(!window.speechSynthesis) return null;
+      var vs = window.speechSynthesis.getVoices() || [];
+      var en = vs.filter(function(v){ return /^en([-_]|$)/i.test(v.lang || ""); });
+      if(!en.length) return null;
+      var us = en.filter(function(v){ return /en-US/i.test(v.lang); });
+      var usLocal = us.filter(function(v){ return v.localService; });
+      /* 单词朗读场景:本地音色零网络延迟最稳(对齐 16_保研英语面试 TTS v4 结论) */
+      EN_VOICE = usLocal[0] || us[0] || en[0];
+      return EN_VOICE;
+    }catch(e){ return null; }
+  }
+  S.speakEN = function(text){
+    try{
+      if(!window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
+      var syn = window.speechSynthesis;
+      if(!EN_VOICE){ EN_VOICE = enPickVoice(); }
+      syn.cancel();
+      var u = new window.SpeechSynthesisUtterance(String(text));
+      u.lang = (EN_VOICE && EN_VOICE.lang) || "en-US";
+      if(EN_VOICE) u.voice = EN_VOICE;
+      u.rate = 0.9; u.volume = 1;
+      syn.speak(u);
+      return true;
+    }catch(e){ return false; }
+  };
+  if(window.speechSynthesis && speechSynthesis.addEventListener){
+    speechSynthesis.addEventListener("voiceschanged", function(){ EN_VOICE_TRIED = false; enPickVoice(); });
+  }
+  function ensureEnTerms(cb){
+    if(window.EN_TERMS){ cb(); return; }
+    var root = (page().root) || "";
+    S.loadScript((root ? root + "/" : "") + "_assets/en-terms.js", function(){ cb(); });
+  }
+  function enEsc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function buildEnPanel(){
+    var cats = (window.EN_TERMS && window.EN_TERMS.cats) || [];
+    var tabs = '<button class="enp-tab on" data-cat="all">全部</button>';
+    cats.forEach(function(c){ tabs += '<button class="enp-tab" data-cat="' + c.id + '">' + enEsc(c.name) + '</button>'; });
+    var p = document.createElement("div");
+    p.className = "en-panel";
+    p.id = "enPanel";
+    p.innerHTML = '<div class="enp-head"><b>🔊 专业英语词卡</b><span class="enp-sub">点击卡片朗读 · 美式发音</span>'
+      + '<button class="enp-x" type="button" title="关闭 (Esc)">×</button></div>'
+      + '<div class="enp-tools">'
+      + '<label class="enp-tap"><input type="checkbox" id="enTapChk"> 点读模式:点击页面上的英文单词即朗读</label>'
+      + '<input type="text" class="enp-q" id="enpQ" placeholder="筛选术语(英文/中文)…" />'
+      + '</div>'
+      + '<div class="enp-tabs">' + tabs + '</div>'
+      + '<div class="enp-list" id="enpList"></div>'
+      + '<div class="enp-foot">默认美式口音,优先本地音色零延迟 · Esc 关闭 · 词表同时用于全站「专业英语」评分维度</div>';
+    document.body.appendChild(p);
+    ENP = p;
+    p.querySelector(".enp-x").addEventListener("click", function(){ S.toggleEnPanel(); });
+    p.querySelector(".enp-q").addEventListener("input", function(){
+      EN_Q = this.value.trim().toLowerCase();
+      renderEnCards();
+    });
+    var tabsEl = p.querySelectorAll(".enp-tab");
+    for(var i = 0; i < tabsEl.length; i++){
+      tabsEl[i].addEventListener("click", function(){
+        EN_TAB = this.getAttribute("data-cat");
+        var all = p.querySelectorAll(".enp-tab");
+        for(var j = 0; j < all.length; j++) all[j].className = "enp-tab" + (all[j] === this ? " on" : "");
+        renderEnCards();
+      });
+    }
+    var chk = p.querySelector("#enTapChk");
+    try{ chk.checked = localStorage.getItem("site-en-tap") === "1"; }catch(e){}
+    chk.addEventListener("change", function(){
+      S.enTap = this.checked;
+      try{ localStorage.setItem("site-en-tap", this.checked ? "1" : "0"); }catch(e){}
+      var b = document.body;
+      if(b) b.className = (b.className || "").replace(/\s*en-tap-on/g, "") + (this.checked ? " en-tap-on" : "");
+    });
+    if(chk.checked){ S.enTap = true; var b2 = document.body; if(b2) b2.className = (b2.className || "") + " en-tap-on"; }
+    renderEnCards();
+  }
+  function renderEnCards(){
+    if(!ENP || !window.EN_TERMS) return;
+    var list = ENP.querySelector("#enpList");
+    var cats = window.EN_TERMS.cats || [];
+    var html = "";
+    cats.forEach(function(c){
+      if(EN_TAB !== "all" && EN_TAB !== c.id) return;
+      var shown = [];
+      c.terms.forEach(function(t){
+        if(EN_Q){
+          var en = (t.en || "").toLowerCase(), zh = t.zh || "";
+          if(en.indexOf(EN_Q) < 0 && zh.indexOf(EN_Q) < 0) return;
+        }
+        shown.push(t);
+      });
+      if(!shown.length) return;
+      if(EN_Q){
+        shown.forEach(function(t){
+          html += '<div class="en-card" data-en="' + enEsc(t.say || t.en) + '"><b>' + enEsc(t.en) + '</b><span>' + enEsc(t.zh) + '</span><i>🔊</i></div>';
+        });
+      }else{
+        html += '<div class="enp-cat">' + enEsc(c.name) + '</div>';
+        shown.forEach(function(t){
+          html += '<div class="en-card" data-en="' + enEsc(t.say || t.en) + '"><b>' + enEsc(t.en) + '</b><span>' + enEsc(t.zh) + '</span><i>🔊</i></div>';
+        });
+      }
+    });
+    list.innerHTML = html || '<div class="enp-empty">没有匹配的术语</div>';
+    var cards = list.querySelectorAll(".en-card");
+    for(var i = 0; i < cards.length; i++){
+      cards[i].addEventListener("click", function(){
+        var w = this.getAttribute("data-en");
+        if(S.speakEN(w)){
+          this.className = "en-card saying";
+          var el = this;
+          setTimeout(function(){ el.className = "en-card"; }, 900);
+        }
+      });
+    }
+  }
+  S.toggleEnPanel = function(){
+    if(ENP){ ENP.remove(); ENP = null; return; }
+    ensureEnTerms(function(){ buildEnPanel(); });
+  };
+  document.addEventListener("keydown", function(e){
+    if(e.keyCode === 27 && ENP){ S.toggleEnPanel(); }
+  });
+  /* 点读模式:点击页面任意英文单词即朗读(捕获阶段;链接内英文会拦截跳转) */
+  function enPickWord(e){
+    try{
+      if(document.caretRangeFromPoint){
+        var range = document.caretRangeFromPoint(e.clientX, e.clientY);
+        if(range && range.startContainer && range.startContainer.nodeType === 3){
+          var text = range.startContainer.textContent, off = range.startOffset;
+          var L = off, R = off;
+          while(L > 0 && /[A-Za-z0-9'\-]/.test(text.charAt(L - 1))) L--;
+          while(R < text.length && /[A-Za-z0-9'\-]/.test(text.charAt(R))) R++;
+          if(R > L) return text.slice(L, R);
+        }
+      }
+    }catch(err){}
+    var t = ((e.target && e.target.textContent) || "").trim().slice(0, 100);
+    var m = t.match(/[A-Za-z][A-Za-z0-9'\-]*(?:\s+[A-Za-z][A-Za-z0-9'\-]*){0,3}/);
+    return m ? m[0] : "";
+  }
+  var EN_TAP_BOUND = false;
+  function initEnTapListener(){
+    if(EN_TAP_BOUND) return;
+    EN_TAP_BOUND = true;
+    document.addEventListener("click", function(e){
+      if(!S.enTap) return;
+      var t = e.target;
+      if(t.closest && (t.closest(".en-panel") || t.closest(".topnav"))) return;
+      if(t.closest && t.closest("[data-say]")) return; /* data-say 走专用委托,避免读两次 */
+      var word = enPickWord(e);
+      if(!word) return;
+      if(t.closest && t.closest("a")) e.preventDefault();
+      S.speakEN(word);
+    }, true);
+  }
+  /* 全局 [data-say] 委托:架构图色块等,点击朗读 + 高亮(my-saying) */
+  function initDataSay(){
+    document.addEventListener("click", function(e){
+      var t = e.target, found = null;
+      while(t && t !== document){
+        if(t.getAttribute && t.getAttribute("data-say")){ found = t; break; }
+        t = t.parentNode;
+      }
+      if(!found) return;
+      var say = found.getAttribute("data-say");
+      if(!say) return;
+      if(S.speakEN(say) && found.classList){
+        found.classList.add("my-saying");
+        setTimeout(function(){ found.classList.remove("my-saying"); }, 1200);
+      }
+    }, true);
+  }
+  function initEnModule(){
+    try{ S.enTap = localStorage.getItem("site-en-tap") === "1"; }catch(e){ S.enTap = false; }
+    if(!EN_VOICE_TRIED){ EN_VOICE_TRIED = true; enPickVoice(); }
+    initDataSay();
+    initEnTapListener();
+    var st = document.createElement("style");
+    st.textContent = '.nav-enq{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);color:#c9d1d9;width:30px;height:30px;border-radius:50%;cursor:pointer;font-family:Georgia,serif;font-size:15px;font-weight:bold;line-height:1;transition:.15s;flex-shrink:0}.nav-enq:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.32);color:#fff;transform:scale(1.06)}html:not([data-theme-early="dark"]) .nav-enq{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}html:not([data-theme-early="dark"]) .nav-enq:hover{background:rgba(37,99,235,.16);color:#0f172a}'
+      + '.en-panel{position:fixed;top:62px;right:12px;width:min(430px,calc(100vw - 24px));max-height:calc(100vh - 90px);display:flex;flex-direction:column;background:rgba(12,17,26,.96);border:1px solid rgba(140,190,255,.32);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:320;backdrop-filter:blur(20px) saturate(150%);overflow:hidden}html:not([data-theme-early="dark"]) .en-panel{background:rgba(255,255,255,.98);border-color:rgba(60,90,140,.22);box-shadow:0 20px 50px rgba(40,70,130,.22)}'
+      + '.enp-head{display:flex;align-items:center;gap:8px;padding:13px 16px 9px;color:#eef4fb;font-size:14.5px}html:not([data-theme-early="dark"]) .enp-head{color:#0f172a}.enp-sub{font-size:11px;color:#8b98a9;font-weight:normal;flex:1}.enp-x{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:inherit;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1}html:not([data-theme-early="dark"]) .enp-x{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.2)}'
+      + '.enp-tools{padding:0 14px 9px;display:flex;flex-direction:column;gap:8px}.enp-tap{font-size:12px;color:#aab8c8;display:flex;align-items:center;gap:6px;cursor:pointer}html:not([data-theme-early="dark"]) .enp-tap{color:#475569}.enp-q{width:100%;box-sizing:border-box;font-size:12.5px;padding:7px 10px;border-radius:9px;border:1px solid rgba(140,190,255,.25);background:rgba(255,255,255,.05);color:inherit;outline:none}html:not([data-theme-early="dark"]) .enp-q{background:rgba(37,99,235,.04);border-color:rgba(37,99,235,.25)}.enp-q:focus{border-color:#58a6ff}'
+      + '.enp-tabs{padding:0 14px 8px;display:flex;flex-wrap:wrap;gap:5px}.enp-tab{font-size:11.5px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#aab8c8;cursor:pointer;font-family:inherit}html:not([data-theme-early="dark"]) .enp-tab{background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.2);color:#475569}.enp-tab.on{background:rgba(88,166,255,.28);border-color:#58a6ff;color:#fff;font-weight:bold}html:not([data-theme-early="dark"]) .enp-tab.on{background:rgba(37,99,235,.14);border-color:#2563eb;color:#1d4ed8}'
+      + '.enp-list{overflow-y:auto;padding:2px 14px 12px;flex:1}.enp-cat{font-size:11px;color:#8b98a9;margin:9px 0 5px;font-weight:bold}'
+      + '.en-card{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin:4px 0;cursor:pointer;transition:.13s;background:rgba(255,255,255,.03)}html:not([data-theme-early="dark"]) .en-card{border-color:rgba(37,99,235,.14);background:rgba(37,99,235,.03)}.en-card:hover{border-color:#58a6ff;background:rgba(88,166,255,.12)}.en-card b{font-size:13px;color:#eef4fb;white-space:nowrap}html:not([data-theme-early="dark"]) .en-card b{color:#0f172a}.en-card span{font-size:11px;color:#8b98a9;flex:1}html:not([data-theme-early="dark"]) .en-card span{color:#5a6a85}.en-card i{font-style:normal;font-size:12px;opacity:.6}.en-card.saying{border-color:#22c55e;background:rgba(34,197,94,.14)}'
+      + '.enp-empty{padding:22px;text-align:center;color:#8b98a9;font-size:12.5px}.enp-foot{padding:8px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:10.5px;color:#8b98a9}html:not([data-theme-early="dark"]) .enp-foot{border-color:rgba(37,99,235,.12);color:#7c8aa0}'
+      + '[data-say]{cursor:pointer}body.en-tap-on{cursor:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27%3E%3Ctext y=%2718%27 font-size=%2716%27%3E%F0%9F%94%8A%3C/text%3E%3C/svg%3E") 4 4, auto}';
+    document.head.appendChild(st);
+  }
+
   /* V2.1.14:初始化链逐项 try-catch 隔离——此前串行裸调用,任一上游抛错
      (第三方脚本污染/未来改动引入)会连带丢失 SW 注册/自动保存/自检挂件等全部下游 */
   var INIT_CHAIN = [
     initFavicon, applyTheme, injectChrome, buildToc, initBackTop, S.initQuiz,
     injectLearningGoals, injectPageStamp, initPrintBtn, initGlass, initAiFab,
     initOnboarding, initSW, initAutoSave, initTermTip, initComments,
-    initKaTeX, injectJsonLd, initScrollProgress, initReveal, initMagnet
+    initKaTeX, injectJsonLd, initScrollProgress, initReveal, initMagnet, initEnModule
   ];
   function bootSite(){
     for(var i = 0; i < INIT_CHAIN.length; i++){
