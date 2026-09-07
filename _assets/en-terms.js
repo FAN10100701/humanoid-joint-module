@@ -12,7 +12,22 @@
 window.EN_TERMS = {
   cats: [
     { id: "tf", name: "Transformer 与大模型", terms: [
+      { en: "Deep Learning", zh: "深度学习:多层神经网络自动学特征", say: "deep learning" },
+      { en: "Neural Network", zh: "神经网络:模仿神经元连接的分层计算模型", say: "neural network" },
+      { en: "Sequence Model", zh: "序列模型:处理按顺序排列数据的模型", say: "sequence model" },
+      { en: "RNN", zh: "循环神经网络:逐词串行处理序列的早期架构", say: "R N N" },
+      { en: "LSTM", zh: "长短期记忆网络:用门控缓解遗忘的 RNN 改良版", say: "L S T M" },
+      { en: "Gradient Vanishing", zh: "梯度消失:反向传播中梯度逐层衰减趋零", say: "gradient vanishing" },
+      { en: "Long-range Dependency", zh: "长程依赖:远距离词之间的关联难以保持", say: "long-range dependency" },
       { en: "Transformer", zh: "完全基于注意力的序列模型,2017 年提出" },
+      { en: "Seq2Seq", zh: "编码器-解码器架构:输入序列转输出序列", say: "sequence to sequence" },
+      { en: "Cross Attention", zh: "交叉注意力:Q 来自解码器,K/V 来自编码器", say: "cross attention" },
+      { en: "Causal Attention", zh: "因果注意力:只允许看自己与前文的掩码注意力", say: "causal attention" },
+      { en: "Autoregressive", zh: "自回归生成:每次根据已生成内容预测下一个词", say: "autoregressive" },
+      { en: "LLM", zh: "大语言模型:超大规模预训练语言模型统称", say: "L L M" },
+      { en: "Foundation Model", zh: "基础模型:在海量数据上预训练、可适配多任务的大模型", say: "foundation model" },
+      { en: "NLU", zh: "自然语言理解:让机器读懂语言的分支", say: "natural language understanding" },
+      { en: "NLG", zh: "自然语言生成:让机器写出语言的分支", say: "natural language generation" },
       { en: "Attention", zh: "注意力:按相关性加权汇聚信息" },
       { en: "Self-Attention", zh: "自注意力:序列内部词与词互相打分", say: "self attention" },
       { en: "Multi-Head Attention", zh: "多头注意力:多组注意力并行再拼接" },

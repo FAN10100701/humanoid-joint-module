@@ -2,6 +2,12 @@
 
 > 人形机器人学习站 · 版本历史。每次更新在**顶部**新增一条,并同步登记到首页底部"版本与更新历史"。
 
+## V2.1.26 · 2026-09-07 · 词卡扩至 93 条(补基础词条)+ 演进页措辞对齐经典讲法
+
+- 📚 **词卡/点读词表扩至 93 条**(对照科普视频常见词汇表查漏):新增 Deep Learning / Neural Network / Sequence Model / RNN / LSTM / Gradient Vanishing(梯度消失)/ Long-range Dependency(长程依赖)/ Seq2Seq / Cross Attention(交叉注意力)/ Causal Attention(因果注意力)/ Autoregressive(自回归生成)/ LLM / Foundation Model(基础模型)/ NLU / NLG 共 15 条基础词条,缩写类全部给出读法(R-N-N / L-S-T-M 等)。
+- 🗺 **07-06 措辞对齐经典讲法三处**:①图②导览点破 Encoder 是「双向注意力」;②Decoder-only 段补「自回归生成」术语(可点读);③BERT 段补 NLU(理解)/NLG(生成)分工——对照【闪客】一小时从 Transformer 到大模型 等科普视频的词汇表逐项查漏补齐,六大脉络(背景痛点/完整架构/注意力逻辑/两大分支/规模跃迁/生成循环)确认全覆盖。
+- ✅ 一键自检 ALL CHECKS PASSED;en-terms.js 在 PRECACHE 内被修改,CACHE 必 bump v2.1.26,发版五处同步齐。
+
 ## V2.1.25 · 2026-09-07 · 全站专业英语词卡:左上角「?」点击读音 + 全页点读模式
 
 - 🔊 **全站英语读音机制(site.js 全局模块,所有页面生效)**:导航栏左上角新增「?」按钮打开专业英语词卡面板——83 个术语按 5 分类(Transformer 与大模型 / Agent 与工作流 / 提示词与上下文 / 推理与部署 / 控制与具身智能),点卡片即朗读,默认**美式口音、优先本地音色零延迟**(对齐 16 页 TTS v4 的音色结论);面板内可开启**点读模式**(localStorage site-en-tap,C4 白名单内):开启后点击任何页面上的英文单词即发音——caretRangeFromPoint 精确取词 + 元素文本兜底,光标临时变 🔊,链接内英文会拦截跳转防止误触导航。

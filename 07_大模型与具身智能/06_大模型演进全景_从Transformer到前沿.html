@@ -152,7 +152,7 @@
 
   <h2><span class="h2-num">2</span> 起点 Transformer:它到底解决了 RNN 的什么病</h2>
   <p>2017 年之前,序列建模的主流是 RNN/LSTM:像<b>读报只有一个人、一个字一个字往后念</b>——第 100 个词的记忆要经过 99 次口头转述才能用上,转述路上不断丢失(梯度消失),而且必须念完上一个才能念下一个(串行,无法并行)。Transformer 用<b>自注意力</b>同时根治两个病:<b>任何两个词之间都是一步直达</b>(长程依赖变成 O(1) 条路径),<b>整句话所有位置同时算</b>(训练可以大规模并行,吃满 GPU)。可以说:没有并行化,就没有后来的「大力出奇迹」。</p>
-  <p>原始论文是 Encoder-Decoder 双塔结构(为机器翻译设计),经典架构如图②:左塔 <b>Encoder</b> 负责「读懂整个输入句子」,右塔 <b>Decoder</b> 负责「一个词一个词写出输出」;每个子层都带 Add &amp; Norm(残差捷径+归一化),位置信息由底部的 Positional Encoding 注入,堆叠整体重复 N 次。🎯 图中每个英文色块都可以<b>点击朗读</b>对应术语——面试聊 Transformer 时,这一排词就是开口要说的词,边看边读印象最深。</p>
+  <p>原始论文是 Encoder-Decoder 双塔结构(为机器翻译设计),经典架构如图②:左塔 <b>Encoder</b> 是<b>双向注意力</b>,负责「读懂整个输入句子」,右塔 <b>Decoder</b> 负责「一个词一个词写出输出」;每个子层都带 Add &amp; Norm(残差捷径+归一化),位置信息由底部的 Positional Encoding 注入,堆叠整体重复 N 次。🎯 图中每个英文色块都可以<b>点击朗读</b>对应术语——面试聊 Transformer 时,这一排词就是开口要说的词,边看边读印象最深。</p>
 
   <div class="my-fig">
     <svg id="myTfSvg" viewBox="0 0 720 545" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="原始 Transformer 经典架构:Encoder-Decoder 双塔,含 Multi-Head Attention、Masked Multi-Head Attention、Feed Forward、Add and Norm、Positional Encoding、Linear、Softmax 等模块,点击色块可朗读英文" font-family="Microsoft YaHei,sans-serif">
@@ -306,7 +306,7 @@
 
   <div class="box box-tip"><b>💡 怎么读这张图(自下而上跟着数据走):</b>① <b>Input Embedding</b> 把词查表变向量,<b>Positional Encoding</b>(旋转符号)给向量盖上「位置戳」;② 左塔每层先 <b>Multi-Head Attention</b>(词与词开会交换信息)再 <b>Feed Forward</b>(独立消化),每步都配 <b>Add &amp; Norm</b> 残差捷径;③ 右塔最底部多了 <b>Masked</b> Multi-Head Attention——「masked」就是不许偷看后面的词(正是上一页实验台②的因果掩码);④ 中间横向箭头把 Encoder 的理解结果(K、V)送给 Decoder 的交叉注意力——「拿 Decoder 的问题去 Encoder 的理解里查资料」;⑤ 最后 <b>Linear</b> 把向量映到词表大小、<b>Softmax</b> 变成概率,得到 <b>Output Probabilities</b>。Outputs (shifted right) 是训练技巧:把标准答案整体右移一位喂给 Decoder,让它永远在「猜下一个词」。</div>
 
-  <p>但随后五年,行业实际收敛到了 <b>Decoder-only</b> 一种形态——这是演进史上第一个重要的「为什么」:</p>
+  <p>但随后五年,行业实际收敛到了 <b>Decoder-only</b>(纯解码器,<span class="my-en" data-say="autoregressive">自回归生成</span>:只根据已生成的词预测下一个词)一种形态——这是演进史上第一个重要的「为什么」:</p>
   <div class="my-fig">
     <svg viewBox="0 0 700 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="三种 Transformer 架构收敛到 Decoder-only:Encoder-Decoder 与 Encoder-only 式微,Decoder-only 成为 2026 前沿主流" font-family="Microsoft YaHei,sans-serif">
       <defs>
@@ -339,7 +339,7 @@
     </svg>
     <div class="my-fig-cap">图③ 架构收敛:三种形态最终汇聚到 Decoder-only(虚线=式微路线,实线=主流路线)</div>
   </div>
-  <p>展开说三条收敛原因:<b>① 训练信号最简单</b>——「预测下一个词」不需要任何人工标注,互联网上任何一段文本都是教材,数据规模可以无限堆;<b>② 与生成任务天然对齐</b>——对话、写作、写代码本质都是「续写」,Decoder 从结构上就是为续写而生的;<b>③ 工程友好</b>——生成时每步只算一个新 token,历史的 K/V 可以缓存增量复用(即 KV Cache,第 9 节会看到它如何成为工程核心矛盾),Encoder-Decoder 的交叉注意力则没这么干净。BERT 那条「理解路线」并没有消失,而是被「生成模型顺便也能理解」吸收了。</p>
+  <p>展开说三条收敛原因:<b>① 训练信号最简单</b>——「预测下一个词」不需要任何人工标注,互联网上任何一段文本都是教材,数据规模可以无限堆;<b>② 与生成任务天然对齐</b>——对话、写作、写代码本质都是「续写」,Decoder 从结构上就是为续写而生的;<b>③ 工程友好</b>——生成时每步只算一个新 token,历史的 K/V 可以缓存增量复用(即 KV Cache,第 9 节会看到它如何成为工程核心矛盾),Encoder-Decoder 的交叉注意力则没这么干净。BERT 那条「理解路线」(偏 NLU 自然语言理解)并没有消失,而是被「生成模型顺便也能理解」吸收了——Decoder-only 一条路同时包揽 NLG(生成)与 NLU(理解)。</p>
   <div class="box box-warn"><b>⚠️ 常见误解:</b>「Transformer=GPT」。Transformer 是一种<b>积木</b>(自注意力+前馈+残差),GPT/BERT/T5 是用同样积木搭出的不同<b>房子</b>。面试说「Transformer 之后都是 Decoder-only」是准确的;说「Transformer 就是大模型」则暴露没分清积木和房子。</div>
 
   <h2><span class="h2-num">3</span> 规模竞赛期:缩放定律与它的第一次修正</h2>
