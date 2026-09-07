@@ -5,9 +5,9 @@
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
-   - 版本: V2.1.26 · 2026-09-07(升级站点时改 CACHE 名以强制更新;本版 en-terms.js 词表扩充 78→93 条,PRECACHE 内必 bump)
+   - 版本: V2.1.27 · 2026-09-07(升级站点时改 CACHE 名以强制更新;本版 16_保研英语面试接入内置音频,en-audio-map.js 已在 PRECACHE,MP3 走 _assets SWR 播放时缓存)
    ============================================================ */
-var CACHE = "hrl-site-v2.1.26";
+var CACHE = "hrl-site-v2.1.27";
 var PRECACHE = [
   "./index.html",
   "./404.html",

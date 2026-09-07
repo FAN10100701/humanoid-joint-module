@@ -946,7 +946,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.26(2026-09-07)";
+  S.VERSION = "V2.1.27(2026-09-07)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -1049,6 +1049,28 @@
     };
     ov.querySelector(".onboard-skip").onclick = finish;
     render();
+  }
+
+  /* ---------- V2.1.27 锚点二次校正:首页计数动画/晚到注入会让上方内容回流,
+     原生锚点跳转按旧布局一次性落点,回流后即偏离;等布局稳定后按最终位置重落一次。
+     用户若已手动滚动(滚轮/触摸/按键)则视为接管,不再打扰 ---------- */
+  function initHashReanchor(){
+    if(!location.hash || location.hash === "#") return;
+    var touched = false;
+    function mark(){ touched = true; }
+    window.addEventListener("wheel", mark, { passive: true });
+    window.addEventListener("touchstart", mark, { passive: true });
+    window.addEventListener("keydown", mark);
+    function realign(){
+      if(touched) return;
+      var id;
+      try{ id = decodeURIComponent(location.hash.slice(1)); }catch(e){ id = location.hash.slice(1); }
+      var el = id && document.getElementById(id);
+      if(el) el.scrollIntoView(true);   /* 各页 scroll-margin-top 照常生效 */
+    }
+    var fire = function(){ setTimeout(realign, 900); setTimeout(realign, 2000); };
+    if(document.readyState === "complete") fire();
+    else window.addEventListener("load", fire);
   }
 
   /* ---------- V2.1.11 顶栏阅读进度环(scroll rAF 节流) ---------- */
@@ -1397,7 +1419,7 @@
       + '.enp-tools{padding:0 14px 9px;display:flex;flex-direction:column;gap:8px}.enp-tap{font-size:12px;color:#aab8c8;display:flex;align-items:center;gap:6px;cursor:pointer}html:not([data-theme-early="dark"]) .enp-tap{color:#475569}.enp-q{width:100%;box-sizing:border-box;font-size:12.5px;padding:7px 10px;border-radius:9px;border:1px solid rgba(140,190,255,.25);background:rgba(255,255,255,.05);color:inherit;outline:none}html:not([data-theme-early="dark"]) .enp-q{background:rgba(37,99,235,.04);border-color:rgba(37,99,235,.25)}.enp-q:focus{border-color:#58a6ff}'
       + '.enp-tabs{padding:0 14px 8px;display:flex;flex-wrap:wrap;gap:5px}.enp-tab{font-size:11.5px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#aab8c8;cursor:pointer;font-family:inherit}html:not([data-theme-early="dark"]) .enp-tab{background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.2);color:#475569}.enp-tab.on{background:rgba(88,166,255,.28);border-color:#58a6ff;color:#fff;font-weight:bold}html:not([data-theme-early="dark"]) .enp-tab.on{background:rgba(37,99,235,.14);border-color:#2563eb;color:#1d4ed8}'
       + '.enp-list{overflow-y:auto;padding:2px 14px 12px;flex:1}.enp-cat{font-size:11px;color:#8b98a9;margin:9px 0 5px;font-weight:bold}'
-      + '.en-card{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin:4px 0;cursor:pointer;transition:.13s;background:rgba(255,255,255,.03)}html:not([data-theme-early="dark"]) .en-card{border-color:rgba(37,99,235,.14);background:rgba(37,99,235,.03)}.en-card:hover{border-color:#58a6ff;background:rgba(88,166,255,.12)}.en-card b{font-size:13px;color:#eef4fb;white-space:nowrap}html:not([data-theme-early="dark"]) .en-card b{color:#0f172a}.en-card span{font-size:11px;color:#8b98a9;flex:1}html:not([data-theme-early="dark"]) .en-card span{color:#5a6a85}.en-card i{font-style:normal;font-size:12px;opacity:.6}.en-card.saying{border-color:#22c55e;background:rgba(34,197,94,.14)}'
+      + '.en-panel .en-card{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin:4px 0;cursor:pointer;transition:.13s;background:rgba(255,255,255,.03)}html:not([data-theme-early="dark"]) .en-panel .en-card{border-color:rgba(37,99,235,.14);background:rgba(37,99,235,.03)}.en-panel .en-card:hover{border-color:#58a6ff;background:rgba(88,166,255,.12)}.en-panel .en-card b{font-size:13px;color:#eef4fb;white-space:nowrap}html:not([data-theme-early="dark"]) .en-panel .en-card b{color:#0f172a}.en-panel .en-card span{font-size:11px;color:#8b98a9;flex:1}html:not([data-theme-early="dark"]) .en-panel .en-card span{color:#5a6a85}.en-panel .en-card i{font-style:normal;font-size:12px;opacity:.6}.en-panel .en-card.saying{border-color:#22c55e;background:rgba(34,197,94,.14)}'
       + '.enp-empty{padding:22px;text-align:center;color:#8b98a9;font-size:12.5px}.enp-foot{padding:8px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:10.5px;color:#8b98a9}html:not([data-theme-early="dark"]) .enp-foot{border-color:rgba(37,99,235,.12);color:#7c8aa0}'
       + '[data-say]{cursor:pointer}body.en-tap-on{cursor:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27%3E%3Ctext y=%2718%27 font-size=%2716%27%3E%F0%9F%94%8A%3C/text%3E%3C/svg%3E") 4 4, auto}';
     document.head.appendChild(st);
@@ -1409,7 +1431,8 @@
     initFavicon, applyTheme, injectChrome, buildToc, initBackTop, S.initQuiz,
     injectLearningGoals, injectPageStamp, initPrintBtn, initGlass, initAiFab,
     initOnboarding, initSW, initAutoSave, initTermTip, initComments,
-    initKaTeX, injectJsonLd, initScrollProgress, initReveal, initMagnet, initEnModule
+    initKaTeX, injectJsonLd, initScrollProgress, initReveal, initMagnet, initEnModule,
+    initHashReanchor
   ];
   function bootSite(){
     for(var i = 0; i < INIT_CHAIN.length; i++){

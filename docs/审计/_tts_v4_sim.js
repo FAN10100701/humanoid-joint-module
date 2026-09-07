@@ -125,6 +125,71 @@ function check(name, cond, detail){
   check("S0 已保存的手选音色(子集外)保留且选中", sel.innerHTML.indexOf('value="george" selected') >= 0, "");
 })();
 
+/* ---------- S9 内置音频层 AU:连播/高亮/回落/停止/语速(页面层函数) ---------- */
+(function(){
+  var a3 = page.indexOf("var AU = (function(){");
+  var b3 = page.indexOf("/* ---------- 渲染:公共行/卡");
+  if(a3 < 0 || b3 < 0 || b3 <= a3){ check("S9 源码抽取", false, "anchor missing"); return; }
+  function FakeAudio(){
+    var self = this;
+    this.src = ""; this.preload = ""; this.playbackRate = 1; this.paused = true;
+    this.onended = this.onerror = null;
+    FakeAudio.last = self;
+    FakeAudio.plays.push("");
+    this.play = function(){ FakeAudio.plays[FakeAudio.plays.length - 1] = self.src; self.paused = false; return { catch: function(){} }; };
+    this.pause = function(){ self.paused = true; };
+  }
+  function freshAU(mapObj){
+    FakeAudio.plays = [];
+    var calls = { ttsSeq: [], ttsWord: [], stops: 0, pulses: 0 };
+    var ttsStub = {
+      speakSequence: function(items, opt){ calls.ttsSeq.push({ items: items, opt: opt }); },
+      speakWord: function(w, b){ calls.ttsWord.push(w); },
+      stop: function(){ calls.stops++; },
+      pulse: function(){ calls.pulses++; }
+    };
+    var fn = new Function("window", "TTS", "Audio", page.slice(a3, b3) + "; return AU;");
+    var au = fn({ EN_AUDIO_MAP: mapObj }, ttsStub, FakeAudio);
+    return { au: au, calls: calls };
+  }
+  function el(){ return { classes: "", classList: { add: function(c){ this._c = this._c || {}; this._c[c] = 1; }, remove: function(c){ this._c = this._c || {}; delete this._c[c]; }, contains: function(c){ return !!(this._c && this._c[c]); } } }; }
+  function cls(e){ return Object.keys(e.classList._c || {}).join(","); }
+
+  var map = { "Hello.": "en-audio/a.mp3", "World.": "en-audio/b.mp3", "robot": "en-audio/c.mp3" };
+  var t = freshAU(map), e1 = el(), e2 = el(), doneCnt = 0;
+  t.au.setRate(0.6);
+  t.au.speakSequence([{ text: "Hello.", el: e1 }, { text: "World.", el: e2 }], { onDone: function(){ doneCnt++; } });
+  check("S9 首句起播且套用语速", FakeAudio.last.src.indexOf("a.mp3") >= 0 && FakeAudio.last.playbackRate === 0.6, FakeAudio.last.src + "@" + FakeAudio.last.playbackRate);
+  check("S9 首句高亮", cls(e1) === "speaking" && cls(e2) === "", cls(e1) + "|" + cls(e2));
+  check("S9 起播前清了 TTS 引擎", t.calls.stops === 1, String(t.calls.stops));
+  FakeAudio.last.onended();
+  check("S9 句间推进:第二句起播+高亮交接", FakeAudio.last.src.indexOf("b.mp3") >= 0 && cls(e1) === "" && cls(e2) === "speaking", FakeAudio.last.src);
+  FakeAudio.last.onended();
+  check("S9 播完回调 onDone 恰好 1 次", doneCnt === 1, String(doneCnt));
+
+  t.au.speakSequence([{ text: "no-audio text", el: el() }], {});
+  check("S9 清单未命中整段回落 TTS", t.calls.ttsSeq.length === 1 && t.calls.ttsSeq[0].items[0].text === "no-audio text", JSON.stringify(t.calls.ttsSeq.map(function(x){ return x.items.length; })));
+
+  var t2 = freshAU(map), w1 = el();
+  t2.au.speakWord("robot", w1);
+  check("S9 单词命中:播音频+点亮+不走TTS", FakeAudio.last.src.indexOf("c.mp3") >= 0 && t2.calls.pulses === 1 && t2.calls.ttsWord.length === 0, FakeAudio.last.src);
+  t2.au.speakWord("zzz", el());
+  check("S9 单词未命中走 TTS", t2.calls.ttsWord.length === 1 && t2.calls.ttsWord[0] === "zzz", JSON.stringify(t2.calls.ttsWord));
+  var t2b = freshAU({ "robot": "en-audio/c.mp3" });
+  t2b.au.speakWord("Robot", el());
+  check("S9 单词小写键兜底命中", FakeAudio.last.src.indexOf("c.mp3") >= 0 && t2b.calls.ttsWord.length === 0, FakeAudio.last.src);
+
+  var t3 = freshAU(map), done3 = 0;
+  t3.au.speakSequence([{ text: "Hello.", el: el() }, { text: "World.", el: el() }], { onDone: function(){ done3++; } });
+  t3.au.stop();
+  check("S9 中途停止:暂停+立即回调 onDone", done3 === 1 && FakeAudio.last.paused === true, "done=" + done3);
+
+  var t4 = freshAU(map);
+  t4.au.speakSequence([{ text: "Hello.", el: el() }, { text: "no-map", el: el() }], {});
+  FakeAudio.last.onerror();
+  check("S9 播放报错从当前句回落 TTS", t4.calls.ttsSeq.length === 1 && t4.calls.ttsSeq[0].items.length === 2, JSON.stringify(t4.calls.ttsSeq.map(function(x){ return x.items.length; })));
+})();
+
 /* ---------- 场景 ---------- */
 (async function(){
   /* S1 本地音色:点击即播(探测句让位)+ 除探测外零 cancel 风暴 */

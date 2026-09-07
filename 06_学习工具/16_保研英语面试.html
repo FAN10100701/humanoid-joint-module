@@ -3,7 +3,7 @@
   人形机器人学习站 · 保研英语面试(口语训练台)
   结构遵循 _assets/页面模板.html;数据来自 _assets/en-interview-data.js / en-dict.js(按需加载)
   功能: 7 页签(自我介绍/高频问答/救场金句/专业词汇/生词本/卡片速记/应试策略)
-        + TTS 逐句跟读(音色/语速) + 点词查词(离线词典) + 生词本(本地保存)
+        + 内置音频逐句跟读(AriaNeural 预生成 MP3,毫秒级起播;缺文件回落 TTS,音色/语速可调)
         + 卡片翻面速记 + 背诵模式(隐藏中文点按偷看)
         + 密码锁(内容含个人简历信息;锁定时不加载数据文件;
           口令仅存 FNV-1a 哈希;11_保研复试面试题库.html 内嵌同一口令入口)
@@ -279,9 +279,9 @@ html:not([data-theme-early="dark"]) .en-lock-hint{color:#64748b}
   <div class="page-head">
     <h1>🗣️ 保研英语面试</h1>
     <div class="sub">英语口语专项训练台:2 版自我介绍 · 20 题高频问答 · 8 条救场金句 · 91 个专业名词 · 367 词离线词典<br>
-    点词即查 · TTS 逐句跟读 · 背诵模式 · 生词本 + 卡片速记——句子短、词简单,说得少、说得对</div>
+    点词即查 · <b>内置音频逐句跟读(毫秒级起播)</b> · 背诵模式 · 生词本 + 卡片速记——句子短、词简单,说得少、说得对</div>
     <div class="tags">
-      <span class="tag">🗣 口语训练</span><span class="tag">🔊 TTS 跟读</span><span class="tag">📖 点词查词</span><span class="tag">⭐ 生词本</span><span class="tag">🙈 背诵模式</span><span class="tag">🔒 密码访问</span>
+      <span class="tag">🗣 口语训练</span><span class="tag">🔊 内置音频跟读</span><span class="tag">📖 点词查词</span><span class="tag">⭐ 生词本</span><span class="tag">🙈 背诵模式</span><span class="tag">🔒 密码访问</span>
     </div>
   </div>
 
@@ -301,7 +301,7 @@ html:not([data-theme-early="dark"]) .en-lock-hint{color:#64748b}
       <div><div class="en-num g" id="enSRescue">0</div><div class="en-num-k">救场金句(条)</div></div>
       <div><div class="en-num v" id="enSVocab">0</div><div class="en-num-k">专业词汇(词)</div></div>
       <div><div class="en-num w" id="enSWB">0</div><div class="en-num-k">生词本(词)</div></div>
-      <div class="en-note">🔊 朗读使用浏览器自带语音(Web Speech API,免费离线),<b>Edge / Chrome 效果最好</b>:默认「标准音色」自动挑最像真人的(带 ★ 的联网音色,合成要走网络、出声稍慢);本页开页会自动探测,网络音色太慢时<b>本次访问先临时改用本地音色</b>保证一点就出声,想用回原音色在下拉框重新选即可。下拉框只保留推荐音色(标准 / ★联网 / 本地秒出声),不罗列系统全部音色。点任何朗读按钮都会<b>立刻亮起</b>;想要单词秒出声,可在 Windows「设置 → 时间和语言 → 语音」里添加 English 语音包获得本地英文音色。</div>
+      <div class="en-note">🔊 朗读默认播放<b>内置音频</b>:全页 285 段句子与单词已用微软神经网络音色(Aria,与 Edge「标准音色」同款)预生成为 MP3,点击<b>毫秒级起播</b>,离线也能用;语速滑杆对内置音频同样生效。仅内置音频未覆盖的内容(如生词本里自加的词)自动回落浏览器 TTS:默认「标准音色」会挑最像真人的联网音色,但合成要走网络、出声稍慢,开页会自动探测,太慢时临时改用本地音色兜底;想要兜底也秒出声,可在 Windows「设置 → 时间和语言 → 语音」里添加 English 语音包。</div>
     </div>
   </div>
   <div class="en-toolbar">
@@ -407,13 +407,14 @@ function loadScript(src, cb){
   s.src = src; s.onload = cb; s.onerror = cb;
   document.head.appendChild(s);
 }
-var pending = 3;
+var pending = 4;
 function onReady(){ if(--pending) return; init(); }
-/* 密码锁纪律:解锁前不注入任何内容数据文件 */
+/* 密码锁纪律:解锁前不注入任何内容数据文件(清单含全部原文,同样受门禁) */
 function loadData(){
   loadScript("../_assets/en-interview-data.js", onReady);
   loadScript("../_assets/en-dict.js", onReady);
   loadScript("../_assets/en-notes.js", onReady);   /* 词组/语法/词根三层讲解 */
+  loadScript("../_assets/en-audio-map.js", onReady);   /* 内置音频清单;加载失败自动全量回落 TTS */
 }
 
 /* ---------- 离线词典查询(词形还原回退) ---------- */
@@ -911,6 +912,99 @@ var TTS = (function(){
   };
 })();
 
+/* ---------- 内置音频层:预生成 MP3,点击即播本地文件(毫秒级起播、离线可用),缺文件回落 TTS ---------- */
+/* 音频由 _本地工具/生成英语音频.py 用微软 AriaNeural(与 Edge「标准音色」同款引擎)预合成,
+   清单 _assets/en-audio-map.js 按「原文 → 文件」映射。浏览器 TTS 的好听音色全是云端合成,
+   每次点击都要走一遍网络(1~3 秒起),这是"点了慢"的根源;预生成后彻底不依赖它。 */
+var AU = (function(){
+  var el = null, rate = 0.75, seq = null, hiEl = null;
+  function map(){ return window.EN_AUDIO_MAP || null; }
+  /* 整句用原文精确命中;单词先原样再小写(词级音频统一小写键) */
+  function urlOf(text){
+    var m = map(), t = String(text == null ? "" : text);
+    if(!m) return null;
+    if(m[t]) return "../_assets/" + m[t];
+    var lo = t.toLowerCase();
+    return m[lo] ? "../_assets/" + m[lo] : null;
+  }
+  function ensureEl(){
+    if(!el){ el = new Audio(); el.preload = "auto"; }
+    return el;
+  }
+  function hi(elm){
+    if(hiEl){ hiEl.classList.remove("speaking"); hiEl = null; }
+    if(elm){ elm.classList.add("speaking"); hiEl = elm; }
+  }
+  function setRate(r){ rate = r; if(el){ try{ el.playbackRate = r; }catch(e){} } }
+  function stop(){
+    if(!seq) return;
+    var s = seq; seq = null;
+    try{ if(el) el.pause(); }catch(e){}
+    hi(null);
+    if(s.onDone) s.onDone();
+  }
+  /* 播放失败(文件缺失/解码错/自动播放被拒):从当前句起改走 TTS 兜底 */
+  function toTTS(s){
+    seq = null; hi(null);
+    TTS.stop();
+    var rest = [], i;
+    for(i = s.i; i < s.items.length; i++) rest.push(s.items[i]);
+    TTS.speakSequence(rest, { onDone: s.onDone });
+  }
+  function next(){
+    var s = seq; if(!s) return;
+    s.i++;
+    if(s.i >= s.items.length){ seq = null; hi(null); if(s.onDone) s.onDone(); return; }
+    hi(s.items[s.i].el);
+    var a = ensureEl(), fell = false;
+    a.src = s.urls[s.i];
+    try{ a.playbackRate = rate; }catch(e){}
+    a.onended = function(){ if(seq === s) next(); };
+    function fail(){ if(fell || seq !== s) return; fell = true; toTTS(s); }
+    a.onerror = fail;
+    var p;
+    try{ p = a.play(); }catch(e){ fail(); return; }
+    if(p && p.catch) p.catch(fail);
+  }
+  /* 整段朗读入口:清单全命中走音频连播;有未命中则整段回落 TTS(不混播,保证衔接可靠) */
+  function speakSequence(items, opt){
+    opt = opt || {};
+    var urls = [], i, u;
+    for(i = 0; i < items.length; i++){
+      u = urlOf(items[i].text);
+      if(!u) break;
+      urls.push(u);
+    }
+    if(urls.length < items.length){ TTS.speakSequence(items, opt); return; }
+    TTS.stop();        /* 清引擎与朗读按钮状态(pendingDone 照常收尾) */
+    stop();            /* 收掉上一段音频(触发其 onDone) */
+    seq = { items: items, urls: urls, i: -1, onDone: opt.onDone || null };
+    if(opt.onStart) opt.onStart();
+    next();
+  }
+  /* 单词/词组:命中播音频(即时),未命中走 TTS;两者都有即时点亮回执 */
+  function speakWord(word, btn){
+    if(btn && btn.classList) TTS.pulse(btn);
+    var u = urlOf(word);
+    if(!u){ TTS.speakWord(word, btn); return; }
+    TTS.stop();
+    stop();
+    var a = ensureEl(), fell = false;
+    a.src = u;
+    try{ a.playbackRate = Math.min(rate, 0.9); }catch(e){}
+    a.onended = null;
+    function fail(){ if(fell) return; fell = true; TTS.speakWord(word, btn); }
+    a.onerror = fail;
+    var p;
+    try{ p = a.play(); }catch(e){ fail(); return; }
+    if(p && p.catch) p.catch(fail);
+  }
+  return {
+    speakSequence: speakSequence, speakWord: speakWord, stop: stop,
+    setRate: setRate, available: function(){ return !!map(); }
+  };
+})();
+
 /* ---------- 渲染:公共行/卡 ---------- */
 function lineHTML(en, zh){
   return '<div class="en-line">' +
@@ -1122,6 +1216,8 @@ function resetReadBtns(){
     btns[i].textContent = btns[i].getAttribute("data-label") || "▶ 朗读";
   }
 }
+/* 全局停止 = 音频层 + TTS 引擎一起收(谁在跑收谁),朗读按钮状态照常复位 */
+function stopAll(){ AU.stop(); TTS.stop(); resetReadBtns(); }
 
 /* ---------- 单词/词组弹窗(释义 + 语法用法 + 词根词缀) ---------- */
 function openPop(word, vocabEntry, phrKey){
@@ -1302,7 +1398,7 @@ function bindEvents(){
     if(w){ openPop(w.getAttribute("data-w"), null, w.getAttribute("data-ph")); return; }
 
     var vs = t.closest ? t.closest(".en-vspeak") : null;
-    if(vs){ TTS.speakWord(vs.getAttribute("data-w"), vs); return; }
+    if(vs){ AU.speakWord(vs.getAttribute("data-w"), vs); return; }
     var st = t.closest ? t.closest(".en-vstar") : null;
     if(st){
       var w2 = st.getAttribute("data-w");
@@ -1315,7 +1411,7 @@ function bindEvents(){
     if(sl){
       var line = sl.closest(".en-line");
       var enBox = line.querySelector(".en-en");
-      TTS.speakSequence([{ text: enBox.textContent, el: line }], {
+      AU.speakSequence([{ text: enBox.textContent, el: line }], {
         onStart: function(){ TTS.pulse(sl); }   /* 点了立刻亮:声音晚到也不像"没反应" */
       });
       return;
@@ -1346,7 +1442,7 @@ function bindEvents(){
       if(rb.id === "enCardRestart"){ buildDeck(); showCard(); toast("已重新洗牌"); return; }
       if(rb.id === "enAgain"){ buildDeck(); showCard(); return; }
       /* 整卡朗读(自我介绍/问答/救场) */
-      if(rb.classList.contains("reading")){ TTS.stop(); resetReadBtns(); return; }
+      if(rb.classList.contains("reading")){ stopAll(); return; }
       var card = rb.closest(".en-card");
       if(!card) return;
       var lines = card.querySelectorAll(".en-line"), items = [];
@@ -1357,7 +1453,7 @@ function bindEvents(){
       resetReadBtns();
       rb.classList.add("reading");
       rb.textContent = "⏹ 停止";
-      TTS.speakSequence(items, { onDone: resetReadBtns });
+      AU.speakSequence(items, { onDone: resetReadBtns });
       return;
     }
 
@@ -1369,7 +1465,7 @@ function bindEvents(){
       if(t.id === "enCardFlip") return;
       return;
     }
-    if(t.id === "enCardSpeak"){ if(deck[deckPos]) TTS.speakWord(deck[deckPos].w, t); return; }
+    if(t.id === "enCardSpeak"){ if(deck[deckPos]) AU.speakWord(deck[deckPos].w, t); return; }
     if(t.id === "enCardNext"){
       if(deckPos < deck.length - 1){ deckPos++; showCard(); } else showFinish();
       return;
@@ -1394,7 +1490,7 @@ function bindEvents(){
   });
 
   $("enPopClose").onclick = closePop;
-  $("enPopSpeak").onclick = function(){ if(popCtx) TTS.speakWord(popCtx.w, $("enPopSpeak")); };
+  $("enPopSpeak").onclick = function(){ if(popCtx) AU.speakWord(popCtx.w, $("enPopSpeak")); };
   $("enPopStar").onclick = function(){
     if(!popCtx) return;
     if(wbHas(popCtx.w)){ wbRemove(popCtx.w); toast("已移出「" + popCtx.w + "」"); }
@@ -1404,12 +1500,14 @@ function bindEvents(){
 
   $("enRate").oninput = function(e){
     TTS.setRate(+e.target.value);
+    AU.setRate(+e.target.value);
     $("enRateLb").textContent = (+e.target.value).toFixed(2).replace(/0$/, "") + "x";
   };
   $("enVoice").onchange = function(e){
     TTS.setUserVoice(e.target.value);
     fillVoiceSelect();
     updateVoiceStatus();
+    AU.stop();              /* 音色试听考的是浏览器 TTS 本尊,先把内置音频停掉避免叠音 */
     TTS.speakSample();
     var v = TTS.getVoice();
     toast(v ? "已切换音色:" + v.name : "已恢复标准音色");
@@ -1420,7 +1518,7 @@ function bindEvents(){
     this.textContent = on ? "👀 显示中文" : "🙈 背诵模式";
     if(on) toast("中文已隐藏,点击任意中文位置可偷看该句");
   };
-  $("enStop").onclick = function(){ TTS.stop(); resetReadBtns(); };
+  $("enStop").onclick = stopAll;
 }
 
 /* ---------- 密码锁门禁 ---------- */
@@ -1453,7 +1551,7 @@ $("enLockGo").onclick = function(){ tryUnlock($("enLockRemember").checked); };
 $("enLockPw").onkeydown = function(e){ if(e.key === "Enter") tryUnlock($("enLockRemember").checked); };
 $("enRelock").onclick = function(){
   try{ localStorage.removeItem(UNLOCK_KEY); sessionStorage.removeItem(UNLOCK_KEY); }catch(e){}
-  TTS.stop(); resetReadBtns();
+  stopAll();
   lockPage();
   $("enLockPw").focus();
   toast("已重新锁定,本机记忆已清除");

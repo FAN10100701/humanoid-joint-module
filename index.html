@@ -1031,10 +1031,18 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.26</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-07 · 词卡扩至 93 条(补 RNN/LSTM/自回归/NLU·NLG 等基础词)+ 演进页补双向注意力与自回归讲法</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.27</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-07 · 保研英语面试朗读彻底改造:内置音频 627 段毫秒级起播,TTS 转兜底</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
                   <details class="faq" open>
+        <summary>🔊 V2.1.27 · 2026-09-07 · 保研英语面试朗读彻底改造:内置音频毫秒级起播(627 段预生成),TTS 转兜底</summary>
+        <div class="faq-a">🔊 <b>为什么之前怎么调都卡</b>:浏览器里好听的音色全是云端神经网络音色,每点一次朗读都要实时联网合成(国内往返 1~3 秒,谷歌系在国内常不可达;本地音色秒出但机器味重)——这是 Web Speech API 的机制,前端调度绕不开。🔊 <b>彻底方案:把发音烘焙进网站</b>——全页 285 段语句 + 342 个唯一单词用微软 AriaNeural(edge-tts,与 Edge「标准音色」同款)预生成为 MP3(627 个文件约 7.5MB),点击即播本地文件:<b>毫秒级起播、音色恒定、离线可用</b>;当前句高亮/停止/连点行为与原来完全一致,语速滑杆照常生效(变速不变调);MP3 首次播放后缓存,之后离线秒开。🧩 <b>顺修排版 bug</b>:V2.1.25 词卡面板注入样式与英语页 `.en-card` 类名撞车致句子逐词竖排,已收进 `.en-panel` 命名空间(台账 A-55)。🧭 <b>顺修首页板块锚点漂移</b>:hero 统计数字动画回流致带锚点进入时落点偏 160px,数字定宽 + 布局稳定后二次校正(台账 A-56)。🛟 <b>TTS 转兜底</b>:生词本自加词等未覆盖内容自动回落 TTS v4,播放报错从当前句无缝续播。🛠 生成脚本 _本地工具/生成英语音频.py 幂等可重跑;仿真 10 组场景 42 断言全过。</div>
+      </details>
+                  <details class="faq">
+        <summary>📚 V2.1.26 · 2026-09-07 · 词卡扩至 93 条(补基础词条)+ 演进页措辞对齐经典讲法</summary>
+        <div class="faq-a">📚 <b>词卡/点读词表扩至 93 条</b>(对照科普视频常见词汇表查漏):新增 Deep Learning / Neural Network / Sequence Model / RNN / LSTM / Gradient Vanishing(梯度消失)/ Long-range Dependency(长程依赖)/ Seq2Seq / Cross Attention(交叉注意力)/ Causal Attention(因果注意力)/ Autoregressive(自回归生成)/ LLM / Foundation Model(基础模型)/ NLU / NLG 共 15 条基础词条,缩写类全部给出读法(R-N-N / L-S-T-M 等)。🗺 <b>07-06 演进页措辞对齐经典讲法三处</b>:①图②导览点破 Encoder 是「双向注意力」;②Decoder-only 段补「自回归生成」术语(可点读);③BERT 段补 NLU(理解)/NLG(生成)分工——对照【闪客】一小时从 Transformer 到大模型 等科普视频的词汇表逐项查漏,六大脉络确认全覆盖。</div>
+      </details>
+                  <details class="faq">
         <summary>🔊 V2.1.25 · 2026-09-07 · 全站专业英语词卡:左上角「?」点击读音 + 全页点读模式</summary>
         <div class="faq-a">🔊 <b>全站英语读音机制</b>:导航栏左上角新增「?」按钮,打开专业英语词卡面板——83 个术语按 5 分类(Transformer 与大模型 / Agent 与工作流 / 提示词与上下文 / 推理与部署 / 控制与具身智能),点卡片即朗读,默认<b>美式口音、优先本地音色零延迟</b>;面板内可开启<b>点读模式</b>:开启后点击任何页面上的英文单词即发音(光标变 🔊,链接内英文会拦截跳转防止误触);状态记忆在本机。所有页面带 <b>data-say</b> 标注的元素(如 07-06 架构图色块、新节的绿色虚线术语)点击即读,全局生效。🗺 <b>07-06 内容增强</b>:新增「里程碑论文速查表」(16 篇经典论文,含 arXiv 原文链接与一句话突破点:Transformer/GPT-3/Chinchilla/思维链/FlashAttention/LoRA/RoPE/LLaMA/Mamba/DeepSeek 三部曲等)、「一条直觉主线」十步串讲(参考闪客《一小时从 Transformer 到大模型》的直觉讲法)、「从模型到工作流」新节(Agent · 思维链 CoT · MCP · Skills · 提示词工程 · 上下文与提示词压缩,术语全部可点读),自测加至 10 题。📊 <b>板块评分升五维</b>:新增「专业英语 20 分」(词表与词卡同源,命中唯一术语数计分),档位同步 A≥102。</div>
       </details>
@@ -1263,7 +1271,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.26(2026-09-07) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.27(2026-09-07) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
