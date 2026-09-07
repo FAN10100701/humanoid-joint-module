@@ -92,3 +92,5 @@ https://cyco.top/08_学习工具/16_保研英语面试.html
 <url><loc>https://cyco.top/06_软件与算法/19_FOC算法完全图解_流程与运行图.html
 <url><loc>https://cyco.top/06_软件与算法/20_工程电机控制框架对比_流程与选型.html
 https://cyco.top/08_学习工具/18_学习路径规划.html
+https://cyco.top/07_大模型与具身智能/06_大模型演进全景_从Transformer到前沿.html
+https://cyco.top/07_大模型与具身智能/07_大模型结构实验室_动手演示.html

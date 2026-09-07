@@ -126,4 +126,6 @@ window.SITE_SEARCH_INDEX = [
   { t:"FreeRTOS 任务调度与实时性", u:"04_软件与算法/20_FreeRTOS任务调度与实时性.html", s:"软件算法与升级进阶", d:"为什么 1kHz 电流环要的是确定性:抢占调度、队列/信号量/互斥量与优先级反转、FromISR 中断家族、STM32 移植与实时性指标", k:"FreeRTOS RTOS 实时 抢占调度 任务 优先级反转 优先级继承 队列 信号量 互斥量 FromISR 临界区 tick 上下文切换 栈溢出 STM32 移植" },
   { t:"代码规范:C / Python / Verilog", u:"04_软件与算法/21_代码规范_C_Python_Verilog.html", s:"软件算法与升级进阶", d:"规范是团队协作的通信协议:C 命名与防御式编程与 MISRA、Python PEP8 与类型注解与项目结构、Verilog 可综合与阻塞/非阻塞分界,外加 Git 协作与检查清单", k:"代码规范 MISRA C PEP8 类型注解 Verilog 可综合 阻塞 非阻塞 命名 防御式编程 volatile Git commit 分支模型 code review 检查清单" },
 { t:"学习路径规划", u:"06_学习工具/18_学习路径规划.html", s:"学习工具", d:"6 条有序学习路径×阶段关卡×打卡进度联动:新手入门/关节驱动控制/数字IC与NPU/机器人软件/具身智能/保研冲刺,一页总览下一站", k:"学习路径 路径规划 新手入门 课程表 学习顺序 关卡 进度 路线 方向 选路" },
+  { t:"大模型演进全景:从 Transformer 到前沿", u:"07_大模型与具身智能/06_大模型演进全景_从Transformer到前沿.html", s:"大模型与具身智能", d:"八年演进一条线:三时代时间线+缩放定律+五条架构工程线,重点讲透当前工程十大问题", k:"Transformer,演进史,缩放定律,Chinchilla,涌现,ChatGPT,RLHF,RoPE,YaRN,MQA,GQA,MLA,FlashAttention,RMSNorm,SwiGLU,MoE,Mixtral,DeepSeek-V3,推理模型,o1,R1,测试时计算,长上下文,多模态,VLA,工程问题,KV Cache,稀疏注意力,GPT-5,Kimi K2,LLM" },
+  { t:"大模型结构实验室:动手演示", u:"07_大模型与具身智能/07_大模型结构实验室_动手演示.html", s:"大模型与具身智能", d:"四个浏览器内实验台:切 token、算注意力、看前向传播动画、算 KV Cache,配五段源码逐行精读", k:"Tokenizer,BPE,分词,注意力,softmax,温度,QKV,因果掩码,前向传播,Embedding,FFN,残差,KV Cache,显存估算,GQA,MLA,MHA,源码,RoPE,MoE路由,动手实验,可视化,LLM" },
 ];

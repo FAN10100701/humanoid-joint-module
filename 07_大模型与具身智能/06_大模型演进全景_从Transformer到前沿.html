@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 大模型演进全景:从 Transformer 到前沿</title>
+<script>
+  /* 主题防闪烁:在任何渲染前定主题(与全站一致) */
+  (function(){try{var t=localStorage.getItem("site-theme");
+    if(t==="dark"){document.documentElement.setAttribute("data-theme","dark");
+      document.documentElement.setAttribute("data-theme-early","dark");}}catch(e){}})();
+</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级样式(my- 前缀):图卡与 SVG 文字双主题类对 ===== */
+  .my-fig{background:rgba(13,17,23,.78);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 12px;margin:16px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:520px;max-width:100%;height:auto;margin:0 auto}
+  .my-fig-cap{font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6}
+  html:not([data-theme-early="dark"]) .my-fig{background:#ffffff;border-color:rgba(60,80,120,.14)}
+  html:not([data-theme-early="dark"]) .my-fig-cap{color:#5a6a85}
+  /* SVG 文字:浅色默认 + 深色覆写(钦定写法) */
+  .my-lg{fill:#26303b}
+  html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-t{fill:#b45309}
+  html[data-theme-early='dark'] .my-t{fill:#fcd34d}
+  .my-tg{fill:#166534}
+  html[data-theme-early='dark'] .my-tg{fill:#86efac}
+  .my-bwd{fill:#991b1b}
+  html[data-theme-early='dark'] .my-bwd{fill:#fca5a5}
+  .my-prob{fill:#1d4ed8}
+  html[data-theme-early='dark'] .my-prob{fill:#93c5fd}
+  /* 经典架构图:点击朗读交互 */
+  .my-tts{cursor:pointer}
+  .my-tts rect{transition:stroke-width .15s}
+  .my-tts:hover rect{stroke-width:2}
+  .my-saying rect{stroke-width:2.5 !important}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "07-06",
+    root: "..",
+    breadcrumb: [
+      { t: "大模型与具身智能", u: "../index.html#sec7" },
+      { t: "大模型演进全景:从 Transformer 到前沿" }
+    ],
+    prev: { t: "代码实战:部署微调与 Agent", u: "05_代码实战_部署微调与Agent.html" },
+    next: { t: "大模型结构实验室:动手演示", u: "07_大模型结构实验室_动手演示.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🗺️ 大模型演进全景:从 Transformer 到前沿</h1>
+    <div class="sub">八年演进一条线:架构怎么变、为什么这么变、当前工程卡在哪——把碎片化的「模型新闻」串成一张可以面试答题的知识网</div>
+    <div class="tags">
+      <span class="tag">演进史</span><span class="tag">缩放定律</span><span class="tag">架构工程线</span><span class="tag">工程十大问题</span><span class="tag">2026 前沿</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 能按「三个时代」口述 2017→2026 大模型演进主线,每个时代说出代表模型与关键转折<br>
+    2. 能解释缩放定律(Kaplan 与 Chinchilla 两种说法)以及「涌现」争议<br>
+    3. 能独立讲清五条架构工程线(位置编码 / 注意力 / 算子 / 归一化 / 激活)各自解决什么问题<br>
+    4. 能列举当前大模型工程的十大核心问题,并对每个问题说出「为什么难 + 工业界现状解法」<br>
+    <b>建议用时:</b>约 40 分钟(精读) | <b>前置:</b>建议先读 <a href="01_大模型基础与MoE架构图解.html">07-01 大模型基础与 MoE</a>
+  </div>
+
+  <h2><span class="h2-num">1</span> 一张图看完八年:三个时代</h2>
+  <p>大模型这八年,可以压缩成<b>三个时代</b>:<b>架构奠基期(2017-2019)</b>——大家争先证明「注意力就是一切」,把 Transformer 这台发动机造出来;<b>规模竞赛期(2020-2022)</b>——发动机造好了,大家疯狂加大排量,直到 ChatGPT 发现「好不好开」比「排量大」更关键;<b>工程深化期(2023-2026)</b>——粗放堆料到头,转入精细化工程:稀疏化、省显存、拉长上下文、教会模型「思考」。本页就是沿着这条主线,把每一站的「为什么」讲透。</p>
+
+  <div class="my-fig">
+    <svg viewBox="0 0 780 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="大模型八年演进时间线:2017 Transformer 到 2026 前沿,分三个时代" font-family="Microsoft YaHei,sans-serif">
+      <!-- 时代分隔竖虚线 -->
+      <line x1="270" y1="30" x2="270" y2="385" stroke="#64748b" stroke-width="1" stroke-dasharray="4 4" opacity=".5"/>
+      <line x1="500" y1="30" x2="500" y2="385" stroke="#64748b" stroke-width="1" stroke-dasharray="4 4" opacity=".5"/>
+      <!-- 主时间轴 -->
+      <line x1="30" y1="230" x2="750" y2="230" stroke="#58a6ff" stroke-width="2"/>
+      <path d="M750,230 l-10,-5 l0,10 z" fill="#58a6ff"/>
+      <!-- 事件:上排 y上=150 文字区(年份120/文字142,158) 下排 y下=310(年份272/文字292,308) -->
+      <!-- 2017 上 -->
+      <circle cx="60" cy="230" r="5" fill="#58a6ff"/>
+      <line x1="60" y1="225" x2="60" y2="170" stroke="#58a6ff" stroke-width="1"/>
+      <text x="60" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2017</text>
+      <text x="60" y="157" text-anchor="middle" class="my-lg" font-size="11">Transformer</text>
+      <text x="60" y="172" text-anchor="middle" fill="#64748b" font-size="10">注意力即一切</text>
+      <!-- 2018 下 -->
+      <circle cx="140" cy="230" r="5" fill="#58a6ff"/>
+      <line x1="140" y1="235" x2="140" y2="290" stroke="#58a6ff" stroke-width="1"/>
+      <text x="140" y="308" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2018</text>
+      <text x="140" y="325" text-anchor="middle" class="my-lg" font-size="11">GPT-1 · BERT</text>
+      <text x="140" y="340" text-anchor="middle" fill="#64748b" font-size="10">生成/理解双线</text>
+      <!-- 2019 上 -->
+      <circle cx="220" cy="230" r="5" fill="#58a6ff"/>
+      <line x1="220" y1="225" x2="220" y2="170" stroke="#58a6ff" stroke-width="1"/>
+      <text x="220" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2019</text>
+      <text x="220" y="157" text-anchor="middle" class="my-lg" font-size="11">GPT-2(15亿)</text>
+      <text x="220" y="172" text-anchor="middle" fill="#64748b" font-size="10">纯生成路线</text>
+      <!-- 2020 下 -->
+      <circle cx="300" cy="230" r="5" fill="#f59e0b"/>
+      <line x1="300" y1="235" x2="300" y2="290" stroke="#f59e0b" stroke-width="1"/>
+      <text x="300" y="308" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2020</text>
+      <text x="300" y="325" text-anchor="middle" class="my-lg" font-size="11">GPT-3(1750亿)</text>
+      <text x="300" y="340" text-anchor="middle" fill="#64748b" font-size="10">缩放定律提出</text>
+      <!-- 2022 上 -->
+      <circle cx="440" cy="230" r="5" fill="#f59e0b"/>
+      <line x1="440" y1="225" x2="440" y2="170" stroke="#f59e0b" stroke-width="1"/>
+      <text x="440" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2022</text>
+      <text x="440" y="157" text-anchor="middle" class="my-lg" font-size="11">Chinchilla 修正</text>
+      <text x="440" y="172" text-anchor="middle" class="my-t" font-size="11" font-weight="bold">ChatGPT 爆发</text>
+      <!-- 2023 下 -->
+      <circle cx="520" cy="230" r="5" fill="#22c55e"/>
+      <line x1="520" y1="235" x2="520" y2="290" stroke="#22c55e" stroke-width="1"/>
+      <text x="520" y="308" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2023</text>
+      <text x="520" y="325" text-anchor="middle" class="my-lg" font-size="11">GPT-4 · Llama</text>
+      <text x="520" y="340" text-anchor="middle" fill="#64748b" font-size="10">开源浪潮启动</text>
+      <!-- 2024 上 -->
+      <circle cx="600" cy="230" r="5" fill="#22c55e"/>
+      <line x1="600" y1="225" x2="600" y2="170" stroke="#22c55e" stroke-width="1"/>
+      <text x="600" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2024</text>
+      <text x="600" y="157" text-anchor="middle" class="my-lg" font-size="11">MoE 大年 · o1</text>
+      <text x="600" y="172" text-anchor="middle" fill="#64748b" font-size="10">V2/V3 架构创新</text>
+      <!-- 2025 下 -->
+      <circle cx="670" cy="230" r="5" fill="#22c55e"/>
+      <line x1="670" y1="235" x2="670" y2="290" stroke="#22c55e" stroke-width="1"/>
+      <text x="670" y="308" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2025</text>
+      <text x="670" y="325" text-anchor="middle" class="my-t" font-size="11" font-weight="bold">R1 思考元年</text>
+      <text x="670" y="340" text-anchor="middle" fill="#64748b" font-size="10">GPT-5 · K2 · Qwen3</text>
+      <!-- 2026 上 -->
+      <circle cx="735" cy="230" r="5" fill="#ef4444"/>
+      <line x1="735" y1="225" x2="735" y2="170" stroke="#ef4444" stroke-width="1"/>
+      <text x="735" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2026</text>
+      <text x="735" y="157" text-anchor="middle" class="my-lg" font-size="11">V4 稀疏注意力</text>
+      <text x="735" y="172" text-anchor="middle" fill="#64748b" font-size="10">Agent 原生化</text>
+      <!-- 底部时代带 -->
+      <rect x="30" y="392" width="236" height="24" rx="6" fill="#58a6ff" fill-opacity=".09" stroke="#58a6ff" stroke-opacity=".4"/>
+      <text x="148" y="408" text-anchor="middle" class="my-lg" font-size="11">架构奠基期 2017-2019</text>
+      <rect x="280" y="392" width="210" height="24" rx="6" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".4"/>
+      <text x="385" y="408" text-anchor="middle" class="my-lg" font-size="11">规模竞赛期 2020-2022</text>
+      <rect x="504" y="392" width="246" height="24" rx="6" fill="#22c55e" fill-opacity=".09" stroke="#22c55e" stroke-opacity=".4"/>
+      <text x="627" y="408" text-anchor="middle" class="my-lg" font-size="11">工程深化期 2023-2026</text>
+    </svg>
+    <div class="my-fig-cap">图① 大模型八年演进时间线(2017-2026):三个时代、九个关键节点。圆点颜色对应所属时代</div>
+  </div>
+
+  <div class="box box-tip"><b>💡 怎么读这条时间线:</b>注意节点颜色的迁移——蓝色(架构)是「发明工具」,橙色(规模)是「使用工具」,绿色/红色(工程)是「打磨工具」。面试里讲演进,最忌报菜名式罗列模型名;按三个时代讲因果,每句话都有「因为…所以…」,层次立刻不同。</div>
+
+  <h2><span class="h2-num">2</span> 起点 Transformer:它到底解决了 RNN 的什么病</h2>
+  <p>2017 年之前,序列建模的主流是 RNN/LSTM:像<b>读报只有一个人、一个字一个字往后念</b>——第 100 个词的记忆要经过 99 次口头转述才能用上,转述路上不断丢失(梯度消失),而且必须念完上一个才能念下一个(串行,无法并行)。Transformer 用<b>自注意力</b>同时根治两个病:<b>任何两个词之间都是一步直达</b>(长程依赖变成 O(1) 条路径),<b>整句话所有位置同时算</b>(训练可以大规模并行,吃满 GPU)。可以说:没有并行化,就没有后来的「大力出奇迹」。</p>
+  <p>原始论文是 Encoder-Decoder 双塔结构(为机器翻译设计),经典架构如图②:左塔 <b>Encoder</b> 负责「读懂整个输入句子」,右塔 <b>Decoder</b> 负责「一个词一个词写出输出」;每个子层都带 Add &amp; Norm(残差捷径+归一化),位置信息由底部的 Positional Encoding 注入,堆叠整体重复 N 次。🎯 图中每个英文色块都可以<b>点击朗读</b>对应术语——面试聊 Transformer 时,这一排词就是开口要说的词,边看边读印象最深。</p>
+
+  <div class="my-fig">
+    <svg id="myTfSvg" viewBox="0 0 720 545" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="原始 Transformer 经典架构:Encoder-Decoder 双塔,含 Multi-Head Attention、Masked Multi-Head Attention、Feed Forward、Add and Norm、Positional Encoding、Linear、Softmax 等模块,点击色块可朗读英文" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="tfAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+      </defs>
+      <!-- ===== Encoder 塔 N× 大框 ===== -->
+      <rect x="66" y="214" width="228" height="216" rx="10" fill="#58a6ff" fill-opacity=".04" stroke="#64748b" stroke-opacity=".5" stroke-dasharray="6 4"/>
+      <text x="302" y="230" class="my-lg" font-size="12" font-weight="bold">N ×</text>
+      <!-- Encoder: Add & Norm(顶) -->
+      <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
+        <rect x="82" y="388" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
+        <text x="180" y="402" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
+        <text x="180" y="416" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+      </g>
+      <line x1="180" y1="388" x2="180" y2="382" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- Encoder: Feed Forward -->
+      <g class="my-tts" data-say="Feed Forward"><title>点击朗读:Feed Forward(前馈网络)</title>
+        <rect x="82" y="348" width="196" height="34" rx="6" fill="#58a6ff" fill-opacity=".13" stroke="#58a6ff" stroke-opacity=".55"/>
+        <text x="180" y="362" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Feed Forward</text>
+        <text x="180" y="376" text-anchor="middle" fill="#64748b" font-size="8.5">前馈网络(独立消化)</text>
+      </g>
+      <line x1="180" y1="348" x2="180" y2="342" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- Encoder: Add & Norm -->
+      <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
+        <rect x="82" y="308" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
+        <text x="180" y="322" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
+        <text x="180" y="336" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+      </g>
+      <line x1="180" y1="308" x2="180" y2="302" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- Encoder: Multi-Head Attention -->
+      <g class="my-tts" data-say="Multi-Head Attention"><title>点击朗读:Multi-Head Attention(多头注意力)</title>
+        <rect x="82" y="268" width="196" height="34" rx="6" fill="#f59e0b" fill-opacity=".13" stroke="#f59e0b" stroke-opacity=".55"/>
+        <text x="180" y="282" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Multi-Head Attention</text>
+        <text x="180" y="296" text-anchor="middle" fill="#64748b" font-size="8.5">多头注意力(词间开会)</text>
+      </g>
+      <line x1="180" y1="268" x2="180" y2="262" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- ===== Decoder 塔 N× 大框 ===== -->
+      <rect x="426" y="130" width="228" height="300" rx="10" fill="#58a6ff" fill-opacity=".04" stroke="#64748b" stroke-opacity=".5" stroke-dasharray="6 4"/>
+      <text x="662" y="146" class="my-lg" font-size="12" font-weight="bold">N ×</text>
+      <!-- Decoder: Add & Norm(顶) -->
+      <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
+        <rect x="442" y="380" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
+        <text x="540" y="394" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
+        <text x="540" y="408" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+      </g>
+      <line x1="540" y1="380" x2="540" y2="374" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- Decoder: Feed Forward -->
+      <g class="my-tts" data-say="Feed Forward"><title>点击朗读:Feed Forward(前馈网络)</title>
+        <rect x="442" y="340" width="196" height="34" rx="6" fill="#58a6ff" fill-opacity=".13" stroke="#58a6ff" stroke-opacity=".55"/>
+        <text x="540" y="354" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Feed Forward</text>
+        <text x="540" y="368" text-anchor="middle" fill="#64748b" font-size="8.5">前馈网络(独立消化)</text>
+      </g>
+      <line x1="540" y1="340" x2="540" y2="334" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- Decoder: Add & Norm -->
+      <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
+        <rect x="442" y="300" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
+        <text x="540" y="314" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
+        <text x="540" y="328" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+      </g>
+      <line x1="540" y1="300" x2="540" y2="294" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- Decoder: Multi-Head Attention(交叉) -->
+      <g class="my-tts" data-say="Multi-Head Attention"><title>点击朗读:Multi-Head Attention(交叉注意力:Q 来自 Decoder,K/V 来自 Encoder)</title>
+        <rect x="442" y="260" width="196" height="34" rx="6" fill="#f59e0b" fill-opacity=".13" stroke="#f59e0b" stroke-opacity=".55"/>
+        <text x="540" y="274" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Multi-Head Attention</text>
+        <text x="540" y="288" text-anchor="middle" fill="#64748b" font-size="8.5">交叉注意力(问 Encoder 查资料)</text>
+      </g>
+      <line x1="540" y1="260" x2="540" y2="254" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- Decoder: Add & Norm -->
+      <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
+        <rect x="442" y="220" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
+        <text x="540" y="234" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
+        <text x="540" y="248" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+      </g>
+      <line x1="540" y1="220" x2="540" y2="214" stroke="#58a6ff" stroke-width="1.4"/>
+      <!-- Decoder: Masked Multi-Head Attention -->
+      <g class="my-tts" data-say="Masked Multi-Head Attention"><title>点击朗读:Masked Multi-Head Attention(带掩码的多头注意力)</title>
+        <rect x="442" y="172" width="196" height="42" rx="6" fill="#f59e0b" fill-opacity=".13" stroke="#f59e0b" stroke-opacity=".55"/>
+        <text x="540" y="189" text-anchor="middle" class="my-lg" font-size="10.5" font-weight="bold">Masked Multi-Head Attention</text>
+        <text x="540" y="205" text-anchor="middle" fill="#64748b" font-size="8.5">带掩码:不许偷看后面的词</text>
+      </g>
+      <!-- ===== 顶部输出链(Decoder 上方) ===== -->
+      <line x1="540" y1="130" x2="540" y2="118" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
+      <g class="my-tts" data-say="Linear"><title>点击朗读:Linear(线性层)</title>
+        <rect x="452" y="86" width="176" height="30" rx="6" fill="#a855f7" fill-opacity=".12" stroke="#a855f7" stroke-opacity=".5"/>
+        <text x="540" y="105" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Linear</text>
+      </g>
+      <line x1="540" y1="86" x2="540" y2="80" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
+      <g class="my-tts" data-say="Softmax"><title>点击朗读:Softmax(归一化成概率)</title>
+        <rect x="452" y="48" width="176" height="30" rx="6" fill="#22c55e" fill-opacity=".16" stroke="#22c55e" stroke-opacity=".55"/>
+        <text x="540" y="67" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Softmax</text>
+      </g>
+      <line x1="540" y1="48" x2="540" y2="42" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
+      <g class="my-tts" data-say="Output Probabilities"><title>点击朗读:Output Probabilities(输出概率)</title>
+        <text x="540" y="18" text-anchor="middle" class="my-lg" font-size="11.5" font-weight="bold">Output Probabilities</text>
+        <text x="540" y="33" text-anchor="middle" fill="#64748b" font-size="8.5">下一个词的概率分布</text>
+      </g>
+      <!-- ===== Encoder 塔顶输出 → Decoder 交叉注意力 ===== -->
+      <path d="M180,214 L180,190 L360,190 L360,277 L424,277" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#tfAr)"/>
+      <text x="262" y="182" text-anchor="middle" fill="#64748b" font-size="9.5">K · V(Encoder 的理解结果)</text>
+      <!-- ===== 底部:输入 / 嵌入 / 位置编码 ===== -->
+      <!-- Encoder 底 -->
+      <line x1="180" y1="452" x2="180" y2="430" stroke="#58a6ff" stroke-width="1.4"/>
+      <circle cx="180" cy="452" r="9" fill="none" stroke="#58a6ff" stroke-width="1.4"/>
+      <path d="M174,452 h12 M180,446 v12" stroke="#58a6ff" stroke-width="1.4"/>
+      <g class="my-tts" data-say="Positional Encoding"><title>点击朗读:Positional Encoding(位置编码)</title>
+        <circle cx="124" cy="452" r="11" fill="none" stroke="#f59e0b" stroke-width="1.4"/>
+        <path d="M116,452 q4,-7 8,0 q4,7 8,0" fill="none" stroke="#f59e0b" stroke-width="1.3"/>
+        <text x="10" y="446" class="my-lg" font-size="9.5">Positional</text>
+        <text x="10" y="459" class="my-lg" font-size="9.5">Encoding</text>
+        <text x="10" y="472" fill="#64748b" font-size="8.5">位置编码(位置戳)</text>
+      </g>
+      <line x1="135" y1="452" x2="168" y2="452" stroke="#58a6ff" stroke-width="1.4"/>
+      <g class="my-tts" data-say="Input Embedding"><title>点击朗读:Input Embedding(输入嵌入)</title>
+        <rect x="82" y="474" width="196" height="34" rx="6" fill="#ec4899" fill-opacity=".12" stroke="#ec4899" stroke-opacity=".5"/>
+        <text x="180" y="488" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Input Embedding</text>
+        <text x="180" y="502" text-anchor="middle" fill="#64748b" font-size="8.5">输入嵌入(查表变向量)</text>
+      </g>
+      <line x1="180" y1="474" x2="180" y2="463" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
+      <g class="my-tts" data-say="Inputs"><title>点击朗读:Inputs(输入)</title>
+        <text x="180" y="530" text-anchor="middle" class="my-lg" font-size="11.5" font-weight="bold">Inputs</text>
+        <text x="180" y="543" text-anchor="middle" fill="#64748b" font-size="8.5">输入序列</text>
+      </g>
+      <!-- Decoder 底 -->
+      <line x1="540" y1="452" x2="540" y2="430" stroke="#58a6ff" stroke-width="1.4"/>
+      <circle cx="540" cy="452" r="9" fill="none" stroke="#58a6ff" stroke-width="1.4"/>
+      <path d="M534,452 h12 M540,446 v12" stroke="#58a6ff" stroke-width="1.4"/>
+      <g class="my-tts" data-say="Positional Encoding"><title>点击朗读:Positional Encoding(位置编码)</title>
+        <circle cx="484" cy="452" r="11" fill="none" stroke="#f59e0b" stroke-width="1.4"/>
+        <path d="M476,452 q4,-7 8,0 q4,7 8,0" fill="none" stroke="#f59e0b" stroke-width="1.3"/>
+        <text x="432" y="446" text-anchor="end" class="my-lg" font-size="9.5">Positional</text>
+        <text x="432" y="459" text-anchor="end" class="my-lg" font-size="9.5">Encoding</text>
+        <text x="432" y="472" text-anchor="end" fill="#64748b" font-size="8.5">位置编码(位置戳)</text>
+      </g>
+      <line x1="495" y1="452" x2="528" y2="452" stroke="#58a6ff" stroke-width="1.4"/>
+      <g class="my-tts" data-say="Output Embedding"><title>点击朗读:Output Embedding(输出嵌入)</title>
+        <rect x="442" y="474" width="196" height="34" rx="6" fill="#ec4899" fill-opacity=".12" stroke="#ec4899" stroke-opacity=".5"/>
+        <text x="540" y="488" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Output Embedding</text>
+        <text x="540" y="502" text-anchor="middle" fill="#64748b" font-size="8.5">输出嵌入(已生成的词)</text>
+      </g>
+      <line x1="540" y1="474" x2="540" y2="463" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
+      <g class="my-tts" data-say="Outputs, shifted right"><title>点击朗读:Outputs, shifted right(输出序列,整体右移一位)</title>
+        <text x="540" y="524" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Outputs (shifted right)</text>
+        <text x="540" y="538" text-anchor="middle" fill="#64748b" font-size="8.5">输出序列(训练时右移一位)</text>
+      </g>
+      <!-- 提示角标 -->
+      <text x="12" y="24" class="my-t" font-size="10.5" font-weight="bold">🔊 点击任意色块朗读英文术语</text>
+    </svg>
+    <div class="my-fig-cap">图② 原始 Transformer 经典架构(2017 论文,双语标注):左塔 Encoder 读懂输入,右塔 Decoder 逐词写出输出;色块可点击朗读英文</div>
+  </div>
+
+  <div class="box box-tip"><b>💡 怎么读这张图(自下而上跟着数据走):</b>① <b>Input Embedding</b> 把词查表变向量,<b>Positional Encoding</b>(旋转符号)给向量盖上「位置戳」;② 左塔每层先 <b>Multi-Head Attention</b>(词与词开会交换信息)再 <b>Feed Forward</b>(独立消化),每步都配 <b>Add &amp; Norm</b> 残差捷径;③ 右塔最底部多了 <b>Masked</b> Multi-Head Attention——「masked」就是不许偷看后面的词(正是上一页实验台②的因果掩码);④ 中间横向箭头把 Encoder 的理解结果(K、V)送给 Decoder 的交叉注意力——「拿 Decoder 的问题去 Encoder 的理解里查资料」;⑤ 最后 <b>Linear</b> 把向量映到词表大小、<b>Softmax</b> 变成概率,得到 <b>Output Probabilities</b>。Outputs (shifted right) 是训练技巧:把标准答案整体右移一位喂给 Decoder,让它永远在「猜下一个词」。</div>
+
+  <p>但随后五年,行业实际收敛到了 <b>Decoder-only</b> 一种形态——这是演进史上第一个重要的「为什么」:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 700 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="三种 Transformer 架构收敛到 Decoder-only:Encoder-Decoder 与 Encoder-only 式微,Decoder-only 成为 2026 前沿主流" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="arB1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+      </defs>
+      <!-- 三个源盒 -->
+      <rect x="30" y="40" width="210" height="56" rx="8" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-opacity=".5"/>
+      <text x="135" y="62" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">Encoder-Decoder</text>
+      <text x="135" y="80" text-anchor="middle" fill="#64748b" font-size="10">代表:T5 / 原始论文</text>
+      <rect x="30" y="118" width="210" height="56" rx="8" fill="#f59e0b" fill-opacity=".08" stroke="#f59e0b" stroke-opacity=".5"/>
+      <text x="135" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">Encoder-only</text>
+      <text x="135" y="158" text-anchor="middle" fill="#64748b" font-size="10">代表:BERT(理解任务)</text>
+      <rect x="30" y="196" width="210" height="56" rx="8" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".6" stroke-width="1.5"/>
+      <text x="135" y="218" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">Decoder-only</text>
+      <text x="135" y="236" text-anchor="middle" fill="#64748b" font-size="10">代表:GPT 系列</text>
+      <!-- 汇聚箭头:前两条虚线(式微),最后一条实线(主流) -->
+      <path d="M240,68 C330,68 340,130 428,148" fill="none" stroke="#58a6ff" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arB1)" opacity=".65"/>
+      <path d="M240,146 C310,146 360,155 428,162" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arB1)" opacity=".65"/>
+      <path d="M240,224 C330,224 340,180 428,176" fill="none" stroke="#22c55e" stroke-width="2.2" marker-end="url(#arB1)"/>
+      <!-- 收敛大盒 -->
+      <rect x="434" y="96" width="236" height="130" rx="10" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".6" stroke-width="1.5"/>
+      <text x="552" y="130" text-anchor="middle" class="my-lg" font-size="13" font-weight="bold">Decoder-only</text>
+      <text x="552" y="150" text-anchor="middle" fill="#64748b" font-size="10.5">2026 年前沿模型几乎全部采用</text>
+      <text x="552" y="170" text-anchor="middle" class="my-lg" font-size="10.5">GPT · Llama · Qwen · DeepSeek</text>
+      <text x="552" y="190" text-anchor="middle" class="my-lg" font-size="10.5">Kimi · Gemini(稀疏化变体)</text>
+      <text x="552" y="212" text-anchor="middle" class="my-tg" font-size="10.5">✓ 训练信号简单 ✓ 天然适配生成</text>
+      <line x1="350" y1="252" x2="350" y2="252" stroke="#64748b"/>
+      <!-- 底部原因 -->
+      <text x="350" y="266" text-anchor="middle" fill="#64748b" font-size="10.5">收敛原因:下一个词预测可在任何文本上训练;生成与解码过程天然对齐;推理时 KV Cache 增量友好</text>
+    </svg>
+    <div class="my-fig-cap">图③ 架构收敛:三种形态最终汇聚到 Decoder-only(虚线=式微路线,实线=主流路线)</div>
+  </div>
+  <p>展开说三条收敛原因:<b>① 训练信号最简单</b>——「预测下一个词」不需要任何人工标注,互联网上任何一段文本都是教材,数据规模可以无限堆;<b>② 与生成任务天然对齐</b>——对话、写作、写代码本质都是「续写」,Decoder 从结构上就是为续写而生的;<b>③ 工程友好</b>——生成时每步只算一个新 token,历史的 K/V 可以缓存增量复用(即 KV Cache,第 9 节会看到它如何成为工程核心矛盾),Encoder-Decoder 的交叉注意力则没这么干净。BERT 那条「理解路线」并没有消失,而是被「生成模型顺便也能理解」吸收了。</p>
+  <div class="box box-warn"><b>⚠️ 常见误解:</b>「Transformer=GPT」。Transformer 是一种<b>积木</b>(自注意力+前馈+残差),GPT/BERT/T5 是用同样积木搭出的不同<b>房子</b>。面试说「Transformer 之后都是 Decoder-only」是准确的;说「Transformer 就是大模型」则暴露没分清积木和房子。</div>
+
+  <h2><span class="h2-num">3</span> 规模竞赛期:缩放定律与它的第一次修正</h2>
+  <p>架构定型后,2020-2022 的主旋律只有一个字:<b>大</b>。参数量三年翻了三个数量级,而支撑这种「大力出奇迹」的理论依据,是 2020 年 OpenAI 提出的<b>缩放定律(Scaling Laws)</b>。</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>模型</th><th>发布</th><th>参数量</th><th>训练数据</th><th>关键意义</th></tr>
+      <tr><td>GPT-1</td><td>2018.06</td><td>约 1.17 亿</td><td>约 5GB 文本</td><td>证明「生成式预训练+微调」范式可行</td></tr>
+      <tr><td>GPT-2</td><td>2019.02</td><td>约 15 亿</td><td>约 40GB(WebText)</td><td>零样本多任务雏形,因「太危险」分阶段发布</td></tr>
+      <tr><td>GPT-3</td><td>2020.05</td><td>约 1750 亿</td><td>约 3000 亿 token</td><td>上下文学习(in-context learning)涌现</td></tr>
+      <tr><td>Chinchilla</td><td>2022.03</td><td>约 700 亿</td><td>约 1.4 万亿 token</td><td>同算力下反超 GPT-3 级模型,修正缩放定律</td></tr>
+    </table>
+  </div>
+  <div class="my-fig">
+    <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="缩放定律示意:左图损失随算力平滑下降,右图 Chinchilla 最优配比约每参数 20 token" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="arB2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+      </defs>
+      <!-- 左半:损失-算力曲线 -->
+      <text x="180" y="26" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">Kaplan 缩放定律(2020)</text>
+      <line x1="55" y1="230" x2="330" y2="230" stroke="#64748b" stroke-width="1.2" marker-end="url(#arB2)"/>
+      <line x1="55" y1="230" x2="55" y2="48" stroke="#64748b" stroke-width="1.2" marker-end="url(#arB2)"/>
+      <text x="322" y="248" text-anchor="middle" fill="#64748b" font-size="10">算力(对数轴)</text>
+      <text x="42" y="44" text-anchor="middle" fill="#64748b" font-size="10">损失</text>
+      <polyline points="70,215 110,205 150,192 190,177 230,160 270,140 310,112" fill="none" stroke="#58a6ff" stroke-width="2.2"/>
+      <text x="196" y="196" text-anchor="middle" class="my-t" font-size="10.5">对数坐标下近似直线:</text>
+      <text x="196" y="211" text-anchor="middle" fill="#64748b" font-size="10">规模每翻倍,损失可预测地下降</text>
+      <text x="180" y="278" text-anchor="middle" fill="#64748b" font-size="10.5">结论:算力、参数、数据同比例堆,性能可预测提升</text>
+      <!-- 分隔线 -->
+      <line x1="360" y1="36" x2="360" y2="264" stroke="#64748b" stroke-width="1" stroke-dasharray="4 4" opacity=".5"/>
+      <!-- 右半:Chinchilla 天平 -->
+      <text x="530" y="26" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">Chinchilla 修正(2022)</text>
+      <line x1="530" y1="90" x2="530" y2="150" stroke="#64748b" stroke-width="3"/>
+      <line x1="430" y1="150" x2="630" y2="150" stroke="#64748b" stroke-width="3"/>
+      <rect x="388" y="162" width="84" height="34" rx="6" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-opacity=".55"/>
+      <text x="430" y="184" text-anchor="middle" class="my-lg" font-size="11">参数 70B</text>
+      <rect x="588" y="162" width="84" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
+      <text x="630" y="184" text-anchor="middle" class="my-lg" font-size="11">数据 1.4T token</text>
+      <text x="530" y="132" text-anchor="middle" class="my-t" font-size="11" font-weight="bold">最优配比 ≈ 每 1 参数喂 20 token</text>
+      <text x="530" y="222" text-anchor="middle" fill="#64748b" font-size="10.5">同算力下:70B + 大量数据 反超 175B + 少量数据</text>
+      <text x="530" y="240" text-anchor="middle" fill="#64748b" font-size="10.5">GPT-3 属于「参数过大、数据喂少」的失衡配置</text>
+      <text x="530" y="278" text-anchor="middle" class="my-tg" font-size="10.5">此后业界转向「小参数、多数据」:Llama 系列是直接受益者</text>
+    </svg>
+    <div class="my-fig-cap">图④ 缩放定律与 Chinchilla 修正:左为 Kaplan 版「堆就完了」,右为 Chinchilla 版「参数与数据要配平」</div>
+  </div>
+  <p><b>Kaplan 版(2020)</b>说:只要算力够,性能提升是<b>可预测</b>的——这给了资本敢砸钱的信心(投入产出可以算账)。<b>Chinchilla 版(2022)</b>修正说:同样的算力预算,与其全砸参数,不如<b>参数和数据按约 1:20 配平</b>——GPT-3 那种「1750 亿参数只喂 3000 亿 token」相当于招了巨人却只给一半口粮。这个修正直接改写了后续路线:Llama 2(70B/2T token)之后的模型几乎全部「喂得远比 Chinchilla 更饱」,因为推理成本让「小参数」永远香,而数据可以靠合成与多轮 epoch 补足。</p>
+  <p>另一个被频繁引用又争议不断的概念是<b>涌现(Emergence)</b>:2022 年有论文称某些能力(多步算术、思维链)在规模越过某个阈值后「突然出现」。2023 年斯坦福的研究则泼了冷水:很多「涌现」是<b>评测指标的假象</b>——把连续评分换成「全对才算对」的非线性指标,平滑进步就会在图上看起来像突变。面试里两个方向都提一句,显得立场成熟:「涌现现象真实存在,但『悬崖式突变』里有相当部分是度量方式的产物」。</p>
+
+  <h2><span class="h2-num">4</span> 对齐革命:ChatGPT 为什么是分水岭</h2>
+  <p>2022 年 11 月 30 日 ChatGPT 上线,底层技术(InstructGPT 的三阶段)其实当年年初就发了论文——它没有让模型「更聪明」,只是让模型「<b>更好用</b>」。一个比喻:基座模型是<b>读完了整个图书馆的天才</b>,但你要写周报,他给你背图书馆目录;对齐做的事,是给这位天才做<b>岗前培训</b>——</p>
+  <div class="step-flow">
+    <div class="step-item"><span class="n">1</span><b>SFT 监督微调</b><br>人类示范「好回答」长什么样,让模型模仿——相当于给岗位说明书</div>
+    <div class="step-item"><span class="n">2</span><b>Reward Model 奖励建模</b><br>人类对多个回答排序,训练出一个「打分器」——相当于把质检标准固化成模型</div>
+    <div class="step-item"><span class="n">3</span><b>RLHF 强化学习</b><br>模型生成回答、奖励模型打分,不断朝高分靠拢——按质检标准持续改进</div>
+  </div>
+  <p>这步之后,「可用性 > 智力」成为行业共识:一个 IQ 140 但说不明白的模型,打不过 IQ 130 且表达清晰的模型。后续演进(DPO 去掉显式奖励模型、GRPO 简化训练流程、可验证奖励用代码/数学题的对错当奖励)都在 07-03〈强化学习与后训练〉有专题,本页只需记住它在时间线上的位置:<b>2022-2023 年的对齐革命,是「基座能力」到「产品体验」的惊险一跃</b>。</p>
+
+  <h2><span class="h2-num">5</span> 架构演进工程线:五年打磨一台发动机</h2>
+  <p>2023 年起,裸堆规模边际收益递减,竞争转移到<b>同样算力下怎么把每一个 FLOPs、每一 GB 显存花在刀刃上</b>。这条工程线上有五条相互独立的演进线,面试高频、也最容易被讲混,逐条过:</p>
+
+  <h3>5.1 位置编码:从「写死地址」到「可旋转的相对坐标」</h3>
+  <p>注意力本身是「无序」的——「猫追狗」和「狗追猫」在纯注意力眼里没区别,必须注入位置信息。演进线:<b>正弦位置编码(2017,固定公式)</b> → <b>可学习绝对位置(GPT-2,当词表一样学出来)</b> → <b><b>RoPE 旋转位置编码(2021)</b></b>——把位置变成 q/k 向量在平面上的<b>旋转角度</b>,两个 token 的注意力得分只依赖「相对转角」,天然表达相对位置;更妙的是训练时只见过 4K 的转角范围,推理时用插值/频率微调(<b>位置插值 PI、NTK-aware、YaRN</b>,2023)就能外推到几十倍长度——这是后来「长上下文军备竞赛」的数学地基。<b>iRoPE(Llama 4,2025)</b>再进一步:部分层干脆不要位置编码、只做全局注意力,换取千万级上下文的泛化。</p>
+
+  <h3>5.2 注意力变体:MHA→MQA→GQA→MLA,一条「省 KV Cache」的主线</h3>
+  <p>这条线的全部动力来自第 9 节会展开的一个事实:<b>推理时 KV Cache 是显存与带宽的第一大户</b>。四个变体一脉相承:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="注意力四变体对比:MHA、MQA、GQA、MLA 的 KV 头结构与缓存占用柱状对比" font-family="Microsoft YaHei,sans-serif">
+      <!-- 列参数:4列 x=24/204/384/564 宽170 -->
+      <!-- MHA -->
+      <text x="109" y="24" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">MHA 多头注意力</text>
+      <text x="109" y="40" text-anchor="middle" fill="#64748b" font-size="9.5">2017 基线,每 Q 头配独立 KV 头</text>
+      <text x="109" y="66" text-anchor="middle" fill="#64748b" font-size="9.5">Q 头</text>
+      <rect x="59" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="83" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="107" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="131" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
+      <text x="109" y="106" text-anchor="middle" fill="#64748b" font-size="9.5">KV 头</text>
+      <rect x="59" y="112" width="20" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/><rect x="83" y="112" width="20" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/><rect x="107" y="112" width="20" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/><rect x="131" y="112" width="20" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/>
+      <line x1="109" y1="128" x2="109" y2="150" stroke="#64748b" stroke-width="1"/>
+      <rect x="59" y="150" width="100" height="16" rx="4" fill="#ef4444" fill-opacity=".6"/>
+      <text x="109" y="162" text-anchor="middle" font-size="9.5" fill="#ffffff">缓存 100%</text>
+      <!-- MQA -->
+      <text x="289" y="24" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">MQA 共享 KV</text>
+      <text x="289" y="40" text-anchor="middle" fill="#64748b" font-size="9.5">2019,所有 Q 头共用 1 份 KV</text>
+      <text x="289" y="66" text-anchor="middle" fill="#64748b" font-size="9.5">Q 头</text>
+      <rect x="239" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="263" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="287" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="311" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
+      <text x="289" y="106" text-anchor="middle" fill="#64748b" font-size="9.5">KV 头</text>
+      <rect x="239" y="112" width="92" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/>
+      <text x="285" y="123" text-anchor="middle" font-size="8.5" fill="#64748b">仅 1 份</text>
+      <line x1="289" y1="128" x2="289" y2="150" stroke="#64748b" stroke-width="1"/>
+      <rect x="247" y="150" width="12" height="16" rx="3" fill="#22c55e" fill-opacity=".75"/>
+      <text x="289" y="162" text-anchor="middle" font-size="9.5" class="my-tg">约 3%</text>
+      <!-- GQA -->
+      <text x="469" y="24" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">GQA 分组共享</text>
+      <text x="469" y="40" text-anchor="middle" fill="#64748b" font-size="9.5">2023,Llama-2-70B 起标配</text>
+      <text x="469" y="66" text-anchor="middle" fill="#64748b" font-size="9.5">Q 头</text>
+      <rect x="419" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="443" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="467" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="491" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
+      <text x="469" y="106" text-anchor="middle" fill="#64748b" font-size="9.5">KV 头(2 组,示意)</text>
+      <rect x="419" y="112" width="44" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/><rect x="467" y="112" width="44" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/>
+      <line x1="469" y1="128" x2="469" y2="150" stroke="#64748b" stroke-width="1"/>
+      <rect x="419" y="150" width="25" height="16" rx="4" fill="#22c55e" fill-opacity=".75"/>
+      <text x="469" y="162" text-anchor="middle" font-size="9.5" class="my-tg">约 25%(8 组)</text>
+      <!-- MLA -->
+      <text x="649" y="24" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">MLA 低秩压缩</text>
+      <text x="649" y="40" text-anchor="middle" fill="#64748b" font-size="9.5">2024,DeepSeek-V2 首创</text>
+      <text x="649" y="66" text-anchor="middle" fill="#64748b" font-size="9.5">Q 头</text>
+      <rect x="599" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="623" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="647" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="671" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
+      <text x="649" y="106" text-anchor="middle" fill="#64748b" font-size="9.5">KV 压缩潜向量</text>
+      <rect x="599" y="112" width="92" height="14" rx="2" fill="#22c55e" fill-opacity=".28" stroke="#22c55e"/>
+      <text x="645" y="123" text-anchor="middle" font-size="8.5" fill="#64748b">c_kv ≈ 压缩到低维</text>
+      <line x1="649" y1="128" x2="649" y2="150" stroke="#64748b" stroke-width="1"/>
+      <rect x="599" y="150" width="7" height="16" rx="3" fill="#22c55e" fill-opacity=".9"/>
+      <text x="649" y="162" text-anchor="middle" font-size="9.5" class="my-tg">约 6%</text>
+      <!-- 底部说明 -->
+      <rect x="24" y="196" width="672" height="118" rx="8" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-opacity=".25"/>
+      <text x="360" y="222" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">一条主线:KV 头越省,KV Cache 越小,推理能同时服务的请求越多</text>
+      <text x="360" y="246" text-anchor="middle" fill="#64748b" font-size="10.5">柱高为相对 MHA 的 KV Cache 占用(以 32 个 Q 头、GQA 8 组为例的约值,精度 FP16 口径)</text>
+      <text x="360" y="266" text-anchor="middle" fill="#64748b" font-size="10.5">MQA 省得最狠但精度损失明显;GQA 是「精度几乎无损」的折中,成为开源标配;</text>
+      <text x="360" y="286" text-anchor="middle" fill="#64748b" font-size="10.5">MLA 走第三条路:不砍头数,而是把 KV 投影到低维潜空间压缩,恢复时几乎无损,</text>
+      <text x="360" y="304" text-anchor="middle" fill="#64748b" font-size="10.5">缓存约为 MHA 的 1/16 级别(DeepSeek-V2 论文口径约 5.7%~13%,随配置不同)</text>
+    </svg>
+    <div class="my-fig-cap">图⑤ 注意力四变体:上为 Q/KV 头结构示意(蓝=Q 头,橙=KV 头),中柱为 KV Cache 相对占用,下为演进逻辑</div>
+  </div>
+  <p>面试标准答法:「MQA/GQA/MLA 都在解决同一个问题——KV Cache 太大。<b>MQA</b> 所有 Q 头共享一份 KV,省到极致但掉点;<b>GQA</b> 分组共享,精度几乎无损,是 Llama 系列的标配;<b>MLA</b>(DeepSeek-V2)不砍头,而是把 KV 压缩进一个低维潜向量 c_kv,注意力计算时再投影回来,配合 RoPE 解耦设计做到又省又不掉点。」三者的数学细节在 07-02〈DeepSeek 架构精讲〉有专门展开。</p>
+
+  <h3>5.3 FlashAttention:不是近似,是「少搬数据」的精确算法</h3>
+  <p>常被误解为「快速但粗糙的注意力」,实际上 <b>FlashAttention(2022)的输出与标准注意力完全一致</b>。它洞察到一个硬件事实:GPU 计算快、显存读写慢,HBM 带宽才是瓶颈。标准实现会把 N×N 的注意力矩阵整个写进显存再读出来;FlashAttention 用「分块+tiling+在线 softmax」让中间结果始终留在高速片上 SRAM 里,<b>显存占用从 O(N²) 降到 O(N),速度提升 2~4 倍</b>。这是「IO-aware 算法设计」的教科书案例,后续 FA-2(2023)、FA-3(2024)持续压榨硬件特性。一句话总结:<b>数学没变,搬运变少</b>。</p>
+
+  <h3>5.4 归一化与激活函数:稳定性与效率的小改进</h3>
+  <p><b>归一化</b>走的是 Post-LN(2017,残差之后归一化,深层难训)→ Pre-LN(残差之前归一化,梯度更稳,GPT-2 起)→ <b>RMSNorm</b>(2019,去掉均值中心化只保留缩放,计算更省、效果基本不变,Llama/DeepSeek 等现代模型标配)的路线。<b>激活函数</b>从 GELU 演进到 <b>SwiGLU</b>(门控线性单元,给 FFN 加了一个「开关分支」,同参数量下效果更好)——这两个改动单看都「平平无奇」,但它们是所有 2023 后开源模型配置表里的默认项,看配置表时认识它们是基本功。</p>
+
+  <h2><span class="h2-num">6</span> 稀疏化:稠密模型到 MoE</h2>
+  <p>参数继续变大,但每一步推理没必要动用全部参数——这就是 <b>MoE(混合专家)</b>的逻辑:把 FFN 拆成几十到几百个「专家」,路由器为每个 token 只选少数几个(如 8 个)干活,<b>总参数巨大、单次计算量小</b>。类比与四步流程在 07-01〈大模型基础与 MoE〉已用「医院分诊」讲透,这里只补时间线与代表数字:</p>
+  <ul>
+    <li><b>2023.12 Mixtral 8x7B:</b>约 467 亿总参、每 token 激活约 129 亿——MoE 第一次以「开源+效果好+推理便宜」组合进入主流视野;</li>
+    <li><b>2024.12 DeepSeek-V3:</b>671B 总参、激活 37B,256 个路由专家+1 个共享专家,每 token 选 8,并用「无辅助损失的动态偏置」解决负载均衡老难题;</li>
+    <li><b>2025 开源 MoE 元年:</b>Llama 4(Scout 约 109B 总参/17B 激活/16 专家)、Qwen3-235B-A22B、Kimi K2(1T 总参/32B 激活/384 专家)——前沿开源模型几乎全部 MoE 化,「稠密模型」退守小尺寸端侧场景。</li>
+  </ul>
+  <p>代价也明确:<b>显存要装下全部专家</b>(哪个 token 选中哪个专家是运行时才知道的)、训练时专家并行的 all-to-all 通信容易变成集群瓶颈——所以 MoE 是「用显存和通信换算力」的生意,只在大集群场景划算。</p>
+
+  <h2><span class="h2-num">7</span> 推理范式转变:从「更大」到「想更久」</h2>
+  <p>2024 年 9 月 OpenAI o1 系列开创了一个新轴:除了预训练规模、后训练对齐,<b>「推理时多想几步」成为第三根性能杠杆</b>——让模型先生成一段隐藏的思维链再作答,想得越久答得越好,类似「考试给草稿纸」。2025 年 1 月 DeepSeek-R1 用<b>纯强化学习</b>(GRPO 算法+可验证奖励)复现并开源了这条路,「推理模型」从此成为独立品类。</p>
+  <p>随后一年这条线快速工程化:<b>GPT-5(2025.8)</b>把快模型(gpt-5-main)和思考模型(gpt-5-thinking)合进一个<b>统一系统</b>,由路由器按题目难度自动分配「想多久」;<b>Qwen3(2025.4)</b>做成「思考/非思考」可开关的混合推理;<b>DeepSeek-V4(2026.4 预览)</b>把思考强度分成 low/high/max 档位。另外两个衍生品:<b>蒸馏</b>(R1 证明了长思维链可以被蒸馏进 7B~70B 小模型)与<b>测试时缩放定律</b>(思考 token 数与正确率的可预测关系)。专题细节在 07-02〈DeepSeek 架构精讲〉与 07-03,本页定位它在演进史里的意义:<b>当预训练的数据与算力都逼近天花板时,「把算力花在推理时」是开辟第二增长曲线的关键转折</b>。</p>
+
+  <h2><span class="h2-num">8</span> 长上下文与多模态:两个「必须做但很难做」的方向</h2>
+  <p><b>长上下文:</b>从 GPT-2 的 1K 到 GPT-4 的 8K/32K,再到 Claude 2 的 100K(2023.7)、GPT-4 Turbo 的 128K、Gemini 1.5 Pro 的 1M(2024)、Llama 4 Scout 宣称的 10M(2025),最后到 DeepSeek-V4 把 1M 做成<b>标配</b>(2026)。背后是三件套的持续工程:RoPE 外推(PI/NTK/YaRN)、注意力算子与稀疏化(下节)、以及「middle 迷失」等数据层面的针对性训练。注意「窗口大」不等于「用得好」——把关键信息埋在 100 万 token 中间,模型能不能找到,是另一回事(评测指标如 NIAH 大海捞针就是干这个的)。</p>
+  <p><b>多模态:</b>2021 年 CLIP 用对比学习打通「图文对齐」;2023-2024 年主流做法是「外挂视觉编码器+投影层」;GPT-4o(2024.5)转向<b>原生全模态</b>(文本/图像/音频共用一套 token 空间端到端训练)。对具身智能的延伸是 <b>VLA(视觉-语言-动作模型)</b>:RT-2、OpenVLA、π0、GR00T 把「动作」也变成 token——这正好接上本站 07-04〈基座选型与开源生态〉的具身 VLM 谱系。</p>
+
+  <h2><span class="h2-num">9</span> ⭐ 当前工程十大问题(本页重点)</h2>
+  <p>演进讲完,现在回答一个更实际的问题:<b>如果你明天入职一家大模型公司(或要在大模型上做产品),工程团队此刻真正在愁什么?</b>先把全景挂在这里,再逐个展开:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="大模型工程十大问题全景:训练侧、推理侧、行为侧三组十个问题及当前解法" font-family="Microsoft YaHei,sans-serif">
+      <!-- 三列:训练侧 x=24..244 / 推理侧 x=252..472 / 行为侧 x=480..700 -->
+      <rect x="24" y="20" width="220" height="330" rx="10" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-opacity=".3"/>
+      <text x="134" y="46" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">训练侧</text>
+      <rect x="40" y="60" width="188" height="66" rx="7" fill="#58a6ff" fill-opacity=".09" stroke="#58a6ff" stroke-opacity=".35"/>
+      <text x="134" y="82" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">① 高质量数据枯竭</text>
+      <text x="134" y="100" text-anchor="middle" fill="#64748b" font-size="9.5">解法:合成数据 / RL 自产思维链</text>
+      <text x="134" y="115" text-anchor="middle" fill="#64748b" font-size="9.5">/ 多模态数据 / 精选配比</text>
+      <rect x="40" y="140" width="188" height="66" rx="7" fill="#58a6ff" fill-opacity=".09" stroke="#58a6ff" stroke-opacity=".35"/>
+      <text x="134" y="162" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">② 算力与互联墙</text>
+      <text x="134" y="180" text-anchor="middle" fill="#64748b" font-size="9.5">解法:模型/专家并行、FP8 训练</text>
+      <text x="134" y="195" text-anchor="middle" fill="#64748b" font-size="9.5">/ 通信与计算重叠调度</text>
+      <rect x="40" y="220" width="188" height="66" rx="7" fill="#58a6ff" fill-opacity=".09" stroke="#58a6ff" stroke-opacity=".35"/>
+      <text x="134" y="242" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">③ 评测污染与基准失效</text>
+      <text x="134" y="260" text-anchor="middle" fill="#64748b" font-size="9.5">解法:私域测试集、动态换题</text>
+      <text x="134" y="275" text-anchor="middle" fill="#64748b" font-size="9.5">/ 真实任务基准(SWE-bench)</text>
+      <text x="134" y="322" text-anchor="middle" fill="#64748b" font-size="9.5">「喂什么、怎么验」</text>
+      <rect x="252" y="20" width="220" height="330" rx="10" fill="#f59e0b" fill-opacity=".05" stroke="#f59e0b" stroke-opacity=".3"/>
+      <text x="362" y="46" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">推理侧</text>
+      <rect x="268" y="60" width="188" height="60" rx="7" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".35"/>
+      <text x="362" y="82" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">④ 注意力二次方复杂度</text>
+      <text x="362" y="100" text-anchor="middle" fill="#64748b" font-size="9.5">解法:稀疏注意力(DSA/CSA)</text>
+      <text x="362" y="113" text-anchor="middle" fill="#64748b" font-size="9.5">/ 线性注意力 / 滑窗+全局混合</text>
+      <rect x="268" y="134" width="188" height="60" rx="7" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".35"/>
+      <text x="362" y="156" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑤ KV Cache 显存带宽</text>
+      <text x="362" y="174" text-anchor="middle" fill="#64748b" font-size="9.5">解法:GQA/MLA、KV 量化</text>
+      <text x="362" y="187" text-anchor="middle" fill="#64748b" font-size="9.5">/ PagedAttention 分页管理</text>
+      <rect x="268" y="208" width="188" height="60" rx="7" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".35"/>
+      <text x="362" y="230" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑥ 延迟与吞吐平衡</text>
+      <text x="362" y="248" text-anchor="middle" fill="#64748b" font-size="9.5">解法:连续批处理、投机解码</text>
+      <text x="362" y="261" text-anchor="middle" fill="#64748b" font-size="9.5">/ 多 token 预测 / prefill 拆分</text>
+      <rect x="268" y="282" width="188" height="60" rx="7" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".35"/>
+      <text x="362" y="304" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑦ 端侧部署与能耗</text>
+      <text x="362" y="322" text-anchor="middle" fill="#64748b" font-size="9.5">解法:INT4/FP8 量化、蒸馏</text>
+      <text x="362" y="335" text-anchor="middle" fill="#64748b" font-size="9.5">/ 云端+端侧协同推理</text>
+      <rect x="480" y="20" width="220" height="330" rx="10" fill="#22c55e" fill-opacity=".05" stroke="#22c55e" stroke-opacity=".3"/>
+      <text x="590" y="46" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">行为侧</text>
+      <rect x="496" y="60" width="188" height="60" rx="7" fill="#22c55e" fill-opacity=".09" stroke="#22c55e" stroke-opacity=".35"/>
+      <text x="590" y="82" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑧ 幻觉与可靠性</text>
+      <text x="590" y="100" text-anchor="middle" fill="#64748b" font-size="9.5">解法:RAG 检索增强、工具调用</text>
+      <text x="590" y="113" text-anchor="middle" fill="#64748b" font-size="9.5">/ 引用溯源、置信度校准</text>
+      <rect x="496" y="134" width="188" height="60" rx="7" fill="#22c55e" fill-opacity=".09" stroke="#22c55e" stroke-opacity=".35"/>
+      <text x="590" y="156" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑨ 对齐税与奖励黑客</text>
+      <text x="590" y="174" text-anchor="middle" fill="#64748b" font-size="9.5">解法:可验证奖励、DPO</text>
+      <text x="590" y="187" text-anchor="middle" fill="#64748b" font-size="9.5">/ 过程奖励 PRM、评测去重</text>
+      <rect x="496" y="208" width="188" height="60" rx="7" fill="#22c55e" fill-opacity=".09" stroke="#22c55e" stroke-opacity=".35"/>
+      <text x="590" y="230" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑩ Agent 长程可靠性</text>
+      <text x="590" y="248" text-anchor="middle" fill="#64748b" font-size="9.5">解法:任务分解、反思重试</text>
+      <text x="590" y="261" text-anchor="middle" fill="#64748b" font-size="9.5">/ 沙箱执行、记忆与上下文管理</text>
+      <text x="590" y="322" text-anchor="middle" fill="#64748b" font-size="9.5">「答得对、装得像、靠得住」</text>
+    </svg>
+    <div class="my-fig-cap">图⑥ 工程十大问题全景:训练侧管「喂什么、怎么验」,推理侧管「跑得动、跑得省」,行为侧管「答得对、靠得住」</div>
+  </div>
+  <p>下面逐个展开「问题是什么→为什么难→现在怎么办」。其中 ④⑤⑥ 三条是同一根藤上的瓜,先补一张图把推理过程拆开看:</p>
+  <div class="my-fig">
+    <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="推理两阶段:prefill 预填充计算密集,decode 解码访存密集,瓶颈随上下文长度迁移" font-family="Microsoft YaHei,sans-serif">
+      <defs>
+        <marker id="arB3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        <marker id="arB3o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+      </defs>
+      <!-- 左半 prefill -->
+      <text x="180" y="28" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">阶段一 Prefill 预填充</text>
+      <text x="180" y="46" text-anchor="middle" fill="#64748b" font-size="10">整段 prompt 一次性并行进网络</text>
+      <rect x="40" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="72" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="104" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="136" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="168" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
+      <text x="117" y="110" text-anchor="middle" fill="#64748b" font-size="9.5">prompt 的全部 token</text>
+      <line x1="117" y1="60" x2="117" y2="66" stroke="#64748b"/>
+      <line x1="200" y1="80" x2="240" y2="80" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arB3)"/>
+      <rect x="246" y="58" width="110" height="44" rx="8" fill="#58a6ff" fill-opacity=".12" stroke="#58a6ff" stroke-opacity=".55"/>
+      <text x="301" y="76" text-anchor="middle" class="my-lg" font-size="10.5">全并行计算</text>
+      <text x="301" y="92" text-anchor="middle" fill="#64748b" font-size="9">GPU 算力打满</text>
+      <line x1="301" y1="102" x2="301" y2="130" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arB3)"/>
+      <rect x="236" y="136" width="130" height="36" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-opacity=".5"/>
+      <text x="301" y="158" text-anchor="middle" class="my-lg" font-size="10.5">产出完整 KV Cache</text>
+      <text x="180" y="200" text-anchor="middle" class="my-t" font-size="10.5" font-weight="bold">计算密集(compute-bound)</text>
+      <text x="180" y="218" text-anchor="middle" fill="#64748b" font-size="10">决定首字延迟 TTFT;prompt 越长越久</text>
+      <!-- 中分隔 -->
+      <line x1="384" y1="24" x2="384" y2="230" stroke="#64748b" stroke-width="1" stroke-dasharray="5 5" opacity=".5"/>
+      <!-- 右半 decode -->
+      <text x="548" y="28" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">阶段二 Decode 解码</text>
+      <text x="548" y="46" text-anchor="middle" fill="#64748b" font-size="10">一个一个 token 往外蹦</text>
+      <rect x="420" y="58" width="120" height="44" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-opacity=".5"/>
+      <text x="480" y="76" text-anchor="middle" class="my-lg" font-size="10.5">每步都要读:全部权重</text>
+      <text x="480" y="93" text-anchor="middle" class="my-lg" font-size="10.5">+ 已积累的全部 KV Cache</text>
+      <line x1="548" y1="102" x2="548" y2="124" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arB3o)"/>
+      <rect x="486" y="130" width="124" height="36" rx="8" fill="#58a6ff" fill-opacity=".12" stroke="#58a6ff" stroke-opacity=".55"/>
+      <text x="548" y="152" text-anchor="middle" class="my-lg" font-size="10.5">只生成 1 个新 token</text>
+      <path d="M612,148 C660,148 660,80 546,74" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arB3o)"/>
+      <text x="648" y="118" text-anchor="middle" fill="#64748b" font-size="9">新 token 并入</text>
+      <text x="648" y="131" text-anchor="middle" fill="#64748b" font-size="9">KV 循环变大</text>
+      <text x="548" y="200" text-anchor="middle" class="my-bwd" font-size="10.5" font-weight="bold">访存密集(memory-bound)</text>
+      <text x="548" y="218" text-anchor="middle" fill="#64748b" font-size="10">算力在「等数据」,决定每字延迟 TPOT</text>
+      <!-- 底部解法条 -->
+      <rect x="40" y="244" width="640" height="40" rx="8" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-opacity=".25"/>
+      <text x="360" y="268" text-anchor="middle" fill="#64748b" font-size="10.5">对症解法:连续批处理(拼车) · PagedAttention(KV 分页防碎片) · 投机解码(小模型草稿+大模型验证) · KV 量化压缩</text>
+    </svg>
+    <div class="my-fig-cap">图⑦ 推理两阶段:prefill 是「大灶台一次炒一桌菜」,decode 是「一位一位上菜还要每上一口回锅一次」——瓶颈从算力迁到显存带宽</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <tr><th style="width:18%">问题</th><th>为什么难</th><th>工业界现状解法</th></tr>
+      <tr><td><b>① 数据枯竭</b></td><td>高质量公开文本被反复训练过;Chinchilla 式「喂饱」越来越贵;低质数据反而伤模型</td><td>合成数据(phi 系列「教科书级」合成);RL 自产思维链(R1 后范式);多模态数据扩充;数据配比与清洗工程化</td></tr>
+      <tr><td><b>② 算力与互联墙</b></td><td>单次前沿训练成本达亿美元级;GPU 间通信带宽(而非算力)常成真瓶颈;MoE 的 all-to-all 通信尤其凶猛</td><td>模型/张量/专家多维并行;FP8 混合精度训练(DeepSeek-V3);通信与计算重叠调度;国产算力栈补生态</td></tr>
+      <tr><td><b>③ 注意力 N² 复杂度</b></td><td>上下文长度翻倍,注意力计算量翻四倍;1M token 时代裸算注意力不经济</td><td>稀疏注意力(DeepSeek-V3.2 的 DSA、V4 的 CSA「token 维压缩+稀疏」);线性注意力/SSM(Mamba、MiniMax 闪电注意力);滑窗+少数全局层混合(Gemma 系)</td></tr>
+      <tr><td><b>④ KV Cache 显存带宽</b></td><td>decode 每生成一个字都要读全部 KV(图⑥);长上下文+大并发时显存先爆、带宽先满</td><td>结构层:GQA/MLA 压 KV;数值层:KV 量化(FP8/INT4);管理层:PagedAttention 按页分配;系统层:前缀缓存复用</td></tr>
+      <tr><td><b>⑤ 延迟与吞吐</b></td><td>首字延迟(TTFT)与每字延迟(TPOT)互相牵制;批处理提吞吐但加重单请求延迟</td><td>连续批处理(新请求即插即入);chunked prefill 把长 prompt 切片穿插;投机解码(小模型起草稿、大模型并行验签);多 token 预测</td></tr>
+      <tr><td><b>⑥ 幻觉</b></td><td>模型本质是「按概率续写」,编造一个「听起来对」的句子与说真话的计算成本相同;知识更新滞后于训练截止日</td><td>RAG 检索增强(先查再答);工具调用(算术交给计算器、时效交给搜索);引用溯源与置信度校准;对「不知道」的奖励训练</td></tr>
+      <tr><td><b>⑦ 对齐税与奖励黑客</b></td><td>RLHF 的奖励模型是代理目标,过度优化后模型学会「讨好打分器」而非真变好(奖励黑客);对齐过强又损伤能力(对齐税)</td><td>可验证奖励(代码能跑、数学有标准答案,黑客无处藏身);DPO 直接偏好优化绕开显式奖励模型;过程奖励 PRM 盯步骤而非只盯结果</td></tr>
+      <tr><td><b>⑧ 评测污染</b></td><td>公开基准的题目大概率混进训练数据,分数虚高;「刷榜」与真实能力脱节</td><td>私域留出集;动态更新题库(LiveBench/LiveCodeBench);真实任务基准(SWE-bench 用真实 GitHub issue);人工盲评</td></tr>
+      <tr><td><b>⑨ Agent 长程可靠性</b></td><td>多步任务误差逐步累积,一步错步步错;上下文被中间过程塞满挤掉关键信息;工具调用格式与时机易错</td><td>任务分解+计划先行;反思与重试机制;代码/命令在沙箱执行;外部记忆与上下文压缩;前沿模型已能连续 200-300 步工具调用(Kimi K2 Thinking 口径)</td></tr>
+      <tr><td><b>⑩ 端侧与能耗</b></td><td>数据中心功耗成为扩张硬约束;手机/机器人/车载的 NPU 显存与功耗预算比数据中心小几个数量级</td><td>权重量化(INT4/FP8);蒸馏小模型;云端协同(端侧做简单请求、云端兜底复杂请求);稀疏激活的 MoE 天然适配多核(与 08 板块 NPU 部署相接)</td></tr>
+    </table>
+  </div>
+  <div class="box box-tip"><b>💡 记忆抓手:</b>十个问题可以按「<b>喂什么(①③)、跑得动(②④⑤)、答得对(⑥⑦⑧)、落得下(⑨⑩)</b>」四组记。面试被问「大模型现在的技术瓶颈」,按这四组各挑一两个展开,比背零散名词体系感强得多。</div>
+
+  <h2><span class="h2-num">10</span> FAQ</h2>
+  <details class="faq"><summary>大模型到底是「数据库」还是「推理器」?</summary><div class="faq-a">两者都是,但机制上更接近「有损压缩的世界模型+模式补全器」。预训练把海量文本压缩进参数,存储了海量「知识碎片」;推理时它用注意力检索碎片、按概率补全。它能表现出推理(尤其是推理模型显式生成思维链后),但「按相关性补全」的底色也是幻觉的根源——这解释了为什么 ⑥(幻觉)与 ⑧(可靠性)只能缓解、难以根除。</div></details>
+  <details class="faq"><summary>缩放定律还能继续吗?会不会撞墙?</summary><div class="faq-a">预训练侧确实在放缓:可用数据见顶(问题①)、单次训练成本失控(问题②),单纯堆预训练算力的边际收益明显下降。但「缩放」没有死,而是换了战场:后训练 RL 的算力投入(R1 之后大增)、测试时思考长度的缩放(o1/V4 思考档位)、以及稀疏化让「总参数」与「计算量」解耦后继续扩大容量。可以概括为:<b>从「预训练缩放」迁到「全生命周期缩放」</b>。</div></details>
+  <details class="faq"><summary>为什么开源模型追得这么快?DeepSeek/Kimi/Qwen 靠什么?</summary><div class="faq-a">三个杠杆:① 架构论文全公开(MLA/MoE/GRPO 都有论文可抄作业),后发者直接用最优解;② 蒸馏与合成数据降低了「从强模型学习」的门槛;③ 训练工程效率(如 DeepSeek 的 FP8+无辅助损失负载均衡)用更少算力逼近前沿。代价是「约落后前沿 3~6 个月」(DeepSeek-V4 官方口径)——开源生态整体在「跟随性创新」上极快,「首发性创新」仍有差距。</div></details>
+  <details class="faq"><summary>上下文窗口都 1M 了,RAG(检索增强)还有必要吗?</summary><div class="faq-a">有。三个理由:① 成本——把 100 万 token 塞进窗口的费用远高于向量库检索出 1 万 token;② 时效——窗口里只有训练截止前的知识,新信息必须外部取;③ 可审计——RAG 能给出「答案来自哪份文档」,纯靠参数记忆无法溯源。真实系统普遍是「RAG 先筛 + 长窗口消化」的组合,二者是分工不是替代。</div></details>
+
+  <h2><span class="h2-num">11</span> 常见误区</h2>
+  <div class="box box-warn"><b>⚠️ 误区一:「参数量决定一切」。</b>Chinchilla 修正早就说明数据配比同样关键;MoE 时代「总参数」与「实际计算量」解耦,1T 总参激活 32B 的 Kimi K2,推理成本与小一两个数量级的稠密模型相当。讨论模型规模必须先问:「总参还是激活?」</div>
+  <div class="box box-warn"><b>⚠️ 误区二:「推理模型就是更大的聊天模型」。</b>推理模型的核心差异在<b>训练方式</b>(RL+可验证奖励塑造长思维链)而非尺寸,7B 的蒸馏推理模型在数学题上能打赢更大的非推理模型。同理「思考 token」是推理时算力,不是「模型变大了」。</div>
+  <div class="box box-warn"><b>⚠️ 误区三:「FlashAttention 是近似算法」。</b>它是<b>精确</b>计算,只是重组了计算顺序以减少显存读写;近似注意力指的是滑窗/线性注意力/稀疏注意力那一族,两码事。混用这两个词在面试里相当减分。</div>
+
+  <h2><span class="h2-num">12</span> 自测</h2>
+  <div class="quiz"><div class="quiz-q">1. Transformer 相比 RNN,最根本的两个改进是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 参数更多、层数更深</button>
+      <button data-v="B">B. 用了更大的词表和更多训练数据</button>
+      <button data-v="C">C. 自注意力让任意位置一步直达 + 全序列并行计算</button>
+      <button data-v="D">D. 引入了卷积核滑窗提取局部特征</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——RNN 的两大病是「第 100 个词的记忆要转述 99 次(长程依赖弱)」和「必须逐词串行(无法并行)」,自注意力把任意两位置变成一步直达、整句同时算,一并根治。A「更深更多」是规模竞赛期的事,不是架构本身的改进;B 是数据侧;D 是 CNN 的特征,恰恰是被 Transformer 淘汰的方案之一。</div></div>
+  <div class="quiz"><div class="quiz-q">2. 行业最终收敛到 Decoder-only,不包括哪条原因?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 「预测下一个词」不需要标注,任何文本都能当训练数据</button>
+      <button data-v="B">B. Decoder-only 的数学表达能力严格强于 Encoder 结构</button>
+      <button data-v="C">C. 对话/写作/写代码本质是续写,与 Decoder 生成方式天然对齐</button>
+      <button data-v="D">D. 推理时 KV Cache 增量复用,工程上干净高效</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 不成立——三种结构的表达能力理论上都够强,Decoder-only 胜出是「数据效率、任务对齐、工程友好」三重实用原因,不是「数学上更强」。A 是数据效率,C 是任务对齐,D 是工程友好,三条都成立。注意「理论表达能力」与「实际训练效率」是两回事,后者才是工程选择的依据。</div></div>
+  <div class="quiz"><div class="quiz-q">3. Chinchilla 论文对缩放定律的核心修正是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 同等算力下,参数与训练 token 应约按 1:20 配比,模型不必一味求大</button>
+      <button data-v="B">B. 损失随参数增长指数下降,参数越大越好</button>
+      <button data-v="C">C. 数据质量无关紧要,数量决定一切</button>
+      <button data-v="D">D. 模型参数应该缩小到 10B 以下才划算</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——Chinchilla 用 70B 参数喂 1.4T token,在相同算力预算下反超了「参数大而数据少」的 Gopher/GPT-3 式配置,给出「每参数约 20 token」的经验配比。B 是被修正的旧认知;C 与事实相反(数据质量与配比恰恰是重点);D 过度引申——Chinchilla 说的是「配平」,后续模型实际喂的数据比 20 token/参数更饱,因为推理成本偏爱小参数,但没有「必须 10B 以下」的结论。</div></div>
+  <div class="quiz"><div class="quiz-q">4. MQA、GQA、MLA 三个注意力变体共同瞄准的问题是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 提高训练收敛速度</button>
+      <button data-v="B">B. 增强模型的长文本理解准确率</button>
+      <button data-v="C">C. 让注意力矩阵变得稀疏以减少计算量</button>
+      <button data-v="D">D. 压缩 KV Cache 的显存占用与读取带宽</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: D 正确——三者本质都是「让推理时需要缓存的 KV 变小」:MQA 全头共享一份 KV,GQA 分组共享,MLA 投影到低维潜空间压缩。A/B 是「副作用目标」,它们都在尽量不掉点的前提下省缓存;C 描述的是稀疏注意力(DSA/滑窗)那一族的思路——减少的是「算多少」,而 MQA/GQA/MLA 减少的是「存多少、搬多少」,两条线不要混。</div></div>
+  <div class="quiz"><div class="quiz-q">5. 关于 FlashAttention,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 它用低秩近似牺牲少量精度换取速度</button>
+      <button data-v="B">B. 它是精确计算,通过分块与在线 softmax 减少显存读写,显存从 O(N²) 降到 O(N)</button>
+      <button data-v="C">C. 它把注意力矩阵存进 CPU 内存避免 GPU 显存不足</button>
+      <button data-v="D">D. 它是一种稀疏注意力,只计算部分位置对</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——FlashAttention 的关键洞察是 GPU 显存带宽瓶颈:它让中间结果留在片上高速缓存,数学结果与标准注意力完全一致。A「低秩近似」和 D「稀疏注意力」都是别的技术族,张冠李戴;C 方向反了——它恰恰是尽量避免访问慢速显存,更不会去碰 CPU 内存。</div></div>
+  <div class="quiz"><div class="quiz-q">6. 大模型推理的 decode 阶段,瓶颈通常是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. GPU 算力不足,FLOPs 打满</button>
+      <button data-v="B">B. 词表 softmax 计算太慢</button>
+      <button data-v="C">C. 显存带宽——每生成一个 token 都要读取全部权重与 KV Cache</button>
+      <button data-v="D">D. 网络传输延迟</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——decode 每步只算一个 token,计算量小,但「读全部权重+KV Cache」的数据搬运量固定很大,算力单元大部分时间在等数据,是访存密集(memory-bound)。A 恰好相反,prefill(预填充)阶段才是算力吃满的阶段;B 的 softmax 在整个开销里占比很小;D 在本地推理场景不存在,即使云端也不是计算瓶颈的主体。</div></div>
+  <div class="quiz"><div class="quiz-q">7. 「推理模型」(o1/R1 类)与普通对话模型的本质区别是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 主要靠 RL+可验证奖励训练出长思维链,把「多想」变成推理时可伸缩的算力</button>
+      <button data-v="B">B. 参数量更大,所以思考更深</button>
+      <button data-v="C">C. 使用了全新的注意力机制替代 Transformer</button>
+      <button data-v="D">D. 训练时不使用人类数据</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——推理模型的差异在训练范式(R1 式纯 RL、可验证奖励)与推理范式(生成隐藏思维链,思考越长正确率越高),「思考 token 数」是推理时的第三根性能杠杆。B 错,7B 蒸馏推理模型也能打赢更大的非推理模型;C 错,底座仍是 Transformer;D 错,预训练照样用人类数据,RL 阶段也需要任务与奖励设计。</div></div>
+  <div class="quiz"><div class="quiz-q">8. 上下文窗口已到百万级,RAG 依然必要,理由不包括?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 全量塞窗口的 token 费用远高于先检索筛选</button>
+      <button data-v="B">B. 窗口内容受训练截止时间限制,新知识必须外部获取</button>
+      <button data-v="C">C. RAG 能给出答案出处,可审计可溯源</button>
+      <button data-v="D">D. 长窗口下模型完全无法利用中间位置的信息</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: D 说法过强——长窗口模型并非「完全无法」利用中间信息,只是存在「middle 迷失」现象(中间位置召回率偏低),是「不够好」而非「完全不行」,所以不能作为 RAG 的理由,A/B/C 三条才是成本、时效、可审计的正当理由。区分「现象存在」与「现象程度」是这类判断题的关键。</div></div>
+  <div class="quiz"><div class="quiz-q">9. 经典双塔架构中,Encoder 的输出送给 Decoder 的交叉注意力(Multi-Head Attention)时,提供的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. Q(查询向量)</button>
+      <button data-v="B">B. K 和 V(键与值)</button>
+      <button data-v="C">C. 完整的翻译输出句子</button>
+      <button data-v="D">D. 位置编码向量</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——交叉注意力里 Q 来自 Decoder 当前词(「我想查什么」),K/V 来自 Encoder 的输出(「源句子里有什么可查」),即「拿 Decoder 的问题去 Encoder 的理解里查资料」,这是两塔协同的关键通路(图②中间那条横向箭头)。A 把来源说反;C 是机器翻译的最终输出而非中间量;D 在两塔底部就已注入,与交叉注意力无关。</div></div>
+
+  <h2><span class="h2-num">13</span> 小结与思考</h2>
+  <p>八年演进用一个比喻收尾:大模型像一家不断升级的餐厅——<b>预训练</b>是厨师的基础教育(吃下整座图书馆);<b>对齐后训练</b>是岗前服务培训(学会按客人要求出菜);<b>测试时计算</b>是遇到硬菜时多花时间备菜;而<b>工程深化期</b>的所有架构改进(MoE/MLA/FlashAttention/稀疏注意力),本质都是在回答「<b>怎么用更少的灶台和煤气,出同样多的菜</b>」。十大工程问题,就是这家餐厅当前真实的经营难题。</p>
+  <p><b>思考题:</b></p>
+  <ul>
+    <li>如果要你向非技术同学解释「为什么 ChatGPT 是分水岭而 GPT-3 不是」,你会怎么讲?(提示:从「可用性>智力」切入)</li>
+    <li>DeepSeek-V4 把「1M 上下文做成标配」依赖哪些技术前提?至少说出两条(提示:稀疏注意力家族 + KV 压缩家族 + 外推训练)</li>
+    <li>十大工程问题里,哪几个在「具身智能/机器人」场景会被放大?(提示:端侧⑩、延迟⑤、长程可靠性⑨——这也是本站主题的连接点)</li>
+  </ul>
+
+  <h3>延伸阅读(本页资料整理更新至 2026-08)</h3>
+  <ul>
+    <li>Attention Is All You Need(Vaswani et al., 2017)——Transformer 原论文</li>
+    <li>Scaling Laws for Neural Language Models(Kaplan et al., 2020)与 Training Compute-Optimal Large Language Models(Hoffmann et al., 2022,Chinchilla)</li>
+    <li>FlashAttention 系列(Tri Dao, 2022/2023/2024)、RoFormer/RoPE(Su et al., 2021)、YaRN(2023)</li>
+    <li>DeepSeek-V2(MLA)/V3(无辅助损失 MoE)/V3.2(DSA)/R1(GRPO)技术报告;DeepSeek-V4 预览版官方公告(2026-04)</li>
+    <li>Emergent Abilities of Abilities(Wei et al., 2022)与 Are Emergent Abilities a Mirage?(Schaeffer et al., 2023)</li>
+    <li>站内衔接:07-01(MoE 与 KV Cache 基础)· 07-02(MLA/R1 深讲)· 07-03(RLHF/DPO/GRPO)· 下一页 07-07 结构实验室(动手算注意力与 KV Cache)</li>
+  </ul>
+
+</div><!-- /container -->
+<script src="../_assets/site.js"></script>
+<script>
+/* ============ 图②经典架构:点击色块朗读英文术语(浏览器本地 TTS,离线可用) ============ */
+(function(){
+"use strict";
+function mySpeak(txt){
+  try{
+    if(!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    window.speechSynthesis.cancel();
+    var u = new window.SpeechSynthesisUtterance(txt);
+    u.lang = "en-US";
+    u.rate = 0.85;
+    u.volume = 1;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+var svg = document.getElementById("myTfSvg");
+if(svg && svg.addEventListener){
+  svg.addEventListener("click", function(e){
+    var g = e.target, found = null;
+    while(g && g !== svg){
+      if(g.classList && g.classList.contains("my-tts")){ found = g; break; }
+      g = g.parentNode;
+    }
+    if(found){
+      var say = found.getAttribute("data-say");
+      if(say){
+        mySpeak(say);
+        found.classList.add("my-saying");
+        setTimeout(function(){ found.classList.remove("my-saying"); }, 1200);
+      }
+    }
+  });
+}
+})();
+</script>
+</body>
+</html>

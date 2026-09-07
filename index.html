@@ -7,7 +7,7 @@
 <title>人形机器人学习站 · 从关节模组到具身智能</title>
 <meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,软件+硬件+芯片全覆盖。">
 <meta property="og:title" content="人形机器人学习站 · 从关节模组到具身智能">
-<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,99 个学习页面,零基础可学。">
+<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,101 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <meta name="baidu-site-verification" content="codeva-83ZAbuLmz6">
@@ -219,7 +219,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
     <span class="sub-meta">零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</span></div>
     <div class="stats">
-      <div class="stat"><div class="v" id="statPages">99</div><div class="k">学习页面</div></div>
+      <div class="stat"><div class="v" id="statPages">101</div><div class="k">学习页面</div></div>
       <div class="stat"><div class="v" id="statTracked">98</div><div class="k">可打卡页面</div></div>
       <div class="stat"><div class="v" id="statSecs">9</div><div class="k">学习板块</div></div>
       <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
@@ -872,6 +872,8 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <a class="card" href="07_大模型与具身智能/03_强化学习与后训练.html"><span class="go">进入 →</span><div class="ic">🎛️</div><div class="t">强化学习与后训练</div><div class="d">SFT→RLHF/DPO→推理RL→Agent RL 四级火箭;PPO vs GRPO、PRM vs ORM、reward hacking。</div></a>
       <a class="card" href="07_大模型与具身智能/04_基座选型与开源生态.html"><span class="go">进入 →</span><div class="ic">🧭</div><div class="t">基座选型与开源生态(2025-2026)</div><div class="d">许可口径红线(开放权重≠开源)、选型决策树、具身 VLM 底座实证谱系。</div></a>
       <a class="card" href="07_大模型与具身智能/05_代码实战_部署微调与Agent.html"><span class="go">进入 →</span><div class="ic">💻</div><div class="t">代码实战:部署微调与 Agent</div><div class="d">Ollama 三条命令→transformers 十行→LoRA 三超参→GRPO 五行→function calling 二十五行最小 Agent。</div></a>
+      <a class="card" href="07_大模型与具身智能/06_大模型演进全景_从Transformer到前沿.html"><span class="go">进入 →</span><div class="ic">🗺️</div><div class="t">大模型演进全景:从 Transformer 到前沿</div><div class="d">三时代时间线+缩放定律+五条架构工程线;重点讲透当前工程十大问题与解法。</div></a>
+      <a class="card" href="07_大模型与具身智能/07_大模型结构实验室_动手演示.html"><span class="go">进入 →</span><div class="ic">🧪</div><div class="t">大模型结构实验室:动手演示</div><div class="d">切 token、算注意力、前向传播动画、KV Cache 计算器四个实验台+五段源码精读。</div></a>
       <!-- 原 04 升级进阶(并入 06,原 04-01~03 → 04-23~25) -->      <a class="card" href="04_软件与算法/22_通信与控制算法升级路线.html">
         <span class="go">进入 →</span>
         <div class="ic">🚀</div>
@@ -1029,10 +1031,18 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.22</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-06 · 保研题库 19→27 学科 180→254 题(新增控制工程/机电学院基础课 8 学科)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.24</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-07 · 大模型板块新增两页:演进全景(07-06)+ 结构实验室(07-07)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
                   <details class="faq" open>
+        <summary>🗺️🧪 V2.1.24 · 2026-09-07 · 大模型板块新增两页:演进全景(07-06)+ 结构实验室(07-07)</summary>
+        <div class="faq-a">🗺 <b>07-06 大模型演进全景</b>:三时代演进时间线(2017 Transformer→2026 V4 稀疏注意力/Agent 原生);Decoder-only 收敛三原因;缩放定律 Kaplan vs Chinchilla 与涌现争议;五条架构工程线(RoPE→YaRN、MHA→MQA→GQA→MLA、FlashAttention 真相、RMSNorm、SwiGLU);MoE 稀疏化算例;推理范式转变(o1/R1/GPT-5 统一路由/思考档位);⭐ 当前工程十大问题专题(每问题「为什么难+工业界解法」)+ 推理两阶段瓶颈迁移图;6 幅双主题 SVG、自测 8 题,前沿事实联网核实更新至 2026-08。🧪 <b>07-07 大模型结构实验室</b>:四个浏览器内本地计算实验台——Tokenizer 切词台(strawberry 数不清 r 的根源)、注意力显微镜(「它→小猫」指代消解热力图+缩放温度效应+因果掩码)、前向传播六站动画(播放/单步/调速控制条)、KV Cache 计算器(MHA 40GB vs GQA 10GB vs MLA 5.6GB 实时对比);五段源码逐行精读;自测 6 题。🖼 07-06 补绘经典 Transformer 论文架构图(双语标注,色块可点击朗读英文,本地 TTS 离线可用);🔧 顺修登记页面.js 在 V2.1.21 单源化后找不到 SITE_SECTIONS 的 bug;S.STATS 99→101 页;学习路径/翻页链/地图/索引六处登记齐。</div>
+      </details>
+                  <details class="faq">
+        <summary>🔊 V2.1.23 · 2026-09-07 · 保研英语面试 TTS 残余卡顿/单句无响应根治 + 音色下拉精选(网络音色探测降级 v4)</summary>
+        <div class="faq-a">🎧 <b>病灶</b>:V2.1.18 v3 调度后用户实测"单词仍卡顿、单句 🔊 点了没反应"——根源在网络音色(Natural/Online/Google 合成要走网络):单词短还能赶在 1.8s 看门狗内出声(卡顿感),整句必被掐掉、重试 4 次后整段放弃(点了没反应);手动选过网络音色的用户还被"不越权"条款挡在回退之外。🛡 <b>TTS v4 四项对策</b>:①开页静音探测音色起步耗时,网络音色超 2s 或报错→本次访问自动临时改用本地音色并提示(手动选的同样生效,重选即重置);②看门狗分档:本地 1.6s 快救、网络 6s 给足合成时间,不把慢请求掐死在半路;③网络音色超时/报错→当场切本地重试同一条词/句,不再空转;④探测句在引擎队列时先清场再发真语音,真词真句不排队干等;保留 cancel 安全拍与空闲零等待两项 v3 优化。🎙 <b>音色下拉精选</b>:默认「标准音色(推荐)」自动挑最像真人的(太慢仍自动落本地),列表只留 Natural 前 6 + Google + 1 个本地秒出声兜底,不再罗列系统全部音色;已保存的手选音色照常保留。👆 单句 🔊 点击立即点亮回执;联网/本地音色分别标记「★联网」「本地秒出声」。🧪 新增行为仿真 docs/审计/_tts_v4_sim.js(9 场景 29 断言)全部 PASS。</div>
+      </details>
+      <details class="faq">
         <summary>🎓 V2.1.22 · 2026-09-06 · 保研复试题库大扩容:19→27 学科 180→254 题(控制工程/机电学院基础课 8 学科)</summary>
         <div class="faq-a">🎓 <b>题库大扩容</b>:新增 ib-data-d.js——控制工程与机电学院基础课 8 学科 72 题,题源综合近年各校保研考研复试公开面经(知乎控制面试汇总/CSDN 模电数电知识点大总结/清华电机系/江苏大学电气等复试经验贴/牛客机械面经)。电路原理 10 题(基尔霍夫本质/戴维南匹配 50%/三要素/三相中线/功率因数补偿/谐振/相量/互感/受控源)、模电 10 题(PN 结/三工作区/三组态/Q 点/BJT vs MOS/负反馈四组态/积分微分/有源滤波/振荡/差分 CMRR)、数电 9 题(补码/OC 三态门/竞争冒险/MUX-LUT/锁存器触发器/计数器/ADC 四架构/DAC/555)、电机与拖动 10 题(换向器本质/直流三调速/起动/变压器实验/转差率/变频/异步同步 PMSM/Y-Δ 起动/三种制动/双闭环)、电力电子 8 题(器件谱系/相控逆变/伏秒平衡/正反激/SPWM/软开关 LLC/PFC/电压电流型)、传感器检测 8 题(静态五指标/应变电桥/热电偶/霍尔/压电/LVDT/调理链/不确定度)、机械设计基础 10 题(格拉霍夫/急回死点/凸轮/渐开线/重合度根切/齿轮失效/轴承 L10/防松/带传动/轴系)、理力材力 7 题(约束二力杆/三大定理达朗贝尔/基本变形/强度理论/压杆稳定/疲劳/刚度)。每题全解析+公式+拓展+追问+站内链接。➕ <b>自控补 2 题</b>:离散系统稳定性与最少拍、非线性系统描述函数相平面(哈工大华科高频考点)。🧩 <b>页面接入</b>:题库页加载第四数据文件、新增 24 道学科选择题并补齐 ic/llm 遗漏的 2 道进阶题、文案更新;统计十处锚点同步(27 学科 254 题);sw.js PRECACHE 增补并 bump v2.1.22;一键自检四处校验纳入 d 文件。🔍 <b>追问全解析</b>:全站 254 题 521 条「考官可能这样追问」从纯问题升级为问题+参考答题思路,题库页逐条折叠展开。✍️ <b>每题笔记</b>:每题可记笔记,自动存本机 localStorage(humanoid-ib-notes-v1),题行显示 📝 标记、面板计数,重置进度不删笔记。</div>
       </details>
@@ -1249,7 +1259,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.22(2026-09-06) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.24(2026-09-07) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

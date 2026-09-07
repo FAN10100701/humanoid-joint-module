@@ -45,18 +45,21 @@ if(s.indexOf(mapAnchor) < 0){ console.error("学习地图锚点未找到,请手�
 else s = s.replace(mapAnchor, mapAnchor + '\n    { id: "' + cfg.pageId + '", t: "' + cfg.title + '", u: "../' + urlPath + '" },');
 W("06_学习工具/06_学习地图.html", s);
 
-/* 5) index.html: SITE_SECTIONS 该组 ids 追加 + sec 网格末尾插卡片 */
+/* 5) index.html: sec 网格末尾插卡片;ids 追加到 _assets/site-sections.js(V2.1.21 单源化后 SITE_SECTIONS 不再内联在 index.html) */
 s = R("index.html");
+const secIdx = s.indexOf('id="sec' + secKey + '"');
+if(secIdx < 0) throw new Error("index.html 未找到板块锚点 sec" + secKey);
+const gridClose = s.indexOf("    </div>", secIdx);
+s = s.slice(0, gridClose) + '      <a class="card" href="' + urlPath + '"><span class="go">进入 →</span><div class="ic">📄</div><div class="t">' + cfg.title + '</div><div class="d">' + cfg.desc + '</div></a>\n' + s.slice(gridClose);
+W("index.html", s);
+s = R(path.join("_assets", "site-sections.js"));
 const keyIdx = s.indexOf('key:"' + secKey + '"');
-if(keyIdx < 0) throw new Error("SITE_SECTIONS 未找到板块 " + secKey);
+if(keyIdx < 0) throw new Error("site-sections.js 未找到板块 " + secKey);
 const idsStart = s.indexOf("ids:[", keyIdx) + 5;
 const idsEnd = s.indexOf("]", idsStart);
 if(s.slice(idsStart, idsEnd).indexOf(cfg.pageId) < 0)
   s = s.slice(0, idsEnd) + ',"' + cfg.pageId + '"' + s.slice(idsEnd);
-const secIdx = s.indexOf('id="sec' + secKey + '"');
-const gridClose = s.indexOf("    </div>", secIdx);
-s = s.slice(0, gridClose) + '      <a class="card" href="' + urlPath + '"><span class="go">进入 →</span><div class="ic">📄</div><div class="t">' + cfg.title + '</div><div class="d">' + cfg.desc + '</div></a>\n' + s.slice(gridClose);
-W("index.html", s);
+W(path.join("_assets", "site-sections.js"), s);
 
 /* 6) 百度清单 */
 fs.appendFileSync(path.join(root, "docs", "收录", "百度手动提交URL清单.txt"), "https://cyco.top/" + urlPath + "\n");

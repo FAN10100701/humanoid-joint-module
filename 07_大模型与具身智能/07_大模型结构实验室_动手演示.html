@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人学习站 · 大模型结构实验室:动手演示</title>
+<script>
+  /* 主题防闪烁:在任何渲染前定主题(与全站一致) */
+  (function(){try{var t=localStorage.getItem("site-theme");
+    if(t==="dark"){document.documentElement.setAttribute("data-theme","dark");
+      document.documentElement.setAttribute("data-theme-early","dark");}}catch(e){}})();
+</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* ===== 页面级样式(my- 前缀),深色默认 + 浅色覆写成对 ===== */
+  .my-fig{background:rgba(13,17,23,.78);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 12px;margin:16px 0;overflow-x:auto}
+  .my-fig svg{display:block;min-width:520px;max-width:100%;height:auto;margin:0 auto}
+  .my-fig-cap{font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6}
+  html:not([data-theme-early="dark"]) .my-fig{background:#ffffff;border-color:rgba(60,80,120,.14)}
+  html:not([data-theme-early="dark"]) .my-fig-cap{color:#5a6a85}
+  /* SVG 文字双主题类对(钦定写法) */
+  .my-lg{fill:#26303b}
+  html[data-theme-early='dark'] .my-lg{fill:#c9d1d9}
+  .my-t{fill:#b45309}
+  html[data-theme-early='dark'] .my-t{fill:#fcd34d}
+  .my-tg{fill:#166534}
+  html[data-theme-early='dark'] .my-tg{fill:#86efac}
+  /* 实验台通用控件 */
+  .my-lab{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;margin:14px 0;background:rgba(255,255,255,.03)}
+  html:not([data-theme-early="dark"]) .my-lab{border-color:rgba(60,80,120,.16);background:rgba(37,99,235,.03)}
+  .my-lab label{font-size:13px;display:inline-flex;align-items:center;gap:6px;margin:4px 10px 4px 0}
+  .my-lab input[type=range]{accent-color:#2563eb;width:150px;vertical-align:middle}
+  .my-val{font-family:Consolas,monospace;font-size:12.5px;color:#9ecbff;background:rgba(59,130,246,.12);border-radius:6px;padding:1px 8px;min-width:44px;text-align:center;display:inline-block}
+  html:not([data-theme-early="dark"]) .my-val{color:#1d4ed8;background:rgba(37,99,235,.1)}
+  .my-btn{font-size:13px;padding:5px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:inherit;cursor:pointer;margin:3px 4px 3px 0}
+  .my-btn:hover{transform:scale(1.03)}
+  html:not([data-theme-early="dark"]) .my-btn{border-color:rgba(60,80,120,.3);background:rgba(37,99,235,.05)}
+  .my-btn.on{background:rgba(59,130,246,.28);border-color:#58a6ff;font-weight:bold}
+  html:not([data-theme-early="dark"]) .my-btn.on{background:rgba(37,99,235,.14);border-color:#2563eb}
+  .my-btn-prim{background:rgba(59,130,246,.3);border-color:#58a6ff}
+  html:not([data-theme-early="dark"]) .my-btn-prim{background:#2563eb;border-color:#2563eb;color:#fff}
+  /* 浅色覆写:自定义控件内的继承文字(site.css 只覆写 p/li/h2,裸 label/span/按钮需自补) */
+  html:not([data-theme-early="dark"]) .my-lab,
+  html:not([data-theme-early="dark"]) .my-lab label,
+  html:not([data-theme-early="dark"]) .my-ani-bar,
+  html:not([data-theme-early="dark"]) .my-tok,
+  html:not([data-theme-early="dark"]) .my-barrow,
+  html:not([data-theme-early="dark"]) .my-narr{color:#3a4759}
+  html:not([data-theme-early="dark"]) .my-lab input[type=text]{color:#1e293b}
+  .my-ani-bar{position:sticky;top:66px;z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(13,17,23,.88);backdrop-filter:blur(8px);margin:10px 0}
+  html:not([data-theme-early="dark"]) .my-ani-bar{background:rgba(255,255,255,.92);border-color:rgba(60,80,120,.2)}
+  .my-read{font-family:Consolas,monospace;font-size:12.5px;color:#9ecbff}
+  html:not([data-theme-early="dark"]) .my-read{color:#1d4ed8}
+  .my-narr{font-size:13.5px;line-height:1.8;min-height:66px;padding:10px 14px;border-radius:10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);margin-top:10px}
+  html:not([data-theme-early="dark"]) .my-narr{background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.18)}
+  /* token 块 */
+  .my-tok{display:inline-block;font-size:13px;font-family:Consolas,monospace;border-radius:6px;padding:2px 8px;margin:3px 4px 3px 0;border:1px solid}
+  /* KV 对比条 */
+  .my-barrow{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:12.5px}
+  .my-barname{width:150px;flex:none;text-align:right}
+  .my-bartrack{flex:1;height:22px;border-radius:6px;background:rgba(127,127,127,.12);overflow:hidden;min-width:120px}
+  .my-barfill{height:100%;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-family:Consolas,monospace;font-size:11.5px;color:#fff;white-space:nowrap;transition:width .25s}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "07-07",
+    root: "..",
+    breadcrumb: [
+      { t: "大模型与具身智能", u: "../index.html#sec7" },
+      { t: "大模型结构实验室:动手演示" }
+    ],
+    prev: { t: "大模型演进全景:从 Transformer 到前沿", u: "06_大模型演进全景_从Transformer到前沿.html" }
+  };
+</script>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <h1>🧪 大模型结构实验室:动手演示</h1>
+    <div class="sub">四个浏览器内跑起来的实验台:亲手切 token、亲手算注意力、亲眼看前向传播、亲手算 KV Cache——大模型结构不再是黑盒名词</div>
+    <div class="tags">
+      <span class="tag">动手实验</span><span class="tag">注意力可视化</span><span class="tag">前向传播动画</span><span class="tag">KV Cache 计算器</span><span class="tag">源码精读</span>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">🎯 本页学习目标</div>
+    1. 通过切词实验理解 tokenizer:为什么「strawberry」里有几个 r 这类问题会难倒大模型<br>
+    2. 亲手调缩放系数,观察 softmax 打分如何从「平均分」变成「一票聚焦」,理解注意力温度<br>
+    3. 能按六个阶段口述一个 token 走完 Transformer 前向传播的全过程<br>
+    4. 会用公式估算任意配置的 KV Cache 显存,并说出 MHA/GQA/MLA 三方案的量级差异<br>
+    <b>建议用时:</b>约 35 分钟(动手) | <b>前置:</b>建议先读 <a href="06_大模型演进全景_从Transformer到前沿.html">07-06 演进全景</a> 与 <a href="01_大模型基础与MoE架构图解.html">07-01 大模型基础</a><br>
+    <b>说明:</b>本页全部实验在你的浏览器本地计算(纯 JS,无网络请求),教学用简化配置,真实模型同原理、规模不同
+  </div>
+
+  <h2><span class="h2-num">1</span> 实验室地图</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>实验台</th><th>你能动手做什么</th><th>对应的知识</th></tr>
+      <tr><td>① Tokenizer 切词台</td><td>输入任意文本,看它被切成 token 块</td><td>BPE 子词、为什么数字母会错</td></tr>
+      <tr><td>② 注意力显微镜</td><td>调缩放系数,看 6×6 注意力权重热力图实时变化</td><td>Q·K 打分、softmax、因果掩码、指代消解</td></tr>
+      <tr><td>③ 前向传播动画</td><td>播放/单步/调速,看 token 走完全部六站</td><td>Embedding→注意力→FFN→残差→输出</td></tr>
+      <tr><td>④ KV Cache 计算器</td><td>拖滑块配模型,实时算三种注意力方案的显存</td><td>KV Cache 公式、GQA/MLA 的意义</td></tr>
+    </table>
+  </div>
+  <p>建议顺序:先玩 ①② 找手感,再看 ③ 把全流程串起来,最后用 ④ 把「工程问题」变成可计算的数字。每个实验台下面都配了对应源码精读(第 6 节),先玩再看代码,或边玩边对照。</p>
+
+  <h2><span class="h2-num">2</span> 实验台① Tokenizer 切词台</h2>
+  <p>大模型眼里的文字不是「字」也不是「词」,而是 <b>token(子词单元)</b>。切词器(BPE 等算法)按统计规律把高频组合编进词表:常见词整块保留,生僻词拆成小块。先用下面的实验台亲手切一切(本台内置一个约 100 条的<b>教学版迷你词表</b>,真实大模型词表有 10 万+ 条,原理相同):</p>
+
+  <div class="my-lab">
+    <div style="margin-bottom:8px"><b>输入文本,看切词结果:</b></div>
+    <input type="text" id="tkIn" value="大模型学习站的注意力机制实验室" style="width:70%;min-width:240px;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid rgba(128,128,128,.35);background:transparent;color:inherit">
+    <button class="my-btn my-btn-prim" onclick="myTkRun()">切一切</button>
+    <button class="my-btn" onclick="myTkNext()">换一个示例</button>
+    <div id="tkOut" style="margin-top:12px;line-height:2.1"></div>
+    <div id="tkStat" class="my-read" style="margin-top:6px"></div>
+    <div id="tkWarn" style="margin-top:8px;font-size:12.5px"></div>
+  </div>
+  <div class="box box-tip"><b>💡 观察重点:</b>常见词(「大模型」「注意力」)是<b>一整块</b>,而模型「读」的就是这些块的编号——它从来没有直接见过字母!试着输入「strawberry」再切一次:10 个字母被切成 3 块,模型看到的是 <b>str + aw + berry</b> 这样的「积木」,要数里面有几个 r,得让积木边界处的字符「显形」,这正是大模型数不清字母的根源(也解释了它为什么「背得出」单词却「拼不对」单词)。</div>
+
+  <h2><span class="h2-num">3</span> 实验台② 注意力显微镜:亲手算一遍注意力</h2>
+  <p>现在把「注意力」放到显微镜下。玩具句:<b>「小猫 坐在 垫子上 因为 它 很困」</b>——其中的「它」指谁?人一眼看出是小猫,注意力层能不能学会?每个词先被表示成 4 维特征向量(动作性/物体性/位置性/指代性,教学设定),再经过两个可学习矩阵 W<sub>q</sub>、W<sub>k</sub> 投影出 Q(想找什么)和 K(能提供什么),然后真刀真枪算一遍 <b>打分 → 缩放 → softmax</b>:</p>
+  <div class="formula">\mathrm{score}(i,j)=\frac{Q_i\cdot K_j}{\sqrt{d_k}}\times s,\qquad \mathrm{attn}_{ij}=\mathrm{softmax}_j\big(\mathrm{score}(i,j)\big)</div>
+  <p>其中 s 是缩放系数(下面滑块控制,真实模型里固定为 1,由训练学出合适的分布)。行=「谁在看(Query)」,列=「看谁(Key)」,颜色越深权重越大:</p>
+
+  <div class="my-lab">
+    <div class="my-ani-bar" style="position:static;top:auto">
+      <label>缩放系数 s <input type="range" id="amS" min="1" max="12" step="0.5" value="6" oninput="myAmDraw()"> <span class="my-val" id="amSv">6.0</span></label>
+      <label><input type="checkbox" id="amMask" onchange="myAmDraw()"> 因果掩码(只许看前文)</label>
+      <span class="my-read" id="amRead"></span>
+    </div>
+    <div class="my-fig" style="margin:10px 0;padding:10px">
+      <canvas id="amCv" width="840" height="560" style="display:block;width:100%;max-width:640px;height:auto;margin:0 auto;cursor:pointer"></canvas>
+    </div>
+    <div id="amCell" style="font-size:13px;min-height:40px;line-height:1.7"></div>
+  </div>
+  <div class="box box-tip"><b>💡 三个必做操作:</b>① 找「它」那一行——默认参数下 <b>小猫 ≈ 42%、垫子上 ≈ 30%</b>,注意力真的把「它」指向了实体词(指代消解涌现);② 把缩放系数拖到 1 再拖到 12——s 小时每行权重接近平均(谁都不聚焦),s 大时一行只剩一两个深格(一票聚焦):这就是 softmax 的「温度」效应,推理模型长思维链的稳定性也和它相关;③ 勾上「因果掩码」——右上角全部归零,每个词只看自己和前文,这正是 Decoder 生成时「不许偷看未来」的实现方式。</div>
+
+  <h2><span class="h2-num">4</span> 实验台③ 前向传播动画:一个 token 的六站之旅</h2>
+  <p>注意力只是其中一站。现在把整个 Decoder 层的流水线搭起来,跟着一个 token 走完六站——用控制条播放、单步、调速(空格键=播放/暂停):</p>
+
+  <div class="my-lab">
+    <div class="my-ani-bar">
+      <button class="my-btn my-btn-prim" id="fwPlay" onclick="myFwToggle()">⏸ 暂停</button>
+      <button class="my-btn" onclick="myFwStep()">⏭ 单步</button>
+      <button class="my-btn" onclick="myFwReset()">↺ 重置</button>
+      <span style="opacity:.5">|</span>
+      <button class="my-btn my-fw-sp" data-sp="0.5" onclick="myFwSpeed(0.5)">0.5x</button>
+      <button class="my-btn my-fw-sp on" data-sp="1" onclick="myFwSpeed(1)">1x</button>
+      <button class="my-btn my-fw-sp" data-sp="2" onclick="myFwSpeed(2)">2x</button>
+      <span class="my-read" id="fwRead">阶段 1/6</span>
+    </div>
+    <div class="my-fig" style="margin:10px 0;padding:10px">
+      <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Transformer 前向传播六站动画:输入分词、Embedding、自注意力、FFN、残差堆叠、输出采样" font-family="Microsoft YaHei,sans-serif">
+        <defs>
+          <marker id="fwAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
+        </defs>
+        <!-- 轨道 -->
+        <line x1="60" y1="185" x2="672" y2="185" stroke="#64748b" stroke-width="1" stroke-dasharray="3 4" opacity=".6"/>
+        <!-- 六个站框:中心 x=70,190,310,430,550,660 y=80 宽92 高110 -->
+        <g id="fw0" opacity=".32">
+          <rect x="24" y="26" width="92" height="112" rx="8" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-opacity=".5"/>
+          <text x="70" y="48" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">① 输入分词</text>
+          <rect x="36" y="60" width="20" height="16" rx="3" fill="#58a6ff" fill-opacity=".3" stroke="#58a6ff"/><text x="46" y="72" text-anchor="middle" font-size="8.5" class="my-lg">我</text>
+          <rect x="60" y="60" width="20" height="16" rx="3" fill="#58a6ff" fill-opacity=".3" stroke="#58a6ff"/><text x="70" y="72" text-anchor="middle" font-size="8.5" class="my-lg">爱</text>
+          <rect x="84" y="60" width="22" height="16" rx="3" fill="#58a6ff" fill-opacity=".3" stroke="#58a6ff"/><text x="95" y="72" text-anchor="middle" font-size="8.5" class="my-lg">机器</text>
+          <text x="70" y="96" text-anchor="middle" fill="#64748b" font-size="9">文本切成</text>
+          <text x="70" y="109" text-anchor="middle" fill="#64748b" font-size="9">token 序列</text>
+        </g>
+        <g id="fw1" opacity=".32">
+          <rect x="144" y="26" width="92" height="112" rx="8" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-opacity=".5"/>
+          <text x="190" y="48" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">② Embedding</text>
+          <rect x="156" y="62" width="16" height="14" rx="2" fill="#f59e0b" fill-opacity=".45"/><rect x="175" y="62" width="16" height="14" rx="2" fill="#f59e0b" fill-opacity=".2"/><rect x="194" y="62" width="16" height="14" rx="2" fill="#f59e0b" fill-opacity=".6"/><rect x="213" y="62" width="16" height="14" rx="2" fill="#f59e0b" fill-opacity=".3"/>
+          <text x="190" y="96" text-anchor="middle" fill="#64748b" font-size="9">查表变向量</text>
+          <text x="190" y="109" text-anchor="middle" fill="#64748b" font-size="9">+位置信息(RoPE)</text>
+        </g>
+        <g id="fw2" opacity=".32">
+          <rect x="264" y="26" width="92" height="112" rx="8" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-opacity=".5"/>
+          <text x="310" y="48" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">③ 自注意力</text>
+          <circle cx="288" cy="80" r="7" fill="#58a6ff" fill-opacity=".4" stroke="#58a6ff"/>
+          <circle cx="332" cy="80" r="7" fill="#58a6ff" fill-opacity=".4" stroke="#58a6ff"/>
+          <path d="M294,74 C306,60 314,60 327,73" fill="none" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#fwAr)"/>
+          <path d="M327,88 C314,102 306,102 295,87" fill="none" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#fwAr)"/>
+          <text x="310" y="120" text-anchor="middle" fill="#64748b" font-size="9">词与词开会</text>
+          <text x="310" y="133" text-anchor="middle" fill="#64748b" font-size="9">交换信息(Q·K·V)</text>
+        </g>
+        <g id="fw3" opacity=".32">
+          <rect x="384" y="26" width="92" height="112" rx="8" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-opacity=".5"/>
+          <text x="430" y="48" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">④ FFN 前馈</text>
+          <path d="M400,70 L460,70 L442,104 L418,104 Z" fill="#f59e0b" fill-opacity=".18" stroke="#f59e0b" stroke-opacity=".5"/>
+          <text x="430" y="120" text-anchor="middle" fill="#64748b" font-size="9">先放大 4 倍</text>
+          <text x="430" y="133" text-anchor="middle" fill="#64748b" font-size="9">再压回(SwiGLU)</text>
+        </g>
+        <g id="fw4" opacity=".32">
+          <rect x="504" y="26" width="92" height="112" rx="8" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-opacity=".5"/>
+          <text x="550" y="48" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑤ 残差 ×N</text>
+          <rect x="522" y="60" width="56" height="18" rx="4" fill="#22c55e" fill-opacity=".15" stroke="#22c55e" stroke-opacity=".5"/>
+          <rect x="522" y="82" width="56" height="18" rx="4" fill="#22c55e" fill-opacity=".15" stroke="#22c55e" stroke-opacity=".5"/>
+          <text x="550" y="73" text-anchor="middle" font-size="8.5" class="my-lg">层 L-1</text>
+          <text x="550" y="95" text-anchor="middle" font-size="8.5" class="my-lg">层 L</text>
+          <text x="550" y="120" text-anchor="middle" fill="#64748b" font-size="9">重复几十层</text>
+          <text x="550" y="133" text-anchor="middle" fill="#64748b" font-size="9">越深懂越多</text>
+        </g>
+        <g id="fw5" opacity=".32">
+          <rect x="614" y="26" width="92" height="112" rx="8" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-opacity=".5"/>
+          <text x="660" y="48" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑥ 输出采样</text>
+          <rect x="628" y="88" width="12" height="30" fill="#22c55e" fill-opacity=".7"/><rect x="644" y="98" width="12" height="20" fill="#58a6ff" fill-opacity=".6"/><rect x="660" y="104" width="12" height="14" fill="#f59e0b" fill-opacity=".6"/>
+          <text x="660" y="120" text-anchor="middle" fill="#64748b" font-size="9">下一个词</text>
+          <text x="660" y="133" text-anchor="middle" fill="#64748b" font-size="9">概率分布</text>
+        </g>
+        <!-- 站间箭头 -->
+        <line x1="116" y1="82" x2="140" y2="82" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#fwAr)"/>
+        <line x1="236" y1="82" x2="260" y2="82" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#fwAr)"/>
+        <line x1="356" y1="82" x2="380" y2="82" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#fwAr)"/>
+        <line x1="476" y1="82" x2="500" y2="82" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#fwAr)"/>
+        <line x1="596" y1="82" x2="610" y2="82" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#fwAr)"/>
+        <!-- 流动小球 -->
+        <circle id="fwBall" cx="70" cy="185" r="8" fill="#58a6ff" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/>
+        <text x="70" y="210" text-anchor="middle" fill="#64748b" font-size="9.5" id="fwBallLab">token 小球</text>
+      </svg>
+      <div class="my-fig-cap">图① Transformer 前向传播六站(交互动画):token 小球沿轨道流动,高亮站随播放推进,当前阶段解说见下方蓝框</div>
+    </div>
+    <div class="my-narr" id="fwNarr"></div>
+  </div>
+  <div class="box box-tip"><b>💡 看完动画应该能答:</b>为什么说「注意力负责交流、FFN 负责消化」?——③ 站里词与词横向交换信息,④ 站里每个位置<b>独立</b>做非线性变换(知识主要存在 FFN 参数里);残差捷径(⑤ 站)让梯度能「抄近道」流回浅层,几十层才训得动。这套流程乘以 N 层(如 60 层)再接输出头,就是一个完整的大模型。</div>
+
+  <h2><span class="h2-num">5</span> 实验台④ KV Cache 计算器:把工程问题变成数字</h2>
+  <p>07-06 页说过:推理时 KV Cache 是显存与带宽的第一大户。公式只有一行:</p>
+  <div class="formula">\mathrm{KV\ Cache}=2\,\times\,L\,\times\,s\,\times\,h_{kv}\,\times\,d_h\,\times\,b\,\times\,\mathrm{batch}</div>
+  <p>(2=K 和 V 各一份,L=层数,s=序列长度,h<sub>kv</sub>=KV 头数,d<sub>h</sub>=头维度,b=每元素字节数)。拖动滑块,看同一个配置下 <b>MHA(不省)/ GQA(分组共享)/ MLA(低秩压缩)</b> 三方案的显存差距——这就是 07-06 第 5.2 节那条演进线的代价账:</p>
+
+  <div class="my-lab">
+    <label>层数 L <input type="range" id="kvL" min="12" max="126" step="1" value="80" oninput="myKvCalc()"> <span class="my-val" id="kvLv">80</span></label>
+    <label>上下文 s <input type="range" id="kvS" min="0" max="10" step="1" value="5" oninput="myKvCalc()"> <span class="my-val" id="kvSv">32K</span></label>
+    <label>KV 头数 h<sub>kv</sub> <input type="range" id="kvH" min="1" max="64" step="1" value="8" oninput="myKvCalc()"> <span class="my-val" id="kvHv">8</span></label>
+    <label>头维 d<sub>h</sub> <input type="range" id="kvD" min="64" max="256" step="32" value="128" oninput="myKvCalc()"> <span class="my-val" id="kvDv">128</span></label>
+    <label>batch <input type="range" id="kvB" min="1" max="64" step="1" value="1" oninput="myKvCalc()"> <span class="my-val" id="kvBv">1</span></label>
+    <div style="margin-top:4px">
+      <span style="font-size:13px;margin-right:6px">精度:</span>
+      <button class="my-btn on" id="kvP2" onclick="myKvPrec(2)">FP16/BF16</button>
+      <button class="my-btn" id="kvP1" onclick="myKvPrec(1)">FP8</button>
+      <button class="my-btn" id="kvP05" onclick="myKvPrec(0.5)">INT4</button>
+      <span style="font-size:12.5px;opacity:.75;margin-left:8px">快捷配置:</span>
+      <button class="my-btn" onclick="myKvPreset('7b')">7B 端侧</button>
+      <button class="my-btn" onclick="myKvPreset('70b')">70B 旗舰</button>
+      <button class="my-btn" onclick="myKvPreset('ds')">DeepSeek-V3 类(MoE+MLA)</button>
+    </div>
+    <div style="margin-top:14px">
+      <div class="my-barrow"><span class="my-barname">MHA(每个 Q 头独享 KV)</span><div class="my-bartrack"><div class="my-barfill" id="kvBarM" style="background:#ef4444;width:100%">10.7 GB</div></div></div>
+      <div class="my-barrow"><span class="my-barname">GQA(8 组共享,当前滑块)</span><div class="my-bartrack"><div class="my-barfill" id="kvBarG" style="background:#f59e0b;width:25%">2.7 GB</div></div></div>
+      <div class="my-barrow"><span class="my-barname">MLA(低秩压缩,潜向量 576 维)</span><div class="my-bartrack"><div class="my-barfill" id="kvBarL" style="background:#22c55e;width:14%">1.5 GB</div></div></div>
+    </div>
+    <div class="my-read" id="kvRead" style="margin-top:10px;line-height:1.9"></div>
+  </div>
+  <div class="box box-tip"><b>💡 试这三组配置:</b>① 默认(70B 级,32K 上下文):MHA 要 40+ GB——<b>一张 80GB 卡的光 KV Cache 就装不下多少并发</b>;GQA 直接砍到 1/4;MLA 再砍半。② 把上下文拉到 1M(max 滑块右端):任何方案都暴涨,这就是为什么 1M 上下文必须配合稀疏注意力(07-06 问题③④)。③ 切到 INT4 精度:全部数字减半再减半——量化是最便宜的「显存扩容」。<b>decode 每生成一个 token 都要把这些 GB 从显存读一遍</b>(显存带宽约 3TB/s 时,10GB KV 意味着每 token 至少 3ms 纯搬运),这是本实验最想让你带走的体感。</div>
+
+  <h2><span class="h2-num">6</span> 结构代码精读:五段代码看懂大模型</h2>
+  <p>下面五段代码与四个实验台一一对应,全部是「骨架级」真实逻辑(简化到每段十几行,保留主干)。逐段给出「逐行讲人话」。</p>
+
+  <h3>6.1 注意力的最小实现(实验台②的完整版)</h3>
+  <pre><code>import numpy as np
+
+def attention(Q, K, V, causal=False):            # Q,K,V 形状 (n词, d_k维)
+    d_k = Q.shape[-1]
+    scores = Q @ K.T / np.sqrt(d_k)              # ① 打分:每个词的Q和每个词的K做点积
+    scores = scores - scores.max(-1, keepdims=True)  # ② 减最大值防 exp 溢出(结果不变)
+    w = np.exp(scores)
+    w = w / w.sum(-1, keepdims=True)             # ③ 每行 softmax 归一化成权重
+    if causal:                                   # ④ 因果掩码(Decoder 需要)
+        mask = np.tril(np.ones(w.shape[-2:]))    #    下三角=1:只许看自己+前文
+        w = np.where(mask &gt; 0, w, 0)
+        w = w / w.sum(-1, keepdims=True)
+    return w @ V                                  # ⑤ 每个词的新表示=按权重汇聚全句的V</code></pre>
+  <p><b>讲人话:</b>①就是实验台②热力图里每个格子的来历;③对应你拖动的缩放滑块(s 大 → exp 拉开差距 → 尖锐);④的「下三角」就是你勾选的因果掩码;⑤得到的新表示送进下一层。整个注意力不过五步,<b>大模型最核心的计算就这么多</b>——难的不是公式,是把它的显存与带宽管好。</p>
+
+  <h3>6.2 RoPE 旋转位置编码:位置是一种「角度」</h3>
+  <pre><code>def rope(q, pos, theta=10000.0):                 # q:(d,) 一个词的查询向量,pos=它的位置
+    half = q.shape[-1] // 2
+    angles = pos / (theta ** (2*np.arange(half)/q.shape[-1]))
+    cos, sin = np.cos(angles), np.sin(angles)    # 位置 pos → 每个二维子空间一个旋转角
+    q2 = q.reshape(-1, 2)                         # 向量拆成 d/2 个平面
+    return np.concatenate([q2[:,0]*cos - q2[:,1]*sin,
+                           q2[:,0]*sin + q2[:,1]*cos])   # 每个平面旋转对应角度</code></pre>
+  <p><b>讲人话:</b>把向量的相邻两维看成平面上的一个点,位置 pos 决定旋转多少度。两个词做点积时,旋转角<b>自动相减</b>——点积结果只依赖「相对位置差」,这就是 RoPE 天然表达相对位置、且能用插值/YaRN 外推到训练时没见过的长度的原因(07-06 第 5.1 节)。</p>
+
+  <h3>6.3 GQA:一行代码的显存减半术</h3>
+  <pre><code># 32 个 Q 头,只有 8 份 K/V:第 0~3 号 Q 头共用第 0 份 KV,以此类推
+kv_expanded = kv.repeat(4, axis=1)               # (s, 8, d) -> (s, 32, d) 逻辑展开
+scores = q @ kv_expanded.transpose(0, 2, 1)      # 照常做点积,数学形式不变</code></pre>
+  <p><b>讲人话:</b>GQA 的全部思想就是「4 个 Q 共享 1 份 KV」——<b>存储时只存 8 份,计算时逻辑展开</b>(现代框架用广播视图,不真复制)。KV Cache 和显存读取量直接除以 4,精度几乎无损。这就是它成为 Llama-2-70B 之后开源标配的原因:一行代码,三分之一显存。</p>
+
+  <h3>6.4 MoE 路由:top-k 选专家</h3>
+  <pre><code>logits = x @ W_router.T                          # 路由器给每个专家打分 (n_tok, n_expert)
+topk_idx = np.argpartition(logits, -8)[-8:]      # 只要分数最高的 8 个专家
+w = softmax(logits[topk_idx])                    # 这 8 个人的分数归一化成权重
+y = sum(wi * experts[i](x) for wi, i in zip(w, topk_idx))  # 加权求和,其余专家不参与</code></pre>
+  <p><b>讲人话:</b>DeepSeek-V3 有 256 个专家,每个 token 只激活 8 个——「argpartition 取前 8」这行就是全部路由逻辑。训练时的难点不在这一行,而在<b>负载均衡</b>:路由器偏心会让少数专家累死、多数专家闲置(07-01 第 8 节的辅助损失/动态偏置就是治这个的)。</p>
+
+  <h3>6.5 KV Cache 生成循环:为什么能「一个字一个字往外蹦」</h3>
+  <pre><code>past_kv = None                                   # 缓存:历史所有 token 的 K/V
+for step in range(max_new_tokens):
+    logits, past_kv = model(last_token, past_kv=past_kv)  # 只喂最新的 1 个 token!
+    last_token = sample(logits)                   # 从概率分布采样下一个词
+    output.append(last_token)                     # 历史 K/V 已在缓存,无需重算</code></pre>
+  <p><b>讲人话:</b>没有 KV Cache 时,生成第 1000 个词要把前 999 个词全部重算一遍——O(n²) 的浪费。缓存后每步只算 1 个新 token 的 Q/K/V,历史的直接取。代价就是实验台④那笔账:<b>省下的是计算,欠下的是显存</b>——cache 越滚越大,decode 阶段每步都要全量读它,这就是「访存密集」的来源(07-06 图⑦)。</p>
+
+  <h2><span class="h2-num">7</span> 常见误区</h2>
+  <div class="box box-warn"><b>⚠️ 误区一:「注意力权重可以直接解释模型在想什么」。</b>本页的玩具模型确实如此,但真实多层模型里,某一层的注意力权重只是信息流动的一小部分(还有 FFN、残差、多层叠加),「attention≠explanation」是可解释性领域的共识。实验台②教的是<b>机制</b>,不是读心术。</div>
+  <div class="box box-warn"><b>⚠️ 误区二:「KV Cache 是可选的优化」。</b>没有它,生成第 N 个词要重算前 N-1 个词的全部 K/V,长文本生成慢到不可用。它是所有推理引擎的<b>标配地基</b>,工程问题(显存/带宽/并发)全部围绕它展开。</div>
+  <div class="box box-warn"><b>⚠️ 误区三:「token 越少越好」。</b>压缩率高确实省上下文,但过度压缩(词表里全是长块)会让模型连「新造的词」「数字」「代码变量名」都切不开。tokenizer 是<b>压缩率与覆盖面</b>的权衡,不是一味求省。</div>
+
+  <h2><span class="h2-num">8</span> 自测</h2>
+  <div class="quiz"><div class="quiz-q">1. 大模型经常数错「strawberry 里有几个 r」,根本原因是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 模型参数不够大,记忆力不足</button>
+      <button data-v="B">B. 训练数据里没有 strawberry 这个词</button>
+      <button data-v="C">C. 模型读到的是子词块(如 str/aw/berry),并不直接面对单个字母</button>
+      <button data-v="D">D. 英文字母没有位置编码</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——实验台①演示了切词:模型输入是 token 编号序列,字母层面的问题需要「穿过块边界」才能回答,本质是表示粒度问题。A 无关;B 现代模型词表覆盖如此常见词;D 无中生有,位置编码作用于 token 序列,与字母拼写无关。</div></div>
+  <div class="quiz"><div class="quiz-q">2. 实验台②里,把缩放系数 s 从 1 调到 12,注意力分布会?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 从尖锐变平均</button>
+      <button data-v="B">B. 从平均变尖锐:最高分的词拿走绝大部分权重</button>
+      <button data-v="C">C. 不变,缩放只影响数值稳定性</button>
+      <button data-v="D">D. 变成均匀分布</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——s 放大了打分差距,softmax 对「差距」是指数敏感的:分数差一点点,权重差一大截。s→0 时退化为平均;s→∞ 时退化为「只看最高分的那一个词」。真实模型里这个平衡由训练学得,1/√d_k 是让方差保持在合适区间的标准初始化选择。</div></div>
+  <div class="quiz"><div class="quiz-q">3. Decoder 生成文本时「因果掩码」的作用是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 训练时防止每个位置看到它后面的词,保证「预测下一个词」的任务成立</button>
+      <button data-v="B">B. 防止模型记住训练数据</button>
+      <button data-v="C">C. 让注意力矩阵变稀疏以节省计算</button>
+      <button data-v="D">D. 过滤掉不安全的内容</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: A 正确——如果训练时能偷看未来,「预测下一个词」就变成「抄答案」,模型学不到真正的预测能力。C 有迷惑性:掩码确实让矩阵少算一半(上三角),但这是任务正确性的<b>结果</b>而非目的;B、D 与因果掩码无关。</div></div>
+  <div class="quiz"><div class="quiz-q">4. 一个 80 层模型,GQA 8 组 KV 头、头维 128、FP16 精度、32K 上下文、batch=1,KV Cache 约多大?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 约 1 GB</button>
+      <button data-v="B">B. 约 10 GB</button>
+      <button data-v="C">C. 约 100 GB</button>
+      <button data-v="D">D. 约 100 MB</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: B 正确——代入公式:2×80×32768×8×128×2B = 10,737,418,240 B ≈ 10 GB。这就是实验台④的默认值(Llama-3-70B 同配置):一张 80GB 的卡,光 KV Cache 就占了 1/8,剩下留给权重(70B FP16 要 140 GB,还得量化)和激活。数字要能心算量级,这是大模型部署的基本功。</div></div>
+  <div class="quiz"><div class="quiz-q">5. 关于 MHA→GQA→MLA 三方案的显存排序(同配置),正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. MHA &lt; GQA &lt; MLA</button>
+      <button data-v="B">B. MLA &lt; MHA &lt; GQA</button>
+      <button data-v="C">C. MLA &lt; GQA &lt; MHA</button>
+      <button data-v="D">D. 三者相同,只影响精度</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: C 正确——实验台④三条柱直观展示:MLA(低秩压缩潜向量)最省,GQA(分组共享)次之,MHA(全头独立)最大。同时注意精度排序大致相反:MLA 设计目标是「压到 1/10 级还几乎不掉点」,GQA 几乎无损,MHA 是精度基线。工程选择永远是「精度损失可接受范围内,显存带宽越省越好」。</div></div>
+  <div class="quiz"><div class="quiz-q">6. 「残差连接」在六站动画的第⑤站,它的主要作用是?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 增加模型参数量</button>
+      <button data-v="B">B. 替代注意力机制</button>
+      <button data-v="C">C. 减少显存占用</button>
+      <button data-v="D">D. 给梯度开「直达电梯」,让几十层的深层网络训得动</button></div>
+    <div class="quiz-feedback"></div><div class="quiz-explain">💡 解析: D 正确——输出 = 层(x)+ x,梯度反向传播时可以沿这条捷径无损直达浅层,避免深层网络的梯度消失/退化(ResNet 一脉相承的思想,Transformer 把它用到极致)。A 无关(残差不加参数);B 错(它是搭配不是替代);C 错(残差中间结果还要为反向传播保存,反而略增显存)。</div></div>
+
+  <h2><span class="h2-num">9</span> 小结</h2>
+  <p>四个实验台串起来,就是大模型的完整微观图景:<b>tokenizer</b> 决定模型「看见什么」(token 而非文字),<b>注意力</b>决定「怎么交流」(打分-缩放-softmax-加权),<b>六站流水线</b>决定「怎么思考」(嵌入→交流→消化→堆叠→采样),<b>KV Cache</b> 决定「多贵」(省计算欠显存,一切推理工程围绕它)。把这四件事讲清楚,你就超过了绝大多数只会报模型名的人。配合 07-06 的宏观演进史与 07-01/07-02 的架构深讲,「从 Transformer 到前沿」这条线就闭环了。</p>
+
+  <h3>参考资料(整理更新至 2026-08)</h3>
+  <ul>
+    <li>Attention Is All You Need(2017)——第 3.2 节即本页实验台②的完整数学定义</li>
+    <li>RoFormer(Su et al., 2021)——RoPE 原论文;Fast Transformer Decoding(Shazeer, 2019)——MQA;GQA 论文(2023);DeepSeek-V2 技术报告(2024)——MLA</li>
+    <li>《动手学深度学习》《Neural Networks: Zero to Hero(Karpathy)》——「从零实现 GPT」的经典动手路线,与本页实验台互为延伸</li>
+    <li>vLLM/PagedAttention 论文(2023)——实验台④数字的工程归宿</li>
+    <li>站内衔接:07-01(MoE/KV Cache 基础)· 07-02(MLA 深讲)· 07-03(后训练)· 07-05(部署微调实战代码)</li>
+  </ul>
+
+</div><!-- /container -->
+<script src="../_assets/site.js"></script>
+<script>
+/* ================= 实验台脚本(ES5,全部本地计算) ================= */
+(function(){
+"use strict";
+
+/* ---------- 主题感知工具 ---------- */
+function myDark(){ return document.documentElement.getAttribute("data-theme-early")==="dark"; }
+function myInk(){ return myDark() ? "#c9d1d9" : "#26303b"; }
+function mySub(){ return "#64748b"; }
+
+/* ---------- 实验台① Tokenizer(教学版贪心最长匹配) ---------- */
+var TK_WORDS = ["大模型","学习站","注意力","机器人","实验室","神经网络","深度学习","人工智能","关节","减速器","灵巧手","上下文","缓存","向量","矩阵","概率","采样","词表","分词","训练","推理","微调","参数","数据","模型","学习","智能","人工","机制","结构","架构","计算","存储","输出","输入","理解","表示","生成","优化","控制","我们","你们","他们","一个","这个","那个","什么","如何","为什么","可以","就是","不是","以及","并且","但是","因为","所以","如果","例如","比如","注意","非常","已经","正在","和","的","了","是","在","有","人","中","大","小","多","好"];
+var TK_EN = ["transform","attention","token","model","large","robot","human","learn","train","infer","cache","context","vector","matrix","attention","straw","berry","str","aw","berr","un","believ","able","re","in","ing","ed","ly","tion","ness","ment","pre","pro","com","con","dis","er","or"];
+var TK_SAMPLES = ["大模型学习站的注意力机制实验室","strawberry 里有几个 r?","unbelievable 的人形机器人正在学习强化学习"];
+var TK_SI = 0;
+
+function tkIsEn(ch){ return /[a-zA-Z0-9]/.test(ch); }
+function tkCutEn(seg){
+  var out=[], i=0, s=seg.toLowerCase();
+  while(i<seg.length){
+    var hit=null, j;
+    for(j=Math.min(9,seg.length-i); j>=2; j--){
+      var cand=s.substr(i,j);
+      if(TK_EN.indexOf(cand)>=0){ hit=cand; break; }
+    }
+    if(hit){ out.push(seg.substr(i,hit.length)); i+=hit.length; }
+    else{ out.push(seg.substr(i,1)); i+=1; }
+  }
+  return out;
+}
+function myTokenize(text){
+  var out=[], i=0;
+  while(i<text.length){
+    var ch=text[i];
+    if(tkIsEn(ch)){
+      var j=i; while(j<text.length && tkIsEn(text[j])) j++;
+      out=out.concat(tkCutEn(text.substr(i,j-i))); i=j; continue;
+    }
+    var matched=null, k;
+    for(k=Math.min(4,text.length-i); k>=2; k--){
+      var cand=text.substr(i,k);
+      if(TK_WORDS.indexOf(cand)>=0){ matched=cand; break; }
+    }
+    if(matched){ out.push(matched); i+=matched.length; }
+    else{ out.push(ch); i+=1; }
+  }
+  return out;
+}
+var TK_COLORS=["rgba(59,130,246,.22)","rgba(245,158,11,.22)","rgba(34,197,94,.22)","rgba(168,85,247,.22)","rgba(236,72,153,.2)"];
+var TK_BORDERS=["rgba(59,130,246,.6)","rgba(245,158,11,.6)","rgba(34,197,94,.6)","rgba(168,85,247,.6)","rgba(236,72,153,.55)"];
+function myTkRun(){
+  var txt=document.getElementById("tkIn").value;
+  if(!txt){ txt=" "; }
+  var toks=myTokenize(txt);
+  var html="", i;
+  for(i=0;i<toks.length;i++){
+    var ci=i%TK_COLORS.length;
+    html+='<span class="my-tok" style="background:'+TK_COLORS[ci]+';border-color:'+TK_BORDERS[ci]+'">'+myEsc(toks[i])+'</span>';
+  }
+  document.getElementById("tkOut").innerHTML=html;
+  document.getElementById("tkStat").innerHTML="共 "+txt.length+" 个字符 → 切成 "+toks.length+" 个 token(压缩率 "+(txt.length/Math.max(1,toks.length)).toFixed(1)+" 字符/token)";
+  var en=0; for(i=0;i<toks.length;i++){ if(toks[i].length===1 && tkIsEn(toks[i])) en++; }
+  document.getElementById("tkWarn").innerHTML = en>0 ? "⚠️ 其中有 "+en+" 个字符被拆成单字符 token(迷你词表没收录的组合)——真实大模型词表更大,但「生僻组合拆碎」的现象完全一样" : "";
+}
+function myTkNext(){
+  TK_SI=(TK_SI+1)%TK_SAMPLES.length;
+  document.getElementById("tkIn").value=TK_SAMPLES[TK_SI];
+  myTkRun();
+}
+function myEsc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+/* ---------- 实验台② 注意力显微镜 ---------- */
+var AM_WORDS=["小猫","坐在","垫子上","因为","它","很困"];
+var AM_F=[[0.1,0.9,0.1,0],[0.9,0.1,0.3,0],[0.1,0.5,0.9,0],[0.3,0,0,0.1],[0,0.1,0,1],[0.4,0.2,0,0]];
+var AM_WQ=[[0.9,0.1,0.2,0.1],[0.2,0.1,0.0,0.5],[0.2,0.1,0.6,0.1],[0.9,0.0,0.0,0.1]];
+var AM_WK=[[0.0,0.9,0.1,0.1],[0.9,0.0,0.1,0.2],[0.3,0.0,0.6,0.1],[0.2,0.0,0.0,0.6]];
+var AM_Q=[],AM_K=[],AM_I;
+for(AM_I=0;AM_I<6;AM_I++){ AM_Q.push(mvMul(AM_WQ,AM_F[AM_I])); AM_K.push(mvMul(AM_WK,AM_F[AM_I])); }
+function mvMul(M,v){ var r=[],d,i; for(d=0;d<M[0].length;d++){ var s=0; for(i=0;i<v.length;i++) s+=v[i]*M[i][d]; r.push(s); } return r; }
+function amScores(row,scale,mask){
+  var sc=[],j,k;
+  for(j=0;j<6;j++){ var d=0; for(k=0;k<4;k++) d+=AM_Q[row][k]*AM_K[j][k]; sc.push(d/2*scale); }
+  if(mask){ for(j=0;j<6;j++) if(j>row) sc[j]=-1e9; }
+  return sc;
+}
+function amSoftmax(sc){
+  var mx=Math.max.apply(null,sc), e=[], s=0, j;
+  for(j=0;j<sc.length;j++){ e.push(Math.exp(sc[j]-mx)); s+=e[j]; }
+  for(j=0;j<e.length;j++) e[j]/=s;
+  return e;
+}
+function myAmDraw(){
+  var scale=parseFloat(document.getElementById("amS").value);
+  var mask=document.getElementById("amMask").checked;
+  document.getElementById("amSv").innerHTML=scale.toFixed(1);
+  var cv=document.getElementById("amCv"), ctx=cv.getContext("2d");
+  var W=cv.width, H=cv.height;
+  var ink=myInk();
+  ctx.clearRect(0,0,W,H);
+  var x0=150, y0=110, cell=(W-x0-30)/6, rowH=(H-y0-40)/6;
+  var i,j;
+  /* 列头(被看的词 K) */
+  ctx.font="bold 22px 'Microsoft YaHei',sans-serif";
+  ctx.fillStyle=ink; ctx.textAlign="center"; ctx.textBaseline="middle";
+  for(j=0;j<6;j++){ ctx.fillText(AM_WORDS[j], x0+cell*(j+0.5), y0-34); }
+  ctx.font="16px 'Microsoft YaHei',sans-serif"; ctx.fillStyle=mySub();
+  ctx.fillText("↓ 谁在看(Query) / 看谁(Key) →", x0+cell*3, y0-70);
+  for(i=0;i<6;i++){
+    var w=amSoftmax(amScores(i,scale,mask));
+    ctx.font="bold 22px 'Microsoft YaHei',sans-serif";
+    ctx.textAlign="right"; ctx.fillStyle=ink;
+    ctx.fillText(AM_WORDS[i], x0-16, y0+rowH*(i+0.5));
+    for(j=0;j<6;j++){
+      var masked=(mask && j>i);
+      var a=masked?0:w[j];
+      ctx.fillStyle = masked ? "rgba(127,127,127,.08)" : "rgba(88,166,255,"+ (0.08+a*2.6).toFixed(3) +")";
+      ctx.fillRect(x0+cell*j, y0+rowH*i, cell-4, rowH-4);
+      ctx.fillStyle = masked ? mySub() : (a>0.22 ? "#ffffff" : ink);
+      ctx.font="19px Consolas,monospace"; ctx.textAlign="center";
+      ctx.fillText(masked?"—":(w[j]*100).toFixed(1)+"%", x0+cell*(j+0.5)-2, y0+rowH*(i+0.5));
+    }
+  }
+  ctx.textAlign="left";
+  ctx.fillStyle=mySub(); ctx.font="15px 'Microsoft YaHei',sans-serif";
+  ctx.fillText("格子里是注意力权重(%),颜色越深=看得越重;每行加总为 100%", x0-120, H-16);
+  /* 读数行:它 → 最强 */
+  var wIt=amSoftmax(amScores(4,scale,mask));
+  var bestIt=0,bi=1;
+  for(i=0;i<6;i++){ if(i!==4 && wIt[i]>bestIt){ bestIt=wIt[i]; bi=i; } }
+  document.getElementById("amRead").innerHTML="「它」现在最关注:「"+AM_WORDS[bi]+"」("+(bestIt*100).toFixed(1)+"%)";
+}
+function myAmCell(e){
+  var cv=document.getElementById("amCv"), r=cv.getBoundingClientRect();
+  var scale=cv.width/r.width;
+  var px=(e.clientX-r.left)*scale, py=(e.clientY-r.top)*scale;
+  var x0=150, y0=110, cell=(cv.width-x0-30)/6, rowH=(cv.height-y0-40)/6;
+  var j=Math.floor((px-x0)/cell), i=Math.floor((py-y0)/rowH);
+  if(i<0||i>5||j<0||j>5){ document.getElementById("amCell").innerHTML="点击任意格子查看这一眼的打分明细"; return; }
+  var scaleS=parseFloat(document.getElementById("amS").value);
+  var mask=document.getElementById("amMask").checked;
+  var sc=amScores(i,scaleS,mask), w=amSoftmax(sc);
+  var masked=(mask&&j>i);
+  var raw=0,k; for(k=0;k<4;k++) raw+=AM_Q[i][k]*AM_K[j][k];
+  document.getElementById("amCell").innerHTML = masked
+    ? "⛔ <b>"+AM_WORDS[i]+" → "+AM_WORDS[j]+"</b>:被因果掩码挡住("+AM_WORDS[i]+" 不许看后面的 "+AM_WORDS[j]+")"
+    : "🔍 <b>"+AM_WORDS[i]+" → "+AM_WORDS[j]+"</b>:原始打分 Q·K = "+raw.toFixed(3)+" → 缩放后 = "+(sc[j]).toFixed(2)+" → softmax 后权重 = <b>"+(w[j]*100).toFixed(1)+"%</b>";
+}
+/* ---------- 实验台③ 前向传播动画 ---------- */
+var FW_NARR=[
+  "<b>① 输入分词:</b>文字先被 tokenizer 切成 token(见实验台①),这里「我 / 爱 / 机器人」变成 3 个编号。模型世界没有文字,只有编号和向量。",
+  "<b>② Embedding 嵌入:</b>每个 token 编号去「查表」,变成一个高维向量(如 4096 维),再加上 RoPE 位置信息——从此网络里流动的全是数字。",
+  "<b>③ 自注意力:</b>每个词发出 Q(我想找什么),和所有词的 K(我能提供什么)打分,按分汇聚各词的 V(内容)。实验台② 你算过的 6×6 权重,就在这一站发生。",
+  "<b>④ FFN 前馈网络:</b>每个位置<b>独立</b>过一个小网络:先放大到约 4 倍宽、非线性激活(SwiGLU)、再压回。模型的大部分「知识」存储在 FFN 的参数里。",
+  "<b>⑤ 残差 + 堆叠:</b>每站输出都加回输入(残差捷径,梯度的高速公路),整套「注意力+FFN」重复几十层——每层都在更抽象的层级上加工。",
+  "<b>⑥ 输出采样:</b>最后一个位置的向量乘词表矩阵,得到每个候选词的概率(条形图),按策略采样出下一个词——然后它回到 ②,循环生成(见实验台④ 的 KV Cache)。"
+];
+var FW_T=0, FW_PLAYING=true, FW_SPEED=1, FW_STEP=false, FW_STAGE_T=2.6;
+var FW_X=[70,190,310,430,550,660];
+function myFwStage(){
+  var total=FW_STAGE_T*6;
+  var t=FW_T%total;
+  var st=Math.floor(t/FW_STAGE_T);
+  var local=t-st*FW_STAGE_T;
+  var x;
+  if(st===0){ x=FW_X[0]; }
+  else{
+    var mv=Math.min(1, local/0.5);
+    var ease=mv*mv*(3-2*mv);
+    x=FW_X[st-1]+(FW_X[st]-FW_X[st-1])*ease;
+  }
+  var ball=document.getElementById("fwBall");
+  if(ball){ ball.setAttribute("cx", x.toFixed(1)); }
+  var i;
+  for(i=0;i<6;i++){
+    var g=document.getElementById("fw"+i);
+    if(g){ g.setAttribute("opacity", i===st ? "1" : ".32"); }
+  }
+  var nar=document.getElementById("fwNarr");
+  if(nar && FW_NARR[st]){ nar.innerHTML=FW_NARR[st]; }
+  var rd=document.getElementById("fwRead");
+  if(rd){ rd.innerHTML="阶段 "+(st+1)+"/6"; }
+  var lab=document.getElementById("fwBallLab");
+  if(lab){ lab.setAttribute("x", x.toFixed(1)); }
+}
+function myFwLoop(){
+  if(FW_PLAYING){
+    FW_T+=(1/60)*FW_SPEED;
+    myFwStage();
+  }
+  else if(FW_STEP){ /* 单步:暂停时推进到下一阶段开头 */
+    FW_T=(Math.floor(FW_T/FW_STAGE_T+1e-6)+1)*FW_STAGE_T;
+    FW_STEP=false;
+    myFwStage();
+  }
+  requestAnimationFrame(myFwLoop);
+}
+function myFwToggle(){
+  FW_PLAYING=!FW_PLAYING;
+  var b=document.getElementById("fwPlay");
+  b.innerHTML=FW_PLAYING?"⏸ 暂停":"▶ 播放";
+}
+function myFwStep(){ FW_STEP=true; }
+function myFwReset(){ FW_T=0; myFwStage(); }
+function myFwSpeed(sp){
+  FW_SPEED=sp;
+  var btns=document.querySelectorAll(".my-fw-sp"), i;
+  for(i=0;i<btns.length;i++){ btns[i].className="my-btn my-fw-sp"+(parseFloat(btns[i].getAttribute("data-sp"))===sp?" on":""); }
+}
+document.addEventListener("keydown",function(e){
+  var tag=(e.target&&e.target.tagName)||"";
+  if(tag==="INPUT"||tag==="TEXTAREA") return;
+  if(e.keyCode===32){ myFwToggle(); e.preventDefault(); }
+});
+document.addEventListener("visibilitychange",function(){ FW_PLAYING=!document.hidden; var b=document.getElementById("fwPlay"); if(b){ b.innerHTML=FW_PLAYING?"⏸ 暂停":"▶ 播放"; } });
+
+/* ---------- 实验台④ KV Cache 计算器 ---------- */
+var KV_PREC=2;
+var KV_STEPS=[1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576];
+function kvFmtS(v){ return v>=1048576?(v/1048576)+"M":(v/1024)+"K"; }
+function kvGb(bytes){ return bytes/1024/1024/1024; }
+function kvCalcOne(L,s,hkv,dh,b,batch){ return 2*L*s*hkv*dh*b*batch; }
+function myKvCalc(){
+  var L=+document.getElementById("kvL").value;
+  var sIdx=+document.getElementById("kvS").value;
+  var s=KV_STEPS[Math.min(sIdx,KV_STEPS.length-1)];
+  var hkv=+document.getElementById("kvH").value;
+  var dh=+document.getElementById("kvD").value;
+  var batch=+document.getElementById("kvB").value;
+  document.getElementById("kvLv").innerHTML=L;
+  document.getElementById("kvSv").innerHTML=kvFmtS(s);
+  document.getElementById("kvHv").innerHTML=hkv;
+  document.getElementById("kvDv").innerHTML=dh;
+  document.getElementById("kvBv").innerHTML=batch;
+  /* MHA:按 Q 头 4 倍于 KV 头且至少 32 头的教学设定;GQA:当前 hkv;MLA:潜向量 576 维/层 */
+  var mha=kvCalcOne(L,s,Math.max(32,hkv*4),dh,KV_PREC,batch);
+  var gqa=kvCalcOne(L,s,hkv,dh,KV_PREC,batch);
+  var mla=kvCalcOne(L,s,1,576,KV_PREC,batch); /* h=1,dh=576 等效每层每 token 576 元素 */
+  var mx=Math.max(mha,gqa,mla);
+  function setBar(id,bytes,txt){
+    var el=document.getElementById(id);
+    el.style.width=Math.max(6,bytes/mx*100).toFixed(1)+"%";
+    el.innerHTML=txt;
+  }
+  setBar("kvBarM",mha,kvGb(mha).toFixed(2)+" GB");
+  setBar("kvBarG",gqa,kvGb(gqa).toFixed(2)+" GB");
+  setBar("kvBarL",mla,kvGb(mla).toFixed(2)+" GB");
+  var perTokG=2*hkv*dh*KV_PREC, perTokL=2*576*KV_PREC;
+  document.getElementById("kvRead").innerHTML=
+    "当前配置:L="+L+" · s="+kvFmtS(s)+" · h<sub>kv</sub>="+hkv+" · d<sub>h</sub>="+dh+" · "+(KV_PREC===2?"FP16":(KV_PREC===1?"FP8":"INT4"))+" · batch="+batch+
+    "<br>GQA 方案每 token 每层 KV = 2×h<sub>kv</sub>×d<sub>h</sub>×b = "+perTokG+" B;MLA = "+perTokL+" B(576 维潜向量口径)"+
+    "<br>decode 每生成 1 个 token 都要把全部 KV 从显存读一遍 —— 带宽 3TB/s 时,GQA 方案仅读 KV 就需 ≥ <b>"+(gqa/3e9).toFixed(1)+" ms</b>/token";
+}
+function myKvPrec(b){
+  KV_PREC=b;
+  var ids=["kvP2","kvP1","kvP05"], vals=[2,1,0.5], i;
+  for(i=0;i<3;i++){ document.getElementById(ids[i]).className="my-btn"+(vals[i]===b?" on":""); }
+  myKvCalc();
+}
+function myKvPreset(name){
+  function set(id,v){ var el=document.getElementById(id); el.value=v; }
+  if(name==="7b"){ set("kvL",32); set("kvS",3); set("kvH",8); set("kvD",128); set("kvB",1); myKvPrec(2); }
+  else if(name==="70b"){ set("kvL",80); set("kvS",5); set("kvH",8); set("kvD",128); set("kvB",1); myKvPrec(2); }
+  else{ set("kvL",61); set("kvS",5); set("kvH",1); set("kvD",128); set("kvB",1); myKvPrec(2); }
+  myKvCalc();
+}
+
+/* ---------- 初始化与主题联动 ---------- */
+/* HTML 内联事件(oninput/onclick)在全局作用域找函数,须把交互函数挂到 window */
+window.myTkRun = myTkRun;   window.myTkNext = myTkNext;
+window.myAmDraw = myAmDraw;
+window.myFwToggle = myFwToggle; window.myFwStep = myFwStep;
+window.myFwReset = myFwReset;   window.myFwSpeed = myFwSpeed;
+window.myKvCalc = myKvCalc;     window.myKvPrec = myKvPrec;
+window.myKvPreset = myKvPreset;
+function myInit(){
+  myTkRun();
+  myAmDraw();
+  myFwStage();
+  myKvCalc();
+  var cv=document.getElementById("amCv");
+  if(cv){ cv.addEventListener("click", myAmCell); }
+}
+if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded", myInit); }
+else{ myInit(); }
+
+/* 主题切换时重绘 canvas(MutationObserver 监听 html 属性) */
+try{
+  var mo=new MutationObserver(function(){ myAmDraw(); });
+  mo.observe(document.documentElement,{attributes:true,attributeFilter:["data-theme-early"]});
+}catch(err){}
+
+})();
+</script>
+</body>
+</html>

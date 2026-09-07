@@ -30,7 +30,7 @@
   /* 全站统计单源(V2.1.7):pages = site-sections.js 全部 pageId + 首页;
      ibSubjects/ibItems 必须与 ib-data-a/b/c/d 实际计数一致(一键自检.ps1 C3 校验)。
      改题库或增删页面时同步这里;新文案引用这里,别再写死数字 */
-  S.STATS = { pages: 99, ibSubjects: 27, ibItems: 254, quizItems: 60 };
+  S.STATS = { pages: 101, ibSubjects: 27, ibItems: 254, quizItems: 60 };
 
   function page(){ return window.PAGE || {}; }
 
@@ -944,7 +944,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.22(2026-09-06)";
+  S.VERSION = "V2.1.24(2026-09-07)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
