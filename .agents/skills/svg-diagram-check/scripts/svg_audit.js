@@ -229,8 +229,10 @@ function analyze(html, rel) {
     }
     if (pairs >= 8) W.push({ svg: idx, kind: "疑似重叠", msg: "更多略(单图上限 8 条)" });
 
-    /* 图注 */
-    const after = html.slice(svgEnd, svgEnd + 300);
+    /* 图注:窗口延伸到下一张 svg 或 800 字符(图例与图注同框时 300 不够,产生误报) */
+    const nextSvg = html.indexOf("<svg", svgEnd);
+    const capWin = nextSvg < 0 ? svgEnd + 800 : Math.min(nextSvg, svgEnd + 800);
+    const after = html.slice(svgEnd, capWin);
     if (!/my-fig-cap|class="[^"]*cap[^"]*"|<figcaption/i.test(after))
       W.push({ svg: idx, kind: "缺图注", msg: "svg 后未找到 my-fig-cap / figcaption" });
   });

@@ -93,10 +93,9 @@ function analyze(fp) {
   while ((sm = sRe.exec(html))) jsBytes += sm[1].length;
   const dynamic = jsBytes > 8000 && jsBytes > chars * 1.2;
 
-  /* 段落:仅统计有实义文本的 <p> */
+  /* 段落:仅统计有实义文本的 <p>(\s 开头匹配避免把 <pre> 代码块误当段落,V2.1.28) */
   const paras = [];
-  html.replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "");
-  const pRe = /<p[^>]*>([\s\S]*?)<\/p>/gi; let m;
+  const pRe = /<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi; let m;
   while ((m = pRe.exec(stripBlocks(html)))) {
     const t = toText(m[1]);
     if (t.length >= 30) paras.push(t.length);
