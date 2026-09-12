@@ -5,9 +5,9 @@
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
-   - 版本: V2.1.27 · 2026-09-07(升级站点时改 CACHE 名以强制更新;本版 16_保研英语面试接入内置音频,en-audio-map.js 已在 PRECACHE,MP3 走 _assets SWR 播放时缓存)
+   - 版本: V2.1.28 · 2026-09-12(升级站点时改 CACHE 名以强制更新;本版 activate 收敛为只清 hrl-site- 域缓存(A-57 缓存互删根治),en-audio MP3 走 _assets SWR 播放时缓存+MD5 寻址不回源)
    ============================================================ */
-var CACHE = "hrl-site-v2.1.27";
+var CACHE = "hrl-site-v2.1.28";
 var PRECACHE = [
   "./index.html",
   "./404.html",
@@ -55,8 +55,12 @@ self.addEventListener("install", function(e){
 
 self.addEventListener("activate", function(e){
   e.waitUntil(
+    /* V2.1.28(A-57): 只清理本站 hrl-site- 域的旧版本缓存。此前删所有非当前 CACHE 名的
+       缓存,会把 3D 专用 SW 的 robot-3d-models-v1(约 16-18MB 模型)与 robot-3d-vXX-* 代码
+       缓存一并清空——每次站点发版后 3D 页被迫全量重下,弱网下引擎 25s 超时/模型挂起,
+       即"人形机器人又显示不出来"。缓存所有权约定:根 SW 只管 hrl-site-*,3D SW 只管 robot-3d-* */
     caches.keys().then(function(keys){
-      return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
+      return Promise.all(keys.filter(function(k){ return k.indexOf("hrl-site-") === 0 && k !== CACHE; }).map(function(k){ return caches.delete(k); }));
     }).then(function(){ return self.clients.claim(); })
   );
 });
@@ -74,9 +78,23 @@ self.addEventListener("fetch", function(e){
        在线时最多晚一次访问看到新资源,改代码无需再 bump CACHE
        V2.1.8: 后台更新加 cache:"reload" 绕过 HTTP 缓存——此前不在 PRECACHE
        清单的文件(如 site-selftest.js/ai-fab-chat.js/glass.css)的后台 revalidate
-       会被 HTTP 缓存(max-age 3600)污染,部署后 1 小时内拿不到新版 */
+       会被 HTTP 缓存(max-age 3600)污染,部署后 1 小时内拿不到新版。
+       V2.1.28: _assets/en-audio/ 例外——MP3 按内容 md5 寻址、永不改版,命中直接回、
+       不做后台 revalidate(此前每播一段就悄悄回源一次,664 段音频在弱网下互相抢带宽,
+       也会拖慢尚未缓存的新文件首播);未命中才走网络并顺手落缓存 */
+    var isAudio = url.pathname.indexOf("/_assets/en-audio/") >= 0;
     e.respondWith(
       caches.match(e.request).then(function(hit){
+        if(isAudio){
+          if(hit) return hit;
+          return fetch(e.request).then(function(res){
+            if(res && res.ok){
+              var cp0 = res.clone();
+              caches.open(CACHE).then(function(c){ c.put(e.request, cp0); });
+            }
+            return res;
+          });
+        }
         var fetchP = fetch(e.request, { cache:"reload" }).then(function(res){
           if(res && res.ok){
             var cp = res.clone();

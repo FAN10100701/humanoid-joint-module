@@ -56,13 +56,15 @@
           /* 去掉结尾多余的 index.html 拼写差异: 兼容 old/index.html 与 old/ */
           if(np.charAt(np.length - 1) === "/") np += "index.html";
           var msg = document.getElementById("jumpMsg");
-          if(msg) msg.innerHTML = "旧地址已更新,正在跳转到新地址…(" + np + ")";
+          /* V2.1.28(A-58): np 来自用户可控的 location.pathname,必须用 textContent——
+             原 innerHTML 拼接可被 /旧前缀/%3Cimg%20onerror=...%3E 之类路径注入 HTML */
+          if(msg) msg.textContent = "旧地址已更新,正在跳转到新地址…(" + np + ")";
           setTimeout(function(){ location.replace(np); }, 120);
           return;
         }
       }
       var m2 = document.getElementById("jumpMsg");
-      if(m2) m2.innerHTML = "";
+      if(m2) m2.textContent = "";
     }
     if(document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", tryJump); }
     else tryJump();

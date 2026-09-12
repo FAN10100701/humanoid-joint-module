@@ -7,6 +7,9 @@
  *   S5 手动保存的网络音色同样被探测降级;重新手动选择即重置
  *   S6 空闲态单句朗读零等待直发(保留 v3 优化)
  *   S7 连点单词队列顺序连播回归
+ *   S9 内置音频层 AU(V2.1.27)+ V2.1.28 回归:连点抢播 AbortError 不误回落 TTS、
+ *      单词在播 stop 收声、未命中回落带 preferLocal
+ *   S10 预热器(V2.1.28):只抓未缓存文件、已缓存零请求、重复 warmTab 去重、词组一并预热
  * 用法: node docs/审计/_tts_v4_sim.js   (全部 PASS 输出 ALL SCENARIOS PASSED)
  */
 "use strict";
@@ -125,8 +128,8 @@ function check(name, cond, detail){
   check("S0 已保存的手选音色(子集外)保留且选中", sel.innerHTML.indexOf('value="george" selected') >= 0, "");
 })();
 
-/* ---------- S9 内置音频层 AU:连播/高亮/回落/停止/语速(页面层函数) ---------- */
-(function(){
+/* ---------- S9 内置音频层 AU:连播/高亮/回落/停止/语速/连点抢播/单词停止(V2.1.28) ---------- */
+(async function(){
   var a3 = page.indexOf("var AU = (function(){");
   var b3 = page.indexOf("/* ---------- 渲染:公共行/卡");
   if(a3 < 0 || b3 < 0 || b3 <= a3){ check("S9 源码抽取", false, "anchor missing"); return; }
@@ -136,20 +139,28 @@ function check(name, cond, detail){
     this.onended = this.onerror = null;
     FakeAudio.last = self;
     FakeAudio.plays.push("");
-    this.play = function(){ FakeAudio.plays[FakeAudio.plays.length - 1] = self.src; self.paused = false; return { catch: function(){} }; };
+    FakeAudio.rejs.push([]);
+    this.play = function(){
+      FakeAudio.plays[FakeAudio.plays.length - 1] = self.src; self.paused = false;
+      return { catch: function(fn){ FakeAudio.rejs[FakeAudio.rejs.length - 1].push(fn); return this; } };
+    };
     this.pause = function(){ self.paused = true; };
   }
+  FakeAudio.plays = []; FakeAudio.rejs = [];
+  function rejectPlay(idx, err){ (FakeAudio.rejs[idx] || []).forEach(function(fn){ fn(err); }); }
   function freshAU(mapObj){
-    FakeAudio.plays = [];
+    FakeAudio.plays = []; FakeAudio.rejs = [];
     var calls = { ttsSeq: [], ttsWord: [], stops: 0, pulses: 0 };
     var ttsStub = {
       speakSequence: function(items, opt){ calls.ttsSeq.push({ items: items, opt: opt }); },
-      speakWord: function(w, b){ calls.ttsWord.push(w); },
+      speakWord: function(w, b, opt){ calls.ttsWord.push({ w: w, opt: opt }); },
       stop: function(){ calls.stops++; },
       pulse: function(){ calls.pulses++; }
     };
-    var fn = new Function("window", "TTS", "Audio", page.slice(a3, b3) + "; return AU;");
-    var au = fn({ EN_AUDIO_MAP: mapObj }, ttsStub, FakeAudio);
+    var fn = new Function("window", "TTS", "Audio", "location", "document", "navigator", "WB", "deck", "caches", "fetch",
+      page.slice(a3, b3) + "; return AU;");
+    var au = fn({ EN_AUDIO_MAP: mapObj }, ttsStub, FakeAudio,
+      { protocol: "file:" }, { visibilityState: "visible" }, { onLine: true }, [], [], undefined, undefined);
     return { au: au, calls: calls };
   }
   function el(){ return { classes: "", classList: { add: function(c){ this._c = this._c || {}; this._c[c] = 1; }, remove: function(c){ this._c = this._c || {}; delete this._c[c]; }, contains: function(c){ return !!(this._c && this._c[c]); } } }; }
@@ -174,7 +185,7 @@ function check(name, cond, detail){
   t2.au.speakWord("robot", w1);
   check("S9 单词命中:播音频+点亮+不走TTS", FakeAudio.last.src.indexOf("c.mp3") >= 0 && t2.calls.pulses === 1 && t2.calls.ttsWord.length === 0, FakeAudio.last.src);
   t2.au.speakWord("zzz", el());
-  check("S9 单词未命中走 TTS", t2.calls.ttsWord.length === 1 && t2.calls.ttsWord[0] === "zzz", JSON.stringify(t2.calls.ttsWord));
+  check("S9 单词未命中走 TTS", t2.calls.ttsWord.length === 1 && t2.calls.ttsWord[0].w === "zzz", JSON.stringify(t2.calls.ttsWord));
   var t2b = freshAU({ "robot": "en-audio/c.mp3" });
   t2b.au.speakWord("Robot", el());
   check("S9 单词小写键兜底命中", FakeAudio.last.src.indexOf("c.mp3") >= 0 && t2b.calls.ttsWord.length === 0, FakeAudio.last.src);
@@ -188,6 +199,59 @@ function check(name, cond, detail){
   t4.au.speakSequence([{ text: "Hello.", el: el() }, { text: "no-map", el: el() }], {});
   FakeAudio.last.onerror();
   check("S9 播放报错从当前句回落 TTS", t4.calls.ttsSeq.length === 1 && t4.calls.ttsSeq[0].items.length === 2, JSON.stringify(t4.calls.ttsSeq.map(function(x){ return x.items.length; })));
+
+  /* ---- V2.1.28 回归 ---- */
+  var t5 = freshAU(map);
+  t5.au.speakWord("robot", el());
+  var firstPlay = FakeAudio.plays.length - 1;
+  t5.au.speakWord("Hello.", el());          /* 抢播:上一条 play() 的 promise 将以 AbortError 拒绝 */
+  rejectPlay(firstPlay, { name: "AbortError" });
+  await sleep(40);
+  check("S9 连点抢播:AbortError 不误回落 TTS(旧版叠音病灶)",
+    t5.calls.ttsWord.length === 0 && FakeAudio.last.src.indexOf("a.mp3") >= 0,
+    "tts=" + JSON.stringify(t5.calls.ttsWord) + " src=" + FakeAudio.last.src);
+
+  var t6 = freshAU(map);
+  t6.au.speakWord("robot", el());
+  var playingBeforeStop = FakeAudio.last.paused;   /* false = 在播 */
+  t6.au.stop();
+  check("S9 单词在播时 stop 能收声(旧版 ⏹ 停不掉病灶)", playingBeforeStop === false && FakeAudio.last.paused === true, "before=" + playingBeforeStop + " after=" + FakeAudio.last.paused);
+
+  var t7 = freshAU(map);
+  t7.au.speakWord("zzz", el());
+  check("S9 未命中回落带 preferLocal(本地音色秒出声)",
+    t7.calls.ttsWord.length === 1 && !!(t7.calls.ttsWord[0].opt && t7.calls.ttsWord[0].opt.preferLocal),
+    JSON.stringify(t7.calls.ttsWord));
+})();
+
+/* ---------- S10 预热器:只抓未缓存、重复去重、词组一并(V2.1.28) ---------- */
+(async function(){
+  var a3 = page.indexOf("var AU = (function(){");
+  var b3 = page.indexOf("/* ---------- 渲染:公共行/卡");
+  if(a3 < 0 || b3 < 0 || b3 <= a3){ check("S10 源码抽取", false, "anchor missing"); return; }
+  var fetched = [], cacheHit = {};
+  var mapObj = { "Hello.": "en-audio/a.mp3", "robot": "en-audio/c.mp3", "step by step": "en-audio/p.mp3" };
+  cacheHit["../_assets/en-audio/c.mp3"] = { ok: true };   /* robot 已在缓存:预热应零请求跳过 */
+  var win = {
+    EN_AUDIO_MAP: mapObj,
+    EN_DATA: { intro: [{ lines: [{ en: "Hello." }, { en: "The robot works." }] }], qa: [], rescue: [], vocab: [], tips: [] },
+    EN_NOTES: { phrases: { "step by step": { d: "逐步" } } },
+    caches: { match: function(u){ return Promise.resolve(cacheHit[u] || null); } },
+    fetch: function(u){ fetched.push(u); return Promise.resolve({ blob: function(){ return Promise.resolve({}); } }); }
+  };
+  var fn = new Function("window", "TTS", "Audio", "location", "document", "navigator", "WB", "deck", "caches", "fetch",
+    page.slice(a3, b3) + "; return AU;");
+  var au = fn(win, { stop: function(){}, pulse: function(){}, speakSequence: function(){}, speakWord: function(){} },
+    function(){}, { protocol: "https:" }, { visibilityState: "visible" }, { onLine: true }, [], [], win.caches, win.fetch);
+  au.warmTab("intro");
+  await sleep(500);
+  check("S10 预热抓取未缓存文件", fetched.indexOf("../_assets/en-audio/a.mp3") >= 0, JSON.stringify(fetched));
+  check("S10 已缓存文件零请求(不触发 revalidate 风暴)", fetched.indexOf("../_assets/en-audio/c.mp3") < 0, JSON.stringify(fetched));
+  check("S10 词组键一并预热", fetched.indexOf("../_assets/en-audio/p.mp3") >= 0, JSON.stringify(fetched));
+  var n = fetched.length;
+  au.warmTab("intro");
+  await sleep(300);
+  check("S10 重复 warmTab 全部去重", fetched.length === n, n + " -> " + fetched.length);
 })();
 
 /* ---------- 场景 ---------- */

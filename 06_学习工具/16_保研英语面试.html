@@ -301,13 +301,14 @@ html:not([data-theme-early="dark"]) .en-lock-hint{color:#64748b}
       <div><div class="en-num g" id="enSRescue">0</div><div class="en-num-k">救场金句(条)</div></div>
       <div><div class="en-num v" id="enSVocab">0</div><div class="en-num-k">专业词汇(词)</div></div>
       <div><div class="en-num w" id="enSWB">0</div><div class="en-num-k">生词本(词)</div></div>
-      <div class="en-note">🔊 朗读默认播放<b>内置音频</b>:全页 285 段句子与单词已用微软神经网络音色(Aria,与 Edge「标准音色」同款)预生成为 MP3,点击<b>毫秒级起播</b>,离线也能用;语速滑杆对内置音频同样生效。仅内置音频未覆盖的内容(如生词本里自加的词)自动回落浏览器 TTS:默认「标准音色」会挑最像真人的联网音色,但合成要走网络、出声稍慢,开页会自动探测,太慢时临时改用本地音色兜底;想要兜底也秒出声,可在 Windows「设置 → 时间和语言 → 语音」里添加 English 语音包。</div>
+      <div class="en-note">🔊 朗读默认播放<b>内置音频</b>:全页 664 段语句、单词与词组(含 step by step 等词组)已用微软神经网络音色(Aria,与 Edge「标准音色」同款)预生成为 MP3,点击<b>毫秒级起播</b>,离线也能用;开页与切页签会自动把本页音频<b>预热带进缓存</b>,空闲后再补齐全站,点过的词第二次起零网络等待。语速滑杆对内置音频同样生效。仅生词本里自加的词自动回落浏览器 TTS,并优先本地音色秒出声;想要更逼真的兜底音色,可在 Windows「设置 → 时间和语言 → 语音」里添加 English 语音包。工具栏 🔁 <b>循环播放</b>:点单句 🔊 即单句循环跟读,点「▶ 朗读」即整卡循环反复听(睡前闭眼听),偏好自动记忆。</div>
     </div>
   </div>
   <div class="en-toolbar">
     <label class="en-tctl" title="默认「标准音色」自动挑最像真人的;列表只保留推荐音色,切换后自动试读一句">🎙 <select id="enVoice"><option value="">标准音色(推荐)</option></select></label>
     <label class="en-tctl" title="朗读语速:越慢越容易跟读">🐢 <input type="range" id="enRate" min="0.5" max="1" step="0.05" value="0.75"><span class="en-rate-lb" id="enRateLb">0.75x</span> 🐇</label>
     <button class="en-tbtn" id="enRecite" title="隐藏所有中文翻译,测自己能不能看懂;点中文位置可偷看该句">🙈 背诵模式</button>
+    <button class="en-tbtn" id="enLoop" title="循环播放:朗读结束后自动从头再来——点单句 🔊 即单句循环(跟读),点「▶ 朗读」即整卡循环(闭眼反复听);再点一次关闭">🔁 循环播放</button>
     <button class="en-tbtn" id="enStop" title="停止当前朗读">⏹ 停止朗读</button>
     <button class="en-tbtn" id="enRelock" title="清空本机的解锁记忆,重新上锁(换设备/离开电脑时用)">🔒 重新锁定</button>
   </div>
@@ -647,9 +648,9 @@ var TTS = (function(){
   function clearHi(){
     if(currentEl){ currentEl.classList.remove("speaking"); currentEl = null; }
   }
-  function makeUtterance(text){
+  function makeUtterance(text, forceV){
     var u = new SpeechSynthesisUtterance(normalize(text));
-    var v = currentVoice();
+    var v = forceV || currentVoice();
     if(v) u.voice = v;
     u.lang = (v && v.lang) || "en-US";
     return u;
@@ -692,9 +693,10 @@ var TTS = (function(){
   /* ---------- 单词连播 ---------- */
   /* 队列只存「还没派发」的词;正在播/正在重试的那条放 curWord,派发时即出队。
      这样队满挤最旧时只会挤掉没播过的词,播完出队也不会错位吃掉后面的词。 */
-  var curWord = null;
-  function speakWord(word, btn){
+  var curWord = null, wordOpt = null;
+  function speakWord(word, btn, opt){
     if(!ok) return;
+    wordOpt = opt || null;   /* preferLocal:单词短音频优选本地音色毫秒级出声(AU 未命中回落用) */
     var fresh = (mode !== 1);
     if(fresh){
       if(live || pendingDone) hardStop();   /* 引擎里确有东西在跑/有朗读按钮状态要收尾才清场 */
@@ -714,10 +716,11 @@ var TTS = (function(){
   function dispatchWord(sid){
     if(sid !== session || mode !== 1) return;
     if(!curWord){                                  /* 上一条已放完:取下一条;有 curWord 则是看门狗重试 */
-      if(!wq.length){ mode = 0; resetCount = 0; return; }
+      if(!wq.length){ mode = 0; resetCount = 0; wordOpt = null; return; }
       curWord = wq.shift();
     }
-    var u = makeUtterance(curWord.text);
+    var u = makeUtterance(curWord.text,
+      (wordOpt && wordOpt.preferLocal) ? (bestLocal() || currentVoice()) : null);
     u.rate = Math.min(rate, 0.8);
     u.onstart = function(){
       if(sid !== session) return;
@@ -798,7 +801,8 @@ var TTS = (function(){
       onDone && onDone();
     }
     function makeU(k){
-      var u = makeUtterance(items[k].text);
+      var u = makeUtterance(items[k].text,
+        (opt && opt.preferLocal) ? (bestLocal() || currentVoice()) : null);
       u.rate = seqRate;
       u.onstart = function(){
         if(sid !== session) return;
@@ -914,10 +918,19 @@ var TTS = (function(){
 
 /* ---------- 内置音频层:预生成 MP3,点击即播本地文件(毫秒级起播、离线可用),缺文件回落 TTS ---------- */
 /* 音频由 _本地工具/生成英语音频.py 用微软 AriaNeural(与 Edge「标准音色」同款引擎)预合成,
-   清单 _assets/en-audio-map.js 按「原文 → 文件」映射。浏览器 TTS 的好听音色全是云端合成,
-   每次点击都要走一遍网络(1~3 秒起),这是"点了慢"的根源;预生成后彻底不依赖它。 */
+   清单 _assets/en-audio-map.js 按「原文 → 文件」映射(整句原文精确键 / 单词·词组小写键)。
+   V2.1.28 修三类"点了慢/没反应"的残余:
+   ① 首点要等网络:MP3 不在 SW PRECACHE,SW 缓存未命中时首点每个词都要一次网络往返——
+     新增预热器 warm:开页/切页签先把本页签会点到的音频提前抓进 SW 缓存(已缓存的一律
+     零请求跳过),空闲 4 秒后把整本清单慢慢补齐;整段连播时顺手预取下一句;
+   ② 连点打架:连点时换 src 会把上一次 play() 的 promise 以 AbortError 拒绝,旧代码把它
+     当"播放失败"回落 TTS,新旧两个读音叠着播——现每次播放发号(playNo),过号的失败一律忽略;
+   ③ 单词在播停不掉:stop() 原来只在整段连播(seq)时才 pause,点「⏹ 停止朗读」/换音色
+     对单曲单词无效——现无条件收声。
+   未命中(生词本自加词等)回落 TTS 时,单词短音频优先本地音色毫秒级出声,不再苦等网络音色。 */
 var AU = (function(){
-  var el = null, rate = 0.75, seq = null, hiEl = null;
+  var el = null, rate = 0.75, seq = null, hiEl = null, playNo = 0;
+  var loopOn = false, lastPlay = null;   /* V2.1.28 循环播放:loopOn=开关;lastPlay=最近一次朗读内容(TTS 回落路径结束后重播用) */
   function map(){ return window.EN_AUDIO_MAP || null; }
   /* 整句用原文精确命中;单词先原样再小写(词级音频统一小写键) */
   function urlOf(text){
@@ -937,25 +950,113 @@ var AU = (function(){
   }
   function setRate(r){ rate = r; if(el){ try{ el.playbackRate = r; }catch(e){} } }
   function stop(){
-    if(!seq) return;
     var s = seq; seq = null;
-    try{ if(el) el.pause(); }catch(e){}
+    try{ if(el) el.pause(); }catch(e){}   /* 无条件收声:单词在播(没有 seq)也必须停得掉 */
     hi(null);
-    if(s.onDone) s.onDone();
+    if(s && s.onDone) s.onDone();
   }
-  /* 播放失败(文件缺失/解码错/自动播放被拒):从当前句起改走 TTS 兜底 */
+  /* ---------- 预热器:把会点到的 MP3 提前抓进缓存 ---------- */
+  /* 先用 caches.match 查一遍(命中即跳过、零请求——直接 fetch 会触发 SW 的后台 revalidate,
+     弱网下几百个回源请求互相抢带宽),未命中的才发 fetch,SW 收到后会顺手落缓存。
+     file:// 直开本地磁盘本来就是毫秒级,整段跳过 */
+  var warmQ = [], warmBusy = 0, warmSeen = {}, warmTimer = 0, phrasesWarmed = false;
+  function warmOK(){
+    return (location.protocol === "http:" || location.protocol === "https:") &&
+      !!window.caches && !!window.fetch;
+  }
+  function warmPump(){
+    warmTimer = 0;
+    if(!warmOK()){ warmQ = []; return; }   /* file:///老浏览器:连播预取塞进来的也一并免了 */
+    if(warmBusy >= 3 || !warmQ.length) return;
+    if(document.visibilityState === "hidden" || navigator.onLine === false){
+      warmTimer = setTimeout(warmPump, 2500);   /* 后台页/断网:先歇会儿再试 */
+      return;
+    }
+    var u = warmQ.shift();
+    warmBusy++;
+    caches.match(u).then(function(hit){
+      return hit ? null : fetch(u).then(function(r){ return r.blob(); });  /* 读掉 body,SW 端好落缓存 */
+    }).catch(function(){ return null; }).then(function(){
+      warmBusy--;
+      setTimeout(warmPump, 30);                 /* 并发 3 + 30ms 间隔,轻拿轻放不抢点击的带宽 */
+    });
+  }
+  function warmPush(url){
+    if(!url || warmSeen[url]) return;
+    warmSeen[url] = 1;
+    warmQ.push(url);
+    if(!warmTimer) warmTimer = setTimeout(warmPump, 0);
+  }
+  function warmText(text){
+    warmPush(urlOf(text));
+    var toks = String(text == null ? "" : text).match(/[A-Za-z][A-Za-z'\u2019-]*/g) || [];
+    for(var i = 0; i < toks.length; i++){
+      var parts = toks[i].split("-");           /* 与页面切词一致:multi-layer 拆两半各自可点 */
+      for(var j = 0; j < parts.length; j++) warmPush(urlOf(parts[j]));
+    }
+  }
+  function warmPhrases(){
+    if(phrasesWarmed) return;
+    phrasesWarmed = true;
+    var PH = (window.EN_NOTES || {}).phrases || {};
+    for(var k in PH) if(PH.hasOwnProperty(k)) warmPush(urlOf(k));
+  }
+  function tabTexts(k){
+    var D = window.EN_DATA, out = [], i, j;
+    if(!D) return out;
+    if(k === "intro"){
+      for(i = 0; i < D.intro.length; i++) for(j = 0; j < D.intro[i].lines.length; j++) out.push(D.intro[i].lines[j].en);
+    }else if(k === "qa"){
+      for(i = 0; i < D.qa.length; i++){ out.push(D.qa[i].q); for(j = 0; j < D.qa[i].lines.length; j++) out.push(D.qa[i].lines[j].en); }
+    }else if(k === "rescue"){
+      for(i = 0; i < D.rescue.length; i++) out.push(D.rescue[i].en);
+    }else if(k === "vocab"){
+      for(i = 0; i < D.vocab.length; i++) for(j = 0; j < D.vocab[i].words.length; j++){ out.push(D.vocab[i].words[j].w); out.push(D.vocab[i].words[j].ex); }
+    }else if(k === "wb"){
+      for(i = 0; i < WB.length; i++) out.push(WB[i].w);
+    }else if(k === "cards"){
+      for(i = 0; i < deck.length; i++){ out.push(deck[i].w); if(deck[i].ex) out.push(deck[i].ex); }
+    }
+    return out;
+  }
+  function warmTab(k){
+    if(!warmOK()) return;
+    warmPhrases();
+    var ts = tabTexts(k);
+    for(var i = 0; i < ts.length; i++) warmText(ts[i]);
+  }
+  /* 空闲补齐整本清单:约 8MB 只在缓存还空着的头一两次访问发生,之后全程零网络请求 */
+  function warmIdle(){
+    if(!warmOK()) return;
+    setTimeout(function(){
+      var m = map();
+      if(!m) return;
+      for(var k in m) if(m.hasOwnProperty(k)) warmPush("../_assets/" + m[k]);
+    }, 4000);
+  }
+  /* 播放失败(文件缺失/解码错/自动播放被拒):从当前句起改走 TTS 兜底;纯单词串优先本地音色 */
   function toTTS(s){
     seq = null; hi(null);
     TTS.stop();
-    var rest = [], i;
-    for(i = s.i; i < s.items.length; i++) rest.push(s.items[i]);
-    TTS.speakSequence(rest, { onDone: s.onDone });
+    var rest = [], i, allWord = true;
+    for(i = s.i; i < s.items.length; i++){
+      rest.push(s.items[i]);
+      if(/\s/.test(s.items[i].text)) allWord = false;
+    }
+    TTS.speakSequence(rest, { preferLocal: allWord, onDone: function(){
+      if(s.loopable && loopOn){ toTTS(s); return; }   /* 循环播放:重播余下段落 */
+      if(s.onDone) s.onDone();
+    } });
   }
   function next(){
     var s = seq; if(!s) return;
     s.i++;
-    if(s.i >= s.items.length){ seq = null; hi(null); if(s.onDone) s.onDone(); return; }
+    if(s.i >= s.items.length){
+      if(s.loopable){ s.i = -1; next(); return; }   /* 循环播放:回到本段开头继续,直到关闭或手动停止 */
+      seq = null; hi(null); if(s.onDone) s.onDone(); return;
+    }
     hi(s.items[s.i].el);
+    warmPush(s.urls[s.i + 1]);             /* 连播预取:本句在播时先把下一句抓进缓存 */
     var a = ensureEl(), fell = false;
     a.src = s.urls[s.i];
     try{ a.playbackRate = rate; }catch(e){}
@@ -969,39 +1070,67 @@ var AU = (function(){
   /* 整段朗读入口:清单全命中走音频连播;有未命中则整段回落 TTS(不混播,保证衔接可靠) */
   function speakSequence(items, opt){
     opt = opt || {};
+    lastPlay = { items: items, opt: opt };   /* 循环播放:记录最近一次朗读,供 TTS 回落路径结束后重播 */
     var urls = [], i, u;
     for(i = 0; i < items.length; i++){
       u = urlOf(items[i].text);
       if(!u) break;
       urls.push(u);
     }
-    if(urls.length < items.length){ TTS.speakSequence(items, opt); return; }
+    if(urls.length < items.length){
+      var allWord = true;
+      for(i = 0; i < items.length; i++) if(/\s/.test(items[i].text)){ allWord = false; break; }
+      TTS.speakSequence(items, { onStart: opt.onStart, preferLocal: allWord, onDone: function(){
+        if(loopOn && lastPlay){ speakSequence(lastPlay.items, lastPlay.opt); return; }   /* 循环播放 */
+        if(opt.onDone) opt.onDone();
+      } });
+      return;
+    }
     TTS.stop();        /* 清引擎与朗读按钮状态(pendingDone 照常收尾) */
     stop();            /* 收掉上一段音频(触发其 onDone) */
-    seq = { items: items, urls: urls, i: -1, onDone: opt.onDone || null };
+    seq = { items: items, urls: urls, i: -1, onDone: opt.onDone || null, loopable: loopOn };
     if(opt.onStart) opt.onStart();
     next();
   }
-  /* 单词/词组:命中播音频(即时),未命中走 TTS;两者都有即时点亮回执 */
+  /* 单词/词组:命中播音频(即时),未命中走 TTS(本地音色优先);两者都有即时点亮回执 */
   function speakWord(word, btn){
     if(btn && btn.classList) TTS.pulse(btn);
     var u = urlOf(word);
-    if(!u){ TTS.speakWord(word, btn); return; }
+    if(!u){
+      stop();                               /* 先收掉在播音频再交给 TTS,防两边叠音 */
+      TTS.speakWord(word, btn, { preferLocal: true });
+      return;
+    }
     TTS.stop();
     stop();
-    var a = ensureEl(), fell = false;
+    var my = ++playNo, a = ensureEl(), fell = false;
     a.src = u;
     try{ a.playbackRate = Math.min(rate, 0.9); }catch(e){}
     a.onended = null;
-    function fail(){ if(fell) return; fell = true; TTS.speakWord(word, btn); }
+    function fail(){
+      if(fell || my !== playNo) return;     /* 过号=已被更新的点击/停止接管,失败不作数 */
+      fell = true;
+      TTS.speakWord(word, btn, { preferLocal: true });
+    }
     a.onerror = fail;
     var p;
     try{ p = a.play(); }catch(e){ fail(); return; }
-    if(p && p.catch) p.catch(fail);
+    if(p && p.catch) p.catch(function(err){
+      if(err && err.name === "AbortError") return;   /* 被 src 更换/暂停打断,不是真失败 */
+      fail();
+    });
+  }
+  /* 全局点读模式(site.js)在本页的落点:点词走内置音频,毫秒级,不与页面引擎打架 */
+  window.SITE_EN_WORD = function(w){ if(w) speakWord(w); };
+  /* 循环播放开关:正在播的段落立即生效(结束分支按 loopable 决定重播) */
+  function setLoop(on){
+    loopOn = !!on;
+    if(seq) seq.loopable = loopOn;
   }
   return {
     speakSequence: speakSequence, speakWord: speakWord, stop: stop,
-    setRate: setRate, available: function(){ return !!map(); }
+    setRate: setRate, setLoop: setLoop, warmTab: warmTab, warmIdle: warmIdle,
+    available: function(){ return !!map(); }
   };
 })();
 
@@ -1208,6 +1337,7 @@ function openTab(k){
   $("enDesc").textContent = DESC[k] || "";
   if(k === "cards" && !deck.length) buildDeck();
   $("enStage").innerHTML = RENDER[k]() || "";
+  AU.warmTab(k);   /* 本页签会点到的句子/单词/词组音频提前抓进缓存,点击即播零等待 */
 }
 function resetReadBtns(){
   var btns = document.querySelectorAll(".en-read.reading");
@@ -1360,6 +1490,7 @@ function init(){
   WB = wbLoad();
   buildChips();
   openTab(curTab);
+  AU.warmIdle();   /* 空闲 4 秒后把整本音频清单补进缓存:此后任何页签任何词都是零网络首点 */
   $("enSIntro").textContent = D.intro.length;
   $("enSQA").textContent = D.qa.length;
   $("enSRescue").textContent = D.rescue.length;
@@ -1519,6 +1650,22 @@ function bindEvents(){
     if(on) toast("中文已隐藏,点击任意中文位置可偷看该句");
   };
   $("enStop").onclick = stopAll;
+  /* V2.1.28 循环播放:单句 🔊 = 单句循环(跟读);「▶ 朗读」= 整卡循环(闭眼反复听);偏好记忆在本机 */
+  var loopBtn = $("enLoop"), loopOn = false;
+  try{ loopOn = localStorage.getItem("humanoid-en-loop-v1") === "1"; }catch(e){}
+  if(loopOn) AU.setLoop(true);
+  function paintLoop(){
+    loopBtn.classList.toggle("on", loopOn);
+    loopBtn.innerHTML = loopOn ? "🔁 循环中" : "🔁 循环播放";
+  }
+  paintLoop();
+  loopBtn.onclick = function(){
+    loopOn = !loopOn;
+    AU.setLoop(loopOn);
+    paintLoop();
+    try{ localStorage.setItem("humanoid-en-loop-v1", loopOn ? "1" : "0"); }catch(e){}
+    toast(loopOn ? "循环播放已开启:读完自动重来,点「⏹ 停止朗读」结束" : "循环播放已关闭");
+  };
 }
 
 /* ---------- 密码锁门禁 ---------- */

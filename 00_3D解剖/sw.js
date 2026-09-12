@@ -9,7 +9,7 @@
    4) HTML 导航请求：network-first（保证教学内容更新及时），断网回退缓存
    5) 改 SW_VERSION 只刷新代码/库；模型文件有更新时才手动改 MODELS_CACHE 名
    ============================================================ */
-var SW_VERSION='robot-3d-v29';           /* 【可调】代码缓存版本号：bump 只清代码/库缓存，模型缓存保留。V2.1.17: 3D 主页修复(引擎路径/复位相位/复位状态机+tdAutoDir)须刷新代码缓存 */
+var SW_VERSION='robot-3d-v30';           /* 【可调】代码缓存版本号：bump 只清代码/库缓存，模型缓存保留。V2.1.28: activate 收敛为本域(robot-3d-)清理+URDF超时重试+'9'标记TTL(app.module.js 同批改动)须刷新代码缓存 */
 var CORE_CACHE=SW_VERSION+'-core';       /* 核心资源缓存名（install 预缓存） */
 var RUNTIME_CACHE=SW_VERSION+'-runtime'; /* 代码/库运行时缓存名（随版本刷新） */
 var MODELS_CACHE='robot-3d-models-v1';   /* 模型缓存名（独立于版本：模型文件未变更时请勿 bump，避免全站模型重下） */
@@ -30,12 +30,15 @@ self.addEventListener('install',function(e){
   );
 });
 
-/* activate：只清代码/库缓存（版本化），保留模型缓存(独立名) */
+/* activate：只清本域(robot-3d-)旧版本代码缓存，保留模型缓存(独立名)。
+   V2.1.28(A-57)：此前删所有非本版本缓存,会误删主站 hrl-site-* 缓存,与根 SW 互删——
+   站点发版→3D 模型缓存被根 SW 清空;进 3D 页→主站缓存被本 SW 清空,双方反复全量重下。
+   缓存所有权约定:本 SW 只管 robot-3d- 前缀,其余缓存(含 hrl-site-*)一律不动 */
 self.addEventListener('activate',function(e){
   e.waitUntil(
     caches.keys().then(function(keys){
       return Promise.all(keys.filter(function(k){
-        return (k.indexOf(SW_VERSION)!==0) && (k!==MODELS_CACHE);   /* 旧版本代码缓存 且 非模型缓存 = 删除 */
+        return (k.indexOf('robot-3d-')===0) && (k!==CORE_CACHE) && (k!==RUNTIME_CACHE) && (k!==MODELS_CACHE);   /* 本域旧版本缓存 = 删除 */
       }).map(function(k){return caches.delete(k);}));
     }).then(function(){return self.clients.claim();})
   );

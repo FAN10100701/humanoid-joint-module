@@ -196,6 +196,8 @@ html:not([data-theme-early="dark"]) .ai-cursor{background:#2563eb}
 (function(){
   "use strict";
   var $ = function(id){ return document.getElementById(id); };
+  /* V2.1.28(A-59): URL 参数等外部字符串进 innerHTML 前必须转义;site.js 已加载(单源 Site.esc) */
+  var escHtml = (window.Site && Site.esc) || function(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); };
   var ctxSubject = null;
   var provBtns = [], personaBtns = [];
 
@@ -304,7 +306,7 @@ html:not([data-theme-early="dark"]) .ai-cursor{background:#2563eb}
   function renderCtx(){
     var html = "当前学科上下文:";
     if(ctxSubject){
-      html += "<span class='ai-ctx'>" + ctxSubject + "<b title='移除' id='aiCtxX'>✕</b></span>";
+      html += "<span class='ai-ctx'>" + escHtml(ctxSubject) + "<b title='移除' id='aiCtxX'>✕</b></span>";
     }else{
       html += "<span style='color:#6b7280'>无(可从题库/闯关页的「问AI」带入)</span>";
     }

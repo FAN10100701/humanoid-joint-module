@@ -127,6 +127,16 @@ function loadDeps(cb){
      标记 1/3/4 → CDN 模式(裸说明符,由注入的 importmap 解析,三源逐级切换)
      标记 9 → 回本地重试(CDN 全失败后的自愈),本地再失败则报错停止 */
   var mark=null;try{mark=sessionStorage.getItem('__three_cdn__');}catch(e){}
+  /* V2.1.28(A-60): '9'(CDN 全失败且回本地也失败)加 30 分钟过期——此前它是状态机终点,
+     一次网络故障会锁死整个标签页会话(刷新也无法重试,只能新开标签或手点诊断面板"重置加载") */
+  if(mark==='9'){
+    var markTs=0;try{markTs=Number(sessionStorage.getItem('__three_cdn_ts__'))||0;}catch(e){}
+    if(!markTs||Date.now()-markTs>30*60*1000){
+      try{sessionStorage.removeItem('__three_cdn__');sessionStorage.removeItem('__three_cdn_ts__');}catch(e){}
+      mark=null;
+      probe("'9' 标记已超 30 分钟,清除后重新进入回退状态机");
+    }
+  }
   var isFile=location.protocol==='file:';
   var cdnMode=isFile||mark==='1'||mark==='3'||mark==='4';
   var LOC='../lib/';   /* V2.1.17: 动态 import 的相对路径基于本模块(js/)而非页面,须用 ../lib/ 才能命中 00_3D解剖/lib/ ——原 ./lib/ 解析成 js/lib/ 恒 404,一直被 CDN 回退掩盖(AUDIT A-35) */
@@ -1025,6 +1035,18 @@ function applyUrdf(m,parsed,list,names){
   applyColorScheme(curScheme);   /* 官方模型组装完成后，应用当前配色方案 */
 }
 
+/* V2.1.28(A-60): URDF 请求加 20s 超时+重试 1 次——此前 fetch 无超时,弱网/本地服务器
+   僵死(DIAG v7.5 记载的形态)时无限挂起,页面永远停在"正在加载官方3D模型"无失败提示 */
+function fetchUrdfWithTimeout(url,tries){
+  return new Promise(function(resolve,reject){
+    var to=setTimeout(function(){reject(new Error('URDF 请求超时(20s)'));},20000);
+    fetch(url).then(function(r){clearTimeout(to);resolve(r);},function(e){clearTimeout(to);reject(e);});
+  }).catch(function(e){
+    if(tries>1)return fetchUrdfWithTimeout(url,tries-1);
+    throw e;
+  });
+}
+
 /* 异步加载官方 URDF+STL：成功替换回退模型；加载失败则保留回退模型并给出提示
    done：可选完成回调（同屏对比功能用它串行加载两机型；成功与失败都会回调） */
 function loadUrdfRobot(m,done){
@@ -1073,7 +1095,7 @@ function loadUrdfRobot(m,done){
   var names=[];
   var fileToLinks={};   /* 网格文件名 -> 使用它的 link 名列表（供逐零件注入定位） */
   var wrap=null;        /* 占位骨架：真实STL边下载边替换，实现"机器人边下边长出来" */
-  fetch(cfg.urdf)
+  fetchUrdfWithTimeout(cfg.urdf,2)
     .then(function(r){if(!r.ok)throw new Error('URDF HTTP '+r.status);return r.text();})
     .then(function(txt){
       parsed=parseUrdf(txt);

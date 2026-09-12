@@ -946,7 +946,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.27(2026-09-07)";
+  S.VERSION = "V2.1.28(2026-09-12)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -1051,26 +1051,41 @@
     render();
   }
 
-  /* ---------- V2.1.27 锚点二次校正:首页计数动画/晚到注入会让上方内容回流,
-     原生锚点跳转按旧布局一次性落点,回流后即偏离;等布局稳定后按最终位置重落一次。
-     用户若已手动滚动(滚轮/触摸/按键)则视为接管,不再打扰 ---------- */
+  /* ---------- 锚点二次校正(V2.1.27 引入,V2.1.28 扩展) ----------
+     场景:①带 #secN/#version 进入;②进入后点上栏板块/页内锚点(hashchange,此前完全不覆盖)。
+     根因:首次进入(冷缓存)时 KaTeX/图片/计数动画/轮播注入让版面持续长高,
+     原生锚点按旧布局一次性落点,回流后即偏离;固定 0.9s/2s 两次重锚在冷加载时不够晚。
+     方案:监听版面高度,变化就重锚、连续两次不变即收工(上限 6.5s,避免常驻定时器);
+     用户手动滚动(滚轮/触摸/按键)视为接管,立即停止;再次点击锚点(hashchange)重新接管。 */
   function initHashReanchor(){
-    if(!location.hash || location.hash === "#") return;
-    var touched = false;
-    function mark(){ touched = true; }
-    window.addEventListener("wheel", mark, { passive: true });
-    window.addEventListener("touchstart", mark, { passive: true });
-    window.addEventListener("keydown", mark);
+    var touched = false, timer = null, lastH = 0, stable = 0, deadline = 0;
+    function mark(){ touched = true; stop(); }
+    function stop(){ if(timer){ clearInterval(timer); timer = null; } }
     function realign(){
-      if(touched) return;
+      if(!location.hash || location.hash === "#") return;
       var id;
       try{ id = decodeURIComponent(location.hash.slice(1)); }catch(e){ id = location.hash.slice(1); }
       var el = id && document.getElementById(id);
       if(el) el.scrollIntoView(true);   /* 各页 scroll-margin-top 照常生效 */
     }
-    var fire = function(){ setTimeout(realign, 900); setTimeout(realign, 2000); };
-    if(document.readyState === "complete") fire();
-    else window.addEventListener("load", fire);
+    function tick(){
+      if(touched){ stop(); return; }
+      var h = document.documentElement.scrollHeight;
+      if(h !== lastH){ lastH = h; stable = 0; realign(); }   /* 版面仍在长高:跟着重锚 */
+      else if(++stable >= 2){ stop(); }                       /* 连续两次不变:布局已稳,收工 */
+      if(Date.now() > deadline) stop();                       /* 兜底上限,绝不常驻 */
+    }
+    function start(){
+      touched = false; lastH = 0; stable = 0;
+      deadline = Date.now() + 6500;
+      stop(); realign();
+      timer = setInterval(tick, 300);
+    }
+    window.addEventListener("wheel", mark, { passive: true });
+    window.addEventListener("touchstart", mark, { passive: true });
+    window.addEventListener("keydown", mark);
+    window.addEventListener("hashchange", function(){ start(); });   /* 点上栏板块/页内锚点 */
+    if(location.hash && location.hash !== "#") start();              /* 带锚点进入 */
   }
 
   /* ---------- V2.1.11 顶栏阅读进度环(scroll rAF 节流) ---------- */
@@ -1387,6 +1402,9 @@
       var word = enPickWord(e);
       if(!word) return;
       if(t.closest && t.closest("a")) e.preventDefault();
+      /* 页面自带内置音频引擎(16_保研英语面试 V2.1.28)时委托给它:预生成 MP3 毫秒级起播,
+         也免得两套 TTS 调度挤在同一个 speechSynthesis 里互相 cancel(点读卡顿的根源之一) */
+      if(window.SITE_EN_WORD){ window.SITE_EN_WORD(word); return; }
       S.speakEN(word);
     }, true);
   }

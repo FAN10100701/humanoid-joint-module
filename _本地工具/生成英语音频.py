@@ -22,6 +22,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_JS = os.path.join(ROOT, "_assets", "en-interview-data.js")
+NOTES_JS = os.path.join(ROOT, "_assets", "en-notes.js")
 OUT_DIR = os.path.join(ROOT, "_assets", "en-audio")
 MAP_JS = os.path.join(ROOT, "_assets", "en-audio-map.js")
 VOICE = "en-US-AriaNeural"          # Edge 默认美音,即页面「标准音色」的同款
@@ -42,12 +43,17 @@ def normalize(text):
     return out
 
 def dump_texts():
-    """node 执行数据文件拿 EN_DATA:产出全部英文语句(精确键)与唯一单词(小写键,词级发音)"""
+    """node 执行数据文件拿 EN_DATA/EN_NOTES:产出全部英文语句(精确键)与唯一单词(小写键,词级发音)。
+    V2.1.28 语料补齐(此前词组/单字母/连字符半词点击会回落 TTS 网络音色,听感"无反应"):
+    ① 单词切分与页面 wrapWords 同一把刀(连字符不算词符),并把 multi-layer 拆成 multi+layer 两键;
+    ② 单字母(a/I/P/D…)也生成——页面句中可点、弹窗可读;
+    ③ en-notes.js 的词组短语(页面 en-ph 整块朗读)与语法/词根键并入语料。"""
     js = r"""
 global.window = {};
 require(process.argv[1]);
-var D = window.EN_DATA;
-var texts = [], words = {}, i, j, g, m;
+require(process.argv[2]);
+var D = window.EN_DATA, NOTES = window.EN_NOTES || {};
+var texts = [], words = {}, i, j, g, m, k;
 function push(t){ if(t && texts.indexOf(t) < 0) texts.push(t); }
 for(i = 0; i < D.intro.length; i++) for(j = 0; j < D.intro[i].lines.length; j++) push(D.intro[i].lines[j].en);
 for(i = 0; i < D.qa.length; i++){ push(D.qa[i].q); for(j = 0; j < D.qa[i].lines.length; j++) push(D.qa[i].lines[j].en); }
@@ -56,13 +62,20 @@ for(g = 0; g < D.vocab.length; g++) for(i = 0; i < D.vocab[g].words.length; i++)
 var re = /[A-Za-z][A-Za-z'\u2019-]*/g;
 for(i = 0; i < texts.length; i++){
   while((m = re.exec(texts[i]))){
-    var w = m[0].toLowerCase().replace(/^[-']+|[-']+$/g, '');
-    if(w && w.length > 1) words[w] = 1;
+    var parts = m[0].split('-');
+    for(k = 0; k < parts.length; k++){
+      var w = parts[k].toLowerCase().replace(/^[-']+|[-']+$/g, '');
+      if(w) words[w] = 1;
+    }
   }
 }
+['phrases', 'grammar', 'roots'].forEach(function(sec){
+  var obj = NOTES[sec] || {};
+  for(var key in obj) if(obj.hasOwnProperty(key) && /^[a-z][a-z' ]*$/i.test(key)) words[key.toLowerCase()] = 1;
+});
 console.log(JSON.stringify({ texts: texts, words: Object.keys(words) }));
 """
-    out = subprocess.check_output(["node", "-e", js, DATA_JS], cwd=ROOT)
+    out = subprocess.check_output(["node", "-e", js, DATA_JS, NOTES_JS], cwd=ROOT)
     d = json.loads(out.decode("utf-8"))
     return d["texts"], d["words"]
 

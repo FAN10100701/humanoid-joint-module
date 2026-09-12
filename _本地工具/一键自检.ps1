@@ -3,7 +3,8 @@
 #         quiz/ib/quest data sync - script tag balance - KaTeX loader single source - SITE_STATS -
 #         localStorage key prefixes - og page count - 3D lib path - privacy - esc dedup -
 #         path-data integrity (C9) - data-file links (C10) - quest refs (C11) -
-#         learning-map integrity (C12) - interview-bank count copy spots (C13)
+#         learning-map integrity (C12) - interview-bank count copy spots (C13) -
+#         sw cache ownership + XSS hotspots (C14)
 # Usage: powershell -ExecutionPolicy Bypass -File "_local-tool-path\self-check.ps1"
 #        (all checks resolve against -Root, never (Get-Location))
 param([string]$Root = "")
@@ -485,6 +486,31 @@ foreach($sp in $c13spots){
 }
 Check "C13 ib count copy spots" ($c13bad.Count -eq 0) ($c13bad.Count.ToString() + " stale spots (real=" + $ibSubj + "subj/" + $ibTotal + "items)")
 $c13bad | Select-Object -First 10 | ForEach-Object { Write-Host ("   STALE: " + $_) }
+
+# ---- C14: SW cache ownership + XSS hotspot guards (V2.1.28, AUDIT A-57/A-58/A-59) ----
+# A-57 dual-SW cache war: root sw.js may only purge hrl-site-* caches, the 3D sw.js only robot-3d-*
+#      (both SWs share one CacheStorage; unprefixed purge = the other side loses its cache every release)
+# A-58/A-59 reflected XSS hotspots: 404 jump msg must stay textContent; ai ctx must go through escHtml
+$c14bad = @()
+$c14root = Join-Path $root "sw.js"
+$c14sw3d = Join-Path $root (Join-Path $d3dir3 "sw.js")
+$c14f404 = Join-Path $root "404.html"
+$c14d06 = "06_" + [string]::Join('', [char]0x5B66, [char]0x4E60, [char]0x5DE5, [char]0x5177)
+$c14f13 = Join-Path $root (Join-Path $c14d06 ("13_AI" + [string]::Join('', [char]0x7B54, [char]0x7591, [char]0x52A9, [char]0x624B) + ".html"))
+if(Test-Path $c14root){
+  if(([IO.File]::ReadAllText($c14root, [Text.Encoding]::UTF8)) -notmatch 'indexOf\("hrl-site-"\)\s*===\s*0'){ $c14bad += "root sw.js missing hrl-site- ownership filter" }
+} else { $c14bad += "root sw.js missing" }
+if(Test-Path $c14sw3d){
+  if(([IO.File]::ReadAllText($c14sw3d, [Text.Encoding]::UTF8)) -notmatch "indexOf\('robot-3d-'\)\s*===\s*0"){ $c14bad += "3D sw.js missing robot-3d- ownership filter" }
+} else { $c14bad += "3D sw.js missing" }
+if(Test-Path $c14f404){
+  if(([IO.File]::ReadAllText($c14f404, [Text.Encoding]::UTF8)) -match 'msg\.innerHTML'){ $c14bad += "404.html msg.innerHTML regression" }
+} else { $c14bad += "404.html missing" }
+if(Test-Path $c14f13){
+  if(([IO.File]::ReadAllText($c14f13, [Text.Encoding]::UTF8)) -notmatch 'escHtml\(ctxSubject\)'){ $c14bad += "13 AI page ctx not escaped" }
+} else { $c14bad += "13 AI page missing" }
+Check "C14 sw cache ownership + xss hotspots" ($c14bad.Count -eq 0) ($c14bad.Count.ToString() + " problems")
+$c14bad | Select-Object -First 10 | ForEach-Object { Write-Host ("   BAD: " + $_) }
 
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }

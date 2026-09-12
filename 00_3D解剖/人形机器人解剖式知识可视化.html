@@ -97,7 +97,7 @@ linear-gradient(90deg,rgba(0,50,120,.04) 1px,transparent 1px);background-size:40
 .det{border-left:1px solid var(--rule);overflow-y:auto;background:rgba(255,255,255,.5)}
 .det::-webkit-scrollbar{width:4px}.det::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
 .din{padding:20px 18px}
-.crumb{font-size:11px;color:var(--faint);margin-bottom:10px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}.crumb b{color:var(--muted);font-weight:500}.crumb .arr{color:var(--rule2)}
+.crumb{font-size:11px;color:var(--faint);margin-bottom:10px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}.crumb b{color:var(--muted);font-weight:500}.crumb .arr{color:var(--muted)}
 .dt1{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:3px;line-height:1.2;color:var(--ink)}
 .dt2{font-size:12.5px;color:var(--muted);margin-bottom:18px;letter-spacing:.3px}
 .pg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:20px}
@@ -517,7 +517,8 @@ var BOOT_WATCHDOG_MS=25000;  /* 【可调】看门狗超时(ms)：模块脚本�
 .kq-myth{padding:10px 13px;border:1px solid var(--rule);border-left:3px solid var(--bad);border-radius:9px;margin-bottom:9px;background:#fff;font-size:12.5px;line-height:1.85;color:var(--muted)}
 .kq-myth b{color:var(--ink)}
 .kq-myth .no{color:var(--bad);font-weight:700}
-.kq-myth .yes{color:var(--ok);font-weight:700}
+.kq-myth .yes{color:#15803d;font-weight:700}
+body[data-theme="dark"] .kq-myth .yes{color:var(--ok)}
 .kq-score{margin-top:14px;padding:10px 13px;border-radius:9px;background:var(--accent-g);border:1px solid var(--accent-g);font-size:12.5px;font-weight:700;color:var(--accent);text-align:center}
 /* 自测题（结构沿用全站 .quiz 约定，样式本页内联） */
 .quiz{border:1px solid var(--rule);border-radius:10px;padding:13px 15px;margin-bottom:12px;background:#fff}
