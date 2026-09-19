@@ -16,6 +16,16 @@
   .my-kp .k b{display:block;font-size:20px;font-family:Consolas,monospace;color:#34d399}
   html:not([data-theme-early="dark"]) .my-kp .k b{color:#047857}
   .my-empty{padding:26px;text-align:center;color:#94a3b8;line-height:2.2;font-size:13.5px}
+  .my-htabs{display:inline-flex;gap:6px;margin-left:10px;vertical-align:2px}
+  .my-htabs button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#9aa4b2;font-size:12px;padding:3px 12px;border-radius:999px;cursor:pointer;font-family:inherit}
+  .my-htabs button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);border-color:transparent;color:#fff;font-weight:700}
+  html:not([data-theme-early="dark"]) .my-htabs button{background:rgba(15,23,42,.05);border-color:rgba(60,80,120,.2);color:#64748b}
+  html:not([data-theme-early="dark"]) .my-htabs button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);border-color:transparent;color:#fff}
+  .my-heat-year svg{display:block;max-width:100%;height:auto;background:#0b1626;border-radius:10px}
+  .my-hstat{font-size:12.5px;color:#94a3b8;margin-top:8px;line-height:1.9}
+  .my-hstat b{color:#e2e8f0;font-family:Consolas,monospace}
+  html:not([data-theme-early="dark"]) .my-hstat{color:#5a6a85}
+  html:not([data-theme-early="dark"]) .my-hstat b{color:#0f172a}
 </style>
 <script>
   /* V2.1.4:同源加载 _assets/site-sections.js */
@@ -54,8 +64,9 @@
   </div>
 
   <div class="my-an">
-    <h3>🔥 最近 12 周学习热力图</h3>
+    <h3>🔥 学习热力图<span class="my-htabs"><button id="anHeatW" type="button" class="on">12 周</button><button id="anHeatY" type="button">12 个月</button></span></h3>
     <canvas id="anHeat" width="880" height="180"></canvas>
+    <div id="anHeatYear" style="display:none"></div>
     <div style="font-size:12px;color:#94a3b8;margin-top:6px">颜色越亮=当天打卡/复习次数越多 · 与首页热力图同源</div>
   </div>
 
@@ -70,7 +81,19 @@
     <div id="anAdvice" style="font-size:13.5px;line-height:2.1"></div>
   </div>
 
-  <h2><span class="h2-num">N</span> 本节自测</h2>
+  <h2><span class="h2-num">1</span> 看板指标含义:每个数字在说什么</h2>
+  <p>本页所有数字都来自本机浏览器的三张表:<b>打卡进度表</b>(学完一页点「✓ 完成」,由 Site.toggleDone 写入)、<b>每日活动表</b>(打卡、复习、首次通关等学习动作,由 Site.logActivity 记入当天)与 <b>SRS 复习记录</b>(题库间隔重复的调度状态)。<b>总完成度</b>是各板块「已打卡页数 ÷ 总页数」的全站汇总,只认页面打卡,刷题量不计入。<b>连续学习(streak)</b>从最近一个有活动记录的日子起,往前连续数「有记录的天数」,中间断一天即清零重计——今天还没学也不会立刻归零,它会先从昨天接着数。<b>活跃天数 / 累计次数</b>衡量习惯的「面」与「频次」;<b>SRS 到期题数</b>是四项里唯一带时效的指标:到期不清,间隔重复的调度就白算了。</p>
+  <p>12 周热力图与首页同源:一格是一天,亮度随当天活动次数升高(≥4 次封顶最亮)。它记录的是「习惯的日历」,与条形图的「广度」、SRS 分布图的「留存深度」互为补充——三张图合起来,才是一张完整的学习画像。</p>
+
+  <h2><span class="h2-num">2</span> 如何据此调整学习节奏</h2>
+  <p>建议每天按「先清债、再推新」的顺序安排:<b>① 先看 SRS 到期</b>,有到期先去自测题库清掉——记忆消退前复习 10 分钟,是全站性价比最高的时间投入;<b>② 再看条形图选主攻</b>,完成度最低且已开工的板块,就是当前最值得推进的大陆;<b>③ 用热力图防断档</b>,出现连续空白格不要试图一天补齐,从当天「1 页 + 3 题」重启即可,连续性比单日强度重要;<b>④ 理性看待连击</b>——streak 的作用是提醒「别断」,不是 KPI,为保数字而机械刷活动,违背了面板的本意。</p>
+  <p>更可持续的是「台阶策略」:每周只看一次「周均活跃天数」,从 2 天提到 3 天、再到 4 天,小步上调;这比「我要每天都学」的口号更容易长期成立,也让每一次数据回落都有明确的调整抓手。</p>
+
+  <h2><span class="h2-num">3</span> 数据隐私:只存本机,不上传</h2>
+  <p>本站是纯静态网站,没有后端服务器:上面三张表只写在本机浏览器的 localStorage 里,不经任何网络上传,别人(包括站方)都看不到。localStorage 按「协议 + 域名 + 端口」隔离——换浏览器、换设备、换域名都读不到;清理浏览器站点数据时,进度会连同缓存一起被清掉。</p>
+  <p>由此得到三条实用结论:<b>换设备</b>前,先用首页「保存进度到本地文件」导出 JSON,在新设备导入恢复;<b>公用电脑</b>上用完,建议导出备份后清除站点数据;<b>本页只读不写</b>,刷新即按最新数据重算,可以放心反复打开对照。</p>
+
+  <h2><span class="h2-num">4</span> 本节自测</h2>
   <div class="quiz">
     <div class="quiz-q">1. "间隔重复"(SRS)复习安排的依据是什么?</div>
     <div class="quiz-options" data-answer="B">
@@ -80,7 +103,7 @@
       <button data-v="D">D. 按题目编号顺序</button>
     </div>
     <div class="quiz-feedback"></div>
-    <div class="quiz-explain">💡 解析:答得好的题间隔指数拉长(1天→3天→7天→21天),答错的回到短间隔——用最少复习次数维持最长记忆保持。本站题库页的"今日复习"就是按此调度。</div>
+    <div class="quiz-explain">💡 解析:答得好的题间隔指数拉长(1天→3天→7天→21天),答错的回到短间隔——用最少复习次数维持最长记忆保持。本站题库页的"今日复习"就是按此调度;本页「SRS 到期」统计的就是其中已到下一次复习时间的题目。</div>
   </div>
   <div class="quiz">
     <div class="quiz-q">2. 学习数据全部存在 localStorage,这意味着?</div>
@@ -91,7 +114,29 @@
       <button data-v="D">D. 其他人可以看到我的进度</button>
     </div>
     <div class="quiz-feedback"></div>
-    <div class="quiz-explain">💡 解析:localStorage 按源(协议+域名+端口)和设备隔离,不上传、不跨设备、清站点数据即清除——所以首页提供 JSON 导入导出,重要进度记得定期备份。</div>
+    <div class="quiz-explain">💡 解析:localStorage 按源(协议+域名+端口)和设备隔离,不上传、不跨设备、清站点数据即清除——所以首页提供 JSON 导入导出,重要进度记得定期备份。公用电脑上用完,记得先导出备份、再清除站点数据,不留痕迹。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 「连续学习(streak)」的计数规则是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 从第一次打开本站那天起累计,永不清零</button>
+      <button data-v="B">B. 只统计「✓ 完成」打卡,复习做题不计入</button>
+      <button data-v="C">C. 从最近一个有活动记录的日子起,往前连续有记录的天数;断一天即清零重计</button>
+      <button data-v="D">D. 按自然周统计,每周一自动归零</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:streak 从今天往前回溯:今天有记录就计入,没有则从昨天继续;遇到第一个空白日立即停止。打卡与复习、首次通关等活动都写入同一张活动表,因此哪怕只复习 3 题也能保住连击。A 错在断档即清零,并非永久累计;B 错在活动表不区分动作类型;D 错在它是「连续天数」口径,与自然周无关。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 本页显示「SRS 到期 12 题」,而今天只有 20 分钟,最合理的安排是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 先把 12 道到期题清完,剩下的时间再推新内容</button>
+      <button data-v="B">B. 跳过复习,先把新页学完再说</button>
+      <button data-v="C">C. 全部时间用来刷题库新题,到期题明天一起算</button>
+      <button data-v="D">D. 清一次浏览器缓存,到期数就归零了</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SRS 的「到期」是按每题遗忘曲线算出的最后复习窗口,清到期题是全站性价比最高的 10 分钟。B 错在新页随时能学,而记忆窗口不等人,拖得越久忘得越多;C 错在刷新题只会新增复习任务,旧到期题并不会消失;D 最危险——清缓存丢的是全部学习进度,而不是「重置到期」。</div>
   </div>
 
   <div class="box box-tip"><b>📌 小结:</b>完成度看"广度"、热力图看"习惯"、SRS 曲线看"留存"、建议看"下一步"。数据不会说谎,但也不会替你学——用它们调整节奏,而不是制造焦虑。</div>
@@ -191,6 +236,56 @@
       ctx.fillStyle=c; ctx.fillRect(36+k*18, legendY-9, 14, 9);
     });
     ctx.fillStyle="#64748b"; ctx.fillText("多", 132, legendY);
+  })();
+
+  /* 12 周 / 12 个月视图切换 + 年度热力图(7 行 × 53 列,口径与 12 周版一致:亮度随次数升高,≥4 封顶;ES5) */
+  (function(){
+    var cvWeek=document.getElementById('anHeat'), wrapYear=document.getElementById('anHeatYear');
+    var btnW=document.getElementById('anHeatW'), btnY=document.getElementById('anHeatY');
+    if(!cvWeek||!wrapYear||!btnW||!btnY) return;
+    var HEAT_COLS=["#16233d","#1d3a8f","#2563eb","#3b82f6","#60a5fa"];
+
+    /* 从「今天-364 天」所在周的周日排起:周日~周六共 7 行,每周一列,共 53 列 */
+    function buildYear(){
+      var CELL=13, PITCH=15, X0=16, TOP=24, W=880, H=156;
+      var end=new Date(), start=new Date();
+      start.setDate(start.getDate()-364);
+      start=new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      var cur=new Date(start.getFullYear(), start.getMonth(), start.getDate()-start.getDay());
+      var cells='', col=0, row=0, activeDays=0, maxRun=0, run=0;
+      while(cur<=end){
+        var keyD=cur.getFullYear()+"-"+p2(cur.getMonth()+1)+"-"+p2(cur.getDate());
+        var n=activity[keyD]||0;
+        var lv=Math.max(0, Math.min(4, Math.floor(n)));
+        cells+='<rect x="'+(X0+col*PITCH)+'" y="'+(TOP+row*PITCH)+'" width="'+CELL+'" height="'+CELL
+          +'" rx="2.5" fill="'+HEAT_COLS[lv]+'"><title>'+keyD+' · '+(n>0 ? n+' 次活动' : '无活动')+'</title></rect>';
+        if(n>0){ activeDays++; run++; if(run>maxRun) maxRun=run; } else { run=0; }
+        row++; if(row===7){ row=0; col++; }
+        cur.setDate(cur.getDate()+1);
+      }
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H
+        +'" role="img" aria-label="近 12 个月学习热力图">'
+        +'<text x="16" y="14" font-size="11" fill="#64748b">一年前</text>'
+        +'<text x="'+(W-16)+'" y="14" font-size="11" fill="#64748b" text-anchor="end">今天</text>'
+        +cells
+        +'<text x="16" y="150" font-size="11" fill="#64748b">少</text>';
+      for(var k=0;k<5;k++){
+        svg+='<rect x="'+(38+k*18)+'" y="142" width="14" height="9" rx="2" fill="'+HEAT_COLS[k]+'"/>';
+      }
+      svg+='<text x="132" y="150" font-size="11" fill="#64748b">多</text></svg>';
+      wrapYear.innerHTML=svg
+        +'<div class="my-hstat">近 12 个月:有活动 <b>'+activeDays+'</b> 天 · 最长连续 <b>'+maxRun+'</b> 天</div>';
+    }
+
+    function show(year){
+      cvWeek.style.display=year?'none':'';
+      wrapYear.style.display=year?'':'none';
+      btnW.className=year?'':'on';
+      btnY.className=year?'on':'';
+    }
+    buildYear();
+    btnW.onclick=function(){ show(false); };
+    btnY.onclick=function(){ show(true); };
   })();
 
   /* SRS 状态:各箱(card box 1~5)分布 */

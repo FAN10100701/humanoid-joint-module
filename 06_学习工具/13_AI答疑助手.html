@@ -188,6 +188,52 @@ html:not([data-theme-early="dark"]) .ai-cursor{background:#2563eb}
   <div class="box box-tip"><b>📌 小技巧:</b>复试考官人设下,回答完它的一个问题即可,它会点评后继续追问;课程助教人设下,可以直接粘贴题库里的"延伸追问"让它展开讲。</div>
   <div class="box box-warn"><b>🤔 提醒:</b>AI 可能在具体数值/型号上出错,重要结论请以站内学习页与教材为准——把 AI 当"会讲题的学长",而不是标准答案。</div>
 
+  <h2><span class="h2-num">4</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 关于 AI 回答的使用边界,本站的建议是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. AI 回答权威准确,可以直接当标准答案引用</button>
+      <button data-v="B">B. 把 AI 当「会讲题的学长」:思路与讲解可用,重要结论以站内学习页与教材为准</button>
+      <button data-v="C">C. AI 会自动联网核对事实,无需人工验证</button>
+      <button data-v="D">D. 只有 AI 答错的题才需要翻书</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:AI 可能在具体数值、型号与公式细节上「一本正经地说错」,语气越流畅越要留个心眼;它的长处是换角度讲解、逐步追问与启发思路。所以本站把它定位成「会讲题的学长」:用它打通理解,最终结论回到教材与站内学习页核对。A 把它最擅长的当成了最可靠的;C 并无事实核查机制;D 的前提「知道它错了」本身就不成立。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 哪种提问方式最容易得到高质量回答?</div>
+    <div class="quiz-options" data-answer="D">
+      <button data-v="A">A. 问题越短越好,比如「讲讲电机」</button>
+      <button data-v="B">B. 一条消息里塞进十个不相关的问题</button>
+      <button data-v="C">C. 直接说「给我答案就行」,不必交代背景</button>
+      <button data-v="D">D. 给出上下文与卡点:正在学什么、自己理解到哪、具体卡在哪一步</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:模型只能根据你提供的上下文推理。说清学科、进度与卡点(例如「FOC 的 SVPWM 扇区判断,我不明白为什么比较三个相位的正负」)能显著提高回答质量——这也是题库/闯关页「问 AI」按钮要把题目与学科上下文一起带过来的原因。A 太宽泛只能得到百科式泛讲;B 会稀释每个问题的上下文;C 让模型只能猜你的水平,猜错就答偏。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 自带 API Key 的安全做法,正确的是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 把 Key 发到学习群里,大家共用一个额度</button>
+      <button data-v="B">B. 把 Key 写进公开的实验报告或笔记里,方便随时查</button>
+      <button data-v="C">C. 单独创建、设置消费限额的 Key,只填进本站配置面板(仅存本机浏览器);公用电脑用完点「清除本机密钥」</button>
+      <button data-v="D">D. Key 泄露也无所谓,服务商发现后会自动退款</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Key 等同于你付费账户的凭据,泄露等于把钱包公开。正确姿势:在供应商控制台单独建 Key 并设消费限额,只填进本站面板——本站没有后端服务器,它只存本机浏览器的 localStorage,发问时由浏览器直连供应商;公用电脑离开前点「清除本机密钥」。A、B 都是主动公开凭据;D 错在额度损失通常要自己承担,难以追回。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. AI 给出一段看起来很完整的公式推导,最稳妥的下一步是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 直接抄进笔记,它看起来足够专业</button>
+      <button data-v="B">B. 用教材或站内学习页对照,或代入具体数值算一遍,验证后再采信</button>
+      <button data-v="C">C. 同一个 AI 再问一遍,两次一致就一定对</button>
+      <button data-v="D">D. 发给同学投票,多数人说对就是对</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:交叉验证的关键是引入「独立于模型的另一来源」:对教材、对站内页面、代入数值算例,都算独立检验。A 把「流畅」误当「正确」;C 不可靠——同一模型面对同一问题容易犯同一个错,自我一致不等于正确;D 把验证变成投票,人数改变不了事实。越复杂的推导越值得花这一步验证。</div>
+  </div>
+
 </div><!-- /container -->
 
 <script src="../_assets/site.js"></script>
@@ -370,7 +416,9 @@ html:not([data-theme-early="dark"]) .ai-cursor{background:#2563eb}
   function showErr(msg){
     var div = document.createElement("div");
     div.className = "ai-msg bot";
-    div.innerHTML = "<div class='ai-who'>⚠️ 出错了</div><div class='ai-err'>" + (window.Site && Site.esc ? Site.esc(msg) : String(msg).replace(/[<>&"]/g, function(ch){ return {"<":"&lt;",">":"&gt;","&":"&amp;","\"":"&quot;"}[ch]; })) + "</div>";
+    /* A-58 约定收口:错误消息不再拼进 innerHTML,经 textContent 注入(渲染结果与文案完全不变) */
+    div.innerHTML = "<div class='ai-who'>⚠️ 出错了</div><div class='ai-err'></div>";
+    div.lastChild.textContent = (msg == null ? "" : String(msg));
     chatBox().appendChild(div);
     scrollBottom();
   }

@@ -84,6 +84,55 @@
     <a class="card" href="03_自测题库.html"><span class="go">进入 →</span><div class="ic">📝</div><div class="t">自测题库(SRS)</div><div class="d">40 题+间隔重复引擎+错题本</div></a>
   </div>
 
+  <h2><span class="h2-num">8</span> 🧭 上手路线:第一次接触仿真,按这条线走</h2>
+  <p>浏览器内就能完成的起步线:先去「核心原理动画」(01-02)看 FOC 与三环转起来,再到<b>代码实验室</b>调一次 PID 示波器、<b>传动与控制实验台</b>拖一次减速器参数,最后在<b>强化学习实验室</b>一键训练 Q-Learning 倒立摆,亲眼看奖励曲线如何长成策略。这一整条线零安装、纯本地运行,半天即可走完,适合快速建立直觉。要进入整机级仿真(MuJoCo/Isaac、强化学习训练、sim2real 部署),再顺着「MuJoCo/Isaac 仿真导读」卡片去 04 软件与算法板块系统学习,那时才需要在本机搭建环境。一个定位提醒:浏览器内实验是<b>教学沙盘</b>,帮你理解参数之间的因果关系;工程级的精度验证,仍要靠本机仿真与实机标定——三者各管一段,不要互相错位。</p>
+
+  <h2><span class="h2-num">9</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 只想在浏览器里零安装地体验「拖参数看响应」,应该选?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 本机安装 MuJoCo 并编译运行环境</button>
+      <button data-v="B">B. 本页分类下的代码实验室 / 传动与控制实验台</button>
+      <button data-v="C">C. 安装 NVIDIA Isaac Sim 并配置 GPU 环境</button>
+      <button data-v="D">D. 自己手写一个数值积分器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:本站代码实验室(PID 示波器)、传动与控制实验台(减速器参数联动)全部在浏览器本地运行,打开即用,正对应「零安装、快反馈」的需求。MuJoCo/Isaac 是整机级仿真平台,需要本机环境与不低的学习成本,解决的问题不在这一档;D 精神可嘉但不是「体验」的正确路径——先用现成工具理解参数因果,等确实需要定制模型时再考虑造轮子,顺序不能反。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 关于 MuJoCo 与 Isaac Sim 的定位,说法最准确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. MuJoCo 是轻量开源的刚体接触动力学仿真器,RL 研究常用;Isaac Sim 是 NVIDIA 的平台,强在 GPU 并行大规模训练与高保真渲染、合成数据</button>
+      <button data-v="B">B. 两者功能完全相同,选哪个纯粹看个人喜好</button>
+      <button data-v="C">C. MuJoCo 已经过时,工业界一律改用 Isaac</button>
+      <button data-v="D">D. Isaac 只能做渲染,不能做物理仿真</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:两者的物理内核与生态定位不同:MuJoCo 以精确高效的接触动力学著称,是学术强化学习研究的常用底座;Isaac 的卖点是 GPU 并行(成千上万环境同时训练)与渲染、合成数据能力,适合大规模 RL 与高保真场景。B 回避了真实差异,「都一样」意味着对两者都无知;C 武断——MuJoCo 至今仍是主流研究工具;D 明显错误,Isaac 的物理仿真能力正是其核心竞争力之一。选型的出发点永远是需求,不是新旧。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 在仿真里调到几乎完美的步态策略,部署到实机就摔倒。最可能的原因是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 实机电池没电</button>
+      <button data-v="B">B. 代码里混入了语法错误</button>
+      <button data-v="C">C. reality gap(现实差距):仿真模型与实机存在摩擦、传动间隙、延迟、传感器噪声等系统性差距</button>
+      <button data-v="D">D. 训练轮数不够,再练十万轮就行</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:仿真再精细也是模型——摩擦特性、传动背隙、通信与执行延迟、执行器带宽、传感器噪声都无法被完全复刻,reality gap 是 sim2real 的核心难题;对策包括域随机化(domain randomization)、系统辨识建模、先半实物过渡再全实物等。A、B 属于低级故障,与「仿真里表现完美」这一前提矛盾;D 是最典型的误区——差距不在「练得不够」,而在「训练环境与真实世界不一致」,盲目加轮数只会让策略更加过拟合仿真环境。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 硬件公式计算器、仿真器、实机实验三者之间,正确的关系是?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 计算器算完就不用仿真了,结论直接可用</button>
+      <button data-v="B">B. 仿真结果足够精细,可以完全替代实机测试</button>
+      <button data-v="C">C. 计算器给设计初值(选型/损耗),仿真验证动态行为,实机标定收尾——三者互补,各管一段</button>
+      <button data-v="D">D. 三者互相独立,用哪个全看心情</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:工程链路是递进的:公式计算器(MOSFET 损耗、母线电容、Kt↔Ke、惯量匹配等)几十秒给出量级正确的初值;仿真在初值之上验证动态行为、暴露控制问题;实机标定(零位、摩擦、温度特性)修正模型误差、完成最后闭环。A 跳过了动态验证,静态估算撑不住工况变化;B 跳过了现实,再好的模型也有 reality gap;D 否定了方法论本身——人形机器人项目里,少任何一环,欠的债都会在下一个阶段加倍偿还。</div>
+  </div>
+
   <div class="box box-tip"><b>📌 小结:</b>本站的交互资产已覆盖"<b>看原理(动画/3D)→ 算参数(计算器)→ 亲手玩(实验台/RL)→ 解决问题(调参/诊断/标定)</b>"完整链路。建议收藏本页作为入口;所有功能离线可用(PWA),实验室数据全部本地计算。</div>
 
 </div><!-- /container -->

@@ -127,6 +127,10 @@
   <h2><span class="h2-num">2</span> Hdrive 开源关节驱动板 · 立创开源工程</h2>
   <p>Hdrive 是「人形机器人技术社区」（立创开源平台作者 ZYS_ZYS）开源的关节电机驱动电路，从 HdriveV1.0 升级到 <b class="my-hl">HdriveV1.1</b>，原理图+PCB+BOM 全部开源（TAPR 开源硬件协议），配套教程发布在人形机器人在线学习技术社区。</p>
 
+  <div class="box box-tip">
+    <b>💡 先分清两份文件的角色——原理图是「剧本」，PCB 是「舞台布景」：</b>原理图只规定「谁和谁相连、用什么器件」，就像剧本只写谁在哪一幕说什么台词；而同一份剧本，布景搭法不同，演出效果天差地别——功率环路摆得开就是「炸场噪声」，摆得紧凑才稳，这就是硬件圈那句 <b>Layout = Design</b> 的由来。本页下面 R49 的教训正是「剧本与布景对不上」：原理图（剧本）写 100Ω，实物（布景）贴 0Ω，戏照样开演，TLV431 却当场烧毁——所以拿到任何开源工程，先做「剧本—布景」一致性核对（原理图 vs 实物 BOM/丝印），再谈复刻。
+  </div>
+
   <div class="table-wrap"><table>
     <tr><th>项目信息</th><th>内容</th></tr>
     <tr><td><strong>开源工程</strong></td><td>立创开源硬件平台：oshwhub.com/zys_zys/guan-jie-dian-ji</td></tr>

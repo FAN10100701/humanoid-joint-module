@@ -32,4 +32,19 @@ $s = [IO.File]::ReadAllText($p, $enc)
 $s = [regex]::Replace($s, [regex]::Escape('**') + 'V[\d.]+' + [regex]::Escape('**') + '\(\d{4}-\d{2}-\d{2}\)', ('**' + $Version + '**(' + $Date + ')'), 1)
 [IO.File]::WriteAllText($p, $s, (New-Object System.Text.UTF8Encoding($false)))
 
+# 5b) stale-description check (V2.1.32): this script bumps version numbers only.
+# If the index.html current-version block date does not match -Date, the
+# description text was probably not rewritten for this release. Warn loudly
+# so the "description debt" found in the 2026-09-19 audit does not recur.
+$pi = Join-Path $root "index.html"
+$si = [IO.File]::ReadAllText($pi, $enc)
+$mi = [regex]::Match($si, '>V\d+\.\d+\.\d+</span>\s*<span[^>]*>[^0-9]*(\d{4}-\d{2}-\d{2})')
+if (-not $mi.Success) {
+  Write-Host "WARN: index.html current-version block not found - check it manually."
+} elseif ($mi.Groups[1].Value -ne $Date) {
+  Write-Host ("WARN: index.html current-version block date is " + $mi.Groups[1].Value + " but release date is " + $Date + " - description text is probably stale, rewrite it for this release.")
+} else {
+  Write-Host ("OK: index.html current-version block date matches " + $Date)
+}
+
 Write-Host "✅ 五处已同步 $Version($Date)。请自行在 CHANGELOG.md 顶部补全本期条目,然后跑 一键自检.ps1。"

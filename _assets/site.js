@@ -186,7 +186,9 @@
       SVG:1,G:1,PATH:1,CIRCLE:1,RECT:1,LINE:1,TEXT:1,TSPAN:1,POLYGON:1,POLYLINE:1,
       ELLIPSE:1,DEFS:1,MARKER:1,TITLE:1 };
     var DROP = { SCRIPT:1,STYLE:1,IFRAME:1,OBJECT:1,EMBED:1,LINK:1,META:1,BASE:1,FORM:1,INPUT:1,TEXTAREA:1,SELECT:1,OPTION:1,VIDEO:1,AUDIO:1,SOURCE:1 };
-    var OK_ATTR = { "class":1, title:1, alt:1, href:1, src:1, target:1, rel:1,
+    var OK_ATTR = { "class":1, id:1, title:1, alt:1, href:1, src:1, target:1, rel:1,
+      /* id V2.1.33 放行:消毒层此前剥掉 id,导致题库页运行时注入的 #ibItems/#ibQuiz
+         容器查不到(E2E 全站 smoke 抓出,renderItems null 崩溃)。id 无脚本风险 */
       colspan:1, rowspan:1, width:1, height:1, "data-answer":1, open:1,
       viewBox:1, d:1, cx:1, cy:1, r:1, rx:1, ry:1, x:1, y:1, x1:1, y1:1, x2:1, y2:1,
       fill:1, stroke:1, "stroke-width":1, "stroke-linecap":1, "stroke-linejoin":1,
@@ -484,7 +486,17 @@
         ownerOf[curId].classList.remove('collapsed');
       }
     }
-    window.addEventListener('scroll', highlightToc, { passive:true });
+    /* V2.1.31: scroll 走 rAF 合并——滚动时每帧最多执行一次 highlightToc(内含逐标题
+       getBoundingClientRect 布局读取),不再每个 scroll 事件都强制布局;load/初始延时
+       仍直接调用,确保首屏高亮正确 */
+    var tocTick = false;
+    function highlightTocRaf(){
+      if(tocTick) return;
+      tocTick = true;
+      var raf = window.requestAnimationFrame || function(fn){ setTimeout(fn, 16); };
+      raf(function(){ tocTick = false; highlightToc(); });
+    }
+    window.addEventListener('scroll', highlightTocRaf, { passive:true });
     window.addEventListener('load', highlightToc);
     setTimeout(highlightToc, 100);
   }
@@ -853,6 +865,37 @@
   }
 
   /* ---------- 自测题判分 ---------- */
+  /* ---------- V2.1.33 全站错题本收集器(答错自动记录,模块见 _assets/mistakes.js) ---------- */
+  var _mkLoading = false, _mkQueue = [];
+  function mkFlush(){
+    while(_mkQueue.length){ try{ _mkQueue.shift()(); }catch(e){} }
+  }
+  function recordMistake(q, optsBox, answer, picked){
+    try{
+      var qEl = q.querySelector(".quiz-q");
+      var qt = qEl ? qEl.textContent.trim().replace(/^[0-9]+[.、．]\s*/, "") : "";
+      if(!qt) return;
+      var texts = [], bs = optsBox.querySelectorAll("button");
+      for(var i = 0; i < bs.length; i++) texts.push(bs[i].textContent.trim());
+      function go(){
+        if(!window.Mistakes) return;
+        Mistakes.record({
+          page: (page().pageId || ""),
+          pageT: (document.title || "").replace(/^人形机器人学习站\s*·\s*/, ""),
+          q: qt, opts: texts, ans: answer, picked: picked
+        });
+        var fb = q.querySelector(".quiz-feedback");
+        if(fb && fb.textContent.indexOf("错题本") < 0) fb.textContent += " · 📕 已加入错题本";
+      }
+      if(window.Mistakes){ go(); return; }
+      _mkQueue.push(go);
+      if(!_mkLoading){
+        _mkLoading = true;
+        S.loadScript((page().root || "") + "/_assets/mistakes.js", mkFlush);
+      }
+    }catch(e){}
+  }
+
   S.initQuiz = function(){
     var qs = document.querySelectorAll(".quiz");
     for(var i = 0; i < qs.length; i++){
@@ -875,6 +918,8 @@
               }else{
                 btn.classList.add("wrong");
                 if(fb){ fb.className = "quiz-feedback no"; fb.textContent = "✗ 回答错误,正确答案是 " + answer; }
+                /* V2.1.33: 答错自动进全站错题本(懒加载 _assets/mistakes.js,失败静默不影响答题) */
+                recordMistake(q, opts, answer, picked);
               }
               if(ex) ex.classList.add("show");
             });
@@ -942,7 +987,10 @@
     }
     var ex = expandQuery(q);
     var idx = buildIndex();
-    var terms = ex.q.split(/\s+/).filter(function(t){ return t; });
+    /* V2.1.33 修复:拼音别名展开会注入大写词形(foc→FOC、pid→PID),而下方匹配全部
+       在小写化的 t/s/d/k 上做 indexOf——不统一小写会让 FOC/PID/ROS2/IMU 等所有
+       拉丁别名永远零命中(E2E 首轮抓出的真实缺陷) */
+    var terms = ex.q.split(/\s+/).filter(function(t){ return t; }).map(function(t){ return t.toLowerCase(); });
     var scored = [];
     for(var i = 0; i < idx.length; i++){
       var it = idx[i];
@@ -1061,7 +1109,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.30(2026-09-19)";
+  S.VERSION = "V2.1.33(2026-09-20)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -1270,11 +1318,19 @@
       (function(b){
         if(b.__mag) return;
         b.__mag = true;
+        /* V2.1.32: pointermove 走 rAF 合并,每帧最多一次布局读取+写 transform */
+        var magTick = false, magX = 0, magY = 0;
         b.addEventListener("pointermove", function(e){
-          var r = b.getBoundingClientRect();
-          var dx = (e.clientX - r.left - r.width / 2) / (r.width / 2);
-          var dy = (e.clientY - r.top - r.height / 2) / (r.height / 2);
-          b.style.transform = "translate(" + (dx * 3).toFixed(1) + "px," + (dy * 2.5).toFixed(1) + "px)";
+          magX = e.clientX; magY = e.clientY;
+          if(magTick) return;
+          magTick = true;
+          (window.requestAnimationFrame || function(fn){ setTimeout(fn, 16); })(function(){
+            magTick = false;
+            var r = b.getBoundingClientRect();
+            var dx = (magX - r.left - r.width / 2) / (r.width / 2);
+            var dy = (magY - r.top - r.height / 2) / (r.height / 2);
+            b.style.transform = "translate(" + (dx * 3).toFixed(1) + "px," + (dy * 2.5).toFixed(1) + "px)";
+          });
         });
         b.addEventListener("pointerleave", function(){ b.style.transform = ""; });
       })(btns[i]);
@@ -1359,8 +1415,12 @@
       l.href = (root ? root + "/" : "") + "_assets/glass.css";
       document.head.appendChild(l);
     }
-    /* 自检挂件(缺文件静默,不影响站点) */
-    if(!document.querySelector('script[src*="site-selftest.js"]')){
+    /* 自检挂件(缺文件静默,不影响站点)。V2.1.32(A-25)环境开关:仅本地预览
+       (file:// 或 localhost/127.0.0.1/::1)或显式 ?selftest=1 时注入,
+       线上访客不再常驻运行自检(性能/噪音) */
+    var sstHost = location.hostname;
+    var sstLocal = location.protocol === "file:" || sstHost === "localhost" || sstHost === "127.0.0.1" || sstHost === "::1";
+    if((sstLocal || /[?&]selftest=1/.test(location.search)) && !document.querySelector('script[src*="site-selftest.js"]')){
       var st = document.createElement("script");
       st.src = (root ? root + "/" : "") + "_assets/site-selftest.js";
       st.async = true;

@@ -109,13 +109,16 @@
 
     return new Promise(function(resolve, reject){
       if(!key){ reject({ status:0, message:"尚未填写 API Key。展开「⚙️ 供应商与密钥配置」,填写后点「保存」。Key 只保存在本机浏览器。" }); return; }
-      curCtrl = new AbortController();
+      /* V2.1.32(A-29): 旧内核回退——缺 AbortController/TextDecoder 时降级为
+         非流式请求(整包 JSON),无打字机效果但功能可用 */
+      var legacy = !window.AbortController || !window.TextDecoder;
+      if(window.AbortController){ curCtrl = new AbortController(); }
       var full = "";
       fetch(url, {
         method:"POST",
-        signal:curCtrl.signal,
+        signal: curCtrl ? curCtrl.signal : undefined,
         headers:{ "Content-Type":"application/json", "Authorization":"Bearer " + key },
-        body:JSON.stringify({ model:model, messages:messages, stream:true, temperature:opt.temperature || 0.7, max_tokens:opt.maxTokens || 2048 })
+        body:JSON.stringify({ model:model, messages:messages, stream: !legacy, temperature:opt.temperature || 0.7, max_tokens:opt.maxTokens || 2048 })
       }).then(function(res){
         if(!res.ok){
           res.json().catch(function(){ return null; }).then(function(j){
@@ -123,6 +126,14 @@
             reject({ status:res.status, message:friendly(res.status, msg) });
           });
           curCtrl = null;
+          return;
+        }
+        if(legacy || !res.body || !res.body.getReader){
+          res.json().then(function(j){
+            curCtrl = null;
+            var txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
+            bumpUsage(txt.length); resolve(txt);
+          }).catch(function(){ reject({ status:0, message:"响应解析失败(非流式回退):返回内容不是合法 JSON。" }); });
           return;
         }
         var reader = res.body.getReader();

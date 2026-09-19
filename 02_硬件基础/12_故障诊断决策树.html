@@ -67,6 +67,9 @@
     <div class="step-item"><span class="n">4</span><b>驱动层</b><br>开环(电压模式)小电压转起来吗?三相 PWM 波形对吗?功率级问题在这一层暴露。</div>
     <div class="step-item"><span class="n">5</span><b>控制层</b><br>最后才动 PID/观测器。参数问题的前提是下面四层全部健康。</div>
   </div>
+  <div class="box box-tip">
+    <b>💡 排查故障像「医生问诊」:</b>好医生不会上来就开药,而是先问病史(什么现象、何时开始、能否复现——对应决策树的「选症状」),再量体征(量血压、验血——对应万用表测电压、示波器看波形),然后逐项排除做鉴别诊断(先排除最常见、最危险的病因——对应「先电源后控制」的分层顺序与安全铁律)。决策树就是一张<b>标准化的问诊流程单</b>:把老工程师脑子里的问诊套路写成分支,让新手也按同样的顺序检查——避免病人(板子)刚进门、还没量血压,就先「开药乱调 PID」,而漏掉了「电源层」这个最常见的病因。
+  </div>
 
   <h2><span class="h2-num">3</span> 高频故障速查表</h2>
   <div class="table-wrap"><table>
@@ -224,7 +227,11 @@ var DIAG = {
 
 (function(){
   var hist = [];
-  var esc = Site.esc;  /* V2.1.18: 引用全站单源(Site.esc),本页不再重复实现(C8) */
+  /* V2.1.33: 本脚本位于 site.js 之前同步执行,此前顶层 `var esc = Site.esc` 直接
+     ReferenceError 并杀死整段决策树交互(E2E 全站 smoke 抓出);改惰性引用 */
+  var esc = function(s){
+    return (window.Site && Site.esc) ? Site.esc(s) : String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  };
   function render(nodeKey){
     var node = DIAG[nodeKey];
     var body = document.getElementById('diagBody');

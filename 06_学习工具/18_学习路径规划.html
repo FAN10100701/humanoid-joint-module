@@ -145,14 +145,36 @@
   <div class="box box-tip"><b>📌 本节小结:</b>六条路径 = 新手入门 🌱 / 关节驱动与控制 ⚙️ / 数字 IC 与 NPU 🔬 / 机器人软件 🤖 / 具身智能与大模型 🧠 / 保研复试冲刺 🎓;每条路径都是"阶段关卡 + 顺序清单 + 进度联动",配合首页打卡就是完整的课程表。</div>
   <div class="box box-warn"><b>🤔 思考题:</b>如果让你为自己的半年规划一条新路径,阶段怎么划?每阶段的"通关产出物"是什么?想清楚这两个问题,比多刷十页内容更有用。</div>
 
-  <h2><span class="h2-num">5</span> 相关工具</h2>
+  <h2><span class="h2-num">5</span> 📅 生成我的学习计划</h2>
+  <style>
+    /* 计划生成器控件(双主题:深色默认 + 浅色覆写,机制同站内 data-theme-early 口径) */
+    .plan-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 14px}
+    .plan-bar select,.plan-bar input{background:rgba(13,17,23,.8);border:1px solid rgba(255,255,255,.16);color:#e6edf3;border-radius:9px;padding:8px 10px;font-family:inherit;font-size:13.5px}
+    .plan-bar label{font-size:13.5px;color:#9aa4b2;display:inline-flex;align-items:center;gap:6px}
+    .plan-bar button{background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;color:#fff;font-size:13.5px;font-weight:700;padding:9px 18px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
+    html:not([data-theme-early="dark"]) .plan-bar select,
+    html:not([data-theme-early="dark"]) .plan-bar input{background:#fff;border-color:rgba(15,23,42,.22);color:#0f172a}
+    html:not([data-theme-early="dark"]) .plan-bar label{color:#64748b}
+    .plan-note{font-size:12.5px;color:#9aa4b2;margin:8px 0 0}
+    html:not([data-theme-early="dark"]) .plan-note{color:#64748b}
+  </style>
+  <p>选一条路径、填起始日期与每周可用时间,自动把各阶段换算成带起止日期的课程表;纯前端本地计算,不上传任何数据。</p>
+  <div class="plan-bar" id="planBar">
+    <select id="planPath" aria-label="选择路径"></select>
+    <label>开始 <input type="date" id="planStart"></label>
+    <label>每周 <input type="number" id="planHours" min="1" max="60" value="10"> 小时</label>
+    <button type="button" id="planGo">生成计划表</button>
+  </div>
+  <div id="planOut"></div>
+
+  <h2><span class="h2-num">6</span> 相关工具</h2>
   <div class="grid">
     <a class="card" href="06_学习地图.html"><span class="go">进入 →</span><div class="ic">🗺️</div><div class="t">学习地图</div><div class="d">全站页面一张图:按板块分组的完成度总览。</div></a>
     <a class="card" href="10_学习数据分析.html"><span class="go">进入 →</span><div class="ic">📊</div><div class="t">学习数据分析</div><div class="d">打卡数据的多维统计与可视化。</div></a>
     <a class="card" href="12_闯关学习.html"><span class="go">进入 →</span><div class="ic">🎯</div><div class="t">闯关学习</div><div class="d">用关卡制检验阶段学习成果。</div></a>
   </div>
 
-  <h2><span class="h2-num">6</span> 参考来源与延伸资源</h2>
+  <h2><span class="h2-num">7</span> 参考来源与延伸资源</h2>
   <p>本页为站内导航工具页,数据与进度均来自本站自身;路径的课程设计参考了下列公开课程体系(均已在对应内容页的"参考来源"中逐一核实标注):</p>
   <ul>
     <li>NPU 四阶段课程设计参照开源社区主流数字 IC 培养路线(详见 <a href="../08_NPU与数字IC设计/01_板块总览与学习路线.html">08-01 板块总览</a> 的资源导航总表)</li>
@@ -258,6 +280,64 @@
 })();
 </script>
 
+<script>
+/* V2.1.33 日期化学习计划:路径阶段 × 总周数(按页数占比分摊)→ 起止日期课程表(纯本地计算) */
+(function(){
+  "use strict";
+  var paths = window.SITE_PATHS || [];
+  var sel = document.getElementById("planPath");
+  if(!sel || !paths.length) return;
+  for(var i = 0; i < paths.length; i++){
+    var o = document.createElement("option");
+    o.value = i;
+    o.textContent = (paths[i].icon || "") + " " + paths[i].name + "(" + (paths[i].weeks || "") + ")";
+    sel.appendChild(o);
+  }
+  var start = document.getElementById("planStart");
+  try{ start.value = new Date().toISOString().slice(0, 10); }catch(e){}
+  function parseStart(){
+    var v = (start.value || "").split("-");
+    if(v.length !== 3) return new Date();
+    return new Date(+v[0], +v[1] - 1, +v[2]);
+  }
+  function fmt(d){
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+  }
+  document.getElementById("planGo").onclick = function(){
+    var p = paths[+sel.value] || paths[0];
+    var w = (p.weeks || "").match(/\d+/g);
+    var total = w ? (w.length >= 2 ? ( (+w[0]) + (+w[1]) ) / 2 : +w[0]) : 8;
+    var totalPages = 0, counts = [];
+    for(var s = 0; s < p.stages.length; s++){
+      counts.push(p.stages[s].pages.length);
+      totalPages += p.stages[s].pages.length;
+    }
+    /* 按阶段页数占比分摊总周数,四舍五入,末阶段吃余量 */
+    var weeksArr = [], assigned = 0;
+    for(var a = 0; a < counts.length; a++){
+      var wk = Math.max(1, Math.round(total * counts[a] / totalPages));
+      weeksArr.push(wk); assigned += wk;
+    }
+    if(assigned !== Math.round(total) && weeksArr.length){
+      weeksArr[weeksArr.length - 1] = Math.max(1, weeksArr[weeksArr.length - 1] + (Math.round(total) - assigned));
+    }
+    var hours = Math.max(1, +document.getElementById("planHours").value || 10);
+    var cursor = parseStart(), rows = "";
+    for(var t = 0; t < p.stages.length; t++){
+      var st = p.stages[t];
+      var stStart = new Date(cursor);
+      var stEnd = new Date(cursor.getTime() + weeksArr[t] * 7 * 86400000 - 86400000);
+      cursor = new Date(stEnd.getTime() + 86400000);
+      rows += "<tr><td>" + st.name + "</td><td>" + st.pages.length + " 页</td><td>约 " + weeksArr[t] + " 周</td><td>" + fmt(stStart) + "</td><td>" + fmt(stEnd) + "</td></tr>";
+    }
+    document.getElementById("planOut").innerHTML =
+      '<div class="table-wrap"><table><tr><th>阶段</th><th>内容量</th><th>建议周期</th><th>开始</th><th>结束</th></tr>' + rows +
+      '<tr><td><b>合计 · ' + p.name + '</b></td><td>' + totalPages + ' 页</td><td>约 ' + weeksArr.reduce(function(x,y){return x+y;},0) + ' 周</td><td colspan="2">按每周 ' + hours + ' 小时投入估算</td></tr></table></div>' +
+      '<p class="plan-note">📅 起始 ' + fmt(parseStart()) + ' · 按每周 ' + hours + ' 小时估算,仅供锚定节奏;遇到考试周/项目周请整体平移,顺序尽量不换——SRS 与打卡会跟着你的真实进度走。</p>';
+  };
+})();
+</script>
 <script src="../_assets/site.js"></script>
 </body>
 </html>

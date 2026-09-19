@@ -1172,10 +1172,22 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.30</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-12 · 3D 模型反复加载失败修复(双 SW 缓存互删) + 英语音频二期664段 + 两处XSS修复 + 全站对比度与内容审查</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.33</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-20 · 功能三连与测试层——全站错题本+SRS盘活 / 词典Anki导出·年度热力图·日期化计划 / Playwright E2E 测试层(揪出并修复 3 个真实 bug)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>📕 V2.1.33 · 2026-09-20 · 全站错题本+SRS盘活 / Anki导出·热力图·日期化计划 / Playwright E2E 测试层(修复 3 个真实 bug) －</summary>
+        <div class="faq-a">📕 <b>全站错题本(答错即入册)</b>:任何页面的自测题答错自动收进错题本(存储 humanoid-mistakes-v1,走 Site.store 带版本,数据只存本机),「自测题库」页新增「全站错题本」复习面板——到期复习/随机练 5 题/一键导出 Anki TSV/移除已巩固,调度阶梯与今日复习一致(答对 30分钟→1→2→4→8→16天,答错 30 分钟后重爬);答错的反馈条会提示「已加入错题本」,埋没已久的 SRS 从此有了全站入口;SW 预缓存补齐 srs.js/mistakes.js(离线首开可用)。⬇ <b>三个新功能</b>:①术语词典一键「导出 Anki CSV」(139 卡,front/back/分类);②学习数据分析页热力图新增「12 周 ↔ 12 个月」年度视图切换(7×53 格 GitHub 风);③学习路径页新增「生成我的学习计划」——选路径+起始日期+每周小时,按阶段页数占比推算起止日期课程表(纯本地计算)。🧪 <b>Playwright E2E 测试层</b>:新增 `_本地工具/e2e/`(Python+Playwright,13 个功能用例 + 全站 104 页逐页 smoke:未捕获异常/同源控制台错误/误落 404),CI 新增 e2e job 随 push 自动跑;AGENTS.md 硬规则 4 增加该目录豁免注。🐛 <b>E2E 首轮揪出并修复 3 个真实 bug(台账 A-66/A-67/A-68)</b>:①搜索的拼音别名展开注入大写词形而匹配在小写串上做,导致 FOC/PID/ROS2/IMU 等所有拉丁别名搜索永远零命中;②消毒层剥掉 id 属性,题库页运行时注入的 #ibItems/#ibQuiz 容器查不到、整页自 V2.1.29 起崩溃(白名单放行 id 修复);③故障诊断决策树页内联脚本先于 site.js 引用 Site.esc 直接 ReferenceError、整段交互从未跑起来(改惰性引用)。🎨 <b>零比喻第二轮</b>:02 硬件基础 10 页全部补齐落地解释(吉他弦调参/医生问诊/三台水龙头/体重秤标定/飞行员检查单/时钟树派工等 14 处)。✅ 一键自检 ALL CHECKS PASSED + E2E 13/13 PASS(全站 smoke 104 页零异常)。</div>
+      </details>
+    <details class="faq">
+        <summary>🧭 V2.1.32 · 2026-09-20 · 优化路线图首轮:教学补强(06板块九页+3D三条链+01比喻算例) + 台账五项销项 + 题库schema方案 －</summary>
+        <div class="faq-a">🧭 按《docs/维护/优化路线图_2026-09-19.md》批次 1/2/3 首轮执行。📚 <b>教学补强</b>:06 学习工具九页(03/06/08/10/11/12/13/14/15)补正文与自测——自测 0 题页全部补至 3~4 题带逐项解析,正文过薄页补至约 1700~2500 字,四薄页按"收纳不删"救活(15_全站体检注明站长工具页);3D 拆解页新增 3000+ 字「三条链」讲授节(伺服动力链/编码器光路链/全驱动 vs 欠驱动,含 36×4×27=3888 脉冲分辨率算例,K4 折算器主线联动锚点),00_3D SW bump v32;01 理论入门五页补比喻/实例/算例(01 页「一次抬腿的信号之旅」贯穿案例、02 页三环"导航/定速巡航/油门"比喻、03 页水路比喻+数值实例、05 页"地址↔经纬度"比喻、06 页闭环传函小节+带宽法主算例 23.9Hz 达标判定+幅频相频对比表)。🩺 <b>内容勘误</b>:03-06 页 BOM 表两行残留勘误(自举电容→电荷泵电容、母线电解 35V→50V,与 03-07 交叉认证)——审查报告 3 处知识硬错误全部闭环;FOC 图解页四件套经核实早已补齐(销项)。🔧 <b>台账销项(AUDIT)</b>:A-25 自检挂件环境开关(仅本地预览或 ?selftest=1 注入,线上访客不再常驻跑自检);A-28 KaTeX 四 CDN 进 SW cache-first(首次联网后公式离线可渲染);A-29 AI 答疑旧内核自动降级非流式请求;A-24 面试进度脏数据开页对账清理;AI 页错误消息 innerHTML 邻接收口(textContent);A-53/A-54 编号撞车台账加注。⚙️ <b>性能与工程</b>:顶栏磁吸按钮 pointermove rAF 节流;发版.ps1 新增"当前版本块描述积欠"检测(防文案债复发);SW 注释 3D 模型口径修正(实测 85MB)。🗺 <b>批次 3</b>:《题库schema统一方案》落档(最小统一字段集+渐进迁移,存量数据不动)。⏸ 延期项:mermaid 2.5MB 换 SVG(排图片轮)、词典单源化(独立会话)、CDN SRI(需外网)、.git 历史清理(专项决策)。✅ 一键自检 ALL CHECKS PASSED。</div>
+      </details>
+    <details class="faq">
+        <summary>🩺 V2.1.31 · 2026-09-19 · 线上体检收口:目录高亮滚动节流 + 预缓存拆层(题库数据改后台补装) + 版本文案积欠补正 －</summary>
+        <div class="faq-a">🩺 <b>线上体检(V2.1.30 实抓 GitHub Pages + cyco.top)</b>:线上与本地版本一致无落后,历史卡顿大头已根治(浅色首页滚动 p95 24.8ms、子页加载 10.2s→275ms、3D 引擎 120FPS),本轮收口体检揪出的三项残余。🧭 <b>目录滚动高亮 rAF 节流</b>:scroll 高频路径改 requestAnimationFrame 合并(旧内核 setTimeout 兜底),滚动每帧最多一次布局读取——此前每次滚动都对全部标题逐个 getBoundingClientRect 强制布局,长页卡顿嫌疑。📦 <b>SW 预缓存拆 CORE/LAZY 两层</b>:题库数据 ib-data 四件(约 693KB)移出首装清单,激活后延迟 3 秒逐个后台补装(跳过已有)——首访/发版重下不再与首屏抢带宽,"未访问也能离线刷题"保留。📝 <b>版本文案两轮积欠补正</b>:README 最新版本行与首页当前版本块描述此前停在 V2.1.28(发版脚本只 bump 号不更新描述),已补正,"描述积欠检测"纳入路线图批次 2。🗺 <b>优化路线图落档</b>:docs/维护/优化路线图_2026-09-19.md,四批次:教学内容补强/精简收纳与性能瘦身(收纳不删)/知识库结构化/PocketBase 推进。✅ 一键自检 ALL CHECKS PASSED。</div>
+      </details>
+    <details class="faq">
         <summary>🃏 V2.1.30 · 2026-09-19 · 卡片悬停宽卡倾角衰减 + ROBO-Q 加载提速(国内 CDN 优先/加载提示) －</summary>
         <div class="faq-a">🃏 <b>卡片 3D 倾斜按卡宽衰减</b>:透视位移量随卡片宽度放大,featured/尾行拉伸等宽卡悬停时左上图标位移过大"飞出"——现 ≤460px 满幅 ±4°,宽卡等比收小(1140px 实测 ±1.5°),小卡手感不变,perspective 800→900。⚡ <b>ROBO-Q 加载提速</b>:three.js 改国内 CDN(npmmirror)优先、本地库兜底保离线(A-35 口径不变);head 增加 preconnect/dns-prefetch;展台注脚增加"加载中…"状态(挂载成功恢复,离线失败明示)。✅ 一键自检 ALL CHECKS PASSED。</div>
       </details>
@@ -1424,7 +1436,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.30(2026-09-19) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.33(2026-09-20) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

@@ -159,7 +159,11 @@ html:not([data-theme-early="dark"]) .qg-card{background:rgba(37,99,235,.04);bord
     <b>建议用时:</b>每关 5~10 分钟,全图约 3 小时 · 进度只存在本机浏览器
   </div>
 
-  <h2><span class="h2-num">1</span> 我的战绩</h2>
+  <h2><span class="h2-num">1</span> 闯关机制速览:大陆、关卡与星级</h2>
+  <p>五个大陆对应站内五大板块:<b>理论大陆</b>(知识框架、机械传动、运动学)、<b>硬件大陆</b>(电路、电机驱动、传感器 PCB)、<b>控制大陆</b>(PID、FOC 三环、ADRC)、<b>软件大陆</b>(C/C++、FreeRTOS、ROS)、<b>复试冲刺大陆</b>(全学科快问快答)。每个大陆由 3~4 个普通关加 1 个 BOSS 综合关组成(复试大陆末关是全真模拟),全图共 21 关。</p>
+  <p><b>顺序解锁</b>:通过当前关,下一关自动开锁;普通关 6 题、70% 及格,BOSS 关 10~15 题、80% 及格——越综合的关越严格。<b>星级</b>衡量质量:及格 1 星、≥90% 2 星、全对 3 星;首次通关给全额 XP,重复通关 10 XP,7 枚徽章对应不同里程碑。<b>答错不扣分</b>:立即展开解析与「去复习」链接,看懂再战就是进步。存档(星级/XP/徽章)只写在本机浏览器 localStorage,「我的战绩」处可随时重置存档从头再来。</p>
+
+  <h2><span class="h2-num">2</span> 我的战绩</h2>
   <div class="qg-stats">
     <div class="qg-stats-row">
       <div><div class="qg-num gold" id="qgStars">0</div><div class="qg-num-k">⭐ 总星数</div></div>
@@ -170,14 +174,18 @@ html:not([data-theme-early="dark"]) .qg-card{background:rgba(37,99,235,.04);bord
     </div>
   </div>
 
-  <h2><span class="h2-num">2</span> 闯关地图</h2>
+  <h2><span class="h2-num">3</span> 闯关地图</h2>
   <p>关卡按顺序解锁:通过当前关卡,下一关自动开锁;<b>BOSS 综合关</b>需要及格率 80%。带 <span class="qg-qtag">口述自评</span> 标签的关卡使用面试题库快问卡——先自己口述答案,再看参考答案自评。</p>
   <div id="qgMap"><div class="ib-empty" style="padding:30px;text-align:center;color:#94a3b8">地图加载中…</div></div>
 
-  <h2><span class="h2-num">3</span> 徽章墙</h2>
+  <h2><span class="h2-num">4</span> 三种题源,以及和题库、地图怎么配合</h2>
+  <p>关卡里的题目来自三个题源:<b>① 闯关自建选择题</b>——围绕关卡主题出题,选完即判分;<b>② 官方自测题库题</b>——直接抽自「自测题库」页,自动判分;<b>③ 复试面试题库快问卡</b>——来自「保研复试面试题库」的问答题,先自己口述 30 秒,再展开参考答案自评,练的是复试最关键的「嘴上功夫」。</p>
+  <p>配合姿势:选择题做错,解析里有「去复习」链接,直达对应知识页;想成体系地过题,去「自测题库」页让 SRS 把错题排进间隔复习;口述卡答不到要点,去「保研复试面试题库」页看完图文详解再回来。连续卡关说明知识有洞——回「学习地图」找到对应节点补课,比反复硬闯有效得多;BOSS 关建议把本大陆普通关刷到三星后再挑战,一次通过的概率会高很多。</p>
+
+  <h2><span class="h2-num">5</span> 徽章墙</h2>
   <div class="qg-badges" id="qgBadgeWall"></div>
 
-  <h2><span class="h2-num">4</span> 配套资源</h2>
+  <h2><span class="h2-num">6</span> 配套资源</h2>
   <div class="grid">
     <a class="card" href="11_保研复试面试题库.html"><span class="go">进入 →</span><div class="ic">🎓</div><div class="t">保研复试面试题库</div><div class="d">27 学科 254 题图文详解(含控制工程/机电学院基础课 + 综合/英语/数学/科研素养通用面 + 工程实践题),闯关遇到的知识点在这里深挖。</div></a>
     <a class="card" href="13_AI答疑助手.html?persona=interviewer"><span class="go">进入 →</span><div class="ic">🤖</div><div class="t">AI 复试考官</div><div class="d">让 AI 模拟考官逐题追问,点评你的口述回答。</div></a>
@@ -187,7 +195,53 @@ html:not([data-theme-early="dark"]) .qg-card{background:rgba(37,99,235,.04);bord
     <b>📌 通关策略:</b>先学后闯——每个大陆对应站内一个板块,通关失败时看解析里的"去复习"链接;BOSS 关是对整个大陆的检阅,建议把该大陆普通关全部三星后再挑战。
   </div>
   <div class="box box-warn">
-    <b>🤔 思考题:</b>1. 哪个大陆的正确率最低?它对应的正是你的知识盲区。2. 快问快答关卡里,你能不看答案把"参考回答"的框架口述出来吗?
+    <b>🤔 思考题:</b>1. 哪个大陆的正确率最低?它对应的正是你的知识盲区。2. 快问快答关卡里,你能不看答案把"参考答案"的框架口述出来吗?
+  </div>
+
+  <h2><span class="h2-num">7</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. 闯关的及格线与星级规则,正确的是?</div>
+    <div class="quiz-options" data-answer="A">
+      <button data-v="A">A. 普通关 70% 及格、BOSS 关 80%;及格 1 星,≥90% 2 星,全对 3 星</button>
+      <button data-v="B">B. 所有关统一 60% 及格,通关即三星</button>
+      <button data-v="C">C. 必须全对才算通关,否则只能重置存档</button>
+      <button data-v="D">D. 及格线随 XP 等级升高而自动提高</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:普通关 6 题 70%(6 题答对 5 题即可)、BOSS 关 80%——越综合的关越严格;星级是质量刻度,及格即通关拿 1 星。B 错在两类关及格线不同,且通关与三星是两件事;C 错在及格就算通关,答错看解析再来一局即可,无需重置;D 错在及格线写死在关卡数据里,与 XP 无关。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 带「口述自评」标签的题目来自哪里、怎么判分?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 由 AI 现场生成,系统自动判分</button>
+      <button data-v="B">B. 闯关自建选择题,自动判分</button>
+      <button data-v="C">C. 复试面试题库的快问卡:先自己口述,再对照参考答案自评</button>
+      <button data-v="D">D. 官方自测题库,按答题用时打分</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:口述卡取自「保研复试面试题库」:页面先隐藏参考答案,请你口述 30 秒,再点「我答到了要点 / 没答好」自评——模拟真实面试没有机器判卷,考官听的是要点覆盖度与表达结构。A 不存在这种机制;B 是自动判分的闯关自建选择题;D 的官方题库题同样自动判分,与口述无关。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 人形机器人旋转关节要在紧凑空间里获得大减速比和小回差,最常用的传动部件是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 同步带</button>
+      <button data-v="B">B. 谐波减速器</button>
+      <button data-v="C">C. 多级圆柱齿轮箱</button>
+      <button data-v="D">D. 液力耦合器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:谐波减速器靠柔轮受控变形与刚轮啮合,单级减速比可达 50~100+,体积小、回差小,是人形机器人旋转关节的主流选择——这也是「理论大陆」机械传动关的常考点。A 同步带减速比有限、存在弹性滑差;C 多级齿轮箱体积与转动惯量大,关节空间放不下;D 液力耦合器响应慢、传动精度差,与伺服关节无缘。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 一体化关节模组通常把哪些部件集成在一起?</div>
+    <div class="quiz-options" data-answer="C">
+      <button data-v="A">A. 只有电机与外壳</button>
+      <button data-v="B">B. 只有减速器与编码器</button>
+      <button data-v="C">C. 电机 + 减速器 + 编码器 + 驱动器,视需要再加力矩传感器</button>
+      <button data-v="D">D. 电池与无线充电模块</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:关节模组的思路是「电机出力、减速增扭、编码反馈、驱动闭环」一体化:电机端与输出端双编码器反馈,驱动板就地完成电流/速度/位置闭环,加力矩传感器即可做力控。A、B 都只集成了部分环节,凑不成能独立工作的关节;D 供电属于整机层面的事,不属于关节模组的组成部分。</div>
   </div>
 
 </div><!-- /container -->

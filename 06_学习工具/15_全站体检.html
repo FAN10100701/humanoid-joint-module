@@ -30,6 +30,79 @@ details.faq .faq-a pre{font-size:11.5px;white-space:pre-wrap;color:#9aa4b2}
   打开本页自动跑全套审计:全站链接逐个 fetch、搜索索引一致性、题库同步、版本单源、每页结构抽查。全部 <b style="color:#86efac">✓</b> 即健康;✗ 项展开看细节。</div>
   <div id="sum">审计中…</div>
   <div id="rows"></div>
+
+  <!-- ================= 体检解读与自助排查(补正文)与本章自测 ================= -->
+  <div class="box box-warn"><b>🧰 先看这里:</b>本页是<b>站长工具页,普通用户可以跳过</b>——它面向站长(以及把本站部署到自己服务器或本地镜像的人)做质量巡检。访客无需读懂下面的检查项;若你在使用中遇到「页面打不开 / 3D 不显示 / 公式不渲染」,直接看第 2 节的自助排查表对症处理即可。</div>
+
+  <h2><span class="h2-num">1</span> 五类检查各在看什么</h2>
+  <p>页面打开后自动执行五类检查,每一类都在防一种「纯静态站特有的病」:</p>
+  <ul>
+    <li><b>全站链接审计</b>:从 sitemap.xml 取出全站 URL 逐个 GET 一遍,揪出 404 与坏链。它是五项里最慢的一步(每 15 个打一行进度),因为它是唯一需要真实发网络请求的一项。</li>
+    <li><b>搜索索引一致性</b>:统计 search-index.js 的条目数。全站搜索框完全依赖这份索引,文件一旦被改坏,症状是「搜索静默无结果」,非常隐蔽,所以单独体检。</li>
+    <li><b>题库同步</b>:对比 quiz-bank.js 的题数与自测题库页的展示数(该页带 data-runtime-quiz 标记,按运行时渲染识别)。两边不相等就说明「单源漂移」——改了数据没同步页面,或反之。</li>
+    <li><b>版本单源</b>:核对 site.js 的 S.VERSION、首页版本行、CHANGELOG、sw.js 的 CACHE 名四处是否同值。这条「版本链」是 PWA 缓存更新的开关:版本一旦脱钩,用户可能长期拿到旧缓存——这是发版流程里最容易漏的一环。</li>
+    <li><b>页面结构抽查</b>:板块组数量、首页设计系统标记、page-meta 注册量,防「新页面加了文件却没登记」这类遗漏。</li>
+  </ul>
+  <p>顺带说隐私:五类检查全部在你的浏览器里发起,只读取站内自己的文件,不上传任何数据;检查结果也只显示在本页,不会发给任何人——这是纯静态站「无后端」架构的直接推论。</p>
+
+  <h2><span class="h2-num">2</span> 常见问题自助排查</h2>
+  <div class="table-wrap"><table>
+    <tr><th>症状</th><th>多半是</th><th>怎么处理</th></tr>
+    <tr><td>断网后整站打不开</td><td>Service Worker 还没建立缓存:PWA 需要先在联网时正常访问过一次</td><td>先联网打开首页一次,之后断网缓存才生效</td></tr>
+    <tr><td>双击 HTML 文件(file://)打开,体检大面积失败、部分数据加载不出</td><td>file:// 协议下浏览器禁止 fetch,而体检与按需加载的数据都依赖 fetch</td><td>双击 _本地工具/启动教学页面.bat 起本地服务,经 http 访问</td></tr>
+    <tr><td>体检出现「全部链接项失败」</td><td>本地服务器没启动,不是站点坏了</td><td>启动本地服务后刷新本页重跑</td></tr>
+    <tr><td>3D 解剖页模型加载失败</td><td>模型首次需联网下载;00 板块有独立的模型缓存与自己的 SW 版本号,未命中即需网络</td><td>联网后刷新重试;仍失败则清理站点缓存后重新预缓存</td></tr>
+    <tr><td>公式显示为 LaTeX 原文(如 \frac 不变形)</td><td>KaTeX 由 CDN 加载,带四级回退(npmmirror → jsdelivr → unpkg → cdnjs);全部不可达时按设计保持原文、不炸版</td><td>联网后刷新即恢复;长期离线属预期行为</td></tr>
+    <tr><td>新页面 404 或搜索搜不到</td><td>登记清单没走全(索引/sitemap/page-meta),属站点维护问题</td><td>访客无需处理;站长跑登记工具与体检修复</td></tr>
+  </table></div>
+  <p>一句话分清责任:断网、缓存、file:// 三类是「使用姿势」问题,按上表即可自救;链接 404、索引缺失、版本不同步是「站点质量」问题,访客侧修不了,等站长按体检结果处理。</p>
+
+  <h2><span class="h2-num">3</span> 本节自测</h2>
+  <div class="quiz">
+    <div class="quiz-q">1. PWA(如本站)要能离线访问,前提条件是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 无任何前提,有浏览器就行</button>
+      <button data-v="B">B. 需要先在联网状态下成功访问过站点,让 Service Worker 完成预缓存</button>
+      <button data-v="C">C. 只要把页面加入浏览器收藏夹</button>
+      <button data-v="D">D. 必须安装对应的桌面客户端</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:Service Worker 的离线能力来自「提前把页面与资源缓存到本机」,而预缓存这个动作只能发生在第一次联网访问时——先在线一次,之后才谈得上离线。收藏夹只是入口快捷方式,不缓存任何资源;D 混淆了 PWA 与原生应用;A 忽略了缓存建立的过程。因此「新设备第一次就断网打开,必然失败」是预期行为而非故障:先联网访问一次,缓存建立后离线才可用。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">2. 用 file:// 方式双击打开本站页面,体检页大面积报错、部分数据加载失败。根本原因是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 站点文件损坏了</button>
+      <button data-v="B">B. file:// 协议下浏览器禁止 fetch 请求,而体检与按需数据加载都依赖 fetch</button>
+      <button data-v="C">C. 浏览器版本过低</button>
+      <button data-v="D">D. 页面缺少 SSL 证书</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:出于安全策略,fetch 在 file:// 源上会被浏览器一律拒绝,没有「同目录文件可读」的豁免;于是依赖 fetch 的链接审计、按需数据加载全部失败——这是打开姿势问题,不是站点问题。对策是经本地服务器(http://)访问,例如仓库自带的启动脚本。同样的文件换成 http 打开即恢复正常,可以直接反证 A、C、D 都不成立;file:// 下本页顶部也会明确提示「降级」。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">3. 「版本单源」检查为什么要专门核对 sw.js 里 CACHE 的版本号?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 版本号只是装饰,核对纯属仪式感</button>
+      <button data-v="B">B. Service Worker 靠 CACHE 名变化判断是否重建预缓存;版本链脱钩会让用户长期拿到旧缓存或更新异常</button>
+      <button data-v="C">C. 为了统计全站有多少个文件</button>
+      <button data-v="D">D. 为了兼容旧版浏览器</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:SW 的更新机制是「检测到 sw.js 字节变化 → 重新安装 → 写入新 CACHE 名 → 预缓存新资源 → 清理旧缓存」。若 CACHE 名与 site.js 版本、首页版本行、CHANGELOG 脱钩,就会出现「代码已是新版、缓存还是旧版」的错位,用户看到的永远是老页面,且很难自查。把四处版本做成一条链并在体检里自动核对,正是为了守住「版本链即缓存更新开关」这条静态站的命门。</div>
+  </div>
+  <div class="quiz">
+    <div class="quiz-q">4. 关于 3D 解剖页模型加载失败,下列说法正确的是?</div>
+    <div class="quiz-options" data-answer="B">
+      <button data-v="A">A. 3D 模型与普通页面共用同一份缓存,一处修好处处恢复</button>
+      <button data-v="B">B. 3D 板块有独立的模型缓存与自己的 SW 版本号;失败应先联网刷新,必要时单独清理重建该缓存</button>
+      <button data-v="C">C. 模型不会加载失败,失败一定是显示器问题</button>
+      <button data-v="D">D. 清空浏览器全部数据是首选方案,零代价</button>
+    </div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-explain">💡 解析:模型文件体积大、更新节奏与普通页面不同,所以 00 板块的 Service Worker 用独立的版本号与模型缓存单独管理——这是「大资源独立缓存」的常规设计。A 错在两者并非同一份缓存;C 无视网络与版本现实;D 代价不成比例:清空全部站点数据会连带删掉打卡进度、SRS 复习记录等 localStorage 内容,属于最后手段——正确顺序永远是「先联网刷新,再定向清理,最后才考虑清空」。</div>
+  </div>
+
 </div>
 <script src="../_assets/site.js"></script>
 <script>

@@ -119,6 +119,9 @@
   <div class="box box-tip">
     <b>🗺️ 使用建议:</b>先整体浏览 8 大板块,记住「机械—电机—驱动—传感—控制—通信」这条主干;图中「核心」「难点」标签标注了本板块的学习重点与坑点,后续每个专题页都对应图中的某一分支。
   </div>
+  <div class="box box-tip">
+    <b>🚇 比喻:知识框架像一张地铁线路图。</b>8 大板块就是 8 条线,刚入门不必背全每条线上的小站,先记住几个「换乘站」——减速器(机械线)、FOC 三环(控制线)、双编码器(传感线)、EtherCAT(通信线)。以后学到任何新名词,先定位它在哪条线、离最近的换乘站有几站,再挂到图上,图谱越织越密;读手册、查资料时也用它找位置:一个新概念若挂在「控制线」上,就先去控制类专题页「接线」,而不是孤立硬记。
+  </div>
 
   <!-- 图例 -->
   <div class="my-legend">
@@ -428,8 +431,69 @@
     </div>
   </div>
 
+  <!-- ================= 贯穿案例:一次抬腿的信号之旅 ================= -->
+  <h2><span class="h2-num">2</span> 贯穿案例:一次抬腿的信号之旅</h2>
+  <p>把 8 大板块分开背,容易「背完就忘」;串起来的办法是跟着一个真实任务走一遍。设想上位机发出「抬起右腿」的指令,随后约半秒钟里,信号沿 8 大板块走完一个完整的环——每一站都对应上图的一个分支:</p>
+
+  <div class="my-sub">
+    <div class="my-sub-title">第 1 站 · 下发指令 —— 六、通信总线</div>
+    <div class="my-leaf-list">
+      <div class="my-leaf">上位机通过 EtherCAT(周期 125μs~1ms、带分布式时钟)把「右髋抬起 30°」这样的关节目标发给全身几十个关节的驱动器,并保证所有关节同一时刻开跑。</div>
+    </div>
+  </div>
+  <div class="my-sub">
+    <div class="my-sub-title">第 2 站 · 感知现状 —— 四、传感感知</div>
+    <div class="my-leaf-list">
+      <div class="my-leaf">躯干 IMU 报出机身倾角,各关节双编码器报出实际角度——决策层得先知道「我现在站得稳不稳、腿摆到了哪」,才能定下一步。</div>
+    </div>
+  </div>
+  <div class="my-sub">
+    <div class="my-sub-title">第 3 站 · 决策与解算 —— 五、控制算法</div>
+    <div class="my-leaf-list">
+      <div class="my-leaf">步态规划结合机身状态给出抬腿时序与落脚点;逆运动学把「脚要到达的位置」翻译成髋、膝、踝各关节的目标角度,再叠助力矩前馈与重力补偿。</div>
+    </div>
+  </div>
+  <div class="my-sub">
+    <div class="my-sub-title">第 4 站 · 三环伺服 —— 五、控制算法</div>
+    <div class="my-leaf-list">
+      <div class="my-leaf">目标角度传到关节驱动器,位置环→速度环→电流环逐级收紧,最终变成 Iq 电流指令,由电流环以 10kHz~40kHz 的节奏去执行。</div>
+    </div>
+  </div>
+  <div class="my-sub">
+    <div class="my-sub-title">第 5 站 · 功率驱动 —— 三、驱动电路</div>
+    <div class="my-leaf-list">
+      <div class="my-leaf">栅极预驱把 3.3V 的 PWM 放大到 10~15V,三相逆变桥的 6 颗 MOSFET 把直流母线电压按 FOC 波形逆变成三相电流,真正灌进电机绕组。</div>
+    </div>
+  </div>
+  <div class="my-sub">
+    <div class="my-sub-title">第 6 站 · 执行 —— 二、动力电机 + 一、机械结构</div>
+    <div class="my-leaf-list">
+      <div class="my-leaf">无框力矩电机输出高速低扭矩,谐波减速器按几十比一(如 1:100)减速,髋关节得到几十 N·m 的低速大扭矩;此过程中抱闸保持通电松开,机械限位随时兜底。</div>
+    </div>
+  </div>
+  <div class="my-sub">
+    <div class="my-sub-title">第 7 站 · 全程护栏 —— 七、集成与可靠性</div>
+    <div class="my-leaf-list">
+      <div class="my-leaf">电机+减速器+驱动板+双编码器能同轴塞进一个壳体、中空走线不缠绕,过流/过温/EMC 防护全程盯着——它不是某一站,而是垫在所有站下面的设计约束。</div>
+    </div>
+  </div>
+  <div class="my-sub">
+    <div class="my-sub-title">第 8 站 · 再反馈 —— 回到四、传感感知 + 六、通信总线</div>
+    <div class="my-leaf-list">
+      <div class="my-leaf">输出端编码器测得实际角度,电流环反推实际扭矩,NTC 测得绕组温度,沿总线回传上位机;上位机比对目标与实际、算出下一拍指令——闭环回到第 1 站,下一个毫秒周期再来一遍。</div>
+    </div>
+  </div>
+
+  <div class="box box-tip">
+    <b>🏃 比喻:这条链像一场接力赛。</b>8 大板块是 8 位接力选手,每位只跑自己那一棒;「交接棒规则」就是板块之间的接口——总线报文格式、PWM 占空比、编码器的 SPI 帧、ADC 采样窗口。哪一棒掉棒(通信超时、采样丢帧、时序错拍),整条链就断;所以集成可靠性板块的很大一部分工作,就是反复演练这些交接瞬间。
+  </div>
+
+  <div class="box box-tip">
+    <b>📌 用法:</b>以后每学一个专题页,先问一句「它在这趟抬腿旅程的哪一站、和前后站交换什么信息」。8 大板块不是并列的名词清单,而是一条每个毫秒周期都在跑的流水线。
+  </div>
+
   <!-- ================= 自测题 ================= -->
-  <h2><span class="h2-num">2</span> 本节自测</h2>
+  <h2><span class="h2-num">3</span> 本节自测</h2>
 
   <div class="quiz">
     <div class="quiz-q">1. 谐波减速器的三大核心部件是?</div>
@@ -540,7 +604,7 @@
   </div>
 
   <!-- ================= 参考资料 ================= -->
-  <h2><span class="h2-num">3</span> 参考资料</h2>
+  <h2><span class="h2-num">4</span> 参考资料</h2>
   <p>本页为知识框架总览,更多细节请进入下方专题页与权威来源;「资料整理更新至 2026-08」。</p>
   <ul>
     <li><a href="02_核心原理动画演示_FOC_三环_减速器.html">本站 01-02 · 核心原理动画演示(FOC / 三环 / 减速器)</a></li>

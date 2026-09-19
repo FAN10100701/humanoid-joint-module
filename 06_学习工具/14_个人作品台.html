@@ -60,6 +60,50 @@ h1{font-family:"Segoe UI Variable Display","Segoe UI","PingFang SC",sans-serif;f
       <span class="arr">→</span>
     </a>
   </div>
+  <div style="width:min(680px,94vw);text-align:left">
+    <h2><span class="h2-num">1</span> 这里是什么:四个作品与它们的技术看点</h2>
+    <p>个人作品台是本站「课堂之外」的展示区:四个独立全屏的创意作品,全部用浏览器前端技术(Three.js / WebGL / Canvas)写成,没有后端、无需安装,点开即玩。每个作品对应一类可视化技术,看完不妨回到对应教学页把原理补上——作品是知识的「预告片」。</p>
+    <p><b>01 时空蝴蝶标本</b>:60 只形状化玻璃蝶排成五环时间切片晶格;技术看点是 InstancedMesh 实例化渲染——一份几何体、一次绘制调用画出全部蝴蝶,再叠物理玻璃材质(透射与折射)得到通透质感。<b>02 悬浮粒子八大行星</b>:每颗行星是一团 Points 粒子球,绕日巡行,点击行星弹出真实天体物理讲解面板;本质是 BufferGeometry 顶点属性的批量渲染。<b>03 风吹麦浪 · 鱼遨游</b>:instanced 麦穗叠加顶点着色器风场(波动位移交给 GPU 算),半空的鱼群用 boids 三规则(分离 / 对齐 / 聚合)模拟。<b>04 万物归墟</b>:用 raymarching 光线步进在片元着色器里逐像素画出黑洞与白洞,引力透镜、光子环都是算出来的,支持环视、凝时与倒流的拖拽物理。</p>
+    <p>本页的星空背景也是同类技术的最小样例:650 个粒子组成 Points 星尘,随鼠标做视差平移——看懂它,就看懂了作品页渲染循环的骨架。</p>
+
+    <h2><span class="h2-num">2</span> 怎么用:入口、离线与数据</h2>
+    <p><b>入口</b>:上面四张卡片就是全部作品入口,点击进入独立全屏页,页脚可返回学习站;移动端也能打开,但拖拽、凝时这类交互建议在电脑上体验。<b>离线与加载</b>:作品页与整站一样是纯静态文件,三维库优先从站内 00_3D解剖 的本地 lib 加载,失败才回退镜像;若提示加载失败,先通过本地静态服务访问再刷新。<b>数据与隐私</b>:作品不注册、不登录、不上传任何数据,与整站一致,一切状态只存本机浏览器,清缓存即清除。</p>
+
+    <h2><span class="h2-num">3</span> 本节自测</h2>
+    <div class="quiz">
+      <div class="quiz-q">1. 「悬浮粒子八大行星」上万颗粒子还能流畅转动,靠的渲染方式是?</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 每颗粒子一个 DOM 元素,用 CSS 逐个移动</button>
+        <button data-v="B">B. 粒子坐标写进 BufferGeometry,由 GPU 一两次绘制调用批量画出</button>
+        <button data-v="C">C. 循环播放一张预渲染的 GIF</button>
+        <button data-v="D">D. 每帧截屏再拼成视频播放</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:WebGL 把所有粒子坐标放进同一个顶点缓冲区,一次 draw call 就交给 GPU 并行画完,所以粒子过万仍能满帧;DOM 数量一多,布局与合成的开销必然卡顿,C、D 则根本无法交互。作品 01 的 InstancedMesh 省性能也是同一思想——把「画很多次」压成「画一两次」。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">2. 让 3D 画面持续动起来、并与屏幕刷新率同步的浏览器 API 是?</div>
+      <div class="quiz-options" data-answer="C">
+        <button data-v="A">A. setInterval(fn, 16)</button>
+        <button data-v="B">B. while(true) 死循环</button>
+        <button data-v="C">C. requestAnimationFrame</button>
+        <button data-v="D">D. window.onload</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:requestAnimationFrame 在浏览器每帧绘制前回调:屏幕 60Hz / 120Hz 自动适配,页面切到后台自动暂停省电。A 的固定 16ms 与实际刷新周期不同步,容易掉帧不匀;B 会冻结整个页面;D 只在资源加载完成时触发一次,画不了动画。四个作品与星空背景的渲染循环都跑在它上面。</div>
+    </div>
+    <div class="quiz">
+      <div class="quiz-q">3. 关于作品页与数据,下列说法正确的是?</div>
+      <div class="quiz-options" data-answer="B">
+        <button data-v="A">A. 作品必须先上传到服务器才能打开</button>
+        <button data-v="B">B. 作品页是纯静态文件,本地即可运行,不上传任何数据</button>
+        <button data-v="C">C. 打开作品会自动读取电脑里的其他文件</button>
+        <button data-v="D">D. 浏览器会自动把浏览记录发给作品作者</button>
+      </div>
+      <div class="quiz-feedback"></div>
+      <div class="quiz-explain">💡 解析:整站(含作品)都是纯静态 HTML/JS,三维库优先走站内本地文件,浏览器打开即运行;页面没有任何后端与上报代码,状态只存本机浏览器。C、D 是对浏览器安全模型的误解——沙箱不允许网页随意读取本地文件,也不存在「自动上报」;A 与本站静态部署的设计恰好相反。</div>
+    </div>
+  </div>
   <div class="foot"><a href="../index.html">‹ 返回学习站</a></div>
 </main>
 <script src="../_assets/site.js"></script>

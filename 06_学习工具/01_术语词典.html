@@ -34,6 +34,10 @@
   .tlink-note{color:#f0a437}
   html:not([data-theme-early="dark"]) .tlink-note{color:#b45309}
   .tlink-empty{font-size:12px;color:#8b98a9}
+  .gloss-anki-btn{background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.45);color:#9ecbff;font-size:13.5px;padding:0 16px;border-radius:10px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .gloss-anki-btn:hover{background:rgba(59,130,246,.32);color:#fff}
+  html:not([data-theme-early="dark"]) .gloss-anki-btn{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.35);color:#1d4ed8}
+  html:not([data-theme-early="dark"]) .gloss-anki-btn:hover{background:rgba(37,99,235,.18);color:#1d4ed8}
 </style>
 </head>
 <body>
@@ -64,6 +68,7 @@
   <!-- ================= 搜索与分类 ================= -->
   <div class="gloss-search">
     <input id="glossInput" type="text" placeholder="输入术语关键词,如 FOC、谐波、背隙…" autocomplete="off">
+    <button id="glossAnkiBtn" type="button" class="gloss-anki-btn" title="把本页全部术语卡导出为 Anki 可导入的 CSV(术语 / 解释 / 分类标签)">⬇ 导出 Anki CSV</button>
   </div>
   <div class="gloss-cats" id="glossCats">
     <button data-cat="全部">全部</button>
@@ -650,6 +655,56 @@
       if(sel && !sel.isCollapsed) return;   /* 划选文字(触发速记)时不展开 */
       toggle(card);
     });
+  });
+})();
+</script>
+<script>
+/* Anki 导出:全部术语卡 → humanoid-glossary-anki.csv(front=术语,back=纯文本解释,tags=分类;UTF-8 带 BOM;ES5) */
+(function () {
+  "use strict";
+  var btn = document.getElementById("glossAnkiBtn");
+  if (!btn) return;
+
+  /* CSV 字段转义:含引号/逗号/换行时加引号,内部引号翻倍,换行压成空格 */
+  function csvField(v) {
+    v = String(v == null ? "" : v).replace(/\r?\n/g, " ");
+    return /[",]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+  /* 剥 HTML 标签取纯文本(解释里的 term-link 等一并去掉),空白折叠 */
+  function plainText(html) {
+    var d = document.createElement("div");
+    d.innerHTML = html;
+    return String(d.textContent || "").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+  }
+  function hint(msg) {
+    if (window.Site && Site.toast) { Site.toast(msg); } else { alert(msg); }
+  }
+
+  btn.addEventListener("click", function () {
+    var cards = document.querySelectorAll(".term-card");
+    if (!cards.length) { hint("未找到术语卡,未导出"); return; }
+    if (!window.Blob || !window.URL || !URL.createObjectURL) { alert("当前浏览器不支持文件下载,无法导出"); return; }
+    var rows = ["#separator:Comma", "#html:false"];
+    for (var i = 0; i < cards.length; i++) {
+      var c = cards[i];
+      var name = c.querySelector(".term-name");
+      var desc = c.querySelector(".term-desc");
+      if (!name || !desc) continue;
+      rows.push([
+        csvField(plainText(name.textContent)),
+        csvField(plainText(desc.innerHTML)),
+        csvField(c.getAttribute("data-cat") || "")
+      ].join(","));
+    }
+    var blob = new Blob(["\uFEFF" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "humanoid-glossary-anki.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
+    hint("已导出 " + cards.length + " 条术语到 humanoid-glossary-anki.csv(字段:术语 / 解释 / 分类标签)");
   });
 })();
 </script>
