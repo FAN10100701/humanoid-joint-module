@@ -15,6 +15,26 @@
     next: { t: "常见问答 FAQ", u: "02_常见问答FAQ.html" }
   };
 </script>
+<style>
+  /* 知识联动抽屉(批次三;tlink- 页内作用域) */
+  .tlink{margin-top:10px;border-top:1px dashed rgba(148,163,184,.35);padding-top:9px;display:grid;gap:7px}
+  .tlink-head{font-size:11px;color:#3b82f6;font-weight:700;letter-spacing:.06em}
+  html:not([data-theme-early="dark"]) .tlink-head{color:#1d4ed8}
+  .tlink-row{display:flex;gap:6px;align-items:flex-start}
+  .tlink-label{font-size:11px;color:#8b98a9;flex-shrink:0;width:56px;line-height:24px}
+  html:not([data-theme-early="dark"]) .tlink-label{color:#7c8aa0}
+  .tlink-items{display:flex;flex-wrap:wrap;gap:5px}
+  .tlink-chip{font-size:11.5px;padding:3px 10px;border-radius:999px;border:1px solid rgba(59,130,246,.3);background:rgba(59,130,246,.08);color:#9ecbff;cursor:pointer;font-family:inherit}
+  .tlink-chip:hover{background:rgba(59,130,246,.2);color:#fff}
+  html:not([data-theme-early="dark"]) .tlink-chip{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.28);color:#1d4ed8}
+  .tlink-en{font-family:Consolas,"Courier New",monospace}
+  .tlink-pg{font-size:12px;color:#9ecbff;text-decoration:none;line-height:24px}
+  .tlink-pg:hover{text-decoration:underline}
+  html:not([data-theme-early="dark"]) .tlink-pg{color:#1d4ed8}
+  .tlink-note{color:#f0a437}
+  html:not([data-theme-early="dark"]) .tlink-note{color:#b45309}
+  .tlink-empty{font-size:12px;color:#8b98a9}
+</style>
 </head>
 <body>
 
@@ -23,11 +43,12 @@
   <!-- ================= 页面头部 ================= -->
   <div class="page-head">
     <h1>📖 人形机器人术语词典</h1>
-    <div class="sub">按分类浏览或输入关键词实时搜索,查阅本站所有页面的专业术语</div>
+    <div class="sub">按分类浏览或输入关键词实时搜索,查阅本站所有页面的专业术语<br><b>🔗 点击任意术语卡展开「知识联动」</b>:相关术语 · 英语词卡 · 出现页面 · 我的笔记;你的学习足迹见 <a href="19_学习笔记.html">学习笔记 · 知识树</a></div>
     <div class="tags">
       <span class="tag">100+ 术语</span>
       <span class="tag">中英对照</span>
       <span class="tag">持续扩充</span>
+      <span class="tag">🔗 知识联动</span>
     </div>
   </div>
 
@@ -458,6 +479,180 @@
 })();
 </script>
 
+<script src="../_assets/search-index.js"></script>
+<script src="../_assets/en-terms.js"></script>
+<script>
+/* 知识库联动(批次三):点击术语卡展开抽屉
+   ①相关术语=同类相邻卡 ②英语词卡=EN_TERMS 匹配(data-say 委托朗读)
+   ③出现页面=search-index 关键词反查 ④我的笔记=humanoid-notes-v1 全库扫描
+   全部由现有单源数据现场计算,零额外数据维护;ES5 */
+(function () {
+  "use strict";
+  var cards = document.querySelectorAll(".term-card");
+  var input = document.getElementById("glossInput");
+  var OVR = {
+    "00_3D解剖/减速器剖面图详解.html": "00-02",
+    "00_3D解剖/电机编码器与灵巧手3D拆解.html": "00-04",
+    "00_3D解剖/关节执行器内部原理3D实验室.html": "00-05"
+  };
+  function lower(s){ return String(s || "").toLowerCase(); }
+  function el(t, c, x){ var e = document.createElement(t); if(c) e.className = c; if(x != null) e.textContent = x; return e; }
+  function trimStr(s){ return String(s || "").replace(/^\s+|\s+$/g, ""); }
+  /* 中文复合词切 2-gram(谐波减速器→谐波/波减/减速/速器),英文按词;解决"谐波减速器"搜不到"谐波 / 行星"类文案的问题 */
+  function grams(s){
+    s = trimStr(s);
+    var out = [];
+    if(/^[a-z0-9 .\-]+$/i.test(s)){
+      var ws = s.split(/[\.\-\s]+/);
+      for(var i = 0; i < ws.length; i++){ if(ws[i].length >= 3) out.push(lower(ws[i])); }
+    }else{
+      for(var j = 0; j + 2 <= s.length && out.length < 6; j++) out.push(s.substr(j, 2));
+    }
+    return out;
+  }
+  function pageMap(){
+    var map = {};
+    (window.SITE_SEARCH_INDEX || []).forEach(function(it){
+      var u = it.u || "";
+      var pid = OVR[u];
+      if(!pid){ var m = /^(\d{2})_[^\/]+\/(\d{2})_/.exec(u); if(m) pid = m[1] + "-" + m[2]; }
+      if(pid) map[pid] = it;
+    });
+    return map;
+  }
+  function loadNotes(){
+    var d = null;
+    if(window.Site && Site.store && Site.store.get){ d = Site.store.get("humanoid-notes-v1"); }
+    else{ try{ d = JSON.parse(localStorage.getItem("humanoid-notes-v1") || "null"); }catch(e){ d = null; } }
+    if(!d || typeof d !== "object" || !d.pages) d = { pages: {} };
+    return d;
+  }
+  function row(label, nodes){
+    var r = el("div", "tlink-row");
+    r.appendChild(el("span", "tlink-label", label));
+    var box = el("span", "tlink-items");
+    for(var i = 0; i < nodes.length; i++) box.appendChild(nodes[i]);
+    r.appendChild(box);
+    return r;
+  }
+  function pageLink(it){
+    var a = el("a", "tlink-pg", it.t || it.u);
+    a.href = "../" + it.u;
+    return a;
+  }
+  function toggle(card){
+    var old = card.querySelector(".tlink");
+    if(old){ old.remove(); return; }
+    var others = document.querySelectorAll(".term-card .tlink");
+    for(var oi = 0; oi < others.length; oi++) others[oi].remove();
+    var name = trimStr(card.querySelector(".term-name").textContent);
+    var en = trimStr(card.querySelector(".term-en").textContent);
+    var cat = card.getAttribute("data-cat");
+    var nameL = lower(name), enL = lower(en);
+    var panel = el("div", "tlink");
+    panel.appendChild(el("div", "tlink-head", "🔗 知识联动"));
+    var rows = 0;
+    /* ① 相关术语:同类相邻卡 */
+    var all = Array.prototype.slice.call(document.querySelectorAll('.term-card[data-cat="' + cat + '"]'));
+    var idx = all.indexOf(card), rel = [];
+    for(var d = -2; d <= 2; d++){
+      if(d === 0) continue;
+      var c = all[idx + d];
+      if(c) rel.push(trimStr(c.querySelector(".term-name").textContent));
+    }
+    if(rel.length){
+      panel.appendChild(row("相关术语", rel.map(function(t){
+        var b = el("button", "tlink-chip", t);
+        b.title = "在词典中查找 " + t;
+        b.onclick = function(){
+          input.value = t;
+          input.dispatchEvent(new Event("input"));
+          input.scrollIntoView({ block: "center", behavior: "smooth" });
+        };
+        return b;
+      })));
+      rows++;
+    }
+    /* ② 英语词卡:EN_TERMS 匹配(data-say 全站委托朗读) */
+    var words = [];
+    var cats = (window.EN_TERMS && window.EN_TERMS.cats) || [];
+    for(var ci = 0; ci < cats.length && words.length < 3; ci++){
+      var terms = cats[ci].terms || [];
+      for(var ti = 0; ti < terms.length && words.length < 3; ti++){
+        var t2 = terms[ti];
+        var tEn = lower(t2.en), tZh = t2.zh || "";
+        var hit = (enL.length >= 4 && (tEn.indexOf(enL) !== -1 || enL.indexOf(tEn) !== -1)) ||
+                  (name.length >= 2 && tZh.indexOf(name) !== -1);
+        if(hit) words.push(t2);
+      }
+    }
+    if(words.length){
+      panel.appendChild(row("英语词卡", words.map(function(t2){
+        var b = el("button", "tlink-chip tlink-en", t2.en + " · " + (t2.zh || ""));
+        b.setAttribute("data-say", t2.say || t2.en);
+        b.title = "点击朗读";
+        return b;
+      })));
+      rows++;
+    }
+    /* ③ 出现页面:search-index 反查(标题命中优先) */
+    var pages = [];
+    var gs = grams(name).concat(enL.length >= 3 ? [enL] : []);
+    (window.SITE_SEARCH_INDEX || []).forEach(function(it){
+      if(it.u === "06_学习工具/01_术语词典.html") return;
+      var hay = lower((it.t || "") + " " + (it.d || "") + " " + (it.k || ""));
+      var hit = hay.indexOf(nameL) !== -1 || (enL.length >= 3 && hay.indexOf(enL) !== -1);
+      if(!hit){ for(var gi = 0; gi < gs.length; gi++){ if(hay.indexOf(gs[gi]) !== -1){ hit = true; break; } } }
+      if(hit) pages.push(it);
+    });
+    pages.sort(function(a, b){
+      var sa = (lower(a.t || "").indexOf(nameL) !== -1 || (enL.length >= 3 && lower(a.t || "").indexOf(enL) !== -1)) ? 2 : 0;
+      var sb = (lower(b.t || "").indexOf(nameL) !== -1 || (enL.length >= 3 && lower(b.t || "").indexOf(enL) !== -1)) ? 2 : 0;
+      return sb - sa;
+    });
+    if(pages.length){
+      panel.appendChild(row("出现页面", pages.slice(0, 4).map(pageLink)));
+      rows++;
+    }
+    /* ④ 我的笔记:全库扫描(段落笔记/便签/划线引文) */
+    var notes = loadNotes(), pmap = pageMap(), mine = [];
+    for(var pid in notes.pages){
+      var items = notes.pages[pid].items || [];
+      for(var ii = 0; ii < items.length && mine.length < 3; ii++){
+        var it3 = items[ii];
+        var tx = lower((it3.text || "") + " " + (it3.quote || ""));
+        var hitNote = tx.indexOf(nameL) !== -1 || (enL.length >= 3 && tx.indexOf(enL) !== -1);
+        if(!hitNote){ for(var gi2 = 0; gi2 < gs.length; gi2++){ if(tx.indexOf(gs[gi2]) !== -1){ hitNote = true; break; } } }
+        if(hitNote){
+          var meta = pmap[pid];
+          var label = (meta ? meta.t : pid) + ":" + (it3.text || it3.quote || "").slice(0, 24);
+          var a2 = el("a", "tlink-pg tlink-note", "📝 " + label + (((it3.text || it3.quote || "").length > 24) ? "…" : ""));
+          a2.href = meta ? "../" + meta.u : "#";
+          a2.title = "查看这条笔记所在页";
+          mine.push(a2);
+        }
+      }
+      if(mine.length >= 3) break;
+    }
+    if(mine.length){
+      panel.appendChild(row("我的笔记", mine));
+      rows++;
+    }
+    if(!rows) panel.appendChild(el("div", "tlink-empty", "本术语暂无联动数据"));
+    card.appendChild(panel);
+  }
+
+  Array.prototype.forEach.call(cards, function(card){
+    card.style.cursor = "pointer";
+    card.addEventListener("click", function(e){
+      if(e.target.closest("a") || e.target.closest("button")) return;
+      var sel = window.getSelection ? window.getSelection() : null;
+      if(sel && !sel.isCollapsed) return;   /* 划选文字(触发速记)时不展开 */
+      toggle(card);
+    });
+  });
+})();
+</script>
 <script src="../_assets/site.js"></script>
 </body>
 </html>

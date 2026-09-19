@@ -5,14 +5,17 @@
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
-   - 版本: V2.1.28 · 2026-09-12(升级站点时改 CACHE 名以强制更新;本版 activate 收敛为只清 hrl-site- 域缓存(A-57 缓存互删根治),en-audio MP3 走 _assets SWR 播放时缓存+MD5 寻址不回源)
+   - 版本: V2.1.29 · 2026-09-12(升级站点时改 CACHE 名以强制更新;本版 activate 收敛为只清 hrl-site- 域缓存(A-57 缓存互删根治),en-audio MP3 走 _assets SWR 播放时缓存+MD5 寻址不回源)
    ============================================================ */
-var CACHE = "hrl-site-v2.1.28";
+var CACHE = "hrl-site-v2.1.29";
 var PRECACHE = [
   "./index.html",
   "./404.html",
   "./_assets/site.css",
   "./_assets/site.js",
+  "./_assets/notes.js",
+  "./_assets/reader.js",
+  "./_assets/pb.js",
   "./_assets/search-index.js",
   "./_assets/page-meta.js",
   "./_assets/path-data.js",
@@ -28,6 +31,8 @@ var PRECACHE = [
   "./_assets/en-dict.js",
   "./_assets/en-notes.js",
   "./_assets/en-audio-map.js",   /* V2.1.23:内置音频清单;MP3 本体走 _assets SWR 播放时缓存 */
+  "./06_学习工具/19_学习笔记.html",
+  "./06_学习工具/20_笔记排版器.html",
   "./06_学习工具/11_保研复试面试题库.html",
   "./06_学习工具/16_保研英语面试.html",
   "./06_学习工具/12_闯关学习.html",

@@ -94,3 +94,5 @@ https://cyco.top/08_学习工具/16_保研英语面试.html
 https://cyco.top/08_学习工具/18_学习路径规划.html
 https://cyco.top/07_大模型与具身智能/06_大模型演进全景_从Transformer到前沿.html
 https://cyco.top/07_大模型与具身智能/07_大模型结构实验室_动手演示.html
+https://cyco.top/06_学习工具/19_学习笔记.html
+https://cyco.top/06_学习工具/20_笔记排版器.html

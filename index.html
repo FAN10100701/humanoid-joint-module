@@ -7,7 +7,7 @@
 <title>人形机器人学习站 · 从关节模组到具身智能</title>
 <meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,软件+硬件+芯片全覆盖。">
 <meta property="og:title" content="人形机器人学习站 · 从关节模组到具身智能">
-<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,101 个学习页面,零基础可学。">
+<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,103 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <meta name="baidu-site-verification" content="codeva-83ZAbuLmz6">
@@ -35,16 +35,43 @@
 <link rel="stylesheet" href="_assets/glass.css">
 <script src="_assets/site-sections.js"></script>
 <style>
-  .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(13,17,23,.6));border:1px solid rgba(59,130,246,.35);border-radius:16px;padding:22px;margin:26px 0}
+  /* ============================================================
+     首页 · 工程图纸风(Engineering Drawing)
+     语言:图框 / 图号章 / 序号球标注 / 尺寸线 / 坐标纸网格 / 等宽注记
+     纪律:本文件内联样式仅首页生效;双色全部走 data-theme-early 双选择器;
+          注记灰深色 #94a3b8 / 浅色 #64748b;批注橙只用于"批注"语义位
+     ============================================================ */
+  :root{
+    --dwg-ink:#e8eef7;
+    --dwg-note:#94a3b8;
+    --dwg-line:rgba(148,163,184,.22);
+    --dwg-line2:rgba(148,163,184,.4);
+    --dwg-accent:#5ea0ff;
+    --dwg-btn:#2563eb;
+    --dwg-mark:#f0a437;
+    --dwg-plate:rgba(148,163,184,.055);
+    --dwg-grid:rgba(148,163,184,.05);
+    --dwg-grid2:rgba(148,163,184,.09);
+  }
+  html:not([data-theme-early="dark"]){
+    --dwg-ink:#0f172a;
+    --dwg-note:#64748b;
+    --dwg-line:rgba(71,85,105,.22);
+    --dwg-line2:rgba(71,85,105,.42);
+    --dwg-accent:#1d4ed8;
+    --dwg-btn:#2563eb;
+    --dwg-mark:#b45309;
+    --dwg-plate:rgba(255,255,255,.72);
+    --dwg-grid:rgba(71,85,105,.055);
+    --dwg-grid2:rgba(71,85,105,.085);
+  }
+  .learn-path{background:var(--dwg-plate);border:1px solid var(--dwg-line2);border-radius:10px;padding:20px 22px;margin:26px 0}
   .upd-item{display:flex;gap:12px;align-items:baseline;padding:9px 4px;border-bottom:1px dashed rgba(255,255,255,.07);font-size:13.5px}
   .upd-item:last-child{border-bottom:none}
   .upd-date{color:#6b7280;font-size:12px;flex-shrink:0;width:86px}
   .upd-item a{color:#9ecbff}
   .upd-item .badge-new{background:linear-gradient(135deg,#fbbf24,#f97316);color:#451a03;font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px}
-  /* ---- 浅色主题适配(首页专属区块) ---- */
-  html:not([data-theme-early="dark"]) .learn-path{background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(255,255,255,.92));border-color:rgba(37,99,235,.32)}
-  html:not([data-theme-early="dark"]) .rm-links a{color:#1d4ed8;background:rgba(37,99,235,.09);border-color:rgba(37,99,235,.28)}
-  html:not([data-theme-early="dark"]) .rm-step p{color:#4b5c74}
+  html:not([data-theme-early="dark"]) .upd-item a{color:#1d4ed8}
 @media (prefers-reduced-motion: reduce){.card,.quicknav a{transition:none!important;transform:none!important}}
 /* 性能:首屏外的板块惰性渲染(大 DOM 首帧提速;滚动到附近才布局绘制)
    V2.1.14:估值按实测校准(1280~1600 宽)——旧 640px 一刀切,#version 实际 3500+px,
@@ -63,26 +90,65 @@ html:not([data-theme-early="dark"]) .pbar-row .pv{color:#334155}
 .ring-track{stroke:rgba(255,255,255,.08)}
 html:not([data-theme-early="dark"]) .ring-track{stroke:rgba(15,23,42,.1)}
 
-/* 快速导航条 */
+/* 快速导航条:索引标签(等宽编号 + 名称) */
 .sec{scroll-margin-top:84px}
-.quicknav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px auto 4px;max-width:900px}
-.quicknav a{font-size:12.5px;color:#9ecbff;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:999px;padding:5px 13px;text-decoration:none;transition:.15s;white-space:nowrap}
-.quicknav a{transition:transform .28s cubic-bezier(.22,1.2,.36,1),background .18s,border-color .18s;}
-.quicknav a:hover{background:rgba(59,130,246,.25);color:#fff;transform:translateY(-1px) scale(1.045)}
-.quicknav a:active{transform:scale(.96);transition-duration:.1s}
-.quicknav a b{font-weight:700;margin-right:2px}
-html:not([data-theme-early="dark"]) .quicknav a{color:#2563eb;background:rgba(37,99,235,.07)}
-/* ===== 默认皮肤高级感特效(2026-08-17):hero 动态光晕 + 卡片顶光条(仅默认皮肤,不干扰 5 套方案) ===== */
-html:not([data-skin]) .hero{position:relative;overflow:hidden}
-html:not([data-skin]) .hero::before,html:not([data-skin]) .hero::after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;filter:blur(90px);-webkit-filter:blur(90px);pointer-events:none;z-index:0;opacity:.5;animation:heroGlow 16s ease-in-out infinite alternate}
-html:not([data-skin]) .hero::before{background:radial-gradient(circle,rgba(59,130,246,.55),transparent 65%);top:-130px;left:-90px}
-html:not([data-skin]) .hero::after{background:radial-gradient(circle,rgba(34,197,94,.35),transparent 65%);bottom:-150px;right:-70px;animation-delay:-8s}
-html:not([data-skin]):not([data-theme-early="dark"]) .hero::before{opacity:.4}
-html:not([data-skin]):not([data-theme-early="dark"]) .hero::after{opacity:.3}
+.quicknav{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:14px auto 4px;max-width:980px;border-radius:10px}
+.quicknav a{font-size:12.5px;color:var(--dwg-note);background:var(--dwg-plate);border:1px solid var(--dwg-line);border-radius:5px;padding:5px 12px;text-decoration:none;white-space:nowrap;transition:transform .2s cubic-bezier(.22,1,.36,1),background .18s,border-color .18s,color .18s}
+.quicknav a:hover{color:var(--dwg-ink);border-color:var(--dwg-accent);background:rgba(37,99,235,.08);transform:translateY(-1px)}
+.quicknav a:active{transform:scale(.97);transition-duration:.1s}
+.quicknav a b{font-weight:700;margin-right:4px;color:var(--dwg-accent);font-family:Consolas,"Courier New",monospace}
+.quicknav a svg{width:13px;height:13px;margin-right:5px;vertical-align:-2px}
+/* ===== Hero 坐标纸网格 + 四角对位标记(替代星尘/极光/光晕) ===== */
+/* overflow:clip = 不可编程滚动的裁剪:hidden 盒子会被锚点/聚焦滚动卡在半截(台账级隐患),clip 直接杜绝 */
+.hero{position:relative;overflow:hidden;overflow:clip;
+  background-image:
+    linear-gradient(var(--dwg-grid2) 1px,transparent 1px),
+    linear-gradient(90deg,var(--dwg-grid2) 1px,transparent 1px),
+    linear-gradient(var(--dwg-grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--dwg-grid) 1px,transparent 1px);
+  background-size:140px 140px,140px 140px,28px 28px,28px 28px}
+.hero .reg{position:absolute;inset:0;pointer-events:none;z-index:2}
+.hero .reg i{position:absolute;width:15px;height:15px}
+.hero .reg i:nth-child(1){top:12px;left:12px;border-top:1.5px solid var(--dwg-line2);border-left:1.5px solid var(--dwg-line2)}
+.hero .reg i:nth-child(2){top:12px;right:12px;border-top:1.5px solid var(--dwg-line2);border-right:1.5px solid var(--dwg-line2)}
+.hero .reg i:nth-child(3){bottom:12px;left:12px;border-bottom:1.5px solid var(--dwg-line2);border-left:1.5px solid var(--dwg-line2)}
+.hero .reg i:nth-child(4){bottom:12px;right:12px;border-bottom:1.5px solid var(--dwg-line2);border-right:1.5px solid var(--dwg-line2)}
+.hero>*{position:relative;z-index:1}
+/* ===== 氛围特效层(用户定版保留):hero 双色光晕 + 极光流场,叠在坐标纸网格之上 ===== */
+.hero::before,.hero::after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;filter:blur(90px);-webkit-filter:blur(90px);pointer-events:none;z-index:0;opacity:.5;animation:heroGlow 16s ease-in-out infinite alternate}
+.hero::before{background:radial-gradient(circle,rgba(59,130,246,.55),transparent 65%);top:-130px;left:-90px}
+.hero::after{background:radial-gradient(circle,rgba(34,197,94,.35),transparent 65%);bottom:-150px;right:-70px;animation-delay:-8s}
+html:not([data-theme-early="dark"]) .hero::before{opacity:.4}
+html:not([data-theme-early="dark"]) .hero::after{opacity:.3}
 @keyframes heroGlow{from{transform:translate(0,0) scale(1)}to{transform:translate(44px,26px) scale(1.18)}}
-html:not([data-skin]) .hero>*{position:relative;z-index:1}
-html:not([data-skin]) .card::before{content:"";position:absolute;left:12px;right:12px;top:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.8),rgba(34,197,94,.6),transparent);opacity:.5;transition:opacity .25s}
-html:not([data-skin]) .card:hover::before{opacity:1}
+.hero.off::before,.hero.off::after{animation-play-state:paused}
+.aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit}
+/* 光晕用透明度呼吸而非位移——大元素 translate 动画在部分合成器下产生 tile 错位伪影 */
+.aurora i{position:absolute;width:64%;height:76%;opacity:.5;border-radius:50%}
+.aurora i:nth-child(1){left:-14%;top:-30%;background:radial-gradient(closest-side,rgba(59,130,246,.42),rgba(59,130,246,.12) 55%,transparent 75%);animation:aurGlow 14s ease-in-out infinite alternate}
+.aurora i:nth-child(2){right:-18%;top:-20%;background:radial-gradient(closest-side,rgba(14,165,233,.26),rgba(14,165,233,.06) 55%,transparent 75%);animation:aurGlow 18s ease-in-out infinite alternate-reverse}
+.aurora i:nth-child(3){left:22%;bottom:-50%;background:radial-gradient(closest-side,rgba(147,112,219,.26),rgba(147,112,219,.07) 55%,transparent 75%);animation:aurGlow 23s ease-in-out infinite alternate}
+.aurora.off i,.hero.off .aurora i{animation-play-state:paused}
+@keyframes aurGlow{from{opacity:.3}to{opacity:.6}}
+html:not([data-theme-early="dark"]) .aurora i{opacity:.2}
+@media (prefers-reduced-motion: reduce){.aurora i{animation:none}}
+/* ===== 板块标题 → 图纸标题栏:线框图号章 + 等宽 SHEET 注记 + 尺寸线 ===== */
+.sec-title{gap:12px;font-size:16.5px;font-weight:800;color:var(--dwg-ink);letter-spacing:.2px}
+.sec-title .num{width:30px;height:30px;border:1.5px solid var(--dwg-accent);color:var(--dwg-accent);border-radius:6px;background:transparent;font-family:Consolas,"Courier New",monospace;font-size:13px;font-weight:700;letter-spacing:.04em;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-title .en{font-family:Consolas,"Courier New",monospace;font-size:10.5px;color:var(--dwg-note);font-weight:500;letter-spacing:.14em;text-transform:uppercase}
+.sec-title .bar{flex:1;height:1px;background:var(--dwg-line2);position:relative;min-width:36px}
+.sec-title .bar::before,.sec-title .bar::after{content:"";position:absolute;top:-3px;width:1px;height:7px;background:var(--dwg-line2)}
+.sec-title .bar::before{left:0}
+.sec-title .bar::after{right:0}
+@media (max-width:760px){.sec-title{flex-wrap:wrap}.sec-title .en{white-space:normal}}
+/* ===== 卡片降噪:去顶光条,悬停克制(轻位移 + 边框加深);顶光条按用户定版保留 ===== */
+.card{transition:transform .3s cubic-bezier(.22,1,.36,1),border-color .25s,background .25s,box-shadow .3s}
+.card:hover{transform:translateY(-3px);border-color:rgba(59,130,246,.5);box-shadow:0 12px 28px -16px rgba(37,99,235,.35)}
+.card::before{content:"";position:absolute;left:12px;right:12px;top:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.8),rgba(34,197,94,.6),transparent);opacity:.5;transition:opacity .25s}
+.card:hover::before{opacity:1}
+.card .ic{transition:transform .38s cubic-bezier(.22,1.2,.36,1)}
+.card:hover .ic{transform:translateY(-2px) scale(1.12)}
+@media (prefers-reduced-motion: reduce){.card,.card .ic{transition:none!important;transform:none!important}}
 /* ===== 学习路径横滑 carousel(V2.0.9):左右循环可拖动,替代溢出箭头 ===== */
 .rm-wrap{position:relative;margin:16px 0 6px}
 .roadmap{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding:6px 6px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab}
@@ -104,6 +170,10 @@ html:not([data-skin]) .card:hover::before{opacity:1}
 .rm-progress{display:flex;gap:6px;justify-content:center;margin-top:2px}
 .rm-dot{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.16);transition:.25s;cursor:pointer;border:none;padding:0}
 .rm-dot.on{width:22px;background:linear-gradient(90deg,#2563eb,#3b82f6)}
+/* 工序卡:线框工序号章 + 图框化卡面 */
+.rm-step{background:var(--dwg-plate);border:1px solid var(--dwg-line);border-radius:10px}
+.rm-step .rm-num{width:28px;height:28px;border-radius:5px;background:transparent;border:1.5px solid var(--dwg-accent);color:var(--dwg-accent);font-family:Consolas,"Courier New",monospace;font-weight:700}
+.rm-step .rm-links a{border-radius:4px}
 /* 浅色主题(双选择器,FOUC 纪律) */
 html:not([data-theme-early="dark"]) .rm-nav {background:rgba(255,255,255,.88);border-color:rgba(37,99,235,.3);color:#2563eb;box-shadow:0 6px 18px rgba(40,80,160,.16)}
 html:not([data-theme-early="dark"]) .rm-nav:hover {background:#2563eb;color:#fff}
@@ -111,28 +181,87 @@ html:not([data-theme-early="dark"]) .rm-dot {background:rgba(60,80,120,.22)}
 html:not([data-theme-early="dark"]) .rm-dot.on {background:linear-gradient(90deg,#2563eb,#3b82f6)}
 /* ===== 版本徽章精修(V2.0.9):玻璃胶囊 + 呼吸更新点 + 等宽字号 ===== */
 .ver-badge{display:none;margin-left:14px;align-items:center;gap:7px;font-size:11.5px;font-family:Consolas,"Courier New",monospace;letter-spacing:.3px;color:#9aa4b2;text-decoration:none;border:1px solid rgba(148,163,184,.32);border-radius:999px;padding:5px 13px;background:rgba(148,163,184,.07);white-space:nowrap;transition:transform .25s cubic-bezier(.22,1.2,.36,1),border-color .18s,color .18s,box-shadow .25s}
+/* ===== Hero 图纸化:左文案右机器人展台;≥1024px 双栏(主流屏可见签名元素),≥1320px 全尺寸 ===== */
 #heroStars{position:absolute;inset:0;width:100%;height:100%;opacity:.8;pointer-events:none}
-/* ===== Hero 极光流场(V2.1.12):纯 CSS 渐变斑缓慢位移(transform 合成器动画,
-   不占 rAF);滚出视口由 JS 暂停;浅色下降到极淡避免脏背景 ===== */
-.aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit}
-/* 不用 filter:blur——超大模糊层在部分环境引发渲染拼接异常;radial-gradient 自带柔边即可 */
-.aurora i{position:absolute;width:64%;height:76%;opacity:.5;border-radius:50%}
-.aurora i:nth-child(1){left:-14%;top:-30%;background:radial-gradient(closest-side,rgba(59,130,246,.42),rgba(59,130,246,.12) 55%,transparent 75%);animation:aur1 26s ease-in-out infinite alternate}
-.aurora i:nth-child(2){right:-18%;top:-20%;background:radial-gradient(closest-side,rgba(14,165,233,.32),rgba(14,165,233,.08) 55%,transparent 75%);animation:aur2 33s ease-in-out infinite alternate}
-.aurora i:nth-child(3){left:22%;bottom:-50%;background:radial-gradient(closest-side,rgba(147,112,219,.26),rgba(147,112,219,.07) 55%,transparent 75%);animation:aur3 39s ease-in-out infinite alternate}
-.aurora.off i,.hero.off .aurora i{animation-play-state:paused}
-/* V2.1.14:hero 滚出视口时暂停双光晕的 transform 动画(离屏不占合成器) */
-.hero.off::before,.hero.off::after{animation-play-state:paused}
-/* V2.1.12:光晕用透明度呼吸而非位移——大元素 translate 动画在部分合成器下产生
-   tile 错位伪影;opacity 动画最稳,明暗流转同样有"活着"的感觉 */
-.aurora i:nth-child(1){animation:aurGlow 14s ease-in-out infinite alternate}
-.aurora i:nth-child(2){animation:aurGlow 18s ease-in-out infinite alternate-reverse}
-.aurora i:nth-child(3){animation:aurGlow 23s ease-in-out infinite alternate}
-@keyframes aurGlow{from{opacity:.3}to{opacity:.6}}
-html:not([data-theme-early="dark"]) .aurora i {opacity:.2}
-html:not([data-theme-early="dark"]) .aurora i {animation-duration:20s}
-.aurora i:nth-child(2){background:radial-gradient(closest-side,rgba(14,165,233,.26),rgba(14,165,233,.06) 55%,transparent 75%)}
-@media (prefers-reduced-motion: reduce){.aurora i{animation:none}}
+.hero .glass-kicker{font-family:Consolas,"Courier New",monospace;font-size:10.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--dwg-note);border:1px solid var(--dwg-line);border-radius:4px;padding:5px 11px;display:inline-block;background:transparent}
+.hero .glass-title{font-size:clamp(34px,3.4vw,46px);letter-spacing:.2px;line-height:1.2;font-weight:800}
+.hero .glass-title b{color:var(--dwg-accent);font-weight:900}
+.hero .glass-rule{width:150px;height:auto;margin:14px 0;background:none;border-top:1px solid var(--dwg-line2);position:relative}
+.hero .glass-rule::after{content:"";position:absolute;right:0;top:-3.5px;width:1px;height:8px;background:var(--dwg-line2)}
+/* 统计行 → 规格铭牌:hairline 竖分隔 + 等宽数字 */
+.hero .stats{display:flex;justify-content:center;gap:0;border:1px solid var(--dwg-line2);border-radius:8px;background:var(--dwg-plate);margin:22px 0 6px;max-width:640px}
+.hero .stat{flex:1;text-align:center;padding:12px 6px 10px;position:relative}
+.hero .stat + .stat::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:1px;background:var(--dwg-line)}
+.hero .stats .stat .v{font-family:Consolas,"Courier New",monospace;font-size:25px;font-weight:700;color:var(--dwg-ink);min-width:3ch;font-variant-numeric:tabular-nums;display:inline-block;text-align:center}
+.hero .stat .k{font-size:11px;color:var(--dwg-note);margin-top:3px;letter-spacing:.04em}
+@media (max-width:560px){.hero .stats{flex-wrap:wrap;max-width:none}.hero .stat{flex:1 1 30%}.hero .stat + .stat::before{display:none}}
+.hero .hero-search input{background:var(--dwg-plate);border:1px solid var(--dwg-line2);border-radius:7px;color:var(--dwg-ink);font-size:13.5px;padding:11px 14px}
+.hero .hero-search input:focus{border-color:var(--dwg-accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.hero .hero-search button{background:var(--dwg-btn);border:none;color:#fff;font-size:13.5px;font-weight:700;padding:0 20px;border-radius:7px;cursor:pointer;font-family:inherit}
+.hero .hero-search button:hover{filter:brightness(1.12)}
+/* 主题分段开关:去渐变,实色蓝图 + 小圆角 */
+.theme-seg{border-radius:8px}
+.theme-seg button{display:inline-flex;align-items:center;gap:6px;border-radius:5px;white-space:nowrap;padding:7px 12px}
+.theme-seg button svg{width:13px;height:13px;flex-shrink:0}
+.theme-seg button.on{background:var(--dwg-btn);box-shadow:none}
+/* 基础(≤1023px):单栏居中,机器人隐藏(手机省电省流量) */
+.hero .hero-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0;padding:14px 20px 0;text-align:center;max-width:1120px;margin:0 auto;position:relative;z-index:1}
+.hero .hero-copy{text-align:center;min-width:0;position:relative;z-index:1}
+.hero .hero-copy .sub{max-width:640px;margin-left:auto;margin-right:auto;font-size:14.5px;line-height:1.85}
+.hero .glass-rule{margin-left:auto;margin-right:auto}
+.hero .stats{margin-left:auto;margin-right:auto}
+.hero .hero-search{margin-left:auto;margin-right:auto}
+.hero .hero-ctrl{margin-top:14px;display:flex;align-items:center;gap:12px;justify-content:center}
+.hero .hero-side{display:none}
+/* ≥1024px:双栏,展台缩配(232px 栏)——主流笔记本/125% 缩放屏可见签名元素 */
+@media (min-width:1024px){
+  .hero .hero-grid{grid-template-columns:minmax(0,1fr) 232px;gap:34px;padding:16px 30px 0;text-align:left}
+  .hero .hero-copy{text-align:left}
+  .hero .hero-copy .sub{margin-left:0;margin-right:0;max-width:560px}
+  .hero .glass-rule{margin-left:0;margin-right:0}
+  .hero .stats{margin-left:0;margin-right:0;justify-content:flex-start;max-width:560px}
+  .hero .hero-search{margin-left:0;margin-right:0;max-width:500px}
+  .hero .hero-ctrl{justify-content:flex-start}
+  .hero .hero-side{position:relative;min-height:342px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+  .hero .hero-stage{width:206px;height:240px}
+  .hero-halo{width:280px;height:280px;bottom:-16px}
+}
+/* ≥1320px:全尺寸展台 */
+@media (min-width:1320px){
+  .hero .hero-grid{grid-template-columns:minmax(0,1fr) 300px;gap:44px;padding:12px 34px 0}
+  .hero .hero-stage{width:266px;height:300px}
+  .hero .hero-side{min-height:372px}
+  .hero-halo{width:350px;height:350px;bottom:-22px}
+}
+/* 右栏:展台光晕 + 注脚 */
+.hero-halo{position:absolute;left:50%;transform:translateX(-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(110,165,255,.16),rgba(110,165,255,.04) 55%,transparent 74%);filter:blur(4px)}
+html:not([data-theme-early="dark"]) .hero-halo{background:radial-gradient(closest-side,rgba(80,140,240,.12),rgba(80,140,240,.03) 55%,transparent 74%)}
+.hero .hero-stage{position:relative;left:auto;bottom:auto;z-index:2;background:transparent;border:none;box-shadow:none;border-radius:0;overflow:visible;pointer-events:none}
+/* 序号球标注:装配图 callout,可点跳对应板块 */
+.callouts{position:absolute;inset:0;pointer-events:none;z-index:4}
+.callouts .co{pointer-events:auto;position:absolute;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--dwg-mark);color:var(--dwg-mark);background:var(--dwg-plate);display:flex;align-items:center;justify-content:center;font-family:Consolas,"Courier New",monospace;font-size:11px;font-weight:700;text-decoration:none;transition:background .2s,color .2s,transform .2s}
+.callouts .co:hover{background:#f0a437;color:#0d1117;transform:scale(1.12)}
+html:not([data-theme-early="dark"]) .callouts .co:hover{background:#b45309;color:#fff}
+.callouts .co::after{content:"";position:absolute;top:50%;width:26px;border-top:1px dashed var(--dwg-mark);opacity:.55}
+.callouts .co-l{left:-4px}
+.callouts .co-l::after{left:24px}
+.callouts .co-r{right:-4px}
+.callouts .co-r::after{right:24px}
+/* 尺寸线:展台基线装饰 */
+.dim{position:relative;z-index:2;display:flex;align-items:center;gap:10px;margin:12px 0 8px;font-family:Consolas,"Courier New",monospace;font-size:9px;letter-spacing:.26em;color:var(--dwg-note);white-space:nowrap;pointer-events:none}
+.dim i{position:relative;flex:0 0 58px;height:1px;background:var(--dwg-line2)}
+.dim i::before,.dim i::after{content:"";position:absolute;top:-3px;width:1px;height:7px;background:var(--dwg-line2)}
+.dim i::before{left:0}
+.dim i::after{right:0}
+.stage-note{position:relative;z-index:2;margin:0 0 8px;font-size:10px;letter-spacing:.22em;color:#64748b;opacity:.75;white-space:nowrap;pointer-events:none}
+html:not([data-theme-early="dark"]) .stage-note{color:#5a6a85}
+/* 天气徽章(ROBO-Q 头顶状态):双主题配色,由 chibi-robot.js 挂类名 */
+.chibi-badge{background:rgba(255,255,255,.62);color:#5a7ba6;border-color:rgba(140,180,230,.35)}
+html:not([data-theme-early="dark"]) .chibi-badge{background:rgba(255,255,255,.72);color:#5a7ba6;border-color:rgba(140,180,230,.35)}
+html[data-theme-early='dark'] .chibi-badge{background:rgba(18,26,42,.6);color:#9fb6dd;border-color:rgba(120,160,220,.28)}
+.hero-3d{position:absolute;inset:0;pointer-events:none}
+.hero-3d canvas{pointer-events:auto;touch-action:pan-y}
+@media (prefers-reduced-motion: reduce){.hero-3d{display:none}}
 .ver-badge i{width:6px;height:6px;border-radius:99px;background:#22c55e;box-shadow:0 0 7px rgba(34,197,94,.85);animation:verBlink 2.4s ease-in-out infinite}
 .ver-badge:hover{color:#60a5fa;border-color:rgba(59,130,246,.6);transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.2);text-decoration:none}
 @keyframes verBlink{0%,100%{opacity:1}50%{opacity:.35}}
@@ -212,45 +341,53 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   <!-- ================= Hero ================= -->
     <div class="hero glass-noise" style="position:relative;border-radius:0 0 26px 26px">
     <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
-    <canvas id="heroStars"></canvas>
-    <div class="glass-kicker">HUMANOID ROBOT LEARNING LAB</div>
-    <h1 class="glass-title" style="font-size:36px;margin-top:10px">人形机器人<b>学习站</b></h1>
-    <div class="glass-rule"></div>
-    <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
-    <span class="sub-meta">零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</span></div>
-    <div class="stats">
-      <div class="stat"><div class="v" id="statPages">101</div><div class="k">学习页面</div></div>
-      <div class="stat"><div class="v" id="statTracked">98</div><div class="k">可打卡页面</div></div>
-      <div class="stat"><div class="v" id="statSecs">9</div><div class="k">学习板块</div></div>
-      <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
-      <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
-    </div>
-    <div class="hero-search">
-      <input id="hpSearchInput" placeholder="搜索:FOC、谐波减速器、ROS2、Isaac、VLA、灵巧手…" onkeydown="if(event.key==='Enter')hpSearch()">
-      <button onclick="hpSearch()">全站搜索</button>
-    </div>
-    <div style="margin-top:18px;text-align:center">
-      <div class="theme-seg" role="group" aria-label="风格切换">
-        <button data-t="dark" onclick="Site.setTheme('dark', event)">🌙 深色风格</button>
-        <button data-t="light" onclick="Site.setTheme('light', event)">☀️ 极简浅色</button>
+    <canvas id="heroStars" aria-hidden="true"></canvas>
+    <div class="reg" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="glass-kicker">DWG NO. HRL-2026 · HUMANOID ROBOT LEARNING LAB</div>
+        <h1 class="glass-title" style="margin-top:10px">人形机器人<b>学习站</b></h1>
+        <div class="glass-rule"></div>
+        <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
+        <span class="sub-meta">零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</span></div>
+        <div class="stats">
+          <div class="stat"><div class="v" id="statPages">103</div><div class="k">学习页面</div></div>
+          <div class="stat"><div class="v" id="statTracked">98</div><div class="k">可打卡页面</div></div>
+          <div class="stat"><div class="v" id="statSecs">9</div><div class="k">学习板块</div></div>
+          <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
+          <div class="stat"><div class="v">∞</div><div class="k">前沿知识</div></div>
+        </div>
+        <div class="hero-search">
+          <input id="hpSearchInput" placeholder="搜索:FOC、谐波减速器、ROS2、Isaac、VLA、灵巧手…" onkeydown="if(event.key==='Enter')hpSearch()">
+          <button onclick="hpSearch()">全站搜索</button>
+        </div>
+        <div class="hero-ctrl">
+          <div class="theme-seg" role="group" aria-label="风格切换">
+            <button data-t="dark" onclick="Site.setTheme('dark', event)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>深色风格</button>
+            <button data-t="light" onclick="Site.setTheme('light', event)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>极简浅色</button>
+          </div>
+          <a id="verBadge" class="ver-badge" href="#version" title="查看版本与更新历史"><i></i>v—</a>
+        </div>
       </div>
-      <a id="verBadge" class="ver-badge" href="#version" title="查看版本与更新历史"><i></i>v—</a>
-    </div>
-    <div class="tags">
-      <span class="tag">宇树 H1 / G1 / 智元 X1 官方模型</span>
-      <span class="tag">FOC 三环控制</span>
-      <span class="tag">谐波 / 行星 / 摆线减速器</span>
-      <span class="tag">SimpleFOC / ODrive / MotorOS</span>
-      <span class="tag">ROS2 / MuJoCo / Isaac Lab</span>
-      <span class="tag">VLA 与具身智能</span>
-      <span class="tag">NPU 与数字 IC 设计</span>
-      <span class="tag">现代控制 / ADRC / 观测器</span>
+      <div class="hero-side">
+        <div class="hero-halo" aria-hidden="true"></div>
+        <div class="hero-stage">
+          <div class="hero-3d" id="heroChibi" aria-hidden="true"></div>
+        </div>
+        <div class="callouts" aria-label="装配序号标注,点击直达对应板块">
+          <a class="co co-l" style="top:13%" href="#sec2" title="① 关节模组 → 硬件基础" aria-label="序号1 关节模组,跳转硬件基础板块"><b>1</b></a>
+          <a class="co co-r" style="top:44%" href="#sec0" title="② 减速器与 3D 拆解 → 3D 解剖" aria-label="序号2 减速器与3D拆解,跳转3D解剖板块"><b>2</b></a>
+          <a class="co co-l" style="top:72%" href="#sec4" title="③ 控制算法 → 软件算法" aria-label="序号3 控制算法,跳转软件算法板块"><b>3</b></a>
+        </div>
+        <div class="dim" aria-hidden="true"><i></i><span>ROBO-Q&nbsp;1:1</span><i></i></div>
+        <div class="stage-note" aria-hidden="true">点一点换天气 · 拖一拖环视</div>
+      </div>
     </div>
   </div>
 
   <!-- ================= 学习路径 ================= -->
   <div class="learn-path" id="learn-path">
-    <div class="sec-title" style="margin-top:0"><span class="num">▶</span>新手学习路径 <span class="en">LEARNING PATH · 按顺序学,3 个月入门 · 可左右拖动</span><span class="bar"></span></div>
+    <div class="sec-title" style="margin-top:0"><span class="num">LP</span>新手学习路径 <span class="en">LEARNING PATH · 按顺序学,3 个月入门 · 可左右拖动</span><span class="bar"></span></div>
     <div class="rm-wrap">
       <button class="rm-nav prev" id="rmPrev" title="上一步" aria-label="上一步">‹</button>
       <div class="roadmap" id="roadmap">
@@ -334,25 +471,25 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     <a href="#sec1"><b>01</b>理论</a>
     <a href="#sec2"><b>02</b>硬件</a>
     <a href="#sec3"><b>03</b>实操</a>
-    <a href="#sec4"><b>06</b>软件算法</a>
-    <a href="#sec5"><b>07</b>前沿</a>
-    <a href="#sec6"><b>08</b>学习工具</a>
-    <a href="#sec7"><b>09</b>大模型</a>
-    <a href="#sec8"><b>10</b>NPU数字IC</a>
-    <a href="06_学习工具/08_仿真中心.html">🕹️ 仿真中心</a>
-    <a href="06_学习工具/06_学习地图.html">🗺️ 学习地图</a>
-    <a href="06_学习工具/09_动手项目清单.html">🛠️ 动手项目</a>
-    <a href="06_学习工具/12_闯关学习.html">🎯 闯关学习</a>
-    <a href="06_学习工具/11_保研复试面试题库.html">🎓 复试题库</a>
-    <a href="06_学习工具/18_学习路径规划.html">🛤️ 路径规划</a>
-    <a href="06_学习工具/16_保研英语面试.html">🗣️ 英语面试</a>
-    <a href="06_学习工具/13_AI答疑助手.html">🤖 AI答疑</a>
-    <a href="06_学习工具/17_AI_Agent介绍.html">🧭 Agent 介绍</a>
+    <a href="#sec4"><b>04</b>软件算法</a>
+    <a href="#sec5"><b>05</b>前沿</a>
+    <a href="#sec6"><b>06</b>学习工具</a>
+    <a href="#sec7"><b>07</b>大模型</a>
+    <a href="#sec8"><b>08</b>NPU数字IC</a>
+    <a href="06_学习工具/08_仿真中心.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21h14"/><circle cx="12" cy="17" r="3"/><path d="M12 14V7"/><circle cx="12" cy="5" r="2"/></svg>仿真中心</a>
+    <a href="06_学习工具/06_学习地图.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>学习地图</a>
+    <a href="06_学习工具/09_动手项目清单.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>动手项目</a>
+    <a href="06_学习工具/12_闯关学习.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5"/></svg>闯关学习</a>
+    <a href="06_学习工具/11_保研复试面试题库.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/></svg>复试题库</a>
+    <a href="06_学习工具/18_学习路径规划.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M7 19h7a4 4 0 0 0 4-4 4 4 0 0 0-4-4h-4a4 4 0 0 1-4-4V5"/></svg>路径规划</a>
+    <a href="06_学习工具/16_保研英语面试.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>英语面试</a>
+    <a href="06_学习工具/13_AI答疑助手.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="10" rx="2"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><path d="M9 12.5v1M15 12.5v1"/></svg>AI答疑</a>
+    <a href="06_学习工具/17_AI_Agent介绍.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z"/></svg>Agent 介绍</a>
     <a href="#progress-sec">✓ 我的进度</a>
   </nav>
 
   <div class="sec" id="sec0">
-    <div class="sec-title"><span class="num">0</span>3D 解剖式知识可视化 <span class="en">ANATOMY</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">0</span>3D 解剖式知识可视化 <span class="en">SHEET 00 · ANATOMY</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card featured" href="00_3D解剖/人形机器人解剖式知识可视化.html">
         <span class="go">进入 →</span>
@@ -383,7 +520,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 
   <!-- ================= 1 · 理论 ================= -->
   <div class="sec" id="sec1">
-    <div class="sec-title"><span class="num">1</span>第一部分 · 理论入门 <span class="en">THEORY</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">1</span>第一部分 · 理论入门 <span class="en">SHEET 01 · THEORY</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card" href="01_理论入门/01_整体知识框架_思维导图.html">
         <span class="go">进入 →</span>
@@ -426,7 +563,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 
   <!-- ================= 2 · 硬件 ================= -->
   <div class="sec" id="sec2">
-    <div class="sec-title"><span class="num">2</span>第二部分 · 硬件基础 <span class="en">HARDWARE</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">2</span>第二部分 · 硬件基础 <span class="en">SHEET 02 · HARDWARE</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card" href="02_硬件基础/04_硬件设计通用要点_避坑指南.html">
         <span class="go">进入 →</span>
@@ -518,7 +655,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 
   <!-- ================= 3 · 实操 ================= -->
   <div class="sec" id="sec3">
-    <div class="sec-title"><span class="num">3</span>第三部分 · 项目实操 <span class="en">PRACTICE</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">3</span>第三部分 · 项目实操 <span class="en">SHEET 03 · PRACTICE</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card featured" href="03_项目实操/11_电源管理功率链路分析/">
         <span class="go">进入 →</span>
@@ -562,7 +699,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   <!-- ================= 4 · 进阶 ================= -->
   <!-- ================= 6 · 软件与算法(新) ================= -->
   <div class="sec" id="sec4">
-    <div class="sec-title"><span class="num">4</span>第四部分 · 软件算法与升级进阶 <span class="en">SOFTWARE & ALGORITHM · 全新</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">4</span>第四部分 · 软件算法与升级进阶 <span class="en">SHEET 04 · SOFTWARE &amp; ALGORITHM · 全新</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card" href="04_软件与算法/01_软件学习路线图.html">
         <span class="go">进入 →</span>
@@ -701,7 +838,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 
   <!-- ================= 7 · 前沿(新) ================= -->
   <div class="sec" id="sec5">
-    <div class="sec-title"><span class="num">5</span>第五部分 · 前沿知识库 <span class="en">FRONTIER · 全新</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">5</span>第五部分 · 前沿知识库 <span class="en">SHEET 05 · FRONTIER · 全新</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card featured" href="05_前沿知识库/01_全球人形机器人机型全景.html">
         <span class="go">进入 →</span>
@@ -756,7 +893,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 
   <!-- ================= 8 · 学习工具(新) ================= -->
   <div class="sec" id="sec6">
-    <div class="sec-title"><span class="num">6</span>第六部分 · 学习工具 <span class="en">TOOLS · 全新</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">6</span>第六部分 · 学习工具 <span class="en">SHEET 06 · TOOLS · 全新</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card" href="06_学习工具/01_术语词典.html">
         <span class="go">进入 →</span>
@@ -861,11 +998,13 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
         <div class="t">学习路径规划 · 6 条有序路径</div>
         <div class="d">新手入门/关节驱动控制/数字IC与NPU/机器人软件/具身智能/保研冲刺——阶段关卡+打卡进度联动,"继续学习"永远指向你的下一站。</div>
       </a>
+      <a class="card" href="06_学习工具/19_学习笔记.html"><span class="go">进入 →</span><div class="ic">📓</div><div class="t">学习笔记 · 知识树</div><div class="d">跨页学习笔记汇总:知识树按板块看每页打卡与笔记密度,时间流按天回溯文字/链接/图片/划线,支持导出 JSON 备份;全部仅存本机不上传</div></a>
+      <a class="card" href="06_学习工具/20_笔记排版器.html"><span class="go">进入 →</span><div class="ic">🧾</div><div class="t">笔记排版器</div><div class="d">粘贴草稿自动识别标题/列表/代码块/公式/表格/图片题注,实时预览站点风格排版,一键复制干净 HTML,讲义笔记博客通用</div></a>
     </div>
   </div>
 
   <div class="sec" id="sec7">
-    <div class="sec-title"><span class="num">7</span>第七部分 · 大模型与具身智能 <span class="en">LLM · V2.1.0 新板块</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">7</span>第七部分 · 大模型与具身智能 <span class="en">SHEET 07 · LLM · V2.1.0 新板块</span><span class="bar"></span></div>
     <div class="grid">
       <a class="card featured" href="07_大模型与具身智能/02_DeepSeek架构精讲.html"><span class="go">进入 →</span><div class="ic">🐋</div><div class="t">DeepSeek 架构精讲:从 V3 到 V4</div><div class="d">MoE/MLA/MTP/FP8 四大创新 → R1 纯RL推理觉醒与四阶段管线 → 混合推理与稀疏注意力;机器人圈热门底座。</div></a>
       <a class="card" href="07_大模型与具身智能/01_大模型基础与MoE架构图解.html"><span class="go">进入 →</span><div class="ic">🧠</div><div class="t">大模型基础与 MoE 架构图解</div><div class="d">Transformer 最小知识、稠密 vs MoE、总参数≠激活参数、KV Cache 为什么贵。</div></a>
@@ -910,7 +1049,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 
   <!-- ================= 10 · NPU与数字IC设计(V2.1.15 新板块,卡片随页面登记逐步填充) ================= -->
   <div class="sec" id="sec8">
-    <div class="sec-title"><span class="num">8</span>第八部分 · NPU 与数字 IC 设计 <span class="en">NPU · RTL · UVM · V2.1.15 新板块</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">8</span>第八部分 · NPU 与数字 IC 设计 <span class="en">SHEET 08 · NPU · RTL · UVM · V2.1.15 新板块</span><span class="bar"></span></div>
     <div class="grid" id="sec8-grid">
       <a class="card featured" href="08_NPU与数字IC设计/01_板块总览与学习路线.html">
         <span class="go">进入 →</span>
@@ -1019,7 +1158,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 
   <!-- ================= 今日复习(SRS 间隔重复) ================= -->
   <div class="sec" id="srs-sec">
-    <div class="sec-title"><span class="num">🧠</span>今日复习 <span class="en">SPACED REPETITION · 学-练-测-复习闭环,答对间隔自动拉长(1→2→4→8→16 天)</span><span class="bar"></span></div>
+    <div class="sec-title"><span class="num">R</span>今日复习 <span class="en">SPACED REPETITION · 学-练-测-复习闭环,答对间隔自动拉长(1→2→4→8→16 天)</span><span class="bar"></span></div>
     <div class="progress-panel">
       <div id="srsPanel">加载中…</div>
     </div>
@@ -1027,14 +1166,18 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 
   <!-- ================= 版本与更新历史 ================= -->
   <div class="sec" id="version">
-    <div class="sec-title"><span class="num">★</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span>
+    <div class="sec-title"><span class="num">V</span>版本与更新历史 <span class="en">CHANGELOG · 点开每期查看具体更新</span><span class="bar"></span>
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.28</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-12 · 3D 模型反复加载失败修复(双 SW 缓存互删) + 英语音频二期664段 + 两处XSS修复 + 全站对比度与内容审查</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.29</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-12 · 3D 模型反复加载失败修复(双 SW 缓存互删) + 英语音频二期664段 + 两处XSS修复 + 全站对比度与内容审查</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
-                  <details class="faq" open>
+<details class="faq" open>
+        <summary>🏠 V2.1.29 · 2026-09-19 · 主页工程图纸风改版 + 学习笔记体系(M1/M2)+ 排版器/阅读模式/知识联动 + PocketBase 本地闭环(消毒层/云同步/教师补充) －</summary>
+        <div class="faq-a">🏠 <b>主页「工程图纸风」改版</b>:坐标纸网格 + 四角对位标记 + 图号章标题栏(SHEET 00~08)+ 规格铭牌统计 + 装配序号球①②③(可点直达板块)+ 尺寸线;双栏 hero 断点 1319→1024px;极光/星尘/光晕/顶光条氛围特效定版保留,与图纸层叠加共存。📓 <b>学习笔记 M1</b>:全站 ✏ 面板——文字/链接/图片引用/荧光笔三色四类条目,划线锚定(引文+次序)刷新精确恢复,面板搜索,导出导入;M2:<b>06-19 学习笔记汇总页</b>(知识树/时间流/统计/筛选)+「段落笔记」选中速记内嵌原文 + 划线点击气泡就地改色删除;🧾 <b>06-20 笔记排版器</b>:标题/列表/引用/代码/公式/表格/图片图注自动识别,实时预览一键复制 HTML。📖 <b>阅读模式</b>:沉浸态 + A± 三档字号 + 按页书签自动回位 + 连读胶囊;🔗 <b>词典知识联动</b>:相关术语/英语词卡/出现页面(2-gram 反查)/我的笔记。☁ <b>PocketBase 阶段一本地闭环</b>:Site.sanitizeHTML 白名单消毒层(题库/AI 共 5 处 sink)、notes/content 集合越权规则、笔记云同步(LWW)、教师补充按页讲义、本地三件套——云同步仅限本地预览(HTTPS 混合内容边界),完整富文本编辑留阶段二。🤖 ROBO-Q:跳起云朵消失修复(降峰+反向跟随)+ 肤色云朵暖调 + 无环境贴图自适应提灯(A-65)。🛠 自检新增 C15 共享 JS 语法 / C16 PRECACHE 存在性;登记工具 sec06 锚点修复;hero overflow:clip 根治锚点裁壳(A-64);页数口径 101→103;根目录会话产物 37MB gitignore;🔧 3D 拆解台 A-61/62/63 并行交付(详见 docs/审计/修复摘要_2026-09-19_3D拆解台.md)。✅ 一键自检 ALL CHECKS PASSED。</div>
+      </details>
+                  <details class="faq">
         <summary>🤖 V2.1.28 · 2026-09-12 · 3D 模型反复加载失败修复(双 SW 缓存互删) + 英语音频二期 + XSS修复 + 全站对比度与内容审查</summary>
         <div class="faq-a">🤖 <b>3D 模型加载失败根治(台账 A-57)</b>:根因是<b>双 Service Worker 缓存互删</b>——根 SW 每次发版会清空 3D 专用 SW 的模型缓存(16-18MB)与引擎缓存,3D SW 反向又清空主站缓存;两份缓存同源共享、互相不知晓,于是每次站点发版后 3D 页被迫全量重下,弱网下引擎 25 秒超时/模型挂起。现确立<b>缓存所有权约定</b>(根 SW 只清 hrl-site-*、3D SW 只清 robot-3d-*,模型缓存独立名永不随版本清空),3D SW bump v30;伴随:'9' 死端标记加 30 分钟过期(一次网络故障不再锁死整个标签页会话)、URDF 请求 20 秒超时+重试(服务器僵死时不再无限挂起)(台账 A-60);防回归入一键自检 C14。🔊 <b>英语音频二期</b>:285 句+342 词扩至 <b>664 段</b>(新增 step by step 等词组);新增预热器(开页/切回页签把本页音频提前抓进 SW 缓存,空闲 4 秒补齐全站,连播预取下一句);修连点时新旧读音叠播(AbortError 误判);MP3 按内容寻址永不回源,避免弱网下带宽争用。🔁 <b>循环播放</b>:工具栏新增循环开关——单句 🔊 即单句循环跟读,「▶ 朗读」即整卡循环反复听(睡前闭眼听),偏好自动记忆。🛡 <b>安全(台账 A-58/A-59)</b>:修复 404 旧链接提示与 AI 答疑 <code>?ctx=</code> 两处<b>反射型 XSS</b>(同源脚本可读 localStorage 里的 API Key 与笔记),定点断言入 C14。🧭 <b>锚点落点校正扩展</b>:首次进入版面未稳时点上栏板块/页内锚点落点漂移——重锚升级为 hashchange 也接管+监听版面高度到稳定为止(上限 6.5s),手动滚动仍优先。🎨 <b>全站对比度轮</b>:新增零依赖《校验对比度.js》做浅/深双主题 WCAG 审计,<b>真实缺陷约 70 处修复</b>——浅色主题悬空浅灰 #94a3b8 换钦定灰(16 页)、只有深色配色的状态/语义类(答对答错反馈、导航钮、术语卡、NEW 徽章等)补齐浅色覆写;SVG 全站审计 39 页 0 错 0 疑。📋 <b>全站审查报告</b>:docs/审计/全站审查报告_2026-09-12.md(隐藏 bug 清单、四专业内容扩展路线、安全四链路、后端价格与"免费"真实性当日核实、本地 PocketBase 三阶段路线);板块评分九板块 B/C 无 D(07 大模型 91.9 居首)。</div>
       </details>
@@ -1275,7 +1418,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.28(2026-09-12) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.29(2026-09-19) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1368,14 +1511,13 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   });
 </script>
 <script>
-/* Hero 星尘背景(2D 零依赖:150 粒漂移+闪烁+鼠标视差) */
+/* Hero 星尘背景(2D 零依赖:150 粒漂移+闪烁+鼠标视差)——V2.1.29 图纸化一度移除,应用户要求恢复 */
 (function(){
   var c = document.getElementById("heroStars");
   if(!c || !c.getContext) return;
   var ctx = c.getContext("2d");
   var W, H, S = [], mx = 0;
-  /* V2.1.8:星尘调色板按主题切换——此前淡蓝星点在浅色近白背景上完全不可见,
-     浅色改用深蓝+琥珀深色星点,深色保持原有的浅蓝/暖橙 */
+  /* 星尘调色板按主题切换:浅色用深蓝+琥珀深色星点(淡蓝星点在浅色近白背景上不可见) */
   function palette(){
     var t = document.body.getAttribute("data-theme");
     return (t === "light" || !t)
@@ -1394,19 +1536,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     });
   }
   size(); addEventListener("resize", size);
-  /* V2.1.14:hero 矩形缓存——此前每次 pointermove 都 getBoundingClientRect(强制布局);
-     仅 r.left/r.width 参与 mx 计算,纵向滚动不影响二者,resize 时失效重测即可 */
+  /* hero 矩形缓存:仅 r.left/r.width 参与 mx 计算,resize 时失效重测 */
   var heroR = null;
   addEventListener("resize", function(){ heroR = null; });
   c.parentNode.addEventListener("pointermove", function(e){
     if(!heroR) heroR = c.parentNode.getBoundingClientRect();
     mx = (e.clientX - heroR.left)/heroR.width - 0.5;
   });
-  /* V2.1.7:rAF 可暂停——标签页隐藏或 Hero 滚出视口时停止绘制,恢复可见再续,
-     后台标签与移动端不再空耗电;IO 不支持时退化为常驻绘制(旧行为)
-     V2.1.12b:恢复统一走幂等的 resume(),并加 2 秒看门狗自愈——此前恢复完全依赖
-     IO/visibilitychange 两个事件,任一被竞态吞掉 rAF 链就永久断裂(星星"时间久了
-     就没了"的根因);看门狗同时先取消遗留排队帧,杜绝多条恢复路径叠加出双循环 */
+  /* rAF 可暂停 + 2 秒看门狗自愈(IO/visibilitychange 竞态吞链后自动续) */
   var raf = 0, inView = true;
   function frame(){
     if(!W || document.hidden || !inView){ raf = 0; return; }
@@ -1440,16 +1577,23 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     else resume();
   });
   raf = requestAnimationFrame(frame);
-  setInterval(resume, 2000);   /* 看门狗:rAF 链断裂后 2 秒内自愈 */
+  setInterval(resume, 2000);   /* 看门狗 */
 })();
 
-/* 板块卡片 3D tilt + 随鼠标光泽(V2.1.8;V2.1.12 性能修正):
-   - 移除常驻 will-change:此前 77 张卡各建一个常驻合成层,内存/合成开销大(变卡主因)
-   - closest 查找从每个 pointermove 事件挪进 rAF(每帧最多一次)
-   仅精确指针(hover:hover + pointer:fine)设备启用,峰值 ±4° */
+/* hero 离屏暂停:极光呼吸 + 双色光晕在滚出视口时停帧,回来再续 */
+(function(){
+  var hero = document.querySelector(".hero");
+  if(!hero || !("IntersectionObserver" in window)) return;
+  new IntersectionObserver(function(es){
+    hero.classList.toggle("off", !es[0].isIntersecting);
+  }).observe(hero);
+})();
+
+/* 板块卡片 3D tilt + 随鼠标光泽(V2.1.8 起的经典微交互,V2.1.29 一度移除,应用户要求恢复):
+   仅精确指针设备启用;closest 查找挪进 rAF(每帧最多一次),无常驻合成层 */
 (function(){
   if(!window.matchMedia || !matchMedia("(hover:hover) and (pointer:fine)").matches) return;
-  var SEL = ".sec-grid .card, .board-grid .card, .grid .card";
+  var SEL = ".grid .card";
   var probe = document.querySelector(SEL);
   if(!probe) return;
   var st = document.createElement("style");
@@ -1484,17 +1628,6 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   document.documentElement.addEventListener("pointerleave", function(){
     if(cur){ cur.style.transform = ""; cur = null; }
   });
-})();
-
-/* hero 离屏暂停(V2.1.12 极光;V2.1.14 扩展到 ::before/::after 光晕):
-   hero 滚出视口即暂停全部装饰动画(极光呼吸 + blur(90px) 光晕),回来再续。
-   统一观察 .hero 自身,不再分别挂在 .aurora 上 */
-(function(){
-  var hero = document.querySelector(".hero");
-  if(!hero || !("IntersectionObserver" in window)) return;
-  new IntersectionObserver(function(es){
-    hero.classList.toggle("off", !es[0].isIntersecting);
-  }).observe(hero);
 })();
 
 /* 顶栏「板块 ▾」下拉(V2.1.0) */
@@ -1743,6 +1876,31 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       }, 150);
     });
   })();
+</script>
+<!-- Hero Q版机器人 ROBO-Q:three 取自 00_3D解剖本地库(npmmirror 兜底),建模在 _assets/chibi-robot.js;失败静默降级,不影响页面 -->
+<script type="module">
+(async function(){
+  const el = document.getElementById("heroChibi");
+  if(!el || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  let THREE = null;
+  try{ THREE = await import("./00_3D解剖/lib/three.module.js"); }
+  catch(e){
+    try{ THREE = await import("https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js"); }
+    catch(e2){ return; }
+  }
+  try{
+    await new Promise((res, rej)=>{
+      const sc = document.createElement("script");
+      sc.src = "./_assets/chibi-robot.js";
+      sc.onload = res; sc.onerror = rej;
+      document.head.appendChild(sc);
+    });
+    let RoomEnv = null;
+    try{ RoomEnv = await import("./00_3D解剖/lib/addons/environments/RoomEnvironment.js"); }catch(e){}
+    const h = window.ChibiRobot.mount(el, THREE, { RoomEnvironment: RoomEnv && RoomEnv.RoomEnvironment });
+    if(h) el.addEventListener("pointerdown", ()=>el.classList.add("touched"), { once:false });
+  }catch(e){ /* 装饰性组件:失败静默 */ }
+})();
 </script>
 </body>
 </html>

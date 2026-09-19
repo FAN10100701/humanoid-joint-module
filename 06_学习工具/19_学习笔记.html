@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 学习笔记</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(前缀 nb- 页内作用域,与全局/notes.js 注入类名无冲突) */
+  .nb-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+  .nb-stat{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:14px 16px}
+  html:not([data-theme-early="dark"]) .nb-stat{background:rgba(255,255,255,.87);border-color:rgba(255,255,255,.9);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+  .nb-stat .n{font-family:Consolas,"Courier New",monospace;font-size:24px;font-weight:700;color:#3b82f6;font-variant-numeric:tabular-nums}
+  html:not([data-theme-early="dark"]) .nb-stat .n{color:#1d4ed8}
+  .nb-stat .k{font-size:12px;color:#9aa4b2;margin-top:2px}
+  html:not([data-theme-early="dark"]) .nb-stat .k{color:#64748b}
+  .nb-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 10px;align-items:center}
+  .nb-tabs button{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:13px;padding:7px 16px;border-radius:999px;cursor:pointer;font-family:inherit;transition:.15s}
+  .nb-tabs button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);border-color:transparent;color:#fff;font-weight:700}
+  html:not([data-theme-early="dark"]) .nb-tabs button{background:rgba(255,255,255,.7);border-color:rgba(60,80,120,.16);color:#64748b}
+  html:not([data-theme-early="dark"]) .nb-tabs button.on{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
+  .nb-tools{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .nb-tools label{font-size:12px;color:#9aa4b2;display:flex;align-items:center;gap:5px;cursor:pointer}
+  html:not([data-theme-early="dark"]) .nb-tools label{color:#64748b}
+  .nb-tools button{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9ecbff;font-size:12px;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:inherit}
+  .nb-tools button:hover{border-color:rgba(59,130,246,.5)}
+  html:not([data-theme-early="dark"]) .nb-tools button{background:rgba(255,255,255,.75);border-color:rgba(60,80,120,.18);color:#1d4ed8}
+  .nb-tip{font-size:12px;color:#6b7280;margin:0 0 12px;line-height:1.7}
+  /* ---- 知识树 ---- */
+  .nb-tree{margin:6px 0}
+  .nb-branch{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;margin:10px 0;overflow:hidden}
+  html:not([data-theme-early="dark"]) .nb-branch{background:rgba(255,255,255,.87);border-color:rgba(255,255,255,.9);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+  .nb-bh{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none}
+  .nb-bh:hover{background:rgba(59,130,246,.07)}
+  .nb-bh .key{font-family:Consolas,"Courier New",monospace;font-size:11px;color:#9ecbff;border:1px solid rgba(59,130,246,.35);border-radius:5px;padding:2px 7px;flex-shrink:0}
+  html:not([data-theme-early="dark"]) .nb-bh .key{color:#1d4ed8;border-color:rgba(37,99,235,.35)}
+  .nb-bh .name{font-size:15px;font-weight:800;color:#fff}
+  html:not([data-theme-early="dark"]) .nb-bh .name{color:#0f172a}
+  .nb-bh .cnt{font-size:12px;color:#9aa4b2;margin-left:auto;white-space:nowrap}
+  html:not([data-theme-early="dark"]) .nb-bh .cnt{color:#64748b}
+  .nb-bh .cnt b{color:#3b82f6}
+  html:not([data-theme-early="dark"]) .nb-bh .cnt b{color:#1d4ed8}
+  .nb-bh .arr{color:#6b7280;font-size:12px;transition:transform .2s;flex-shrink:0}
+  .nb-branch.closed .nb-bh .arr{transform:rotate(-90deg)}
+  .nb-bar{height:5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;flex:1;max-width:180px}
+  .nb-bar i{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#22c55e);border-radius:99px}
+  html:not([data-theme-early="dark"]) .nb-bar{background:rgba(15,23,42,.08)}
+  .nb-leaves{padding:2px 14px 12px;display:none}
+  .nb-branch:not(.closed) .nb-leaves{display:block}
+  .nb-leaf{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;text-decoration:none;position:relative}
+  .nb-leaf::before{content:"";position:absolute;left:-8px;top:0;bottom:0;width:1px;background:rgba(148,163,184,.18)}
+  .nb-leaf:hover{background:rgba(59,130,246,.08)}
+  .nb-leaf .st{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:rgba(148,163,184,.35)}
+  .nb-leaf.done .st{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.5)}
+  .nb-leaf .t{font-size:13.5px;color:#c9d1d9;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html:not([data-theme-early="dark"]) .nb-leaf .t{color:#334155}
+  .nb-leaf.done .t{color:#86efac}
+  html:not([data-theme-early="dark"]) .nb-leaf.done .t{color:#15803d}
+  .nb-leaf .badge{font-size:10.5px;color:#f0a437;background:rgba(240,164,55,.12);border:1px solid rgba(240,164,55,.4);border-radius:999px;padding:1px 8px;white-space:nowrap;flex-shrink:0}
+  html:not([data-theme-early="dark"]) .nb-leaf .badge{color:#b45309;background:rgba(180,83,9,.08);border-color:rgba(180,83,9,.4)}
+  /* ---- 时间流 ---- */
+  .nb-flow-day{font-size:12px;color:#6b7280;font-family:Consolas,"Courier New",monospace;margin:16px 0 6px}
+  html:not([data-theme-early="dark"]) .nb-flow-day{color:#64748b}
+  .nb-card{background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:12px 14px;margin:8px 0}
+  html:not([data-theme-early="dark"]) .nb-card{background:rgba(255,255,255,.87);border-color:rgba(255,255,255,.9);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+  .nb-card .ih{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .nb-card .pg{font-size:12px;color:#9ecbff;text-decoration:none}
+  .nb-card .pg:hover{text-decoration:underline}
+  html:not([data-theme-early="dark"]) .nb-card .pg{color:#1d4ed8}
+  .nb-card .tp{font-size:10px;color:#8b98a9;letter-spacing:.06em}
+  .nb-card .ts{margin-left:auto;font-size:10px;color:#8b98a9;font-family:Consolas,monospace}
+  .nb-card .tx{font-size:13px;color:#c9d1d9;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+  html:not([data-theme-early="dark"]) .nb-card .tx{color:#334155}
+  .nb-card .qt{font-size:12.5px;color:#b6c2d1;line-height:1.7}
+  html:not([data-theme-early="dark"]) .nb-card .qt{color:#475569}
+  .nb-card .lk{font-size:12.5px;color:#9ecbff;word-break:break-all;text-decoration:none}
+  html:not([data-theme-early="dark"]) .nb-card .lk{color:#1d4ed8}
+  .nb-card img{max-width:min(100%,320px);border-radius:8px;display:block;margin:4px 0}
+  .nb-cdot{display:inline-block;width:9px;height:9px;border-radius:50%}
+  .nb-empty{background:rgba(22,27,34,.6);border:1px dashed rgba(148,163,184,.3);border-radius:12px;padding:28px 20px;text-align:center;color:#9aa4b2;font-size:13px;line-height:2}
+  html:not([data-theme-early="dark"]) .nb-empty{background:rgba(255,255,255,.7);border-color:rgba(100,116,139,.3);color:#64748b}
+  @media (max-width:640px){.nb-tools{margin-left:0}}
+</style>
+<script src="../_assets/site-sections.js"></script>
+<script src="../_assets/search-index.js"></script>
+<script>
+  window.PAGE = {
+    pageId: "06-19",
+    root: "..",
+    breadcrumb: [
+      { t: "学习工具", u: "../index.html#sec6" },
+      { t: "学习笔记", u: "19_学习笔记.html" }
+    ],
+    prev: { t: "个人作品台", u: "14_个人作品台.html" },
+    next: { t: "笔记排版器", u: "20_笔记排版器.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>📓 学习笔记</h1>
+    <div class="sub">你的知识树 —— 枝干是九大板块,叶子是每一页,叶上的笔记数就是你下过功夫的地方;全部仅存本机浏览器,不上传</div>
+    <div class="tags">
+      <span class="tag">知识树</span>
+      <span class="tag">跨页汇总</span>
+      <span class="tag">时间流</span>
+      <span class="tag">导出备份</span>
+    </div>
+  </div>
+
+  <!-- ================= 统计 ================= -->
+  <div class="nb-stats" id="nbStats"></div>
+
+  <!-- ================= 工具行 ================= -->
+  <div class="nb-tabs">
+    <button id="tabTree" class="on" onclick="nbView('tree')">🌳 知识树</button>
+    <button id="tabFlow" onclick="nbView('flow')">🕒 时间流</button>
+    <div class="nb-tools">
+      <label><input type="checkbox" id="fHasNotes"> 只看有笔记的页</label>
+      <label><input type="checkbox" id="fTodo"> 只看未打卡</label>
+      <button onclick="nbExport()" title="导出全部笔记为 JSON,换设备迁移">导出</button>
+      <button onclick="document.getElementById('nbFile').click()" title="从备份 JSON 导入(覆盖现有)">导入</button>
+      <input type="file" id="nbFile" accept=".json,application/json" style="display:none" onchange="nbImport(this.files && this.files[0]); this.value=''">
+    </div>
+  </div>
+  <p class="nb-tip">💡 在各内容页点顶栏 ✏️ 按钮记录文字 / 链接 / 图片 / 荧光笔划线;本页是全库汇总。荧光笔三色语义:黄=概念、绿=例子、红=疑问。笔记不出网,换设备请用导出 / 导入。</p>
+
+  <!-- ================= 知识树 ================= -->
+  <div class="nb-tree" id="nbTree"></div>
+
+  <!-- ================= 时间流 ================= -->
+  <div id="nbFlow" style="display:none"></div>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+<script>
+/* 学习笔记汇总页(笔记提案 M2):知识树 + 时间流
+   数据源:SITE_SECTIONS(树干)/ SITE_SEARCH_INDEX(页题+URL)/
+          humanoid-site-progress-v1(打卡,只读)/ humanoid-notes-v1(笔记) */
+(function(){
+  "use strict";
+  var S = window.Site || {};
+  var KEY_NOTES = "humanoid-notes-v1";
+  var OVR = {   /* 00 板块文件名无 NN_ 前缀,手工映射(search-index 按标题同步,不硬编码题名) */
+    "00_3D解剖/减速器剖面图详解.html": "00-02",
+    "00_3D解剖/电机编码器与灵巧手3D拆解.html": "00-04",
+    "00_3D解剖/关节执行器内部原理3D实验室.html": "00-05"
+  };
+  function loadNotes(){
+    var d = null;
+    if(S.store && S.store.get){ d = S.store.get(KEY_NOTES); }
+    else{ try{ d = JSON.parse(localStorage.getItem(KEY_NOTES) || "null"); }catch(e){ d = null; } }
+    if(!d || typeof d !== "object" || !d.pages || typeof d.pages !== "object") d = { version: 1, pages: {} };
+    return d;
+  }
+  function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+  function p2(n){ return n < 10 ? "0" + n : "" + n; }
+  function fmtTs(ts){ var d = new Date(ts); return p2(d.getMonth()+1) + "-" + p2(d.getDate()) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()); }
+  function fmtDay(ts){ var d = new Date(ts); return d.getFullYear() + "-" + p2(d.getMonth()+1) + "-" + p2(d.getDate()); }
+  function typeName(it){ if(it.type === "text") return it.quote ? "段落笔记" : "文字"; return { link: "链接", image: "图片", hl: "划线" }[it.type] || "笔记"; }
+
+  /* pageId → { t, u }:search-index 的 u 推导 NN_ 页;00 板块走 OVR 映射(题名取自索引,不硬编码) */
+  function pageIndex(){
+    var map = {};
+    (window.SITE_SEARCH_INDEX || []).forEach(function(it){
+      var u = it.u || "";
+      if(OVR[u]){ map[OVR[u]] = { t: it.t, u: u }; return; }
+      var m = /^(\d{2})_[^\/]+\/(\d{2})_/.exec(u);
+      if(m) map[m[1] + "-" + m[2]] = { t: it.t, u: u };
+    });
+    return map;
+  }
+  function progressMap(){
+    var p = {};
+    try{ p = JSON.parse(localStorage.getItem("humanoid-site-progress-v1") || "{}"); }catch(e){ p = {}; }
+    return p;
+  }
+  function noteCount(notes, pid){ var pg = notes.pages[pid]; return (pg && pg.items) ? pg.items.length : 0; }
+
+  /* ---------- 统计行 ---------- */
+  function renderStats(){
+    var notes = loadNotes(), box = document.getElementById("nbStats");
+    var total = 0, hl = 0, pages = 0;
+    for(var pid in notes.pages){
+      var items = notes.pages[pid].items || [];
+      if(items.length) pages++;
+      for(var i = 0; i < items.length; i++){ total++; if(items[i].type === "hl") hl++; }
+    }
+    var secs = window.SITE_SECTIONS || [], done = 0, all = 0;
+    secs.forEach(function(sec){ sec.ids.forEach(function(id){ all++; if(progressMap()[id]) done++; }); });
+    box.textContent = "";
+    [[total, "笔记总数"], [hl, "荧光划线"], [pages, "覆盖页数"], [done + "/" + all, "已打卡页面"]].forEach(function(pair){
+      var c = el("div", "nb-stat");
+      c.appendChild(el("div", "n", String(pair[0])));
+      c.appendChild(el("div", "k", pair[1]));
+      box.appendChild(c);
+    });
+  }
+
+  /* ---------- 知识树 ---------- */
+  function renderTree(){
+    var notes = loadNotes(), pmap = pageIndex(), prog = progressMap();
+    var fNotes = document.getElementById("fHasNotes").checked;
+    var fTodo = document.getElementById("fTodo").checked;
+    var tree = document.getElementById("nbTree");
+    tree.textContent = "";
+    var secs = window.SITE_SECTIONS || [];
+    var anyVisible = false;
+    secs.forEach(function(sec){
+      var done = 0, withNotes = 0, secNoteCount = 0;
+      sec.ids.forEach(function(id){
+        if(prog[id]) done++;
+        var n = noteCount(notes, id);
+        if(n > 0){ withNotes++; secNoteCount += n; }
+      });
+      var branch = el("div", "nb-branch" + (secNoteCount ? "" : " closed"));
+      var bh = el("div", "nb-bh");
+      bh.appendChild(el("span", "key", sec.key));
+      bh.appendChild(el("span", "name", sec.name));
+      var bar = el("span", "nb-bar");
+      var fill = el("i");
+      fill.style.width = (sec.ids.length ? Math.round(done / sec.ids.length * 100) : 0) + "%";
+      bar.appendChild(fill);
+      bh.appendChild(bar);
+      bh.appendChild(el("span", "cnt", "📝 " + secNoteCount + " · ✓ " + done + "/" + sec.ids.length));
+      var arr = el("span", "arr", "▼");
+      bh.appendChild(arr);
+      bh.onclick = function(){ branch.classList.toggle("closed"); };
+      branch.appendChild(bh);
+      var leaves = el("div", "nb-leaves");
+      sec.ids.forEach(function(id){
+        var n = noteCount(notes, id), isDone = !!prog[id];
+        if(fNotes && n === 0) return;
+        if(fTodo && isDone) return;
+        anyVisible = true;
+        var meta = pmap[id] || { t: id, u: "#" };
+        var leaf = el("a", "nb-leaf" + (isDone ? " done" : ""));
+        leaf.href = "../" + meta.u;
+        leaf.appendChild(el("span", "st"));
+        leaf.appendChild(el("span", "t", meta.t));
+        if(n > 0) leaf.appendChild(el("span", "badge", "📝 " + n));
+        leaves.appendChild(leaf);
+      });
+      branch.appendChild(leaves);
+      tree.appendChild(branch);
+    });
+    if(!anyVisible && (fNotes || fTodo)){
+      tree.appendChild(el("div", "nb-empty", "当前筛选条件下没有页面——取消勾选试试"));
+    }
+  }
+
+  /* ---------- 时间流 ---------- */
+  function renderFlow(){
+    var notes = loadNotes(), pmap = pageIndex();
+    var flow = document.getElementById("nbFlow");
+    flow.textContent = "";
+    var rows = [];
+    for(var pid in notes.pages){
+      var meta = pmap[pid] || { t: pid, u: "#" };
+      (notes.pages[pid].items || []).forEach(function(it){
+        rows.push({ pid: pid, pt: meta.t, pu: meta.u, it: it });
+      });
+    }
+    if(!rows.length){
+      flow.appendChild(el("div", "nb-empty", "还没有任何笔记。\n去任意内容页点顶栏 ✏️ 按钮,记下第一条笔记或划一句荧光笔吧。"));
+      return;
+    }
+    rows.sort(function(a, b){ return (b.it.ts || 0) - (a.it.ts || 0); });
+    var lastDay = "";
+    rows.forEach(function(r){
+      var day = fmtDay(r.it.ts || 0);
+      if(day !== lastDay){ flow.appendChild(el("div", "nb-flow-day", "— " + day + " —")); lastDay = day; }
+      var card = el("div", "nb-card");
+      var ih = el("div", "ih");
+      if(r.it.type === "hl"){
+        var dot = el("i", "nb-cdot");
+        dot.style.background = r.it.color === "g" ? "#3cb96a" : (r.it.color === "r" ? "#e0655f" : "#e7c400");
+        ih.appendChild(dot);
+      }
+      ih.appendChild(el("span", "tp", typeName(r.it)));
+      var pg = el("a", "pg", r.pt);
+      pg.href = "../" + r.pu;
+      ih.appendChild(pg);
+      ih.appendChild(el("span", "ts", fmtTs(r.it.ts || 0)));
+      card.appendChild(ih);
+      if(r.it.type === "hl"){
+        card.appendChild(el("div", "qt", "「" + (r.it.quote || r.it.text || "") + "」"));
+      }else if(r.it.type === "link"){
+        var a = el("a", "lk", r.it.text || r.it.url || "链接");
+        a.href = r.it.url || "#"; a.target = "_blank"; a.rel = "noopener";
+        card.appendChild(a);
+      }else if(r.it.type === "image"){
+        var im = document.createElement("img");
+        im.src = r.it.url || ""; im.alt = r.it.text || "笔记图片"; im.loading = "lazy";
+        im.onclick = function(){ if(im.src) window.open(im.src, "_blank", "noopener"); };
+        card.appendChild(im);
+        if(r.it.text) card.appendChild(el("div", "tx", r.it.text));
+      }else{
+        if(r.it.quote) card.appendChild(el("div", "qt", "「" + r.it.quote + "」"));
+        card.appendChild(el("div", "tx", r.it.text || ""));
+      }
+      flow.appendChild(card);
+    });
+  }
+
+  /* ---------- 视图切换 / 导出导入 ---------- */
+  window.nbView = function(v){
+    document.getElementById("tabTree").classList.toggle("on", v === "tree");
+    document.getElementById("tabFlow").classList.toggle("on", v === "flow");
+    document.getElementById("nbTree").style.display = v === "tree" ? "" : "none";
+    document.getElementById("nbFlow").style.display = v === "flow" ? "" : "none";
+    if(v === "flow") renderFlow();
+  };
+  window.nbExport = function(){
+    var blob = new Blob([JSON.stringify(loadNotes(), null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    var url = URL.createObjectURL(blob);
+    a.href = url;
+    var dt = new Date();
+    a.download = "学习笔记备份_" + dt.getFullYear() + p2(dt.getMonth() + 1) + p2(dt.getDate()) + ".json";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 400);
+    if(S.toast) S.toast("已导出学习笔记 JSON");
+  };
+  window.nbImport = function(file){
+    if(!file) return;
+    var fr = new FileReader();
+    fr.onload = function(){
+      var d = null;
+      try{ d = JSON.parse(String(fr.result)); }catch(e){ d = null; }
+      if(!d || typeof d !== "object" || !d.pages || typeof d.pages !== "object"){
+        if(S.toast) S.toast("文件格式不对:需要本站导出的笔记 JSON");
+        return;
+      }
+      if(!window.confirm("导入将覆盖本机现有全部笔记,确定继续?")) return;
+      if(S.store && S.store.set){ S.store.set(KEY_NOTES, d); }
+      else{ try{ localStorage.setItem(KEY_NOTES, JSON.stringify(d)); }catch(e){} }
+      location.reload();   /* 重载后笔记面板/划线/统计/树全部按新数据重建 */
+    };
+    fr.readAsText(file, "utf-8");
+  };
+
+  document.addEventListener("DOMContentLoaded", function(){
+    /* 筛选框程序化绑定(IIFE 内函数,inline onchange 不可达) */
+    document.getElementById("fHasNotes").addEventListener("change", renderTree);
+    document.getElementById("fTodo").addEventListener("change", renderTree);
+    renderStats();
+    renderTree();
+  });
+})();
+</script>
+</body>
+</html>

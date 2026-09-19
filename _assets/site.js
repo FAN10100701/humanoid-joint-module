@@ -30,7 +30,7 @@
   /* 全站统计单源(V2.1.7):pages = site-sections.js 全部 pageId + 首页;
      ibSubjects/ibItems 必须与 ib-data-a/b/c/d 实际计数一致(一键自检.ps1 C3 校验)。
      改题库或增删页面时同步这里;新文案引用这里,别再写死数字 */
-  S.STATS = { pages: 101, ibSubjects: 27, ibItems: 254, quizItems: 60 };
+  S.STATS = { pages: 103, ibSubjects: 27, ibItems: 254, quizItems: 60 };
 
   function page(){ return window.PAGE || {}; }
 
@@ -139,6 +139,121 @@
     var s = document.createElement("script");
     s.src = src; s.onload = cb; s.onerror = cb;   /* onerror 也回调:与题库/闯关页容错语义一致(数据全失败走各自空态) */
     document.head.appendChild(s);
+  };
+  /* ---------- 本地存储单源工具(V2.1.29,AUDIT A-24):键版本迁移 + 配额统一提示 ----------
+     约定:新增 localStorage 数据一律走 Site.store(注册键定义,带版本号与迁移函数);
+     存量键(进度/活动等)读写路径保持不动,迁移机制待其需要换版时逐键接入。
+     版本号存于数据对象自身 value.version;读取时版本落后即调 migrate 补齐。 */
+  var _storeDefs = {}, _quotaToasted = false;
+  S.store = {
+    def: function(key, version, migrate){ _storeDefs[key] = { version: version, migrate: migrate }; },
+    get: function(key){
+      var raw = null;
+      try{ raw = localStorage.getItem(key); }catch(e){ return null; }
+      if(raw === null || raw === undefined) return null;
+      var data;
+      try{ data = JSON.parse(raw); }catch(e){ return null; }
+      var def = _storeDefs[key];
+      if(def && def.version && data && typeof data === "object" && !Array.isArray(data) && data.version !== def.version){
+        try{ if(def.migrate) data = def.migrate(data, data.version || 0) || data; }catch(e2){}
+        data.version = def.version;
+      }
+      return data;
+    },
+    set: function(key, value){
+      var def = _storeDefs[key];
+      if(def && def.version && value && typeof value === "object" && !Array.isArray(value)) value.version = def.version;
+      try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
+      catch(e){
+        /* QuotaExceeded:本页会话只提示一次,引导导出备份(报告二-9) */
+        if(!_quotaToasted){ _quotaToasted = true; S.toast("本地存储空间已满,刚才的内容可能没存上——请导出笔记/进度备份后清理旧数据"); }
+        return false;
+      }
+    }
+  };
+  /* ---------- HTML 消毒层(V2.1.29 批次四,AUDIT 二-7 前置)----------
+     白名单过滤:供一切"教师可编辑/云端内容"进入 innerHTML 前调用。
+     DOM 模板解析(<template> 内容不执行脚本),逐节点按许可表过滤:
+     - script/style/iframe/object/embed/link/meta/base/form/input 整体剔除
+     - 其余未许可标签剥壳保留子文本;on* 事件属性全删;URL 仅许 http(s)/相对/锚点
+     - style 属性做黑名单(expression/javascript:/behavior:)兜底
+     使用: el.innerHTML = Site.sanitizeHTML(html); 一方数据也建议走(纵深防御) */
+  S.sanitizeHTML = (function(){
+    var KEEP = { DIV:1,SPAN:1,P:1,B:1,STRONG:1,I:1,EM:1,U:1,S:1,BR:1,HR:1,
+      H1:1,H2:1,H3:1,H4:1,H5:1,H6:1,UL:1,OL:1,LI:1,A:1,IMG:1,CODE:1,PRE:1,
+      TABLE:1,THEAD:1,TBODY:1,TFOOT:1,TR:1,TH:1,TD:1,DETAILS:1,SUMMARY:1,
+      BLOCKQUOTE:1,BUTTON:1,SMALL:1,SUP:1,SUB:1,MARK:1,FIGURE:1,FIGCAPTION:1,
+      SVG:1,G:1,PATH:1,CIRCLE:1,RECT:1,LINE:1,TEXT:1,TSPAN:1,POLYGON:1,POLYLINE:1,
+      ELLIPSE:1,DEFS:1,MARKER:1,TITLE:1 };
+    var DROP = { SCRIPT:1,STYLE:1,IFRAME:1,OBJECT:1,EMBED:1,LINK:1,META:1,BASE:1,FORM:1,INPUT:1,TEXTAREA:1,SELECT:1,OPTION:1,VIDEO:1,AUDIO:1,SOURCE:1 };
+    var OK_ATTR = { "class":1, title:1, alt:1, href:1, src:1, target:1, rel:1,
+      colspan:1, rowspan:1, width:1, height:1, "data-answer":1, open:1,
+      viewBox:1, d:1, cx:1, cy:1, r:1, rx:1, ry:1, x:1, y:1, x1:1, y1:1, x2:1, y2:1,
+      fill:1, stroke:1, "stroke-width":1, "stroke-linecap":1, "stroke-linejoin":1,
+      "stroke-dasharray":1, "fill-opacity":1, "stroke-opacity":1, opacity:1,
+      transform:1, "text-anchor":1, "font-size":1, "font-family":1, "font-weight":1,
+      points:1, "marker-end":1, "marker-start":1, "dominant-baseline":1, "preserveAspectRatio":1 };
+    function okUrl(v){
+      var t = String(v).replace(/\s+/g, "");
+      if(/^data:image\//i.test(t)) return true;          /* img 内嵌图允许 */
+      return /^(https?:|mailto:|\/|\.|\.\.\/|#)/i.test(t) && !/^\s*javascript:/i.test(t);
+    }
+    function clean(node, out){
+      for(var n = node.firstChild; n; n = n.nextSibling){
+        if(n.nodeType === 3){ out.appendChild(document.createTextNode(n.nodeValue)); continue; }
+        if(n.nodeType !== 1) continue;
+        var tagRaw = n.tagName;              /* SVG 命名空间元素为小写,HTML 元素为大写 */
+        var tag = tagRaw.toUpperCase();
+        if(DROP[tag]) continue;
+        if(!KEEP[tag]){
+          clean(n, out);                    /* 未许可标签:剥壳保留子内容 */
+          continue;
+        }
+        var copy = document.createElement(tagRaw);
+        for(var a = 0; a < n.attributes.length; a++){
+          var at = n.attributes[a], an = at.name, av = at.value;
+          if(/^on/i.test(an)) continue;
+          if(an.indexOf("data-") === 0){ copy.setAttribute(an, av); continue; }
+          if(!OK_ATTR[an]) continue;
+          if((an === "href" || an === "src") && !okUrl(av)) continue;
+          if(an === "style" && /(expression\s*\(|javascript:|behavior\s*:|@import)/i.test(av)) continue;
+          copy.setAttribute(an, av);
+        }
+        if(tag === "A" && copy.getAttribute("target") === "_blank" && !copy.getAttribute("rel"))
+          copy.setAttribute("rel", "noopener");
+        clean(n, copy);
+        out.appendChild(copy);
+      }
+    }
+    return function(html){
+      try{
+        var tpl = document.createElement("template");
+        tpl.innerHTML = String(html == null ? "" : html);
+        var out = document.createElement("div");
+        clean(tpl.content, out);
+        return out.innerHTML;
+      }catch(e){ return ""; }               /* 消毒失败宁缺毋滥 */
+    };
+  })();
+
+  /* 轻提示(V2.1.29 单源):底部居中,自动消失;类名 site- 前缀(注入样式命名空间约定) */
+  var _toastEl = null, _toastTimer = 0;
+  S.toast = function(msg, ms){
+    try{
+      if(!_toastEl){
+        _toastEl = document.createElement("div");
+        _toastEl.className = "site-toast";
+        _toastEl.setAttribute("role", "status");
+        var st = document.createElement("style");
+        st.textContent = '.site-toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(14px);max-width:min(86vw,480px);padding:10px 18px;border-radius:10px;background:rgba(12,17,26,.94);color:#e8eef7;font-size:13px;line-height:1.6;z-index:400;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 12px 34px rgba(0,0,0,.4);backdrop-filter:blur(8px)}html:not([data-theme-early="dark"]) .site-toast{background:rgba(255,255,255,.98);color:#0f172a;box-shadow:0 12px 30px rgba(40,70,130,.28);border:1px solid rgba(60,90,140,.18)}.site-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}';
+        document.head.appendChild(st);
+        document.body.appendChild(_toastEl);   /* 修复:此前元素从未挂载,toast 永不显示 */
+      }
+      _toastEl.textContent = msg;   /* textContent:消息内容不落 innerHTML */
+      _toastEl.classList.add("show");
+      if(_toastTimer) clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(function(){ _toastEl.classList.remove("show"); }, ms || 3500);
+    }catch(e){}
   };
   S.toggleDone = function(){
     var id = page().pageId; if(!id) return;
@@ -946,7 +1061,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.1.28(2026-09-12)";
+  S.VERSION = "V2.1.29(2026-09-19)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
@@ -972,7 +1087,7 @@
       var div = document.createElement("div");
       div.className = "key-point page-goals";
       var html = '<div class="kp-title">🎯 本页学习目标</div>';
-      (meta.goals || []).forEach(function(g){ html += "1. " + g + "<br>"; });
+      (meta.goals || []).forEach(function(g, i){ html += (i + 1) + ". " + g + "<br>"; });   /* 2026-09-19:原模板每行硬编码"1.",注入式目标块全显示 1.1.1. */
       if(meta.time)  html += "<b>建议用时:</b>" + meta.time + "　";
       if(meta.prereq) html += "<b>前置知识:</b>" + meta.prereq;
       div.innerHTML = html;
@@ -1191,6 +1306,41 @@
       sc.async = true;
       document.head.appendChild(sc);
     });
+  }
+
+  /* ---------- 学习笔记面板加载口(V2.1.29,笔记提案 M1):仅内容页载入,首页/3D 主页不注入 ----------
+     notes.js 自挂导航按钮与面板(样式/交互全在模块内);加载失败静默,不影响页面 */
+  function initNotes(){
+    if(!page().pageId) return;   /* 与打卡同口径:无 pageId 不注入 */
+    var root = page().root || "";
+    var sc = document.createElement("script");
+    sc.src = (root ? root + "/" : "") + "_assets/notes.js";
+    sc.async = true;
+    sc.onerror = function(){};
+    document.head.appendChild(sc);
+  }
+
+  /* ---------- PocketBase 集成层加载口(V2.1.29 批次四):笔记云同步 + 教师补充 ----------
+     pb.js 自带健康检查,云端不可达整层静默(优雅降级);依赖 notes.js 的 SiteNotes API */
+  /* ---------- 阅读模式加载口(V2.1.29 批次三):内容页载 reader.js(沉浸/字号/书签/连读) ---------- */
+  function initReader(){
+    if(!page().pageId) return;
+    var root = page().root || "";
+    var sc = document.createElement("script");
+    sc.src = (root ? root + "/" : "") + "_assets/reader.js";
+    sc.async = true;
+    sc.onerror = function(){};
+    document.head.appendChild(sc);
+  }
+
+  function initPB(){
+    if(!page().pageId) return;
+    var root = page().root || "";
+    var sc = document.createElement("script");
+    sc.src = (root ? root + "/" : "") + "_assets/pb.js";
+    sc.async = true;
+    sc.onerror = function(){};
+    document.head.appendChild(sc);
   }
 
   document.addEventListener("keydown", function(e){
@@ -1447,7 +1597,7 @@
      (第三方脚本污染/未来改动引入)会连带丢失 SW 注册/自动保存/自检挂件等全部下游 */
   var INIT_CHAIN = [
     initFavicon, applyTheme, injectChrome, buildToc, initBackTop, S.initQuiz,
-    injectLearningGoals, injectPageStamp, initPrintBtn, initGlass, initAiFab,
+    injectLearningGoals, injectPageStamp, initPrintBtn, initGlass, initAiFab, initNotes, initReader, initPB,
     initOnboarding, initSW, initAutoSave, initTermTip, initComments,
     initKaTeX, injectJsonLd, initScrollProgress, initReveal, initMagnet, initEnModule,
     initHashReanchor

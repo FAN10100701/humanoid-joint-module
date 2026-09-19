@@ -54,3 +54,20 @@ __pycache__/
 .v2c/
 .video_agent/
 .workbuddy/
+
+# ============================================================
+# 会话级产物与本地生成物(批次四根目录整理;目录保留在本机,不入库)
+# ============================================================
+# 截图/调试快照(会话产物,体积大且无引用)
+_shots_v3/
+gui-test-screenshots/
+out/
+# Blender 3D 管线脚本(3D 重建工具链,与站点运行无关;需要时可单独入库)
+_blender-scripts/
+# PocketBase 本地数据与二进制(pocketbase.exe 12MB + data.db,永不入库)
+_本地工具/pocketbase/pb.zip
+_本地工具/pocketbase/pocketbase.exe
+_本地工具/pocketbase/pb_data/
+_本地工具/pocketbase/pb_download_status.txt
+# 本机临时文件
+_local_tools_shots_test.png

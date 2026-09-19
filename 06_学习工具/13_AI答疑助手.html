@@ -370,7 +370,7 @@ html:not([data-theme-early="dark"]) .ai-cursor{background:#2563eb}
   function showErr(msg){
     var div = document.createElement("div");
     div.className = "ai-msg bot";
-    div.innerHTML = "<div class='ai-who'>⚠️ 出错了</div><div class='ai-err'>" + msg + "</div>";
+    div.innerHTML = "<div class='ai-who'>⚠️ 出错了</div><div class='ai-err'>" + (window.Site && Site.esc ? Site.esc(msg) : String(msg).replace(/[<>&"]/g, function(ch){ return {"<":"&lt;",">":"&gt;","&":"&amp;","\"":"&quot;"}[ch]; })) + "</div>";
     chatBox().appendChild(div);
     scrollBottom();
   }

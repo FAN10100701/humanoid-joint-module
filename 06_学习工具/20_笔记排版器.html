@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>人形机器人学习站 · 笔记排版器</title>
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式(前缀 fm- 页内作用域) */
+  .fm-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  .fm-bar button{background:rgba(22,27,34,.8);border:1px solid rgba(255,255,255,.12);color:#9aa4b2;font-size:12.5px;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:inherit;transition:.15s}
+  .fm-bar button:hover{border-color:rgba(59,130,246,.5);color:#fff}
+  html:not([data-theme-early="dark"]) .fm-bar button{background:rgba(255,255,255,.75);border-color:rgba(60,80,120,.18);color:#475569}
+  html:not([data-theme-early="dark"]) .fm-bar button:hover{border-color:rgba(37,99,235,.45);color:#1d4ed8}
+  .fm-bar button.pri{background:linear-gradient(135deg,#2563eb,#3b82f6);border-color:transparent;color:#fff;font-weight:700}
+  .fm-bar button.pri:hover{filter:brightness(1.12);color:#fff}
+  .fm-bar .cnt{margin-left:auto;font-size:12px;color:#6b7280;font-family:Consolas,monospace}
+  html:not([data-theme-early="dark"]) .fm-bar .cnt{color:#64748b}
+  .fm-panes{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch}
+  @media (max-width:900px){.fm-panes{grid-template-columns:1fr}}
+  .fm-pane{display:flex;flex-direction:column;background:rgba(22,27,34,.75);border:1px solid rgba(255,255,255,.09);border-radius:12px;overflow:hidden;min-height:420px}
+  html:not([data-theme-early="dark"]) .fm-pane{background:rgba(255,255,255,.87);border-color:rgba(255,255,255,.9);box-shadow:0 8px 26px rgba(50,80,140,.08)}
+  .fm-ph{font-size:12px;color:#9aa4b2;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;gap:8px;align-items:center}
+  html:not([data-theme-early="dark"]) .fm-ph{border-color:rgba(60,80,120,.12);color:#64748b}
+  .fm-in{flex:1;width:100%;box-sizing:border-box;border:none;outline:none;resize:none;background:transparent;color:#e6edf3;font-family:Consolas,"Courier New",monospace;font-size:13px;line-height:1.8;padding:14px}
+  html:not([data-theme-early="dark"]) .fm-in{color:#0f172a}
+  .fm-out{flex:1;overflow-y:auto;padding:14px 18px}
+  .fm-out h2,.fm-out h3,.fm-out h4,.fm-out h5{color:#fff;margin:16px 0 8px;line-height:1.4}
+  .fm-out h2{font-size:19px;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:6px}
+  .fm-out h3{font-size:16.5px}
+  .fm-out h4{font-size:14.5px}
+  .fm-out h5{font-size:13.5px;color:#9ecbff}
+  html:not([data-theme-early="dark"]) .fm-out h2,html:not([data-theme-early="dark"]) .fm-out h3,html:not([data-theme-early="dark"]) .fm-out h4{color:#0f172a}
+  html:not([data-theme-early="dark"]) .fm-out h2{border-color:rgba(60,80,120,.15)}
+  html:not([data-theme-early="dark"]) .fm-out h5{color:#1d4ed8}
+  .fm-out p{font-size:13.5px;line-height:1.9;margin:8px 0;color:#c9d1d9}
+  html:not([data-theme-early="dark"]) .fm-out p{color:#334155}
+  .fm-out ul,.fm-out ol{margin:8px 0;padding-left:24px}
+  .fm-out li{font-size:13.5px;color:#c9d1d9;line-height:1.85;margin:4px 0}
+  html:not([data-theme-early="dark"]) .fm-out li{color:#334155}
+  .fm-out pre{margin:10px 0}
+  .fm-out hr{border:none;border-top:1px solid rgba(148,163,184,.25);margin:14px 0}
+  .fm-out figure{margin:12px 0;text-align:center}
+  .fm-out figure img{max-width:100%;border-radius:8px}
+  .fm-out figcaption{font-size:11.5px;color:#8b98a9;margin-top:6px;letter-spacing:.04em}
+  html:not([data-theme-early="dark"]) .fm-out figcaption{color:#7c8aa0}
+  .fm-out .formula{margin:10px auto;text-align:center;color:#e6edf3;overflow-x:auto}
+  html:not([data-theme-early="dark"]) .fm-out .formula{color:#0f172a}
+  .fm-out .fm-math-i{display:inline-block;margin:0 2px}
+  .fm-out a{color:#9ecbff}
+  html:not([data-theme-early="dark"]) .fm-out a{color:#1d4ed8}
+  .fm-out strong{color:#fff}
+  html:not([data-theme-early="dark"]) .fm-out strong{color:#0f172a}
+  .fm-cheat{background:rgba(22,27,34,.6);border:1px dashed rgba(148,163,184,.3);border-radius:12px;padding:14px 18px;margin:14px 0;font-size:12.5px;color:#9aa4b2;line-height:2}
+  html:not([data-theme-early="dark"]) .fm-cheat{background:rgba(255,255,255,.7);border-color:rgba(100,116,139,.3);color:#64748b}
+  .fm-cheat code{background:rgba(59,130,246,.14);color:#9ecbff;padding:1px 6px;border-radius:5px;font-size:11.5px}
+  html:not([data-theme-early="dark"]) .fm-cheat code{color:#1d4ed8}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-20",
+    root: "..",
+    breadcrumb: [
+      { t: "学习工具", u: "../index.html#sec6" },
+      { t: "笔记排版器", u: "20_笔记排版器.html" }
+    ],
+    prev: { t: "学习笔记", u: "19_学习笔记.html" },
+    next: { t: "返回首页", u: "../index.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🧾 笔记排版器</h1>
+    <div class="sub">粘贴随手记的草稿,自动识别标题 / 列表 / 代码块 / 公式 / 表格 / 图片题注,实时预览站点风格排版,一键复制 HTML —— 讲义、笔记、博客通用</div>
+    <div class="tags">
+      <span class="tag">自动识别</span>
+      <span class="tag">图注编号</span>
+      <span class="tag">公式渲染</span>
+      <span class="tag">一键复制</span>
+    </div>
+  </div>
+
+  <!-- ================= 工具行 ================= -->
+  <div class="fm-bar">
+    <button onclick="fmSample()">载入示例</button>
+    <button onclick="fmClear()">清空</button>
+    <button class="pri" onclick="fmCopy()">复制 HTML</button>
+    <span class="cnt" id="fmCnt"></span>
+  </div>
+
+  <!-- ================= 双栏 ================= -->
+  <div class="fm-panes">
+    <div class="fm-pane">
+      <div class="fm-ph">📝 输入草稿(自动保存本机)</div>
+      <textarea class="fm-in" id="fmIn" spellcheck="false" placeholder="在这里粘贴或输入草稿…&#10;&#10;# 一级标题&#10;- 列表项&#10;$$ 公式 $$&#10;| 表格 | 试试 |&#10;![图注](图片地址)"></textarea>
+    </div>
+    <div class="fm-pane">
+      <div class="fm-ph">👀 实时预览(站点风格)</div>
+      <div class="fm-out" id="fmOut"></div>
+    </div>
+  </div>
+
+  <!-- ================= 速查 ================= -->
+  <div class="fm-cheat">
+    <b>识别规则速查:</b>
+    <code># ## ###</code> 标题 ·
+    <code>- / 1.</code> 列表(缩进两格嵌套) ·
+    <code>&gt; </code> 提示块 ·
+    <code>```</code> 代码块 ·
+    <code>$$…$$</code> 独立公式 / <code>$…$</code> 行内公式 ·
+    <code>| a | b |</code> 表格 ·
+    <code>![题注](地址)</code> 自动编号图注 ·
+    <code>**加粗**</code> · <code>`行内代码`</code> · <code>[文字](链接)</code> ·
+    <code>---</code> 分隔线。图片只填站内相对地址或 http(s) 地址。
+  </div>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+<script>
+/* 笔记排版器(M2 批次):行级状态机解析 → DOM 构建(用户内容零 innerHTML)→ 实时预览
+   公式走 site.js 单源 KatexLoader(四源回退,加载失败保持原文);
+   复制输出为渲染前的干净 HTML(.formula 保留 data-src,可二次渲染) */
+(function(){
+  "use strict";
+  var S = window.Site || {};
+  var DRAFT_KEY = "site-formatter-draft";
+  var inEl, outEl, cntEl;
+  var figNo = 0, parts = [];
+
+  function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+  function keep(node){   /* 序列化进复制池 + 挂上预览 */
+    var w = document.createElement("div");
+    w.appendChild(node.cloneNode(true));
+    parts.push(w.innerHTML);
+    outEl.appendChild(node);
+  }
+  function safeUrl(u){
+    u = String(u || "").replace(/^\s+|\s+$/g, "");
+    return /^(https?:\/\/|\/|\.\/|\.\.\/|#)/i.test(u) ? u : null;
+  }
+  /* 行内标记:$公式$ `代码` **加粗** [文字](链接) —— 顺序切分,互不嵌套 */
+  function inline(parent, raw){
+    var re = /\$([^$]+)\$|`([^`]+)`|\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
+    var last = 0, m;
+    while((m = re.exec(raw)) !== null){
+      if(m.index > last) parent.appendChild(document.createTextNode(raw.slice(last, m.index)));
+      if(m[1] !== undefined){
+        var sp = el("span", "fm-math-i formula");
+        sp.setAttribute("data-src", m[1]);
+        sp.textContent = m[1];
+        parent.appendChild(sp);
+      }else if(m[2] !== undefined){
+        parent.appendChild(el("code", null, m[2]));
+      }else if(m[3] !== undefined){
+        parent.appendChild(el("strong", null, m[3]));
+      }else{
+        var u = safeUrl(m[5]);
+        if(u){
+          var a = el("a", null, m[4]);
+          a.href = u; a.target = "_blank"; a.rel = "noopener";
+          parent.appendChild(a);
+        }else{
+          parent.appendChild(document.createTextNode(m[0]));
+        }
+      }
+      last = re.lastIndex;
+    }
+    if(last < raw.length) parent.appendChild(document.createTextNode(raw.slice(last)));
+  }
+  function isTableSep(line){ return /^\s*\|?[\s:\-|]+\|?\s*$/.test(line) && line.indexOf("-") !== -1; }
+  function splitRow(line){
+    var s = String(line).replace(/^\s*\|/, "").replace(/\|\s*$/, "");
+    return s.split("|").map(function(c){ return c.replace(/^\s+|\s+$/g, ""); });
+  }
+
+  function render(){
+    var src = inEl.value;
+    figNo = 0;
+    parts = [];
+    outEl.textContent = "";
+    var lines = src.split(/\r\n|\r|\n/);
+    var i = 0, para = [], listBuf = null, quoteBuf = null;
+    function flushPara(){
+      if(para.length){ var p = el("p"); inline(p, para.join(" ")); keep(p); para = []; }
+    }
+    function flushQuote(){
+      if(quoteBuf){ var b = el("div", "box box-tip"); inline(b, quoteBuf.join(" ")); keep(b); quoteBuf = null; }
+    }
+    function flushList(){
+      if(listBuf){ keep(listBuf); listBuf = null; }
+    }
+    while(i < lines.length){
+      var line = lines[i];
+      /* 代码块 */
+      if(/^\s*```/.test(line)){
+        flushPara(); flushQuote(); flushList();
+        var lang = line.replace(/^\s*```/, "").replace(/^\s+|\s+$/g, "");
+        var pre = el("pre"), code = el("code");
+        if(lang) code.className = "language-" + lang;
+        i++;
+        var buf = [];
+        while(i < lines.length && !/^\s*```/.test(lines[i])){ buf.push(lines[i]); i++; }
+        i++;   /* 跳过收尾 ``` */
+        code.textContent = buf.join("\n");
+        pre.appendChild(code);
+        keep(pre);
+        continue;
+      }
+      /* 独立公式 $$ … $$ */
+      if(/^\s*\$\$\s*$/.test(line)){
+        flushPara(); flushQuote(); flushList();
+        var math = [];
+        i++;
+        while(i < lines.length && !/^\s*\$\$\s*$/.test(lines[i])){ math.push(lines[i]); i++; }
+        i++;
+        if(math.length){
+          var f = el("div", "formula");
+          var msrc = math.join(" ");   /* 独立命名:不得与函数顶部 var src(全文)共用,var 提升会覆盖全文导致 cnt/草稿写坏 */
+          f.setAttribute("data-src", msrc);
+          f.textContent = msrc;
+          keep(f);
+        }
+        continue;
+      }
+      /* 标题 */
+      var hm = /^(#{1,4})\s+(.*)$/.exec(line);
+      if(hm){
+        flushPara(); flushQuote(); flushList();
+        var level = hm[1].length + 1;   /* # → h2,与全站 h2 分节口径一致 */
+        var h = el("h" + Math.min(level, 5));
+        inline(h, hm[2]);
+        keep(h);
+        i++; continue;
+      }
+      /* 分隔线 */
+      if(/^\s*(-{3,}|\*{3,})\s*$/.test(line)){
+        flushPara(); flushQuote(); flushList();
+        keep(el("hr"));
+        i++; continue;
+      }
+      /* 图片(整行)= 自动编号图注 */
+      var im = /^\s*!\[([^\]]*)\]\(([^)]+)\)\s*$/.exec(line);
+      if(im){
+        flushPara(); flushQuote(); flushList();
+        var u = safeUrl(im[2]);
+        figNo++;
+        var fig = el("figure");
+        if(u){
+          var img = el("img");
+          img.src = u; img.alt = im[1] || ("图" + figNo); img.loading = "lazy";
+          fig.appendChild(img);
+        }else{
+          fig.appendChild(el("span", "ntp-flag", "图片地址无效:" + im[2]));
+        }
+        fig.appendChild(el("figcaption", null, "图" + circ(figNo) + " " + (im[1] || "")));
+        keep(fig);
+        i++; continue;
+      }
+      /* 表格 */
+      if(/^\s*\|.*\|\s*$/.test(line) && i + 1 < lines.length && isTableSep(lines[i + 1])){
+        flushPara(); flushQuote(); flushList();
+        var head = splitRow(line);
+        i += 2;
+        var tb = el("table"), trh = el("tr");
+        head.forEach(function(c){ var th = el("th"); inline(th, c); trh.appendChild(th); });
+        tb.appendChild(trh);
+        while(i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])){
+          var tr = el("tr");
+          splitRow(lines[i]).forEach(function(c){ var td = el("td"); inline(td, c); tr.appendChild(td); });
+          tb.appendChild(tr);
+          i++;
+        }
+        var wrap = el("div", "table-wrap");
+        wrap.appendChild(tb);
+        keep(wrap);
+        continue;
+      }
+      /* 引用块 */
+      if(/^\s*>\s?/.test(line)){
+        flushPara(); flushList();
+        if(!quoteBuf) quoteBuf = [];
+        quoteBuf.push(line.replace(/^\s*>\s?/, ""));
+        i++; continue;
+      }
+      /* 列表(同一连续块共用一个容器;缩进两格挂进上一顶级 li 的子列表) */
+      var lm = /^(\s*)([-*]|\d+[.、)])\s+(.*)$/.exec(line);
+      if(lm){
+        flushPara(); flushQuote();
+        var ordered = /\d/.test(lm[2]);
+        var indent = lm[1].length >= 2;
+        var tag = ordered ? "ol" : "ul";
+        if(!listBuf || listBuf.tagName.toLowerCase() !== tag){
+          flushList();
+          listBuf = el(tag);
+        }
+        var parent = listBuf;
+        if(indent){
+          var lastLi = listBuf.lastElementChild;
+          if(!lastLi){ lastLi = el("li"); listBuf.appendChild(lastLi); }
+          var sub = null;
+          for(var ck = 0; ck < lastLi.children.length; ck++){
+            if(lastLi.children[ck].tagName === tag.toUpperCase()){ sub = lastLi.children[ck]; break; }
+          }
+          if(!sub){ sub = el(tag); lastLi.appendChild(sub); }
+          parent = sub;
+        }
+        var li = el("li");
+        inline(li, lm[3]);
+        parent.appendChild(li);
+        i++; continue;
+      }
+      /* 空行 */
+      if(!line.replace(/^\s+|\s+$/g, "")){
+        flushPara(); flushQuote(); flushList();
+        i++; continue;
+      }
+      /* 普通段落(连续行合并) */
+      para.push(line.replace(/^\s+|\s+$/g, ""));
+      i++;
+    }
+    flushPara(); flushQuote(); flushList();
+    if(!outEl.children.length){
+      var empty = el("p");
+      empty.style.color = "#6b7280";
+      empty.textContent = "左侧输入内容后,这里实时出现排版结果。点上方「载入示例」看全部规则。";
+      outEl.appendChild(empty);
+    }
+    cntEl.textContent = "输入 " + src.length + " 字 · 输出 " + parts.length + " 块 · 图注 " + figNo + " 个";
+    renderMath();
+    try{ localStorage.setItem(DRAFT_KEY, src); }catch(e){}
+  }
+  function circ(n){   /* 1→①:与全站图注口径一致 */
+    var base = 0x2460;   /* ① */
+    return n <= 20 ? String.fromCharCode(base + n - 1) : "[" + n + "]";
+  }
+  function renderMath(){
+    var els = outEl.querySelectorAll(".formula");
+    if(!els.length) return;
+    function done(){ 
+      for(var i = 0; i < els.length; i++){
+        var f = els[i];
+        if(f.getAttribute("data-done")) continue;
+        if(!window.katex) continue;
+        try{ katex.render(f.getAttribute("data-src") || f.textContent, f, { displayMode: !/\bfm-math-i\b/.test(f.className), throwOnError: false }); }catch(e){}
+        f.setAttribute("data-done", "1");
+      }
+    }
+    if(window.katex){ done(); return; }
+    if(window.KatexLoader) KatexLoader.ensure(done);
+  }
+
+  /* ---------- 工具按钮 ---------- */
+  var SAMPLE = [
+    "# 关节模组学习笔记",
+    "",
+    "今天把**谐波减速器**的传动比推导过了一遍,要点:$i = 1 + \\frac{z_f}{z_s}$(柔轮固定时)。",
+    "",
+    "## 三个要点",
+    "- 柔轮与刚轮齿数差决定了减速比",
+    "- 双波发生器让啮合区对称分布",
+    "  - 失步大多发生在过载冲击时",
+    "- 背隙几乎为零,适合关节反向驱动",
+    "",
+    "## 下一步计划",
+    "1. 复算一轮传动比与承载校核",
+    "2. 把整定口诀抄进卡片,周末上手实验台",
+    "",
+    "## 电流环整定口诀",
+    "> 带宽法:$K_p = \\omega_c L$,$K_i = \\omega_c R$,先内环后外环。",
+    "",
+    "$$",
+    "u = K_p e + K_i \int e\,dt",
+    "$$",
+    "```c",
+    "// FOC 电流环 ISR 骨架",
+    "float iq_ref = pi_iq(step(iq_meas - iq_ref));",
+    "```",
+    "",
+    "| 减速器 | 背隙 | 传动比 |",
+    "| --- | --- | --- |",
+    "| 谐波 | 极小 | 50~160 |",
+    "| 行星 | 小 | 3~10 |",
+    "",
+    "![站内图片示例](../_assets/favicon-180.png)",
+    "---",
+    "参考:`01_理论入门/02_核心原理动画演示` 与 [电机选型专题](../02_硬件基础/07_电机选型计算专题.html)"
+  ].join("\n");
+
+  window.fmSample = function(){
+    inEl.value = SAMPLE;
+    render();
+  };
+  window.fmClear = function(){
+    inEl.value = "";
+    render();
+    inEl.focus();
+  };
+  window.fmCopy = function(){
+    var text = parts.join("\n");
+    if(!text){ if(S.toast) S.toast("先输入内容再复制"); return; }
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand("copy"); if(S.toast) S.toast("HTML 已复制(" + text.length + " 字符)"); }
+      catch(e){ if(S.toast) S.toast("复制失败,请手动选择预览区复制"); }
+      ta.remove();
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        if(S.toast) S.toast("HTML 已复制(" + text.length + " 字符)");
+      }, fallback);
+    }else fallback();
+  };
+
+  var deb = 0;
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot);
+  }else boot();
+  function boot(){
+    inEl = document.getElementById("fmIn");
+    outEl = document.getElementById("fmOut");
+    cntEl = document.getElementById("fmCnt");
+    try{ inEl.value = localStorage.getItem(DRAFT_KEY) || ""; }catch(e){}
+    inEl.addEventListener("input", function(){
+      clearTimeout(deb);
+      deb = setTimeout(render, 300);
+    });
+    render();
+  }
+})();
+</script>
+</body>
+</html>

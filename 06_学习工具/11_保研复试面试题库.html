@@ -386,7 +386,7 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
       html += "<button class='ib-chip' data-s='" + s.id + "' id='chip-" + s.id + "'>" + s.icon + " " + esc(s.name) +
         " <span class='ib-chip-p'>" + done + "/" + its.length + "</span></button>";
     }
-    box.innerHTML = html;
+    box.innerHTML = (window.Site && Site.sanitizeHTML) ? Site.sanitizeHTML(html) : html;
     var btns = box.querySelectorAll(".ib-chip");
     for(var k = 0; k < btns.length; k++){
       btns[k].onclick = function(){ openSubject(this.getAttribute("data-s")); };
@@ -423,7 +423,7 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
       "<div class='ib-rel'>" + rel + "</div></div>" +
       "<div id='ibItems'></div>" +
       "<h3 style='margin-top:22px'>✅ 本学科选择题自测(每科 2 题)</h3><div id='ibQuiz'></div>";
-    $("ibSubject").innerHTML = html;
+    $("ibSubject").innerHTML = (window.Site && Site.sanitizeHTML) ? Site.sanitizeHTML(html) : html;
     renderItems();
     renderQuiz(sid);
     refreshChips();
@@ -436,7 +436,7 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
     var its = itemsOf(cur).filter(hit);
     if(!its.length){ box.innerHTML = "<div class='ib-empty'>本学科没有匹配「" + esc(kw) + "」的题目,换个关键词试试</div>"; return; }
     for(var i = 0; i < its.length; i++) html += itemHTML(its[i], p, n);
-    box.innerHTML = html;
+    box.innerHTML = (window.Site && Site.sanitizeHTML) ? Site.sanitizeHTML(html) : html;
     bindItems(box);
     renderFormulas(box);
   }
@@ -735,7 +735,7 @@ html:not([data-theme-early="dark"]) .ib-enlock-err{color:#b91c1c}
         "<div class='quiz-options' data-answer='" + qs[i].a + "'>" + opts + "</div>" +
         "<div class='quiz-feedback'></div><div class='quiz-explain'>💡 " + esc(qs[i].e) + "</div></div>";
     }
-    box.innerHTML = html;
+    box.innerHTML = (window.Site && Site.sanitizeHTML) ? Site.sanitizeHTML(html) : html;
     var optBtns = box.querySelectorAll(".quiz-options button");
     for(var k = 0; k < optBtns.length; k++){
       optBtns[k].onclick = function(){

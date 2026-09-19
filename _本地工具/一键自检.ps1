@@ -512,6 +512,42 @@ if(Test-Path $c14f13){
 Check "C14 sw cache ownership + xss hotspots" ($c14bad.Count -eq 0) ($c14bad.Count.ToString() + " problems")
 $c14bad | Select-Object -First 10 | ForEach-Object { Write-Host ("   BAD: " + $_) }
 
+# ---- C15: shared JS files syntax (node --check, V2.1.29 batch-1/3/4) ----
+# _assets modules load on every page; a syntax error kills all of them site-wide.
+# node missing => SKIP (record as pass-with-note, CI without node stays green)
+$c15bad = @(); $c15checked = 0
+if (Get-Command node -ErrorAction SilentlyContinue) {
+  $c15dir = Join-Path $root "_assets"
+  if (Test-Path $c15dir) {
+    Get-ChildItem -Path $c15dir -Filter "*.js" | ForEach-Object {
+      $c15checked++
+      $null = & node --check $_.FullName 2>&1
+      if ($LASTEXITCODE -ne 0) { $c15bad += $_.Name }
+    }
+  }
+  $null = & node --check (Join-Path $root "sw.js") 2>&1
+  if ($LASTEXITCODE -ne 0) { $c15bad += "sw.js" }
+  Check "C15 shared js syntax (node --check)" ($c15bad.Count -eq 0) ($c15checked.ToString() + " files checked")
+  $c15bad | Select-Object -First 8 | ForEach-Object { Write-Host ("   SYNTAX: " + $_) }
+} else {
+  Check "C15 shared js syntax (node --check)" $true "node not found - skipped"
+}
+
+# ---- C16: sw.js PRECACHE targets must exist (V2.1.29 batch-2/4) ----
+# A PRECACHE entry pointing to a missing file silently skips (tolerant install),
+# so a renamed page/asset would lose its offline copy with zero noise.
+$c16bad = @()
+$c16sw = Join-Path $root "sw.js"
+if (Test-Path $c16sw) {
+  $c16txt = [IO.File]::ReadAllText($c16sw, [Text.Encoding]::UTF8)
+  foreach ($m in [regex]::Matches($c16txt, '"\./([^"]+)"')) {
+    $rel = $m.Groups[1].Value
+    if (-not (Test-Path (Join-Path $root ($rel -replace "/", [IO.Path]::DirectorySeparatorChar)))) { $c16bad += $rel }
+  }
+  Check "C16 precache targets exist" ($c16bad.Count -eq 0) ((([regex]::Matches($c16txt, '"\./([^"]+)"')).Count).ToString() + " entries")
+  $c16bad | Select-Object -First 8 | ForEach-Object { Write-Host ("   MISSING: " + $_) }
+} else { $c16bad += "sw.js missing"; Check "C16 precache targets exist" $false "sw.js missing" }
+
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }
 Write-Host ("CHECKS FAILED: " + $fail)

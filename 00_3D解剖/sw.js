@@ -9,7 +9,7 @@
    4) HTML 导航请求：network-first（保证教学内容更新及时），断网回退缓存
    5) 改 SW_VERSION 只刷新代码/库；模型文件有更新时才手动改 MODELS_CACHE 名
    ============================================================ */
-var SW_VERSION='robot-3d-v30';           /* 【可调】代码缓存版本号：bump 只清代码/库缓存，模型缓存保留。V2.1.28: activate 收敛为本域(robot-3d-)清理+URDF超时重试+'9'标记TTL(app.module.js 同批改动)须刷新代码缓存 */
+var SW_VERSION='robot-3d-v31';           /* 【可调】代码缓存版本号：bump 只清代码/库缓存，模型缓存保留。v31: 3D拆解台弯曲演示崩溃/爆炸位移累加/编码器光路展开/目录排序/右键平移/爆炸取景等10项修复(docs/审计/修复摘要_2026-09-19_3D拆解台.md),须刷新HTML代码缓存 */
 var CORE_CACHE=SW_VERSION+'-core';       /* 核心资源缓存名（install 预缓存） */
 var RUNTIME_CACHE=SW_VERSION+'-runtime'; /* 代码/库运行时缓存名（随版本刷新） */
 var MODELS_CACHE='robot-3d-models-v1';   /* 模型缓存名（独立于版本：模型文件未变更时请勿 bump，避免全站模型重下） */

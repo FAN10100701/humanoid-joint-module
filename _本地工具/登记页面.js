@@ -47,7 +47,7 @@ W("06_学习工具/06_学习地图.html", s);
 
 /* 5) index.html: sec 网格末尾插卡片;ids 追加到 _assets/site-sections.js(V2.1.21 单源化后 SITE_SECTIONS 不再内联在 index.html) */
 s = R("index.html");
-const secIdx = s.indexOf('id="sec' + secKey + '"');
+const secIdx = s.indexOf('id="sec' + parseInt(secKey, 10) + '"');   /* index 锚点不补零:#sec6;site-sections key 仍用补零 "06" */
 if(secIdx < 0) throw new Error("index.html 未找到板块锚点 sec" + secKey);
 const gridClose = s.indexOf("    </div>", secIdx);
 s = s.slice(0, gridClose) + '      <a class="card" href="' + urlPath + '"><span class="go">进入 →</span><div class="ic">📄</div><div class="t">' + cfg.title + '</div><div class="d">' + cfg.desc + '</div></a>\n' + s.slice(gridClose);
