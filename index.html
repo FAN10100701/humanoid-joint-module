@@ -11,6 +11,8 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <meta name="baidu-site-verification" content="codeva-83ZAbuLmz6">
+<link rel="preconnect" href="https://registry.npmmirror.com" crossorigin>
+<link rel="dns-prefetch" href="https://registry.npmmirror.com">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -1170,10 +1172,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.29</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-12 · 3D 模型反复加载失败修复(双 SW 缓存互删) + 英语音频二期664段 + 两处XSS修复 + 全站对比度与内容审查</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.30</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-12 · 3D 模型反复加载失败修复(双 SW 缓存互删) + 英语音频二期664段 + 两处XSS修复 + 全站对比度与内容审查</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>🃏 V2.1.30 · 2026-09-19 · 卡片悬停宽卡倾角衰减 + ROBO-Q 加载提速(国内 CDN 优先/加载提示) －</summary>
+        <div class="faq-a">🃏 <b>卡片 3D 倾斜按卡宽衰减</b>:透视位移量随卡片宽度放大,featured/尾行拉伸等宽卡悬停时左上图标位移过大"飞出"——现 ≤460px 满幅 ±4°,宽卡等比收小(1140px 实测 ±1.5°),小卡手感不变,perspective 800→900。⚡ <b>ROBO-Q 加载提速</b>:three.js 改国内 CDN(npmmirror)优先、本地库兜底保离线(A-35 口径不变);head 增加 preconnect/dns-prefetch;展台注脚增加"加载中…"状态(挂载成功恢复,离线失败明示)。✅ 一键自检 ALL CHECKS PASSED。</div>
+      </details>
+    <details class="faq">
         <summary>🏠 V2.1.29 · 2026-09-19 · 主页工程图纸风改版 + 学习笔记体系(M1/M2)+ 排版器/阅读模式/知识联动 + PocketBase 本地闭环(消毒层/云同步/教师补充) －</summary>
         <div class="faq-a">🏠 <b>主页「工程图纸风」改版</b>:坐标纸网格 + 四角对位标记 + 图号章标题栏(SHEET 00~08)+ 规格铭牌统计 + 装配序号球①②③(可点直达板块)+ 尺寸线;双栏 hero 断点 1319→1024px;极光/星尘/光晕/顶光条氛围特效定版保留,与图纸层叠加共存。📓 <b>学习笔记 M1</b>:全站 ✏ 面板——文字/链接/图片引用/荧光笔三色四类条目,划线锚定(引文+次序)刷新精确恢复,面板搜索,导出导入;M2:<b>06-19 学习笔记汇总页</b>(知识树/时间流/统计/筛选)+「段落笔记」选中速记内嵌原文 + 划线点击气泡就地改色删除;🧾 <b>06-20 笔记排版器</b>:标题/列表/引用/代码/公式/表格/图片图注自动识别,实时预览一键复制 HTML。📖 <b>阅读模式</b>:沉浸态 + A± 三档字号 + 按页书签自动回位 + 连读胶囊;🔗 <b>词典知识联动</b>:相关术语/英语词卡/出现页面(2-gram 反查)/我的笔记。☁ <b>PocketBase 阶段一本地闭环</b>:Site.sanitizeHTML 白名单消毒层(题库/AI 共 5 处 sink)、notes/content 集合越权规则、笔记云同步(LWW)、教师补充按页讲义、本地三件套——云同步仅限本地预览(HTTPS 混合内容边界),完整富文本编辑留阶段二。🤖 ROBO-Q:跳起云朵消失修复(降峰+反向跟随)+ 肤色云朵暖调 + 无环境贴图自适应提灯(A-65)。🛠 自检新增 C15 共享 JS 语法 / C16 PRECACHE 存在性;登记工具 sec06 锚点修复;hero overflow:clip 根治锚点裁壳(A-64);页数口径 101→103;根目录会话产物 37MB gitignore;🔧 3D 拆解台 A-61/62/63 并行交付(详见 docs/审计/修复摘要_2026-09-19_3D拆解台.md)。✅ 一键自检 ALL CHECKS PASSED。</div>
       </details>
@@ -1418,7 +1424,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.29(2026-09-19) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.1.30(2026-09-19) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1616,8 +1622,11 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     var r = cur.getBoundingClientRect();
     if(!r.width || !r.height) return;
     var px = (tx - r.left) / r.width, py = (ty - r.top) / r.height;
-    var rx = (0.5 - py) * 8, ry = (px - 0.5) * 8;      /* 峰值 ±4° */
-    cur.style.transform = "perspective(800px) rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg) translateY(-2px)";
+    /* V2.1.30:倾角按卡宽衰减——透视位移量随宽度放大,宽卡(featured/尾行拉伸 900px+)
+       图标会"飞出"卡片,小卡观感不变(460px 以下满幅) */
+    var k = Math.min(1, 460 / Math.max(r.width, 1));
+    var rx = (0.5 - py) * 8 * k, ry = (px - 0.5) * 8 * k;
+    cur.style.transform = "perspective(900px) rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg) translateY(-2px)";
     cur.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
     cur.style.setProperty("--my", (py * 100).toFixed(1) + "%");
   }
@@ -1882,11 +1891,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
 (async function(){
   const el = document.getElementById("heroChibi");
   if(!el || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  const noteEl = document.querySelector(".stage-note");
+  if(noteEl) noteEl.textContent = "ROBO-Q 加载中…";
   let THREE = null;
-  try{ THREE = await import("./00_3D解剖/lib/three.module.js"); }
+  /* V2.1.30:国内 CDN 优先(npmmirror 边缘快于 GitHub Pages 同源),本地库兜底保离线 */
+  try{ THREE = await import("https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js"); }
   catch(e){
-    try{ THREE = await import("https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js"); }
-    catch(e2){ return; }
+    try{ THREE = await import("./00_3D解剖/lib/three.module.js"); }
+    catch(e2){ if(noteEl) noteEl.textContent = "机器人离线加载失败(联网后刷新重试)"; return; }
   }
   try{
     await new Promise((res, rej)=>{
@@ -1898,6 +1910,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     let RoomEnv = null;
     try{ RoomEnv = await import("./00_3D解剖/lib/addons/environments/RoomEnvironment.js"); }catch(e){}
     const h = window.ChibiRobot.mount(el, THREE, { RoomEnvironment: RoomEnv && RoomEnv.RoomEnvironment });
+    if(h && noteEl) noteEl.textContent = "点一点换天气 · 拖一拖环视";
     if(h) el.addEventListener("pointerdown", ()=>el.classList.add("touched"), { once:false });
   }catch(e){ /* 装饰性组件:失败静默 */ }
 })();
