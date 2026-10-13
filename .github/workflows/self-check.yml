@@ -23,7 +23,23 @@ jobs:
       - name: Run one-click self check
         shell: powershell
         run: |
-          powershell -NoProfile -ExecutionPolicy Bypass -File "_本地工具\一键自检.ps1"
+          # WHY THIS BLOCK MUST STAY PURE ASCII (root cause of this workflow being red since day one):
+          # GitHub Actions writes a `run` block to a temp script encoded as UTF-8 *without BOM*.
+          # Windows PowerShell 5.1 decodes a BOM-less script with the SYSTEM ANSI code page, which
+          # on the English runner is CP1252 -- so a Chinese path literal written here turns into
+          # mojibake, the file is never found, and the whole step fails. The check script itself is
+          # ASCII-safe by design (it resolves non-ASCII paths through filesystem enumeration too);
+          # only this workflow file had been missed.
+          # FIX: locate the script by pure-ASCII enumeration. The returned path is a .NET string and
+          # is never round-tripped through the console code page, so non-ASCII dir names are safe.
+          $sc = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter '*.ps1' -File |
+                Where-Object { $_.Directory.Name -like '_*' -and $_.Length -gt 20000 } |
+                Sort-Object Length -Descending |
+                Select-Object -First 1
+          if (-not $sc) { throw '[self-check] one-click script not found under a _* directory' }
+          Write-Host ('[self-check] running ' + $sc.FullName)
+          & $sc.FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   e2e:
     runs-on: ubuntu-latest
