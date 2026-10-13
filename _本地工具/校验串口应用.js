@@ -452,6 +452,139 @@ check("端到端: 残帧头不破坏后续对齐", (() => {
   return b.frames.length === 1 && b.frames[0].length === 11;
 })());
 
+/* ============================================================
+   ⑬ 显示口径：时间格式化（绝对时刻 / 相对时长）
+   ------------------------------------------------------------
+   绝对时刻的断言不写死字符串——本机时区未必是 +8，写死会让 CI 在不同时区误报。
+   正确姿势是「与 Date 自身的分解算法一致」。
+   相对时长则必须锁死精度：早期版本跑过 1 分钟后毫秒被吃掉，时间戳突然变整秒。
+   ============================================================ */
+const T_MS = 1697212340123;
+const _dt = new Date(T_MS);
+const expectClock = U.pad2(_dt.getHours()) + ":" + U.pad2(_dt.getMinutes()) + ":"
+  + U.pad2(_dt.getSeconds()) + "." + U.pad3(_dt.getMilliseconds());
+check("util: fmtClock 输出 HH:MM:SS.mmm", U.fmtClock(T_MS) === expectClock, U.fmtClock(T_MS));
+check("util: fmtClock(withMs=false) 只到秒",
+  U.fmtClock(T_MS, false) === expectClock.slice(0, 8), U.fmtClock(T_MS, false));
+check("util: fmtClock 非法输入回退占位符", U.fmtClock(NaN) === "--:--:--", U.fmtClock(NaN));
+check("util: fmtRelative 不足 1 分钟保留 3 位小数", U.fmtRelative(1234.5) === "1.235s", U.fmtRelative(1234.5));
+check("util: fmtRelative 超过 1 分钟仍保留毫秒（不塌成整秒）",
+  U.fmtRelative(62345.6) === "1m02.346s", U.fmtRelative(62345.6));
+check("util: fmtRelative 59.9996s 进位成 1m00.000s 而非 60.000s",
+  U.fmtRelative(59999.6) === "1m00.000s", U.fmtRelative(59999.6));
+check("util: fmtRelative 零与非法值不产出 NaN",
+  U.fmtRelative(0) === "0.000s" && U.fmtRelative(NaN) === "0.000s" && U.fmtRelative(undefined) === "0.000s");
+
+/* ============================================================
+   ⑭ 开源协议预设（FireWater / Teleplot / JustFloat / 匿名 V1.0）
+   ------------------------------------------------------------
+   预设是「点一下就用社区事实标准」的入口，一旦某个字段写错，
+   用户看到的是「套了预设反而解不出来」，比没有预设更糟。故逐条端到端验。
+   ============================================================ */
+const presetIds = core.presets().map(p => p.id).sort().join(",");
+check("core: 内置 4 套开源协议预设", presetIds === "ano10,firewater,justfloat,teleplot", presetIds);
+check("core: 每条预设的 kind 与 rule.active 一致",
+  core.presets().every(p => p.kind === p.rule.active));
+check("core: 未知预设 id 返回 null（不抛异常）",
+  core.getPreset("nope") === null && core.presetRule("nope") === null);
+check("core: presetRule 用默认值补齐为完整规则",
+  (() => {
+    const r = core.presetRule("firewater");
+    return !!r && r.active === "text" && !!r.text && !!r.hex && Array.isArray(r.hex.fields);
+  })());
+check("预设 FireWater: 同一行多组 name:value 全部解出",
+  (() => {
+    const v = Parser.parseText("temp:25.3, cur:1.02, rpm:1800", core.presetRule("firewater")).values;
+    return v.temp === 25.3 && v.cur === 1.02 && v.rpm === 1800;
+  })());
+check("预设 Teleplot: 忽略 > 前缀，取出 rpm",
+  Parser.parseText(">rpm:1800", core.presetRule("teleplot")).values.rpm === 1800);
+check("预设 JustFloat: 按帧尾 0000807F 定界并解出 4 路 float32",
+  (() => {
+    const r = core.presetRule("justfloat");
+    /* 4 路 float32 小端：0.0 / 1.0 / 2.0 / 3.0，再接帧尾 +Inf */
+    const u8 = U.hexToBytes("00 00 00 00 00 00 80 3F 00 00 00 40 00 00 40 40 00 00 80 7F");
+    const ex = C.extractFrames(u8, new Uint8Array(0), r.hex);
+    if (ex.frames.length !== 1 || ex.frames[0].length !== 20) { return false; }
+    const pr = Parser.parseHexFrame(ex.frames[0], { fields: r.hex.fields, checksum: r.hex.checksum });
+    return pr.ok && pr.values.ch1 === 0 && pr.values.ch2 === 1
+      && pr.values.ch3 === 2 && pr.values.ch4 === 3;
+  })());
+check("预设 匿名 V1.0: 示例帧 SUM8 自洽，且能被自身规则恰好收帧并解出",
+  (() => {
+    const r = core.presetRule("ano10");
+    const u8 = U.hexToBytes(core.getPreset("ano10").sample);
+    const ex = C.extractFrames(u8, new Uint8Array(0), r.hex);
+    if (ex.frames.length !== 1 || ex.frames[0].length !== u8.length || ex.rest.length !== 0) { return false; }
+    const pr = Parser.parseHexFrame(ex.frames[0], { fields: r.hex.fields, checksum: r.hex.checksum });
+    /* func=1；x=0x0064×0.01=1.00；y=0x0032×0.01=0.50；z=0 */
+    return pr.ok && pr.values.func === 1 && near(pr.values.x, 1, 1e-9)
+      && near(pr.values.y, 0.5, 1e-9) && pr.values.z === 0;
+  })());
+check("预设 匿名 V1.0: 校验和错 1 位即被拒（SUM8 真的在起作用）", (() => {
+  const r = core.presetRule("ano10");
+  const u8 = U.hexToBytes(core.getPreset("ano10").sample);
+  u8[u8.length - 1] ^= 0xFF;
+  const ex = C.extractFrames(u8, new Uint8Array(0), r.hex);
+  if (ex.frames.length !== 1) { return false; }
+  const pr = Parser.parseHexFrame(ex.frames[0], { fields: r.hex.fields, checksum: r.hex.checksum });
+  return pr.ok === false && pr.reason === "校验和不匹配";
+})());
+
+/* ============================================================
+   ⑮ 面向 AI 的调试包（debugBundle）
+   ------------------------------------------------------------
+   这是「让 AI 直接读数据、不用人来回截图粘贴」的交付面。
+   结构一旦缺字段，AI 就拿不到判断依据，所以字段集与摘要都要锁住。
+   ============================================================ */
+Store.pushRaw({ t: 1000, tWall: Date.now(), tLabel: "0.000s", tLabelAbs: "23:06:40.000",
+  dir: "rx", hex: "AA AA 01 06 00 64 00 32 00 00 F1", ok: true, values: { func: 1, x: 1, y: 0.5 } });
+Store.pushRaw({ t: 1001, tWall: Date.now(), tLabel: "0.001s", tLabelAbs: "23:06:40.001",
+  dir: "rx", hex: "AA AA 01 06 00 64 00 32 00 00 00", ok: false, reason: "校验和不匹配" });
+Store.pushRaw({ t: 1002, tWall: Date.now(), tLabel: "0.002s", tLabelAbs: "23:06:40.002",
+  dir: "tx", hex: "AA 55", text: "PING", ok: true });
+Store.pushFrame({ t: 1000, values: { func: 1, x: 1 }, dir: "rx", bytes: 11 });
+
+const bundle = X.debugBundle({ samples: 50 });
+check("调试包: 顶层字段齐全（kind/version/设置/样本/提示）",
+  bundle.kind === "seriallab-debug-bundle" && bundle.version === 1
+  && !!bundle.app && !!bundle.connection && !!bundle.rule && !!bundle.frameLayout
+  && !!bundle.availablePresets && !!bundle.channels && !!bundle.settings
+  && !!bundle.stats && Array.isArray(bundle.samples) && Array.isArray(bundle.failures)
+  && Array.isArray(bundle.hints) && typeof bundle.brief === "string",
+  Object.keys(bundle).join(","));
+check("调试包: 收发计数与失败计数准确",
+  bundle.stats.tx === 1 && bundle.stats.rx === 2 && bundle.stats.failedFrames === 1
+  && bundle.stats.failureReasons.length === 1
+  && bundle.stats.failureReasons[0].reason === "校验和不匹配",
+  JSON.stringify(bundle.stats));
+check("调试包: 样本保留原始 HEX 与解出值，失败样本带原因",
+  bundle.samples.length === 3
+  && bundle.samples[0].hex === "AA AA 01 06 00 64 00 32 00 00 F1"
+  && bundle.samples[0].values.x === 1
+  && bundle.failures.length === 1 && bundle.failures[0].reason === "校验和不匹配");
+check("调试包: 通道统计含颜色与量程（便于 AI 判断哪条线是哪路）",
+  bundle.channels.length >= 1
+  && bundle.channels.every(c => typeof c.key === "string" && typeof c.color === "string"
+    && typeof c.count === "number"),
+  JSON.stringify(bundle.channels.map(c => c.key)));
+check("调试包: 帧结构说明与预设清单一并给出",
+  bundle.frameLayout.join(" ").indexOf("分隔符") >= 0
+  && bundle.availablePresets.length === 4);
+check("调试包: 摘要 brief 段落齐全",
+  ["[连接]", "[显示设置]", "[帧结构]", "[统计]", "[通道", "[给 AI 的提示]", "[使用方法]"]
+    .every(seg => bundle.brief.indexOf(seg) >= 0), bundle.brief.slice(0, 60));
+check("调试包: 摘要不含 undefined / NaN / [object",
+  bundle.brief.indexOf("undefined") < 0 && bundle.brief.indexOf("NaN") < 0
+  && bundle.brief.indexOf("[object") < 0);
+check("调试包: options.samples 被限幅且不抛异常",
+  (() => {
+    const a = X.debugBundle({ samples: 1 });
+    const b = X.debugBundle({ samples: 999999 });
+    return a.samples.length === 3 && b.samples.length === 3;
+  })());
+check("调试包: 导出函数已挂载", typeof X.exportDebugBundleFile === "function");
+
 console.log("");
 console.log(fails === 0 ? "SERIAL OK" : ("SERIAL FAIL: " + fails));
 process.exit(fails === 0 ? 0 : 1);

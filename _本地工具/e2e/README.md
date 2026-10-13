@@ -28,14 +28,20 @@ python "_本地工具/e2e/e2e_test.py" --fast    # 只跑功能用例(秒级~1 �
 | heatmap_annual | 数据分析页 12 周↔12 个月热力图切换 |
 | plan_generator | 路径页日期化计划表生成 |
 | ai_no_key | AI 答疑无 Key 时的友好错误提示 |
-| serial_shell | 串口助手子应用:`SerialLab` 14 模块挂载 + 版本位 + 7 页签 + 无 Web Serial 时降级横幅与禁用连接 |
-| serial_pipeline | 子应用演示模式(合成数据 50Hz)→ 预置 2 面板 → 加面板 → canvas 挂载 → 接收计数>0 → 通道表渲染 |
+| serial_shell | 串口助手子应用:`SerialLab` 14 模块挂载 + 版本位 + 8 页签 + 无 Web Serial 时降级横幅与禁用连接 |
+| serial_pipeline | 子应用演示模式(合成数据 50Hz)→ 主位监视器断言 → 快捷添加面板 → canvas 尺寸 > 40px → 接收计数>0 → 监视器行渲染 |
 | serial_export | 子应用配置落盘 `humanoid-serial-config-v1` + 原始记录 CSV 下载(BOM 与数据行断言) |
+| serial_wiring | 控件 → 配置接线与持久化(改完刷新回填,防"只加控件不接线") |
+| serial_demo_rule | 演示模式跟随用户自定义 HEX 规则(否则自定义协议进演示零通道) |
+| serial_stage | 上下分割比例拖拽 + 波形不被监视器拉长(反向验证)+ 全屏 + 收起 + 键盘快捷键 + 比例落盘 |
+| serial_run | 运行绿圆标三态(未连接/运行/暂停)与左栏页签开关**同口径**(同一 `core.state.paused`) |
+| serial_display | 绝对时刻格式 + 时间戳与正文颜色不同 + 相对秒口径 + 字号根变量 + 数字标红 + 规则输入框回填 |
+| serial_preset_bundle | 四枚开源协议预设套用 + 帧头回填 + 匿名 V1.0 出通道 + AI 调试包下载与结构断言 |
 | page_404 | 404 页无异常 |
 | katex_render | 公式渲染(仅在线环境,离线自动 SKIP) |
 | full_site_smoke | search-index 全站逐页:未捕获异常 + 同源控制台错误 + 误落 404 |
 
-> 串口助手子应用在 `06_学习工具/_串口调试助手/`(`_` 前缀),**不进 search-index,因此 `full_site_smoke` 覆盖不到它**(AUDIT A-71);三条 `serial_*` 用例即为它的浏览器层兜底,纯函数层则由 `_本地工具/校验串口应用.js` 覆盖。
+> 串口助手子应用在 `06_学习工具/_串口调试助手/`(`_` 前缀),**不进 search-index,因此 `full_site_smoke` 覆盖不到它**(AUDIT A-71);九条 `serial_*` 用例即为它的浏览器层兜底,纯函数层则由 `_本地工具/校验串口应用.js`(126 项)覆盖。
 
 ## 约定
 

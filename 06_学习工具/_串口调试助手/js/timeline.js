@@ -19,6 +19,20 @@
   var MAX_FRAMES = 200000;    /* 单次录制帧数上限，约 1 小时 @50Hz */
   var MAX_KEEP = 20;          /* 内存里最多保留多少条录制 */
 
+  /* 自动存档用的可调上限与滚动模式：
+     手动录制是「一次性存档」，到顶就停（保住完整的事故现场）；
+     自动存档是「滚动缓冲」，到顶丢最旧的 20% 继续录——因为它的用途是
+     「随时导出最近一段给 AI 看」，保留最新数据比保留全部更有用。 */
+  var maxFrames = MAX_FRAMES;
+  var rolling = false;
+
+  T.setMaxFrames = function (n) {
+    maxFrames = (typeof n === "number" && n > 0) ? Math.min(n, MAX_FRAMES) : MAX_FRAMES;
+  };
+  T.maxFrames = function () { return maxFrames; };
+  T.setRolling = function (on) { rolling = !!on; };
+  T.isRolling = function () { return rolling; };
+
   var records = [];
   var cur = null;
 
@@ -95,10 +109,14 @@
   core.on("frame", function (frame) {
     if (!cur) { return; }
     if (frame && frame.source === "playback") { return; }   /* 回放出来的帧不再录进去 */
-    if (cur.frames.length >= MAX_FRAMES) {
-      core.log("warn", "录制已达上限（" + MAX_FRAMES + " 帧），自动停止");
-      T.stopRecord();
-      return;
+    if (cur.frames.length >= maxFrames) {
+      if (rolling) {
+        cur.frames.splice(0, Math.floor(maxFrames * 0.2));
+      } else {
+        core.log("warn", "录制已达上限（" + maxFrames + " 帧），自动停止");
+        T.stopRecord();
+        return;
+      }
     }
     cur.frames.push({
       t: Math.round(frame.t * 1000) / 1000,

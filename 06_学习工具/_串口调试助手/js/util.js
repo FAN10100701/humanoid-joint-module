@@ -55,6 +55,47 @@
     return out;
   };
 
+  /* ---------- 绝对时刻格式化（监视器时间戳的「绝对口径」）----------
+     输入 Date.now() 毫秒值（注意：U.now() 是 performance.now()，单调但不是墙钟，
+     两者不可混用——记录里同时存 t(单调) 与 tWall(墙钟)，绝对时刻一律走 tWall）。
+     withMs 省略时保留毫秒，与 VOFA+ / SerialWeb 的显示习惯一致。
+     例：fmtClock(1750000000000) -> "23:06:40.000" */
+  U.fmtClock = function (ms, withMs) {
+    var d = new Date(ms);
+    if (isNaN(d.getTime())) { return "--:--:--"; }
+    return U.pad2(d.getHours()) + ":" + U.pad2(d.getMinutes()) + ":" + U.pad2(d.getSeconds()) +
+      (withMs === false ? "" : "." + U.pad3(d.getMilliseconds()));
+  };
+
+  /* ---------- 两位 / 三位补零 ---------- */
+  U.pad2 = function (n) {
+    var s = String(n | 0);
+    return s.length >= 2 ? s : "0" + s;
+  };
+
+  U.pad3 = function (n) {
+    var s = String(n | 0);
+    while (s.length < 3) { s = "0" + s; }
+    return s;
+  };
+
+  /* ---------- 相对时长格式化（监视器时间戳的「相对口径」）----------
+     fmtRelative(1234.5) -> "1.235s"；超过 1 分钟改成分秒，避免数字太长挤掉内容列：
+     fmtRelative(62345.6) -> "1m02.346s"
+     注意：分秒口径同样保留 3 位小数——早期版本在这里把小数丢了，
+     跑过 1 分钟后时间戳精度会突然从毫秒跌到整秒，看不出帧间抖动。
+     先四舍五入到整毫秒再判分支，这样 59.9996s 会规规矩矩进位成 "1m00.000s"，
+     而不是出现 "60.000s" 这种既违和又破坏列宽的数字。 */
+  U.fmtRelative = function (ms) {
+    var v = (typeof ms === "number" && isFinite(ms)) ? ms : 0;
+    var sign = v < 0 ? "-" : "";
+    var aMs = Math.round(Math.abs(v));
+    if (aMs < 60000) { return sign + (aMs / 1000).toFixed(3) + "s"; }
+    var m = Math.floor(aMs / 60000);
+    var rest = aMs - m * 60000;
+    return sign + m + "m" + U.pad2(Math.floor(rest / 1000)) + "." + U.pad3(rest % 1000) + "s";
+  };
+
   /* ---------- 数值限幅 ---------- */
   U.clamp = function (v, lo, hi) {
     if (v < lo) { return lo; }

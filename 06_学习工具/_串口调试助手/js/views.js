@@ -1,11 +1,26 @@
 /* ============================================================
    网页端串口调试助手 · SerialLab
    模块：views（工作区视图调度）
-   职责：图表框（面板）的增删、顺序（含手写拖拽排序）、折叠、
-         以及统一的渲染节流循环；并向渲染器提供 data provider。
+   职责：
+     1) 面板的增删、停靠位切换（主位 C1 / 工作区 C2）、折叠、拖拽排序、拖拽改高
+     2) 主区上下分割比例（监视器 : 波形）的读写与持久化
+     3) 统一的渲染节流循环；并向渲染器提供 data provider
    依赖：core、util、plugins、datastore
+
+   布局模型（与 index.html 的 DOM 一一对应）：
+     .sl-stage
+       ├─ .sl-stage-bar      工作区工具条
+       ├─ .sl-stage-main     C1：主位面板（默认是串口监视器）——主视觉
+       ├─ .sl-split          可拖拽的分割线（改 --sl-mon-grow / --sl-grid-grow）
+       └─ .sl-stage-grid     C2：其余面板的栅格（每个面板固定高度、独立滚动）
+
+   为什么要这样改（对旧版的修正）：
+     旧版把所有面板塞进同一个 CSS Grid，Grid 默认 align-items:stretch，
+     于是「同一行内所有面板等高」——监视器一旦变高，同行的波形就被拉成一条竖线。
+     现在监视器独占 C1，波形在 C2 里各自固定高度、各自滚动，两者互不影响。
+
    渲染节流说明：串口数据可能上百 Hz 到达，但屏幕只需要 20~25 fps。
-     这里用 requestAnimationFrame 驱动，并按 DRAW_INTERVAL 抽帧，
+     这里用 requestAnimationFrame 驱动，并按 drawInterval 抽帧，
      避免每个字节都触发一次重绘把主线程压死。
    ============================================================ */
 ;(function (global) {
@@ -18,7 +33,11 @@
 
   var V = {};
 
-  var gridEl = null;
+  var mainHost = null;          /* C1 主位面板的宿主 */
+  var gridHost = null;          /* C2 工作区栅格 */
+  var stageEl = null;           /* .sl-stage（承载分割比例变量与全屏/收起状态类） */
+  var splitEl = null;           /* 分割线 */
+
   var panels = [];              /* 描述符数组，顺序即显示顺序 */
   var instances = {};           /* id -> 渲染器实例 */
   var els = {};                 /* id -> 面板 DOM */
@@ -27,6 +46,17 @@
   var lastDraw = 0;
   var drawInterval = 40;        /* ms，约 25 fps */
   var dragId = null;
+  var rzId = null, rzStartY = 0, rzStartH = 0;
+
+  /* 高度约束：太小画不出东西，太大没有意义 */
+  var DEF_H = 260, MIN_H = 140, MAX_H = 2000;
+  /* 分割比例约束：主位至少能显示几行日志，波形区至少能显示一个面板 */
+  var RATIO_MIN = 0.20, RATIO_MAX = 0.85;
+  var RATIO_DEF = 0.62;
+
+  V.DEF_H = DEF_H;
+  V.MIN_H = MIN_H;
+  V.MAX_H = MAX_H;
 
   /* data provider：渲染器只认这个接口，不直接依赖 datastore，便于替换与测试 */
   var data = {
@@ -41,8 +71,81 @@
   V.data = data;
 
   /* ------------------------------------------------------------
-     1) DOM 构建
+     1) 槽位工具
      ------------------------------------------------------------ */
+  function isMain(p) { return !!p && p.slot === "main"; }
+
+  function hostOf(p) { return isMain(p) ? mainHost : gridHost; }
+
+  /* 主位同一时刻只能有一个面板：新面板进主位时，旧主位退回工作区 */
+  function enforceSingleMain(keepId) {
+    for (var i = 0; i < panels.length; i++) {
+      var p = panels[i];
+      if (p.slot === "main" && p.id !== keepId) {
+        p.slot = "grid";
+        var el = els[p.id];
+        if (el && gridHost) { gridHost.appendChild(el); }
+        stylePanel(el, p);
+      }
+    }
+  }
+
+  /* 把描述符里的 slot / h / span 落到 DOM 上 */
+  function stylePanel(el, p) {
+    if (!el) { return; }
+    var main = isMain(p);
+    if (el.classList) {
+      el.classList.toggle("sl-panel--main", main);
+      el.classList.toggle("sl-panel--grid", !main);
+    }
+    if (main) {
+      el.style.height = "";                 /* 主位高度由 C1 的 flex 决定 */
+      el.style.gridColumn = "";
+    } else {
+      el.style.height = (p.h || DEF_H) + "px";
+      el.style.gridColumn = (p.span === 2) ? "span 2" : "";
+    }
+  }
+
+  /* 按 panels 数组顺序把每个面板重新挂回自己的槽位（appendChild 会移动已有节点） */
+  function reflowHosts() {
+    for (var i = 0; i < panels.length; i++) {
+      var el = els[panels[i].id];
+      if (el) { hostOf(panels[i]).appendChild(el); }
+    }
+  }
+
+  function applyRatio() {
+    if (!stageEl) { return; }
+    var r = V.monRatio();
+    stageEl.style.setProperty("--sl-mon-grow", String(Math.round(r * 1000)));
+    stageEl.style.setProperty("--sl-grid-grow", String(Math.round((1 - r) * 1000)));
+  }
+
+  /* 主位是否收起 → 同步给 stage（C1 压成只剩标题条） */
+  function syncMainCollapsedClass() {
+    if (!stageEl) { return; }
+    var mp = V.mainPanel();
+    var col = false;
+    if (mp && els[mp.id]) { col = els[mp.id].className.indexOf("is-collapsed") >= 0; }
+    stageEl.classList.toggle("is-main-collapsed", col);
+    if (core.config.ui) { core.config.ui.monCollapsed = col; }
+  }
+
+  /* ------------------------------------------------------------
+     2) DOM 构建
+     ------------------------------------------------------------ */
+  function iconBtn(text, title, cls, onclick) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "sl-iconbtn" + (cls ? (" " + cls) : "");
+    b.textContent = text;
+    b.title = title;
+    b.setAttribute("aria-label", title);
+    b.onclick = function (e) { e.stopPropagation(); onclick(); };
+    return b;
+  }
+
   function buildPanelEl(panel) {
     var el = document.createElement("div");
     el.className = "sl-panel";
@@ -63,25 +166,29 @@
     type.textContent = r ? r.label : panel.type;
     head.appendChild(type);
 
-    var btnCollapse = document.createElement("button");
-    btnCollapse.type = "button";
-    btnCollapse.className = "sl-btn is-sm";
-    btnCollapse.textContent = "收起";
-    btnCollapse.onclick = function (e) {
-      e.stopPropagation();
-      V.toggleCollapse(panel.id);
-    };
-    head.appendChild(btnCollapse);
+    if (isMain(panel)) {
+      head.appendChild(iconBtn("⛶", "全屏显示（再点一次还原）", "is-main-only", function () {
+        V.toggleMainFull();
+      }));
+      head.appendChild(iconBtn("▭", "收起主区（波形区占满）", "", function () {
+        V.setMainCollapsed(true);
+      }));
+    } else {
+      head.appendChild(iconBtn("⇱", "移到主位（与串口监视器互换位置）", "", function () {
+        V.moveToSlot(panel.id, "main");
+      }));
+      head.appendChild(iconBtn("⇔", "加宽 / 还原（跨两列）", "", function () {
+        V.toggleSpan(panel.id);
+      }));
+    }
 
-    var btnDel = document.createElement("button");
-    btnDel.type = "button";
-    btnDel.className = "sl-btn is-sm is-danger";
-    btnDel.textContent = "移除";
-    btnDel.onclick = function (e) {
-      e.stopPropagation();
+    head.appendChild(iconBtn("▾", "收起 / 展开", "", function () {
+      V.toggleCollapse(panel.id);
+    }));
+
+    head.appendChild(iconBtn("✕", "移除该面板", "is-del", function () {
       V.removePanel(panel.id);
-    };
-    head.appendChild(btnDel);
+    }));
 
     head.addEventListener("pointerdown", function (e) {
       /* 点在按钮上不触发拖拽 */
@@ -95,13 +202,32 @@
     body.className = "sl-panel-body";
     el.appendChild(body);
 
+    /* 工作区面板右下角给一个缩放手柄：纵向拖改高度，双击复位默认高度。
+       手柄挂在 body 内部（而不是 el 末尾），这样 el.lastElementChild 始终是 body，
+       Plugins.instantiate(panel, el.lastElementChild) 的既有约定不被破坏。 */
+    if (!isMain(panel)) {
+      var grip = document.createElement("div");
+      grip.className = "sl-panel-grip";
+      grip.title = "拖动改高度 · 双击复位默认高度";
+      grip.addEventListener("pointerdown", function (e) {
+        e.stopPropagation();
+        if (e.preventDefault) { e.preventDefault(); }
+        startResize(panel.id, e);
+      });
+      grip.addEventListener("dblclick", function (e) {
+        e.stopPropagation();
+        V.setPanelHeight(panel.id, DEF_H);
+      });
+      body.appendChild(grip);
+    }
+
+    stylePanel(el, panel);
     return el;
   }
 
   /* ------------------------------------------------------------
-     2) 拖拽排序（手写 pointer 事件，不依赖任何库）
-     策略：拖动过程中实时把元素插入到「离指针最近的其它面板」的前/后，
-           松手即提交顺序，视觉反馈最直接。
+     3) 拖拽排序（手写 pointer 事件，不依赖任何库）
+     拖动过程中实时把元素插入到「同一槽位里离指针最近的其它面板」的前/后，松手提交。
      ------------------------------------------------------------ */
   function startDrag(id, e) {
     if (!els[id]) { return; }
@@ -124,11 +250,14 @@
   function onDragMove(e) {
     if (!dragId) { return; }
     var el = els[dragId];
-    if (!el || !gridEl) { return; }
+    var p = V.getPanel(dragId);
+    if (!el || !p) { return; }
+    var host = hostOf(p);
+    if (!host) { return; }
 
     var kids = [];
-    for (var i = 0; i < gridEl.children.length; i++) {
-      var n = gridEl.children[i];
+    for (var i = 0; i < host.children.length; i++) {
+      var n = host.children[i];
       if (n !== el && n.className && n.className.indexOf("sl-panel") >= 0) { kids.push(n); }
     }
     if (!kids.length) { return; }
@@ -144,22 +273,34 @@
     if (!best) { return; }
 
     var br = best.getBoundingClientRect();
-    var insertBefore = e.clientY < br.top + br.height / 2;
+    var relY = e.clientY - (br.top + br.height / 2);
+    var relX = e.clientX - (br.left + br.width / 2);
+    /* 主位是单块区域，只看上下半区；
+       栅格里先看纵向（换行意图明确），纵向几乎持平（同一行内左右移动）时改用横向判断，
+       否则跨列面板会让同一行内的左右拖拽完全没反应。 */
+    var insertBefore = isMain(p)
+      ? (relY < 0)
+      : (Math.abs(relY) > br.height * 0.3 ? (relY < 0) : (relX < 0));
+
     if (insertBefore) {
-      if (best.previousSibling !== el) { gridEl.insertBefore(el, best); }
+      if (best.previousSibling !== el) { host.insertBefore(el, best); }
     } else {
-      if (best.nextSibling !== el) { gridEl.insertBefore(el, best.nextSibling); }
+      if (best.nextSibling !== el) { host.insertBefore(el, best.nextSibling); }
     }
   }
 
-  /* 把 DOM 顺序同步到 panels 数组与配置 */
+  /* 把 DOM 顺序同步到 panels 数组与配置（按槽位分别提交） */
   function commitOrder() {
-    if (!gridEl) { return; }
+    if (!gridHost) { return; }
     var newOrder = [];
-    for (var i = 0; i < gridEl.children.length; i++) {
-      var n = gridEl.children[i];
-      var pid = n.getAttribute && n.getAttribute("data-panel-id");
-      if (pid) { newOrder.push(pid); }
+    var hosts = [mainHost, gridHost];
+    for (var h = 0; h < hosts.length; h++) {
+      if (!hosts[h]) { continue; }
+      for (var i = 0; i < hosts[h].children.length; i++) {
+        var n = hosts[h].children[i];
+        var pid = n.getAttribute && n.getAttribute("data-panel-id");
+        if (pid) { newOrder.push(pid); }
+      }
     }
     var sorted = [];
     for (var k = 0; k < newOrder.length; k++) {
@@ -173,10 +314,70 @@
   }
 
   /* ------------------------------------------------------------
-     3) 面板增删
+     4) 拖拽改高
+     ------------------------------------------------------------ */
+  function startResize(id, e) {
+    var p = V.getPanel(id);
+    if (!p || isMain(p)) { return; }
+    rzId = id;
+    rzStartY = e.clientY;
+    rzStartH = p.h || DEF_H;
+    if (els[id]) { els[id].classList.add("is-resizing"); }
+
+    var move = function (ev) { onResizeMove(ev); };
+    var up = function () {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      if (rzId && els[rzId]) { els[rzId].classList.remove("is-resizing"); }
+      rzId = null;
+      V.save();
+      core.emit("panels:changed", { reason: "resize" });
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+  }
+
+  function onResizeMove(e) {
+    var p = V.getPanel(rzId);
+    if (!p) { return; }
+    p.h = Math.round(U.clamp(rzStartH + (e.clientY - rzStartY), MIN_H, MAX_H));
+    if (els[p.id]) { els[p.id].style.height = p.h + "px"; }
+    if (instances[p.id] && instances[p.id].resize) {
+      try { instances[p.id].resize(); } catch (err) { /* 单个面板适配失败不影响拖动 */ }
+    }
+  }
+
+  V.setPanelHeight = function (id, h) {
+    var p = V.getPanel(id);
+    if (!p) { return null; }
+    p.h = Math.round(U.clamp(h, MIN_H, MAX_H));
+    stylePanel(els[id], p);
+    if (instances[id] && instances[id].resize) {
+      try { instances[id].resize(); } catch (e) { /* 忽略 */ }
+    }
+    V.save();
+    V.redraw();
+    return p.h;
+  };
+
+  V.toggleSpan = function (id) {
+    var p = V.getPanel(id);
+    if (!p || isMain(p)) { return null; }
+    p.span = (p.span === 2) ? 1 : 2;
+    stylePanel(els[id], p);
+    if (instances[id] && instances[id].resize) {
+      try { instances[id].resize(); } catch (e) { /* 忽略 */ }
+    }
+    V.save();
+    V.redraw();
+    return p.span;
+  };
+
+  /* ------------------------------------------------------------
+     5) 面板增删与停靠位
      ------------------------------------------------------------ */
   V.addPanel = function (desc, silent) {
-    if (!gridEl) { return null; }
+    if (!gridHost) { return null; }
     /* 监视器面板的显示开关跟随全局配置（时间戳 / HEX 显示）：
        只在该面板未显式指定时播种，导入的面板包里的显式设置优先。
        这里是所有面板的唯一入口，覆盖「+串口监视器」「插件页新增」
@@ -206,14 +407,17 @@
       if (!silent) { core.emit("toast", { level: "warn", msg: "面板配置已自动修正：" + res.errors[0] }); }
     }
 
+    if (isMain(panel)) { enforceSingleMain(panel.id); }
+
     var el = buildPanelEl(panel);
-    gridEl.appendChild(el);
+    hostOf(panel).appendChild(el);
     els[panel.id] = el;
     panels.push(panel);
 
     var inst = Plugins.instantiate(panel, el.lastElementChild);
     instances[panel.id] = inst;
 
+    syncMainCollapsedClass();
     V.save();
     core.emit("panels:changed", { reason: "add", panel: panel });
     if (!silent) { V.redraw(); }
@@ -232,8 +436,42 @@
     for (var i = panels.length - 1; i >= 0; i--) {
       if (panels[i].id === id) { panels.splice(i, 1); }
     }
+    syncMainCollapsedClass();
     V.save();
     core.emit("panels:changed", { reason: "remove", id: id });
+  };
+
+  /* 切换停靠位：把面板在 C1（主位）与 C2（工作区）之间搬运。
+     做法是「重建面板 + 重建渲染器」而不是搬 DOM 节点：
+       a) 主位与工作区的头部按钮组不同，复用头部会带错按钮；
+       b) canvas 渲染器持有创建时的宿主引用，直接把 canvas 搬到新宿主
+          会让它一直按旧宿主（已脱离文档）量尺寸，画布会塌成 0×0。
+     代价只是重建一次渲染器——数据都在 datastore 里，下一帧就重画出来。 */
+  V.moveToSlot = function (id, slot) {
+    var p = V.getPanel(id);
+    if (!p) { return null; }
+    slot = (slot === "main") ? "main" : "grid";
+    if (p.slot === slot) { return p; }
+
+    p.slot = slot;
+    if (slot === "main") { enforceSingleMain(id); }
+
+    var old = els[id];
+    if (instances[id] && instances[id].destroy) {
+      try { instances[id].destroy(); } catch (e) { /* 忽略 */ }
+    }
+    if (old && old.parentNode) { old.parentNode.removeChild(old); }
+
+    var el = buildPanelEl(p);
+    hostOf(p).appendChild(el);
+    els[id] = el;
+    instances[id] = Plugins.instantiate(p, el.lastElementChild);
+
+    syncMainCollapsedClass();
+    V.save();
+    core.emit("panels:changed", { reason: "slot", panel: p });
+    V.redraw();
+    return p;
   };
 
   V.toggleCollapse = function (id) {
@@ -243,6 +481,7 @@
     el.className = collapsed
       ? el.className.replace(/\s*is-collapsed/, "")
       : el.className + " is-collapsed";
+    syncMainCollapsedClass();
     if (collapsed && instances[id] && instances[id].resize) {
       /* 展开后画布尺寸变了，补一次适配 */
       setTimeout(function () {
@@ -250,6 +489,11 @@
         V.redraw();
       }, 0);
     }
+  };
+
+  V.isCollapsed = function (id) {
+    var el = els[id];
+    return !!(el && el.className.indexOf("is-collapsed") >= 0);
   };
 
   V.clearPanels = function () {
@@ -271,6 +515,11 @@
 
   V.count = function () { return panels.length; };
 
+  V.mainPanel = function () {
+    for (var i = 0; i < panels.length; i++) { if (panels[i].slot === "main") { return panels[i]; } }
+    return null;
+  };
+
   /* 更新面板描述符（插件编辑器用）——重建该面板以应用新配置 */
   V.updatePanel = function (id, patch) {
     var old = V.getPanel(id);
@@ -289,20 +538,22 @@
     delete els[id];
     delete instances[id];
     if (index >= 0) { panels.splice(index, 1); }
+    if (index < 0) { index = panels.length; }
 
     var res = Plugins.validate(merged);
     if (!res.panel) { return null; }
     var panel = res.panel;
     panel.id = id;
 
-    var newEl = buildPanelEl(panel);
-    /* 插回原位置 */
-    var ref = gridEl.children[index] || null;
-    gridEl.insertBefore(newEl, ref);
-    els[panel.id] = newEl;
+    if (isMain(panel)) { enforceSingleMain(panel.id); }
     panels.splice(index, 0, panel);
-    instances[panel.id] = Plugins.instantiate(panel, newEl.lastElementChild);
 
+    var newEl = buildPanelEl(panel);
+    els[panel.id] = newEl;
+    instances[panel.id] = Plugins.instantiate(panel, newEl.lastElementChild);
+    reflowHosts();
+
+    syncMainCollapsedClass();
     V.save();
     core.emit("panels:changed", { reason: "update", panel: panel });
     V.redraw();
@@ -310,11 +561,59 @@
   };
 
   /* ------------------------------------------------------------
-     4) 渲染循环
+     6) 主区形态：分割比例 / 全屏 / 收起
+     ------------------------------------------------------------ */
+  V.setMonRatio = function (r) {
+    if (!(typeof r === "number") || !isFinite(r)) { return V.monRatio(); }
+    core.config.ui.monRatio = U.clamp(r, RATIO_MIN, RATIO_MAX);
+    applyRatio();
+    setTimeout(function () {
+      for (var id in instances) {
+        if (Object.prototype.hasOwnProperty.call(instances, id) && instances[id] && instances[id].resize) {
+          try { instances[id].resize(); } catch (e) { /* 忽略 */ }
+        }
+      }
+      V.redraw();
+    }, 0);
+    core.emit("config:dirty", { scope: "ui" });
+    return core.config.ui.monRatio;
+  };
+
+  V.monRatio = function () {
+    var r = core.config.ui && core.config.ui.monRatio;
+    return U.clamp((typeof r === "number" && isFinite(r)) ? r : RATIO_DEF, RATIO_MIN, RATIO_MAX);
+  };
+
+  V.toggleMainFull = function () {
+    if (!stageEl) { return false; }
+    var on = !stageEl.classList.contains("is-main-full");
+    stageEl.classList.toggle("is-main-full", on);
+    setTimeout(function () { V.redraw(); }, 0);
+    return on;
+  };
+
+  V.isMainFull = function () { return !!(stageEl && stageEl.classList.contains("is-main-full")); };
+
+  V.setMainCollapsed = function (on) {
+    var mp = V.mainPanel();
+    if (!mp) { return false; }
+    var col = V.isCollapsed(mp.id);
+    if (!!on !== col) { V.toggleCollapse(mp.id); }
+    return !!on;
+  };
+
+  V.isMainCollapsed = function () {
+    var mp = V.mainPanel();
+    return !!mp && V.isCollapsed(mp.id);
+  };
+
+  /* ------------------------------------------------------------
+     7) 渲染循环
      ------------------------------------------------------------ */
   function frame() {
     if (!running) { return; }
     rafId = global.requestAnimationFrame(frame);
+    if (core.state.paused) { return; }        /* 暂停：不刷屏，但缓冲照收 */
     var now = U.now();
     if (now - lastDraw < drawInterval) { return; }
     lastDraw = now;
@@ -323,16 +622,16 @@
 
   /* 立即重绘全部（可见）面板；单个面板异常被隔离 */
   V.redraw = function () {
-    if (!gridEl) { return; }
+    if (!gridHost) { return; }
     for (var i = 0; i < panels.length; i++) {
       var p = panels[i];
       var el = els[p.id];
       var inst = instances[p.id];
       if (!el || !inst) { continue; }
       if (el.className.indexOf("is-collapsed") >= 0) { continue; }
-      /* 滚动出视口的面板暂不重绘，省 CPU */
+      /* 滚动出视口的面板暂不重绘，省 CPU（主位永远可见，不做剔除） */
       var body = el.lastElementChild;
-      if (body) {
+      if (!isMain(p) && body) {
         var rc = body.getBoundingClientRect();
         if (rc.bottom < -80 || rc.top > (global.innerHeight || 800) + 80) { continue; }
       }
@@ -363,14 +662,26 @@
     if (rafId) { global.cancelAnimationFrame(rafId); rafId = null; }
   };
 
+  V.isRunning = function () { return running; };
+
   V.setDrawInterval = function (ms) {
     drawInterval = Math.max(16, Math.min(1000, ms || 40));
   };
 
   V.drawInterval = function () { return drawInterval; };
 
+  /* 运行 / 暂停（顶栏绿圆标）：暂停只停显示，数据继续进缓冲，恢复后接着看 */
+  V.setPaused = function (on) {
+    core.set("paused", !!on);
+    if (core.state.paused) { V.stop(); }
+    else { V.start(); V.redraw(); }
+    return !!core.state.paused;
+  };
+
+  V.isPaused = function () { return !!core.state.paused; };
+
   /* ------------------------------------------------------------
-     5) 配置持久化
+     8) 配置持久化
      ------------------------------------------------------------ */
   V.save = function () {
     core.config.panels = V.list();
@@ -384,14 +695,8 @@
 
   /* 按配置里的顺序重排（启动时用） */
   function applyLayoutOrder() {
-    if (!gridEl) { return; }
     var layout = (core.config.ui && core.config.ui.layout) || [];
     if (!layout.length) { return; }
-    for (var i = 0; i < layout.length; i++) {
-      var el = els[layout[i]];
-      if (el) { gridEl.appendChild(el); }
-    }
-    /* 同步 panels 数组顺序 */
     var sorted = [];
     for (var k = 0; k < layout.length; k++) {
       for (var m = 0; m < panels.length; m++) {
@@ -399,31 +704,93 @@
       }
     }
     if (sorted.length === panels.length) { panels = sorted; }
+    reflowHosts();
   }
 
   /* ------------------------------------------------------------
-     6) 初始化
+     9) 分割线拖拽（含键盘可达）
+     ------------------------------------------------------------ */
+  function wireSplit() {
+    if (!splitEl || !stageEl) { return; }
+
+    var startY = 0, startRatio = 0, baseH = 1, dragging = false;
+
+    function move(ev) {
+      if (!dragging) { return; }
+      V.setMonRatio(startRatio + (ev.clientY - startY) / baseH);
+    }
+    function up() {
+      if (!dragging) { return; }
+      dragging = false;
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      if (splitEl.classList) { splitEl.classList.remove("is-active"); }
+      core.saveConfig();
+    }
+    splitEl.addEventListener("pointerdown", function (e) {
+      if (e.preventDefault) { e.preventDefault(); }
+      dragging = true;
+      startY = e.clientY;
+      startRatio = V.monRatio();
+      /* 以 .sl-stage 的高度为基准：这样手指的位移与视觉位移一致，拖动不会飘 */
+      baseH = Math.max(1, stageEl.getBoundingClientRect().height);
+      if (splitEl.classList) { splitEl.classList.add("is-active"); }
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", up);
+    });
+
+    /* 键盘可达：上下键微调，Home 复位 */
+    splitEl.addEventListener("keydown", function (e) {
+      var r = V.monRatio();
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        V.setMonRatio(r + (e.key === "ArrowUp" ? -0.02 : 0.02));
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        V.setMonRatio(RATIO_DEF);
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------
+     10) 初始化
      ------------------------------------------------------------ */
   V.init = function (grid, opts) {
-    gridEl = grid;
-    if (opts && opts.drawInterval) { V.setDrawInterval(opts.drawInterval); }
+    opts = opts || {};
+    gridHost = grid;
+    mainHost = opts.mainHost || null;
+    stageEl = opts.stage || null;
+    splitEl = opts.split || null;
+    if (opts.drawInterval) { V.setDrawInterval(opts.drawInterval); }
 
-    /* 配置里的面板（静默恢复，避免启动时弹一堆修正提示） */
+    applyRatio();
+    wireSplit();
+
     var saved = (core.config.panels && core.config.panels.length) ? core.config.panels : null;
     if (saved) {
+      /* 静默恢复，避免启动时弹一堆修正提示 */
       for (var i = 0; i < saved.length; i++) { V.addPanel(saved[i], true); }
       applyLayoutOrder();
+    } else {
+      /* 首次使用：监视器占主位（主视觉），时域波形进工作区 */
+      V.addPanel({ type: "textmon", title: "串口监视器", channels: [], window: 400, slot: "main" }, true);
+      V.addPanel({ type: "timeplot", title: "时域波形", channels: ["auto"], window: 500, h: 300 }, true);
     }
 
-    /* 首次使用给一个默认面板，避免用户面对空白工作区 */
-    if (!panels.length) {
-      V.addPanel({
-        type: "timeplot", title: "时域波形", channels: ["auto"], window: 500
-      }, true);
-      V.addPanel({
-        type: "textmon", title: "串口监视器", channels: [], window: 400
-      }, true);
+    /* 老配置没有「主位」概念：把第一个文本监视器提为监视器主位 */
+    if (!V.mainPanel()) {
+      var promoted = false;
+      for (var k = 0; k < panels.length; k++) {
+        if (panels[k].type === "textmon") { V.moveToSlot(panels[k].id, "main"); promoted = true; break; }
+      }
+      /* 连监视器都没有就补一个——主区不该是空的 */
+      if (!promoted) {
+        V.addPanel({ type: "textmon", title: "串口监视器", channels: [], window: 400, slot: "main" }, true);
+      }
     }
+
+    /* 恢复上次的收起状态 */
+    if (core.config.ui && core.config.ui.monCollapsed) { V.setMainCollapsed(true); }
   };
 
   SL.views = V;

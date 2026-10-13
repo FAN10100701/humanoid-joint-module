@@ -17,9 +17,9 @@ js/fft.js             零依赖 radix-2 FFT
 js/datastore.js       环形缓冲 + 通道元数据 + 原始帧记录
 js/transport.js       Web Serial 传输层 + 内置演示数据源
 js/plugins.js         声明式插件注册表 + 7 个内置渲染器 + 面板包
-js/views.js           工作区面板调度与节流渲染
-js/timeline.js        录制 / 冻结 / 回放
-js/exporters.js       数据导出 / 配置导入导出 / 单文件离线版装配
+js/views.js           主区上下分割 / 面板调度与节流渲染
+js/timeline.js        录制 / 暂停刷新 / 回放
+js/exporters.js       数据导出 / 配置导入导出 / 单文件离线版装配 / AI 调试包
 js/ui.js              DOM 绑定 / 控件 / 对话框 / 主题 / 快捷键 / 发送引擎
 js/app.js             唯一编排者：装配数据管线并启动
 llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
@@ -64,6 +64,17 @@ llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
 | 控件接线 | 界面上的每个控件都必须用 `ui.js` 的 `addBind({el, path, ...})` 落到 `core.config` 上；`read/write` 用于控件取值与配置值类型不一致的场景（复选框↔字符串、下拉字面量 `\n` ↔ 真换行）。**只加控件不接线是真实缺陷**——V2.2.0 修过 14 个（波特率、编码、换行、自动重连、复位等待、HEX 发送…全部改不动） |
 | 显示层 vs 解析层 | 「HEX 显示」「显示时间戳」是**监视器面板的 opts**（`transport.hexRecv` / `transport.showTimestamp` 只是它们的持久化落点）；数据解析成通道由 `rule.active`（解析模式）决定。两者语义独立，别合并 |
 | 数值口径 | 时间轴用 `util.now()`（`performance.now`，单调）；绘图量程自动时留 `null` |
+| **两种时钟不可混用** | `t` = `performance.now()`（单调，**绘图时间轴**）；`tWall` = `Date.now()`（墙钟，**绝对时刻显示的唯一来源**）。记录里两者并存；`mkRec()`（app.js）是唯一构造入口，别手写记录对象 |
+| 时间戳口径 | `transport.timeMode`：`abs`（默认，`U.fmtClock` → `23:06:40.125`）/ `rel`（`U.fmtRelative` → `1.235s`，超 1 分钟为 `1m02.346s`，**毫秒不丢**）。渲染层每帧现读配置，改完只需 `redraw()` |
+| 暂停 = 单一真源 | 只有 `core.state.paused` 一个真源。`views.setPaused()` 与 `timeline.toggleFreeze()` 都写它；`core.on("state")` 里统一刷新绿圆标（`renderRun`）与页签按钮（`renderRecordState`）。**暂停只停重绘，传输/分帧/解析/缓冲照常** |
+| 主区布局模型 | `.sl-stage` 内 C1/C2 用 `flex-grow` 数值对表达比例：`--sl-mon-grow` = r×1000、`--sl-grid-grow` = (1−r)×1000（`views.applyRatio()` 唯一写入点）。**工作区面板是固定像素高度**（`stylePanel` 写 `el.style.height`），`.sl-grid` 必须保留 `align-items: start` —— 这正是不让波形被监视器拉长的关键 |
+| 面板 body 约定 | `Plugins.instantiate(panel, el.lastElementChild)` 依赖「面板最后一个子元素是 body」→ 任何附着元素（如缩放手柄 `.sl-panel-grip`）必须 `body.appendChild()`，**不能挂到 el 末尾** |
+| canvas 宿主绑定 | canvas 渲染器持有创建时的宿主引用，**跨槽位移 DOM 会让画布塌成 0×0** → `views.moveToSlot()` 是「销毁渲染器 + 重建面板 + 重建渲染器」，不是搬 DOM |
+| 布局字段不走 opts | `slot` / `h` / `span` 三个布局字段由 `P.validate()` 直接挂在 panel 上（**不在 `renderer.defaults.opts` 白名单里**，写进 opts 会被丢掉） |
+| 配置版本 | `core.CFG_VERSION` 当前 = **2**。新增配置段必须写迁移（`migrateConfig`，只补齐缺失字段、不覆盖用户改过的值）。v1→v2 加了整个 `ui` 显示段 |
+| 数字标红 | 动态文本**先过 `U.esc()`**，再用「实体引用优先」的正则 `&#?\w+;\|(-?\d+(?:\.\d+)?)` 切分。顺序反了会把 `&#39;` / `&amp;` 拆成 `&#39` + `;` |
+| 开源协议预设 | `core.presets()` 返回 4 条（`firewater` / `teleplot` / `justfloat` / `ano10`），`core.presetRule(id)` 用 `mergeDeep(defaultConfig().rule, p.rule)` 补齐成可直接写进 `config.rule` 的完整规则。**每条预设的 `kind` 必须等于 `rule.active`**（校验脚本断言） |
+| AI 调试包 | `exporters.debugBundle(opts)` → 自包含 JSON + `.brief` 纯文本摘要。**新增任何影响解析行为的配置，都要同步补进 `frameLayout` / `settings` / `hints`**，否则 AI 拿不到判断依据。配套 `app.replayBuffered(limit)` 用缓存字节重放验证规则 |
 
 ## 容易踩的坑（都是真踩过的）
 
@@ -80,6 +91,10 @@ llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
 11. **演示帧必须跟随用户配置的帧结构**：`transport.buildDemoHexFrameByRule(rule,seq,t)` 按 `core.config.rule.hex` 合成，`demoRuleUsable(rule)` 判定可用性，不可用才回退内置 AA55 帧。若演示永远只发 AA55，用户配好自定义协议后进演示会「一条通道都建不出来」，看起来像坏了。
 12. 规则驱动合成器与内置 AA55 帧**必须逐字节等价**（`_本地工具/校验串口应用.js` 有断言锁死）：帧头 → [长度字段] → 字段 → [帧尾] → 校验和的顺序不能变，序号字节要填在「第一个没人占用的空档」，且**必须在算校验和之前**写入（校验范围可能覆盖它）。
 13. 写 E2E 想注入 `humanoid-serial-config-v1` 时，**不能**「先开子应用 → 注入 → 刷新」：`app.js` 在 `beforeunload` 会把内存配置回写，注入必被覆盖。正确姿势是先落到非子应用页（如 `/404.html`）注入，再 `goto` 子应用。
+14. **不要让面板靠父容器分配高度**：Grid 的 `align-items: stretch` 会让同一行所有面板强制等高，监视器一高就把波形压成竖线（V2.2.1 前的真实事故）。工作区面板一律写死像素高度 + `align-items: start`，需要更高就拖右下角把手。
+15. **`syncForms()` 只刷新 `addBind` 注册过的控件**：像 `#slHexHead` / `#slHexTail` 这类走自定义接线的输入框刷不到，改完规则必须走 `refreshRuleInputs()`，否则「配置变了但界面还是旧值」。新增任何「非 addBind 的控件」都要记得进这个函数。
+16. **新增下拉/列表类控件要用同一份数据源填充**：V2.2.1 修过「舞台栏的『新图表』下拉从未被填充」（`renderPluginTypes` 只填了另一处），表现为点添加永远是默认值。同一份列表有多个入口时，函数里一次填完。
+17. **状态类 UI 要订阅真源，不要只在入口回调里刷**：运行圆标曾经只在点击时刷新，进演示模式后仍停在灰「暂停」态。正确做法是在 `core.on("state")` 里统一刷（`renderConn` → `renderRun` + `renderRecordState`）。
 
 ## 面板描述符（用户 DIY 显示的唯一入口）
 
@@ -93,9 +108,14 @@ llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
   axis: { yAuto: true, yMin: null, yMax: null },
   window: 500,                   // 显示最近多少个采样点（10 ~ 100000）
   colors: { "cur": "#3b82f6" },  // 每通道覆盖色
-  opts: { ... }                  // 渲染器私有选项（以渲染器 defaults 为白名单）
+  opts: { ... },                 // 渲染器私有选项（以渲染器 defaults 为白名单）
+  slot: "grid",                  // 布局字段（不走 opts！）："main" 主位 / "grid" 工作区
+  h: 300,                        // 布局字段：工作区面板的固定高度 px（140 ~ 2000）
+  span: 1                        // 布局字段：1 单列 / 2 跨两列
 }
 ```
+
+> `slot` / `h` / `span` 由 `P.validate()` 直接挂在 panel 上。**它们不是渲染器选项**，写进 `opts` 会被白名单丢掉、且不会报错（静默失效）。
 
 内置渲染器：`timeplot` 时域折线 · `fftplot` 频域谱 · `bar` 柱状图 · `gauge` 仪表盘 ·
 `table` 数据表格 · `textmon` 文本监视器 · `plotxy` 二维轨迹。
@@ -119,8 +139,11 @@ llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
 ## 校验
 
 ```bash
-node _本地工具/校验串口应用.js        # 纯函数 + 帧管线断言，期望输出 SERIAL OK
+node _本地工具/校验串口应用.js        # 纯函数 + 帧管线断言（126 项），期望输出 SERIAL OK
 node _本地工具/一键自检.ps1           # 站点级自检（本目录因 _ 前缀豁免索引检查，但仍受 JS 语法与 localStorage 键名约束）
+python _本地工具/e2e/e2e_test.py      # 浏览器层 E2E（22 用例，其中 8 条针对本子应用）；接线/布局/圆标类缺陷只有它能抓
 ```
+
+改动任何模块后，四条都要跑：`_本地工具/校验串口应用.js`（纯函数）、`一键自检.ps1`（站点级静态）、`e2e_test.py`（浏览器层）、以及人工在浏览器里过一遍 `AGENTS.md` 的验收清单。
 
 `skills/html-webserial-app/SKILL.md` 里有从零开发同类应用的完整流程与踩坑清单。

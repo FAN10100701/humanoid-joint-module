@@ -11,7 +11,7 @@ description: 在「人形机器人学习站」仓库里开发或改动网页端�
 |---|---|
 | 模块契约、数据流、命名与代码约定、面板描述符 schema、易踩坑清单 | `06_学习工具/_串口调试助手/llms.txt` |
 | 本目录硬规则、与站点同步点、浏览器人工验收清单 | `06_学习工具/_串口调试助手/AGENTS.md` |
-| 从零开发同类应用的完整流程（Web Serial 七坑、架构、分帧、插件、发送护栏、验收） | `06_学习工具/_串口调试助手/skills/html-webserial-app/SKILL.md` |
+| 从零开发同类应用的完整流程（Web Serial 坑位、14 模块架构、主位上下分割布局模型、分帧、插件、发送护栏、AI 调试包、验收） | `06_学习工具/_串口调试助手/skills/html-webserial-app/SKILL.md` |
 
 本文件不复述技术细节——**复述必然漂移**。要改代码，先读上面三份。
 
@@ -27,9 +27,12 @@ description: 在「人形机器人学习站」仓库里开发或改动网页端�
   - 「C16 precache targets exist」：根 `sw.js` 的 `PRECACHE` 里任何指向本目录的路径必须真实存在。
   - 相对链接审计：本目录 HTML 里的相对链接仍会被逐条 `Test-Path`。
 - 本目录 HTML **不进** E2E 的「全站逐页 smoke」（因为不在 search-index 里），但 E2E 内已有
-  **三条子应用专项用例**兜底：`serial_shell`（外壳 + 14 模块挂载 + 无 Web Serial 时的降级）/ 
-  `serial_pipeline`（演示数据从传输→分帧→解析→绘图的整条链路）/ `serial_export`（配置落盘 + CSV 导出）。
-  纯函数与帧管线的回归仍必须靠 `_本地工具/校验串口应用.js`，浏览器人工验收清单在子应用 `AGENTS.md` 末尾。
+  **九条子应用专项用例**兜底：`serial_shell`（外壳 + 14 模块挂载 + 无 Web Serial 时的降级）/
+  `serial_pipeline`（演示数据从传输→分帧→解析→绘图的整条链路 + 主位布局断言 + canvas 尺寸）/
+  `serial_export`（配置落盘 + CSV 导出）/ `serial_stage`（上下分割比例、波形不被拉长、全屏、收起、键盘快捷键）/
+  `serial_run`（运行绿圆标三态与页签同口径）/ `serial_display`（绝对时刻格式、时间戳与正文颜色不同、字号、数字标红、规则回填）/
+  `serial_preset_bundle`（四枚开源协议预设、帧头回填、匿名 V1.0 出通道、AI 调试包下载与结构）。
+  纯函数与帧管线的回归仍必须靠 `_本地工具/校验串口应用.js`（126 项），浏览器人工验收清单在子应用 `AGENTS.md` 末尾。
   （这条「豁免导致检查盲区」已在 `AUDIT.md` A-71 登记为「有意保留 + 补偿脚本」。）
 
 ## 改动时的同步清单
@@ -37,9 +40,11 @@ description: 在「人形机器人学习站」仓库里开发或改动网页端�
 | 改动 | 必须同步 |
 |---|---|
 | 新增 / 改名本目录的 `js/*.js` | `index.html` 底部的 `<script src>` 外链顺序（**依赖顺序即加载顺序，不可打乱**） |
+| 改本目录任何前端资源（`js/` `app.css` `index.html`） | 根 `sw.js` 的 `CACHE` 版本号 +1（`hrl-site-vX.Y.Z`）——否则老用户会一直拿到 SW 缓存的旧版，测出的现象与实际代码不符 |
 | 新增本目录内的 `.html` 页面 | 无需登记进 search-index；但要在入口页 `06_学习工具/21_串口调试助手.html` 里补链接 |
 | 新增本目录的资源文件（图片/字体等） | 加入根 `sw.js` 的 `PRECACHE`（否则自检 C16 不会报警，但离线时会 404） |
 | 改入口页文案 / 数字 | `06_学习工具/21_串口调试助手.html`（已登记 search-index / sitemap / page-meta / 学习地图 / index 卡片 / SITE_SECTIONS / 百度清单） |
+| 新增 / 改动站点顶栏的「串口」快速入口 | **三处同改**：`_assets/site.js`（`injectChrome()`，改这一处 100+ 内容页统一生效）+ `index.html`（首页是静态 `.topnav`，不动态注入，须手改）+ `_assets/site.css`（`.nav-serial` 样式，含浅色主题覆盖与打印 `display:none`） |
 | 改站点全局数字（页数等） | 与本子应用无关，**不要**因为本目录改动去动 `S.STATS.pages` / og:description |
 
 **版本号约定**：子应用显示自己的 `UI.VERSION`（`js/ui.js`），与站点 `S.VERSION` **不同源**。
@@ -49,14 +54,15 @@ description: 在「人形机器人学习站」仓库里开发或改动网页端�
 ## 验证流程（改完必跑）
 
 ```bash
-# 1) 纯函数 + 帧管线断言（期望输出 SERIAL OK，退出码 0）
+# 1) 纯函数 + 帧管线断言（期望输出 SERIAL OK、126 项，退出码 0）
 node _本地工具/校验串口应用.js
 
 # 2) 站点级自检（JS 语法 / localStorage 键名 / 链接审计 / PRECACHE 存在性等）
 powershell -ExecutionPolicy Bypass -File "_本地工具/一键自检.ps1"   # 期望 ALL CHECKS PASSED
 
 # 3) 浏览器层专项（本目录不在全站 smoke 里；需先 pip install playwright + playwright install chromium）
-python "_本地工具/e2e/e2e_test.py" --fast                          # 期望 16/16 PASS
+python "_本地工具/e2e/e2e_test.py"           # 期望 22/22 PASS（1 SKIP：KaTeX 离线时）
+python "_本地工具/e2e/e2e_test.py" --fast     # 只跑子应用 + 关键页；改布局/交互层时必须跑全量
 
 # 4) 浏览器人工验收（绘图观感、双主题、七种渲染器这类静态检查抓不到的）
 powershell -ExecutionPolicy Bypass -File "_本地工具/启动服务器.ps1"
@@ -83,3 +89,13 @@ powershell -ExecutionPolicy Bypass -File "_本地工具/启动服务器.ps1"
 8. **不要让演示模式固定发内置 AA55 帧**。演示数据必须按 `core.config.rule.hex` 合成
    （`transport.buildDemoHexFrameByRule` / `demoRuleUsable`），否则用户配好自定义协议后进演示会一条通道都建不出来。
    写 E2E 想注入配置时，先从子应用页离开再注入 —— `app.js` 在 `beforeunload` 会回写内存配置，注入会被覆盖。
+9. **不要把工作区面板和监视器摆在同一个 CSS Grid 行里靠默认的 `stretch` 对齐**。同排面板会被强行等高，
+   监视器一高就把波形 canvas 拉成一条竖线（本项目 A-75 事故）。本项目已改为**上下分割**（主位 `flex-grow: 比率×1000`
+   + 图表槽独立固定高、容器 `align-items: start`）。任何新加的容器都要盯着 `align-items` 与面板高度是否显式给定。
+10. **面板「提升为主位」不要只搬 DOM 节点**。跨槽 `appendChild` 移动会把原 `<canvas>` 重置成 0×0，波形直接消失；
+   必须**销毁重建渲染器**（`views.moveToSlot()` 的做法）。
+11. **状态类 UI 必须订阅单一真源**。运行绿圆标 / 页签开关 / 工具条按钮三处都读写 `core.state.paused`，
+    不许各自存一份（V2.2.1 修过「三处显示不一致」）；同理时间戳一律取记录里的 `tWall`（绝对时刻），
+    不要用 `performance.now()` 去 `new Date()`。
+12. **程序性改配置后要显式回填非 `addBind` 控件**。预设套用 / 示例帧载入会改 `core.config.rule`，但帧头/帧尾这类
+    手工输入框不会被 `syncForms` 刷新，需靠 `refreshRuleInputs()` 补一刀（V2.2.1 修过「套用预设后输入框没变」）。

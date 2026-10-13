@@ -257,12 +257,15 @@
 
   D.rawCount = function () { return rawLog.length; };
 
-  /* ---------------- 清理 ---------------- */
-  D.clear = function (keepChannels) {
+  /* ---------------- 清理 ----------------
+     keepChannels=true 保留通道元数据（颜色/标签不被打回默认）；
+     keepRaw=true 保留原始记录（规则热更新重放时用：曲线要重建，但监视器里
+     已经打出来的日志不该消失） */
+  D.clear = function (keepChannels, keepRaw) {
     for (var k in rings) {
       if (Object.prototype.hasOwnProperty.call(rings, k)) { rings[k].clear(); }
     }
-    rawLog = [];
+    if (!keepRaw) { rawLog = []; }
     totalFrames = 0;
     totalBytes = 0;
     if (!keepChannels) {
@@ -271,7 +274,7 @@
       rings = {};
       colorCursor = 0;
     }
-    SL.core.emit("data:clear", { keepChannels: !!keepChannels });
+    SL.core.emit("data:clear", { keepChannels: !!keepChannels, keepRaw: !!keepRaw });
   };
 
   /* 从配置恢复通道元数据（启动时用） */

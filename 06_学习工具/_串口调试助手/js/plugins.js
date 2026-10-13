@@ -396,6 +396,16 @@
       }
     }
 
+    /* 布局字段：停靠位 / 高度 / 是否跨列加宽。
+       这三个不是渲染器参数，所以不进 opts 白名单（否则会被渲染器 defaults 覆盖）；
+       它们由 views 直接读写，并随配置落盘。
+         slot: "main" 占主区 C1（串口监视器的默认位）· "grid" 进工作区 C2 */
+    out.slot = (raw.slot === "main") ? "main" : "grid";
+    var hh = parseInt(raw.h, 10);
+    if (isNaN(hh)) { hh = (r.defaults && r.defaults.h) || 260; }
+    out.h = Math.max(140, Math.min(2000, hh));
+    out.span = (raw.span === 2) ? 2 : 1;
+
     return { ok: errors.length === 0, panel: out, errors: errors };
   };
 
@@ -502,7 +512,7 @@
     label: "时域折线",
     category: "时域",
     autoCount: 4,
-    defaults: { window: 500, opts: { lineWidth: 1.4, showDot: true } },
+    defaults: { window: 500, h: 300, opts: { lineWidth: 1.4, showDot: true } },
     make: function (hostEl, panel) {
       var view = makeView(hostEl);
 
@@ -601,7 +611,7 @@
     label: "频域谱",
     category: "频域",
     autoCount: 3,
-    defaults: { window: 1024, opts: { maxN: 4096, logScale: true } },
+    defaults: { window: 1024, h: 300, opts: { maxN: 4096, logScale: true } },
     make: function (hostEl, panel) {
       var view = makeView(hostEl);
 
@@ -720,7 +730,7 @@
     label: "柱状图",
     category: "统计",
     autoCount: 8,
-    defaults: { window: 600, opts: { showValue: true } },
+    defaults: { window: 600, h: 240, opts: { showValue: true } },
     make: function (hostEl, panel) {
       var view = makeView(hostEl);
 
@@ -803,7 +813,7 @@
     label: "仪表盘",
     category: "统计",
     autoCount: 1,
-    defaults: { window: 200, opts: {} },
+    defaults: { window: 200, h: 240, opts: {} },
     make: function (hostEl, panel) {
       var view = makeView(hostEl);
       var state = { display: 0, inited: false };
@@ -915,7 +925,7 @@
     label: "数据表格",
     category: "统计",
     autoCount: 8,
-    defaults: { window: 500, opts: {} },
+    defaults: { window: 500, h: 260, opts: {} },
     make: function (hostEl, panel) {
       var wrap = document.createElement("div");
       wrap.className = "sl-table-wrap";
@@ -994,13 +1004,20 @@
     }
   });
 
-  /* ---------- 6) 文本监视器 ---------- */
+  /* ---------- 6) 文本监视器 ----------
+     实现要点：
+       a) 用一次 innerHTML 而不是几百次 createElement —— 300 行 × 5 个 span
+          的元素创建量在 25fps 下会明显吃掉主线程；
+       b) 所有动态文本先过 U.esc()，数字标红作用在「已转义的 HTML」上，
+          并用「实体引用优先」的分支保护 &#39; 这类含数字的转义序列；
+       c) 时间戳有两种口径（绝对时刻 / 相对秒），由 core.config.transport.timeMode
+          决定，标签在 app.js 落库时就已经算好，这里只挑一个用。 */
   P.register({
     id: "textmon",
     label: "文本监视器",
     category: "监视",
     autoCount: 0,
-    defaults: { window: 500, opts: { maxLines: 300, showTimestamp: true, showHex: false } },
+    defaults: { window: 500, h: 260, opts: { maxLines: 300, showTimestamp: true, showHex: false, showDir: true } },
     make: function (hostEl, panel) {
       var box = document.createElement("div");
       box.className = "sl-mon";
@@ -1011,35 +1028,62 @@
         autoscroll = (box.scrollHeight - box.scrollTop - box.clientHeight) < 24;
       });
 
+      /* 数字标红：只包数字，放行 HTML 实体引用（&#39; / &amp; 里含数字，不能误伤） */
+      function markNumbers(html) {
+        return html.replace(/&#?\w+;|(-?\d+(?:\.\d+)?)/g, function (m, num) {
+          if (num === undefined) { return m; }
+          return '<span class="sl-mon-num">' + m + '</span>';
+        });
+      }
+
       function draw(data) {
         var recs = data.recentRaw ? data.recentRaw(panel.window || 500) : [];
         var opts = panel.opts || {};
         var maxLines = opts.maxLines || 300;
         if (recs.length > maxLines) { recs = recs.slice(recs.length - maxLines); }
-        /* 显示层开关（顶栏「编码与显示」组）：时间戳 / HEX 显示 */
+
         var showTs = opts.showTimestamp !== false;
         var showHex = !!opts.showHex;
+        var showDir = opts.showDir !== false;
+        var ui = core.config.ui || {};
+        var timeMode = (core.config.transport && core.config.transport.timeMode === "rel") ? "rel" : "abs";
+        var markNum = !!ui.highlightNumbers && !showHex;
+        var markFail = ui.markFailed !== false;
 
-        var frag = document.createDocumentFragment();
+        box.className = "sl-mon" +
+          (showTs ? "" : " is-nots") +
+          (showDir ? "" : " is-nodir") +
+          (showHex ? " is-hex" : "");
+
+        var out = [];
         for (var i = 0; i < recs.length; i++) {
           var rec = recs[i];
-          var line = document.createElement("div");
+          var tx = rec.dir === "tx";
+          var failed = markFail && !tx && rec.ok === false;
+          var cls = "sl-mon-line" + (tx ? " is-tx" : "") + (failed ? " is-fail" : "");
+          var row = '<div class="' + cls + '">';
+
           if (showTs) {
-            var ts = document.createElement("span");
-            ts.className = "sl-mon-t";
-            ts.textContent = (rec.tLabel || "") + " ";
-            line.appendChild(ts);
+            var lab = timeMode === "rel" ? rec.tLabel : rec.tLabelAbs;
+            row += '<span class="sl-mon-t">' + U.esc(lab || "") + '</span>';
           }
-          var body = document.createElement("span");
-          body.className = rec.dir === "tx" ? "sl-mon-tx" : "sl-mon-rx";
-          body.textContent = showHex
-            ? (rec.hex || rec.text || "")
-            : (rec.text || rec.hex || "");
-          line.appendChild(body);
-          frag.appendChild(line);
+          if (showDir) {
+            row += '<span class="sl-mon-dir">' + (tx ? "TX" : "RX") + '</span>';
+          }
+          var text = showHex ? (rec.hex || rec.text || "") : (rec.text || rec.hex || "");
+          var html = U.esc(text);
+          if (markNum) { html = markNumbers(html); }
+          /* 失败原因写进内容列内部（而不是再加一个 grid 子项），
+             否则会多出一列把三列对齐打乱 */
+          if (failed && rec.reason) {
+            html += '<span class="sl-mon-why"> ⚠ ' + U.esc(rec.reason) + '</span>';
+          }
+          row += '<span class="sl-mon-body">' + html + '</span>';
+          row += '</div>';
+          out.push(row);
         }
-        box.innerHTML = "";
-        box.appendChild(frag);
+
+        box.innerHTML = out.join("");
         if (autoscroll) { box.scrollTop = box.scrollHeight; }
       }
 
@@ -1057,7 +1101,7 @@
     label: "二维轨迹",
     category: "时域",
     autoCount: 2,
-    defaults: { window: 800, opts: { equalAxis: true } },
+    defaults: { window: 800, h: 320, opts: { equalAxis: true } },
     make: function (hostEl, panel) {
       var view = makeView(hostEl);
 

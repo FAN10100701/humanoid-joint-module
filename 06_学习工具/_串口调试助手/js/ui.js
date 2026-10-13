@@ -365,6 +365,10 @@
     $("slTxCount").textContent = T.stats.tx;
     $("slRxCount").textContent = T.stats.rx;
 
+    /* 运行圆标依赖「是否已连上 / 是否在演示」，连接态一变就得跟着重画，
+       否则进演示模式后圆标还停在「暂停」灰态，看着像坏了。 */
+    renderRun();
+
     var hint = $("slSendHint");
     if (hint) {
       if (!T.isSupported() && !demo) {
@@ -765,6 +769,18 @@
     touch("rule");
   }
 
+  /* 规则被整体替换（套用预设 / 套用示例 / 导入配置）后，把界面刷到与配置一致。
+     注意：帧头 / 帧尾两个输入框不在泛绑定表里（它们有独立的十六进制校验逻辑），
+     所以要单独写一遍——否则会出现「配置变了但输入框还是旧值」的错位。 */
+  function refreshRuleInputs() {
+    syncForms();
+    var h = core.config.rule.hex || {};
+    if ($("slHexHead")) { $("slHexHead").value = h.head || ""; }
+    if ($("slHexTail")) { $("slHexTail").value = h.tail || ""; }
+    renderRuleMode();
+    renderFields();
+  }
+
   function applySample() {
     var r = core.config.rule;
     if (r.active === "hex") {
@@ -774,13 +790,12 @@
       r.hex.len = U.clone(demo.len);
       r.hex.fields = U.clone(demo.fields);
       r.hex.checksum = U.clone(demo.checksum);
-      syncForms();
-      renderFields();
+      refreshRuleInputs();
       UI.toast("ok", "已套用演示 HEX 帧结构（AA55 帧头 + 3 个 int16 字段 + 累加和校验）");
     } else {
       r.text.seps = ["=", ":"];
       r.text.suffixChannels = true;
-      syncForms();
+      refreshRuleInputs();
       UI.toast("ok", "已套用演示文本规则（同时识别 = 与 :，后缀数字视为独立通道）");
     }
     touch("rule");
@@ -1077,16 +1092,32 @@
      ------------------------------------------------------------ */
   function renderPluginTypes() {
     var sel = $("slPluginType");
-    if (!sel) { return; }
-    var keep = sel.value;
-    sel.textContent = "";
+    var quick = $("slQuickAdd");
+    if (!sel && !quick) { return; }
     var list = SL.plugins.list();
-    for (var i = 0; i < list.length; i++) {
-      var o = el("option", null, list[i].label + "（" + list[i].id + "）");
-      o.value = list[i].id;
-      sel.appendChild(o);
+    var i;
+    if (sel) {
+      var keep = sel.value;
+      sel.textContent = "";
+      for (i = 0; i < list.length; i++) {
+        var o = el("option", null, list[i].label + "（" + list[i].id + "）");
+        o.value = list[i].id;
+        sel.appendChild(o);
+      }
+      if (keep) { sel.value = keep; }
     }
-    if (keep) { sel.value = keep; }
+    /* 舞台工具条里的「新图表」下拉与「图表」页签同源，但只显示中文名——
+       工具条上还挤着三个按钮与两个清空入口，带上 (id) 会把下拉撑得过宽。 */
+    if (quick) {
+      var keepQ = quick.value;
+      quick.textContent = "";
+      for (i = 0; i < list.length; i++) {
+        var oq = el("option", null, list[i].label);
+        oq.value = list[i].id;
+        quick.appendChild(oq);
+      }
+      if (keepQ) { quick.value = keepQ; }
+    }
   }
 
   function renderPanelList() {
@@ -1353,8 +1384,10 @@
     var on = SL.timeline.isRecording();
     $("slBtnRecord").textContent = on ? "停止录制" : "开始录制";
     $("slBtnRecord").className = "sl-btn is-sm" + (on ? " is-danger" : " is-primary");
+    /* 冻结显示 = 暂停刷新，与顶栏绿圆标是同一个总开关（core + views 双保险） */
     var frozen = SL.timeline.isFrozen();
-    $("slBtnFreeze").textContent = frozen ? "恢复显示" : "冻结显示";
+    $("slBtnFreeze").textContent = frozen ? "继续刷新" : "暂停刷新";
+    renderRun();   /* 任何一处改了暂停态，绿圆标同步 */
     $("slRecHint").textContent = on
       ? ("正在录制…已记录 " + SL.timeline.frameCount() + " 帧（回放/导出在停止后进行）")
       : "录制中的原始帧会进内存缓冲，停止后可在下方回放或导出。";
@@ -1475,7 +1508,6 @@
 
     $("slBtnOffline").addEventListener("click", function () { SL.exporters.exportOffline(); });
 
-    $("slBtnPrompt2").addEventListener("click", showAiPrompt);
     $("slBtnPrompt").addEventListener("click", showAiPrompt);
   }
 
@@ -1617,9 +1649,13 @@
         "六个最容易踩的坑：长度字段只按小端解析；校验固定在帧尾；长度字段与帧尾并存时以长度字段为准；字段偏移是相对整帧起始；未知类型按无符号整数处理；不支持位域与变长字段。"
       ] },
       { h: "②-4 显示层开关（设备页签「编码与显示」）", p: "「HEX 显示」勾上后串口监视器按十六进制字节流显示；「显示时间戳」决定每行是否带时间；「HEX 发送」勾上后底部发送的内容按十六进制解析（顶栏与发送条两个开关同步）。要把数据解析成通道，请用「解析」页签的模式单选 —— 一个管显示、一个管解析，互不冲突。" },
-      { h: "③ DIY 显示", p: "「插件」标签页里选渲染器 → 添加到工作区 → 点该图框的「编辑」绑定通道、写映射公式、调量程与配色。公式只支持四则运算与白名单函数（abs/sqrt/sin/cos/log/…），用通道名作变量，例如 (cur*24)。面板可拖动标题栏排序，配置与配色可通过「面板包」导出分享。" },
+      { h: "②-5 时间戳口径与显示细节（「显示」页签）", p: "时间戳有两种口径：绝对时刻（23:51:21.900）与相对秒（12.345s，自本次会话开始累计）。默认绝对时刻，与 VOFA+ / SerialWeb 的显示习惯一致。同一页签里还能调监视器字号、是否数字标红、是否把解析失败的行整行标红，以及屏幕刷新频率（数据一直在收，只是屏幕按这个频率重画，串口很吵时调低更省 CPU）。" },
+      { h: "③ DIY 显示", p: "「图表」标签页里选渲染器 → 添加到工作区 → 点该图框的「编辑」绑定通道、写映射公式、调量程与配色。公式只支持四则运算与白名单函数（abs/sqrt/sin/cos/log/…），用通道名作变量，例如 (cur*24)。每个图框右下角有缩放手柄可拖拽改高度，「⇔」可加宽跨两列，「⇱」可与串口监视器互换主位。图表配置与配色可通过「面板包」导出分享。" },
+      { h: "③-1 主区布局与运行控制", p: "主区是「上监视器 + 下波形」的上下分割：中间的横条可以上下拖动调整比例（键盘也可用：↑↓ 微调、Home 复位），比例会记进配置。监视器标题栏的「⛶」让主区独占全屏，「▭」把主区压成只剩标题条。顶栏左侧的绿色圆标是运行 / 暂停：点一下冻结画面，但数据仍在后台缓冲，恢复后接着看，不会丢。" },
+      { h: "③-2 开源协议预设（「解析」页签顶部）", p: "内置四套社区事实标准的协议，点一下即套用：FireWater（VOFA+ 文本 name:value）、Teleplot（>name:value）、JustFloat（VOFA+ 二进制 float32×N + 帧尾 00 00 80 7F）、匿名 V1.0（AA AA + 功能字 + 长度 + 数据 + SUM8，数据 int16 大端）。套用后会立刻用缓存里的原始字节重放一次，当场就能看出解对没解对。" },
+      { h: "③-3 面向 AI 的调试回路", p: "「显示」页签里有两个按钮专为「让 AI 直接调硬件」设计：一是「导出 AI 调试包」—— 一个自包含 JSON，含生效配置、帧结构说明、各通道统计、最近若干条原始记录（含解出值）与解析失败样本，整包丢给 AI 就不必来回截图粘贴；二是「按当前规则重放缓存」—— 改完帧结构不必让硬件重跑，用缓存里的原始字节立刻重解一遍。另外「自动存档」会在连上设备或进入演示后自动开始录制（滚动保留最近数据），随时可导出。" },
       { h: "④ 发送", p: "底部输入框回车即发；HEX 模式内容写 AA 55 01（可空格分隔）。「发送」标签页里还能配定时轮询、触发应答（收到含「匹配」的内容自动回「应答」）与预设发送（可绑单字符快捷键，焦点不在输入框时生效，支持期望回包与超时提示）。" },
-      { h: "⑤ 录制与导出", p: "「录制」标签页把流过的帧存进内存，停止后可回放、导出为 JSON；冻结显示只暂停画面、不断开数据。数据页可导出解析结果 CSV（带 BOM，Excel 中文不乱码）、原始记录 CSV、JSON、BIN 与 TXT。" },
+      { h: "⑤ 录制与导出", p: "「录制」标签页把流过的帧存进内存，停止后可回放、导出为 JSON；「暂停刷新」只停画面、不断开数据（与顶栏绿圆标是同一个开关）。数据页可导出解析结果 CSV（带 BOM，Excel 中文不乱码）、原始记录 CSV、JSON、BIN 与 TXT。" },
       { h: "已知限制（务必先看）", list: [
         "file:// 直接打开的单文件离线版无法使用真实串口 —— file:// 不是安全上下文，浏览器禁止 Web Serial。真机调试请用本地 HTTP 服务或在线版本。",
         "改波特率、数据位、停止位、校验或流控需要关闭端口重开，应用会自动完成（约四分之一秒）。",
@@ -1738,10 +1774,22 @@
   function wireTop() {
     $("slBtnHelp").addEventListener("click", showHelp);
     $("slBtnTheme").addEventListener("click", UI.cycleTheme);
+    $("slBtnDefaults").addEventListener("click", restoreDefaults);
+
+    /* 运行 / 暂停：绿色圆标一键切换（替代旧版埋在「录制」页签里的「冻结显示」） */
+    $("slRun").addEventListener("click", function () {
+      SL.views.setPaused(!core.state.paused);
+      renderRun();
+      UI.toast(core.state.paused ? "warn" : "ok",
+        core.state.paused ? "已暂停屏幕刷新（数据仍在后台缓冲，不会丢）" : "已恢复实时刷新");
+    });
+
     $("slBtnSide").addEventListener("click", function () {
       var side = $("slSide");
       var hid = side.className.indexOf("is-hidden") >= 0;
       side.className = hid ? "sl-side" : "sl-side is-hidden";
+      core.config.ui.sideHidden = !hid;
+      core.saveConfig();
       this.textContent = hid ? "收起左栏" : "展开左栏";
       if (SL.views) { global.setTimeout(function () { SL.views.redraw(); }, 30); }
     });
@@ -1764,12 +1812,36 @@
     });
   }
 
+  /* 主区工具条：C1 主位形态控制 + C2 快速加图表 */
   function wireStage() {
-    $("slBtnAddMonitor").addEventListener("click", function () {
-      var p = SL.views.addPanel({
-        type: "textmon", title: "串口监视器", channels: [], window: 400
-      });
-      if (p) { renderPanelList(); }
+    /* C1 主位：全屏（独占主区）/ 收起（只留标题条）/ 比例复位 */
+    $("slBtnMainFull").addEventListener("click", function () {
+      var on = SL.views.toggleMainFull();
+      this.textContent = on ? "还原主区" : "全屏主区";
+      UI.toast("info", on ? "主区已全屏（波形区暂时隐藏）" : "已还原分割视图");
+    });
+
+    $("slBtnMainCollapse").addEventListener("click", function () {
+      var on = SL.views.isMainCollapsed();
+      SL.views.setMainCollapsed(!on);
+      this.textContent = !on ? "展开主区" : "收起主区";
+    });
+
+    $("slBtnSplitReset").addEventListener("click", function () {
+      SL.views.setMonRatio(0.62);
+      core.saveConfig();
+      UI.toast("ok", "分割比例已复位（主区 62%）");
+    });
+
+    /* C2 快捷添加：渲染器下拉 + 添加按钮（与「图表」页签同源） */
+    $("slBtnAddPanel2").addEventListener("click", function () {
+      var sel = $("slQuickAdd");
+      var type = sel ? sel.value : "timeplot";
+      var p = SL.views.addPanel({ type: type, channels: ["auto"] });
+      if (p) {
+        renderPanelList();
+        UI.toast("ok", "已添加「" + p.title + "」到工作区（可在面板标题栏点 ⇱ 移到主位）");
+      }
     });
 
     $("slBtnClearPanels").addEventListener("click", function () {
@@ -1791,6 +1863,209 @@
           renderChannels();
           UI.toast("ok", "已清空缓存数据");
         });
+    });
+  }
+
+  /* ------------------------------------------------------------
+     13b) 「显示」页签：时间口径 / 刷新节流 / 字号 / 高亮 / AI 回路
+     ------------------------------------------------------------ */
+  /* 全局优先的显示偏好：写在 documentElement 的 CSS 变量上，
+     监视器与所有面板下一帧就会跟着变，不需要重建面板。 */
+  function applyUiPrefs() {
+    var ui = core.config.ui || {};
+    var root = document.documentElement;
+    var fs = parseInt(ui.fontSize, 10);
+    if (isNaN(fs)) { fs = 12; }
+    fs = U.clamp(fs, 11, 18);
+    ui.fontSize = fs;
+    root.style.setProperty("--sl-mon-size", fs + "px");
+
+    var di = parseInt(ui.drawInterval, 10);
+    if (isNaN(di)) { di = 40; }
+    di = U.clamp(di, 16, 200);
+    ui.drawInterval = di;
+    if (SL.views) { SL.views.setDrawInterval(di); }
+
+    if (SL.timeline && SL.timeline.setMaxFrames) {
+      SL.timeline.setMaxFrames(parseInt(ui.recordCap, 10) || 20000);
+    }
+
+    /* 左栏收起状态 */
+    var side = $("slSide");
+    if (side) {
+      side.className = ui.sideHidden ? "sl-side is-hidden" : "sl-side";
+      if ($("slBtnSide")) { $("slBtnSide").textContent = ui.sideHidden ? "展开左栏" : "收起左栏"; }
+    }
+
+    renderRun();
+    if (SL.views && SL.views.redraw) { SL.views.redraw(); }
+  }
+
+  /* 运行 / 暂停圆标的状态渲染 */
+  function renderRun() {
+    var btn = $("slRun");
+    if (!btn) { return; }
+    var paused = !!(SL.views && SL.views.isPaused && SL.views.isPaused());
+    var live = (core.state.conn === "open" || core.state.demo);
+    var state = paused ? "paused" : (live ? "running" : "idle");
+    btn.setAttribute("data-state", state);
+    btn.setAttribute("aria-pressed", paused ? "true" : "false");
+    btn.title = state === "running"
+      ? "正在实时刷新 · 点击暂停（数据仍在后台缓冲）"
+      : (state === "paused" ? "已暂停 · 点击继续实时刷新" : "未连接 / 未进入演示 · 点击可先暂停刷新");
+    if ($("slRunLabel")) {
+      $("slRunLabel").textContent = state === "running" ? "运行中" : (state === "paused" ? "已暂停" : "暂停");
+    }
+  }
+
+  /* 一键恢复默认设置（顶栏入口 + 显示页签入口共用同一实现） */
+  function restoreDefaults() {
+    UI.confirm(
+      "恢复默认设置",
+      "将把串口参数、解析规则、发送工作流、通道、图表框与全部显示设置恢复默认，并清空本地存储。如需留存当前配置，请先用「数据」页签的「导出文件」备份。",
+      "恢复默认"
+    ).then(function (ok) {
+      if (!ok) { return; }
+      core.clearConfig();
+      bootFromConfig();
+      applyUiPrefs();
+      renderPresets();
+      UI.toast("ok", "已恢复默认设置");
+    });
+  }
+
+  /* 开源协议预设按钮组 */
+  function renderPresets() {
+    var host = $("slPresetRow");
+    if (!host) { return; }
+    host.textContent = "";
+    var list = core.presets ? core.presets() : [];
+    var active = core.config.rule.active;
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      var btn = el("button", "sl-preset" + ((p.kind === active) ? "" : ""));
+      btn.type = "button";
+      btn.setAttribute("data-preset", p.id);
+      btn.title = p.note + "（示例：" + p.sample + "）";
+      var n1 = el("span", "", p.name);
+      var n2 = el("span", "sl-preset-brand", p.brand);
+      btn.appendChild(n1);
+      btn.appendChild(n2);
+      host.appendChild(btn);
+    }
+    if ($("slPresetNote")) {
+      $("slPresetNote").textContent = "点一下即套用社区事实标准的帧结构（会立即用缓存数据重放一次，当场看效果）；套用后仍可手动微调。完整的数据格式说明见介绍页「数据格式说明」一节。";
+    }
+  }
+
+  function applyPreset(id) {
+    var p = core.getPreset ? core.getPreset(id) : null;
+    var rule = core.presetRule ? core.presetRule(id) : null;
+    if (!p || !rule) { return; }
+    core.config.rule = rule;
+    core.saveConfig();
+    refreshRuleInputs();
+    renderPresets();
+    core.emit("config:changed", { scope: "rule" });
+
+    /* 规则换了，用缓存里的原始字节立刻重放一遍——不必让硬件重跑 */
+    var res = (SL.app && SL.app.replayBuffered) ? SL.app.replayBuffered(5000) : null;
+    if (res && res.ok) {
+      UI.toast("ok", "已套用「" + p.name + "」，并按新规则重放 " + res.frames + " 帧", 6000);
+    } else {
+      UI.toast("ok", "已套用「" + p.name + "」。" + (res && res.reason ? res.reason : ""), 6000);
+    }
+    renderChannels();
+  }
+
+  /* 面向 AI 的「调试包」：一个自包含 JSON，整包丢给 AI 即可免去来回截图粘贴 */
+  function exportDebugBundle() {
+    if (!SL.exporters || !SL.exporters.debugBundle) {
+      UI.toast("bad", "导出模块未就绪");
+      return;
+    }
+    var bundle = SL.exporters.debugBundle({ samples: 400 });
+    var text = JSON.stringify(bundle, null, 2);
+    var name = "seriallab-debug-" + fmtMs(Date.now()) + ".json";
+    var ok = U.download(new Blob([text], { type: "application/json" }), name);
+    /* 同时把摘要塞进剪贴板，方便直接粘给 AI */
+    copyText(bundle.brief || text.slice(0, 4000));
+    if (ok) {
+      UI.toast("ok", "已导出调试包（" + name + "）；简要摘要已复制到剪贴板，可直接粘给 AI", 8000);
+    } else {
+      UI.toast("warn", "下载被拦截，已把简要摘要复制到剪贴板");
+    }
+  }
+
+  function wireDisplayPane() {
+    /* 时间戳口径：绝对时刻 / 相对秒 —— 渲染层每帧现读配置，改完直接重绘即可 */
+    addBind({
+      el: "slTimeMode", path: "transport.timeMode", type: "select", scope: "transport",
+      apply: function () { if (SL.views) { SL.views.redraw(); } }
+    });
+
+    addBind({
+      el: "slDrawInterval", path: "ui.drawInterval", type: "num", scope: "ui",
+      apply: function () { applyUiPrefs(); }
+    });
+
+    addBind({
+      el: "slFontSize", path: "ui.fontSize", type: "num", scope: "ui",
+      apply: function () { applyUiPrefs(); }
+    });
+    addBind({
+      el: "slHighlightNum", path: "ui.highlightNumbers", type: "chk", scope: "ui",
+      apply: function () { if (SL.views) { SL.views.redraw(); } }
+    });
+    addBind({
+      el: "slMarkFailed", path: "ui.markFailed", type: "chk", scope: "ui",
+      apply: function () { if (SL.views) { SL.views.redraw(); } }
+    });
+    addBind({
+      el: "slAutoRecord", path: "ui.autoRecord", type: "chk", scope: "ui",
+      apply: function () {
+        if (core.config.ui.autoRecord && SL.app && SL.app.ensureAutoRecord) {
+          SL.app.ensureAutoRecord();
+        }
+      }
+    });
+    addBind({
+      el: "slRecordCap", path: "ui.recordCap", type: "num", scope: "ui",
+      apply: function () {
+        if (SL.timeline && SL.timeline.setMaxFrames) {
+          SL.timeline.setMaxFrames(parseInt(core.config.ui.recordCap, 10) || 20000);
+        }
+      }
+    });
+
+    $("slBtnFontReset").addEventListener("click", function () {
+      core.config.ui.fontSize = 12;
+      syncForms();
+      applyUiPrefs();
+      touch("ui");
+      UI.toast("ok", "监视器字号已复位为 12px");
+    });
+
+    $("slBtnDebugBundle").addEventListener("click", exportDebugBundle);
+
+    $("slBtnReplay").addEventListener("click", function () {
+      var res = SL.app && SL.app.replayBuffered ? SL.app.replayBuffered(5000) : null;
+      if (!res || !res.ok) {
+        UI.toast("warn", (res && res.reason) || "没有可重放的缓存数据");
+        return;
+      }
+      renderChannels();
+      UI.toast("ok", "已按当前规则重放 " + res.frames + " 帧（扫描 " + res.scanned + " 条原始记录）", 6000);
+    });
+
+    $("slBtnRestoreDefaults").addEventListener("click", restoreDefaults);
+
+    /* 预设按钮采用事件委托：按钮是动态生成的 */
+    $("slPresetRow").addEventListener("click", function (e) {
+      var t = e.target;
+      while (t && t !== this && !(t.getAttribute && t.getAttribute("data-preset"))) { t = t.parentNode; }
+      if (!t || t === this) { return; }
+      applyPreset(t.getAttribute("data-preset"));
     });
   }
 
@@ -1841,6 +2116,9 @@
     renderPanelList();
     renderConn();
     renderLogs();
+    /* 显示偏好（字号 / 节流 / 存档上限 / 左栏收起 / 运行圆标）与解析预设按钮 */
+    applyUiPrefs();
+    renderPresets();
   }
 
   /* ------------------------------------------------------------
@@ -1852,7 +2130,12 @@
       UI.toast(p.level || "info", p.msg || "");
     });
 
-    core.on("state", function () { renderConn(); });
+    core.on("state", function () {
+      renderConn();
+      /* 暂停态存在 core.state.paused 里,任何入口(绿圆标 / 页签内开关)改了它都会走到这里;
+         一并刷新「录制」页签的按钮文案,保证两处口径永远一致 */
+      renderRecordState();
+    });
 
     core.on("serial:state", function () {
       renderConn();
@@ -1938,6 +2221,7 @@
     wireTimelinePane();
     wireDataPane();
     wireSendBar();
+    wireDisplayPane();
     wireBus();
 
     $("slModalClose").addEventListener("click", UI.closeModal);

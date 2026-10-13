@@ -79,7 +79,7 @@
      3) 全局配置：默认值 / 版本迁移 / 持久化
      持久化键 humanoid-serial-config-v1 —— 前缀 humanoid- 是站点自检 C4 的白名单要求
      ------------------------------------------------------------ */
-  var CFG_VERSION = 1;
+  var CFG_VERSION = 2;
   var CFG_KEY = "humanoid-serial-config-v1";
 
   core.CFG_VERSION = CFG_VERSION;
@@ -103,6 +103,9 @@
         hexRecv: false,
         hexSend: false,
         showTimestamp: true,
+        /* 监视器时间戳口径：abs = 绝对时刻 23:51:21.900（默认，贴近 VOFA/SerialWeb）
+                            rel = 本次会话已运行的相对秒 12.345s */
+        timeMode: "abs",
         autoReconnect: false,
         resetWaitMs: 1500,       /* Arduino/ESP 打开串口会因 DTR 复位，连上后先别发 */
         lingerDot: true          /* 无换行的裸流也按“静默超时”切帧 */
@@ -145,7 +148,16 @@
       ui: {
         theme: "auto",           /* auto | light | dark */
         layout: [],              /* 图表框顺序（panel id 数组） */
-        leftWidth: 340
+        leftWidth: 340,
+        sideHidden: false,       /* 左栏是否整栏收起 */
+        monRatio: 0.62,          /* 主区上下分割：监视器占主区高度的比例（0.2~0.85） */
+        monCollapsed: false,     /* 监视器是否收起（只留标题条） */
+        drawInterval: 40,        /* 重绘节流 ms（16~200，越小越流畅越费 CPU） */
+        fontSize: 12,            /* 监视器等宽字号 px（11~18） */
+        highlightNumbers: false, /* 数字标红：把监视器里的数字用醒目色标出 */
+        markFailed: true,        /* 解析失败 / 校验失败的行整行标红 */
+        autoRecord: true,        /* 连上设备或进入演示后自动开始录制（供导出/AI 读取） */
+        recordCap: 20000         /* 录制缓冲帧数上限 */
       }
     };
   };
@@ -167,6 +179,16 @@
       if (!cfg.channels) { cfg.channels = []; }
       if (!cfg.panels) { cfg.panels = []; }
       v = 1;
+    }
+
+    /* v1 -> v2：新增「显示与性能」段落（时间口径 / 分割比例 / 字号 / 标红 / 自动存档）
+       只补齐缺失字段，不覆盖用户已经改过的值 */
+    if (v < 2) {
+      var d2 = core.defaultConfig();
+      cfg.version = 2;
+      cfg.transport = mergeDeep(d2.transport, cfg.transport || {});
+      cfg.ui = mergeDeep(d2.ui, cfg.ui || {});
+      v = 2;
     }
 
     /* 未来版本（用户在本机改高过）按原样返回，由调用方决定是否拒绝 */
@@ -193,6 +215,101 @@
     return out;
   }
   core.mergeDeep = mergeDeep;
+
+  /* ------------------------------------------------------------
+     3b) 开源协议预设（社区事实标准的一键套用）
+     这些协议被 VOFA+ / Teleplot / 匿名上位机 / Serial Studio 等工具广泛使用，
+     内置成预设后，用户不必从零拼帧结构，只要点一下再按需微调。
+     每条只描述「解析规则」的差异部分，applyPresetRule 会用默认配置补齐其余字段。
+     ------------------------------------------------------------ */
+  var PRESETS = [
+    {
+      id: "firewater",
+      name: "FireWater",
+      brand: "VOFA+",
+      kind: "text",
+      note: "文本 name:value，按换行分帧；同一行可写多组，用逗号或空格隔开",
+      sample: "temp:25.3, cur:1.02, rpm:1800",
+      rule: {
+        active: "text",
+        text: { seps: ["=", ":"], suffixChannels: true, trim: true }
+      }
+    },
+    {
+      id: "teleplot",
+      name: "Teleplot",
+      brand: "Teleplot / VS Code",
+      kind: "text",
+      note: "文本 >name:value（前缀 > 用于标识绘图变量；解析器自动忽略键名前的前缀字符）",
+      sample: ">rpm:1800",
+      rule: {
+        active: "text",
+        text: { seps: [":", "="], suffixChannels: true, trim: true }
+      }
+    },
+    {
+      id: "justfloat",
+      name: "JustFloat",
+      brand: "VOFA+",
+      kind: "hex",
+      note: "二进制：float32 小端 × N，帧尾固定 00 00 80 7F（即 +Inf）。无帧头，按帧尾定界",
+      sample: "00 00 00 00 | 00 00 80 3F | 00 00 00 40 | 00 00 40 40 | 00 00 80 7F",
+      rule: {
+        active: "hex",
+        hex: {
+          head: "",
+          tail: "0000807F",
+          len: { offset: 0, size: 0, mode: "none" },
+          checksum: { type: "none", from: 0, to: -1 },
+          fields: [
+            { key: "ch1", type: "float32", offset: 0, size: 4, scale: 1, big: false },
+            { key: "ch2", type: "float32", offset: 4, size: 4, scale: 1, big: false },
+            { key: "ch3", type: "float32", offset: 8, size: 4, scale: 1, big: false },
+            { key: "ch4", type: "float32", offset: 12, size: 4, scale: 1, big: false }
+          ]
+        }
+      }
+    },
+    {
+      id: "ano10",
+      name: "匿名 V1.0",
+      brand: "匿名上位机 / 野火例程",
+      kind: "hex",
+      note: "帧头 AA AA + 功能字(1B) + 长度(1B，数据段字节数) + 数据 + SUM8（从帧头累加取低 8 位）；数据为 int16 大端",
+      sample: "AA AA 01 06 00 64 00 32 00 00 F1",
+      rule: {
+        active: "hex",
+        hex: {
+          head: "AAAA",
+          tail: "",
+          len: { offset: 3, size: 1, mode: "payload" },
+          checksum: { type: "sum8", from: 0, to: -1 },
+          fields: [
+            { key: "func", type: "uint8", offset: 2, size: 1, scale: 1, big: false },
+            { key: "x", type: "int16", offset: 4, size: 2, scale: 0.01, big: true },
+            { key: "y", type: "int16", offset: 6, size: 2, scale: 0.01, big: true },
+            { key: "z", type: "int16", offset: 8, size: 2, scale: 0.01, big: true }
+          ]
+        }
+      }
+    }
+  ];
+
+  core.presets = function () { return PRESETS.slice(0); };
+
+  core.getPreset = function (id) {
+    for (var i = 0; i < PRESETS.length; i++) {
+      if (PRESETS[i].id === id) { return PRESETS[i]; }
+    }
+    return null;
+  };
+
+  /* 返回一条可直接写进 config.rule 的完整规则（用默认值补齐未描述的部分） */
+  core.presetRule = function (id) {
+    var p = core.getPreset(id);
+    if (!p) { return null; }
+    return mergeDeep(core.defaultConfig().rule, p.rule);
+  };
 
   /* 当前生效配置（内存态，由 app 启动时装载） */
   core.config = core.defaultConfig();

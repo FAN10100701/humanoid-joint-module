@@ -35,6 +35,17 @@
 </script>
 <link rel="stylesheet" href="_assets/site.css">
 <link rel="stylesheet" href="_assets/glass.css">
+<!-- ===== V2.1.31 ROBO-Q 首屏加速:modulepreload 预载 =====
+     此前三段是「串行 await」:HTML 必须解析到 </body> 前的 module 脚本才发起第一次请求,
+     且 three 下完才开始取 chibi-robot.js,再取 RoomEnvironment.js —— 三段首尾相接,
+     总耗时 = 三段之和,mac 首屏实测常达 1-3s(three.module.js 未压缩 1.27MB)。
+     改成解析阶段就并发发出,总耗时≈最慢的那一条。
+     ── 跨域 URL 需 crossorigin,否则凭据模式与 module 请求不一致,预载会被丢弃并二次下载;
+     ── 同源 URL 不加 crossorigin(加了反而可能因凭据模式不匹配导致预载失效)。 -->
+<link rel="modulepreload" href="https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js" crossorigin="anonymous">
+<link rel="modulepreload" href="00_3D解剖/lib/three.module.js">
+<link rel="modulepreload" href="00_3D解剖/lib/addons/environments/RoomEnvironment.js">
+<link rel="preload" href="_assets/chibi-robot.js" as="script">
 <script src="_assets/site-sections.js"></script>
 <style>
   /* ============================================================
@@ -263,7 +274,20 @@ html:not([data-theme-early="dark"]) .chibi-badge{background:rgba(255,255,255,.72
 html[data-theme-early='dark'] .chibi-badge{background:rgba(18,26,42,.6);color:#9fb6dd;border-color:rgba(120,160,220,.28)}
 .hero-3d{position:absolute;inset:0;pointer-events:none}
 .hero-3d canvas{pointer-events:auto;touch-action:pan-y}
-@media (prefers-reduced-motion: reduce){.hero-3d{display:none}}
+/* V2.1.31 ROBO-Q 加载占位:three 还在下载时,用一枚纯 CSS 呼吸剪影顶住视觉空洞,
+   机器人挂载成功(或确认失败)即由脚本摘掉 .is-loading。
+   关键:伪元素是「定位元素」,会盖在静态 canvas 之上,所以必须先摘类再挂载——
+   脚本里 mount() 之后就立刻移除,不会挡住真机器人。 */
+.hero-3d.is-loading::before{content:"";position:absolute;left:50%;bottom:9%;width:72px;height:146px;
+  transform:translateX(-50%);border-radius:42px 42px 28px 28px;
+  background:linear-gradient(180deg,rgba(214,229,248,.5),rgba(184,206,238,.2));
+  box-shadow:0 0 34px rgba(140,190,255,.28);animation:roboBreath 1.7s ease-in-out infinite}
+.hero-3d.is-loading::after{content:"";position:absolute;left:50%;bottom:6%;width:96px;height:12px;
+  transform:translateX(-50%);border-radius:50%;filter:blur(3px);
+  background:radial-gradient(closest-side,rgba(120,160,225,.42),transparent 72%)}
+html:not([data-theme-early="dark"]) .hero-3d.is-loading::before{background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(206,222,244,.5));box-shadow:0 0 28px rgba(120,170,240,.24)}
+@keyframes roboBreath{0%,100%{transform:translateX(-50%) translateY(0) scale(1);opacity:.82}50%{transform:translateX(-50%) translateY(-5px) scale(1.02);opacity:1}}
+@media (prefers-reduced-motion: reduce){.hero-3d{display:none}.hero-3d.is-loading::before{animation:none}}
 .ver-badge i{width:6px;height:6px;border-radius:99px;background:#22c55e;box-shadow:0 0 7px rgba(34,197,94,.85);animation:verBlink 2.4s ease-in-out infinite}
 .ver-badge:hover{color:#60a5fa;border-color:rgba(59,130,246,.6);transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.2);text-decoration:none}
 @keyframes verBlink{0%,100%{opacity:1}50%{opacity:.35}}
@@ -317,6 +341,8 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       </div>
     </div>
     <a class="nav-ver" id="navVerHome" href="#version" title="版本与更新历史"><i class="ver-dot"></i>v—</a>
+    <!-- V2.2.1 串口调试助手快速入口:与内容页注入的顶栏同款同格式(见 _assets/site.js injectChrome) -->
+    <a class="nav-serial" href="06_学习工具/21_串口调试助手.html" title="串口调试助手:串口监视 · 时域波形 · 协议解析 · AI 调试包" aria-label="串口调试助手"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 12.5h3.2l1.8-5.6 3.3 10.6 2.2-7.1 1.5 2.1h6.8"/></svg><span>串口</span></a>
     <button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>
     <button class="nav-search" onclick="Site.openSearch()" title="搜索 (Ctrl+K)" aria-label="搜索"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.3 20.3-4.2-4.2"/></svg></button>
     <button class="nav-ham" onclick="toggleDrawer()" title="菜单">☰</button>
@@ -335,6 +361,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   <a href="#sec6" onclick="toggleDrawer()">学习工具</a>
   <a href="#sec7" onclick="toggleDrawer()">大模型</a>
   <a href="#sec8" onclick="toggleDrawer()">NPU与数字IC</a>
+  <a href="06_学习工具/21_串口调试助手.html">串口调试助手</a>
   <a href="#version" onclick="toggleDrawer()">版本历史</a>
 </div>
 
@@ -374,7 +401,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <div class="hero-side">
         <div class="hero-halo" aria-hidden="true"></div>
         <div class="hero-stage">
-          <div class="hero-3d" id="heroChibi" aria-hidden="true"></div>
+          <div class="hero-3d is-loading" id="heroChibi" aria-hidden="true"></div>
         </div>
         <div class="callouts" aria-label="装配序号标注,点击直达对应板块">
           <a class="co co-l" style="top:13%" href="#sec2" title="① 关节模组 → 硬件基础" aria-label="序号1 关节模组,跳转硬件基础板块"><b>1</b></a>
@@ -1173,10 +1200,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-13 · 新增网页端串口调试助手:Web Serial 连真机 / 文本与 HEX 双解析 / 七种图表 + 声明式插件 DIY / 四种发送 / 录制回放与五种导出(14 个零依赖模块,可作开发基座) + 控件接线收口·演示跟随自定义协议·数据格式说明</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.1</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-13 · 串口调试助手重构轮:参考 Vofa+ 改为「监视器主视觉 + 上下分割」(修掉波形被主区拉长的 Grid 病根) / 运行绿圆标一键暂停 / 绝对时刻与相对秒双口径时间戳 / 打印节流·字号·数字标红·失败行标红 / 4 套开源协议预设(FireWater·Teleplot·JustFloat·匿名 V1.0) / 面向 AI 的调试包与规则热重放 / 顶栏串口快速入口 / 首页机器人并发加载提速</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>🔌🧭 V2.2.1 · 2026-10-13 · 串口调试助手布局与交互重构:监视器主视觉 + 上下分割 / 运行绿圆标 / 双口径时间戳 / 4 套开源协议预设 / AI 调试包与规则热重放 / 顶栏快速入口 / 首页机器人提速 －</summary>
+        <div class="faq-a">🧭 <b>布局重构(参考 Vofa+,但不必长得像本站)</b>:把「串口监视器」提为<b>绝对主视觉</b>——主区改为<b>上下分割</b>,监视器占上方约 62%、波形带在下方,中间一条<b>可拖拽分割线</b>调比例(支持双击复位 / ↑↓ 微调 / Home 复位,比例写进配置、刷新后保持),日志与波形<b>各自独立滚动、互不拉伸</b>。工作区可<b>全屏主区</b>(全屏时波形区与分割线一并隐藏)也可<b>收起主区</b>(只留标题条)。<b>修掉一个存在多年的真实病根</b>:旧版用 CSS Grid 且默认 <code>align-items:stretch</code>,同一行内所有面板被强制等高——监视器一高就把波形拉成竖线,这正是你说的「时域波形稀烂、跟着串口监视器一起拉长、完全看不了」的代码级原因;现改为 <code>flex-grow</code> 比例控制主区 + 面板<b>固定像素高度</b>(右下角有缩放手柄可调)+ 独立滚动。<b>为什么演示显示的是「多少 s」而不是设计时间</b>:旧版监视器只有一个相对秒口径,且超过 1 分钟后连毫秒都被吃掉;现在时间戳<b>双口径</b>可选——「绝对时刻」(默认,<code>23:06:40.125</code>,与 Vofa+/SerialWeb 一致)或「相对秒」(<code>1.235s</code> / <code>1m02.346s</code>,毫秒不丢),并且<b>时间戳与正文用不同颜色</b>(紫罗兰 / TX 琥珀 / RX 天蓝 / 数字标红),一眼能分清。📌 <b>运行绿圆标</b>:顶栏左上角一枚呼吸绿点替代旧版埋在「录制」页签里的「冻结显示」——运行中 / 已暂停 / 未连接三态,一处点击暂停继续(<b>暂停只是不刷屏,数据照收不丢</b>),页签里的同名开关与它<b>同一口径</b>。🎛 <b>设置补齐</b>:打印刷新节流(16~200ms)、监视器字号(11~18px,默认 12,可一键复位)、<b>数字标红</b>(把打印里的数字用醒目色标出)、<b>失败行整行标红并标注原因</b>(校验和不符 / 长度越界 / 未识别出键值对)、<b>自动存档</b>(连上设备或进演示即自动开录,滚动保留最近数据,上限可调)、<b>一键恢复默认设置</b>(顶栏与「显示」页签双入口)。🧩 <b>4 套开源协议预设一键套用</b>:<b>FireWater</b>(Vofa+ 文本 <code>name:value</code>)/ <b>Teleplot</b>(<code>&gt;name:value</code>)/ <b>JustFloat</b>(Vofa+ 二进制 float32 小端 + 帧尾 <code>00 00 80 7F</code> 定界)/ <b>匿名 V1.0</b>(帧头 <code>AA AA</code> + 功能字 + 长度(数据段字节数) + int16 大端数据 + SUM8)——点一下即套用社区事实标准,套用后<b>立刻用缓存里的原始字节重放一次</b>,当场看效果,并可继续手动微调。🤖 <b>架构上的创新:面向 AI 的调试回路</b>(你说「自己串口调试过程中 DIY 写代码写规则、便于 AI 直接读取与自动化调试」):新增<b>「导出 AI 调试包」</b>——一份自包含 JSON,内含生效配置与显示设置、<b>帧结构人话说明</b>、四套可用预设清单、各通道统计(含颜色/量程/是否恒定)、最近 N 条<b>原始 HEX + 解出值</b>、全部失败样本与原因分布,并附一段<b>纯文本摘要</b>(同时自动复制到剪贴板)可直接粘给 AI;配合<b>「按当前规则重放缓存」</b>——解析规则改完用缓存字节重解一遍,<b>不必让硬件重跑</b>就能验证新规则,形成「AI 读数据 → 发现规律 → 改规则 → 当场重放验证」的闭环。另有 <b>URL 携带规则</b>与<b>诊断自述报告</b>供二次开发。🔝 <b>站点顶栏快速入口</b>:全站顶栏(105 个可索引页面统一由 <code>site.js</code> 注入)在版本胶囊右侧加了一枚青色「串口」药丸(脉冲波形图标),与既有图标同高 30px、同圆角、同间距,格式完全对齐;首页静态顶栏与移动端抽屉同步。<b>按键排版精简</b>:主区工具条(全屏 / 收起 / 重置分割 / 新图表 / 清空面板 / 清空缓存)、发送条压成单行、删除重复入口。<b>面板布局可拖拽</b>:标题栏 <code>⛶</code> 全屏、<code>▭</code> 收起、工作区 <code>⇱</code> 移到主位、<code>⇔</code> 加宽、<code>▾</code> 收起、<code>✕</code> 移除,右下角可拖拽调高。<b>波形线颜色可区分</b>:8 色令牌板自动分配并落到通道表,面板里逐条显示色块。⚡ <b>首页小机器人提速</b>:ROBO-Q 的三段加载(three / 机器人模型 / 环境贴图)由<b>串行 await 改并发</b>,并在 <code>&lt;head&gt;</code> 加 <code>modulepreload</code> 让 1.27MB 的 three 在 HTML 解析阶段就开始下载(此前要等解析到 <code>&lt;/body&gt;</code> 前的脚本才发起第一次请求),再加一枚<b>纯 CSS 呼吸剪影占位</b>顶住加载期的视觉空洞。🧪 <b>回归加厚</b>:校验脚本 94→<b>126 项断言</b>(新增时间格式化、4 套预设端到端、调试包结构三组),E2E 18→<b>22 用例</b>(新增主区上下分割 / 波形不被拉长 / 全屏 / 收起 / 绿圆标暂停 / 显示设置持久化 / 预设套用 / 调试包导出),一键自检 ALL CHECKS PASSED。</div>
+      </details>
+    <details class="faq">
         <summary>🔌 V2.2.0 · 2026-10-13 · 新增「网页端串口调试助手」:Web Serial 连真机 + 文本/HEX 双解析 + 七种图表与声明式插件 DIY + 四种发送 + 录制回放与五种导出(14 个零依赖模块,可作开发基座) + 控件接线收口·演示跟随自定义协议·数据格式说明 －</summary>
         <div class="faq-a">🔌 <b>本站第一个与真实硬件通信的应用页</b>(入口 06-21,本体 <code>06_学习工具/_串口调试助手/</code>):用 Web Serial API 在浏览器里连串口,打开即用、零安装、零后端、零第三方运行时依赖。对齐 Vofa+ 与常见串口助手的基础能力,并补上「可复盘」这一层。<b>连接与监视</b>:端口授权、波特率/数据位/停止位/校验/硬流控、自动重连、失焦自动断连、DTR/RTS/BREAK 手动信号、CTS/DSR/DCD/RI 实时读取;收发双向列表带时间戳与 HEX/文本双视图。<b>双解析</b>:文本模式同时识别 <code>键=值</code> 与 <code>键:值</code>(整数小数统一处理,<code>temp1/temp2</code> 后缀保留为独立通道,键后非数值自动跳过);HEX 模式按帧头/帧尾/长度字段定界收帧 + 字段表(偏移/类型/字节序/缩放)+ 四种具名校验(累加和 8/16、异或、CRC16-Modbus,另可选「无」),校验失败仍保留已解出的字段并标注「期望/实际」——排障比直接丢弃有用。<b>七种内置渲染器 + 声明式插件</b>:时域折线/频域谱(自研 radix-2 FFT + 汉宁窗 + 单边幅值归一)/柱状图/仪表盘/数据表格/文本监视器/二维轨迹(李萨如·相图);面板由一份纯 JSON 描述符决定(渲染器 + 通道 + 映射公式 + 量程 + 配色),<b>禁 eval</b>,未知渲染器自动降级为数据表格而非报错,整套布局可导出为「面板包」分享。<b>四种发送</b>:手动(回车即发)/定时轮询(与配置对账式管理计时器,改参数下次即生效)/触发应答(收到含匹配词自动回包,带 250ms 规则冷却与每秒 30 次全局限流,防匹配词与应答互相点火打满串口)/预设发送(可绑单字符快捷键 + 期望回包 + 超时提示)。<b>录制即复盘</b>:把流过的帧录进内存(不写 localStorage,避免上万帧把 5MB 配额打爆连配置一起写坏),可回放重演当时波形、可导出 JSON 存档;另有解析结果 CSV(带 BOM,Excel 中文不乱码)/原始记录 CSV/JSON/BIN/TXT 五种导出。<b>工程与可复用</b>:14 个单一职责模块共用一个命名空间、只走事件总线通信、业务 JS 全部外置;单向数据流 <code>transport → 分帧 → 解析 → 数据仓 → 重绘</code> 明确到可替换传输层(Wireless→WebSocket/Web Bluetooth/CAN 只需换一个模块);自带 <code>llms.txt</code>/<code>AGENTS.md</code>/<code>skills/html-webserial-app/SKILL.md</code> 三份给 AI 直接读取的开发文档,并在应用内提供可一键复制的「AI 开发提示词」。🛠 <b>顺手修掉一个真实缺陷</b>:收帧长度公式把「帧头长度」与「相对整帧起始的偏移」重复相加、且未计入校验和字节数,导致「帧头 + 长度字段 + 校验和」这类帧永远收不齐(演示帧 AA55 正是这种);现已按 <code>offset + size + 载荷 + 帧尾 + 校验和长度</code> 修正,并补进回归断言。🧪 <b>新增 <code>_本地工具/校验串口应用.js</code>(85 项断言)</b>:该目录以 <code>_</code> 开头会被站点自检的可索引页过滤豁免(HTML 不进内联脚本语法检查、不进 E2E 逐页 smoke),故纯函数与帧管线回归由这份脚本承担——直接 require 子应用真源文件(不抄副本),覆盖 UTF-8 多字节切分保护、跨块分帧、帧头帧尾长度三种定界、四种校验和已知向量、结构表解码与越界不抛异常、表达式白名单(未绑定标识符与 <code>alert(1)</code> 必须被拒)、FFT 已知频率峰位与幅值、环形缓冲绕回统计、插件描述符归一化与三类文件(kind/version)闸门,以及<b>端到端「碎块喂入演示源数据恰好收齐 6 帧并解回原值」</b>。🖥 <b>浏览器层同样有兜底</b>:E2E 新增三条子应用专项用例——<code>serial_shell</code>(<code>window.SerialLab</code> 14 个模块挂载 + 版本位 + 7 个页签 + 无 Web Serial 时的降级横幅)/<code>serial_pipeline</code>(演示模式合成数据 50Hz → 预置面板 → 新增面板挂 canvas → 接收字节数 >0 → 通道表渲染)/<code>serial_export</code>(配置落盘 <code>humanoid-serial-config-v1</code> + 原始记录 CSV 下载带 UTF-8 BOM),E2E 全量 16 用例全过(含全站逐页 smoke 无异常)。📦 <b>配套</b>:入口页 06-21 完成六处登记(search-index/sitemap/page-meta/学习地图/index 卡片+SITE_SECTIONS/百度清单)+ 翻页链 + 页数 103→104 三处同步(og:description/首页统计位/<code>S.STATS.pages</code>);子应用外壳与 14 个脚本进根 <code>sw.js</code> 的 LAZY 预缓存层(约 230KB 后台补装,不抢首屏带宽,离线首开仍可用)。🛠 <b>控件接线收口</b>:界面上的波特率/数据位/停止位/校验/硬流控/编码/发送换行/追加换行/自动重连/复位等待/HEX 发送(两处)/HEX 显示/显示时间戳共 14 个控件此前<b>只存在于 HTML 而未写进配置</b>(改波特率无效、勾 HEX 发送无效),现全部接入配置并可持久化;「HEX 显示 / 显示时间戳」落到监视器面板显示开关,两个 HEX 发送开关双向同步。🔁 <b>演示模式跟随你的协议</b>:演示数据按当前 HEX 帧结构合成(帧头/长度字段/字段表/帧尾/校验和),规则不完整时自动回退内置 AA55 帧——没接硬件也能验证自定义协议能否出通道、能否画时域波形与频谱。📖 <b>新增「数据格式说明」</b>:入口页 06-21 新增一节(默认 11 字节演示帧的字节级布局表 + 自定义 HEX 逐项配置步骤 + 六个易错点),应用内「使用帮助」同步补全,并统一「四种具名校验(另可选无)」口径。🧪 <b>回归加厚</b>:校验脚本 85→94 项(含「示例规则帧与内置帧逐字节等价」「自定义帧能被自身收帧器收齐并被结构表解出」),E2E 16→18 用例(新增控件接线与配置落盘断言、自定义协议演示出通道断言)。</div>
       </details>
@@ -1445,7 +1476,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.0(2026-10-13) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.1(2026-10-13) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
@@ -1907,33 +1938,55 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
     });
   })();
 </script>
-<!-- Hero Q版机器人 ROBO-Q:three 取自 00_3D解剖本地库(npmmirror 兜底),建模在 _assets/chibi-robot.js;失败静默降级,不影响页面 -->
+<!-- Hero Q版机器人 ROBO-Q:three 取自 npmmirror(国内边缘快),本地库兜底保离线;
+     建模在 _assets/chibi-robot.js;失败静默降级,不影响页面。
+     V2.1.31 加速(配合 <head> 的 modulepreload):
+       ① three   ② chibi-robot.js   ③ RoomEnvironment 环境贴图 —— 三者互不依赖,
+       改为并发发起;此前是串行 await,总耗时是三段之和。
+       占位剪影:HTML 上预置 .is-loading(纯 CSS 即刻可见),挂载/失败后一律摘掉。 -->
 <script type="module">
 (async function(){
   const el = document.getElementById("heroChibi");
-  if(!el || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  if(!el) return;
+  /* 无障碍:reduced-motion 用户不看 3D,但要把占位剪影一并摘掉,否则留下一块空壳 */
+  if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches){
+    el.classList.remove("is-loading");
+    return;
+  }
   const noteEl = document.querySelector(".stage-note");
   if(noteEl) noteEl.textContent = "ROBO-Q 加载中…";
+
+  /* ② chibi-robot.js:经典脚本,用完即弃,提前发起即可与 three 的下载完全重叠 */
+  const pChibi = (window.ChibiRobot ? Promise.resolve() : new Promise((res, rej)=>{
+    const sc = document.createElement("script");
+    sc.src = "./_assets/chibi-robot.js";
+    sc.onload = res; sc.onerror = rej;
+    document.head.appendChild(sc);
+  })).catch(()=>{ /* 失败静默:装饰性组件 */ });
+  /* ③ 环境贴图:同样提前发起(chibi-robot.js 支持缺省该参数,缺失时自动提灯补偿) */
+  const pEnv = import("./00_3D解剖/lib/addons/environments/RoomEnvironment.js").catch(()=>null);
+
+  /* ① three 本体:CDN 优先(国内 CDN 边缘快于 GitHub Pages 同源),本地库兜底保离线 */
   let THREE = null;
-  /* V2.1.30:国内 CDN 优先(npmmirror 边缘快于 GitHub Pages 同源),本地库兜底保离线 */
   try{ THREE = await import("https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js"); }
   catch(e){
     try{ THREE = await import("./00_3D解剖/lib/three.module.js"); }
-    catch(e2){ if(noteEl) noteEl.textContent = "机器人离线加载失败(联网后刷新重试)"; return; }
+    catch(e2){
+      el.classList.remove("is-loading");
+      if(noteEl) noteEl.textContent = "机器人离线加载失败(联网后刷新重试)";
+      return;
+    }
   }
   try{
-    await new Promise((res, rej)=>{
-      const sc = document.createElement("script");
-      sc.src = "./_assets/chibi-robot.js";
-      sc.onload = res; sc.onerror = rej;
-      document.head.appendChild(sc);
-    });
-    let RoomEnv = null;
-    try{ RoomEnv = await import("./00_3D解剖/lib/addons/environments/RoomEnvironment.js"); }catch(e){}
-    const h = window.ChibiRobot.mount(el, THREE, { RoomEnvironment: RoomEnv && RoomEnv.RoomEnvironment });
+    /* 只等剩下两条;因为早已并发发起,这里几乎不额外耗时 */
+    const envMod = (await Promise.all([pChibi, pEnv]))[1];
+    if(!window.ChibiRobot){ el.classList.remove("is-loading"); return; }
+    const h = window.ChibiRobot.mount(el, THREE, { RoomEnvironment: envMod && envMod.RoomEnvironment });
+    /* 摘占位必须在 mount 之后:伪元素会盖在 canvas 之上 */
+    el.classList.remove("is-loading");
     if(h && noteEl) noteEl.textContent = "点一点换天气 · 拖一拖环视";
     if(h) el.addEventListener("pointerdown", ()=>el.classList.add("touched"), { once:false });
-  }catch(e){ /* 装饰性组件:失败静默 */ }
+  }catch(e){ el.classList.remove("is-loading"); /* 装饰性组件:失败静默,但占位剪影必须摘掉 */ }
 })();
 </script>
 </body>

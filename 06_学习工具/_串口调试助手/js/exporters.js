@@ -333,6 +333,390 @@
     });
   };
 
+  /* ------------------------------------------------------------
+     5) 面向 AI 的「调试包」（自己串口调试 + 丢给 AI 定位问题）
+     设计目标：一个自包含 JSON，AI 只读它就能回答
+       「现在按什么规则解帧 / 解出来的量长什么样 / 哪里失败 / 该怎么改规则」，
+     无需用户来回截图、复制粘贴。
+     同时产出一段纯文本 brief，可直接粘到对话框里。
+     ------------------------------------------------------------ */
+  var BUNDLE_KIND = "seriallab-debug-bundle";
+  var BUNDLE_VERSION = 1;
+
+  /* ---------- 文本排版小工具（ES5 无 padStart/padEnd） ---------- */
+  function padR(s, n) {
+    s = (s === null || s === undefined) ? "" : String(s);
+    while (s.length < n) { s += " "; }
+    return s;
+  }
+  function padL(s, n) {
+    s = (s === null || s === undefined) ? "" : String(s);
+    while (s.length < n) { s = " " + s; }
+    return s;
+  }
+  function fmtNum(v, p) {
+    if (typeof v !== "number" || !isFinite(v)) { return "-"; }
+    var d = (typeof p === "number" && p >= 0 && p <= 8) ? p : 3;
+    return v.toFixed(d);
+  }
+  /* 单行化：日志里的换行会让表格错位，统一收成可见分隔 */
+  function oneLine(s, n) {
+    s = (s === null || s === undefined) ? "" : String(s);
+    s = s.replace(/[\r\n\t]+/g, " ");
+    if (n && s.length > n) { s = s.slice(0, n) + "\u2026"; }
+    return s;
+  }
+  /* "AAAA" -> "AA AA"；容忍奇数长度与空格 */
+  function hexSpaced(h) {
+    var s = String(h || "").replace(/[^0-9a-fA-F]/g, "").toUpperCase();
+    if (!s) { return ""; }
+    var out = [];
+    for (var i = 0; i < s.length; i += 2) { out.push(s.substr(i, 2)); }
+    return out.join(" ");
+  }
+
+  /* ---------- 帧结构人话说明（AI 靠这段理解硬件在发什么） ---------- */
+  function describeRule(activeName, r) {
+    var L = [];
+    if (activeName !== "hex") {
+      L.push("模式: 文本 / 键值自适应解析");
+      L.push("分隔符: " + ((r.seps && r.seps.length) ? r.seps.join(" ") : "= :"));
+      L.push("数值正则: " + (r.number || "(默认)"));
+      L.push("后缀通道: " + (r.suffixChannels ? "temp1/temp2 视为不同通道" : "同名合并"));
+      L.push("切帧: 优先按换行；无换行裸流按静默超时切帧");
+      L.push("示例: temperature=25.63, rpm:-1200.5, vbus:24.01");
+      return L;
+    }
+    L.push("模式: 二进制 / 按显式帧结构解析");
+    L.push("帧头: " + (r.head ? hexSpaced(r.head) : "(未设置：靠帧尾或长度字段定界)"));
+    var len = r.len || {};
+    if (len.mode && len.mode !== "none" && len.size > 0) {
+      L.push("长度字段: 位于第 " + len.offset + " 字节，占 " + len.size + " 字节，"
+        + (len.mode === "payload" ? "表示「数据段字节数」" : "表示「整帧字节数」"));
+    } else {
+      L.push("长度字段: (未使用)");
+    }
+    var fs = r.fields || [];
+    if (fs.length) {
+      var parts = [];
+      for (var i = 0; i < fs.length; i++) {
+        var f = fs[i];
+        parts.push(f.key + "(" + (f.type || "uint8") + "@" + f.offset
+          + (f.size ? "×" + f.size : "")
+          + (f.scale && f.scale !== 1 ? " ×" + f.scale : "")
+          + ((f.type === "int16" || f.type === "uint16" || f.type === "int32" || f.type === "uint32" || f.type === "float32" || f.type === "float64")
+            ? (f.big ? " BE" : " LE") : "")
+          + ")");
+      }
+      L.push("数据字段: " + parts.join("  "));
+    } else {
+      L.push("数据字段: (未定义；当前不会解出任何数值通道)");
+    }
+    var ck = r.checksum || {};
+    function ckName(t) {
+      if (t === "sum8") { return "8 位累加和"; }
+      if (t === "xor8") { return "8 位异或"; }
+      if (t === "sum16") { return "16 位累加和"; }
+      if (t === "crc16modbus") { return "CRC16/MODBUS"; }
+      return "无";
+    }
+    if (ck.type && ck.type !== "none") {
+      L.push("校验: " + ckName(ck.type) + "（从第 " + (ck.from || 0) + " 字节抽到 "
+        + (ck.to === -1 || ck.to === undefined ? "帧末" : ("第 " + ck.to + " 字节")) + "）");
+    } else {
+      L.push("校验: 无（不做完整性判断）");
+    }
+    L.push("帧尾: " + (r.tail ? hexSpaced(r.tail) : "(未设置)"));
+    L.push("字节序: 多字节字段默认小端，字段上可勾「大端」逐项覆盖");
+    return L;
+  }
+
+  /* ---------- 单条原始记录 -> 精简样本 ---------- */
+  function sampleOf(rec, seq) {
+    var s = {
+      seq: seq,
+      dir: rec.dir === "tx" ? "TX" : "RX"
+    };
+    if (rec.tLabelAbs) { s.tAbs = rec.tLabelAbs; }
+    if (rec.tLabel) { s.tRel = rec.tLabel; }
+    if (rec.hex) { s.hex = oneLine(rec.hex, 512); }
+    if (rec.text) { s.text = oneLine(rec.text, 240); }
+    if (rec.ok === false) {
+      s.ok = false;
+      if (rec.reason) { s.reason = oneLine(rec.reason, 160); }
+    }
+    if (rec.values) {
+      var vals = {}, has = false;
+      for (var k in rec.values) {
+        if (!Object.prototype.hasOwnProperty.call(rec.values, k)) { continue; }
+        var v = rec.values[k];
+        if (typeof v !== "number" || !isFinite(v)) { continue; }
+        vals[k] = Math.round(v * 1e6) / 1e6;   /* 收一下尾数，别把包撑大 */
+        has = true;
+      }
+      if (has) { s.values = vals; }
+    }
+    return s;
+  }
+
+  /* ---------- 通道统计（含颜色，便于 AI 判断「哪条线是哪路」） ---------- */
+  function channelStats() {
+    var list = SL.datastore.listChannels();
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var ch = list[i];
+      var st = SL.datastore.stat(ch.key);
+      out.push({
+        key: ch.key,
+        label: ch.label,
+        unit: ch.unit || "",
+        color: ch.color,
+        precision: ch.precision,
+        source: ch.source,
+        visible: ch.visible !== false,
+        count: st.count,
+        last: (typeof st.last === "number" && isFinite(st.last)) ? st.last : null,
+        min: (typeof st.min === "number" && isFinite(st.min)) ? st.min : null,
+        max: (typeof st.max === "number" && isFinite(st.max)) ? st.max : null,
+        avg: (typeof st.avg === "number" && isFinite(st.avg)) ? st.avg : null,
+        span: (typeof st.span === "number" && isFinite(st.span)) ? st.span : null
+      });
+    }
+    return out;
+  }
+
+  /* ---------- 主体 ---------- */
+  E.debugBundle = function (opts) {
+    opts = opts || {};
+    var wantSamples = U.clamp(parseInt(opts.samples, 10) || 400, 20, 5000);
+
+    var cfg = core.config;
+    var rule = cfg.rule || {};
+    var activeName = (rule.active === "hex") ? "hex" : "text";
+    var activeRule = rule[activeName] || {};
+    var tp = cfg.transport || {};
+
+    /* 采样：取末尾 wantSamples 条，失败样本单独抽出（最多 40 条） */
+    var all = SL.datastore.recentRaw();
+    var totalRec = all.length;
+    var from = Math.max(0, totalRec - wantSamples);
+    var samples = [];
+    var failures = [];
+    var reasonHist = {};
+    var tx = 0, rx = 0;
+    var i;
+    for (i = 0; i < totalRec; i++) {
+      if (all[i].dir === "tx") { tx++; } else { rx++; }
+    }
+    for (i = from; i < totalRec; i++) {
+      var s = sampleOf(all[i], i + 1);
+      samples.push(s);
+      if (s.ok === false) {
+        var rk = s.reason || "未知原因";
+        reasonHist[rk] = (reasonHist[rk] || 0) + 1;
+        if (failures.length < 40) { failures.push(s); }
+      }
+    }
+    /* 全窗口的失败计数（不只是采样窗） */
+    var failTotal = 0;
+    for (i = 0; i < totalRec; i++) { if (all[i].ok === false) { failTotal++; } }
+
+    var failList = [];
+    for (var rk2 in reasonHist) {
+      if (Object.prototype.hasOwnProperty.call(reasonHist, rk2)) {
+        failList.push({ reason: rk2, count: reasonHist[rk2] });
+      }
+    }
+    failList.sort(function (a, b) { return b.count - a.count; });
+
+    var chans = channelStats();
+
+    /* 简易规律提示：给 AI 一个起点，别让它全靠猜 */
+    var hints = [];
+    if (activeName === "text") {
+      hints.push("文本模式：若 AI 看到大量「未识别出键值对」，多半是分隔符或数值正则与该设备输出不符。");
+      hints.push("可用内置预设一键切换：FireWater / Teleplot（文本），JustFloat / 匿名 V1.0（二进制）。");
+    } else {
+      hints.push("二进制模式：优先核对帧头、长度字段含义（数据段 or 整帧）与校验起点，这三项最容易对不上。");
+      if (!activeRule.head) { hints.push("当前未设帧头，收帧只能靠帧尾或长度字段，长噪声下容易串帧，建议补帧头。"); }
+      if (!(activeRule.fields && activeRule.fields.length)) { hints.push("当前未定义数据字段，因此不会有数值通道产出。"); }
+    }
+    if (failTotal > 0) {
+      hints.push("存在解析/校验失败帧（共 " + failTotal + " 条），先把失败样本的 HEX 与规则逐字节对齐，通常能直接定位偏移错误。");
+    }
+    if (!chans.length) {
+      hints.push("还没有任何数值通道：确认设备输出的是 key=value 形式，或改用带字段定义的二进制规则。");
+    } else {
+      var flat = [];
+      for (i = 0; i < chans.length; i++) {
+        if (chans[i].count > 0 && chans[i].span === 0) { flat.push(chans[i].key); }
+      }
+      if (flat.length) { hints.push("以下通道数值恒定（span=0），可能是固定增益、占位字段或解析偏移错位：" + flat.join(", ")); }
+    }
+    hints.push("本包内的 samples 保留原始 HEX 与解出值，可据此离线复算；改完规则后在本应用「按当前规则重放缓存」即可验证，不必让硬件重跑。");
+
+    var generatedAt = new Date();
+    var bundle = {
+      kind: BUNDLE_KIND,
+      version: BUNDLE_VERSION,
+      generatedAt: generatedAt.toISOString(),
+      app: { name: "SerialLab · 网页端串口调试助手", configVersion: core.CFG_VERSION },
+      connection: {
+        conn: core.state.conn || "idle",
+        demo: !!core.state.demo,
+        paused: !!core.state.paused,
+        baudRate: tp.baudRate, dataBits: tp.dataBits, stopBits: tp.stopBits,
+        parity: tp.parity, flow: tp.flow, encoding: tp.encoding,
+        timeMode: tp.timeMode || "abs", hexRecv: !!tp.hexRecv
+      },
+      rule: { active: activeName, detail: U.clone(activeRule) },
+      frameLayout: describeRule(activeName, activeRule),
+      /* 设置快照：AI 要能看懂「用户当前是怎么配的」，否则给出的建议会答非所问 */
+      settings: {
+        transport: U.clone(tp),
+        display: U.clone(cfg.ui || {}),
+        panels: (function () {
+          var ps = cfg.panels || [];
+          var o = [];
+          for (var m = 0; m < ps.length; m++) {
+            o.push({ id: ps[m].id, type: ps[m].type, slot: ps[m].slot, h: ps[m].h, span: ps[m].span });
+          }
+          return o;
+        })(),
+        send: {
+          timed: ((cfg.send && cfg.send.timed) || []).length,
+          triggers: ((cfg.send && cfg.send.triggers) || []).length,
+          presets: ((cfg.send && cfg.send.presets) || []).length
+        }
+      },
+      availablePresets: (function () {
+        var src = core.presets ? core.presets() : [];
+        var out = [];
+        for (var j = 0; j < src.length; j++) {
+          out.push({ id: src[j].id, name: src[j].name, brand: src[j].brand, note: src[j].note, sample: src[j].sample });
+        }
+        return out;
+      })(),
+      channels: chans,
+      stats: {
+        rawRecords: totalRec,
+        parsedFrames: SL.datastore.totalFrames(),
+        bytes: SL.datastore.totalBytes(),
+        tx: tx, rx: rx,
+        failedFrames: failTotal,
+        failureReasons: failList,
+        sampleWindow: samples.length
+      },
+      samples: samples,
+      failures: failures,
+      hints: hints
+    };
+
+    /* ---------------- 纯文本摘要（可直接粘给 AI） ---------------- */
+    function ts2(d) {
+      function p(n) { return (n < 10 ? "0" : "") + n; }
+      return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate())
+        + " " + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+    }
+    var B = [];
+    B.push("=== SerialLab 串口调试包 v" + BUNDLE_VERSION + " ===");
+    B.push("生成时间: " + ts2(generatedAt));
+    B.push("应用: SerialLab · 网页端串口调试助手（站点在线版同样可用）");
+    B.push("");
+    B.push("[连接] " + (bundle.connection.conn) + (bundle.connection.demo ? " · 演示数据" : "")
+      + (bundle.connection.paused ? " · 已暂停刷新" : "")
+      + " · " + tp.baudRate + " " + tp.dataBits + (String(tp.parity || "none").charAt(0).toUpperCase())
+      + tp.stopBits + " · 编码 " + tp.encoding
+      + " · 时间戳 " + (bundle.connection.timeMode === "rel" ? "相对秒" : "绝对时刻"));
+    B.push("[显示设置] 刷新节流 " + (bundle.settings.display.drawInterval || 40) + "ms"
+      + " · 字号 " + (bundle.settings.display.fontSize || 12) + "px"
+      + " · 数字标红 " + (bundle.settings.display.highlightNumbers ? "开" : "关")
+      + " · 失败行标红 " + (bundle.settings.display.markFailed !== false ? "开" : "关")
+      + " · 自动存档 " + (bundle.settings.display.autoRecord !== false ? "开" : "关")
+      + "（上限 " + (bundle.settings.display.recordCap || 20000) + " 帧）"
+      + " · 图表框 " + bundle.settings.panels.length + " 个");
+    B.push("");
+    B.push("[帧结构]");
+    for (i = 0; i < bundle.frameLayout.length; i++) { B.push("  " + bundle.frameLayout[i]); }
+    B.push("");
+    B.push("[统计] 原始记录 " + totalRec + " 条 · 解析帧 " + SL.datastore.totalFrames()
+      + " · 字节 " + SL.datastore.totalBytes() + " · TX " + tx + " · RX " + rx
+      + " · 失败 " + failTotal + " 条");
+    if (failList.length) {
+      var fr = [];
+      for (i = 0; i < failList.length; i++) { fr.push(failList[i].reason + " ×" + failList[i].count); }
+      B.push("  失败原因分布: " + fr.join(" / "));
+    }
+    B.push("");
+    if (chans.length) {
+      B.push("[通道 " + chans.length + "]");
+      B.push("  " + padR("key", 14) + padR("label", 14) + padR("unit", 7)
+        + padL("count", 7) + padL("last", 12) + padL("min", 12) + padL("max", 12) + padL("avg", 12) + "  color");
+      for (i = 0; i < chans.length; i++) {
+        var c = chans[i];
+        B.push("  " + padR(oneLine(c.key, 13), 14) + padR(oneLine(c.label, 13), 14) + padR(oneLine(c.unit, 6), 7)
+          + padL(c.count, 7)
+          + padL(fmtNum(c.last, c.precision), 12)
+          + padL(fmtNum(c.min, c.precision), 12)
+          + padL(fmtNum(c.max, c.precision), 12)
+          + padL(fmtNum(c.avg, c.precision), 12)
+          + "  " + c.color);
+      }
+    } else {
+      B.push("[通道] 无（尚未解析出任何数值通道）");
+    }
+    B.push("");
+    /* 只挑尾部若干条，避免摘要过长；完整样本在 JSON 里 */
+    var tailN = Math.min(samples.length, 24);
+    if (tailN) {
+      B.push("[最近 " + tailN + " 条原始记录]（seq 为全局序号，完整 " + samples.length + " 条见 JSON.samples）");
+      for (i = samples.length - tailN; i < samples.length; i++) {
+        var sm = samples[i];
+        var line = "  #" + padL(sm.seq, 6) + " " + padR(sm.tAbs || sm.tRel || "", 14)
+          + padR(sm.dir, 4) + padR(sm.ok === false ? "FAIL" : "ok", 6);
+        if (sm.hex) { line += padR(oneLine(sm.hex, 38), 40); }
+        else if (sm.text) { line += padR(oneLine(sm.text, 38), 40); }
+        else { line += padR("", 40); }
+        if (sm.values) {
+          var kv = [];
+          for (var kk in sm.values) {
+            if (Object.prototype.hasOwnProperty.call(sm.values, kk)) { kv.push(kk + "=" + sm.values[kk]); }
+          }
+          line += kv.join(" ");
+        }
+        if (sm.reason) { line += "  <-- " + sm.reason; }
+        B.push(line);
+      }
+    }
+    if (failures.length) {
+      B.push("");
+      B.push("[失败样本 " + failures.length + " 条]");
+      for (i = 0; i < failures.length; i++) {
+        var f = failures[i];
+        B.push("  #" + padL(f.seq, 6) + " " + padR(f.tAbs || f.tRel || "", 14)
+          + padR(f.hex || f.text || "", 40) + "  <-- " + (f.reason || "未知"));
+      }
+    }
+    B.push("");
+    B.push("[给 AI 的提示]");
+    for (i = 0; i < hints.length; i++) { B.push("  - " + hints[i]); }
+    B.push("");
+    B.push("[使用方法] 把本段文本（或整个 JSON）发给 AI，并说明「设备在跑什么、期望看到什么」。");
+    B.push("           改好规则后回到应用：解析页签套用预设或手改，再点「按当前规则重放缓存」，");
+    B.push("           无需让硬件重跑即可当场验证。");
+
+    bundle.brief = B.join("\n");
+    return bundle;
+  };
+
+  /* 一步到位：生成 + 下载 + 返回摘要（供脚本/控制台调用） */
+  E.exportDebugBundleFile = function (opts) {
+    var b = E.debugBundle(opts);
+    var ok = E.downloadText(JSON.stringify(b, null, 2),
+      "seriallab-debug-" + stamp() + ".json", "application/json");
+    return { ok: ok, brief: b.brief, bundle: b };
+  };
+
   SL.exporters = E;
 
   /* UMD 尾：校验脚本可加载 toCsv / withBom / configFromText 做断言 */

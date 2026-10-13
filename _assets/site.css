@@ -566,7 +566,7 @@ html:not([data-theme-early="dark"]) .onboard-skip{color:#64748b}
   /* V2.1.14 补齐:AI 悬浮球/面板、横滑箭头与进度圆点、循环克隆卡(data-clone)、
      移动端抽屉(translateX(100%) 撑宽页面的隐患)、汉堡/板块下拉/版本胶囊/进度环 */
   .topnav,.toc-sidebar,.toc-toggle,.backtop,.prevnext,.site-footer,.nav-done,.nav-theme,.nav-search,.nav-print,.onboard-overlay,.theme-seg,
-  .ai-fab-btn,.ai-fab-panel,.rm-nav,.rm-progress,.rm-step[data-clone],.drawer,.nav-ham,.nav-dd,.nav-ver,.nav-prog{display:none!important}
+  .ai-fab-btn,.ai-fab-panel,.rm-nav,.rm-progress,.rm-step[data-clone],.drawer,.nav-ham,.nav-dd,.nav-ver,.nav-prog,.nav-serial{display:none!important}
   .container,.breadcrumb{max-width:100%!important;margin:0!important}
   body.has-toc .container,body.has-toc .prevnext,body.has-toc .breadcrumb{margin:0!important}
   a{color:#000!important;text-decoration:underline}
@@ -673,6 +673,23 @@ html:not([data-theme-early="dark"]) .nav-ver:hover{color:#2563eb;border-color:#2
 /* V2.1.8 窄屏顶栏减负:版本/打印/自检/搜索快捷键徽标退出,保 brand+主题+搜索+打卡+汉堡 */
 @media (max-width:640px){
   .topnav .nav-ver{display:none}
+}
+
+/* ---------- V2.2.1 串口调试助手快速入口 ----------
+   原因:串口调试助手是本站唯一的「真机交互」工具,之前只能从学习工具导航页二跳进入。
+   做法:与版本胶囊同高 30px、同圆角规格,紧贴版本胶囊右侧,格式完全对齐;
+   配色取青色(与主题=琥珀 / 搜索=天蓝 / 版本=中性灰互不撞色),让它一眼可辨。 */
+.nav-serial{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;margin-left:8px;flex-shrink:0;
+  font-size:12.5px;line-height:1;letter-spacing:.3px;white-space:nowrap;text-decoration:none;
+  color:#67e8f9;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.32);border-radius:999px;
+  transition:background-color .15s,border-color .15s,color .15s}
+.nav-serial svg{display:block;flex-shrink:0}
+.nav-serial:hover{color:#a5f3fc;background:rgba(34,211,238,.2);border-color:rgba(34,211,238,.6);text-decoration:none}
+html:not([data-theme-early="dark"]) .nav-serial{color:#0e7490;background:rgba(8,145,178,.08);border-color:rgba(8,145,178,.3)}
+html:not([data-theme-early="dark"]) .nav-serial:hover{color:#155e75;background:rgba(8,145,178,.16);border-color:rgba(8,145,178,.55)}
+/* 窄屏与版本胶囊一同退出顶栏(Web Serial 本就只支持桌面 Chromium,移动端留着也无用) */
+@media (max-width:900px){
+  .topnav .nav-serial{display:none}
 }
 
 /* ---------- V2.1.11 顶栏阅读进度环 ---------- */

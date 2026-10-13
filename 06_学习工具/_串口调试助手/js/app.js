@@ -44,14 +44,33 @@
 
   /* ------------------------------------------------------------
      1) 时间戳显示
+     两种口径同时在记录里备好，显示时由「显示设置」里的 timeMode 决定用哪个：
+       t        —— 单调时钟（performance.now），只用于绘图时间轴
+       tWall    —— 墙钟（Date.now），绝对时刻显示的唯一来源
+       tLabel   —— 相对口径："12.345s"
+       tLabelAbs—— 绝对口径："23:51:21.900"
+     预计算而不是渲染时算：渲染层每秒可能刷 25 次 × 300 行，重复算字符串很浪费。
      ------------------------------------------------------------ */
   var t0 = U.now();
 
-  function tLabel(t) {
-    var ms = t - t0;
-    var s = ms / 1000;
-    return s.toFixed(3) + "s";
+  function mkRec(t, extra) {
+    var wall = Date.now();
+    var rec = {
+      t: t,
+      tWall: wall,
+      tLabel: U.fmtRelative(t - t0),
+      tLabelAbs: U.fmtClock(wall),
+      dir: "rx"
+    };
+    if (extra) {
+      for (var k in extra) {
+        if (Object.prototype.hasOwnProperty.call(extra, k)) { rec[k] = extra[k]; }
+      }
+    }
+    return rec;
   }
+
+  App.timeBase = function () { return t0; };
 
   function fmtNum(v, digits) {
     if (typeof v !== "number" || !isFinite(v)) { return "—"; }
@@ -108,10 +127,10 @@
     var parsed = Parser.parseText(line, core.config.rule.text);
     var values = parsed.values || {};
 
-    pushRecord({
-      t: t, tLabel: tLabel(t), dir: dir, text: line,
+    pushRecord(mkRec(t, {
+      dir: dir, text: line,
       hex: U.bytesToHex(bytes), values: values, ok: true
-    });
+    }));
 
     Store.pushFrame({
       t: t, dir: dir, raw: bytes, text: line, values: values,
@@ -129,12 +148,12 @@
       if (Object.prototype.hasOwnProperty.call(values, k)) { hasValues = true; break; }
     }
 
-    pushRecord({
-      t: t, tLabel: tLabel(t), dir: "rx",
+    pushRecord(mkRec(t, {
+      dir: "rx",
       text: dec.text, hex: U.bytesToHex(u8), values: values,
       ok: parsed.ok, reason: parsed.reason, partial: !!partial,
       checksum: parsed.checksum
-    });
+    }));
 
     if (hasValues) {
       Store.pushFrame({
@@ -155,10 +174,10 @@
       ? Parser.parseText(dec, core.config.rule.text)
       : { values: {} };
 
-    pushRecord({
-      t: t, tLabel: tLabel(t), dir: "tx", text: text,
+    pushRecord(mkRec(t, {
+      dir: "tx", text: text,
       hex: U.bytesToHex(u8), values: parsed.values || {}, ok: true
-    });
+    }));
 
     /* values 传空对象：datastore 只在 dir === "tx" 时仍会 emit "frame"，
        这样录制与时间线能记录到发送动作，却不会建出通道 */
@@ -419,6 +438,75 @@
   }
 
   /* ------------------------------------------------------------
+     5b) 规则热更新重放 / 自动存档 —— 面向「AI 直接调硬件」的回路
+     ------------------------------------------------------------ */
+  function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+
+  function anyValue(vals) {
+    if (!vals) { return false; }
+    for (var k in vals) { if (hasOwn(vals, k)) { return true; } }
+    return false;
+  }
+
+  /* 用「当前生效的解析规则」重放数据仓里已缓存的原始记录。
+     价值：AI 给出新的帧结构 / 字段表之后，用户不需要让硬件重跑一遍——
+     粘贴规则 → 立刻用同一批原始字节重新解一次，当场看对错。
+     rawLog 里的记录会被就地更新（ok / reason / values），监视器的失败标红同步刷新。 */
+  App.replayBuffered = function (limit) {
+    var recs = Store.recentRaw(limit || 5000);
+    if (!recs.length) { return { ok: false, frames: 0, reason: "没有可重放的缓存数据" }; }
+    Store.clear(true, true);            /* 保留通道元数据 + 保留原始记录 */
+    var hex = currentMode() === "hex";
+    var enc = core.config.transport.encoding || "utf-8";
+    var n = 0;
+    for (var i = 0; i < recs.length; i++) {
+      var r = recs[i];
+      if (!r || r.dir !== "rx" || !r.hex) { continue; }
+      var u8 = U.hexToBytes(r.hex);
+      if (!u8 || !u8.length) { continue; }
+      var vals, ok = true, reason = "", ck = null;
+      if (hex) {
+        var ph = Parser.parseHexFrame(u8, fieldRule());
+        vals = ph.values || {}; ok = !!ph.ok; reason = ph.reason || ""; ck = ph.checksum;
+      } else {
+        var dec = C.decodeText(u8, enc).text;
+        vals = Parser.parseText(dec, core.config.rule.text).values || {};
+      }
+      r.values = vals; r.ok = ok; r.reason = reason;
+      if (ck) { r.checksum = ck; }
+      if (anyValue(vals)) {
+        Store.pushFrame({
+          t: r.t, dir: "rx", raw: u8, values: vals,
+          rule: hex ? "hex" : "text", source: "replay"
+        });
+        n++;
+      }
+    }
+    resetFraming();
+    core.emit("data:replay", { frames: n });
+    core.log("info", "已按当前规则重放 " + n + " 帧（扫描 " + recs.length + " 条原始记录）");
+    return { ok: true, frames: n, scanned: recs.length };
+  };
+
+  /* 自动存档：连上真机 / 进入演示后自动开始录制，用作滚动缓冲。
+     到顶丢最旧的 20% 继续录——它的用途是「随时导出最近一段给 AI 看」，
+     保留最新数据比保留全部更有价值；手动录制则是到顶即停，保住完整现场。 */
+  var autoArmed = false, autoDone = false;
+
+  App.armAutoRecord = function () { autoArmed = true; autoDone = false; };
+
+  function ensureAutoRecord() {
+    if (!Timeline || !Timeline.isRecording) { return false; }
+    if (core.config.ui && core.config.ui.autoRecord === false) { return false; }
+    if (Timeline.isRecording()) { return false; }
+    Timeline.setMaxFrames((core.config.ui && core.config.ui.recordCap) || 20000);
+    Timeline.setRolling(true);
+    Timeline.startRecord("自动存档");
+    return true;
+  }
+  App.ensureAutoRecord = ensureAutoRecord;
+
+  /* ------------------------------------------------------------
      6) 事件装配
      ------------------------------------------------------------ */
   function wirePipeline() {
@@ -431,6 +519,16 @@
       if (!probe && rec.hex) { probe = rec.hex; }
       checkPresetExpect(probe);
       checkTriggers(probe);
+      /* 首帧到达时才真正开录，避免"连上但没数据"也占一条空录制 */
+      if (autoArmed && !autoDone) {
+        autoDone = true;
+        ensureAutoRecord();
+      }
+    });
+
+    /* 连接状态或数据源变化 → 重新武装自动存档 */
+    core.on("state", function (p) {
+      if (p && (p.key === "conn" || p.key === "demo")) { App.armAutoRecord(); }
     });
 
     /* 规则/口径变了就丢弃残留字节，避免用新旧两套规则拼半帧 */
@@ -446,8 +544,8 @@
       App.stopAllTimed();
     });
 
-    /* 连接建立后按当前配置拉起定时轮询 */
-    core.on("serial:opened", function () { App.syncSend(); });
+    /* 连接建立后按当前配置拉起定时轮询，并武装自动存档 */
+    core.on("serial:opened", function () { App.syncSend(); App.armAutoRecord(); });
 
     if (lingerTimer) { clearInterval(lingerTimer); }
     lingerTimer = setInterval(lingerTick, LINGER_TICK);
@@ -472,11 +570,22 @@
     /* b) 传输层（内部会做能力探测与状态机初始化） */
     Tpt.init();
 
-    /* c) 工作区视图（按配置恢复面板；没有配置时给默认面板） */
+    /* c) 工作区视图（按配置恢复面板；没有配置时给默认面板）
+       主区结构：C1 主位（监视器）+ 可拖拽分割线 + C2 波形工作区 */
     var grid = document.getElementById("slGrid");
     if (grid) {
-      Views.init(grid, { drawInterval: 40 });
+      Views.init(grid, {
+        drawInterval: (core.config.ui && core.config.ui.drawInterval) || 40,
+        mainHost: document.getElementById("slMainHost"),
+        stage: document.getElementById("slStage"),
+        split: document.getElementById("slSplit")
+      });
       Views.start();
+    }
+
+    /* c2) 自动存档的缓冲上限（滚动模式在真正开录时再打开） */
+    if (Timeline && Timeline.setMaxFrames) {
+      Timeline.setMaxFrames((core.config.ui && core.config.ui.recordCap) || 20000);
     }
 
     /* d) 数据管线与发送引擎 */

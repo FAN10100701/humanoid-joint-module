@@ -12,17 +12,40 @@
 </head>
 <body>
 
-<div class="sl-app">
+<div class="sl-app" id="slApp">
 
-  <!-- ==================== 顶栏 ==================== -->
+  <!-- ==================== A 顶栏：全局且低频的动作 ==================== -->
   <header class="sl-top">
-    <div class="sl-brand">🔌 串口调试助手 <span class="sl-ver" id="slVersion">--</span></div>
-    <div class="sl-top-spacer"></div>
-    <button class="sl-link" id="slBtnHelp" type="button">使用帮助</button>
-    <button class="sl-link" id="slBtnPrompt" type="button">AI 开发提示词</button>
+    <a class="sl-brand" href="../21_串口调试助手.html" title="返回功能介绍页">
+      🔌 串口调试助手 <span class="sl-ver" id="slVersion">--</span>
+    </a>
+
+    <!-- 运行 / 暂停：绿色圆标（运行中）↔ 灰色圆标（已暂停），参照 VOFA+ 左上角那枚 -->
+    <button class="sl-run" id="slRun" type="button" data-state="idle" aria-pressed="false"
+            title="暂停 / 继续屏幕刷新（数据仍在后台缓冲，不会丢）">
+      <i class="sl-run-dot"></i><span id="slRunLabel">暂停</span>
+    </button>
+
+    <span class="sl-field sl-conn">
+      <span class="sl-dot" id="slDot"></span>
+      <b class="sl-state" id="slState">未连接</b>
+      <span class="sl-mono" id="slVidPid">-</span>
+    </span>
+
+    <button class="sl-btn is-primary" id="slBtnConnect" type="button">连接设备</button>
+    <button class="sl-btn" id="slBtnDemo" type="button">演示模式</button>
+    <button class="sl-btn is-danger" id="slBtnDisconnect" type="button" disabled>断开</button>
+
+    <span class="sl-top-spacer"></span>
+
+    <span class="sl-field" id="slModem">CTS - · DSR - · DCD - · RI -</span>
+    <span class="sl-field sl-mono sl-count">收 <b id="slRxCount">0</b>B · 发 <b id="slTxCount">0</b>B</span>
+
+    <button class="sl-link" id="slBtnHelp" type="button">帮助</button>
+    <button class="sl-link" id="slBtnPrompt" type="button">AI</button>
     <button class="sl-link" id="slBtnTheme" type="button">主题</button>
+    <button class="sl-link" id="slBtnDefaults" type="button">恢复默认</button>
     <button class="sl-link" id="slBtnSide" type="button">收起左栏</button>
-    <a class="sl-link" href="../21_串口调试助手.html">返回介绍页</a>
     <a class="sl-link" href="../../index.html">学习首页</a>
   </header>
 
@@ -32,46 +55,23 @@
     <div>
       <b>当前浏览器不支持 Web Serial，无法连接真实串口。</b><br>
       需要 Chromium 内核浏览器（Chrome / Edge 89+）并运行在 <b>HTTPS 或 localhost</b> 下；
-      Safari 与移动端浏览器不提供该能力。你仍然可以点「进入演示模式」用合成数据体验全部解析、绘图与导出功能。
+      Safari 与移动端浏览器不提供该能力。你仍然可以点「演示模式」用合成数据体验全部解析、绘图与导出功能。
       <span id="slBannerWhy"></span>
     </div>
-  </div>
-
-  <!-- ==================== 连接条 ==================== -->
-  <div class="sl-bar">
-    <span class="sl-dot" id="slDot"></span>
-    <span class="sl-state" id="slState">未连接</span>
-    <span class="sl-field">设备 <span class="sl-mono" id="slVidPid">-</span></span>
-
-    <button class="sl-btn is-primary" id="slBtnConnect" type="button">连接设备</button>
-    <button class="sl-btn" id="slBtnDemo" type="button">进入演示模式</button>
-    <button class="sl-btn is-danger" id="slBtnDisconnect" type="button" disabled>断开</button>
-
-    <span class="sl-field">波特率
-      <select id="slBaud">
-        <option>1200</option><option>2400</option><option>4800</option><option>9600</option>
-        <option>19200</option><option>38400</option><option>57600</option>
-        <option selected>115200</option>
-        <option>230400</option><option>460800</option><option>921600</option>
-      </select>
-    </span>
-
-    <span class="sl-top-spacer"></span>
-    <span class="sl-field" id="slModem">CTS - · DSR - · DCD - · RI -</span>
-    <span class="sl-field">收 <b class="sl-mono" id="slRxCount">0</b> B / 发 <b class="sl-mono" id="slTxCount">0</b> B</span>
   </div>
 
   <!-- ==================== 主体 ==================== -->
   <div class="sl-main">
 
-    <!-- ---------- 左栏：参数与配置 ---------- -->
+    <!-- ---------- B 配置栏：低频、一次性设置（可整栏收起） ---------- -->
     <aside class="sl-side" id="slSide">
       <div class="sl-tabs" id="slTabs">
         <button class="sl-tab is-on" type="button" data-pane="device">设备</button>
         <button class="sl-tab" type="button" data-pane="parse">解析</button>
+        <button class="sl-tab" type="button" data-pane="display">显示</button>
         <button class="sl-tab" type="button" data-pane="channels">通道</button>
         <button class="sl-tab" type="button" data-pane="send">发送</button>
-        <button class="sl-tab" type="button" data-pane="plugins">插件</button>
+        <button class="sl-tab" type="button" data-pane="plugins">图表</button>
         <button class="sl-tab" type="button" data-pane="timeline">录制</button>
         <button class="sl-tab" type="button" data-pane="data">数据</button>
       </div>
@@ -93,9 +93,19 @@
           <div class="sl-group">
             <h3>⚙️ 串口参数</h3>
             <div class="sl-row">
+              <span class="sl-field">波特率
+                <select id="slBaud">
+                  <option>1200</option><option>2400</option><option>4800</option><option>9600</option>
+                  <option>19200</option><option>38400</option><option>57600</option>
+                  <option selected>115200</option>
+                  <option>230400</option><option>460800</option><option>921600</option>
+                </select>
+              </span>
               <span class="sl-field">数据位
                 <select id="slDataBits"><option selected>8</option><option>7</option></select>
               </span>
+            </div>
+            <div class="sl-row">
               <span class="sl-field">停止位
                 <select id="slStopBits"><option selected>1</option><option>2</option></select>
               </span>
@@ -147,12 +157,12 @@
               <label class="sl-chk"><input type="checkbox" id="slHexSend">HEX 发送</label>
               <label class="sl-chk"><input type="checkbox" id="slShowTs" checked>显示时间戳</label>
             </div>
+            <p class="sl-hint">这三个只决定串口监视器「怎么显示」；把数据解析成通道请到「解析」页签，显示细节（时间格式/字号/标红）请到「显示」页签。</p>
             <div class="sl-row">
               <span class="sl-field">复位等待
                 <input type="number" id="slResetWait" min="0" max="10000" step="100" value="1500"> ms
               </span>
             </div>
-            <p class="sl-hint">「HEX 显示」与「显示时间戳」只决定串口监视器怎么显示；把数据解析成通道请到「解析」页签切换解析模式。</p>
             <p class="sl-hint">Arduino / ESP 打开串口会因 DTR 拉低自动复位，连接后这段时间内不建议发送。</p>
           </div>
         </section>
@@ -160,11 +170,17 @@
         <!-- ===== 解析 ===== -->
         <section class="sl-pane" data-pane="parse">
           <div class="sl-group">
+            <h3>📦 开源协议预设</h3>
+            <div class="sl-row" id="slPresetRow"></div>
+            <p class="sl-hint" id="slPresetNote">点一下即套用社区事实标准的帧结构，套用后仍可手动微调。完整的数据格式说明见介绍页「数据格式说明」一节。</p>
+          </div>
+
+          <div class="sl-group">
             <h3>🧭 解析模式</h3>
             <div class="sl-row">
               <label class="sl-chk"><input type="radio" name="slRuleMode" value="text" checked>文本</label>
               <label class="sl-chk"><input type="radio" name="slRuleMode" value="hex">十六进制</label>
-              <button class="sl-btn is-sm" id="slBtnSample" type="button">套用示例</button>
+              <button class="sl-btn is-sm" id="slBtnSample" type="button">套用内置示例帧</button>
             </div>
           </div>
 
@@ -178,7 +194,7 @@
             <div class="sl-row">
               <label class="sl-chk"><input type="checkbox" id="slSuffixCh" checked>后缀数字视为独立通道（temp1 / temp2）</label>
             </div>
-            <p class="sl-hint">每行形如 <code>temp=25.3, cur:1.02</code>；数值支持整数与小数。</p>
+            <p class="sl-hint">每行形如 <code>temp=25.3, cur:1.02</code>；数值支持整数与小数。Teleplot 的 <code>&gt;name:value</code> 前缀写法也能直接解析。</p>
           </div>
 
           <!-- HEX 规则 -->
@@ -212,7 +228,7 @@
               <span class="sl-field">起始 <input type="number" id="slCkFrom" min="0" value="0"></span>
               <span class="sl-field">结束 <input type="number" id="slCkTo" value="-1"></span>
             </div>
-            <p class="sl-hint">结束填 -1 表示到载荷末尾。</p>
+            <p class="sl-hint">结束填 -1 表示到载荷末尾。四种具名校验之外还可以选「无」。</p>
           </div>
 
           <div class="sl-group">
@@ -225,6 +241,76 @@
           </div>
         </section>
 
+        <!-- ===== 显示 ===== -->
+        <section class="sl-pane" data-pane="display">
+          <div class="sl-group">
+            <h3>🕒 时间与刷新</h3>
+            <div class="sl-row">
+              <span class="sl-field">时间戳口径
+                <select id="slTimeMode">
+                  <option value="abs" selected>绝对时刻 23:51:21.900</option>
+                  <option value="rel">相对秒 12.345s</option>
+                </select>
+              </span>
+            </div>
+            <div class="sl-row">
+              <span class="sl-field">刷新节流
+                <select id="slDrawInterval">
+                  <option value="16">60 fps（最流畅）</option>
+                  <option value="25">40 fps</option>
+                  <option value="40" selected>25 fps（默认）</option>
+                  <option value="66">15 fps</option>
+                  <option value="100">10 fps（更省 CPU）</option>
+                  <option value="200">5 fps（最省 CPU）</option>
+                </select>
+              </span>
+            </div>
+            <p class="sl-hint">串口数据一直在收，只是屏幕按这个频率重画。串口很吵（上百 Hz）时调低更省 CPU。</p>
+          </div>
+
+          <div class="sl-group">
+            <h3>🔤 字体与高亮</h3>
+            <div class="sl-row">
+              <span class="sl-field">监视器字号
+                <input type="number" id="slFontSize" min="11" max="18" step="1" value="12"> px
+              </span>
+              <button class="sl-btn is-sm" id="slBtnFontReset" type="button">复位 12px</button>
+            </div>
+            <div class="sl-row">
+              <label class="sl-chk"><input type="checkbox" id="slHighlightNum">数字标红（把打印里的数字用醒目色标出）</label>
+            </div>
+            <div class="sl-row">
+              <label class="sl-chk"><input type="checkbox" id="slMarkFailed" checked>解析 / 校验失败的行整行标红并标注原因</label>
+            </div>
+          </div>
+
+          <div class="sl-group">
+            <h3>🧠 面向 AI 的自动化回路</h3>
+            <div class="sl-row">
+              <label class="sl-chk"><input type="checkbox" id="slAutoRecord" checked>自动存档（连上或进入演示后自动录制，滚动保留最近数据）</label>
+            </div>
+            <div class="sl-row">
+              <span class="sl-field">存档上限
+                <input type="number" id="slRecordCap" min="1000" max="200000" step="1000" value="20000"> 帧
+              </span>
+            </div>
+            <div class="sl-row">
+              <button class="sl-btn is-primary is-sm" id="slBtnDebugBundle" type="button">导出 AI 调试包</button>
+              <button class="sl-btn is-sm" id="slBtnReplay" type="button">按当前规则重放缓存</button>
+            </div>
+            <p class="sl-hint">「调试包」是一个自包含的 JSON：生效配置 + 帧结构说明 + 各通道统计 + 最近若干条原始记录（含解出值）+ 解析失败样本。整包丢给 AI，就免去了来回截图粘贴。</p>
+            <p class="sl-hint">「重放」用当前解析规则把缓存里的原始字节重新解一遍——改完帧结构不必让硬件重跑。</p>
+          </div>
+
+          <div class="sl-group">
+            <h3>♻️ 恢复</h3>
+            <div class="sl-row">
+              <button class="sl-btn is-danger is-sm" id="slBtnRestoreDefaults" type="button">一键恢复默认设置</button>
+            </div>
+            <p class="sl-hint">把串口参数、解析规则、发送工作流、通道、面板与显示设置全部恢复默认，并清空本地存储。建议先用「数据」页签的「导出文件」备份一份。</p>
+          </div>
+        </section>
+
         <!-- ===== 通道 ===== -->
         <section class="sl-pane" data-pane="channels">
           <div class="sl-group">
@@ -234,7 +320,7 @@
               <button class="sl-btn is-sm" id="slBtnAddChannel" type="button">＋ 新增通道</button>
               <button class="sl-btn is-sm" id="slBtnClearChannels" type="button">清空数据</button>
             </div>
-            <p class="sl-hint">解析出新键名时会自动建通道；这里可改标签、单位、颜色与显示精度。</p>
+            <p class="sl-hint">解析出新键名时会自动建通道；这里可改标签、单位、颜色与显示精度。默认 8 色板深浅主题各一套，同屏曲线不会撞色。</p>
           </div>
         </section>
 
@@ -261,7 +347,7 @@
           </div>
         </section>
 
-        <!-- ===== 插件 ===== -->
+        <!-- ===== 图表（声明式插件） ===== -->
         <section class="sl-pane" data-pane="plugins">
           <div class="sl-group">
             <h3>🧩 新增图表框</h3>
@@ -271,7 +357,7 @@
               </span>
               <button class="sl-btn is-primary is-sm" id="slBtnAddPanel" type="button">添加到工作区</button>
             </div>
-            <p class="sl-hint">本应用的「插件」是声明式配置：选一个内置渲染器，再绑定通道、公式、坐标轴与颜色，零代码执行。</p>
+            <p class="sl-hint">「图表」是声明式配置：选一个内置渲染器，再绑定通道、公式、坐标轴与颜色，零代码执行。把面板拖到主位即可与串口监视器互换位置。</p>
           </div>
           <div class="sl-group">
             <h3>🗂 工作区面板</h3>
@@ -292,7 +378,7 @@
             <h3>⏺ 录制与冻结</h3>
             <div class="sl-row">
               <button class="sl-btn is-primary is-sm" id="slBtnRecord" type="button">开始录制</button>
-              <button class="sl-btn is-sm" id="slBtnFreeze" type="button">冻结显示</button>
+              <button class="sl-btn is-sm" id="slBtnFreeze" type="button">暂停刷新</button>
             </div>
             <p class="sl-hint" id="slRecHint">录制中的原始帧会进内存缓冲，停止后可在下方回放或导出。</p>
           </div>
@@ -326,7 +412,7 @@
               <button class="sl-btn is-sm" id="slBtnCfgImport" type="button">粘贴导入</button>
               <button class="sl-btn is-sm" id="slBtnCfgExport" type="button">导出文件</button>
               <button class="sl-btn is-sm" id="slBtnCfgFile" type="button">导入文件</button>
-              <button class="sl-btn is-danger is-sm" id="slBtnCfgClear" type="button">清空配置</button>
+              <button class="sl-btn is-danger is-sm" id="slBtnCfgClear" type="button">清空并恢复默认</button>
             </div>
           </div>
           <div class="sl-group">
@@ -337,13 +423,6 @@
             <p class="sl-hint">离线单文件打开后可查看界面与演示数据，但受浏览器安全模型限制，<b>file:// 下无法使用真实串口</b>；真机使用请通过 localhost 或 HTTPS 访问。</p>
           </div>
           <div class="sl-group">
-            <h3>🧠 面向 AI</h3>
-            <div class="sl-row">
-              <button class="sl-btn is-sm" id="slBtnPrompt2" type="button">查看 / 复制开发提示词</button>
-            </div>
-            <p class="sl-hint">本应用自带可供 AI 直接读取的开发说明，可用于开发同类应用，或以本应用为基座二次开发。</p>
-          </div>
-          <div class="sl-group">
             <h3>📜 日志</h3>
             <div id="slLogList" class="sl-table-wrap"></div>
           </div>
@@ -352,33 +431,56 @@
       </div>
     </aside>
 
-    <!-- ---------- 主区：图表框 ---------- -->
-    <section class="sl-stage">
+    <!-- ---------- C 主区 ---------- -->
+    <section class="sl-stage" id="slStage">
+
       <div class="sl-stage-bar">
-        <span class="sl-stage-title">工作区</span>
-        <button class="sl-btn is-sm" id="slBtnAddMonitor" type="button">＋ 串口监视器</button>
+        <span class="sl-stage-title">主区</span>
+        <span class="sl-stage-hint">监视器在上（主视觉）· 波形在下 · 中间分割线可拖拽</span>
+        <span class="sl-top-spacer"></span>
+        <button class="sl-btn is-sm" id="slBtnMainFull" type="button">全屏主区</button>
+        <button class="sl-btn is-sm" id="slBtnMainCollapse" type="button">收起主区</button>
+        <button class="sl-btn is-sm" id="slBtnSplitReset" type="button">重置分割</button>
+        <span class="sl-bar-sep"></span>
+        <span class="sl-field">新图表
+          <select id="slQuickAdd"></select>
+        </span>
+        <button class="sl-btn is-sm" id="slBtnAddPanel2" type="button">添加</button>
         <button class="sl-btn is-sm" id="slBtnClearPanels" type="button">清空面板</button>
-        <div class="sl-top-spacer" style="flex:1 1 auto"></div>
         <button class="sl-btn is-sm" id="slBtnClearData" type="button">清空缓存</button>
       </div>
-      <div class="sl-grid-wrap">
-        <div class="sl-grid" id="slGrid"></div>
+
+      <!-- C1：主位（默认 = 串口监视器），主视觉 -->
+      <div class="sl-stage-main" id="slStageMain">
+        <div class="sl-main-host" id="slMainHost"></div>
+      </div>
+
+      <!-- 可拖拽分割线：改上下比例，比例写进配置，刷新后保持 -->
+      <div class="sl-split" id="slSplit" role="separator" tabindex="0"
+           aria-orientation="horizontal" aria-label="调整监视器与波形区的高度比例"
+           title="上下拖动调整比例 · 双击复位 · ↑↓ 微调 · Home 复位">
+        <span class="sl-split-grip"></span>
+      </div>
+
+      <!-- C2：波形工作区（每个面板固定高度、独立滚动） -->
+      <div class="sl-stage-grid" id="slStageGrid">
+        <div class="sl-grid-wrap">
+          <div class="sl-grid" id="slGrid"></div>
+        </div>
       </div>
     </section>
 
   </div>
 
-  <!-- ==================== 底部发送条 ==================== -->
+  <!-- ==================== D 底部发送条 ==================== -->
   <footer class="sl-send">
     <div class="sl-send-row">
       <span class="sl-field">发送</span>
       <span class="sl-send-input"><input type="text" id="slSendInput" class="sl-mono-input" placeholder="输入要发送的内容；HEX 模式下写 AA 55 01（可空格分隔）" autocomplete="off"></span>
       <button class="sl-btn is-primary" id="slBtnSend" type="button">发送</button>
-      <button class="sl-btn" id="slBtnSendAgain" type="button">重发上一条</button>
+      <button class="sl-btn" id="slBtnSendAgain" type="button">重发</button>
       <label class="sl-chk"><input type="checkbox" id="slAppendEnding" checked>追加换行</label>
       <label class="sl-chk"><input type="checkbox" id="slSendHex">HEX</label>
-    </div>
-    <div class="sl-send-row">
       <span class="sl-hint" id="slSendHint">未连接。连接设备或进入演示模式后可发送。</span>
     </div>
   </footer>

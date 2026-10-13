@@ -266,7 +266,7 @@ def main():
             assert re.match(r"^v\d+\.\d+", ver), "版本号未渲染: %r" % ver
             missing = page.evaluate("(ns)=>{var s=window.SerialLab||{};return ns.filter(function(k){return !s[k];});}", SL_MODULES)
             assert not missing, "SerialLab 模块未挂载: " + ", ".join(missing)
-            assert page.locator("#slTabs .sl-tab").count() == 7, "左栏页签数不对: %d" % page.locator("#slTabs .sl-tab").count()
+            assert page.locator("#slTabs .sl-tab").count() == 8, "左栏页签数不对: %d" % page.locator("#slTabs .sl-tab").count()
             # 无 Web Serial 时必须走「降级横幅 + 连接按钮禁用」而不是报错
             if not page.evaluate("!!(navigator.serial)"):
                 cls = page.locator("#slBanner").get_attribute("class") or ""
@@ -278,35 +278,50 @@ def main():
         def t_serial_pipeline():
             errs = make_page_errors_tracker(page)
             page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
-            # 首次使用应自动预置 2 个面板(时域波形 + 串口监视器),不留空白工作区
-            page.wait_for_selector("#slGrid .sl-panel", timeout=10000)
+            # 首次使用:监视器自动占「主位」(主视觉),时域波形进下方工作区 —— 这是 V2.2.0 的
+            # 默认布局契约:不再让工作区空着,也不再把监视器塞进工作区跟波形抢高度
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            assert page.locator("#slMainHost .sl-panel").count() == 1, "主位未自动放置监视器"
+            assert page.locator("#slMainHost .sl-panel--main").count() == 1, "主位面板缺 --main 修饰类"
+            assert page.locator("#slStageMain .sl-panel--main").count() == 1, "主位面板不在 C1 槽内"
             n0 = page.locator("#slGrid .sl-panel").count()
-            assert n0 == 2, "首次进入的预置面板数不对: %d" % n0
+            assert n0 == 1, "首次进入工作区面板数不对(应只有时域波形): %d" % n0
             page.click("#slBtnDemo")  # 演示模式:合成数据 50Hz,无需真实硬件
             page.wait_for_function(
                 "document.querySelector('#slState') && document.querySelector('#slState').textContent.indexOf('演示') >= 0",
                 timeout=10000)
-            page.click("#slBtnAddMonitor")  # 舞台栏:文本监视器
+            # 舞台栏「新图表」下拉直达添加(旧版靠 #slBtnAddMonitor,已随布局重构下线)
+            page.select_option("#slQuickAdd", "textmon")
+            page.click("#slBtnAddPanel2")
+            page.wait_for_function("document.querySelectorAll('#slGrid .sl-panel').length === 2", timeout=10000)
             page.click("#slTabs .sl-tab[data-pane='plugins']")  # 左栏页签(非活动页签内元素不可见)
             page.select_option("#slPluginType", "timeplot")
             page.click("#slBtnAddPanel")  # 时域折线(声明式插件入口)
-            page.wait_for_function("document.querySelectorAll('#slGrid .sl-panel').length === 4", timeout=10000)
+            page.wait_for_function("document.querySelectorAll('#slGrid .sl-panel').length === 3", timeout=10000)
             assert page.locator("#slGrid canvas.sl-canvas").count() >= 2, "时域面板未挂 canvas"
+            # 两个时域面板(预置 + 新增)各一块画布;宽度必须 >0 —— 上下分割模型下
+            # 若槽位 flex 算错,canvas 会塌成 0×0(旧版 Grid 的 stretch 病根就是这么来的)
+            box = page.locator("#slGrid canvas.sl-canvas").first.bounding_box()
+            assert box and box["width"] > 40 and box["height"] > 40, "波形画布尺寸异常: %r" % box
             # 数据管线走通:传输→分帧→解析→数据仓 后接收字节数不再是 0
             page.wait_for_function(
                 "document.querySelector('#slRxCount') && document.querySelector('#slRxCount').textContent !== '0'",
                 timeout=10000)
             assert int(page.locator("#slRxCount").inner_text()) > 0, "接收字节数仍为 0"
+            # 监视器应实时把行打印出来(主视觉的核心内容),不是空壳
+            page.wait_for_function(
+                "document.querySelectorAll('#slMainHost .sl-mon-line').length > 0", timeout=10000)
             page.click("#slTabs .sl-tab[data-pane='channels']")
             n_ch = page.locator("#slChannels tr").count()
             assert n_ch >= 2, "解析出的通道未渲染到通道表(tr=%d)" % n_ch
             assert not errs, "数据管线 JS 异常: " + "; ".join(errs[:3])
-        check("serial_pipeline 演示数据→分帧解析→绘图", t_serial_pipeline)
+        check("serial_pipeline 演示数据→分帧解析→监视器打印→绘图", t_serial_pipeline)
 
         def t_serial_export():
             page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
             page.click("#slBtnDemo")
-            page.click("#slBtnAddMonitor")  # 面板变更 → 配置落盘
+            page.select_option("#slQuickAdd", "textmon")  # 面板变更 → 配置落盘
+            page.click("#slBtnAddPanel2")
             page.wait_for_function(
                 "!!localStorage.getItem('humanoid-serial-config-v1')", timeout=8000)
             page.wait_for_timeout(1200)
@@ -383,6 +398,231 @@ def main():
             assert "a" in txt and "b" in txt, "自定义帧未解析出字段(通道表: %r)" % txt
             assert not errs, "自定义规则演示 JS 异常: " + "; ".join(errs[:3])
         check("serial_demo_rule 演示跟随自定义 HEX 规则", t_serial_demo_rule)
+
+        def t_serial_stage():
+            """主区形态:上监视器/下波形的上下分割 + 可拖拽比例 + 主区全屏 + 主区收起。
+
+            回归价值:旧版用 CSS Grid 且默认 align-items:stretch,
+            同一行内所有面板被强制等高 —— 监视器一高就把波形拉成竖线,
+            这就是「时域波形稀烂、跟着监视器一起拉长」的代码级病根。
+            现在改为 flex-grow 比例 + 面板固定高度 + 独立滚动,本用例把这条锁住。
+            """
+            errs = make_page_errors_tracker(page)
+            # 在非子应用页清配置,保证首屏是默认布局(子应用 beforeunload 会回写内存配置)
+            page.goto(BASE + "/404.html", wait_until="load", timeout=30000)
+            page.evaluate("()=>{try{localStorage.removeItem('humanoid-serial-config-v1');}catch(e){}}")
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+
+            def grow():
+                return page.evaluate(
+                    "()=>{var cs=getComputedStyle(document.getElementById('slStage'));"
+                    "return [cs.getPropertyValue('--sl-mon-grow').trim(),"
+                    "cs.getPropertyValue('--sl-grid-grow').trim()];}")
+
+            assert grow() == ["620", "380"], "默认分割比例不是 0.62: %r" % grow()
+
+            # 波形面板必须是「固定像素高度」——旧版 Grid 的 align-items:stretch 会让
+            # 同一行所有面板强制等高,监视器一高就把波形拉成竖线。
+            # 这里直接做反向验证:把主区比例从 0.62 一路压到下限,波形高度不许跟着变。
+            gh0 = page.locator("#slGrid .sl-panel").first.bounding_box()
+            mh0 = page.locator("#slMainHost .sl-panel").first.bounding_box()
+            assert gh0 and mh0, "面板没量到尺寸"
+            assert 100 < gh0["height"] <= 420, "波形面板初始高度异常: %r" % gh0["height"]
+            page.focus("#slSplit")
+            for _ in range(21):          # 每步 -0.02,0.62 → 0.20(下限)
+                page.keyboard.press("ArrowUp")
+            page.wait_for_timeout(250)
+            gh1 = page.locator("#slGrid .sl-panel").first.bounding_box()
+            mh1 = page.locator("#slMainHost .sl-panel").first.bounding_box()
+            assert abs(gh1["height"] - gh0["height"]) <= 2, \
+                "调整分割比例后波形面板被拉长/压扁(旧版 stretch 病根): %r → %r" % (gh0["height"], gh1["height"])
+            assert mh1["height"] < mh0["height"] - 10, \
+                "主区比例调小后监视器高度没变,分割比例未生效: %r → %r" % (mh0["height"], mh1["height"])
+            page.keyboard.press("Home")
+            page.wait_for_timeout(200)
+            assert grow() == ["620", "380"], "分割线 Home 复位无效: %r" % grow()
+            assert abs(page.locator("#slGrid .sl-panel").first.bounding_box()["height"] - gh0["height"]) <= 2, \
+                "复位后波形面板高度漂移"
+
+            # 全屏主区:波形区与分割线一并隐藏,主区独占
+            page.click("#slBtnMainFull")
+            page.wait_for_timeout(150)
+            assert page.locator(".sl-stage.is-main-full").count() == 1, "全屏类未加上"
+            assert not page.locator("#slStageGrid").is_visible(), "全屏后波形区仍可见"
+            assert not page.locator("#slSplit").is_visible(), "全屏后分割线仍可见"
+            page.click("#slBtnMainFull")
+            page.wait_for_timeout(150)
+            assert page.locator(".sl-stage.is-main-full").count() == 0, "退出全屏失败"
+            assert page.locator("#slSplit").is_visible(), "还原分割视图后分割线仍隐藏"
+
+            # 收起主区:只留标题条
+            page.click("#slBtnMainCollapse")
+            page.wait_for_timeout(150)
+            assert page.locator(".sl-stage.is-main-collapsed").count() == 1, "主区收起类未加上"
+            page.click("#slBtnMainCollapse")
+            page.wait_for_timeout(150)
+            assert page.locator(".sl-stage.is-main-collapsed").count() == 0, "主区展开失败"
+
+            # 分割线键盘可达性:上面已用 ↑ 调小比例 + Home 复位覆盖
+
+            # 比例必须落盘(刷新后保持)
+            page.wait_for_function(
+                "(()=>{var c=JSON.parse(localStorage.getItem('humanoid-serial-config-v1')||'{}');"
+                "return c.ui && typeof c.ui.monRatio === 'number';})()", timeout=8000)
+            assert not errs, "主区形态 JS 异常: " + "; ".join(errs[:3])
+        check("serial_stage 上下分割+比例拖拽+全屏+收起+波形不被拉长", t_serial_stage)
+
+        def t_serial_run():
+            """左上角绿色圆标:一键暂停/继续实时刷新(替代旧版埋在「录制」页签里的「冻结显示」)。
+
+            要求:圆标状态必须随「连接/演示」与「暂停」两个来源同步,
+            并且「录制」页签里的同名开关与它同口径(同一个 core.state.paused)。
+            """
+            errs = make_page_errors_tracker(page)
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            assert page.locator("#slRun .sl-run-dot").count() == 1, "绿圆标未渲染"
+            assert page.get_attribute("#slRun", "data-state") == "idle", "未连接时圆标不是 idle 态"
+            page.click("#slBtnDemo")
+            page.wait_for_function(
+                "document.getElementById('slRun').getAttribute('data-state') === 'running'",
+                timeout=8000)
+            assert page.locator("#slRunLabel").inner_text() == "运行中", "演示中圆标文案不对"
+            # 暂停:圆标转 paused,且页面不再刷新(core.state.paused 生效)
+            page.click("#slRun")
+            page.wait_for_function(
+                "document.getElementById('slRun').getAttribute('data-state') === 'paused'", timeout=8000)
+            assert page.evaluate("!!window.SerialLab.core.state.paused") is True, "暂停未落到 core.state"
+            assert page.get_attribute("#slRun", "aria-pressed") == "true", "暂停后 aria-pressed 未置位"
+            # 「录制」页签里的开关与圆标同口径
+            page.click("#slTabs .sl-tab[data-pane='timeline']")
+            assert page.locator("#slBtnFreeze").inner_text() == "继续刷新", "暂停后页签内开关文案未同步"
+            page.click("#slBtnFreeze")
+            page.wait_for_function(
+                "document.getElementById('slRun').getAttribute('data-state') === 'running'", timeout=8000)
+            assert page.evaluate("!!window.SerialLab.core.state.paused") is False, "恢复刷新未生效"
+            assert not errs, "运行圆标 JS 异常: " + "; ".join(errs[:3])
+        check("serial_run 绿圆标暂停/继续与页签开关同口径", t_serial_run)
+
+        def t_serial_display():
+            """「显示」页签:时间戳口径(绝对时刻/相对秒)、打印节流、字号、数字标红、失败标红、自动存档。
+
+            回归价值:旧版监视器只打「相对秒」,还丢了毫秒精度;
+            用户要的「实时时间用另一种颜色区分」「打印速度可调」都要在这里锁住。
+            """
+            errs = make_page_errors_tracker(page)
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            page.click("#slBtnDemo")
+            page.wait_for_function(
+                "document.querySelector('#slState').textContent.indexOf('演示') >= 0", timeout=10000)
+            page.wait_for_function(
+                "document.querySelectorAll('#slMainHost .sl-mon-line').length > 0", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='display']")
+
+            # ① 默认绝对时刻:HH:MM:SS.mmm 形态,且用独立配色变量
+            page.select_option("#slTimeMode", "abs")
+            page.wait_for_timeout(400)
+            ts = page.locator("#slMainHost .sl-mon-t").first.inner_text().strip()
+            assert re.match(r"^\d{2}:\d{2}:\d{2}\.\d{3}$", ts), "绝对时刻格式不对: %r" % ts
+            col_ts = page.evaluate(
+                "()=>{var e=document.querySelector('#slMainHost .sl-mon-t');"
+                "return e?getComputedStyle(e).color:'';}")
+            col_bd = page.evaluate(
+                "()=>{var e=document.querySelector('#slMainHost .sl-mon-body');"
+                "return e?getComputedStyle(e).color:'';}")
+            assert col_ts and col_ts != col_bd, "时间戳与正文同色,没做到「另用颜色区分」: %r/%r" % (col_ts, col_bd)
+
+            # ② 切相对秒:X.XXXs(含毫秒,不塌成整秒)
+            page.select_option("#slTimeMode", "rel")
+            page.wait_for_timeout(400)
+            ts2 = page.locator("#slMainHost .sl-mon-t").first.inner_text().strip()
+            assert re.match(r"^\d+m\d{2}\.\d{3}s$|^\d+\.\d{3}s$", ts2), "相对秒格式不对: %r" % ts2
+
+            # ③ 字号:改根变量 → 监视器同宽字立即变
+            page.fill("#slFontSize", "17")
+            page.dispatch_event("#slFontSize", "change")
+            page.wait_for_function(
+                "getComputedStyle(document.documentElement).getPropertyValue('--sl-mon-size').trim() === '17px'",
+                timeout=8000)
+
+            # ④ 数字标红:开启后正文里应出现 .sl-mon-num 片段
+            page.check("#slHighlightNum")
+            page.wait_for_timeout(400)
+            assert page.locator("#slMainHost .sl-mon-num").count() > 0, "数字标红开启后没有标红片段"
+
+            # ⑤ 全部落盘 + 刷新后回填
+            page.wait_for_function(
+                "(()=>{var c=JSON.parse(localStorage.getItem('humanoid-serial-config-v1')||'{}');"
+                "return c.ui && c.ui.fontSize===17 && c.ui.highlightNumbers===true;})()", timeout=8000)
+            cfg = page.evaluate("JSON.parse(localStorage.getItem('humanoid-serial-config-v1'))")
+            assert cfg["transport"]["timeMode"] == "rel", "时间口径未落盘: %r" % cfg["transport"].get("timeMode")
+            page.reload(wait_until="load")
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='display']")
+            assert page.input_value("#slFontSize") == "17", "刷新后字号未回填"
+            assert page.is_checked("#slHighlightNum"), "刷新后数字标红未回填"
+            assert not errs, "显示设置 JS 异常: " + "; ".join(errs[:3])
+        check("serial_display 时间口径/字号/数字标红/刷新回填", t_serial_display)
+
+        def t_serial_preset_bundle():
+            """开源协议预设一键套用 + 面向 AI 的调试包导出。
+
+            预设:FireWater / Teleplot / JustFloat / 匿名 V1.0(社区事实标准),
+            套用后要立刻用缓存数据重放,当场能看出效果(不必让硬件重跑)。
+            调试包:自包含 JSON,包含生效规则/帧结构说明/通道统计/原始样本/失败样本,
+            让 AI 不必靠人来回截图粘贴就能定位解析问题。
+            """
+            errs = make_page_errors_tracker(page)
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='parse']")
+            btns = page.locator("#slPresetRow .sl-preset")
+            assert btns.count() == 4, "开源协议预设数不对: %d" % btns.count()
+            ids = page.evaluate(
+                "()=>Array.from(document.querySelectorAll('#slPresetRow .sl-preset'))"
+                ".map(function(b){return b.getAttribute('data-preset');})")
+            assert ids == ["firewater", "teleplot", "justfloat", "ano10"], "预设顺序/ID 不对: %r" % ids
+
+            # 套用「匿名 V1.0」:规则写入配置
+            page.click("#slPresetRow .sl-preset[data-preset='ano10']")
+            page.wait_for_function(
+                "(()=>{var c=JSON.parse(localStorage.getItem('humanoid-serial-config-v1')||'{}');"
+                "return c.rule && c.rule.active==='hex' && c.rule.hex.head==='AAAA';})()", timeout=8000)
+            head_val = page.input_value("#slHexHead")
+            assert re.sub(r"[^0-9A-Fa-f]", "", head_val).upper() == "AAAA", \
+                "套用预设后帧头输入框未同步回填: %r" % head_val
+
+            # 回切演示模式:演示数据须按新规则(匿名 V1.0)合成,能解出 func/x/y/z
+            page.click("#slBtnDemo")
+            page.wait_for_function(
+                "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='channels']")
+            page.wait_for_function("document.querySelectorAll('#slChannels tr').length >= 2", timeout=10000)
+            txt = page.locator("#slChannels").inner_text()
+            assert ("x" in txt or "func" in txt), "匿名 V1.0 预设未解析出字段: %r" % txt
+
+            # AI 调试包:从「显示」页签导出,文件名带前缀,内容自包含
+            page.click("#slTabs .sl-tab[data-pane='display']")
+            with page.expect_download(timeout=15000) as dl:
+                page.click("#slBtnDebugBundle")
+            d = dl.value
+            assert d.suggested_filename.startswith("seriallab-debug-") and d.suggested_filename.endswith(".json"), \
+                "调试包文件名不对: " + d.suggested_filename
+            import json as _json
+            raw = open(d.path(), "rb").read().decode("utf-8", "ignore")
+            b = _json.loads(raw)
+            assert b["kind"] == "seriallab-debug-bundle" and b["version"] == 1, "调试包 kind/version 不对"
+            for k in ("brief", "frameLayout", "settings", "channels", "samples", "stats", "hints"):
+                assert k in b, "调试包缺字段: " + k
+            assert b["frameLayout"] and any("帧头" in s for s in b["frameLayout"]), \
+                "调试包没给出帧结构说明(二进制模式应说明帧头): %r" % b["frameLayout"]
+            assert b["samples"], "调试包没带原始样本"
+            assert b["samples"][0].get("hex"), "样本缺原始 HEX,AI 无法离线复算"
+            assert "[给 AI 的提示]" in b["brief"] and "[帧结构]" in b["brief"], "摘要缺关键段落"
+            assert not errs, "预设/调试包 JS 异常: " + "; ".join(errs[:3])
+        check("serial_preset_bundle 预设一键套用+AI 调试包导出", t_serial_preset_bundle)
 
         # ---------- 8. 404 页 ----------
         def t_404():

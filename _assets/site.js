@@ -40,7 +40,10 @@
     search: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.3 20.3-4.2-4.2"/></svg>',
     print: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="2"/><path d="M7 13.5h10v7H7z"/></svg>',
     sun: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.2 5.2l1.5 1.5M17.3 17.3l1.5 1.5M18.8 5.2l-1.5 1.5M6.7 17.3l-1.5 1.5"/></svg>',
-    moon: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 13.6A8.2 8.2 0 1 1 10.4 3.8a6.6 6.6 0 0 0 9.8 9.8z"/></svg>'
+    moon: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 13.6A8.2 8.2 0 1 1 10.4 3.8a6.6 6.6 0 0 0 9.8 9.8z"/></svg>',
+    /* V2.2.1:串口调试助手入口——脉冲波形象征「实时波形监视」,
+       与旁边三枚图标同为 currentColor 单色线性,尺寸/描边完全一致以保持顶栏对齐 */
+    serial: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 12.5h3.2l1.8-5.6 3.3 10.6 2.2-7.1 1.5 2.1h6.8"/></svg>'
   };
 
   /* ---------- 主题(亮/暗风格切换) ---------- */
@@ -133,7 +136,7 @@
   };
   /* V2.1.7:开放给闯关等页面复用,消除 humanoid-site-activity-v1 字面量副本 */
   S.logActivity = logActivity;
-  /* V2.1.18:esc/脚本加载器单源开放(AUDIT A-22)——题库页/闯关页原各持 esc×3、loadScript×2 副本,收敛至此 */
+  /* V2.2.1:esc/脚本加载器单源开放(AUDIT A-22)——题库页/闯关页原各持 esc×3、loadScript×2 副本,收敛至此 */
   S.esc = esc;
   S.loadScript = function(src, cb){
     var s = document.createElement("script");
@@ -720,6 +723,9 @@
       + '<circle class="np-p" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" transform="rotate(-90 18 18)"/>'
       + '</svg><i id="navProgTxt">0%</i></span>'
       + '<a class="nav-ver" href="' + root + '/index.html#version" title="版本与更新历史"><i class="ver-dot"></i>v' + (S.VERSION.split('(')[0] || '').replace('V','') + '</a>'
+      /* V2.2.1:串口调试助手顶栏快速入口——全站(100+ 内容页)统一由本函数注入,
+         改这一处即全站生效;首页 index.html 的静态 .topnav 另有一份同款入口,格式一致 */
+      + '<a class="nav-serial" href="' + root + '/06_学习工具/21_串口调试助手.html" title="串口调试助手:串口监视 · 时域波形 · 协议解析 · AI 调试包" aria-label="串口调试助手">' + ICONS.serial + '<span>串口</span></a>'
       /* V2.1.12c 工具区排序:同类相邻——版本胶囊 | 文字按钮(完成) | 图标三连(主题/搜索/打印) */
       + '<button class="nav-done" onclick="Site.toggleDone()" title="标记本节已完成">✓ 完成</button>'
       + '<button class="nav-theme" onclick="Site.toggleTheme(event)" title="切换亮/暗风格">☀️</button>'
@@ -946,7 +952,7 @@
   function ensureSearchIndex(cb){
     if(window.SITE_SEARCH_INDEX){ cb(); return; }
     var root = page().root || "";
-    /* V2.1.18:改走 S.loadScript 单源(容错语义一致) */
+    /* V2.2.1:改走 S.loadScript 单源(容错语义一致) */
     S.loadScript((root ? root + "/" : "") + "_assets/search-index.js", function(){ cb(); if(S.onSearchIndexReady) S.onSearchIndexReady(); });
   }
   function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1109,7 +1115,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.2.0(2026-10-13)";
+  S.VERSION = "V2.2.1(2026-10-13)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
