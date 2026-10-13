@@ -7,7 +7,7 @@
 
 1. **禁 `git add -A` / `git add .`**——只 add 指定文件(多次把并行会话半成品卷进提交的事故);commit/push 由用户确认,不自动推
 2. **隐私红线**:API Key(`sk-`/`ep-` 形态)、含用户名的机器绝对路径、手机号/内网 IP 不入库;`.mimosa/ .v2c .video_agent .workbuddy .zcode .trae` 等个人目录已 gitignore(`.agents/` 仅 `skills/` 入库),勿 `git add -f`
-3. **`.ps1`/`.bat` 一律 ASCII-only**:PS 5.1 把无 BOM UTF-8 当 GBK 读,中文注释会炸脚本(历史事故×2);中文字面量用 `[char]0xXXXX` 拼接
+3. **`.ps1`/`.bat` 与 workflow 的 `run:` 块一律 ASCII-only**:PS 5.1 把无 BOM UTF-8 当 GBK 读,中文注释会炸脚本(历史事故×2);GitHub Actions 同样把 `run:` 写成无 BOM UTF-8 临时脚本,`shell: powershell` 下中文路径被按 ANSI 解码成乱码致找不到文件(**A-74:CI 自建立以来 30 次全红**);中文字面量用 `[char]0xXXXX` 拼接,中文路径改用文件系统枚举
 4. **站点代码保守 ES5、离线可用**;`_本地工具/*.js` 校验脚本零依赖(只用 fs/path);唯一豁免:`_本地工具/e2e/` 浏览器端到端测试(Python+Playwright,仅本地/CI 用,不入站点部署)
 5. **数据单源**:题只改 `ib-data-a/b/c/d.js` / `quiz-bank.js` / `quest-data.js`;统计数字只改 `site.js` 的 `S.STATS`;页面清单只改 `site-sections.js`;打卡/活动只用 `Site.toggleDone` / `Site.logActivity`
 6. **新页面走完整登记清单**(见下),漏登记自检报 not in index
