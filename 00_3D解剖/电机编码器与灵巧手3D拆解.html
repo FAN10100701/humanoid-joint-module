@@ -559,13 +559,20 @@ function parseSTL(buffer){
 }
 
 /* ---------- 加载 STL → Mesh(自动缩放居中,带进度) ---------- */
+/* V2.1.34: gz 优先——先拉 url+'.gz' 用浏览器内置 DecompressionStream 解压(传输量省约 70%);
+   任一环节失败(浏览器不支持/404/解压异常)自动回退原始 STL,与 3D 主页 app.module.js 同一套降级约定 */
+function fetchSTLBuf(url){
+  function raw(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); }
+  if(typeof DecompressionStream === 'undefined'){ return fetch(url).then(raw); }
+  return fetch(url + '.gz').then(function(r){
+    if(!r.ok) throw new Error('gz HTTP ' + r.status);
+    return new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  }).catch(function(){ return fetch(url).then(raw); });
+}
 function loadSTL(url, color, opts){
   opts = opts || {};
   return new Promise(function(res, rej){
-    fetch(url).then(function(r){
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      return r.arrayBuffer();
-    }).then(function(buf){
+    fetchSTLBuf(url).then(function(buf){
       var geo = parseSTL(buf);
       if(!geo.positions.length){ throw new Error('空 STL'); }
       var T = LAB.T;

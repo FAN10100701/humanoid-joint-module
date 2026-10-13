@@ -30,6 +30,8 @@
   /* mermaid 流程图容器(图内浅底保证 'neutral' 主题的深色文字可读) */
   .my-diagram{background:rgba(13,17,23,.6);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px;margin:16px 0;text-align:center}
   .my-diagram .mermaid{background:#f7f9fc;color:#334155;border-radius:8px;padding:14px;overflow-x:auto;text-align:center}
+  /* V2.1.34b: mermaid 节点文字强制深色(容器底固定浅色,双主题一致)——浅色字看不清的根修 */
+  .my-diagram .mermaid .nodeLabel,.my-diagram .mermaid .nodeLabel p{color:#1e293b !important}.my-diagram .mermaid svg .label text,.my-diagram .mermaid svg .node .label text{fill:#1e293b !important}.my-diagram .mermaid .edgeLabel,.my-diagram .mermaid .edgeLabel p{color:#334155 !important}.my-diagram .mermaid .cluster-label{color:#475569 !important}
   .my-diagram figcaption{font-size:13px;color:#9aa4b2;margin-top:12px;font-weight:600}
 
   /* 优先级文字 */
@@ -198,11 +200,11 @@ flowchart TD
         M[AGND 模拟地] <-->|R1 0Ω 0603| N[GND 数字/功率地]
     end
 
-    style C fill:#fca5a5,stroke:#ef4444
-    style E fill:#fca5a5,stroke:#ef4444
-    style K fill:#fca5a5,stroke:#ef4444
-    style M fill:#fcd34d,stroke:#f59e0b
-    style N fill:#fcd34d,stroke:#f59e0b
+    style C fill:#fca5a5,stroke:#ef4444,color:#7f1d1d
+    style E fill:#fca5a5,stroke:#ef4444,color:#7f1d1d
+    style K fill:#fca5a5,stroke:#ef4444,color:#7f1d1d
+    style M fill:#fcd34d,stroke:#f59e0b,color:#78350f
+    style N fill:#fcd34d,stroke:#f59e0b,color:#78350f
     </pre>
     <figcaption>图1:原 HdriveV1.1 电源架构(红色标记为问题模块)</figcaption>
   </figure>
@@ -337,8 +339,8 @@ flowchart TD
         P[GND 完整地平面\n4层板第2层]
     end
 
-    style F fill:#86efac,stroke:#22c55e
-    style H fill:#86efac,stroke:#22c55e
+    style F fill:#86efac,stroke:#22c55e,color:#14532d
+    style H fill:#86efac,stroke:#22c55e,color:#14532d
     </pre>
     <figcaption>图2:DRV8323R 路线电源架构(绿色为集成模块)</figcaption>
   </figure>
@@ -476,7 +478,7 @@ flowchart TD
         L[AGND 模拟地] <-->|1206 0Ω 单点连接\n在采样电阻负极端| M[PGND 功率地]
     end
 
-    style D fill:#fcd34d,stroke:#f59e0b
+    style D fill:#fcd34d,stroke:#f59e0b,color:#78350f
     style F fill:#fcd34d,stroke:#f59e0b
     style J fill:#fcd34d,stroke:#f59e0b
     </pre>
@@ -880,8 +882,7 @@ flowchart TD
 
 </div><!-- /container -->
 
-<!-- 本页自带 mermaid(位于页面目录 _shared 下,用于渲染三张电源链路图) -->
-<script src="./_shared/js/mermaid.min.js"></script>
+<!-- 本页自带 mermaid(位于页面目录 _shared 下,用于渲染三张电源链路图);V2.1.34: 2.5MB 全量 mermaid 改为滚动到图附近才按需加载(A-20) -->
 <script>
 /* ============ 交互式电压树(轻量 DOM,不依赖 mermaid,双主题用 CSS 类控制) ============ */
 (function(){
@@ -915,7 +916,39 @@ flowchart TD
 })();
 </script>
 <script>
-  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { curve: 'basis' } });
+/* V2.1.34(A-20): mermaid 2.5MB 按需加载——滚动到任一流程图附近(rootMargin 600px 预载)才注入脚本,
+   加载完成后手动 init 渲染(脚本晚于 DOMContentLoaded,startOnLoad 不再触发);
+   不支持 IntersectionObserver 的老浏览器 3s 兜底加载;渲染前图中位置显示原始图源文本,无布局跳动 */
+(function(){
+  var MERMAID_OPTS = { startOnLoad: false, securityLevel: 'loose', flowchart: { curve: 'basis' }, theme: 'base', themeVariables: { primaryColor: '#e8eef7', primaryTextColor: '#1e293b', primaryBorderColor: '#64748b', lineColor: '#475569', textColor: '#334155', edgeLabelBackground: '#f7f9fc', clusterBkg: '#fbfcfe', clusterBorder: '#94a3b8', fontSize: '13px' } };
+  var done = false;
+  function boot(){
+    if(done || !window.mermaid) return;
+    done = true;
+    mermaid.initialize(MERMAID_OPTS);
+    try { mermaid.init(undefined, document.querySelectorAll('pre.mermaid')); } catch(e) {}
+  }
+  function load(){
+    if(done) return;
+    var s = document.createElement('script');
+    s.src = './_shared/js/mermaid.min.js';
+    s.onload = boot;
+    s.onerror = function(){ /* 脚本加载失败:保持原始图源文本可读 */ };
+    document.body.appendChild(s);
+  }
+  var targets = document.querySelectorAll('pre.mermaid');
+  if(!targets.length) return;
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(es){
+      for(var i = 0; i < es.length; i++){
+        if(es[i].isIntersecting){ load(); io.disconnect(); break; }
+      }
+    }, { rootMargin: '600px 0px' });
+    for(var j = 0; j < targets.length; j++){ io.observe(targets[j]); }
+  } else {
+    setTimeout(load, 3000);
+  }
+})();
 </script>
 <!-- 共享脚本:导航/面包屑/前后翻页/页脚/自测/搜索/打卡 全部自动生效 -->
 <script src="../../_assets/site.js"></script>

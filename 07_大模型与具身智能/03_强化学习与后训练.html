@@ -11,6 +11,21 @@
     breadcrumb:[{t:"大模型与具身智能",u:"../index.html#sec7"},{t:"强化学习与后训练"}],
     prev:{t:"DeepSeek 架构精讲",u:"02_DeepSeek架构精讲.html"}, next:{t:"基座选型与开源生态",u:"04_基座选型与开源生态.html"} };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="container">
@@ -61,10 +76,10 @@
   <rect x="330" y="30" width="70" height="44" rx="8" fill="#143524" stroke="#22c55e"/><text x="365" y="50">答案4</text><text x="365" y="66" fill="#86efac">r=1</text>
   <rect x="430" y="30" width="70" height="44" rx="8" fill="#143524" stroke="#22c55e"/><text x="465" y="50">答案5</text><text x="465" y="66" fill="#86efac">r=1</text>
 </g>
-<line x1="20" y1="96" x2="510" y2="96" stroke="#f59e0b" stroke-dasharray="5 4"/><text x="510" y="92" font-size="10.5" fill="#f59e0b" text-anchor="end">组均值 0.6 = 基线(代替critic)</text>
-<text x="30"  y="120" font-size="11" fill="#86efac">优势 = (1−0.6)/σ = + 正 → 强化</text>
-<text x="228" y="120" font-size="11" fill="#fca5a5">优势 = 负 → 抑制</text>
-<text x="10" y="150" font-size="10.5" fill="#64748b">好答案被推高、差答案被压低——全程没有价值网络参与,组内互相当参照</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图 2:GRPO 组采样优势计算示例——同一题目采多答,按组内相对优劣定优势</div></div>
+<line x1="20" y1="96" x2="510" y2="96" stroke="#f59e0b" stroke-dasharray="5 4"/><text x="510" y="92" font-size="10.5" fill="#f59e0b" text-anchor="end" class="fig-t-warn">组均值 0.6 = 基线(代替critic)</text>
+<text x="30"  y="120" font-size="11" fill="#86efac" class="fig-t-ok">优势 = (1−0.6)/σ = + 正 → 强化</text>
+<text x="228" y="120" font-size="11" fill="#fca5a5" class="fig-t-bad">优势 = 负 → 抑制</text>
+<text x="10" y="150" font-size="10.5" fill="#64748b" class="fig-t-muted">好答案被推高、差答案被压低——全程没有价值网络参与,组内互相当参照</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图 2:GRPO 组采样优势计算示例——同一题目采多答,按组内相对优劣定优势</div></div>
 
   <h2><span class="h2-num">4</span> 常见误区:Reward Hacking 与对齐的坑</h2>
   <p><b>Reward Hacking(必考):</b>奖励模型打分而非真理时,策略会钻 RM 的漏洞(谄媚、冗长、套路化)。对策:RM 迭代、KL 锚定、可验证奖励(数学/代码对错)绕开 RM——这正是推理 RL 兴起的原因之一。在此基础上,再避开下面两个坑:</p>

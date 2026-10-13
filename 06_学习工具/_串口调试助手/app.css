@@ -1,0 +1,729 @@
+/* ============================================================
+   网页端串口调试助手 · SerialLab · 应用样式
+   - 本文件自带一套设计令牌（--sl-*），不依赖站点 site.css / glass.css
+   - 双主题：浅色为 html:not([data-theme-early="dark"]) 覆盖（与全站口径一致，
+     首帧由 index.html 的早读脚本写入 data-theme-early，避免浅色用户看到深色闪烁）
+   - 类名统一 sl- 前缀，禁止空类
+   - 配色约束：正文与次要文字对其背景的对比度均 ≥ 3.0（站点对比度审计会扫到本目录）
+   ============================================================ */
+
+/* ---------------- 设计令牌 ---------------- */
+:root {
+  /* 表面与描边 */
+  --sl-bg: #0d1117;
+  --sl-bg-soft: #0a0f16;
+  --sl-surface: rgba(22, 27, 34, .78);
+  --sl-surface-2: rgba(13, 17, 23, .72);
+  --sl-border: rgba(255, 255, 255, .10);
+  --sl-border-hi: rgba(59, 130, 246, .45);
+
+  /* 文字 */
+  --sl-ink: #e6edf3;          /* 正文 */
+  --sl-ink-2: #9aa4b2;        /* 次要 */
+  --sl-ink-3: #8b949e;        /* 弱化（仍满足对比度） */
+  --sl-accent-ink: #9ecbff;   /* 强调文字（蓝底/暗底上） */
+
+  /* 主色与语义色 */
+  --sl-brand: #3b82f6;
+  --sl-brand-2: #2563eb;
+  --sl-ok: #22c55e;
+  --sl-warn: #f59e0b;
+  --sl-bad: #ef4444;
+  --sl-ok-ink: #4ade80;
+  --sl-warn-ink: #fbbf24;
+  --sl-bad-ink: #f87171;
+
+  /* 绘图 */
+  --sl-canvas-bg: #0a0f16;
+  --sl-grid: rgba(148, 163, 184, .16);
+  --sl-axis: rgba(148, 163, 184, .45);
+  --sl-tip: rgba(15, 20, 28, .96);
+
+  /* 尺寸与动效 */
+  --sl-radius: 12px;
+  --sl-radius-sm: 8px;
+  --sl-ease: cubic-bezier(.22, 1, .36, 1);
+
+  /* 通道默认色板（8 色，够区分常见工况） */
+  --sl-c1: #3b82f6;
+  --sl-c2: #22c55e;
+  --sl-c3: #f59e0b;
+  --sl-c4: #ef4444;
+  --sl-c5: #a855f7;
+  --sl-c6: #06b6d4;
+  --sl-c7: #ec4899;
+  --sl-c8: #84cc16;
+}
+
+/* 浅色主题覆盖（单选择器统一挂载，与全站 site.css 规约一致） */
+html:not([data-theme-early="dark"]) {
+  --sl-bg: #f4f7fb;
+  --sl-bg-soft: #eef2f8;
+  --sl-surface: rgba(255, 255, 255, .92);
+  --sl-surface-2: rgba(255, 255, 255, .78);
+  --sl-border: rgba(60, 80, 120, .18);
+  --sl-border-hi: rgba(37, 99, 235, .45);
+
+  --sl-ink: #0f172a;
+  --sl-ink-2: #475569;
+  --sl-ink-3: #64748b;
+  --sl-accent-ink: #1d4ed8;
+
+  --sl-brand: #2563eb;
+  --sl-brand-2: #1d4ed8;
+  --sl-ok-ink: #15803d;
+  --sl-warn-ink: #b45309;
+  --sl-bad-ink: #b91c1c;
+
+  --sl-canvas-bg: #ffffff;
+  --sl-grid: rgba(100, 116, 139, .20);
+  --sl-axis: rgba(100, 116, 139, .55);
+  --sl-tip: rgba(255, 255, 255, .98);
+
+  --sl-c1: #2563eb;
+  --sl-c2: #15803d;
+  --sl-c3: #b45309;
+  --sl-c4: #b91c1c;
+  --sl-c5: #7e22ce;
+  --sl-c6: #0e7490;
+  --sl-c7: #be185d;
+  --sl-c8: #4d7c0f;
+}
+
+/* ---------------- 基础 ---------------- */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--sl-bg);
+  color: var(--sl-ink);
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 本应用是满屏工作台，不用站点 container 限宽 */
+.sl-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+code, kbd, pre, .sl-mono {
+  font-family: Consolas, "Courier New", Menlo, monospace;
+}
+
+a { color: var(--sl-accent-ink); }
+
+/* ---------------- 顶栏 ---------------- */
+.sl-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  background: var(--sl-surface-2);
+  border-bottom: 1px solid var(--sl-border);
+  flex-shrink: 0;
+}
+
+.sl-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--sl-ink);
+}
+
+.sl-brand .sl-ver {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sl-ink-3);
+  font-family: Consolas, monospace;
+}
+
+.sl-top-spacer { flex: 1 1 auto; }
+
+.sl-link {
+  font-size: 12.5px;
+  color: var(--sl-ink-2);
+  text-decoration: none;
+  padding: 5px 10px;
+  border: 1px solid var(--sl-border);
+  border-radius: var(--sl-radius-sm);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.sl-link:hover {
+  color: var(--sl-ink);
+  border-color: var(--sl-border-hi);
+}
+
+/* ---------------- 状态灯与连接条 ---------------- */
+.sl-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  background: var(--sl-surface);
+  border-bottom: 1px solid var(--sl-border);
+  flex-shrink: 0;
+}
+
+.sl-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sl-ink-3);
+  flex-shrink: 0;
+}
+
+.sl-dot.is-open { background: var(--sl-ok); box-shadow: 0 0 7px var(--sl-ok); }
+.sl-dot.is-busy { background: var(--sl-warn); box-shadow: 0 0 7px var(--sl-warn); }
+.sl-dot.is-bad { background: var(--sl-bad); box-shadow: 0 0 7px var(--sl-bad); }
+
+.sl-state {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--sl-ink-2);
+  min-width: 74px;
+}
+
+.sl-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--sl-ink-2);
+  white-space: nowrap;
+}
+
+.sl-field > label { color: var(--sl-ink-2); }
+
+/* ---------------- 表单控件 ---------------- */
+input[type="text"], input[type="number"], select, textarea {
+  background: var(--sl-bg-soft);
+  border: 1px solid var(--sl-border);
+  border-radius: var(--sl-radius-sm);
+  color: var(--sl-ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 5px 8px;
+  outline: none;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+  border-color: var(--sl-border-hi);
+}
+
+input[type="number"] { width: 78px; }
+
+.sl-mono-input {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.sl-chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--sl-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sl-chk input { accent-color: var(--sl-brand); }
+
+/* ---------------- 按钮 ---------------- */
+.sl-btn {
+  background: rgba(59, 130, 246, .14);
+  border: 1px solid rgba(59, 130, 246, .42);
+  color: var(--sl-accent-ink);
+  font-size: 12.5px;
+  font-family: inherit;
+  padding: 6px 13px;
+  border-radius: var(--sl-radius-sm);
+  cursor: pointer;
+  transition: background .15s var(--sl-ease), color .15s var(--sl-ease);
+  white-space: nowrap;
+}
+
+.sl-btn:hover { background: rgba(59, 130, 246, .30); color: var(--sl-ink); }
+
+.sl-btn.is-primary {
+  background: linear-gradient(135deg, var(--sl-brand-2), var(--sl-brand));
+  border-color: transparent;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.sl-btn.is-primary:hover { filter: brightness(1.12); color: #ffffff; }
+
+.sl-btn.is-danger {
+  background: rgba(239, 68, 68, .14);
+  border-color: rgba(239, 68, 68, .42);
+  color: var(--sl-bad-ink);
+}
+
+.sl-btn.is-danger:hover { background: rgba(239, 68, 68, .28); color: var(--sl-ink); }
+
+.sl-btn[disabled] {
+  opacity: .45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.sl-btn.is-sm { padding: 4px 9px; font-size: 11.5px; }
+
+/* ---------------- 主体布局 ---------------- */
+.sl-main {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;         /* 关键：允许内部滚动区正确收缩 */
+  overflow: hidden;
+}
+
+/* 左栏：参数与配置 */
+.sl-side {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--sl-border);
+  background: var(--sl-surface);
+  min-height: 0;
+}
+
+.sl-side.is-hidden { display: none; }
+
+.sl-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 8px 0;
+  border-bottom: 1px solid var(--sl-border);
+  flex-shrink: 0;
+}
+
+.sl-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--sl-ink-2);
+  font-size: 12.5px;
+  font-family: inherit;
+  padding: 6px 10px;
+  border-radius: var(--sl-radius-sm) var(--sl-radius-sm) 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sl-tab:hover { color: var(--sl-ink); }
+
+.sl-tab.is-on {
+  color: var(--sl-accent-ink);
+  border-color: var(--sl-border);
+  border-bottom-color: var(--sl-surface);
+  background: var(--sl-bg-soft);
+  font-weight: 700;
+}
+
+.sl-panes {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px;
+  min-height: 0;
+}
+
+.sl-pane { display: none; }
+.sl-pane.is-on { display: block; }
+
+/* 主区：图表框栅格 */
+.sl-stage {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sl-stage-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--sl-border);
+  flex-shrink: 0;
+  background: var(--sl-surface-2);
+}
+
+.sl-stage-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--sl-ink-2);
+}
+
+.sl-grid-wrap {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px;
+  min-height: 0;
+}
+
+.sl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+/* ---------------- 图表框（面板） ---------------- */
+.sl-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--sl-surface-2);
+  border: 1px solid var(--sl-border);
+  border-radius: var(--sl-radius);
+  overflow: hidden;
+  min-height: 230px;
+}
+
+.sl-panel.is-dragging { opacity: .5; }
+
+.sl-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--sl-border);
+  flex-shrink: 0;
+  cursor: move;                 /* 拖拽排序 */
+  background: transparent;
+}
+
+.sl-panel-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--sl-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sl-panel-type {
+  font-size: 11px;
+  color: var(--sl-ink-3);
+  font-family: Consolas, monospace;
+  flex-shrink: 0;
+}
+
+.sl-panel-body {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 160px;
+}
+
+.sl-panel.is-collapsed .sl-panel-body { display: none; }
+
+.sl-panel-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 16px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--sl-ink-3);
+}
+
+.sl-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--sl-canvas-bg);
+}
+
+/* ---------------- 详细信息列表 / 表格 ---------------- */
+.sl-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  font-size: 12.5px;
+  margin: 8px 0;
+}
+
+.sl-kv dt { color: var(--sl-ink-3); }
+.sl-kv dd { margin: 0; color: var(--sl-ink); font-family: Consolas, monospace; }
+
+.sl-table-wrap { overflow-x: auto; margin: 8px 0; }
+
+table.sl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.sl-table th, table.sl-table td {
+  border: 1px solid var(--sl-border);
+  padding: 4px 7px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+table.sl-table th {
+  background: var(--sl-bg-soft);
+  color: var(--sl-ink-2);
+  font-weight: 700;
+}
+
+table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
+
+/* ---------------- 分组与说明 ---------------- */
+.sl-group {
+  border: 1px solid var(--sl-border);
+  border-radius: var(--sl-radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: var(--sl-bg-soft);
+}
+
+.sl-group > h3 {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--sl-ink);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+.sl-hint {
+  font-size: 11.5px;
+  color: var(--sl-ink-3);
+  line-height: 1.7;
+  margin: 6px 0 0;
+}
+
+.sl-note {
+  border-left: 3px solid var(--sl-brand);
+  background: rgba(59, 130, 246, .10);
+  padding: 8px 11px;
+  border-radius: 0 var(--sl-radius-sm) var(--sl-radius-sm) 0;
+  font-size: 12px;
+  color: var(--sl-ink-2);
+  line-height: 1.75;
+  margin: 8px 0;
+}
+
+.sl-note.is-warn {
+  border-left-color: var(--sl-warn);
+  background: rgba(245, 158, 11, .12);
+}
+
+.sl-note.is-bad {
+  border-left-color: var(--sl-bad);
+  background: rgba(239, 68, 68, .12);
+}
+
+/* 不支持 Web Serial 时的降级横幅 */
+.sl-banner {
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, .14);
+  border-bottom: 1px solid rgba(245, 158, 11, .4);
+  font-size: 12.5px;
+  color: var(--sl-ink);
+  line-height: 1.75;
+  flex-shrink: 0;
+}
+
+.sl-banner.is-on { display: flex; }
+.sl-banner b { color: var(--sl-warn-ink); }
+
+/* ---------------- 底部发送条 ---------------- */
+.sl-send {
+  flex-shrink: 0;
+  border-top: 1px solid var(--sl-border);
+  background: var(--sl-surface);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.sl-send-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sl-send-input {
+  flex: 1 1 260px;
+  min-width: 160px;
+}
+
+.sl-send-input input[type="text"] {
+  width: 100%;
+}
+
+/* ---------------- 监视器（文本 / HEX 流） ---------------- */
+.sl-mon {
+  height: 100%;
+  overflow-y: auto;
+  padding: 8px 10px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  background: var(--sl-canvas-bg);
+  color: var(--sl-ink);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.sl-mon .sl-mon-t { color: var(--sl-ink-3); }
+.sl-mon .sl-mon-tx { color: var(--sl-warn-ink); }
+.sl-mon .sl-mon-rx { color: var(--sl-ink); }
+
+/* ---------------- 通道色块 ---------------- */
+.sl-swatch {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  vertical-align: -1px;
+  flex-shrink: 0;
+}
+
+/* ---------------- 提示条 ---------------- */
+.sl-toasts {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 90;
+  pointer-events: none;
+  max-width: min(360px, 86vw);
+}
+
+.sl-toast {
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-left: 3px solid var(--sl-brand);
+  border-radius: var(--sl-radius-sm);
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--sl-ink);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+  pointer-events: auto;
+}
+
+.sl-toast.is-ok { border-left-color: var(--sl-ok); }
+.sl-toast.is-warn { border-left-color: var(--sl-warn); }
+.sl-toast.is-bad { border-left-color: var(--sl-bad); }
+
+/* ---------------- 对话框 ---------------- */
+.sl-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 12, .58);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 18px;
+}
+
+.sl-modal[hidden] { display: none; }
+
+.sl-modal-card {
+  background: var(--sl-bg);
+  border: 1px solid var(--sl-border);
+  border-radius: var(--sl-radius);
+  width: min(620px, 96vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .40);
+}
+
+.sl-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--sl-border);
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--sl-ink);
+}
+
+.sl-modal-head .sl-top-spacer { flex: 1 1 auto; }
+
+.sl-modal-body {
+  padding: 14px;
+  overflow-y: auto;
+  min-height: 0;
+  font-size: 12.5px;
+  color: var(--sl-ink);
+}
+
+.sl-modal-foot {
+  padding: 10px 14px;
+  border-top: 1px solid var(--sl-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 供 AI 读取的提示词块 */
+.sl-prompt {
+  width: 100%;
+  min-height: 260px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11.5px;
+  line-height: 1.7;
+  white-space: pre;
+  overflow: auto;
+}
+
+/* ---------------- 响应式 ---------------- */
+@media (max-width: 900px) {
+  .sl-side {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    box-shadow: 0 0 28px rgba(0, 0, 0, .34);
+  }
+  .sl-grid { grid-template-columns: 1fr; }
+}

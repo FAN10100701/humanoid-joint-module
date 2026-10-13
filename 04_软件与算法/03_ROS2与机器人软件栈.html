@@ -45,6 +45,21 @@
 
   html:not([data-theme-early="dark"]) .my-copy-btn{color:#1d4ed8}
 </style>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -87,29 +102,29 @@
 
   <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 318" role="img" aria-label="ROS2 分层架构图:用户代码、rcl、rmw、DDS 与操作系统网络五层" font-family="Microsoft YaHei,sans-serif">
     <text x="74" y="55" font-size="10.5" class="my-lg" text-anchor="middle" font-weight="bold">用户代码</text>
-    <text x="74" y="109" font-size="10.5" fill="#64748b" text-anchor="middle">rcl</text>
-    <text x="74" y="163" font-size="10.5" fill="#64748b" text-anchor="middle">rmw</text>
-    <text x="74" y="217" font-size="10.5" fill="#64748b" text-anchor="middle">DDS</text>
-    <text x="74" y="271" font-size="10.5" fill="#64748b" text-anchor="middle">OS / 网络</text>
+    <text x="74" y="109" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">rcl</text>
+    <text x="74" y="163" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">rmw</text>
+    <text x="74" y="217" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">DDS</text>
+    <text x="74" y="271" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">OS / 网络</text>
     <line x1="136" y1="84" x2="136" y2="234" stroke="#2563eb" stroke-opacity=".5"/>
     <line x1="130" y1="84" x2="136" y2="84" stroke="#2563eb" stroke-opacity=".5"/>
     <line x1="130" y1="234" x2="136" y2="234" stroke="#2563eb" stroke-opacity=".5"/>
     <rect x="150" y="30" width="440" height="42" rx="8" fill="#2563eb" fill-opacity=".1" stroke="#2563eb"/>
     <text x="166" y="56" font-size="11.5" class="my-lg" font-weight="bold">应用层:用户节点(rclcpp / rclpy)</text>
-    <text x="574" y="56" font-size="9.5" fill="#64748b" text-anchor="end">感知·规划·控制</text>
+    <text x="574" y="56" font-size="9.5" fill="#64748b" text-anchor="end" class="fig-t-muted">感知·规划·控制</text>
     <rect x="150" y="84" width="440" height="42" rx="8" fill="#2563eb" fill-opacity=".1" stroke="#2563eb"/>
     <text x="166" y="110" font-size="11.5" class="my-lg" font-weight="bold">客户端库 rcl:统一 API 与生命周期</text>
-    <text x="574" y="110" font-size="9.5" fill="#64748b" text-anchor="end">节点/话题/服务/动作/参数</text>
+    <text x="574" y="110" font-size="9.5" fill="#64748b" text-anchor="end" class="fig-t-muted">节点/话题/服务/动作/参数</text>
     <rect x="150" y="138" width="440" height="42" rx="8" fill="#f59e0b" fill-opacity=".12" stroke="#f59e0b"/>
     <text x="166" y="164" font-size="11.5" class="my-sub-o" font-weight="bold">rmw 中间件抽象层(可插拔)</text>
-    <text x="574" y="164" font-size="9.5" fill="#64748b" text-anchor="end">换 DDS 不改业务代码</text>
+    <text x="574" y="164" font-size="9.5" fill="#64748b" text-anchor="end" class="fig-t-muted">换 DDS 不改业务代码</text>
     <rect x="150" y="192" width="440" height="42" rx="8" fill="#2563eb" fill-opacity=".1" stroke="#2563eb"/>
     <text x="166" y="218" font-size="11.5" class="my-lg" font-weight="bold">DDS 实现:发现 · 传输 · QoS</text>
-    <text x="574" y="218" font-size="9.5" fill="#64748b" text-anchor="end">Fast DDS / Cyclone DDS 可替换</text>
+    <text x="574" y="218" font-size="9.5" fill="#64748b" text-anchor="end" class="fig-t-muted">Fast DDS / Cyclone DDS 可替换</text>
     <rect x="150" y="246" width="440" height="42" rx="8" fill="#64748b" fill-opacity=".1" stroke="#64748b"/>
     <text x="166" y="272" font-size="11.5" class="my-lg" font-weight="bold">操作系统与网络:Linux / RTOS</text>
-    <text x="574" y="272" font-size="9.5" fill="#64748b" text-anchor="end">UDP / 共享内存 · 实时调度</text>
-    <text x="8" y="310" font-size="9.5" fill="#64748b">去中心化:节点经 DDS 自动发现、直连,无 roscore 单点;QoS 逐话题权衡「实时 vs 可靠」(传感器可丢帧,控制指令不能丢)。</text>
+    <text x="574" y="272" font-size="9.5" fill="#64748b" text-anchor="end" class="fig-t-muted">UDP / 共享内存 · 实时调度</text>
+    <text x="8" y="310" font-size="9.5" fill="#64748b" class="fig-t-muted">去中心化:节点经 DDS 自动发现、直连,无 roscore 单点;QoS 逐话题权衡「实时 vs 可靠」(传感器可丢帧,控制指令不能丢)。</text>
   </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:ROS2 分层架构——用户代码只面向 rcl 统一 API;rmw 屏蔽底层差异,使 Fast DDS / Cyclone DDS 可整只替换;DDS 去中心化自动发现,取代 ROS1 的 roscore</div></div>
 
   <h3>1.1 中间件要解决的四类问题</h3>

@@ -8,9 +8,9 @@
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
-   - 版本: V2.1.33 · 2026-09-20(升级站点时改 CACHE 名以强制更新;activate 收敛为只清 hrl-site- 域缓存(A-57 缓存互删根治),en-audio MP3 走 _assets SWR 播放时缓存+MD5 寻址不回源;V2.1.31 起预缓存拆 CORE/LAZY 两层,V2.1.32 加 KaTeX CDN cache-first 特例(A-28),V2.1.33 补 srs.js/mistakes.js 进 CORE)
+   - 版本: V2.2.0 · 2026-10-13(升级站点时改 CACHE 名以强制更新;activate 收敛为只清 hrl-site- 域缓存(A-57 缓存互删根治),en-audio MP3 走 _assets SWR 播放时缓存+MD5 寻址不回源;V2.1.31 起预缓存拆 CORE/LAZY 两层,V2.1.32 加 KaTeX CDN cache-first 特例(A-28),V2.1.33 补 srs.js/mistakes.js 进 CORE,V2.2.0 补串口调试助手入口页进 CORE + 子应用 17 个文件进 LAZY(约 230KB,不抢首屏))
    ============================================================ */
-var CACHE = "hrl-site-v2.1.33";
+var CACHE = "hrl-site-v2.2.0";
 var PRECACHE = [
   "./index.html",
   "./404.html",
@@ -40,17 +40,37 @@ var PRECACHE = [
   "./06_学习工具/13_AI答疑助手.html",
   "./06_学习工具/14_个人作品台.html",
   "./06_学习工具/17_AI_Agent介绍.html",
-  "./06_学习工具/18_学习路径规划.html"
+  "./06_学习工具/18_学习路径规划.html",
+  "./06_学习工具/21_串口调试助手.html"   /* V2.2.0:入口页;子应用本体在 LAZY 层 */
 ];
 
 /* V2.1.31: 大件题库数据(4 件约 693KB,仅题库/闯关两页按需 loadScript 使用)拆出首装
    预缓存,改 activate 后延迟补装——首访/发版重下不再与首屏资源抢带宽,
-   补装完成后"未访问也能离线打开题库"的承诺不变 */
+   补装完成后"未访问也能离线打开题库"的承诺不变。
+   V2.2.0: 串口调试助手子应用(外壳 + 样式 + 14 个业务脚本,约 230KB)同样放本层:
+   它是整目录可拷走的独立工具,但并非每个访客都会访问,没必要占用首装带宽;
+   延迟补装后"打开网页即可离线使用"的承诺仍然成立(单文件缺失只跳过,不阻断 install)。 */
 var LAZY_PRECACHE = [
   "./_assets/ib-data-a.js",
   "./_assets/ib-data-b.js",
   "./_assets/ib-data-c.js",
-  "./_assets/ib-data-d.js"
+  "./_assets/ib-data-d.js",
+  "./06_学习工具/_串口调试助手/index.html",
+  "./06_学习工具/_串口调试助手/app.css",
+  "./06_学习工具/_串口调试助手/js/util.js",
+  "./06_学习工具/_串口调试助手/js/core.js",
+  "./06_学习工具/_串口调试助手/js/codec.js",
+  "./06_学习工具/_串口调试助手/js/expr.js",
+  "./06_学习工具/_串口调试助手/js/parser.js",
+  "./06_学习工具/_串口调试助手/js/fft.js",
+  "./06_学习工具/_串口调试助手/js/datastore.js",
+  "./06_学习工具/_串口调试助手/js/transport.js",
+  "./06_学习工具/_串口调试助手/js/plugins.js",
+  "./06_学习工具/_串口调试助手/js/views.js",
+  "./06_学习工具/_串口调试助手/js/timeline.js",
+  "./06_学习工具/_串口调试助手/js/exporters.js",
+  "./06_学习工具/_串口调试助手/js/ui.js",
+  "./06_学习工具/_串口调试助手/js/app.js"
 ];
 
 self.addEventListener("install", function(e){

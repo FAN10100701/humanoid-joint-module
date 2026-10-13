@@ -69,6 +69,21 @@
     next: { t: "芯片设计流程与AHB_AXI总线", u: "09_芯片设计流程与AHB_AXI总线.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -128,27 +143,27 @@
     <rect x="82" y="80"  width="40" height="160" rx="4" fill="rgba(239,68,68,.55)" stroke="#ef4444"/>
     <rect x="130" y="160" width="40" height="80"  rx="4" fill="rgba(245,158,11,.55)" stroke="#f59e0b"/>
     <rect x="178" y="200" width="40" height="40"  rx="4" fill="rgba(34,197,94,.55)" stroke="#22c55e"/>
-    <text x="102" y="72"  text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">98MB</text>
-    <text x="150" y="152" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b">49MB</text>
-    <text x="198" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e">25MB</text>
+    <text x="102" y="72"  text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444" class="fig-t-bad">98MB</text>
+    <text x="150" y="152" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b" class="fig-t-warn">49MB</text>
+    <text x="198" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e" class="fig-t-ok">25MB</text>
     <text x="150" y="260" text-anchor="middle" class="my-t1">① 存储占用</text>
     <text x="150" y="277" text-anchor="middle" class="my-t2">ResNet-50 权重大小(近似)</text>
     <!-- 组2:带宽需求 -->
     <rect x="252" y="80"  width="40" height="160" rx="4" fill="rgba(239,68,68,.55)" stroke="#ef4444"/>
     <rect x="300" y="160" width="40" height="80"  rx="4" fill="rgba(245,158,11,.55)" stroke="#f59e0b"/>
     <rect x="348" y="200" width="40" height="40"  rx="4" fill="rgba(34,197,94,.55)" stroke="#22c55e"/>
-    <text x="272" y="72"  text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">4×</text>
-    <text x="320" y="152" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b">2×</text>
-    <text x="368" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e">1×</text>
+    <text x="272" y="72"  text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444" class="fig-t-bad">4×</text>
+    <text x="320" y="152" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b" class="fig-t-warn">2×</text>
+    <text x="368" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e" class="fig-t-ok">1×</text>
     <text x="320" y="260" text-anchor="middle" class="my-t1">② 带宽需求</text>
     <text x="320" y="277" text-anchor="middle" class="my-t2">搬运同样多权重占总线宽度</text>
     <!-- 组3:推理能耗 -->
     <rect x="422" y="80"  width="40" height="160" rx="4" fill="rgba(239,68,68,.55)" stroke="#ef4444"/>
     <rect x="470" y="160" width="40" height="80"  rx="4" fill="rgba(245,158,11,.55)" stroke="#f59e0b"/>
     <rect x="518" y="200" width="40" height="40"  rx="4" fill="rgba(34,197,94,.55)" stroke="#22c55e"/>
-    <text x="442" y="72"  text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">4×</text>
-    <text x="490" y="152" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b">2×</text>
-    <text x="538" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e">1×</text>
+    <text x="442" y="72"  text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444" class="fig-t-bad">4×</text>
+    <text x="490" y="152" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b" class="fig-t-warn">2×</text>
+    <text x="538" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e" class="fig-t-ok">1×</text>
     <text x="490" y="260" text-anchor="middle" class="my-t1">③ 推理能耗(访存主导)</text>
     <text x="490" y="277" text-anchor="middle" class="my-t2">第④本账「算力面积」同理:</text>
     <text x="490" y="296" text-anchor="middle" class="my-t2">INT8 TOPS ≈ FP32 的 4~8×</text>
@@ -207,9 +222,9 @@
     <line x1="70" y1="52" x2="70" y2="68" stroke="#ef4444" stroke-width="2"/>
     <line x1="410" y1="52" x2="410" y2="68" stroke="#58a6ff" stroke-width="2"/>
     <line x1="560" y1="52" x2="560" y2="68" stroke="#22c55e" stroke-width="2"/>
-    <text x="70" y="46" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">r_min = -1.0</text>
-    <text x="410" y="46" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#58a6ff">r = 0.83</text>
-    <text x="560" y="46" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e">r_max = 2.0</text>
+    <text x="70" y="46" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444" class="fig-t-bad">r_min = -1.0</text>
+    <text x="410" y="46" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#58a6ff" class="fig-t-info">r = 0.83</text>
+    <text x="560" y="46" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e" class="fig-t-ok">r_max = 2.0</text>
     <!-- INT8/UINT8 轴 -->
     <text x="60" y="140" class="my-t1">UINT8 整数轴(仅 256 级台阶)</text>
     <line x1="60" y1="170" x2="580" y2="170" stroke="#8b949e" stroke-width="1.5" marker-end="url(#m3g)"/>
@@ -218,11 +233,11 @@
     <line x1="315" y1="162" x2="315" y2="178" stroke="#8b949e" stroke-width="1"/>
     <line x1="410" y1="162" x2="410" y2="178" stroke="#58a6ff" stroke-width="2"/>
     <line x1="560" y1="162" x2="560" y2="178" stroke="#22c55e" stroke-width="2"/>
-    <text x="70" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444">0</text>
-    <text x="210" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b">z = 85 (zero_point)</text>
-    <text x="315" y="192" text-anchor="middle" font-size="11" fill="#64748b">128</text>
-    <text x="410" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#58a6ff">q = 155</text>
-    <text x="560" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e">255</text>
+    <text x="70" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ef4444" class="fig-t-bad">0</text>
+    <text x="210" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#f59e0b" class="fig-t-warn">z = 85 (zero_point)</text>
+    <text x="315" y="192" text-anchor="middle" font-size="11" fill="#64748b" class="fig-t-muted">128</text>
+    <text x="410" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#58a6ff" class="fig-t-info">q = 155</text>
+    <text x="560" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22c55e" class="fig-t-ok">255</text>
     <!-- 对应关系虚线 -->
     <line x1="70" y1="72" x2="70" y2="158" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,4"/>
     <line x1="410" y1="72" x2="410" y2="158" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,4"/>

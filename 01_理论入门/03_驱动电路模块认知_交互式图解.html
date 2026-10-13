@@ -145,6 +145,21 @@
     next: { t: "机械原理基础", u: "04_机械原理基础_连杆齿轮传动.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -321,44 +336,44 @@
         <text class="my-voltage-label" x="396" y="170">3.3V/5V</text>
 
         <path class="my-wire my-wire-power" d="M 790 255 L 805 255 L 805 190 L 830 190" marker-end="url(#arrow-motor)"/>
-        <text class="my-wire-label" x="803" y="204" fill="#f97316" text-anchor="end">U/V/W</text>
+        <text class="my-wire-label fig-t-warn" x="803" y="204" fill="#f97316" text-anchor="end">U/V/W</text>
 
         <!-- ===== 连接线:信号(蓝虚线) ===== -->
         <path class="my-wire my-wire-signal" d="M 370 265 L 410 290" marker-end="url(#arrow-signal)"/>
-        <text class="my-wire-label" x="372" y="272" fill="#06b6d4">RS485</text>
+        <text class="my-wire-label fig-t-cyan" x="372" y="272" fill="#06b6d4">RS485</text>
 
         <path class="my-wire my-wire-signal" d="M 580 240 L 600 240 L 600 140 L 620 140" marker-end="url(#arrow-signal)"/>
-        <text class="my-wire-label" x="598" y="168" fill="#a855f7" text-anchor="end">PWM×6</text>
+        <text class="my-wire-label fig-t-purple" x="598" y="168" fill="#a855f7" text-anchor="end">PWM×6</text>
 
         <path class="my-wire my-wire-signal" d="M 705 190 L 705 210" marker-end="url(#arrow-signal)"/>
 
         <path class="my-wire my-wire-signal" d="M 705 300 L 705 320" marker-end="url(#arrow-signal)"/>
 
         <path class="my-wire my-wire-signal" d="M 620 360 L 590 360 L 590 300 L 580 300" marker-end="url(#arrow-signal)"/>
-        <text class="my-wire-label" x="594" y="330" fill="#10b981">电流</text>
-        <text class="my-wire-label" x="594" y="344" fill="#10b981">反馈</text>
+        <text class="my-wire-label fig-t-ok" x="594" y="330" fill="#10b981">电流</text>
+        <text class="my-wire-label fig-t-ok" x="594" y="344" fill="#10b981">反馈</text>
 
         <path class="my-wire my-wire-signal" d="M 620 475 L 610 475 L 610 350 L 580 350" marker-end="url(#arrow-signal)"/>
-        <text class="my-wire-label" x="608" y="415" fill="#34d399" text-anchor="end">位置反馈</text>
+        <text class="my-wire-label fig-t-ok" x="608" y="415" fill="#34d399" text-anchor="end">位置反馈</text>
 
         <path class="my-wire my-wire-signal" d="M 370 375 L 410 350" marker-end="url(#arrow-signal)"/>
-        <text class="my-wire-label" x="374" y="392" fill="#eab308">故障</text>
-        <text class="my-wire-label" x="374" y="406" fill="#eab308">状态</text>
+        <text class="my-wire-label fig-t-yellow" x="374" y="392" fill="#eab308">故障</text>
+        <text class="my-wire-label fig-t-yellow" x="374" y="406" fill="#eab308">状态</text>
 
         <!-- ===== 连接线:保护关断(黄虚线) ===== -->
         <path d="M 310 330 L 310 40 L 680 40 L 680 110" stroke="#eab308" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#arrow-protect)"/>
-        <text class="my-wire-label" x="470" y="34" fill="#eab308">硬件关断信号</text>
+        <text class="my-wire-label fig-t-yellow" x="470" y="34" fill="#eab308">硬件关断信号</text>
 
         <!-- ===== 连接线:抱闸(粉) ===== -->
         <path d="M 580 400 L 580 560 L 815 560 L 815 360 L 830 360" stroke="#ec4899" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#arrow-brake)"/>
-        <text class="my-wire-label" x="640" y="555" fill="#ec4899">抱闸控制</text>
+        <text class="my-wire-label fig-t-pink" x="640" y="555" fill="#ec4899">抱闸控制</text>
 
         <!-- ===== 连接线:编码器(绿) ===== -->
         <path d="M 830 240 L 795 240 L 795 475 L 790 475" stroke="#34d399" stroke-width="2" fill="none" marker-end="url(#arrow-enc)"/>
-        <text class="my-wire-label" x="800" y="264" fill="#34d399">电机端编码器</text>
+        <text class="my-wire-label fig-t-ok" x="800" y="264" fill="#34d399">电机端编码器</text>
 
         <path d="M 905 240 L 905 260 L 1002 260 L 1002 380 L 905 380 L 905 400" stroke="#34d399" stroke-width="2" fill="none" marker-end="url(#arrow-enc)"/>
-        <text class="my-wire-label" x="1008" y="320" fill="#34d399">输出编码器</text>
+        <text class="my-wire-label fig-t-ok" x="1008" y="320" fill="#34d399">输出编码器</text>
 
         <!-- ===== 接插件标注 ===== -->
         <circle cx="30" cy="155" r="6" fill="#ef4444"/>

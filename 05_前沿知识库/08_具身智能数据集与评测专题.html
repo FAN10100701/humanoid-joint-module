@@ -70,6 +70,21 @@
 </style>
 
 <style id="v2128-contrast3">html:not([data-theme-early="dark"]) .my-note{color:#64748b}</style>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -221,47 +236,47 @@
   </div>
 
   <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 330" role="img" aria-label="六大操作数据集轨迹规模与模态对比图" font-family="Microsoft YaHei,sans-serif">
-    <text x="8" y="22" font-size="10.5" fill="#64748b">数据集</text>
-    <text x="170" y="22" font-size="10.5" fill="#64748b">轨迹规模(线性刻度)</text>
-    <text x="600" y="22" font-size="10.5" fill="#64748b">模态与形态</text>
+    <text x="8" y="22" font-size="10.5" fill="#64748b" class="fig-t-muted">数据集</text>
+    <text x="170" y="22" font-size="10.5" fill="#64748b" class="fig-t-muted">轨迹规模(线性刻度)</text>
+    <text x="600" y="22" font-size="10.5" fill="#64748b" class="fig-t-muted">模态与形态</text>
     <line x1="158" y1="30" x2="158" y2="252" stroke="#64748b" stroke-opacity=".18"/>
     <rect x="170" y="53" width="360" height="18" rx="3" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b"/>
     <text x="8" y="67" font-size="11.5" class="my-lg">Open X-Embodiment</text>
-    <text x="538" y="67" font-size="10.5" fill="#64748b">100 万+</text>
-    <text x="600" y="63" font-size="9.5" fill="#64748b">22 形态 · 60+ 子集 · 527 技能</text>
-    <text x="600" y="77" font-size="9.5" fill="#64748b">RGB(-D)+关节状态</text>
+    <text x="538" y="67" font-size="10.5" fill="#64748b" class="fig-t-muted">100 万+</text>
+    <text x="600" y="63" font-size="9.5" fill="#64748b" class="fig-t-muted">22 形态 · 60+ 子集 · 527 技能</text>
+    <text x="600" y="77" font-size="9.5" fill="#64748b" class="fig-t-muted">RGB(-D)+关节状态</text>
     <rect x="170" y="89" width="360" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
     <text x="8" y="103" font-size="11.5" class="my-lg">AgiBot World</text>
-    <text x="538" y="103" font-size="10.5" fill="#64748b">100 万+</text>
-    <text x="600" y="99" font-size="9.5" fill="#64748b">100+ 台真机 · 217+ 任务</text>
-    <text x="600" y="113" font-size="9.5" fill="#64748b">RGB-D+触觉+本体感受</text>
+    <text x="538" y="103" font-size="10.5" fill="#64748b" class="fig-t-muted">100 万+</text>
+    <text x="600" y="99" font-size="9.5" fill="#64748b" class="fig-t-muted">100+ 台真机 · 217+ 任务</text>
+    <text x="600" y="113" font-size="9.5" fill="#64748b" class="fig-t-muted">RGB-D+触觉+本体感受</text>
     <rect x="170" y="125" width="27" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
     <text x="8" y="139" font-size="11.5" class="my-lg">DROID</text>
-    <text x="205" y="139" font-size="10.5" fill="#64748b">约 7.6 万</text>
-    <text x="600" y="135" font-size="9.5" fill="#64748b">564 场景 · 86 任务 · 约 350 h</text>
-    <text x="600" y="149" font-size="9.5" fill="#64748b">RGB×2~3+关节+夹爪</text>
+    <text x="205" y="139" font-size="10.5" fill="#64748b" class="fig-t-muted">约 7.6 万</text>
+    <text x="600" y="135" font-size="9.5" fill="#64748b" class="fig-t-muted">564 场景 · 86 任务 · 约 350 h</text>
+    <text x="600" y="149" font-size="9.5" fill="#64748b" class="fig-t-muted">RGB×2~3+关节+夹爪</text>
     <rect x="170" y="161" width="22" height="18" rx="3" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
     <text x="8" y="175" font-size="11.5" class="my-lg">BridgeData V2</text>
-    <text x="200" y="175" font-size="10.5" fill="#64748b">约 6.0 万</text>
-    <text x="600" y="171" font-size="9.5" fill="#64748b">24 环境 · 73 物体 · WidowX</text>
-    <text x="600" y="185" font-size="9.5" fill="#64748b">RGB+关节+夹爪</text>
+    <text x="200" y="175" font-size="10.5" fill="#64748b" class="fig-t-muted">约 6.0 万</text>
+    <text x="600" y="171" font-size="9.5" fill="#64748b" class="fig-t-muted">24 环境 · 73 物体 · WidowX</text>
+    <text x="600" y="185" font-size="9.5" fill="#64748b" class="fig-t-muted">RGB+关节+夹爪</text>
     <rect x="170" y="197" width="5" height="18" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
     <text x="8" y="211" font-size="11.5" class="my-lg">RoboMimic</text>
-    <text x="183" y="211" font-size="10.5" fill="#64748b">数千条示教</text>
-    <text x="600" y="207" font-size="9.5" fill="#64748b">5 任务 · 3 机器人</text>
-    <text x="600" y="221" font-size="9.5" fill="#64748b">仿真 RGB+关节</text>
+    <text x="183" y="211" font-size="10.5" fill="#64748b" class="fig-t-muted">数千条示教</text>
+    <text x="600" y="207" font-size="9.5" fill="#64748b" class="fig-t-muted">5 任务 · 3 机器人</text>
+    <text x="600" y="221" font-size="9.5" fill="#64748b" class="fig-t-muted">仿真 RGB+关节</text>
     <rect x="170" y="233" width="5" height="18" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
     <text x="8" y="247" font-size="11.5" class="my-lg">RLBench</text>
-    <text x="183" y="247" font-size="10.5" fill="#64748b">以任务数计:100 任务</text>
-    <text x="600" y="243" font-size="9.5" fill="#64748b">CoppeliaSim+Franka</text>
-    <text x="600" y="257" font-size="9.5" fill="#64748b">仿真相机+关节</text>
+    <text x="183" y="247" font-size="10.5" fill="#64748b" class="fig-t-muted">以任务数计:100 任务</text>
+    <text x="600" y="243" font-size="9.5" fill="#64748b" class="fig-t-muted">CoppeliaSim+Franka</text>
+    <text x="600" y="257" font-size="9.5" fill="#64748b" class="fig-t-muted">仿真相机+关节</text>
     <rect x="170" y="282" width="12" height="12" rx="2" fill="#2563eb" fill-opacity=".5" stroke="#2563eb"/>
-    <text x="188" y="292" font-size="10" fill="#64748b">真机遥操作</text>
+    <text x="188" y="292" font-size="10" fill="#64748b" class="fig-t-muted">真机遥操作</text>
     <rect x="286" y="282" width="12" height="12" rx="2" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b"/>
-    <text x="304" y="292" font-size="10" fill="#64748b">汇聚已有数据集</text>
+    <text x="304" y="292" font-size="10" fill="#64748b" class="fig-t-muted">汇聚已有数据集</text>
     <rect x="424" y="282" width="12" height="12" rx="2" fill="#22c55e" fill-opacity=".5" stroke="#22c55e"/>
-    <text x="442" y="292" font-size="10" fill="#64748b">仿真基准</text>
-    <text x="170" y="316" font-size="9.5" fill="#64748b">条形按轨迹数线性刻度;宇树 G1-Dex1 规模官方未统一公布,未入图;仿真基准不以轨迹规模计。</text>
+    <text x="442" y="292" font-size="10" fill="#64748b" class="fig-t-muted">仿真基准</text>
+    <text x="170" y="316" font-size="9.5" fill="#64748b" class="fig-t-muted">条形按轨迹数线性刻度;宇树 G1-Dex1 规模官方未统一公布,未入图;仿真基准不以轨迹规模计。</text>
   </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:六大操作数据集规模与模态对比——条形为轨迹规模(线性刻度),颜色区分采集方式;OXE 靠「汇聚」做到百万级,AgiBot World 为真机新采同量级,DROID / BridgeData 是中小规模真机遥操作,仿真基准不以轨迹数计</div></div>
 
   <!-- ================= 3 运动与仿真数据集 ================= -->

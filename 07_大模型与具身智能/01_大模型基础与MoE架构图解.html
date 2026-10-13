@@ -15,6 +15,21 @@
     breadcrumb:[{t:"大模型与具身智能",u:"../index.html#sec7"},{t:"大模型基础与 MoE 架构图解"}],
     prev:{t:"返回首页",u:"../index.html"}, next:{t:"DeepSeek 架构精讲",u:"02_DeepSeek架构精讲.html"} };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="container">
@@ -55,8 +70,8 @@
     <text x="260" y="300" font-size="11" fill="#9aa4b2" text-anchor="middle">④ 残差相加 + 归一化 → 进入下一层(×N)</text>
     <path d="M120,94 L96,94 L96,161 L148,161" fill="none" stroke="#f59e0b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#m1)"/>
     <path d="M406,218 L430,218 L430,295 L374,295" fill="none" stroke="#f59e0b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#m1)"/>
-    <text x="70" y="180" font-size="10.5" fill="#f59e0b">残差捷径</text>
-    <text x="438" y="258" font-size="10.5" fill="#f59e0b">残差捷径</text>
+    <text x="70" y="180" font-size="10.5" fill="#f59e0b" class="fig-t-warn">残差捷径</text>
+    <text x="438" y="258" font-size="10.5" fill="#f59e0b" class="fig-t-warn">残差捷径</text>
   </svg>
   <div class="my-cap">图1 · 一个 Decoder 块:注意力(交流)→ FFN(思考),残差捷径保底,循环 N 层</div></div>
   <p>传统模型(如 Llama)里,③ 的 FFN 是<b>一整个</b>大网络,每个词都必须完整过一遍——参数有多少、算力就花多少。<b>MoE 改造的就是这一层</b>:把一个巨型 FFN 拆成一个「专家团队」。</p>
@@ -74,7 +89,7 @@
     <text x="260" y="80" font-size="12.5" fill="#eef4fb" text-anchor="middle" font-weight="700">① 路由器打分</text>
     <text x="260" y="96" font-size="10" fill="#fbbf24" text-anchor="middle">给 256 位专家各打一个「匹配分」</text>
     <line x1="260" y1="104" x2="260" y2="122" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#m2)"/>
-    <text x="288" y="117" font-size="10" fill="#64748b">得分最高的 8 位入选</text>
+    <text x="288" y="117" font-size="10" fill="#64748b" class="fig-t-muted">得分最高的 8 位入选</text>
     <rect x="60" y="124" width="400" height="34" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-dasharray="4 3"/>
     <text x="260" y="146" font-size="11.5" fill="#9ecbff" text-anchor="middle">② Top-8 选择:数学专家✓ 机械专家✓ 语言专家✓ 代码专家✓ …(其余 248 位休息)</text>
     <line x1="120" y1="158" x2="90" y2="186" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#m2)"/>
@@ -91,7 +106,7 @@
     <rect x="170" y="264" width="180" height="40" rx="10" fill="#2e1d47" stroke="#a78bfa"/>
     <text x="260" y="284" font-size="12.5" fill="#eef4fb" text-anchor="middle" font-weight="700">③④ 按得分加权求和</text>
     <text x="260" y="299" font-size="10" fill="#c4b5fd" text-anchor="middle">匹配分越高的话语权越大(残差后进下一层)</text>
-    <text x="480" y="180" font-size="10" fill="#fbbf24" text-anchor="middle">常驻</text>
+    <text x="480" y="180" font-size="10" fill="#fbbf24" text-anchor="middle" class="fig-t-yellow">常驻</text>
   </svg>
   <div class="my-cap">图2 · MoE 层解剖:路由打分 → Top-8 选择 → 专家各自加工 → 加权求和(共享专家全程参与)</div></div>
 

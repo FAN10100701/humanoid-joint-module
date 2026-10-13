@@ -18,6 +18,9 @@
 
   /* SVG 图形容器 */
   .my-fig{margin:18px 0;padding:14px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:rgba(13,17,23,.72);text-align:center;overflow-x:auto}
+  /* my-fig 浅色覆写(V2.1.34b):图卡随主题翻转,图内 fig-t 语义类浅色值生效 */
+  html:not([data-theme-early="dark"]) .my-fig{border-color:rgba(60,80,120,.14);background:#f6f8fb}
+  html:not([data-theme-early="dark"]) .my-fig figcaption{color:#64748b}
   .my-fig svg{max-width:100%;height:auto}
   .my-fig figcaption{font-size:12.5px;color:#8b98a9;margin-top:8px;line-height:1.6}
 
@@ -69,6 +72,21 @@
     next: { t: "FIFO设计与跨时钟域CDC", u: "04_FIFO设计与跨时钟域CDC.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -442,41 +460,41 @@ endmodule
       <marker id="arwY" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#8b98a9"/></marker>
     </defs>
     <!-- din 输入 -->
-    <text x="8" y="84" fill="#8b98a9" font-size="12">din</text>
+    <text x="8" y="84" fill="#8b98a9" font-size="12" class="fig-t-muted">din</text>
     <line x1="14" y1="92" x2="54" y2="92" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwO)"/>
     <!-- 第二段:次态组合 -->
     <rect x="60" y="60" width="160" height="84" rx="10" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="1.6"/>
-    <text x="140" y="84" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">第二段 · 次态组合</text>
-    <text x="140" y="102" text-anchor="middle" fill="#8b98a9" font-size="10.5">always @*</text>
-    <text x="140" y="118" text-anchor="middle" fill="#8b98a9" font-size="10.5">next_state = f(state,din)</text>
+    <text x="140" y="84" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold" class="fig-t-warn">第二段 · 次态组合</text>
+    <text x="140" y="102" text-anchor="middle" fill="#8b98a9" font-size="10.5" class="fig-t-muted">always @*</text>
+    <text x="140" y="118" text-anchor="middle" fill="#8b98a9" font-size="10.5" class="fig-t-muted">next_state = f(state,din)</text>
     <!-- A→B -->
     <line x1="220" y1="102" x2="260" y2="102" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arwB)"/>
-    <text x="240" y="92" text-anchor="middle" fill="#58a6ff" font-size="9.5">next_state</text>
+    <text x="240" y="92" text-anchor="middle" fill="#58a6ff" font-size="9.5" class="fig-t-info">next_state</text>
     <!-- 第一段:状态寄存器 -->
     <rect x="266" y="60" width="170" height="84" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.6"/>
-    <text x="351" y="84" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">第一段 · 状态寄存器</text>
-    <text x="351" y="102" text-anchor="middle" fill="#8b98a9" font-size="10.5">always @(posedge clk)</text>
-    <text x="351" y="118" text-anchor="middle" fill="#8b98a9" font-size="10.5">state &lt;= next_state</text>
+    <text x="351" y="84" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold" class="fig-t-info">第一段 · 状态寄存器</text>
+    <text x="351" y="102" text-anchor="middle" fill="#8b98a9" font-size="10.5" class="fig-t-muted">always @(posedge clk)</text>
+    <text x="351" y="118" text-anchor="middle" fill="#8b98a9" font-size="10.5" class="fig-t-muted">state &lt;= next_state</text>
     <!-- B→C -->
     <line x1="436" y1="102" x2="494" y2="102" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwG)"/>
-    <text x="465" y="92" text-anchor="middle" fill="#22c55e" font-size="9.5">state</text>
+    <text x="465" y="92" text-anchor="middle" fill="#22c55e" font-size="9.5" class="fig-t-ok">state</text>
     <!-- 第三段:输出逻辑 -->
     <rect x="500" y="60" width="126" height="84" rx="10" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.6"/>
-    <text x="563" y="84" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">第三段 · 输出</text>
-    <text x="563" y="102" text-anchor="middle" fill="#8b98a9" font-size="9.5">always @(posedge clk)</text>
-    <text x="563" y="118" text-anchor="middle" fill="#8b98a9" font-size="9.5">dout &lt;= g(state,din)</text>
+    <text x="563" y="84" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold" class="fig-t-ok">第三段 · 输出</text>
+    <text x="563" y="102" text-anchor="middle" fill="#8b98a9" font-size="9.5" class="fig-t-muted">always @(posedge clk)</text>
+    <text x="563" y="118" text-anchor="middle" fill="#8b98a9" font-size="9.5" class="fig-t-muted">dout &lt;= g(state,din)</text>
     <!-- dout 输出 -->
     <line x1="563" y1="144" x2="563" y2="196" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arwG)"/>
-    <text x="571" y="180" fill="#8b98a9" font-size="11">dout</text>
+    <text x="571" y="180" fill="#8b98a9" font-size="11" class="fig-t-muted">dout</text>
     <!-- state 反馈 -->
     <path d="M300,144 L300,206 L100,206 L100,146" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arwO)"/>
-    <text x="200" y="220" text-anchor="middle" fill="#f59e0b" font-size="10">state(现态反馈)</text>
+    <text x="200" y="220" text-anchor="middle" fill="#f59e0b" font-size="10" class="fig-t-warn">state(现态反馈)</text>
     <!-- clk -->
     <line x1="351" y1="250" x2="351" y2="148" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#arwY)"/>
-    <text x="359" y="242" fill="#8b98a9" font-size="11">clk</text>
+    <text x="359" y="242" fill="#8b98a9" font-size="11" class="fig-t-muted">clk</text>
     <!-- din 到第三段(Mealy) -->
     <path d="M14,44 L540,44 L540,56" fill="none" stroke="#f59e0b" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#arwO)"/>
-    <text x="262" y="36" text-anchor="middle" fill="#f59e0b" font-size="10">din(Mealy 型输出时才引入,Moore 型无此线)</text>
+    <text x="262" y="36" text-anchor="middle" fill="#f59e0b" font-size="10" class="fig-t-warn">din(Mealy 型输出时才引入,Moore 型无此线)</text>
   </svg>
   <figcaption>图① 三段式状态机框架:第二段(组合)算次态 → 第一段(时序)时钟沿打一拍 → 第三段输出。Moore 型输出只看 state;引入虚线即成 Mealy 型。</figcaption>
   </figure>
@@ -545,54 +563,54 @@ endmodule</code></pre>
       <marker id="arw2Y" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#8b98a9"/></marker>
     </defs>
     <!-- 复位入口 -->
-    <text x="8" y="158" fill="#8b98a9" font-size="10.5">复位</text>
+    <text x="8" y="158" fill="#8b98a9" font-size="10.5" class="fig-t-muted">复位</text>
     <line x1="14" y1="170" x2="44" y2="170" stroke="#8b98a9" stroke-width="1.4" marker-end="url(#arw2Y)"/>
     <!-- S0 -->
     <circle cx="90" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="90" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S0</text>
-    <text x="90" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">IDLE(空)</text>
+    <text x="90" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold" class="fig-t-muted">S0</text>
+    <text x="90" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5" class="fig-t-muted">IDLE(空)</text>
     <!-- S1 -->
     <circle cx="240" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="240" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S1</text>
-    <text x="240" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:1</text>
+    <text x="240" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold" class="fig-t-muted">S1</text>
+    <text x="240" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5" class="fig-t-muted">已匹配:1</text>
     <!-- S2 -->
     <circle cx="390" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="390" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S2</text>
-    <text x="390" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:10</text>
+    <text x="390" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold" class="fig-t-muted">S2</text>
+    <text x="390" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5" class="fig-t-muted">已匹配:10</text>
     <!-- S3 -->
     <circle cx="540" cy="170" r="40" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.8"/>
-    <text x="540" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold">S3</text>
-    <text x="540" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:101</text>
+    <text x="540" y="168" text-anchor="middle" fill="#8b98a9" font-size="13" font-weight="bold" class="fig-t-muted">S3</text>
+    <text x="540" y="184" text-anchor="middle" fill="#8b98a9" font-size="9.5" class="fig-t-muted">已匹配:101</text>
     <!-- S4 检测成功 -->
     <circle cx="540" cy="340" r="44" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="2"/>
-    <text x="540" y="336" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="bold">S4 ✓</text>
-    <text x="540" y="352" text-anchor="middle" fill="#8b98a9" font-size="9.5">已匹配:1011</text>
-    <text x="540" y="366" text-anchor="middle" fill="#22c55e" font-size="9.5">dout=1</text>
+    <text x="540" y="336" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="bold" class="fig-t-ok">S4 ✓</text>
+    <text x="540" y="352" text-anchor="middle" fill="#8b98a9" font-size="9.5" class="fig-t-muted">已匹配:1011</text>
+    <text x="540" y="366" text-anchor="middle" fill="#22c55e" font-size="9.5" class="fig-t-ok">dout=1</text>
     <!-- 前进边(蓝) -->
     <line x1="130" y1="170" x2="194" y2="170" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arw2B)"/>
-    <text x="162" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=1</text>
+    <text x="162" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5" class="fig-t-info">din=1</text>
     <line x1="280" y1="170" x2="344" y2="170" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arw2B)"/>
-    <text x="312" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=0</text>
+    <text x="312" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5" class="fig-t-info">din=0</text>
     <line x1="430" y1="170" x2="494" y2="170" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arw2B)"/>
-    <text x="462" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=1</text>
+    <text x="462" y="158" text-anchor="middle" fill="#58a6ff" font-size="10.5" class="fig-t-info">din=1</text>
     <!-- 检测成功(红) -->
     <line x1="540" y1="210" x2="540" y2="290" stroke="#ef4444" stroke-width="1.8" marker-end="url(#arw2R)"/>
-    <text x="552" y="242" fill="#ef4444" font-size="10.5">din=1</text>
-    <text x="552" y="258" fill="#ef4444" font-size="10.5">命中!</text>
+    <text x="552" y="242" fill="#ef4444" font-size="10.5" class="fig-t-bad">din=1</text>
+    <text x="552" y="258" fill="#ef4444" font-size="10.5" class="fig-t-bad">命中!</text>
     <!-- 自环 -->
     <path d="M224,133 C210,90 290,90 256,133" fill="none" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arw2B)"/>
-    <text x="240" y="86" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=1</text>
+    <text x="240" y="86" text-anchor="middle" fill="#58a6ff" font-size="10.5" class="fig-t-info">din=1</text>
     <path d="M76,133 C62,90 118,90 104,133" fill="none" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arw2B)"/>
-    <text x="90" y="86" text-anchor="middle" fill="#58a6ff" font-size="10.5">din=0</text>
+    <text x="90" y="86" text-anchor="middle" fill="#58a6ff" font-size="10.5" class="fig-t-info">din=0</text>
     <!-- 回退边(橙) -->
     <path d="M512,142 C500,66 430,66 418,138" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arw2O)"/>
-    <text x="465" y="76" text-anchor="middle" fill="#f59e0b" font-size="10.5">din=0 回退</text>
+    <text x="465" y="76" text-anchor="middle" fill="#f59e0b" font-size="10.5" class="fig-t-warn">din=0 回退</text>
     <path d="M362,198 C330,270 150,270 118,202" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arw2O)"/>
-    <text x="240" y="252" text-anchor="middle" fill="#f59e0b" font-size="10.5">din=0 回退</text>
+    <text x="240" y="252" text-anchor="middle" fill="#f59e0b" font-size="10.5" class="fig-t-warn">din=0 回退</text>
     <path d="M496,340 L390,340 L390,214" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arw2O)"/>
-    <text x="446" y="330" text-anchor="middle" fill="#f59e0b" font-size="10.5">din=0 回退</text>
+    <text x="446" y="330" text-anchor="middle" fill="#f59e0b" font-size="10.5" class="fig-t-warn">din=0 回退</text>
     <path d="M540,384 L540,398 L240,398 L240,214" fill="none" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#arw2O)"/>
-    <text x="392" y="392" text-anchor="middle" fill="#f59e0b" font-size="10.5">din=1 回退(重叠:旧后缀 1 仍是前缀)</text>
+    <text x="392" y="392" text-anchor="middle" fill="#f59e0b" font-size="10.5" class="fig-t-warn">din=1 回退(重叠:旧后缀 1 仍是前缀)</text>
   </svg>
   <figcaption>图② 「1011」序列检测器(Moore 型、可重叠)状态转移图。圆内 = 状态与已匹配的最长前缀;蓝 = 前进,橙 = 失配回退,红 = 命中。回退边才是本题的灵魂:如收到 1010,后缀 "10" 仍是前缀,回 S2 而非 S0。</figcaption>
   </figure>

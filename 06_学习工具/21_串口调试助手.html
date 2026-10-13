@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem("site-theme")||"light";document.documentElement.setAttribute("data-theme",t);document.documentElement.setAttribute("data-theme-early",t);}catch(e){}})();</script>
+<title>网页端串口调试助手 · 人形机器人学习站</title>
+<meta name="description" content="纯前端串口调试助手：Web Serial 连接设备，实时监视与文本/HEX 解析、时域/频域/柱状图/仪表盘绘制、手动/定时/触发/预设四种发送、时间线录制回放导出，并支持声明式插件 DIY 显示。零后端、可离线。">
+<link rel="stylesheet" href="../_assets/site.css">
+<style>
+  /* 页面级补充样式（前缀 sw- 页内作用域，颜色沿用站内已通过对比度审计的口径） */
+  .sw-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;margin:22px 0 6px}
+  .sw-cta a{display:inline-block;font-size:14px;font-weight:700;padding:12px 26px;border-radius:10px;text-decoration:none;transition:.16s}
+  .sw-cta a.pri{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
+  .sw-cta a.pri:hover{filter:brightness(1.12)}
+  .sw-cta a.sec{background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.42);color:#9ecbff}
+  .sw-cta a.sec:hover{background:rgba(59,130,246,.3);color:#fff}
+  html:not([data-theme-early="dark"]) .sw-cta a.sec{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.3);color:#1d4ed8}
+  html:not([data-theme-early="dark"]) .sw-cta a.sec:hover{background:rgba(37,99,235,.16);color:#0f172a}
+  .sw-cta-note{text-align:center;font-size:12px;color:#8b949e;margin:0 0 4px}
+  html:not([data-theme-early="dark"]) .sw-cta-note{color:#64748b}
+  .sw-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;margin:16px 0}
+  .sw-cell{background:rgba(22,27,34,.6);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:13px 15px}
+  html:not([data-theme-early="dark"]) .sw-cell{background:rgba(255,255,255,.86);border-color:rgba(60,80,120,.16)}
+  .sw-cell .t{font-size:13.5px;font-weight:700;color:#fff;margin-bottom:5px}
+  html:not([data-theme-early="dark"]) .sw-cell .t{color:#0f172a}
+  .sw-cell .d{font-size:12.5px;line-height:1.75;color:#c9d1d9}
+  html:not([data-theme-early="dark"]) .sw-cell .d{color:#334155}
+  .sw-cell code{font-size:11.5px}
+</style>
+<script>
+  window.PAGE = {
+    pageId: "06-21",
+    root: "..",
+    breadcrumb: [
+      { t: "学习工具", u: "../index.html#sec6" },
+      { t: "串口调试助手", u: "21_串口调试助手.html" }
+    ],
+    prev: { t: "笔记排版器", u: "20_笔记排版器.html" },
+    next: { t: "返回首页", u: "../index.html" }
+  };
+</script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ================= 页面头部 ================= -->
+  <div class="page-head">
+    <h1>🔌 网页端串口调试助手</h1>
+    <div class="sub">打开浏览器就能连串口：实时监视、文本/HEX 解析、时域与频域绘图、四种发送模式、录制回放导出 —— 图表还能自己 DIY。零后端、纯静态、可离线</div>
+    <div class="tags">
+      <span class="tag">Web Serial</span>
+      <span class="tag">文本 / HEX 解析</span>
+      <span class="tag">时域 · 频域 · 柱状 · 仪表盘</span>
+      <span class="tag">定时 / 触发 / 预设</span>
+      <span class="tag">录制回放</span>
+      <span class="tag">声明式插件</span>
+    </div>
+  </div>
+
+  <div class="sw-cta">
+    <a class="pri" href="_串口调试助手/index.html">打开串口调试助手 →</a>
+    <a class="sec" href="#sw-start">三步上手</a>
+    <a class="sec" href="#sw-format">数据格式说明</a>
+    <a class="sec" href="#sw-limit">支持与限制</a>
+  </div>
+  <p class="sw-cta-note">需要 Chromium 内核浏览器（Chrome / Edge 89+），并通过 <b>https://</b> 或 <b>http://localhost</b> 访问；没有硬件也可以点「进入演示模式」用合成数据跑通全部功能。</p>
+
+  <!-- ================= 1 是什么 ================= -->
+  <h2><span class="h2-num">1</span> 这是什么：把串口助手搬进浏览器</h2>
+  <p>调电机、看编码器、抓 IMU 数据，几乎每个做机器人的人都会长期挂着一个串口调试助手。传统工具是桌面软件：装一次、换台电脑重装一次，画的曲线只能截图，解析规则只能靠记事本抄。这个工具换了个思路——<b>用 Web Serial API 把串口助手做成一个网页</b>，打开即用，解析规则、通道配色、图表布局全部记在配置里，可以导出一份 JSON 带走。</p>
+  <p>它对齐 Vofa+ 与市面上常见串口助手的基础能力：设备连接与参数配置、手动信号线控制、文本与 HEX 双模式收发、实时数据监视、波形的时域与频域展示、定时轮询与触发应答、预设快捷发送。在此之上补了两件更贴近「做实验」的事：<b>一是时间线录制</b>——把流过的帧录下来，事后回放、导出、复盘；<b>二是声明式插件</b>——图表的种类、绑定哪几路数据、用什么公式换算、颜色与量程，都由一份 JSON 描述符决定，想加一个新视图不需要改代码。</p>
+  <p>整个应用是纯静态文件：没有后端、没有第三方运行时依赖、没有构建步骤，与本站其他页面共用一套离线缓存。它的解析内核、绘图内核、插件系统都是本站自研，源码可读、可改，也自带一份给 AI 读的开发说明（见第 7 节）。</p>
+
+  <div class="key-point">
+    <div class="kp-title">它在站点里的位置</div>
+    本站的工具页分两类：一类是纯浏览器内的计算与排版工具（如<b>笔记排版器</b>），一类是需要与硬件打交道的工具。串口调试助手属于后者，它是本站第一个<b>与真实硬件通信</b>的应用页，也是第一次把「设备连接」这件事带进学习流程——从这一页开始，你写的固件和数据可以在同一个浏览器里被观察、记录与回放。
+  </div>
+
+  <!-- ================= 2 能做什么 ================= -->
+  <h2><span class="h2-num">2</span> 能力清单</h2>
+  <div class="sw-cells">
+    <div class="sw-cell">
+      <div class="t">🔗 设备连接管理</div>
+      <div class="d">端口选择授权、波特率/数据位/停止位/校验/硬流控配置、自动重连、失焦自动断连、DTR/RTS/BREAK 手动信号、CTS/DSR/DCD/RI 调制解调器信号实时读取。</div>
+    </div>
+    <div class="sw-cell">
+      <div class="t">👁 实时监视</div>
+      <div class="d">收发双向列表、时间戳、HEX 与文本双视图、收发光字节计数、解析成功/失败与校验和结果就地标注。</div>
+    </div>
+    <div class="sw-cell">
+      <div class="t">🧭 文本解析</div>
+      <div class="d">同时识别 <code>key=value</code> 与 <code>key:value</code>，整数小数统一处理；<code>temp1/temp2</code> 这类后缀数字保留为独立通道；一行里多个数值对全部提取。</div>
+    </div>
+    <div class="sw-cell">
+      <div class="t">🔢 HEX 结构表解析</div>
+      <div class="d">按帧头/帧尾或长度字段定界收帧；字段表声明类型（int8~uint32、float32）、偏移、字节序与缩放系数；校验支持累加和、异或、累加和(16) 与 CRC16-Modbus。</div>
+    </div>
+    <div class="sw-cell">
+      <div class="t">📈 七种内置渲染器</div>
+      <div class="d">时域折线、频域谱（FFT）、柱状图、仪表盘、数据表格、文本监视器、二维轨迹（李萨如/相图）。可多个同屏，拖动标题栏排序，收起/展开/移除。</div>
+    </div>
+    <div class="sw-cell">
+      <div class="t">📡 频域分析</div>
+      <div class="d">零依赖手写 radix-2 FFT，加汉宁窗、单边幅值谱归一，峰值频率自动标注；采样率可取配置值，也可按相邻采样点的时间间隔反推。</div>
+    </div>
+    <div class="sw-cell">
+      <div class="t">⏱ 四种发送方式</div>
+      <div class="d">手动发送（回车即发）、定时轮询、触发应答（收到含「匹配」内容自动回「应答」，带冷却与限流护栏）、预设发送（可绑单字符快捷键 + 期望回包 + 超时提示）。</div>
+    </div>
+    <div class="sw-cell">
+      <div class="t">🎞 录制 · 回放 · 导出</div>
+      <div class="d">把流过的帧录成可回放的事故档案；冻结显示只暂停画面、不断开数据。导出解析结果 CSV（带 BOM，Excel 中文不乱码）、原始记录 CSV、JSON、BIN、TXT。</div>
+    </div>
+    <div class="sw-cell">
+      <div class="t">🧩 声明式 DIY 显示</div>
+      <div class="d">选渲染器 → 绑通道 → 写映射公式（如 <code>(cur*24)</code> 换算功率）→ 调量程与配色，全程是 JSON 配置，零代码执行；整套面板可导出为「面板包」分享。</div>
+    </div>
+  </div>
+
+  <h3>与常见串口助手的功能对照</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>能力</th><th>桌面串口助手 / Vofa+</th><th>本工具</th></tr>
+    <tr><td>安装方式</td><td>下载安装包，分平台</td><td>打开网页即用，零安装</td></tr>
+    <tr><td>支持的设备</td><td>系统串口（含 USB 转串口驱动）</td><td>浏览器可访问的串口（Chromium 系，需 https/localhost）</td></tr>
+    <tr><td>文本解析</td><td>需按工具规定的分隔符书写</td><td>同时识别 <code>=</code> 与 <code>:</code>，后缀数字自动分通道</td></tr>
+    <tr><td>HEX 解析</td><td>一般只按固定偏移显示</td><td>帧头/帧尾/长度字段定界 + 字段表 + 四种具名校验（另可选「无」）</td></tr>
+    <tr><td>自定义视图</td><td>改软件代码或写插件脚本</td><td>声明式 JSON 描述符，禁 eval，导入即用</td></tr>
+    <tr><td>配置迁移</td><td>导出注册表/配置文件</td><td>一键复制或导出 JSON，换机器粘贴即恢复</td></tr>
+    <tr><td>离线使用</td><td>天然离线</td><td>支持本地静态服务离线；还能导出单文件离线版（仅查看）</td></tr>
+    <tr><td>数据留痕</td><td>取决于软件，多数导出为 CSV</td><td>录制 JSON（可再回放）+ 五种格式导出</td></tr>
+  </table>
+  </div>
+
+  <!-- ================= 3 三步上手 ================= -->
+  <h2 id="sw-start"><span class="h2-num">3</span> 三步上手</h2>
+  <p><b>第一步，把设备接上。</b>点「连接设备」，浏览器会弹出一个端口列表（这一步必须由你亲手点，浏览器不允许网页自动打开串口）。选好设备后按你固件的设置调整波特率——默认 115200。如果你用的是 Arduino 或 ESP 系列，打开串口的瞬间 DTR 拉低会让板子复位，工具会显示「复位等待」，等它结束再发指令。手边没有硬件也不要紧：点「进入演示模式」，工具会用合成数据（位置/速度/电流/温度/母线电压五路正弦与噪声信号）走完全部流程，包括发送后的回显，用来验证解析规则刚刚好。</p>
+  <p><b>第二步，告诉它数据长什么样。</b>串口来的数据无非两种形态。<i>文本形态</i>最常见，一行里写着键值对，比如 <code>temp=25.3, cur:1.02</code>——这种情况下什么都不用配，工具会自动把出现过的键建成通道，等宽曲线立刻就有。如果是 <i>二进制帧</i>，切到「十六进制」模式：先定义帧结构（帧头 <code>AA55</code>？有没有长度字段？帧尾是什么？有没有校验和？），再逐个字段声明它从第几个字节开始、是什么类型、要不要乘缩放系数。逗号分隔的演示帧结构可以点「套用示例」一键填入，对着改最快。</p>
+  <p><b>第三步，挑一个顺眼的视图。</b>切到「插件」标签页，从七种渲染器里选一个加到工作区：看趋势用时域折线，查振荡找频域谱，盯一路即时值用仪表盘，看电机电流与位置的相位关系用二维轨迹。然后点这个图框上的「编辑」，绑定它要显示哪几路通道、窗口显示最近多少点、纵轴要不要固定量程、每一路用什么颜色。想换算成更直观的量，就在「映射公式」里写一行算式：<code>(cur*24)</code> 把电流换算成功率，<code>sqrt(ix*ix+iy*iy)</code> 求合成矢量幅值。公式只支持四则运算与白名单数学函数，用通道名当变量，不支持任何脚本执行。</p>
+  <p>这套配置会自动存在本机浏览器里，下次打开还在原地。要换台电脑、或者分享给同学，去「数据」标签页复制配置，或者干脆导出「面板包」——里面装着图表框布局与通道配色。</p>
+
+  <!-- ================= 4 数据格式说明 ================= -->
+  <h2 id="sw-format"><span class="h2-num">4</span> 数据格式说明：把「数据长什么样」一次配对</h2>
+  <p>这一节回答两个最常被问到的问题：默认格式到底是什么？我自己的协议怎么配上去？先说结论——<b>文本数据几乎不用配，二进制帧需要你把帧结构告诉它</b>。配好之后，任何被解析出来的数值字段都会自动成为一路通道，可以直接进时域折线、频域谱、柱状图、仪表盘或表格。</p>
+
+  <h3>文本格式：键值对，等号冒号都认</h3>
+  <p>每行写一个或多个键值对，分隔符 <code>=</code> 与 <code>:</code> 都识别，数值对之间用逗号或空格分开，后缀数字（<code>temp1</code> / <code>temp2</code>）会各自成为独立通道，数值支持整数、小数与科学计数法。若设备发的是没有换行的裸流，工具会在 60ms 静默后按一帧处理，不会一直卡着不动。</p>
+  <pre><code>temp=25.3, cur:1.02
+pos:90 vel=12.5
+acc1=0.2, acc2=0.3</code></pre>
+
+  <h3>默认（演示）HEX 帧：共 11 字节</h3>
+  <p>点「套用示例」或进入演示模式时用的就是这一帧。它不是任何标准协议，只是一个「结构完整、便于对照」的示例，你可以照它的形状改成自己的协议：</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>偏移</th><th>字节</th><th>含义</th><th>对应配置</th></tr>
+    <tr><td>0-1</td><td><code>AA 55</code></td><td>帧头</td><td>帧头 = <code>AA55</code></td></tr>
+    <tr><td>2</td><td><code>seq</code></td><td>序号，0~255 循环，用来观察丢帧</td><td>无需配置（演示帧自动填）</td></tr>
+    <tr><td>3</td><td><code>06</code></td><td>长度字段 = 载荷长度 6</td><td>长度字段：偏移 3 / 1 字节 / 载荷长度</td></tr>
+    <tr><td>4-5</td><td>pos</td><td>int16 小端，×0.01（度）</td><td>字段 pos / int16 / 偏移 4 / 缩放 0.01</td></tr>
+    <tr><td>6-7</td><td>cur</td><td>int16 小端，×0.001（安培）</td><td>字段 cur / int16 / 偏移 6 / 缩放 0.001</td></tr>
+    <tr><td>8-9</td><td>temp</td><td>int16 小端，×0.01（摄氏度）</td><td>字段 temp / int16 / 偏移 8 / 缩放 0.01</td></tr>
+    <tr><td>10</td><td><code>sum8</code></td><td>帧首到第 9 字节的累加和低 8 位</td><td>校验：累加和(8) / 起始 0 / 结束 -1</td></tr>
+  </table>
+  </div>
+  <p>演示波形由三条互不相同的信号合成：<code>pos = 90·sin(2π·0.5t)</code>、<code>cur = 3.2·sin(2π·0.5t+0.6)</code>、<code>temp = 42 + 3·sin(2π·0.02t)</code>。所以时域上能看到慢变与快变叠加，频域谱上在 0.5Hz 附近有明确峰值——这也正好用来验证频域面板工作是否正常。</p>
+
+  <h3>自定义 HEX 格式：在「解析」页签逐项配置</h3>
+  <ol>
+    <li>打开「解析」页签，模式选「十六进制」。</li>
+    <li><b>帧结构</b>：填帧头（如 <code>AA55</code>）、帧尾（如 <code>0D0A</code>）；留空表示不按该方式定界。</li>
+    <li><b>长度字段</b>：偏移（相对整帧起始，<b>含帧头</b>）、字节数（0 = 不用，1~4）、含义（载荷长度 / 整帧长度）。</li>
+    <li><b>校验</b>：选类型（无 / 累加和8 / 异或8 / 累加和16 / CRC16-Modbus），再填校验起始与结束字节（-1 表示到载荷末尾）。</li>
+    <li><b>字段表</b>：点「＋新增字段」，逐个填键名、类型（int8~uint32、float32）、偏移、长度、缩放系数、是否大端。</li>
+    <li>回「设备」页签点「进入演示模式」——<b>演示数据会按你刚配好的帧结构合成</b>，手边没有硬件也能确认「帧收得齐、字段解得对、通道画得出」。</li>
+  </ol>
+  <div class="box box-warn">
+    <b>六个最容易踩的坑</b>
+    <ul>
+      <li>长度字段的偏移是相对<b>整帧起始（含帧头）</b>，不是相对载荷，也不是相对帧头之后。</li>
+      <li>长度字段只按<b>小端</b>解析（当前不支持大端长度字段）。</li>
+      <li>校验和固定在<b>帧尾</b>，按类型占 1 或 2 字节。</li>
+      <li>长度字段与帧尾同时填时<b>以长度字段为准</b>，帧尾只参与帧长计算。</li>
+      <li>未知字段类型会被当作<b>无符号整数</b>处理，不会让整帧作废——但也容易掩盖配错，建议按实际类型选。</li>
+      <li>不支持<b>位域</b>与<b>变长字段</b>；字段的偏移与长度必须落在帧内，否则整帧判为越界。</li>
+    </ul>
+  </div>
+  <div class="box box-tip">
+    <b>解析出来之后怎么画？</b> 数值字段会自动建通道，去「插件」页签加一个时域折线（看趋势）或频域谱（找振荡）即可；要显示非数值内容（比如原始行、原始 HEX 字节）用文本监视器。想让某个字段按公式换算（例：<code>(cur*24)</code> 求功率），在面板「编辑」里写映射公式，用通道名当变量。
+  </div>
+
+  <!-- ================= 5 发送与录制 ================= -->
+  <h2><span class="h2-num">5</span> 发送与录制：把调试过程变成可复盘的材料</h2>
+  <p><b>定时轮询</b>适合周期性问一个寄存器：填好内容和间隔（最小 20ms），勾上启用即可，工具会用与配置对账的方式管理计时器，改内容或改间隔下一次发送就生效，不用重启。<b>触发应答</b>适合「设备上报某状态，我立刻回一条控制字」的闭环：接收内容里出现你写的匹配词就自动发送应答。这里有一层保护——单条规则 250ms 冷却，自动发送每秒最多 30 次；如果匹配词与应答内容互相包含，工具会限流并提示，避免把串口打满。<b>预设发送</b>是给常用指令准备的：绑一个单字符快捷键（焦点不在输入框时生效），顺手敲一下就把指令发出去；还能填「期望回包」与超时时间，收到就提示往返耗时，超时也会明确告诉你——这比盯着屏幕数秒数靠谱。</p>
+  <p>调完一轮，最珍贵的往往是中间那段异常数据。<b>录制</b>标签页点「开始录制」，工具会把这期间流过的每一帧（含时间戳、方向、原始 HEX、文本与解析值）存进内存；停止后可以回放——按原始时间关系重新喂给图表，让当时的抖动重演一遍——也可以导出成 JSON 存档、或者粘回另一台机器继续分析。需要长时间留档时，用「数据」标签页导出解析结果 CSV 或原始记录 CSV：CSV 带 UTF-8 BOM，Excel 双击打开中文不乱码。</p>
+  <div class="box box-tip">
+    <b>为什么录制数据只放内存？</b> 一次几分钟的 50Hz 录制就有上万帧，写进浏览器的 5MB 本地存储只会把配额打爆，连你的配置一起写坏。所以录制是「用完即导」的定位：想看就回放，想留存就导出 JSON 文件，配置则始终独立保存。
+  </div>
+
+  <!-- ================= 5 限制 ================= -->
+  <h2 id="sw-limit"><span class="h2-num">6</span> 支持与限制：先把这几条看完</h2>
+  <div class="box box-warn">
+    <b>浏览器能力边界（不是本工具的取舍，是平台规定）</b>
+    <div class="table-wrap">
+    <table>
+      <tr><th>场景</th><th>能不能用真实串口</th><th>原因</th></tr>
+      <tr><td>Chrome / Edge 89+ 访问 https:// 或 http://localhost</td><td>✅ 可以</td><td>Web Serial 要求安全上下文</td></tr>
+      <tr><td>直接双击本地 HTML 文件（file://）打开</td><td>❌ 不可以</td><td>file:// 不是安全上下文，浏览器拒绝授权串口</td></tr>
+      <tr><td>Firefox</td><td>❌ 不可以</td><td>截至目前未实现 Web Serial</td></tr>
+      <tr><td>Safari / iOS / Android 浏览器</td><td>❌ 不可以</td><td>未实现 Web Serial，且移动端无系统串口授权通道</td></tr>
+      <tr><td>任何浏览器 + 演示模式</td><td>— 用合成数据</td><td>解析、绘图、插件、录制、导出全部可用，仅不联真机</td></tr>
+    </table>
+    </div>
+    所以本地的正确打开方式是：把仓库放到本地，用 <code>_本地工具/启动教学页面.bat</code>（或任意静态 HTTP 服务）访问，而不是双击 HTML。页面顶部也会在检测到不支持时给出具体原因。
+  </div>
+  <p>另外三条工程限制，用之前知道比踩到再查省事：<b>改口串口参数必须关端口重开</b>——波特率、数据位、停止位、校验、流控都不能热改，工具会自动完成「关闭→重开」，大约四分之一秒内不可发送。<b>开启硬流控后不再手动控制 RTS</b>——两者会打架，工具会自动让出控制权。<b>页面关闭前会主动释放端口</b>——否则下次打开会提示端口被占用，如果你强行关掉标签页导致占用，拔插一次设备即可。</p>
+
+  <!-- ================= 6 面向 AI ================= -->
+  <h2><span class="h2-num">7</span> 面向 AI：它同时是一份可复用的开发基座</h2>
+  <p>这个应用不是一次性页面，而是按「可被复用的基座」写的。它把串口调试这类应用拆成了十四个职责单一的模块，全部挂在同一个命名空间 <code>window.SerialLab</code> 下，模块之间不互相持有引用、只通过事件总线通信：</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>模块</th><th>职责</th></tr>
+    <tr><td><code>util</code></td><td>通用工具（叶子模块，零依赖）</td></tr>
+    <tr><td><code>core</code></td><td>事件总线、运行状态、配置默认值/版本迁移/持久化</td></tr>
+    <tr><td><code>codec</code></td><td>UTF-8 多字节切分保护、按行分帧、按帧头/帧尾/长度字段收帧、四种校验和（另可选「无」）</td></tr>
+    <tr><td><code>parser</code></td><td>文本 key=value/冒号解析、HEX 结构表解析、后缀数字分通道</td></tr>
+    <tr><td><code>expr</code></td><td>安全表达式求值（词法分析 + 调度场 + RPN，禁 eval）</td></tr>
+    <tr><td><code>fft</code></td><td>零依赖 radix-2 FFT、汉宁窗、单边幅值谱</td></tr>
+    <tr><td><code>datastore</code></td><td>环形缓冲（零分配遍历）、通道元数据、原始帧记录、即时统计</td></tr>
+    <tr><td><code>transport</code></td><td>Web Serial 状态机、读循环、写队列、参数变更重开、内置演示源</td></tr>
+    <tr><td><code>plugins</code></td><td>声明式插件注册表 + 七个内置渲染器 + 面板包导入导出</td></tr>
+    <tr><td><code>views</code></td><td>面板增删排序折叠、requestAnimationFrame 节流渲染</td></tr>
+    <tr><td><code>timeline</code></td><td>录制 / 冻结 / 回放 / 录制文件导入导出</td></tr>
+    <tr><td><code>exporters</code></td><td>CSV/JSON/BIN/TXT 导出、配置导入导出、单文件离线版装配</td></tr>
+    <tr><td><code>ui</code></td><td>DOM 绑定、控件与配置双向同步、对话框、主题、快捷键、发送引擎</td></tr>
+    <tr><td><code>app</code></td><td>唯一编排者：装配数据管线并启动</td></tr>
+  </table>
+  </div>
+  <p>同时，应用目录里自带三份给 AI 直接读取的文档：<code>llms.txt</code>（速览与关键约定）、<code>AGENTS.md</code>（工程硬约束与协作规则）、<code>skills/html-webserial-app/SKILL.md</code>（从零开发同类应用的完整流程与踩坑清单）。如果你想让 AI 帮你做一件类似的事——做一个网页端 CAN 调试器、一个串口协议分析器，或者在这个应用上加新图表、新发送方式——把这三份文档连同对应模块贴给它，比口头描述快得多。应用内「AI 开发提示词」按钮还提供了一份浓缩版，可一键复制或下载为 txt。</p>
+  <div class="box box-ok">
+    <b>拿它当基座可以做什么</b>：把 <code>transport</code> 换成 WebSocket 或 Web Bluetooth 传输层，整套解析、绘图、录制与导出链路可以原样复用；把 <code>plugins</code> 的渲染器注册表加一项，就有了新图表类型；把 <code>parser</code> 的字段表扩成完整的 CAN 报文定义，就有了一个浏览器内的总线调试器。三条路都不需要改动数据管线的其他部分。
+  </div>
+
+  <!-- ================= 7 排障 ================= -->
+  <h2><span class="h2-num">8</span> 常见问题速查</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>现象</th><th>先查这里</th></tr>
+    <tr><td>点「连接设备」没有任何反应或提示不支持</td><td>看页面顶部横幅给的具体原因：多半是用了 file:// 或非 Chromium 浏览器</td></tr>
+    <tr><td>连上了但一条数据都没有</td><td>波特率是否与固件一致；是否在「复位等待」窗口内；文本模式下设备是否发送了换行符（没有换行的裸流会等 60ms 静默后按一帧显示）</td></tr>
+    <tr><td>有数据但通道一直是空的</td><td>数据形态与解析模式不匹配：文本模式只认 <code>键=值</code>／<code>键:值</code>；二进制帧要切到 HEX 模式并配置字段表</td></tr>
+    <tr><td>HEX 模式收到的是残帧、校验和一直不匹配</td><td>逐项核对帧结构：帧头写对了吗？长度字段的偏移是相对「整帧起始（含帧头）」的吗？有校验和时有没有选对类型？长度字段的含义是「载荷长度」还是「整帧长度」？</td></tr>
+    <tr><td>曲线像一团噪声</td><td>纵轴量程被固定住了；点图框「编辑」把纵轴上限/下限清空即回到自动量程</td></tr>
+    <tr><td>发送没反应</td><td>先看底部提示条：未连接、复位等待中、或 HEX 内容不是偶数位十六进制，都会明确提示</td></tr>
+    <tr><td>配置丢了</td><td>换浏览器、清缓存、隐私模式都会导致本地存储不可用；重要配置请用「导出文件」留一份</td></tr>
+  </table>
+  </div>
+
+  <div class="key-point">
+    <div class="kp-title">一句总结</div>
+    串口调试助手的价值不在「多一个能画曲线的界面」，而在<b>把调试过程变成可保存、可迁移、可复盘的材料</b>：规则是 JSON、布局是 JSON、数据可录制可回放可导出，连图表的画法都能被描述成一份配置。做到这一步，它就不只是工具，而是一份可以继续长的基座。
+  </div>
+
+</div><!-- /container -->
+
+<script src="../_assets/site.js"></script>
+</body>
+</html>

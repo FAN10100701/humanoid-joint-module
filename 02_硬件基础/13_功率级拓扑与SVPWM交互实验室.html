@@ -33,6 +33,21 @@
     next: { t: "硬件公式计算器矩阵", u: "14_硬件公式计算器矩阵.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="container">
@@ -62,8 +77,8 @@
     <svg id="bridgeSvg" viewBox="0 0 640 400" role="img" aria-label="功率级拓扑与 SVPWM 交互实验室:母线、三相逆变桥与矢量切换示意" style="max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
       <line x1="40" y1="46" x2="520" y2="46" stroke="#ef4444" stroke-width="5"/>
       <line x1="40" y1="330" x2="520" y2="330" stroke="#60a5fa" stroke-width="5"/>
-      <text x="46" y="36" fill="#f87171" font-size="13" font-weight="bold">DC+ (母线正)</text>
-      <text x="46" y="352" fill="#60a5fa" font-size="13" font-weight="bold">DC− (母线负)</text>
+      <text x="46" y="36" fill="#f87171" font-size="13" font-weight="bold" class="fig-t-bad">DC+ (母线正)</text>
+      <text x="46" y="352" fill="#60a5fa" font-size="13" font-weight="bold" class="fig-t-info">DC− (母线负)</text>
       <g id="legs"></g>
       <!-- 三相绕组(星接),右侧集中绘制 -->
       <path id="wU" class="wp" d="M140 190 L180 190 L180 160 L440 160"/>
@@ -76,16 +91,16 @@
       </g>
       <path id="wStar" class="wp" d="M536 160 L560 160 L560 190 L536 190 M536 220 L560 220 L560 190"/>
       <circle cx="560" cy="190" r="5" fill="#f59e0b"/>
-      <text x="572" y="194" fill="#64748b" font-size="12">中性点</text>
-      <text x="446" y="148" fill="#64748b" font-size="12">U</text>
-      <text x="446" y="182" fill="#64748b" font-size="12">V</text>
-      <text x="446" y="244" fill="#64748b" font-size="12">W</text>
+      <text x="572" y="194" fill="#64748b" font-size="12" class="fig-t-muted">中性点</text>
+      <text x="446" y="148" fill="#64748b" font-size="12" class="fig-t-muted">U</text>
+      <text x="446" y="182" fill="#64748b" font-size="12" class="fig-t-muted">V</text>
+      <text x="446" y="244" fill="#64748b" font-size="12" class="fig-t-muted">W</text>
       <g id="curArrows" opacity="0">
-        <text id="arrU" x="300" y="152" fill="#f97316" font-size="16" font-weight="bold">▶</text>
-        <text id="arrV" x="330" y="182" fill="#f97316" font-size="16" font-weight="bold">▶</text>
-        <text id="arrW" x="416" y="212" fill="#f97316" font-size="16" font-weight="bold">▶</text>
+        <text id="arrU" x="300" y="152" fill="#f97316" font-size="16" font-weight="bold" class="fig-t-warn">▶</text>
+        <text id="arrV" x="330" y="182" fill="#f97316" font-size="16" font-weight="bold" class="fig-t-warn">▶</text>
+        <text id="arrW" x="416" y="212" fill="#f97316" font-size="16" font-weight="bold" class="fig-t-warn">▶</text>
       </g>
-      <text x="430" y="270" fill="#64748b" font-size="12">电机三相绕组(星接)</text>
+      <text x="430" y="270" fill="#64748b" font-size="12" class="fig-t-muted">电机三相绕组(星接)</text>
     </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图:SVPWM 电压矢量与扇区划分交互实验室——调节 Vα/Vβ 观察矢量合成、扇区切换与三相占空比</div>
     <div class="my-read" id="vecRead"></div>
     <div style="margin-top:6px">

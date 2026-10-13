@@ -7,7 +7,7 @@
 <title>人形机器人学习站 · 从关节模组到具身智能</title>
 <meta name="description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论入门、硬件基础、项目实操、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,软件+硬件+芯片全覆盖。">
 <meta property="og:title" content="人形机器人学习站 · 从关节模组到具身智能">
-<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,103 个学习页面,零基础可学。">
+<meta property="og:description" content="免费开源的人形机器人学习入门网站:3D 解剖、理论、硬件、软件与算法、前沿知识库、学习工具、大模型与具身智能、NPU 与数字 IC 设计,104 个学习页面,零基础可学。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0d1117">
 <meta name="baidu-site-verification" content="codeva-83ZAbuLmz6">
@@ -353,7 +353,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
         <div class="sub">从关节模组解剖到具身智能前沿 —— 软件 + 硬件 + 项目 + 前沿知识的一站式入门网站<br>
         <span class="sub-meta">零基础可学 · 100% 免费 · 访问过的页面离线可用 · 持续更新</span></div>
         <div class="stats">
-          <div class="stat"><div class="v" id="statPages">103</div><div class="k">学习页面</div></div>
+          <div class="stat"><div class="v" id="statPages">104</div><div class="k">学习页面</div></div>
           <div class="stat"><div class="v" id="statTracked">98</div><div class="k">可打卡页面</div></div>
           <div class="stat"><div class="v" id="statSecs">9</div><div class="k">学习板块</div></div>
           <div class="stat"><div class="v">3</div><div class="k">开源机型 3D 拆解</div></div>
@@ -1002,6 +1002,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       </a>
       <a class="card" href="06_学习工具/19_学习笔记.html"><span class="go">进入 →</span><div class="ic">📓</div><div class="t">学习笔记 · 知识树</div><div class="d">跨页学习笔记汇总:知识树按板块看每页打卡与笔记密度,时间流按天回溯文字/链接/图片/划线,支持导出 JSON 备份;全部仅存本机不上传</div></a>
       <a class="card" href="06_学习工具/20_笔记排版器.html"><span class="go">进入 →</span><div class="ic">🧾</div><div class="t">笔记排版器</div><div class="d">粘贴草稿自动识别标题/列表/代码块/公式/表格/图片题注,实时预览站点风格排版,一键复制干净 HTML,讲义笔记博客通用</div></a>
+      <a class="card" href="06_学习工具/21_串口调试助手.html"><span class="go">进入 →</span><div class="ic">🔌</div><div class="t">串口调试助手</div><div class="d">浏览器里的串口调试助手:Web Serial 连接设备,实时监视与文本/HEX 解析,时域/频域/柱状图/仪表盘绘图,手动/定时/触发/预设四种发送,录制回放与五种格式导出,支持声明式插件 DIY 显示</div></a>
     </div>
   </div>
 
@@ -1172,10 +1173,18 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.1.33</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-09-20 · 功能三连与测试层——全站错题本+SRS盘活 / 词典Anki导出·年度热力图·日期化计划 / Playwright E2E 测试层(揪出并修复 3 个真实 bug)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.0</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-13 · 新增网页端串口调试助手:Web Serial 连真机 / 文本与 HEX 双解析 / 七种图表 + 声明式插件 DIY / 四种发送 / 录制回放与五种导出(14 个零依赖模块,可作开发基座) + 控件接线收口·演示跟随自定义协议·数据格式说明</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>🔌 V2.2.0 · 2026-10-13 · 新增「网页端串口调试助手」:Web Serial 连真机 + 文本/HEX 双解析 + 七种图表与声明式插件 DIY + 四种发送 + 录制回放与五种导出(14 个零依赖模块,可作开发基座) + 控件接线收口·演示跟随自定义协议·数据格式说明 －</summary>
+        <div class="faq-a">🔌 <b>本站第一个与真实硬件通信的应用页</b>(入口 06-21,本体 <code>06_学习工具/_串口调试助手/</code>):用 Web Serial API 在浏览器里连串口,打开即用、零安装、零后端、零第三方运行时依赖。对齐 Vofa+ 与常见串口助手的基础能力,并补上「可复盘」这一层。<b>连接与监视</b>:端口授权、波特率/数据位/停止位/校验/硬流控、自动重连、失焦自动断连、DTR/RTS/BREAK 手动信号、CTS/DSR/DCD/RI 实时读取;收发双向列表带时间戳与 HEX/文本双视图。<b>双解析</b>:文本模式同时识别 <code>键=值</code> 与 <code>键:值</code>(整数小数统一处理,<code>temp1/temp2</code> 后缀保留为独立通道,键后非数值自动跳过);HEX 模式按帧头/帧尾/长度字段定界收帧 + 字段表(偏移/类型/字节序/缩放)+ 四种具名校验(累加和 8/16、异或、CRC16-Modbus,另可选「无」),校验失败仍保留已解出的字段并标注「期望/实际」——排障比直接丢弃有用。<b>七种内置渲染器 + 声明式插件</b>:时域折线/频域谱(自研 radix-2 FFT + 汉宁窗 + 单边幅值归一)/柱状图/仪表盘/数据表格/文本监视器/二维轨迹(李萨如·相图);面板由一份纯 JSON 描述符决定(渲染器 + 通道 + 映射公式 + 量程 + 配色),<b>禁 eval</b>,未知渲染器自动降级为数据表格而非报错,整套布局可导出为「面板包」分享。<b>四种发送</b>:手动(回车即发)/定时轮询(与配置对账式管理计时器,改参数下次即生效)/触发应答(收到含匹配词自动回包,带 250ms 规则冷却与每秒 30 次全局限流,防匹配词与应答互相点火打满串口)/预设发送(可绑单字符快捷键 + 期望回包 + 超时提示)。<b>录制即复盘</b>:把流过的帧录进内存(不写 localStorage,避免上万帧把 5MB 配额打爆连配置一起写坏),可回放重演当时波形、可导出 JSON 存档;另有解析结果 CSV(带 BOM,Excel 中文不乱码)/原始记录 CSV/JSON/BIN/TXT 五种导出。<b>工程与可复用</b>:14 个单一职责模块共用一个命名空间、只走事件总线通信、业务 JS 全部外置;单向数据流 <code>transport → 分帧 → 解析 → 数据仓 → 重绘</code> 明确到可替换传输层(Wireless→WebSocket/Web Bluetooth/CAN 只需换一个模块);自带 <code>llms.txt</code>/<code>AGENTS.md</code>/<code>skills/html-webserial-app/SKILL.md</code> 三份给 AI 直接读取的开发文档,并在应用内提供可一键复制的「AI 开发提示词」。🛠 <b>顺手修掉一个真实缺陷</b>:收帧长度公式把「帧头长度」与「相对整帧起始的偏移」重复相加、且未计入校验和字节数,导致「帧头 + 长度字段 + 校验和」这类帧永远收不齐(演示帧 AA55 正是这种);现已按 <code>offset + size + 载荷 + 帧尾 + 校验和长度</code> 修正,并补进回归断言。🧪 <b>新增 <code>_本地工具/校验串口应用.js</code>(85 项断言)</b>:该目录以 <code>_</code> 开头会被站点自检的可索引页过滤豁免(HTML 不进内联脚本语法检查、不进 E2E 逐页 smoke),故纯函数与帧管线回归由这份脚本承担——直接 require 子应用真源文件(不抄副本),覆盖 UTF-8 多字节切分保护、跨块分帧、帧头帧尾长度三种定界、四种校验和已知向量、结构表解码与越界不抛异常、表达式白名单(未绑定标识符与 <code>alert(1)</code> 必须被拒)、FFT 已知频率峰位与幅值、环形缓冲绕回统计、插件描述符归一化与三类文件(kind/version)闸门,以及<b>端到端「碎块喂入演示源数据恰好收齐 6 帧并解回原值」</b>。🖥 <b>浏览器层同样有兜底</b>:E2E 新增三条子应用专项用例——<code>serial_shell</code>(<code>window.SerialLab</code> 14 个模块挂载 + 版本位 + 7 个页签 + 无 Web Serial 时的降级横幅)/<code>serial_pipeline</code>(演示模式合成数据 50Hz → 预置面板 → 新增面板挂 canvas → 接收字节数 >0 → 通道表渲染)/<code>serial_export</code>(配置落盘 <code>humanoid-serial-config-v1</code> + 原始记录 CSV 下载带 UTF-8 BOM),E2E 全量 16 用例全过(含全站逐页 smoke 无异常)。📦 <b>配套</b>:入口页 06-21 完成六处登记(search-index/sitemap/page-meta/学习地图/index 卡片+SITE_SECTIONS/百度清单)+ 翻页链 + 页数 103→104 三处同步(og:description/首页统计位/<code>S.STATS.pages</code>);子应用外壳与 14 个脚本进根 <code>sw.js</code> 的 LAZY 预缓存层(约 230KB 后台补装,不抢首屏带宽,离线首开仍可用)。🛠 <b>控件接线收口</b>:界面上的波特率/数据位/停止位/校验/硬流控/编码/发送换行/追加换行/自动重连/复位等待/HEX 发送(两处)/HEX 显示/显示时间戳共 14 个控件此前<b>只存在于 HTML 而未写进配置</b>(改波特率无效、勾 HEX 发送无效),现全部接入配置并可持久化;「HEX 显示 / 显示时间戳」落到监视器面板显示开关,两个 HEX 发送开关双向同步。🔁 <b>演示模式跟随你的协议</b>:演示数据按当前 HEX 帧结构合成(帧头/长度字段/字段表/帧尾/校验和),规则不完整时自动回退内置 AA55 帧——没接硬件也能验证自定义协议能否出通道、能否画时域波形与频谱。📖 <b>新增「数据格式说明」</b>:入口页 06-21 新增一节(默认 11 字节演示帧的字节级布局表 + 自定义 HEX 逐项配置步骤 + 六个易错点),应用内「使用帮助」同步补全,并统一「四种具名校验(另可选无)」口径。🧪 <b>回归加厚</b>:校验脚本 85→94 项(含「示例规则帧与内置帧逐字节等价」「自定义帧能被自身收帧器收齐并被结构表解出」),E2E 16→18 用例(新增控件接线与配置落盘断言、自定义协议演示出通道断言)。</div>
+      </details>
+    <details class="faq">
+        <summary>🎨🔍 V2.1.34 · 2026-09-20 · 夜间自主巡检:图内文字双主题对比度修复 1536 处(A-69) / 图片目检 60 图 / 3D gz 全覆盖 / A-20 销项(自检新增 C17/C18) －</summary>
+        <div class="faq-a">🔍 <b>图片自检(svg-diagram-check 全流程)</b>:全站静态审计 40 页 SVG 0E 0W(修 1W:学习数据分析页年度热力图为 JS 动态注入,补图注);browser-use 截图目检 11 页 60 图——FOC 图解与电机控制框架对比两页 9 图做全双主题,其余 9 页暗色全图,修 1 处真实压线(状态观测器图③ EEMF 标签压进 PLL 绿框→移出复截),3 处轻微紧凑记录归档。🎨 <b>统一风格(双主题对比度)</b>:修复 V2.1.28 裁决之外的 5 处漏网真实缺陷——3D 知识系统页诊断面板关闭/重置按钮(2.88/2.99)与答对反馈(3.1)、术语词典/笔记排版器浅色标签(3.29→钦定灰 #64748b);另 2 处经代码核实为检查器"深色背景继承未建模"边界误报,照例归档。⚙ <b>评分脚本口径分裂修复</b>:板块评分.js 图注与 SVG 同口径(全文计数),修复 JS 生成图"svg 有数、图注恒 0"——复评风险页 1→0,06 工具板块 68.7→71.6,九板块无 D。🧊 <b>3D 模型 gz 全覆盖(A-18 进展)</b>:实测 198 个原始 STL 只有 165 个 gz,补齐 encoder/leap_hand/rvgh_servo 三组缺失的 33 个 .gz(gzip -9,解压逐一字节校验,最大零件 4.35MB→1.09MB);灵巧手拆解页自备加载器升级 gz 优先(DecompressionStream 流式解压,失败回退 STL),清缓存实测 43/43 全走 .gz;3D 版 SW_VERSION v32→v33。⚡ <b>A-20 销项</b>:电源管理页 2.5MB 全量 mermaid 急加载改 IntersectionObserver 按需加载(600px 预载+3s 兜底+手动 init),实测 3/3 图渲染正常;防回归落自检 <b>C17(任何 HTML 不得同步 script src 引用 >500KB 本地库,扫描 124 处)</b>。台账 A-18/A-20/A-52 回写;一键自检 ALL CHECKS PASSED(新增 C17)。</div>
+      </details>
+    <details class="faq">
         <summary>📕 V2.1.33 · 2026-09-20 · 全站错题本+SRS盘活 / Anki导出·热力图·日期化计划 / Playwright E2E 测试层(修复 3 个真实 bug) －</summary>
         <div class="faq-a">📕 <b>全站错题本(答错即入册)</b>:任何页面的自测题答错自动收进错题本(存储 humanoid-mistakes-v1,走 Site.store 带版本,数据只存本机),「自测题库」页新增「全站错题本」复习面板——到期复习/随机练 5 题/一键导出 Anki TSV/移除已巩固,调度阶梯与今日复习一致(答对 30分钟→1→2→4→8→16天,答错 30 分钟后重爬);答错的反馈条会提示「已加入错题本」,埋没已久的 SRS 从此有了全站入口;SW 预缓存补齐 srs.js/mistakes.js(离线首开可用)。⬇ <b>三个新功能</b>:①术语词典一键「导出 Anki CSV」(139 卡,front/back/分类);②学习数据分析页热力图新增「12 周 ↔ 12 个月」年度视图切换(7×53 格 GitHub 风);③学习路径页新增「生成我的学习计划」——选路径+起始日期+每周小时,按阶段页数占比推算起止日期课程表(纯本地计算)。🧪 <b>Playwright E2E 测试层</b>:新增 `_本地工具/e2e/`(Python+Playwright,13 个功能用例 + 全站 104 页逐页 smoke:未捕获异常/同源控制台错误/误落 404),CI 新增 e2e job 随 push 自动跑;AGENTS.md 硬规则 4 增加该目录豁免注。🐛 <b>E2E 首轮揪出并修复 3 个真实 bug(台账 A-66/A-67/A-68)</b>:①搜索的拼音别名展开注入大写词形而匹配在小写串上做,导致 FOC/PID/ROS2/IMU 等所有拉丁别名搜索永远零命中;②消毒层剥掉 id 属性,题库页运行时注入的 #ibItems/#ibQuiz 容器查不到、整页自 V2.1.29 起崩溃(白名单放行 id 修复);③故障诊断决策树页内联脚本先于 site.js 引用 Site.esc 直接 ReferenceError、整段交互从未跑起来(改惰性引用)。🎨 <b>零比喻第二轮</b>:02 硬件基础 10 页全部补齐落地解释(吉他弦调参/医生问诊/三台水龙头/体重秤标定/飞行员检查单/时钟树派工等 14 处)。✅ 一键自检 ALL CHECKS PASSED + E2E 13/13 PASS(全站 smoke 104 页零异常)。</div>
       </details>
@@ -1436,7 +1445,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.1.33(2026-09-20) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.0(2026-10-13) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

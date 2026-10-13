@@ -101,6 +101,21 @@
     next: { t: "工程电机控制框架对比与选型", u: "20_工程电机控制框架对比_流程与选型.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -144,22 +159,22 @@
         <marker id="hwArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
       </defs>
       <!-- 母线 -->
-      <text x="14" y="24" fill="#ef4444" font-size="12" font-weight="bold">母线 Udc(12~48V)</text>
+      <text x="14" y="24" fill="#ef4444" font-size="12" font-weight="bold" class="fig-t-bad">母线 Udc(12~48V)</text>
       <line x1="14" y1="92" x2="576" y2="92" stroke="#ef4444" stroke-width="3"/>
       <line x1="14" y1="242" x2="576" y2="242" stroke="#64748b" stroke-width="3"/>
-      <text x="14" y="258" fill="#64748b" font-size="11">DC− / GND</text>
+      <text x="14" y="258" fill="#64748b" font-size="11" class="fig-t-muted">DC− / GND</text>
       <!-- 采样电阻+运放 -->
       <rect x="14" y="122" width="96" height="60" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="62" y="147" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">采样电阻</text>
-      <text x="62" y="164" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">+ 运放调理</text>
+      <text x="62" y="147" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold" class="fig-t-warn">采样电阻</text>
+      <text x="62" y="164" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold" class="fig-t-warn">+ 运放调理</text>
       <!-- ADC -->
       <rect x="136" y="122" width="76" height="60" rx="9" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="174" y="147" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">ADC</text>
-      <text x="174" y="164" text-anchor="middle" fill="#58a6ff" font-size="11">注入组·同步</text>
+      <text x="174" y="147" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold" class="fig-t-info">ADC</text>
+      <text x="174" y="164" text-anchor="middle" fill="#58a6ff" font-size="11" class="fig-t-info">注入组·同步</text>
       <!-- MCU -->
       <rect x="238" y="76" width="132" height="152" rx="11" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff" stroke-width="2"/>
-      <text x="304" y="97" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="bold">MCU</text>
-      <text x="304" y="113" text-anchor="middle" fill="#7cb8ff" font-size="10">Cortex-M4F @170MHz</text>
+      <text x="304" y="97" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="bold" class="fig-t-info">MCU</text>
+      <text x="304" y="113" text-anchor="middle" fill="#7cb8ff" font-size="10" class="fig-t-info">Cortex-M4F @170MHz</text>
       <g font-size="10.5" fill="#64748b">
         <text x="250" y="131">① 电流采样换算</text>
         <text x="250" y="147">② Clark ③ Park</text>
@@ -170,8 +185,8 @@
       </g>
       <!-- 栅极驱动 -->
       <rect x="394" y="122" width="82" height="60" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="435" y="147" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">栅极驱动</text>
-      <text x="435" y="164" text-anchor="middle" fill="#f59e0b" font-size="10.5">死区/自举/保护</text>
+      <text x="435" y="147" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold" class="fig-t-warn">栅极驱动</text>
+      <text x="435" y="164" text-anchor="middle" fill="#f59e0b" font-size="10.5" class="fig-t-warn">死区/自举/保护</text>
       <!-- 逆变桥:六管 -->
       <g stroke="#ef4444" stroke-width="1.4" fill="#ef4444" fill-opacity=".08">
         <rect x="502" y="98" width="20" height="22" rx="3"/>
@@ -188,16 +203,16 @@
         <line x1="512" y1="120" x2="512" y2="212"/><line x1="552" y1="120" x2="552" y2="212"/><line x1="592" y1="120" x2="592" y2="212"/>
         <line x1="512" y1="234" x2="512" y2="242"/><line x1="552" y1="234" x2="552" y2="242"/><line x1="592" y1="234" x2="592" y2="242"/>
       </g>
-      <text x="497" y="86" fill="#64748b" font-size="10.5">三相逆变桥(6×MOSFET)</text>
+      <text x="497" y="86" fill="#64748b" font-size="10.5" class="fig-t-muted">三相逆变桥(6×MOSFET)</text>
       <!-- 相线到电机 -->
       <g stroke="#f59e0b" stroke-width="2" fill="none">
         <path d="M512 166 C 520 166 518 176 528 176 L 546 176"/>
         <path d="M552 166 L 546 176" />
         <path d="M592 166 C 600 166 598 186 590 186 L 546 186"/>
       </g>
-      <text x="520" y="172" fill="#f59e0b" font-size="10">U</text>
-      <text x="520" y="200" fill="#f59e0b" font-size="10">V</text>
-      <text x="596" y="182" fill="#f59e0b" font-size="10">W</text>
+      <text x="520" y="172" fill="#f59e0b" font-size="10" class="fig-t-warn">U</text>
+      <text x="520" y="200" fill="#f59e0b" font-size="10" class="fig-t-warn">V</text>
+      <text x="596" y="182" fill="#f59e0b" font-size="10" class="fig-t-warn">W</text>
       <g stroke="#f59e0b" stroke-width="2" fill="none">
         <path d="M512 166 L 512 166"/>
       </g>
@@ -205,26 +220,26 @@
       <circle cx="508" cy="181" r="0" fill="none"/>
       <circle cx="470" cy="181" r="0" fill="none"/>
       <rect x="394" y="190" width="82" height="36" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="2"/>
-      <text x="435" y="205" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">PMSM</text>
-      <text x="435" y="220" text-anchor="middle" fill="#22c55e" font-size="10">三相永磁同步</text>
+      <text x="435" y="205" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold" class="fig-t-ok">PMSM</text>
+      <text x="435" y="220" text-anchor="middle" fill="#22c55e" font-size="10" class="fig-t-ok">三相永磁同步</text>
       <!-- 编码器 -->
       <rect x="404" y="252" width="110" height="30" rx="8" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
-      <text x="459" y="271" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">编码器(θ/ω)</text>
+      <text x="459" y="271" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold" class="fig-t-ok">编码器(θ/ω)</text>
       <line x1="435" y1="226" x2="435" y2="252" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
       <!-- 反馈虚线 -->
       <path d="M404 267 C 360 267 330 250 316 228" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#hwArrG)"/>
       <path d="M62 182 C 62 226 130 252 238 210" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#hwArrG)"/>
-      <text x="100" y="260" fill="#22c55e" font-size="10.5">Ia/Ib 电压信号(上行反馈)</text>
+      <text x="100" y="260" fill="#22c55e" font-size="10.5" class="fig-t-ok">Ia/Ib 电压信号(上行反馈)</text>
       <!-- 正向箭头 -->
       <line x1="110" y1="152" x2="136" y2="152" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
       <line x1="212" y1="152" x2="238" y2="152" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
       <line x1="286" y1="228" x2="286" y2="278" stroke="none"/>
       <path d="M316 228 C 340 240 366 152 394 152" fill="none" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
       <line x1="476" y1="152" x2="500" y2="140" stroke="#58a6ff" stroke-width="2" marker-end="url(#hwArrB)"/>
-      <text x="330" y="240" fill="#58a6ff" font-size="10.5">六路互补 PWM(下行)</text>
+      <text x="330" y="240" fill="#58a6ff" font-size="10.5" class="fig-t-info">六路互补 PWM(下行)</text>
       <!-- Udc 检测 -->
       <path d="M540 92 C 500 60 260 52 208 122" fill="none" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#hwArrG)"/>
-      <text x="330" y="56" fill="#64748b" font-size="10.5">Udc 分压检测(限幅圆用)</text>
+      <text x="330" y="56" fill="#64748b" font-size="10.5" class="fig-t-muted">Udc 分压检测(限幅圆用)</text>
     </svg>
     <div class="my-fig-cap">图① FOC 硬件信号链:蓝色为运算与数据流,橙色为功率/模拟链路,绿色虚线为反馈。母线电压、相电流、转子角度三路信号齐备,FOC 才有"眼睛"。</div>
   </div>
@@ -240,79 +255,79 @@
       </defs>
       <!-- 触发 -->
       <rect x="140" y="8" width="360" height="32" rx="9" fill="#22c55e" fill-opacity=".12" stroke="#22c55e" stroke-width="1.8"/>
-      <text x="320" y="29" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="bold">⚡ ADC 注入组采样完成中断(JEOC)</text>
+      <text x="320" y="29" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="bold" class="fig-t-ok">⚡ ADC 注入组采样完成中断(JEOC)</text>
       <line x1="320" y1="40" x2="320" y2="56" stroke="#22c55e" stroke-width="2" marker-end="url(#flArrG)"/>
       <!-- 分支1: 状态检查 -->
       <polygon points="320,58 462,86 320,114 178,86" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="320" y="82" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">状态机 = RUN</text>
-      <text x="320" y="99" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">且无 FAULT ?</text>
+      <text x="320" y="82" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold" class="fig-t-info">状态机 = RUN</text>
+      <text x="320" y="99" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold" class="fig-t-info">且无 FAULT ?</text>
       <!-- 否 → 封波 -->
       <line x1="462" y1="86" x2="496" y2="86" stroke="#ef4444" stroke-width="2" marker-end="url(#flArrR)"/>
-      <text x="474" y="78" fill="#ef4444" font-size="11" font-weight="bold">否</text>
+      <text x="474" y="78" fill="#ef4444" font-size="11" font-weight="bold" class="fig-t-bad">否</text>
       <rect x="498" y="64" width="134" height="44" rx="9" fill="#ef4444" fill-opacity=".1" stroke="#ef4444" stroke-width="1.5"/>
-      <text x="565" y="82" text-anchor="middle" fill="#ef4444" font-size="11.5" font-weight="bold">置 FAULT / 封波</text>
-      <text x="565" y="98" text-anchor="middle" fill="#ef4444" font-size="10.5">(MOE=0,六管全关)</text>
+      <text x="565" y="82" text-anchor="middle" fill="#ef4444" font-size="11.5" font-weight="bold" class="fig-t-bad">置 FAULT / 封波</text>
+      <text x="565" y="98" text-anchor="middle" fill="#ef4444" font-size="10.5" class="fig-t-bad">(MOE=0,六管全关)</text>
       <line x1="320" y1="114" x2="320" y2="126" stroke="#22c55e" stroke-width="2" marker-end="url(#flArrG)"/>
-      <text x="332" y="124" fill="#22c55e" font-size="11" font-weight="bold">是</text>
+      <text x="332" y="124" fill="#22c55e" font-size="11" font-weight="bold" class="fig-t-ok">是</text>
       <!-- ① -->
       <rect x="150" y="128" width="340" height="34" rx="8" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="320" y="150" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">① 读相电流 Ia、Ib(ADC 注入组,Ic=−Ia−Ib)</text>
+      <text x="320" y="150" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold" class="fig-t-info">① 读相电流 Ia、Ib(ADC 注入组,Ic=−Ia−Ib)</text>
       <line x1="320" y1="162" x2="320" y2="172" stroke="#58a6ff" stroke-width="2" marker-end="url(#flArrB)"/>
       <!-- ② -->
       <rect x="150" y="174" width="340" height="34" rx="8" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="320" y="196" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">② Clark 变换:Ia,Ib → Iα,Iβ(三相→两相静止)</text>
+      <text x="320" y="196" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold" class="fig-t-info">② Clark 变换:Ia,Ib → Iα,Iβ(三相→两相静止)</text>
       <line x1="320" y1="208" x2="320" y2="218" stroke="#58a6ff" stroke-width="2" marker-end="url(#flArrB)"/>
       <!-- ③ -->
       <rect x="150" y="220" width="340" height="34" rx="8" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="320" y="242" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">③ Park 变换(θ 来自编码器)→ Id,Iq(旋转直流量)</text>
+      <text x="320" y="242" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold" class="fig-t-info">③ Park 变换(θ 来自编码器)→ Id,Iq(旋转直流量)</text>
       <line x1="320" y1="254" x2="320" y2="264" stroke="#58a6ff" stroke-width="2" marker-end="url(#flArrB)"/>
       <!-- ④ -->
       <rect x="150" y="266" width="340" height="34" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="320" y="288" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">④ d/q 轴 PI 电流环(积分抗饱和 + 输出限幅)</text>
+      <text x="320" y="288" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold" class="fig-t-warn">④ d/q 轴 PI 电流环(积分抗饱和 + 输出限幅)</text>
       <line x1="320" y1="300" x2="320" y2="310" stroke="#f59e0b" stroke-width="2" marker-end="url(#flArrO)"/>
       <!-- ⑤ -->
       <rect x="150" y="312" width="340" height="34" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="320" y="334" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">⑤ 电压限幅圆:|Us| ≤ Usmax = Udc/√3</text>
+      <text x="320" y="334" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold" class="fig-t-warn">⑤ 电压限幅圆:|Us| ≤ Usmax = Udc/√3</text>
       <line x1="320" y1="346" x2="320" y2="356" stroke="#f59e0b" stroke-width="2" marker-end="url(#flArrO)"/>
       <!-- 分支2: 限幅判断 -->
       <polygon points="320,358 468,386 320,414 172,386" fill="#ef4444" fill-opacity=".07" stroke="#ef4444" stroke-width="1.6"/>
-      <text x="320" y="391" text-anchor="middle" fill="#ef4444" font-size="12" font-weight="bold">|Us| &gt; Usmax ?</text>
+      <text x="320" y="391" text-anchor="middle" fill="#ef4444" font-size="12" font-weight="bold" class="fig-t-bad">|Us| &gt; Usmax ?</text>
       <line x1="468" y1="386" x2="496" y2="386" stroke="#ef4444" stroke-width="2" marker-end="url(#flArrR)"/>
-      <text x="474" y="378" fill="#ef4444" font-size="11" font-weight="bold">是</text>
+      <text x="474" y="378" fill="#ef4444" font-size="11" font-weight="bold" class="fig-t-bad">是</text>
       <rect x="498" y="364" width="134" height="44" rx="9" fill="#ef4444" fill-opacity=".1" stroke="#ef4444" stroke-width="1.5"/>
-      <text x="565" y="382" text-anchor="middle" fill="#ef4444" font-size="11.5" font-weight="bold">等比缩小 Ud、Uq</text>
-      <text x="565" y="398" text-anchor="middle" fill="#ef4444" font-size="10.5">(方向不变,模长压回圆内)</text>
+      <text x="565" y="382" text-anchor="middle" fill="#ef4444" font-size="11.5" font-weight="bold" class="fig-t-bad">等比缩小 Ud、Uq</text>
+      <text x="565" y="398" text-anchor="middle" fill="#ef4444" font-size="10.5" class="fig-t-bad">(方向不变,模长压回圆内)</text>
       <path d="M565 408 L 565 438 L 322 438" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#flArrR)"/>
       <line x1="320" y1="414" x2="320" y2="444" stroke="#22c55e" stroke-width="2" marker-end="url(#flArrG)"/>
-      <text x="330" y="434" fill="#22c55e" font-size="11" font-weight="bold">否</text>
+      <text x="330" y="434" fill="#22c55e" font-size="11" font-weight="bold" class="fig-t-ok">否</text>
       <!-- ⑥ -->
       <rect x="150" y="446" width="340" height="34" rx="8" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="320" y="468" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">⑥ 反 Park 变换:Vd,Vq → Vα,Vβ(旋转→静止)</text>
+      <text x="320" y="468" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold" class="fig-t-info">⑥ 反 Park 变换:Vd,Vq → Vα,Vβ(旋转→静止)</text>
       <line x1="320" y1="480" x2="320" y2="490" stroke="#58a6ff" stroke-width="2" marker-end="url(#flArrB)"/>
       <!-- ⑦ -->
       <rect x="150" y="492" width="340" height="34" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="320" y="514" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">⑦ SVPWM:扇区 N → T1,T2,T0 → 三相 CCRx</text>
+      <text x="320" y="514" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold" class="fig-t-warn">⑦ SVPWM:扇区 N → T1,T2,T0 → 三相 CCRx</text>
       <line x1="320" y1="526" x2="320" y2="536" stroke="#f59e0b" stroke-width="2" marker-end="url(#flArrO)"/>
       <!-- ⑧ -->
       <rect x="150" y="538" width="340" height="34" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="320" y="560" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold">⑧ 写定时器比较寄存器 CCRx(影子寄存器)</text>
+      <text x="320" y="560" text-anchor="middle" fill="#f59e0b" font-size="12.5" font-weight="bold" class="fig-t-warn">⑧ 写定时器比较寄存器 CCRx(影子寄存器)</text>
       <line x1="320" y1="572" x2="320" y2="582" stroke="#f59e0b" stroke-width="2" marker-end="url(#flArrO)"/>
       <!-- 清中断 -->
       <rect x="150" y="584" width="340" height="32" rx="9" fill="#22c55e" fill-opacity=".12" stroke="#22c55e" stroke-width="1.6"/>
-      <text x="320" y="605" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">清 ADC/JEOC 标志 → 中断返回(等下一个 PWM 周期)</text>
+      <text x="320" y="605" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold" class="fig-t-ok">清 ADC/JEOC 标志 → 中断返回(等下一个 PWM 周期)</text>
       <!-- 侧路:θ 与 Udc -->
       <rect x="6" y="216" width="132" height="42" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="5 3"/>
-      <text x="72" y="233" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">编码器 θe</text>
-      <text x="72" y="249" text-anchor="middle" fill="#22c55e" font-size="10">(电角度,第 7 节)</text>
+      <text x="72" y="233" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold" class="fig-t-ok">编码器 θe</text>
+      <text x="72" y="249" text-anchor="middle" fill="#22c55e" font-size="10" class="fig-t-ok">(电角度,第 7 节)</text>
       <line x1="138" y1="237" x2="148" y2="237" stroke="#22c55e" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#flArrG)"/>
       <rect x="6" y="308" width="132" height="42" rx="9" fill="#64748b" fill-opacity=".12" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 3"/>
-      <text x="72" y="325" text-anchor="middle" fill="#64748b" font-size="11" font-weight="bold">Udc 母线电压</text>
-      <text x="72" y="341" text-anchor="middle" fill="#64748b" font-size="10">(分压采样,周期更新)</text>
+      <text x="72" y="325" text-anchor="middle" fill="#64748b" font-size="11" font-weight="bold" class="fig-t-muted">Udc 母线电压</text>
+      <text x="72" y="341" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">(分压采样,周期更新)</text>
       <line x1="138" y1="329" x2="148" y2="329" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#flArrG)"/>
       <!-- 底注 -->
       <rect x="60" y="634" width="520" height="44" rx="9" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-width="1.2" stroke-dasharray="5 3"/>
-      <text x="320" y="652" text-anchor="middle" fill="#7cb8ff" font-size="11.5">整个循环以 PWM 频率逐拍执行:20kHz → 每拍 50μs,①~⑧ 全部计算</text>
-      <text x="320" y="670" text-anchor="middle" fill="#7cb8ff" font-size="11.5">必须在下一拍到来前完成(见第 9 节执行时间预算)</text>
+      <text x="320" y="652" text-anchor="middle" fill="#7cb8ff" font-size="11.5" class="fig-t-info">整个循环以 PWM 频率逐拍执行:20kHz → 每拍 50μs,①~⑧ 全部计算</text>
+      <text x="320" y="670" text-anchor="middle" fill="#7cb8ff" font-size="11.5" class="fig-t-info">必须在下一拍到来前完成(见第 9 节执行时间预算)</text>
     </svg>
     <div class="my-fig-cap">图② FOC ISR 总流程(全页主图):绿色=中断边界,蓝色=坐标变换,橙色=控制器与调制,红色=分支与保护动作。编号①~⑧与第 12 节参考代码逐行对应。</div>
   </div>
@@ -451,34 +466,34 @@ svpwm_update(valpha, vbeta, udc);            /* 内部写 TIM1-&gt;CCR1/2/3 */</
       <rect x="235" y="56" width="20" height="196" fill="#ef4444" fill-opacity=".14"/>
       <rect x="395" y="56" width="20" height="196" fill="#ef4444" fill-opacity=".14"/>
       <rect x="485" y="56" width="20" height="196" fill="#ef4444" fill-opacity=".14"/>
-      <text x="155" y="50" fill="#ef4444" font-size="10.5">开关沿 = 噪声禁区</text>
+      <text x="155" y="50" fill="#ef4444" font-size="10.5" class="fig-t-bad">开关沿 = 噪声禁区</text>
       <!-- 采样窗口 -->
       <rect x="176" y="56" width="38" height="196" fill="#22c55e" fill-opacity=".12"/>
       <rect x="426" y="56" width="38" height="196" fill="#22c55e" fill-opacity=".12"/>
-      <text x="195" y="295" text-anchor="middle" fill="#22c55e" font-size="10.5">安全采样窗口</text>
-      <text x="445" y="295" text-anchor="middle" fill="#22c55e" font-size="10.5">安全采样窗口</text>
+      <text x="195" y="295" text-anchor="middle" fill="#22c55e" font-size="10.5" class="fig-t-ok">安全采样窗口</text>
+      <text x="445" y="295" text-anchor="middle" fill="#22c55e" font-size="10.5" class="fig-t-ok">安全采样窗口</text>
       <!-- 波形: 中心对齐相电压 -->
       <path d="M70 70 H145 L155 190 H235 L245 70 H320 H395 L405 190 H485 L495 70 H600" fill="none" stroke="#f59e0b" stroke-width="2.6"/>
-      <text x="66" y="66" text-anchor="end" fill="#f59e0b" font-size="11">高=上管导通</text>
-      <text x="66" y="194" text-anchor="end" fill="#f59e0b" font-size="11">低=下管导通</text>
+      <text x="66" y="66" text-anchor="end" fill="#f59e0b" font-size="11" class="fig-t-warn">高=上管导通</text>
+      <text x="66" y="194" text-anchor="end" fill="#f59e0b" font-size="11" class="fig-t-warn">低=下管导通</text>
       <!-- ADC 触发 -->
       <line x1="195" y1="40" x2="195" y2="262" stroke="#22c55e" stroke-width="2" stroke-dasharray="6 3"/>
       <line x1="445" y1="40" x2="445" y2="262" stroke="#22c55e" stroke-width="2" stroke-dasharray="6 3"/>
       <circle cx="195" cy="190" r="4.5" fill="#22c55e"/>
       <circle cx="445" cy="190" r="4.5" fill="#22c55e"/>
-      <text x="320" y="34" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">ADC 触发(定时器 TRGO / 更新事件)= 周期正中心</text>
+      <text x="320" y="34" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold" class="fig-t-ok">ADC 触发(定时器 TRGO / 更新事件)= 周期正中心</text>
       <!-- ISR 窗口 -->
       <rect x="200" y="212" width="120" height="26" rx="6" fill="#58a6ff" fill-opacity=".15" stroke="#58a6ff" stroke-width="1.2"/>
-      <text x="260" y="229" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold">ISR:①~⑧ 计算</text>
+      <text x="260" y="229" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold" class="fig-t-info">ISR:①~⑧ 计算</text>
       <rect x="450" y="212" width="120" height="26" rx="6" fill="#58a6ff" fill-opacity=".15" stroke="#58a6ff" stroke-width="1.2"/>
-      <text x="510" y="229" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold">ISR:①~⑧ 计算</text>
+      <text x="510" y="229" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold" class="fig-t-info">ISR:①~⑧ 计算</text>
       <!-- 时间轴 -->
       <line x1="60" y1="262" x2="608" y2="262" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#swArrG)"/>
       <line x1="70" y1="268" x2="320" y2="268" stroke="#94a3b8" stroke-width="1.2"/>
       <line x1="70" y1="263" x2="70" y2="273" stroke="#94a3b8" stroke-width="1.2"/>
       <line x1="320" y1="263" x2="320" y2="273" stroke="#94a3b8" stroke-width="1.2"/>
-      <text x="195" y="279" text-anchor="middle" fill="#64748b" font-size="10.5">1 × Tpwm(50μs @20kHz)</text>
-      <text x="60" y="46" fill="#64748b" font-size="11">相端电压</text>
+      <text x="195" y="279" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">1 × Tpwm(50μs @20kHz)</text>
+      <text x="60" y="46" fill="#64748b" font-size="11" class="fig-t-muted">相端电压</text>
     </svg>
     <div class="my-fig-cap">图③ 采样窗口示意:中心对齐 PWM 每周期正中心三相下管同时导通,此处采样 = 电流稳定 + 远离开关沿。触发后立刻进 ISR 完成①~⑧,波形写入影子寄存器、下个周期生效。</div>
   </div>
@@ -582,41 +597,41 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
         <marker id="csArrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
         <marker id="csArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
       </defs>
-      <text x="16" y="74" fill="#64748b" font-size="12">θ*</text>
+      <text x="16" y="74" fill="#64748b" font-size="12" class="fig-t-muted">θ*</text>
       <line x1="34" y1="70" x2="76" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
       <rect x="80" y="50" width="86" height="40" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.6"/>
-      <text x="123" y="67" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">位置环</text>
-      <text x="123" y="82" text-anchor="middle" fill="#22c55e" font-size="10">P(输出端反馈)</text>
-      <text x="131" y="106" text-anchor="start" fill="#64748b" font-size="10">≈10~100Hz</text>
+      <text x="123" y="67" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold" class="fig-t-ok">位置环</text>
+      <text x="123" y="82" text-anchor="middle" fill="#22c55e" font-size="10" class="fig-t-ok">P(输出端反馈)</text>
+      <text x="131" y="106" text-anchor="start" fill="#64748b" font-size="10" class="fig-t-muted">≈10~100Hz</text>
       <line x1="166" y1="70" x2="222" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
-      <text x="194" y="62" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">ω*</text>
+      <text x="194" y="62" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold" class="fig-t-warn">ω*</text>
       <rect x="226" y="50" width="86" height="40" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="269" y="67" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">速度环</text>
-      <text x="269" y="82" text-anchor="middle" fill="#f59e0b" font-size="10">PI + 前馈</text>
-      <text x="277" y="106" text-anchor="start" fill="#64748b" font-size="10">≈100~500Hz</text>
+      <text x="269" y="67" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold" class="fig-t-warn">速度环</text>
+      <text x="269" y="82" text-anchor="middle" fill="#f59e0b" font-size="10" class="fig-t-warn">PI + 前馈</text>
+      <text x="277" y="106" text-anchor="start" fill="#64748b" font-size="10" class="fig-t-muted">≈100~500Hz</text>
       <line x1="312" y1="70" x2="368" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
-      <text x="340" y="62" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">Iq*</text>
+      <text x="340" y="62" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold" class="fig-t-warn">Iq*</text>
       <rect x="372" y="50" width="86" height="40" rx="9" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="415" y="67" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold">电流环 ×2</text>
-      <text x="415" y="82" text-anchor="middle" fill="#58a6ff" font-size="10">PI(d/q)+限幅圆</text>
-      <text x="423" y="106" text-anchor="start" fill="#64748b" font-size="10">≈0.5~2kHz</text>
+      <text x="415" y="67" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="bold" class="fig-t-info">电流环 ×2</text>
+      <text x="415" y="82" text-anchor="middle" fill="#58a6ff" font-size="10" class="fig-t-info">PI(d/q)+限幅圆</text>
+      <text x="423" y="106" text-anchor="start" fill="#64748b" font-size="10" class="fig-t-muted">≈0.5~2kHz</text>
       <line x1="458" y1="70" x2="514" y2="70" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
-      <text x="486" y="62" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold">Vd,Vq</text>
+      <text x="486" y="62" text-anchor="middle" fill="#58a6ff" font-size="10.5" font-weight="bold" class="fig-t-info">Vd,Vq</text>
       <rect x="518" y="50" width="86" height="40" rx="9" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="561" y="67" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold">SVPWM+逆变</text>
-      <text x="561" y="82" text-anchor="middle" fill="#f59e0b" font-size="10">10~40kHz</text>
+      <text x="561" y="67" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold" class="fig-t-warn">SVPWM+逆变</text>
+      <text x="561" y="82" text-anchor="middle" fill="#f59e0b" font-size="10" class="fig-t-warn">10~40kHz</text>
       <line x1="561" y1="90" x2="561" y2="126" stroke="#58a6ff" stroke-width="2" marker-end="url(#csArrB)"/>
       <rect x="518" y="130" width="86" height="34" rx="9" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.6"/>
-      <text x="561" y="151" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold">PMSM+编码器</text>
+      <text x="561" y="151" text-anchor="middle" fill="#22c55e" font-size="11.5" font-weight="bold" class="fig-t-ok">PMSM+编码器</text>
       <!-- 反馈总线 -->
       <path d="M561 164 L561 186 L123 186" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3"/>
       <line x1="123" y1="186" x2="123" y2="96" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#csArrG)"/>
       <line x1="269" y1="186" x2="269" y2="96" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#csArrG)"/>
       <line x1="415" y1="186" x2="415" y2="96" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#csArrG)"/>
-      <text x="130" y="180" fill="#22c55e" font-size="10">θ 反馈</text>
-      <text x="276" y="180" fill="#22c55e" font-size="10">ω 反馈</text>
-      <text x="422" y="180" fill="#22c55e" font-size="10">Id,Iq 反馈</text>
-      <text x="320" y="210" text-anchor="middle" fill="#7cb8ff" font-size="11">带宽分离原则:内环带宽取外环的 5~10 倍,外环才敢把内环当成"听话的执行器"</text>
+      <text x="130" y="180" fill="#22c55e" font-size="10" class="fig-t-ok">θ 反馈</text>
+      <text x="276" y="180" fill="#22c55e" font-size="10" class="fig-t-ok">ω 反馈</text>
+      <text x="422" y="180" fill="#22c55e" font-size="10" class="fig-t-ok">Id,Iq 反馈</text>
+      <text x="320" y="210" text-anchor="middle" fill="#7cb8ff" font-size="11" class="fig-t-info">带宽分离原则:内环带宽取外环的 5~10 倍,外环才敢把内环当成"听话的执行器"</text>
     </svg>
     <div class="my-fig-cap">图④ 三环级联:电流环每 PWM 周期执行(总流程图④框),速度环 1~5kHz,位置环 ~1kHz 或在主循环。关节机器人位置环常用输出端编码器反馈以消传动误差。</div>
   </div>
@@ -648,13 +663,13 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
       <!-- 坐标轴 -->
       <line x1="90" y1="170" x2="560" y2="170" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>
       <line x1="320" y1="290" x2="320" y2="46" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>
-      <text x="552" y="162" fill="#64748b" font-size="11">α</text>
-      <text x="328" y="44" fill="#64748b" font-size="11">β</text>
+      <text x="552" y="162" fill="#64748b" font-size="11" class="fig-t-muted">α</text>
+      <text x="328" y="44" fill="#64748b" font-size="11" class="fig-t-muted">β</text>
       <!-- 六边形 -->
       <polygon points="425,170 372,79 268,79 215,170 268,261 372,261" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-width="1.6"/>
       <!-- 内切圆 = 线性区 -->
       <circle cx="320" cy="170" r="91" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 3"/>
-      <text x="320" y="58" text-anchor="middle" fill="#f59e0b" font-size="10.5">内切圆 = Usmax = Udc/√3(线性区)</text>
+      <text x="320" y="58" text-anchor="middle" fill="#f59e0b" font-size="10.5" class="fig-t-warn">内切圆 = Usmax = Udc/√3(线性区)</text>
       <!-- 基本矢量 -->
       <g stroke="#ef4444" stroke-width="2.2" marker-end="url(#svArrG)">
         <line x1="320" y1="170" x2="418" y2="170"/>
@@ -672,7 +687,7 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
         <text x="232" y="272">V1(001)</text>
         <text x="376" y="272">V5(101)</text>
       </g>
-      <text x="238" y="200" fill="#64748b" font-size="10">V0/V7=零矢量</text>
+      <text x="238" y="200" fill="#64748b" font-size="10" class="fig-t-muted">V0/V7=零矢量</text>
       <!-- 扇区号 -->
       <g font-size="12" font-weight="bold" fill="#7cb8ff">
         <text x="400" y="128">Ⅰ</text>
@@ -684,12 +699,12 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
       </g>
       <!-- Vref 示例 -->
       <line x1="320" y1="170" x2="392" y2="136" stroke="#22c55e" stroke-width="2.6" marker-end="url(#svArrG)"/>
-      <text x="398" y="142" fill="#22c55e" font-size="11.5" font-weight="bold">Vref(落在扇区Ⅰ)</text>
+      <text x="398" y="142" fill="#22c55e" font-size="11.5" font-weight="bold" class="fig-t-ok">Vref(落在扇区Ⅰ)</text>
       <line x1="320" y1="170" x2="396" y2="170" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="4 2" marker-end="url(#svArrB)"/>
       <line x1="396" y1="170" x2="392" y2="136" stroke="#58a6ff" stroke-width="1.6" stroke-dasharray="4 2" marker-end="url(#svArrB)"/>
-      <text x="352" y="184" fill="#58a6ff" font-size="10.5" font-weight="bold">T1·V4</text>
-      <text x="408" y="158" fill="#58a6ff" font-size="10.5" font-weight="bold">T2·V6</text>
-      <text x="320" y="302" text-anchor="middle" fill="#64748b" font-size="11">γ = Vref 相对扇区起始边的夹角;Vref 由 V4 作用 T1、V6 作用 T2、零矢量作用 T0 合成</text>
+      <text x="352" y="184" fill="#58a6ff" font-size="10.5" font-weight="bold" class="fig-t-info">T1·V4</text>
+      <text x="408" y="158" fill="#58a6ff" font-size="10.5" font-weight="bold" class="fig-t-info">T2·V6</text>
+      <text x="320" y="302" text-anchor="middle" fill="#64748b" font-size="11" class="fig-t-muted">γ = Vref 相对扇区起始边的夹角;Vref 由 V4 作用 T1、V6 作用 T2、零矢量作用 T0 合成</text>
     </svg>
     <div class="my-fig-cap">图⑤ SVPWM 矢量扇区图:括号内是三相开关状态(S=上管导通)。Vref 矢量角 γ 决定相邻矢量各自分担多少时间;超出内切圆即过调制,电流环失控。</div>
   </div>
@@ -727,15 +742,15 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
       </g>
       <!-- U 相 -->
       <path d="M110 130 H170 V52 H410 V130 H530" fill="none" stroke="#58a6ff" stroke-width="2.4"/>
-      <text x="94" y="96" text-anchor="end" fill="#58a6ff" font-size="11" font-weight="bold">U</text>
+      <text x="94" y="96" text-anchor="end" fill="#58a6ff" font-size="11" font-weight="bold" class="fig-t-info">U</text>
       <!-- V 相 -->
       <path d="M110 130 H230 V88 H350 V130 H530" fill="none" stroke="#f59e0b" stroke-width="2.4"/>
-      <text x="94" y="114" text-anchor="end" fill="#f59e0b" font-size="11" font-weight="bold">V</text>
+      <text x="94" y="114" text-anchor="end" fill="#f59e0b" font-size="11" font-weight="bold" class="fig-t-warn">V</text>
       <!-- W 相 -->
       <path d="M110 130 H290 V124 H350 V130 H530" fill="none" stroke="#22c55e" stroke-width="2.4"/>
-      <text x="94" y="132" text-anchor="end" fill="#22c55e" font-size="11" font-weight="bold">W</text>
-      <text x="560" y="90" fill="#64748b" font-size="10">上管导通=高</text>
-      <text x="560" y="140" fill="#64748b" font-size="10">每段只切一相</text>
+      <text x="94" y="132" text-anchor="end" fill="#22c55e" font-size="11" font-weight="bold" class="fig-t-ok">W</text>
+      <text x="560" y="90" fill="#64748b" font-size="10" class="fig-t-muted">上管导通=高</text>
+      <text x="560" y="140" fill="#64748b" font-size="10" class="fig-t-muted">每段只切一相</text>
     </svg>
     <div class="my-fig-cap">图⑥ 七段式开关序列(扇区Ⅰ,U 相占空比最大):形状中心对称、两端各留半个零矢量。序列随扇区轮换,三相占空比随之滚动。</div>
   </div>
@@ -744,12 +759,12 @@ float vq = clamp(kp*err + integ, VMIN, VMAX);</code></pre>
     <svg viewBox="0 0 640 205" role="img" aria-label="马鞍波与正弦调制波对比:注入零序分量后波形顶部被压平,基波可用幅值提升约百分之十五点五" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
       <line x1="50" y1="100" x2="560" y2="100" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3"/>
       <line x1="50" y1="19" x2="560" y2="19" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="6 3"/>
-      <text x="356" y="15" fill="#22c55e" font-size="10.5">SVPWM 基波可用幅值 = 1.155(SPWM 为 1.0)</text>
+      <text x="356" y="15" fill="#22c55e" font-size="10.5" class="fig-t-ok">SVPWM 基波可用幅值 = 1.155(SPWM 为 1.0)</text>
       <polyline points="60,100 80,81.9 100,65 120,50.5 140,39.4 160,32.4 180,30 200,32.4 220,39.4 240,50.5 260,65 280,81.9 300,100 320,118.1 340,135 360,149.5 380,160.6 400,167.6 420,170 440,167.6 460,160.6 480,149.5 500,135 520,118.1 540,100" fill="none" stroke="#58a6ff" stroke-width="1.8" stroke-dasharray="6 3"/>
       <polyline points="60,100 80,72.8 100,60.3 120,41.5 140,34.7 160,41.4 180,47.5 200,41.4 220,39.4 240,41.5 260,47.5 280,72.8 300,100 320,127.2 340,139.7 360,158.5 380,165.3 400,158.6 420,152.5 440,158.6 460,160.6 480,158.5 500,152.5 520,127.2 540,100" fill="none" stroke="#f59e0b" stroke-width="2.4"/>
-      <text x="546" y="34" fill="#f59e0b" font-size="11" font-weight="bold">马鞍波</text>
-      <text x="546" y="104" fill="#58a6ff" font-size="11">正弦 SPWM</text>
-      <text x="300" y="196" text-anchor="middle" fill="#64748b" font-size="11">注入 u_cm = −(max+min)/2 后:包络被"压平抬高",同样的母线电压可输出更大的基波</text>
+      <text x="546" y="34" fill="#f59e0b" font-size="11" font-weight="bold" class="fig-t-warn">马鞍波</text>
+      <text x="546" y="104" fill="#58a6ff" font-size="11" class="fig-t-info">正弦 SPWM</text>
+      <text x="300" y="196" text-anchor="middle" fill="#64748b" font-size="11" class="fig-t-muted">注入 u_cm = −(max+min)/2 后:包络被"压平抬高",同样的母线电压可输出更大的基波</text>
     </svg>
     <div class="my-fig-cap">图⑦ 马鞍波 vs 正弦调制:顶部平、谷底也平,单相峰值反而更低;绿色虚线是等母线下 SVPWM 能给出的基波幅值,即 √3/2 增益的来源。</div>
   </div>
@@ -821,54 +836,54 @@ duty_a += ia_comp;  duty_b += 0;  duty_c += 0;   /* 三相各算各的,再统一
       </defs>
       <!-- 状态框 -->
       <rect x="20" y="24" width="180" height="54" rx="12" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.8"/>
-      <text x="110" y="46" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">POWER_ON_SELFTEST</text>
-      <text x="110" y="64" text-anchor="middle" fill="#22c55e" font-size="10">RAM/外设自检·ADC 零偏标定</text>
+      <text x="110" y="46" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold" class="fig-t-ok">POWER_ON_SELFTEST</text>
+      <text x="110" y="64" text-anchor="middle" fill="#22c55e" font-size="10" class="fig-t-ok">RAM/外设自检·ADC 零偏标定</text>
       <rect x="250" y="24" width="170" height="54" rx="12" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.8"/>
-      <text x="335" y="46" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">ENCODER_CALIB</text>
-      <text x="335" y="64" text-anchor="middle" fill="#58a6ff" font-size="10">编码器通信/方向判定</text>
+      <text x="335" y="46" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold" class="fig-t-info">ENCODER_CALIB</text>
+      <text x="335" y="64" text-anchor="middle" fill="#58a6ff" font-size="10" class="fig-t-info">编码器通信/方向判定</text>
       <rect x="470" y="24" width="150" height="54" rx="12" fill="#7c3aed" fill-opacity=".08" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="6 3"/>
-      <text x="545" y="46" text-anchor="middle" fill="#a78bfa" font-size="12.5" font-weight="bold">PARAM_IDENTIFY</text>
-      <text x="545" y="64" text-anchor="middle" fill="#a78bfa" font-size="10">可选:辨识 Rs/L/ψf</text>
+      <text x="545" y="46" text-anchor="middle" fill="#a78bfa" font-size="12.5" font-weight="bold" class="fig-t-purple">PARAM_IDENTIFY</text>
+      <text x="545" y="64" text-anchor="middle" fill="#a78bfa" font-size="10" class="fig-t-purple">可选:辨识 Rs/L/ψf</text>
       <rect x="250" y="150" width="170" height="50" rx="12" fill="#58a6ff" fill-opacity=".1" stroke="#58a6ff" stroke-width="1.8"/>
-      <text x="335" y="171" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold">ALIGN</text>
-      <text x="335" y="189" text-anchor="middle" fill="#58a6ff" font-size="10">d 轴对齐,记 θe_offset</text>
+      <text x="335" y="171" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="bold" class="fig-t-info">ALIGN</text>
+      <text x="335" y="189" text-anchor="middle" fill="#58a6ff" font-size="10" class="fig-t-info">d 轴对齐,记 θe_offset</text>
       <rect x="250" y="270" width="170" height="50" rx="12" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-width="1.8"/>
-      <text x="335" y="291" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold">READY</text>
-      <text x="335" y="309" text-anchor="middle" fill="#22c55e" font-size="10">待机封波,等待使能</text>
+      <text x="335" y="291" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="bold" class="fig-t-ok">READY</text>
+      <text x="335" y="309" text-anchor="middle" fill="#22c55e" font-size="10" class="fig-t-ok">待机封波,等待使能</text>
       <rect x="250" y="385" width="170" height="64" rx="12" fill="#f59e0b" fill-opacity=".12" stroke="#f59e0b" stroke-width="2.2"/>
-      <text x="335" y="407" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="bold">RUN</text>
-      <text x="335" y="424" text-anchor="middle" fill="#f59e0b" font-size="10">ISR:总流程①~⑧ 逐拍执行</text>
-      <text x="335" y="440" text-anchor="middle" fill="#f59e0b" font-size="10">主循环:速度/位置环+指令解析</text>
+      <text x="335" y="407" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="bold" class="fig-t-warn">RUN</text>
+      <text x="335" y="424" text-anchor="middle" fill="#f59e0b" font-size="10" class="fig-t-warn">ISR:总流程①~⑧ 逐拍执行</text>
+      <text x="335" y="440" text-anchor="middle" fill="#f59e0b" font-size="10" class="fig-t-warn">主循环:速度/位置环+指令解析</text>
       <rect x="490" y="385" width="130" height="64" rx="12" fill="#ef4444" fill-opacity=".12" stroke="#ef4444" stroke-width="2"/>
-      <text x="555" y="407" text-anchor="middle" fill="#ef4444" font-size="13" font-weight="bold">FAULT</text>
-      <text x="555" y="424" text-anchor="middle" fill="#ef4444" font-size="10">封波 MOE=0</text>
-      <text x="555" y="440" text-anchor="middle" fill="#ef4444" font-size="10">记录故障码/时间戳</text>
+      <text x="555" y="407" text-anchor="middle" fill="#ef4444" font-size="13" font-weight="bold" class="fig-t-bad">FAULT</text>
+      <text x="555" y="424" text-anchor="middle" fill="#ef4444" font-size="10" class="fig-t-bad">封波 MOE=0</text>
+      <text x="555" y="440" text-anchor="middle" fill="#ef4444" font-size="10" class="fig-t-bad">记录故障码/时间戳</text>
       <rect x="490" y="474" width="130" height="36" rx="9" fill="#ef4444" fill-opacity=".07" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="5 3"/>
-      <text x="555" y="489" text-anchor="middle" fill="#ef4444" font-size="10">严重故障:锁定</text>
-      <text x="555" y="503" text-anchor="middle" fill="#ef4444" font-size="10">需重新上电清零</text>
+      <text x="555" y="489" text-anchor="middle" fill="#ef4444" font-size="10" class="fig-t-bad">严重故障:锁定</text>
+      <text x="555" y="503" text-anchor="middle" fill="#ef4444" font-size="10" class="fig-t-bad">需重新上电清零</text>
       <!-- 转换箭头 -->
       <line x1="200" y1="51" x2="250" y2="51" stroke="#22c55e" stroke-width="1.8" marker-end="url(#stArrG)"/>
-      <text x="225" y="43" text-anchor="middle" fill="#64748b" font-size="9.5">自检通过</text>
+      <text x="225" y="43" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">自检通过</text>
       <line x1="420" y1="51" x2="470" y2="51" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#stArrB)"/>
-      <text x="445" y="43" text-anchor="middle" fill="#a78bfa" font-size="9.5">可选</text>
+      <text x="445" y="43" text-anchor="middle" fill="#a78bfa" font-size="9.5" class="fig-t-purple">可选</text>
       <line x1="335" y1="78" x2="335" y2="150" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#stArrB)"/>
-      <text x="343" y="118" fill="#64748b" font-size="9.5">校准通过/跳过辨识</text>
+      <text x="343" y="118" fill="#64748b" font-size="9.5" class="fig-t-muted">校准通过/跳过辨识</text>
       <path d="M545 78 C545 120 460 160 420 170" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#stArrB)"/>
-      <text x="490" y="140" fill="#a78bfa" font-size="9.5">参数写入</text>
+      <text x="490" y="140" fill="#a78bfa" font-size="9.5" class="fig-t-purple">参数写入</text>
       <line x1="335" y1="200" x2="335" y2="270" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#stArrB)"/>
-      <text x="343" y="240" fill="#64748b" font-size="9.5">offset 存入 NVS</text>
+      <text x="343" y="240" fill="#64748b" font-size="9.5" class="fig-t-muted">offset 存入 NVS</text>
       <line x1="320" y1="320" x2="320" y2="385" stroke="#22c55e" stroke-width="1.8" marker-end="url(#stArrG)"/>
-      <text x="312" y="356" text-anchor="end" fill="#64748b" font-size="9.5">收到使能(CAN/上位机)</text>
+      <text x="312" y="356" text-anchor="end" fill="#64748b" font-size="9.5" class="fig-t-muted">收到使能(CAN/上位机)</text>
       <line x1="362" y1="385" x2="362" y2="320" stroke="#22c55e" stroke-width="1.8" marker-end="url(#stArrG)"/>
-      <text x="368" y="348" fill="#64748b" font-size="9.5">去使能/停机</text>
+      <text x="368" y="348" fill="#64748b" font-size="9.5" class="fig-t-muted">去使能/停机</text>
       <path d="M420 175 C505 185 555 250 555 385" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#stArrR)"/>
-      <text x="560" y="300" fill="#ef4444" font-size="9.5">对齐超时/失锁</text>
+      <text x="560" y="300" fill="#ef4444" font-size="9.5" class="fig-t-bad">对齐超时/失锁</text>
       <line x1="420" y1="417" x2="490" y2="417" stroke="#ef4444" stroke-width="2" marker-end="url(#stArrR)"/>
-      <text x="455" y="408" text-anchor="middle" fill="#ef4444" font-size="9.5">过流/超温/堵转/丢编码器</text>
+      <text x="455" y="408" text-anchor="middle" fill="#ef4444" font-size="9.5" class="fig-t-bad">过流/超温/堵转/丢编码器</text>
       <path d="M500 400 C445 385 432 340 424 322" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#stArrG)"/>
-      <text x="448" y="368" fill="#22c55e" font-size="9.5">故障已消失+重试&lt;N 次</text>
+      <text x="448" y="368" fill="#22c55e" font-size="9.5" class="fig-t-ok">故障已消失+重试&lt;N 次</text>
       <line x1="555" y1="449" x2="555" y2="474" stroke="#ef4444" stroke-width="1.6" marker-end="url(#stArrR)"/>
-      <text x="563" y="466" fill="#ef4444" font-size="9.5">重复故障×M</text>
+      <text x="563" y="466" fill="#ef4444" font-size="9.5" class="fig-t-bad">重复故障×M</text>
     </svg>
     <div class="my-fig-cap">图⑧ FOC 固件生命周期状态机:绿=安全态,蓝=校准链路,紫虚线=可选辨识,橙=正常运行(唯一允许输出转矩的状态),红=故障与锁定。任何状态任何异常,终点都是 FAULT——先安全,再谈性能。</div>
   </div>
@@ -905,29 +920,29 @@ duty_a += ia_comp;  duty_b += 0;  duty_c += 0;   /* 三相各算各的,再统一
       <line x1="445" y1="40" x2="445" y2="228" stroke="#22c55e" stroke-width="1.8" stroke-dasharray="6 3"/>
       <polygon points="195,40 189,50 201,50" fill="#22c55e"/>
       <polygon points="445,40 439,50 451,50" fill="#22c55e"/>
-      <text x="195" y="34" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">ADC 触发(周期中心)</text>
-      <text x="445" y="34" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold">ADC 触发</text>
+      <text x="195" y="34" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold" class="fig-t-ok">ADC 触发(周期中心)</text>
+      <text x="445" y="34" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold" class="fig-t-ok">ADC 触发</text>
       <!-- 截止线 -->
       <line x1="445" y1="150" x2="445" y2="228" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3 3"/>
       <line x1="570" y1="150" x2="570" y2="228" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="6 3"/>
-      <text x="542" y="172" text-anchor="middle" fill="#ef4444" font-size="10.5" font-weight="bold">下一拍截止</text>
+      <text x="542" y="172" text-anchor="middle" fill="#ef4444" font-size="10.5" font-weight="bold" class="fig-t-bad">下一拍截止</text>
       <!-- 行1: ADC 转换 -->
-      <text x="60" y="70" text-anchor="end" fill="#58a6ff" font-size="11">ADC 转换</text>
+      <text x="60" y="70" text-anchor="end" fill="#58a6ff" font-size="11" class="fig-t-info">ADC 转换</text>
       <rect x="195" y="56" width="12" height="20" rx="3" fill="#58a6ff" fill-opacity=".5" stroke="#58a6ff" stroke-width="1.4"/>
       <rect x="445" y="56" width="12" height="20" rx="3" fill="#58a6ff" fill-opacity=".5" stroke="#58a6ff" stroke-width="1.4"/>
-      <text x="212" y="70" fill="#58a6ff" font-size="10">≈2μs(注入组流水)</text>
+      <text x="212" y="70" fill="#58a6ff" font-size="10" class="fig-t-info">≈2μs(注入组流水)</text>
       <!-- 行2: ISR 正常 -->
-      <text x="60" y="112" text-anchor="end" fill="#f59e0b" font-size="11">ISR 正常</text>
+      <text x="60" y="112" text-anchor="end" fill="#f59e0b" font-size="11" class="fig-t-warn">ISR 正常</text>
       <rect x="207" y="96" width="90" height="20" rx="4" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b" stroke-width="1.4"/>
-      <text x="303" y="110" fill="#f59e0b" font-size="10">①~⑧ ≈15μs ✓ 远早于 445 处下一拍</text>
+      <text x="303" y="110" fill="#f59e0b" font-size="10" class="fig-t-warn">①~⑧ ≈15μs ✓ 远早于 445 处下一拍</text>
       <!-- 行3: ISR 超时 -->
-      <text x="60" y="152" text-anchor="end" fill="#ef4444" font-size="11">ISR 超时</text>
+      <text x="60" y="152" text-anchor="end" fill="#ef4444" font-size="11" class="fig-t-bad">ISR 超时</text>
       <rect x="457" y="136" width="88" height="20" rx="4" fill="#f59e0b" fill-opacity=".5" stroke="#f59e0b" stroke-width="1.4"/>
       <rect x="545" y="136" width="40" height="20" rx="4" fill="#ef4444" fill-opacity=".55" stroke="#ef4444" stroke-width="1.5"/>
-      <text x="438" y="186" text-anchor="end" fill="#ef4444" font-size="10.5">被更高优先级中断抢占/计算超支 → 跨过 570 处截止线</text>
+      <text x="438" y="186" text-anchor="end" fill="#ef4444" font-size="10.5" class="fig-t-bad">被更高优先级中断抢占/计算超支 → 跨过 570 处截止线</text>
       <!-- 波纹: 后果 -->
       <path d="M585 156 L585 196 L360 196" fill="none" stroke="#ef4444" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#tsArrR)"/>
-      <text x="352" y="210" text-anchor="end" fill="#ef4444" font-size="10.5">错过下一拍采样 → 电流重建错拍、θ 补偿失配 → 电流环啸叫/振荡</text>
+      <text x="352" y="210" text-anchor="end" fill="#ef4444" font-size="10.5" class="fig-t-bad">错过下一拍采样 → 电流重建错拍、θ 补偿失配 → 电流环啸叫/振荡</text>
       <!-- 时间轴 -->
       <line x1="66" y1="228" x2="600" y2="228" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#tsArrG)"/>
       <g stroke="#94a3b8" stroke-width="1.2">
@@ -939,7 +954,7 @@ duty_a += ia_comp;  duty_b += 0;  duty_c += 0;   /* 三相各算各的,再统一
         <text x="70" y="244">0</text><text x="195" y="244">25μs</text><text x="320" y="244">50μs</text>
         <text x="445" y="244">75μs</text><text x="570" y="244">100μs</text>
       </g>
-      <text x="620" y="258" text-anchor="end" fill="#64748b" font-size="10">例: 20kHz, Tpwm=50μs</text>
+      <text x="620" y="258" text-anchor="end" fill="#64748b" font-size="10" class="fig-t-muted">例: 20kHz, Tpwm=50μs</text>
     </svg>
     <div class="my-fig-cap">图⑨ PWM 中断时序:绿色=触发点,蓝=ADC 转换,橙=ISR 执行,红=越界部分。健康判据:ISR 结束时刻距下一拍触发仍有大段余量(至少留 40~50% 空闲给通信与其他中断)。</div>
   </div>

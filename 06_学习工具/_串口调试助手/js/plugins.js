@@ -1,0 +1,1161 @@
+/* ============================================================
+   网页端串口调试助手 · SerialLab
+   模块：plugins（声明式插件系统 + 内置渲染器）
+   职责：
+     1) 渲染器注册表与描述符校验（把用户配置归一成安全的 panel 描述符）
+     2) 内置 7 个渲染器：时域折线 / 频域谱 / 柱状 / 仪表盘 / 数据表格 / 文本监视器 / 二维轨迹
+     3) 面板包（DIY 配置）的导入导出与版本兼容
+   依赖：core、util、expr、fft
+   安全边界：插件是「声明式配置」，用户不能注入 JS。
+     自由度来自：选渲染器 + 绑通道 + 写映射公式（走 expr 的安全求值，禁 eval）
+     + 调坐标轴 / 量程 / 颜色 / 窗口。
+   注意：本模块不直接依赖 datastore —— 数据由 views 以 data provider 形式注入，
+     既保持单向依赖，也让渲染器可以脱离真实串口单独测试。
+   ============================================================ */
+;(function (global) {
+  "use strict";
+
+  var SL = global.SerialLab = global.SerialLab || {};
+  var U = SL.util;
+  var core = SL.core;
+
+  var P = {};
+
+  var WINDOW_MIN = 10;
+  var WINDOW_MAX = 100000;
+  var COLOR_RE = /^#[0-9a-fA-F]{3,6}$/;
+
+  var registry = {};
+  var registryOrder = [];
+
+  /* ------------------------------------------------------------
+     0) 绘图基元与主题取色
+     ------------------------------------------------------------ */
+  var themeCache = null;
+
+  P.invalidateTheme = function () { themeCache = null; };
+
+  function theme() {
+    if (themeCache) { return themeCache; }
+    var fb = {
+      grid: "rgba(148,163,184,.16)", axis: "rgba(148,163,184,.45)",
+      ink: "#e6edf3", ink2: "#9aa4b2", ink3: "#8b949e", bg: "#0a0f16"
+    };
+    if (typeof document === "undefined" || !global.getComputedStyle) {
+      themeCache = fb; return fb;
+    }
+    try {
+      var cs = global.getComputedStyle(document.documentElement);
+      function g(name, d) {
+        var v = cs.getPropertyValue(name);
+        v = v ? v.replace(/^\s+|\s+$/g, "") : "";
+        return v || d;
+      }
+      themeCache = {
+        grid: g("--sl-grid", fb.grid),
+        axis: g("--sl-axis", fb.axis),
+        ink: g("--sl-ink", fb.ink),
+        ink2: g("--sl-ink-2", fb.ink2),
+        ink3: g("--sl-ink-3", fb.ink3),
+        bg: g("--sl-canvas-bg", fb.bg)
+      };
+    } catch (e) { themeCache = fb; }
+    return themeCache;
+  }
+  P.theme = theme;
+
+  /* 建立 canvas 并做 DPR 适配；返回可复用的视图对象 */
+  function makeView(hostEl) {
+    var canvas = document.createElement("canvas");
+    canvas.className = "sl-canvas";
+    hostEl.appendChild(canvas);
+    var ctx = canvas.getContext("2d");
+    var view = {
+      canvas: canvas,
+      ctx: ctx,
+      w: 0, h: 0, dpr: 1,
+      fit: function () {
+        var dpr = global.devicePixelRatio || 1;
+        var r = hostEl.getBoundingClientRect();
+        var w = Math.max(1, Math.floor(r.width));
+        var h = Math.max(1, Math.floor(r.height));
+        if (w === view.w && h === view.h && dpr === view.dpr) { return false; }
+        view.w = w; view.h = h; view.dpr = dpr;
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return true;
+      },
+      clear: function () {
+        ctx.clearRect(0, 0, view.w, view.h);
+      },
+      destroy: function () {
+        if (canvas.parentNode) { canvas.parentNode.removeChild(canvas); }
+      }
+    };
+    view.fit();
+    return view;
+  }
+
+  /* 好看的刻度步长 */
+  function niceStep(range, target) {
+    if (!(range > 0)) { return 1; }
+    var raw = range / (target || 5);
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var norm = raw / mag;
+    var step = norm <= 1 ? 1 : (norm <= 2 ? 2 : (norm <= 5 ? 5 : 10));
+    return step * mag;
+  }
+  P.niceStep = niceStep;
+
+  /* 画网格与坐标轴，返回用于映射的函数 */
+  function drawFrame(view, yMin, yMax, pad, fmtY) {
+    var ctx = view.ctx, t = theme();
+    var w = view.w, h = view.h;
+    var plotW = Math.max(1, w - pad.l - pad.r);
+    var plotH = Math.max(1, h - pad.t - pad.b);
+
+    ctx.save();
+    ctx.strokeStyle = t.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+
+    /* 横向网格 + y 轴刻度 */
+    var span = yMax - yMin;
+    if (!(span > 0)) { span = 1; }
+    var step = niceStep(span, 4);
+    var first = Math.ceil(yMin / step) * step;
+    ctx.font = "10px Consolas, monospace";
+    ctx.fillStyle = t.ink3;
+    ctx.textBaseline = "middle";
+    for (var yv = first; yv <= yMax + 1e-9; yv += step) {
+      var y = pad.t + plotH - ((yv - yMin) / span) * plotH;
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(pad.l + plotW, y);
+      ctx.fillText(fmtY ? fmtY(yv) : String(Math.round(yv * 1000) / 1000), 4, y);
+    }
+
+    /* 纵向网格（按点数均分，不画时间标注以免拥挤） */
+    var vlines = 6;
+    for (var i = 1; i < vlines; i++) {
+      var x = pad.l + (plotW * i) / vlines;
+      ctx.moveTo(x, pad.t);
+      ctx.lineTo(x, pad.t + plotH);
+    }
+    ctx.stroke();
+
+    /* 边框 */
+    ctx.strokeStyle = t.axis;
+    ctx.strokeRect(pad.l, pad.t, plotW, plotH);
+    ctx.restore();
+
+    return {
+      plotW: plotW,
+      plotH: plotH,
+      xOf: function (i, cnt) {
+        if (cnt <= 1) { return pad.l; }
+        return pad.l + (i / (cnt - 1)) * plotW;
+      },
+      yOf: function (v) {
+        return pad.t + plotH - ((v - yMin) / span) * plotH;
+      }
+    };
+  }
+
+  /* ------------------------------------------------------------
+     1) 面板 → 序列（含映射公式）
+     data provider 由 views 提供：
+       { channels(), count(key), forEach(key,n,cb), copy(key,n), stat(key),
+         recentRaw(n), now() }
+     ------------------------------------------------------------ */
+  function findChannel(list, key) {
+    for (var i = 0; i < list.length; i++) { if (list[i].key === key) { return list[i]; } }
+    return null;
+  }
+
+  function resolveChannels(panel, data, renderer) {
+    var all = data.channels();
+    var want = panel.channels || [];
+    var out = [];
+    var i;
+    if (want.length === 1 && want[0] === "auto") {
+      var cap = renderer.autoCount || 4;
+      for (i = 0; i < all.length && out.length < cap; i++) {
+        if (all[i].visible !== false) { out.push(all[i]); }
+      }
+      return out;
+    }
+    for (i = 0; i < want.length; i++) {
+      var c = findChannel(all, want[i]);
+      if (c) { out.push(c); }
+    }
+    /* 全部指定通道都还没数据时，退回自动模式，避免面板长时间空白 */
+    if (!out.length) {
+      var cap2 = renderer.autoCount || 4;
+      for (i = 0; i < all.length && out.length < cap2; i++) {
+        if (all[i].visible !== false) { out.push(all[i]); }
+      }
+    }
+    return out;
+  }
+  P.resolveChannels = resolveChannels;
+
+  /* 组装绘图序列；若描述符带 expr，则按「同索引对齐各通道」逐点重算 */
+  function buildSeries(panel, data, chans) {
+    var series = [];
+    var i;
+    var raw = [];
+
+    /* 先把各通道最近 window 个点取出来（一次复制，后面按索引对齐） */
+    for (i = 0; i < chans.length; i++) {
+      raw.push(data.copy(chans[i].key, panel.window || 500));
+    }
+
+    var hasExpr = false;
+    var exprFn = null;
+    if (panel.expr && String(panel.expr).replace(/^\s+|\s+$/g, "")) {
+      var varNames = [];
+      for (i = 0; i < chans.length; i++) { varNames.push(chans[i].key); }
+      var compiled = SL.expr.compile(panel.expr, varNames);
+      if (compiled.ok) { exprFn = compiled.fn; hasExpr = true; }
+      else { panel._exprError = compiled.err; }
+    }
+
+    for (i = 0; i < chans.length; i++) {
+      var c = chans[i];
+      var src = raw[i];
+      var vals = new Array(src.v.length);
+      if (hasExpr && src.v.length) {
+        /* 从末尾对齐：让各通道最近的点互相配对，等长同步采样时结果完全正确 */
+        var vars = {};
+        for (var j = 0; j < src.v.length; j++) {
+          for (var q = 0; q < chans.length; q++) {
+            var o2 = raw[q];
+            var ii = o2.v.length - src.v.length + j;
+            vars[chans[q].key] = (ii >= 0 && ii < o2.v.length) ? o2.v[ii] : 0;
+          }
+          var r = exprFn(vars);
+          vals[j] = isFinite(r) ? r : NaN;
+        }
+      } else {
+        for (var m = 0; m < src.v.length; m++) { vals[m] = src.v[m]; }
+      }
+      series.push({
+        key: c.key,
+        label: c.label || c.key,
+        unit: c.unit || "",
+        color: (panel.colors && panel.colors[c.key]) || c.color,
+        t: src.t,
+        v: vals
+      });
+    }
+    return series;
+  }
+
+  /* 自动量程 */
+  function autoRange(series, padRatio) {
+    var mn = Infinity, mx = -Infinity;
+    for (var i = 0; i < series.length; i++) {
+      var v = series[i].v;
+      for (var j = 0; j < v.length; j++) {
+        var x = v[j];
+        if (!isFinite(x)) { continue; }
+        if (x < mn) { mn = x; }
+        if (x > mx) { mx = x; }
+      }
+    }
+    if (!isFinite(mn) || !isFinite(mx)) { return { min: -1, max: 1 }; }
+    if (mn === mx) { var d = Math.abs(mn) * 0.1 || 1; return { min: mn - d, max: mx + d }; }
+    var pad = (mx - mn) * (padRatio === undefined ? 0.08 : padRatio);
+    return { min: mn - pad, max: mx + pad };
+  }
+
+  function yRange(panel, series) {
+    var axis = panel.axis || {};
+    var auto = autoRange(series);
+    var mn = (typeof axis.yMin === "number" && isFinite(axis.yMin)) ? axis.yMin : auto.min;
+    var mx = (typeof axis.yMax === "number" && isFinite(axis.yMax)) ? axis.yMax : auto.max;
+    if (!(mx > mn)) { mx = mn + 1; }
+    return { min: mn, max: mx };
+  }
+
+  /* ------------------------------------------------------------
+     2) 注册表
+     ------------------------------------------------------------ */
+  P.register = function (renderer) {
+    if (!renderer || !renderer.id) { return false; }
+    if (!registry[renderer.id]) { registryOrder.push(renderer.id); }
+    registry[renderer.id] = renderer;
+    return true;
+  };
+
+  P.list = function () {
+    var out = [];
+    for (var i = 0; i < registryOrder.length; i++) {
+      var r = registry[registryOrder[i]];
+      if (!r) { continue; }
+      out.push({ id: r.id, label: r.label, category: r.category || "", autoCount: r.autoCount || 4 });
+    }
+    return out;
+  };
+
+  P.get = function (id) { return registry[id] || null; };
+
+  /* ------------------------------------------------------------
+     3) 描述符校验（归一 + 修正 + 记录问题，绝不抛异常）
+     ------------------------------------------------------------ */
+  P.validate = function (desc) {
+    var errors = [];
+    var raw = (desc && typeof desc === "object") ? desc : {};
+    var fallbackId = registry["table"] ? "table" : registryOrder[0];
+
+    var r = registry[raw.type];
+    if (!r) {
+      errors.push("未知渲染器「" + (raw.type === undefined ? "(空)" : raw.type) + "」，已降级为数据表格");
+      r = registry[fallbackId];
+    }
+    if (!r) { return { ok: false, panel: null, errors: ["没有可用的渲染器"] }; }
+
+    var out = {};
+    out.type = r.id;
+    out.id = (typeof raw.id === "string" && raw.id) ? raw.id : U.nextId("p");
+    out.title = (raw.title === undefined || raw.title === null || raw.title === "") ? r.label : String(raw.title);
+    if (out.title.length > 40) { out.title = out.title.slice(0, 40); errors.push("标题过长，已截断到 40 字"); }
+
+    /* 通道 */
+    var chans = raw.channels;
+    if (chans === undefined || chans === null) { chans = ["auto"]; }
+    if (Object.prototype.toString.call(chans) !== "[object Array]") { chans = [String(chans)]; }
+    if (!chans.length) { chans = ["auto"]; }
+    out.channels = [];
+    for (var i = 0; i < chans.length; i++) {
+      if (typeof chans[i] !== "string" || !chans[i]) {
+        errors.push("第 " + (i + 1) + " 个通道名无效，已忽略");
+        continue;
+      }
+      out.channels.push(chans[i]);
+    }
+    if (!out.channels.length) { out.channels = ["auto"]; }
+
+    /* 映射公式（可选） */
+    out.expr = (raw.expr === undefined || raw.expr === null) ? "" : String(raw.expr);
+    if (out.expr) {
+      var vn = [];
+      for (var v = 0; v < out.channels.length; v++) {
+        if (out.channels[v] !== "auto") { vn.push(out.channels[v]); }
+      }
+      var c = SL.expr.compile(out.expr, vn.length ? vn : null);
+      if (!c.ok) { errors.push("公式无效（" + c.err + "），已忽略公式"); out.expr = ""; }
+    }
+
+    /* 坐标轴 */
+    var ax = raw.axis || {};
+    out.axis = {
+      xAuto: ax.xAuto !== false,
+      yAuto: ax.yAuto !== false,
+      yMin: (typeof ax.yMin === "number" && isFinite(ax.yMin)) ? ax.yMin : null,
+      yMax: (typeof ax.yMax === "number" && isFinite(ax.yMax)) ? ax.yMax : null,
+      yLog: ax.yLog === true
+    };
+    if (out.axis.yMin !== null && out.axis.yMax !== null && !(out.axis.yMax > out.axis.yMin)) {
+      errors.push("纵轴上限不大于下限，已改回自动量程");
+      out.axis.yMin = null;
+      out.axis.yMax = null;
+      out.axis.yAuto = true;
+    }
+
+    /* 窗口点数 */
+    var win = parseInt(raw.window, 10);
+    if (isNaN(win)) { win = (r.defaults && r.defaults.window) || 500; }
+    if (win < WINDOW_MIN) { win = WINDOW_MIN; errors.push("窗口过小，已提升到 " + WINDOW_MIN); }
+    if (win > WINDOW_MAX) { win = WINDOW_MAX; errors.push("窗口过大，已限制到 " + WINDOW_MAX); }
+    out.window = win;
+
+    /* 颜色 */
+    out.colors = {};
+    if (raw.colors && typeof raw.colors === "object") {
+      for (var ck in raw.colors) {
+        if (!Object.prototype.hasOwnProperty.call(raw.colors, ck)) { continue; }
+        var cv = String(raw.colors[ck] || "");
+        if (COLOR_RE.test(cv)) { out.colors[ck] = cv; }
+        else if (cv) { errors.push("通道「" + ck + "」的颜色「" + cv + "」非法，已忽略"); }
+      }
+    }
+
+    /* 其它选项合并渲染器 defaults */
+    out.opts = {};
+    var defs = (r.defaults && r.defaults.opts) ? r.defaults.opts : {};
+    for (var dk in defs) { if (Object.prototype.hasOwnProperty.call(defs, dk)) { out.opts[dk] = defs[dk]; } }
+    if (raw.opts && typeof raw.opts === "object") {
+      for (var ok2 in raw.opts) {
+        if (Object.prototype.hasOwnProperty.call(raw.opts, ok2) && Object.prototype.hasOwnProperty.call(defs, ok2)) {
+          out.opts[ok2] = raw.opts[ok2];
+        }
+      }
+    }
+
+    return { ok: errors.length === 0, panel: out, errors: errors };
+  };
+
+  /* ------------------------------------------------------------
+     4) 实例化
+     ------------------------------------------------------------ */
+  P.instantiate = function (panelDesc, hostEl) {
+    var r = registry[panelDesc.type] || registry[registryOrder[0]];
+    if (!r || !r.make) { return null; }
+    var inst;
+    try {
+      inst = r.make(hostEl, panelDesc);
+    } catch (e) {
+      core.log("error", "渲染器「" + r.id + "」初始化失败：" + ((e && e.message) || e));
+      /* 降级：不影响其它面板 */
+      if (hostEl) {
+        hostEl.innerHTML = "";
+        var msg = document.createElement("div");
+        msg.className = "sl-panel-msg";
+        msg.textContent = "该图框渲染失败（" + r.label + "）";
+        hostEl.appendChild(msg);
+      }
+      return null;
+    }
+    if (!inst) { return null; }
+    if (typeof inst.update !== "function") { inst.update = function () {}; }
+    if (typeof inst.resize !== "function") { inst.resize = function () {}; }
+    if (typeof inst.destroy !== "function") { inst.destroy = function () {}; }
+    return inst;
+  };
+
+  /* ------------------------------------------------------------
+     5) 面板包导入导出
+     ------------------------------------------------------------ */
+  var PACK_KIND = "seriallab-panel-pack";
+  var PACK_VERSION = 1;
+
+  P.PACK_KIND = PACK_KIND;
+
+  P.exportPack = function (panels, channels) {
+    return {
+      kind: PACK_KIND,
+      version: PACK_VERSION,
+      exportedAt: new Date().toISOString(),
+      panels: U.clone(panels || []),
+      channels: U.clone(channels || [])
+    };
+  };
+
+  P.importPack = function (input) {
+    var pack = input;
+    if (typeof input === "string") {
+      try { pack = JSON.parse(input); }
+      catch (e) { return { ok: false, panels: [], channels: [], errors: ["不是合法的 JSON"] }; }
+    }
+    if (!pack || typeof pack !== "object") {
+      return { ok: false, panels: [], channels: [], errors: ["面板包内容为空"] };
+    }
+    if (pack.kind !== PACK_KIND) {
+      return { ok: false, panels: [], channels: [], errors: ["面板包类型不匹配（期望 " + PACK_KIND + "）"] };
+    }
+    var v = parseInt(pack.version, 10);
+    if (isNaN(v)) { v = 0; }
+    if (v > PACK_VERSION) {
+      return { ok: false, panels: [], channels: [], errors: ["面板包版本（v" + v + "）高于本应用支持的 v" + PACK_VERSION] };
+    }
+
+    var errors = [];
+    var panels = [];
+    var list = Object.prototype.toString.call(pack.panels) === "[object Array]" ? pack.panels : [];
+    for (var i = 0; i < list.length; i++) {
+      var res = P.validate(list[i]);
+      if (res.panel) { panels.push(res.panel); }
+      for (var e = 0; e < res.errors.length; e++) { errors.push("面板 " + (i + 1) + "：" + res.errors[e]); }
+    }
+
+    var channels = [];
+    var clist = Object.prototype.toString.call(pack.channels) === "[object Array]" ? pack.channels : [];
+    for (var c = 0; c < clist.length; c++) {
+      var ch = clist[c];
+      if (ch && typeof ch === "object" && ch.key) {
+        channels.push({
+          key: String(ch.key),
+          label: ch.label === undefined ? String(ch.key) : String(ch.label),
+          unit: ch.unit === undefined ? "" : String(ch.unit),
+          color: COLOR_RE.test(String(ch.color || "")) ? String(ch.color) : "",
+          visible: ch.visible !== false,
+          precision: typeof ch.precision === "number" ? ch.precision : 3
+        });
+      }
+    }
+    return { ok: errors.length === 0, panels: panels, channels: channels, errors: errors };
+  };
+
+  /* ============================================================
+     内置渲染器
+     ============================================================ */
+
+  var PAD = { l: 42, r: 10, t: 20, b: 16 };
+
+  /* ---------- 1) 时域折线 ---------- */
+  P.register({
+    id: "timeplot",
+    label: "时域折线",
+    category: "时域",
+    autoCount: 4,
+    defaults: { window: 500, opts: { lineWidth: 1.4, showDot: true } },
+    make: function (hostEl, panel) {
+      var view = makeView(hostEl);
+
+      function draw(data) {
+        view.fit();
+        view.clear();
+        var t = theme();
+        var ctx = view.ctx;
+        var chans = resolveChannels(panel, data, registry.timeplot);
+        var series = buildSeries(panel, data, chans);
+
+        if (!series.length) {
+          ctx.fillStyle = t.ink3;
+          ctx.font = "11px Consolas, monospace";
+          ctx.textBaseline = "middle";
+          ctx.fillText("暂无数据（连接设备或进入演示模式）", 12, view.h / 2);
+          return;
+        }
+
+        var yr = yRange(panel, series);
+        var pad = { l: PAD.l, r: PAD.r, t: PAD.t, b: PAD.b };
+        var map = drawFrame(view, yr.min, yr.max, pad);
+        var lw = (panel.opts && panel.opts.lineWidth) || 1.4;
+
+        for (var i = 0; i < series.length; i++) {
+          var s = series[i];
+          ctx.save();
+          ctx.strokeStyle = s.color;
+          ctx.lineWidth = lw;
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          var started = false;
+          for (var j = 0; j < s.v.length; j++) {
+            var val = s.v[j];
+            if (!isFinite(val)) { started = false; continue; }
+            var x = map.xOf(j, s.v.length);
+            var y = map.yOf(val);
+            if (!started) { ctx.moveTo(x, y); started = true; }
+            else { ctx.lineTo(x, y); }
+          }
+          ctx.stroke();
+
+          /* 最新点标记 */
+          if (panel.opts && panel.opts.showDot && s.v.length) {
+            var lastIdx = s.v.length - 1;
+            var lv = s.v[lastIdx];
+            if (isFinite(lv)) {
+              ctx.fillStyle = s.color;
+              ctx.beginPath();
+              ctx.arc(map.xOf(lastIdx, s.v.length), map.yOf(lv), 2.6, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          ctx.restore();
+        }
+
+        /* 图例（左上角） */
+        var items = [];
+        for (var k = 0; k < series.length; k++) {
+          items.push({ color: series[k].color, label: series[k].label });
+        }
+        ctx.save();
+        ctx.font = "10px Consolas, monospace";
+        ctx.textBaseline = "middle";
+        var cx = pad.l + 4, cy = 9;
+        for (var m = 0; m < items.length; m++) {
+          if (cx + 60 > view.w - pad.r) { break; }
+          ctx.fillStyle = items[m].color;
+          ctx.fillRect(cx, cy - 4, 8, 8);
+          ctx.fillStyle = t.ink2;
+          ctx.fillText(items[m].label, cx + 12, cy);
+          cx += 12 + ctx.measureText(items[m].label).width + 12;
+        }
+        ctx.restore();
+
+        /* 左上角标出当前量程 */
+        ctx.save();
+        ctx.fillStyle = t.ink3;
+        ctx.font = "10px Consolas, monospace";
+        ctx.textBaseline = "top";
+        ctx.fillText(U.fmt(yr.min, 3) + " ~ " + U.fmt(yr.max, 3), 4, view.h - pad.b + 3);
+        ctx.restore();
+      }
+
+      return {
+        update: draw,
+        resize: function () { view.fit(); },
+        destroy: function () { view.destroy(); }
+      };
+    }
+  });
+
+  /* ---------- 2) 频域谱 ---------- */
+  P.register({
+    id: "fftplot",
+    label: "频域谱",
+    category: "频域",
+    autoCount: 3,
+    defaults: { window: 1024, opts: { maxN: 4096, logScale: true } },
+    make: function (hostEl, panel) {
+      var view = makeView(hostEl);
+
+      function draw(data) {
+        view.fit();
+        view.clear();
+        var t = theme();
+        var ctx = view.ctx;
+        var chans = resolveChannels(panel, data, registry.fftplot);
+        var series = buildSeries(panel, data, chans);
+
+        var spectrums = [];
+        var i, j;
+        for (i = 0; i < series.length; i++) {
+          var s = series[i];
+          if (s.v.length < 16) { continue; }
+          /* 采样率：优先用描述符指定，否则按相邻点平均时间间隔反推 */
+          var sr = (panel.opts && panel.opts.sampleRate) || 0;
+          if (!(sr > 0) && s.t.length >= 2) {
+            var dt = (s.t[s.t.length - 1] - s.t[0]) / (s.t.length - 1);
+            if (dt > 0) { sr = 1000 / dt; }        /* t 的单位是 ms */
+          }
+          if (!(sr > 0)) { sr = 1; }
+          var sp = SL.fft.spectrum(s.v, sr, { maxN: (panel.opts && panel.opts.maxN) || 4096 });
+          if (sp) { spectrums.push({ key: s.key, label: s.label, color: s.color, sp: sp }); }
+        }
+
+        if (!spectrums.length) {
+          ctx.fillStyle = t.ink3;
+          ctx.font = "11px Consolas, monospace";
+          ctx.textBaseline = "middle";
+          ctx.fillText("样本不足（至少需要 16 个点才能做频谱）", 12, view.h / 2);
+          return;
+        }
+
+        /* 只画到奈奎斯特频率的一半，避免高频区噪声占满画面 */
+        var fMax = 0;
+        for (i = 0; i < spectrums.length; i++) {
+          var fN = spectrums[i].sp.freqs[spectrums[i].sp.freqs.length - 1] / 2;
+          if (fN > fMax) { fMax = fN; }
+        }
+        if (!(fMax > 0)) { fMax = 1; }
+
+        var useDb = !panel.opts || panel.opts.logScale !== false;
+        var mn = Infinity, mx = -Infinity;
+        for (i = 0; i < spectrums.length; i++) {
+          var arr = useDb ? spectrums[i].sp.magsDb : spectrums[i].sp.magsLin;
+          for (j = 0; j < arr.length; j++) {
+            if (spectrums[i].sp.freqs[j] > fMax) { break; }
+            if (arr[j] < mn) { mn = arr[j]; }
+            if (arr[j] > mx) { mx = arr[j]; }
+          }
+        }
+        if (!isFinite(mn)) { mn = -80; mx = 0; }
+        if (mx - mn < 1) { mx = mn + 1; }
+
+        var pad = { l: 46, r: 10, t: 20, b: 16 };
+        var map = drawFrame(view, mn, mx, pad, function (v) { return U.fmt(v, 1); });
+
+        for (i = 0; i < spectrums.length; i++) {
+          var sc = spectrums[i];
+          var a = useDb ? sc.sp.magsDb : sc.sp.magsLin;
+          ctx.save();
+          ctx.strokeStyle = sc.color;
+          ctx.lineWidth = 1.3;
+          ctx.beginPath();
+          var started = false;
+          for (j = 0; j < a.length; j++) {
+            var f = sc.sp.freqs[j];
+            if (f > fMax) { break; }
+            var x = pad.l + (fMax > 0 ? (f / fMax) * map.plotW : 0);
+            var y = map.yOf(a[j]);
+            if (!started) { ctx.moveTo(x, y); started = true; }
+            else { ctx.lineTo(x, y); }
+          }
+          ctx.stroke();
+
+          /* 峰值频率标注 */
+          if (sc.sp.peak && sc.sp.peak.mag > 0) {
+            var pf = sc.sp.peak.freq;
+            if (pf <= fMax) {
+              var px = pad.l + (pf / fMax) * map.plotW;
+              var pMag = useDb ? (20 * Math.log(sc.sp.peak.mag + 1e-12) / Math.LN10) : sc.sp.peak.mag;
+              ctx.fillStyle = sc.color;
+              ctx.beginPath();
+              ctx.arc(px, map.yOf(pMag), 2.4, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = t.ink2;
+              ctx.font = "10px Consolas, monospace";
+              ctx.textBaseline = "bottom";
+              ctx.fillText(U.fmt(pf, 2) + "Hz", Math.min(px + 4, view.w - 52), pad.t + 10);
+            }
+          }
+          ctx.restore();
+        }
+
+        ctx.save();
+        ctx.fillStyle = t.ink3;
+        ctx.font = "10px Consolas, monospace";
+        ctx.textBaseline = "top";
+        ctx.fillText((useDb ? "幅值 dB" : "幅值") + " · 横轴 0~" + U.fmt(fMax, 1) + "Hz", 4, view.h - pad.b + 3);
+        ctx.restore();
+      }
+
+      return {
+        update: draw,
+        resize: function () { view.fit(); },
+        destroy: function () { view.destroy(); }
+      };
+    }
+  });
+
+  /* ---------- 3) 柱状图（各通道最新值） ---------- */
+  P.register({
+    id: "bar",
+    label: "柱状图",
+    category: "统计",
+    autoCount: 8,
+    defaults: { window: 600, opts: { showValue: true } },
+    make: function (hostEl, panel) {
+      var view = makeView(hostEl);
+
+      function draw(data) {
+        view.fit();
+        view.clear();
+        var t = theme();
+        var ctx = view.ctx;
+        var chans = resolveChannels(panel, data, registry.bar);
+        var stats = [];
+        for (var i = 0; i < chans.length; i++) {
+          var st = data.stat(chans[i].key, panel.window);
+          if (st.count > 0) {
+            stats.push({ ch: chans[i], st: st });
+          }
+        }
+        if (!stats.length) {
+          ctx.fillStyle = t.ink3;
+          ctx.font = "11px Consolas, monospace";
+          ctx.textBaseline = "middle";
+          ctx.fillText("暂无数据", 12, view.h / 2);
+          return;
+        }
+
+        var pad = { l: 46, r: 10, t: 20, b: 30 };
+        var mn = Infinity, mx = -Infinity;
+        for (var m = 0; m < stats.length; m++) {
+          if (stats[m].st.last < mn) { mn = stats[m].st.last; }
+          if (stats[m].st.last > mx) { mx = stats[m].st.last; }
+        }
+        if (!isFinite(mn)) { mn = 0; mx = 1; }
+        if (mn > 0) { mn = 0; }
+        if (mx < 0) { mx = 0; }
+        if (mx === mn) { mx = mn + 1; }
+        mn -= (mx - mn) * 0.05;
+        mx += (mx - mn) * 0.05;
+
+        var map = drawFrame(view, mn, mx, pad);
+        var n = stats.length;
+        var slot = map.plotW / n;
+        var bw = Math.max(6, Math.min(46, slot * 0.6));
+
+        for (var k = 0; k < n; k++) {
+          var item = stats[k];
+          var val = item.st.last;
+          var cx = pad.l + slot * (k + 0.5);
+          var y0 = map.yOf(0);
+          var y1 = map.yOf(val);
+          ctx.save();
+          ctx.fillStyle = item.ch.color || "#3b82f6";
+          ctx.globalAlpha = 0.85;
+          ctx.fillRect(cx - bw / 2, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0)));
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = t.ink2;
+          ctx.font = "10px Consolas, monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillText(item.ch.label || item.ch.key, cx, view.h - pad.b + 4);
+          if (panel.opts && panel.opts.showValue !== false) {
+            ctx.fillStyle = t.ink;
+            ctx.textBaseline = "bottom";
+            ctx.fillText(U.fmt(val, item.ch.precision === undefined ? 3 : item.ch.precision),
+              cx, Math.min(y0, y1) - 2);
+          }
+          ctx.restore();
+        }
+      }
+
+      return {
+        update: draw,
+        resize: function () { view.fit(); },
+        destroy: function () { view.destroy(); }
+      };
+    }
+  });
+
+  /* ---------- 4) 仪表盘（单通道） ---------- */
+  P.register({
+    id: "gauge",
+    label: "仪表盘",
+    category: "统计",
+    autoCount: 1,
+    defaults: { window: 200, opts: {} },
+    make: function (hostEl, panel) {
+      var view = makeView(hostEl);
+      var state = { display: 0, inited: false };
+
+      function draw(data) {
+        view.fit();
+        view.clear();
+        var t = theme();
+        var ctx = view.ctx;
+        var chans = resolveChannels(panel, data, registry.gauge);
+        if (!chans.length) {
+          ctx.fillStyle = t.ink3;
+          ctx.font = "11px Consolas, monospace";
+          ctx.textBaseline = "middle";
+          ctx.fillText("暂无可显示的通道", 12, view.h / 2);
+          return;
+        }
+        var ch = chans[0];
+        var st = data.stat(ch.key, panel.window);
+        if (st.count === 0) {
+          ctx.fillStyle = t.ink3;
+          ctx.font = "11px Consolas, monospace";
+          ctx.textBaseline = "middle";
+          ctx.fillText("等待通道「" + (ch.label || ch.key) + "」的数据", 12, view.h / 2);
+          return;
+        }
+
+        /* 量程：用户指定 > 通道 min/max > 当前值附近 */
+        var axis = panel.axis || {};
+        var lo = (typeof axis.yMin === "number") ? axis.yMin : null;
+        var hi = (typeof axis.yMax === "number") ? axis.yMax : null;
+        if (lo === null || hi === null) {
+          var span = (st.max - st.min);
+          if (!(span > 0)) { span = Math.abs(st.last) * 1.5 || 1; }
+          var mid = (st.max + st.min) / 2;
+          lo = (lo === null) ? mid - span * 0.75 : lo;
+          hi = (hi === null) ? mid + span * 0.75 : hi;
+        }
+        if (!(hi > lo)) { hi = lo + 1; }
+
+        var cx = view.w / 2;
+        var cy = view.h * 0.72;
+        var radius = Math.min(view.w * 0.42, view.h * 0.62);
+        var a0 = Math.PI * 0.98;
+        var a1 = Math.PI * 2.02;
+
+        /* 分区弧（红 / 黄 / 绿 / 黄 / 红） */
+        var zones = [
+          { from: 0, to: 0.1, color: "#ef4444" },
+          { from: 0.1, to: 0.25, color: "#f59e0b" },
+          { from: 0.25, to: 0.75, color: "#22c55e" },
+          { from: 0.75, to: 0.9, color: "#f59e0b" },
+          { from: 0.9, to: 1, color: "#ef4444" }
+        ];
+        ctx.save();
+        ctx.lineWidth = Math.max(8, radius * 0.16);
+        ctx.lineCap = "butt";
+        for (var i = 0; i < zones.length; i++) {
+          var z = zones[i];
+          ctx.strokeStyle = z.color;
+          ctx.globalAlpha = 0.42;
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, a0 + (a1 - a0) * z.from, a0 + (a1 - a0) * z.to);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        /* 指针 */
+        var ratio = U.clamp((st.last - lo) / (hi - lo), 0, 1);
+        if (!state.inited) { state.display = ratio; state.inited = true; }
+        else { state.display += (ratio - state.display) * 0.25; }   /* 缓和跟随，读数不跳 */
+        var ang = a0 + (a1 - a0) * state.display;
+        ctx.strokeStyle = t.ink;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(ang) * radius * 0.92, cy + Math.sin(ang) * radius * 0.92);
+        ctx.stroke();
+        ctx.fillStyle = t.ink;
+        ctx.beginPath();
+        ctx.arc(cx, cy, Math.max(3, radius * 0.05), 0, Math.PI * 2);
+        ctx.fill();
+
+        /* 读数 */
+        ctx.textAlign = "center";
+        ctx.fillStyle = t.ink;
+        ctx.font = "bold 19px Consolas, monospace";
+        ctx.textBaseline = "middle";
+        var prec = (ch.precision === undefined) ? 2 : ch.precision;
+        ctx.fillText(U.fmt(st.last, prec) + (ch.unit ? " " + ch.unit : ""), cx, cy - radius * 0.34);
+        ctx.font = "10px Consolas, monospace";
+        ctx.fillStyle = t.ink3;
+        ctx.fillText(String(ch.label || ch.key) + "  ·  min " + U.fmt(st.min, prec)
+          + " / max " + U.fmt(st.max, prec), cx, cy - radius * 0.08);
+        ctx.restore();
+      }
+
+      return {
+        update: draw,
+        resize: function () { view.fit(); },
+        destroy: function () { view.destroy(); }
+      };
+    }
+  });
+
+  /* ---------- 5) 数据表格（DOM 渲染） ---------- */
+  P.register({
+    id: "table",
+    label: "数据表格",
+    category: "统计",
+    autoCount: 8,
+    defaults: { window: 500, opts: {} },
+    make: function (hostEl, panel) {
+      var wrap = document.createElement("div");
+      wrap.className = "sl-table-wrap";
+      wrap.style.height = "100%";
+      wrap.style.overflow = "auto";
+      wrap.style.padding = "6px";
+      hostEl.appendChild(wrap);
+
+      function draw(data) {
+        var chans = resolveChannels(panel, data, registry.table);
+        var rows = [];
+        for (var i = 0; i < chans.length; i++) {
+          var ch = chans[i];
+          var st = data.stat(ch.key, panel.window);
+          if (st.count === 0) { continue; }
+          rows.push({ ch: ch, st: st });
+        }
+
+        /* 用 DOM 构建，全部走 textContent，不拼 HTML 字符串 */
+        var table = document.createElement("table");
+        table.className = "sl-table";
+        var thead = document.createElement("thead");
+        var htr = document.createElement("tr");
+        var heads = ["通道", "最新", "最小", "最大", "平均", "点数"];
+        for (var h = 0; h < heads.length; h++) {
+          var th = document.createElement("th");
+          th.textContent = heads[h];
+          htr.appendChild(th);
+        }
+        thead.appendChild(htr);
+        table.appendChild(thead);
+
+        var tbody = document.createElement("tbody");
+        if (!rows.length) {
+          var er = document.createElement("tr");
+          var etd = document.createElement("td");
+          etd.colSpan = heads.length;
+          etd.textContent = "暂无数据";
+          er.appendChild(etd);
+          tbody.appendChild(er);
+        }
+        for (var r = 0; r < rows.length; r++) {
+          var item = rows[r];
+          var prec = (item.ch.precision === undefined) ? 3 : item.ch.precision;
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          var sw = document.createElement("span");
+          sw.className = "sl-swatch";
+          sw.style.background = item.ch.color || "#3b82f6";
+          td0.appendChild(sw);
+          td0.appendChild(document.createTextNode(" " + (item.ch.label || item.ch.key)
+            + (item.ch.unit ? " (" + item.ch.unit + ")" : "")));
+          tr.appendChild(td0);
+          var vals = [item.st.last, item.st.min, item.st.max, item.st.avg];
+          for (var v = 0; v < vals.length; v++) {
+            var td = document.createElement("td");
+            td.textContent = U.fmt(vals[v], prec);
+            tr.appendChild(td);
+          }
+          var tdc = document.createElement("td");
+          tdc.textContent = String(item.st.count);
+          tr.appendChild(tdc);
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+
+        wrap.innerHTML = "";
+        wrap.appendChild(table);
+      }
+
+      return {
+        update: draw,
+        resize: function () {},
+        destroy: function () { hostEl.innerHTML = ""; }
+      };
+    }
+  });
+
+  /* ---------- 6) 文本监视器 ---------- */
+  P.register({
+    id: "textmon",
+    label: "文本监视器",
+    category: "监视",
+    autoCount: 0,
+    defaults: { window: 500, opts: { maxLines: 300, showTimestamp: true, showHex: false } },
+    make: function (hostEl, panel) {
+      var box = document.createElement("div");
+      box.className = "sl-mon";
+      hostEl.appendChild(box);
+      var autoscroll = true;
+
+      box.addEventListener("scroll", function () {
+        autoscroll = (box.scrollHeight - box.scrollTop - box.clientHeight) < 24;
+      });
+
+      function draw(data) {
+        var recs = data.recentRaw ? data.recentRaw(panel.window || 500) : [];
+        var opts = panel.opts || {};
+        var maxLines = opts.maxLines || 300;
+        if (recs.length > maxLines) { recs = recs.slice(recs.length - maxLines); }
+        /* 显示层开关（顶栏「编码与显示」组）：时间戳 / HEX 显示 */
+        var showTs = opts.showTimestamp !== false;
+        var showHex = !!opts.showHex;
+
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < recs.length; i++) {
+          var rec = recs[i];
+          var line = document.createElement("div");
+          if (showTs) {
+            var ts = document.createElement("span");
+            ts.className = "sl-mon-t";
+            ts.textContent = (rec.tLabel || "") + " ";
+            line.appendChild(ts);
+          }
+          var body = document.createElement("span");
+          body.className = rec.dir === "tx" ? "sl-mon-tx" : "sl-mon-rx";
+          body.textContent = showHex
+            ? (rec.hex || rec.text || "")
+            : (rec.text || rec.hex || "");
+          line.appendChild(body);
+          frag.appendChild(line);
+        }
+        box.innerHTML = "";
+        box.appendChild(frag);
+        if (autoscroll) { box.scrollTop = box.scrollHeight; }
+      }
+
+      return {
+        update: draw,
+        resize: function () {},
+        destroy: function () { hostEl.innerHTML = ""; }
+      };
+    }
+  });
+
+  /* ---------- 7) 二维轨迹 ---------- */
+  P.register({
+    id: "plotxy",
+    label: "二维轨迹",
+    category: "时域",
+    autoCount: 2,
+    defaults: { window: 800, opts: { equalAxis: true } },
+    make: function (hostEl, panel) {
+      var view = makeView(hostEl);
+
+      function draw(data) {
+        view.fit();
+        view.clear();
+        var t = theme();
+        var ctx = view.ctx;
+        var chans = resolveChannels(panel, data, registry.plotxy);
+        if (chans.length < 2) {
+          ctx.fillStyle = t.ink3;
+          ctx.font = "11px Consolas, monospace";
+          ctx.textBaseline = "middle";
+          ctx.fillText("需要两条通道（前一条作 X，后一条作 Y）", 12, view.h / 2);
+          return;
+        }
+        var cx = chans[0], cy = chans[1];
+        var sx = data.copy(cx.key, panel.window);
+        var sy = data.copy(cy.key, panel.window);
+        var n = Math.min(sx.v.length, sy.v.length);
+        if (n < 2) {
+          ctx.fillStyle = t.ink3;
+          ctx.font = "11px Consolas, monospace";
+          ctx.textBaseline = "middle";
+          ctx.fillText("样本不足", 12, view.h / 2);
+          return;
+        }
+        /* 从末尾对齐 */
+        var ox = sx.v.length - n, oy = sy.v.length - n;
+
+        var pad = { l: 44, r: 12, t: 18, b: 26 };
+        var map = drawFrame(view, -1, 1, pad);   /* 先画网格骨架，量程下面重算 */
+
+        var mnX = Infinity, mxX = -Infinity, mnY = Infinity, mxY = -Infinity;
+        var i, vx, vy;
+        for (i = 0; i < n; i++) {
+          vx = sx.v[ox + i]; vy = sy.v[oy + i];
+          if (!isFinite(vx) || !isFinite(vy)) { continue; }
+          if (vx < mnX) { mnX = vx; }
+          if (vx > mxX) { mxX = vx; }
+          if (vy < mnY) { mnY = vy; }
+          if (vy > mxY) { mxY = vy; }
+        }
+        if (!isFinite(mnX)) { mnX = -1; mxX = 1; mnY = -1; mxY = 1; }
+        if (mxX - mnX < 1e-9) { mnX -= 0.5; mxX += 0.5; }
+        if (mxY - mnY < 1e-9) { mnY -= 0.5; mxY += 0.5; }
+        var px = (mxX - mnX) * 0.06, py = (mxY - mnY) * 0.06;
+        mnX -= px; mxX += px; mnY -= py; mxY += py;
+
+        view.clear();
+        drawFrame(view, mnY, mxY, pad);
+        var plotW = Math.max(1, view.w - pad.l - pad.r);
+        var plotH = Math.max(1, view.h - pad.t - pad.b);
+        var X = function (v) { return pad.l + ((v - mnX) / (mxX - mnX)) * plotW; };
+        var Y = function (v) { return pad.t + plotH - ((v - mnY) / (mxY - mnY)) * plotH; };
+
+        ctx.save();
+        ctx.strokeStyle = (panel.colors && panel.colors[cx.key]) || cx.color || "#3b82f6";
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        var started = false;
+        for (i = 0; i < n; i++) {
+          vx = sx.v[ox + i]; vy = sy.v[oy + i];
+          if (!isFinite(vx) || !isFinite(vy)) { started = false; continue; }
+          if (!started) { ctx.moveTo(X(vx), Y(vy)); started = true; }
+          else { ctx.lineTo(X(vx), Y(vy)); }
+        }
+        ctx.stroke();
+        /* 最新点 */
+        var lx = sx.v[sx.v.length - 1], ly = sy.v[sy.v.length - 1];
+        if (isFinite(lx) && isFinite(ly)) {
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = (panel.colors && panel.colors[cx.key]) || cx.color || "#3b82f6";
+          ctx.beginPath();
+          ctx.arc(X(lx), Y(ly), 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.fillStyle = t.ink3;
+        ctx.font = "10px Consolas, monospace";
+        ctx.textBaseline = "top";
+        ctx.fillText("X: " + (cx.label || cx.key) + "   Y: " + (cy.label || cy.key), 4, view.h - pad.b + 4);
+        ctx.restore();
+      }
+
+      return {
+        update: draw,
+        resize: function () { view.fit(); },
+        destroy: function () { view.destroy(); }
+      };
+    }
+  });
+
+  SL.plugins = P;
+
+  /* UMD 尾：校验脚本可加载 validate / importPack 等做断言 */
+  if (typeof module !== "undefined" && module.exports) { module.exports = SL.plugins; }
+})(typeof window !== "undefined" ? window : globalThis);

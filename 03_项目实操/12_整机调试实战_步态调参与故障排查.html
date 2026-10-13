@@ -48,6 +48,21 @@
 <style id="v2128-contrast2">/* V2.1.28 对比度轮二批:浅色覆写补齐 */
   html:not([data-theme-early="dark"]) .my-kv-d{color:#b91c1c}
 </style>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -395,7 +410,7 @@ for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
     </defs>
     <rect x="16" y="26" width="104" height="44" rx="9" fill="#2563eb" fill-opacity=".15" stroke="#2563eb"/>
     <text x="68" y="53" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">整机异常</text>
-    <text x="68" y="88" font-size="9.5" fill="#64748b" text-anchor="middle">六类高频故障</text>
+    <text x="68" y="88" font-size="9.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">六类高频故障</text>
     <path d="M120,48 H136 V340" fill="none" stroke="#58a6ff" stroke-width="1.4"/>
     <line x1="136" y1="105" x2="148" y2="105" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <line x1="136" y1="152" x2="148" y2="152" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
@@ -407,10 +422,10 @@ for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
     <text x="198" y="109" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">电机不转</text>
     <line x1="246" y1="105" x2="268" y2="105" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="270" y="88" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="345" y="109" font-size="10.5" fill="#64748b" text-anchor="middle">测母线电压/欠压</text>
+    <text x="345" y="109" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">测母线电压/欠压</text>
     <line x1="420" y1="105" x2="442" y2="105" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="444" y="88" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="519" y="109" font-size="10.5" fill="#64748b" text-anchor="middle">查使能·抱闸·指令与反馈</text>
+    <text x="519" y="109" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">查使能·抱闸·指令与反馈</text>
     <line x1="594" y1="105" x2="616" y2="105" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
     <rect x="618" y="88" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
     <text x="683" y="109" font-size="10.5" class="my-sub-o" text-anchor="middle">供电/抱闸/编码器</text>
@@ -418,10 +433,10 @@ for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
     <text x="198" y="156" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">抖动·啸叫</text>
     <line x1="246" y1="152" x2="268" y2="152" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="270" y="135" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="345" y="156" font-size="10.5" fill="#64748b" text-anchor="middle">先降电流环 Kp</text>
+    <text x="345" y="156" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">先降电流环 Kp</text>
     <line x1="420" y1="152" x2="442" y2="152" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="444" y="135" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="519" y="156" font-size="10.5" fill="#64748b" text-anchor="middle">扫频查谐振与编码器噪声</text>
+    <text x="519" y="156" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">扫频查谐振与编码器噪声</text>
     <line x1="594" y1="152" x2="616" y2="152" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
     <rect x="618" y="135" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
     <text x="683" y="156" font-size="10.5" class="my-sub-o" text-anchor="middle">增益/谐振/噪声</text>
@@ -429,10 +444,10 @@ for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
     <text x="198" y="203" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">关节过热</text>
     <line x1="246" y1="199" x2="268" y2="199" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="270" y="182" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="345" y="203" font-size="10.5" fill="#64748b" text-anchor="middle">测持续电流是否超限</text>
+    <text x="345" y="203" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">测持续电流是否超限</text>
     <line x1="420" y1="199" x2="442" y2="199" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="444" y="182" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="519" y="203" font-size="10.5" fill="#64748b" text-anchor="middle">查堵转卡死与散热</text>
+    <text x="519" y="203" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">查堵转卡死与散热</text>
     <line x1="594" y1="199" x2="616" y2="199" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
     <rect x="618" y="182" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
     <text x="683" y="203" font-size="10.5" class="my-sub-o" text-anchor="middle">超限/堵转/散热不足</text>
@@ -440,10 +455,10 @@ for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
     <text x="198" y="250" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">位置漂移</text>
     <line x1="246" y1="246" x2="268" y2="246" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="270" y="229" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="345" y="250" font-size="10.5" fill="#64748b" text-anchor="middle">查编码器磁环/连接</text>
+    <text x="345" y="250" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">查编码器磁环/连接</text>
     <line x1="420" y1="246" x2="442" y2="246" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="444" y="229" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="519" y="250" font-size="10.5" fill="#64748b" text-anchor="middle">查传动打滑与背隙</text>
+    <text x="519" y="250" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">查传动打滑与背隙</text>
     <line x1="594" y1="246" x2="616" y2="246" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
     <rect x="618" y="229" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
     <text x="683" y="250" font-size="10.5" class="my-sub-o" text-anchor="middle">松动/打滑/背隙/零位</text>
@@ -451,10 +466,10 @@ for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
     <text x="198" y="297" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">通信中断</text>
     <line x1="246" y1="293" x2="268" y2="293" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="270" y="276" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="345" y="297" font-size="10.5" fill="#64748b" text-anchor="middle">查 120Ω 终端电阻</text>
+    <text x="345" y="297" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">查 120Ω 终端电阻</text>
     <line x1="420" y1="293" x2="442" y2="293" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="444" y="276" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="519" y="297" font-size="10.5" fill="#64748b" text-anchor="middle">查拓扑·ID·波特率</text>
+    <text x="519" y="297" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">查拓扑·ID·波特率</text>
     <line x1="594" y1="293" x2="616" y2="293" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
     <rect x="618" y="276" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
     <text x="683" y="297" font-size="10.5" class="my-sub-o" text-anchor="middle">电阻/断线/ID 冲突</text>
@@ -462,17 +477,17 @@ for w in [0.5, 1, 2, 4, 8]:          # 多个恒定速度点(rad/s)
     <text x="198" y="344" font-size="11" class="my-lg" text-anchor="middle" font-weight="bold">掉电坠落</text>
     <line x1="246" y1="340" x2="268" y2="340" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="270" y="323" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="345" y="344" font-size="10.5" fill="#64748b" text-anchor="middle">查抱闸时序</text>
+    <text x="345" y="344" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">查抱闸时序</text>
     <line x1="420" y1="340" x2="442" y2="340" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#dtA)"/>
     <rect x="444" y="323" width="150" height="34" rx="7" fill="#58a6ff" fill-opacity=".07" stroke="#58a6ff"/>
-    <text x="519" y="344" font-size="10.5" fill="#64748b" text-anchor="middle">查电容维持与保持力矩</text>
+    <text x="519" y="344" font-size="10.5" fill="#64748b" text-anchor="middle" class="fig-t-muted">查电容维持与保持力矩</text>
     <line x1="594" y1="340" x2="616" y2="340" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#dtO)"/>
     <rect x="618" y="323" width="130" height="34" rx="7" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b"/>
     <text x="683" y="344" font-size="10.5" class="my-sub-o" text-anchor="middle">时序/电容/力矩不足</text>
     <rect x="150" y="382" width="12" height="12" rx="2" fill="#58a6ff" fill-opacity=".3" stroke="#58a6ff"/>
-    <text x="168" y="392" font-size="10" fill="#64748b">排查步骤(从最常见、最易测开始)</text>
+    <text x="168" y="392" font-size="10" fill="#64748b" class="fig-t-muted">排查步骤(从最常见、最易测开始)</text>
     <rect x="420" y="382" width="12" height="12" rx="2" fill="#f59e0b" fill-opacity=".3" stroke="#f59e0b"/>
-    <text x="438" y="392" font-size="10" fill="#64748b">高频根因</text>
+    <text x="438" y="392" font-size="10" fill="#64748b" class="fig-t-muted">高频根因</text>
   </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:六类高频故障排查决策树——每类从「最常见、最易测」的第 1 步开始,两三步内收敛到右侧高频根因;完整三步排查详表见下</div></div>
 
   <div class="table-wrap"><table>

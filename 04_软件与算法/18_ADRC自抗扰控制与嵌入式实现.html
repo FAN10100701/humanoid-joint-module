@@ -81,6 +81,21 @@
     next: { t: "FOC算法完全图解:流程与运行图", u: "19_FOC算法完全图解_流程与运行图.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -148,65 +163,65 @@
         <marker id="ar-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
       </defs>
       <!-- 参考输入 v -->
-      <text x="12" y="76" fill="#22c55e" font-size="13" font-weight="bold">v</text>
-      <text x="8" y="92" fill="#8b98a9" font-size="10">参考输入</text>
+      <text x="12" y="76" fill="#22c55e" font-size="13" font-weight="bold" class="fig-t-ok">v</text>
+      <text x="8" y="92" fill="#8b98a9" font-size="10" class="fig-t-muted">参考输入</text>
       <line x1="24" y1="71" x2="50" y2="71" stroke="#22c55e" stroke-width="2" marker-end="url(#ar-g)"/>
       <!-- TD 框 -->
       <rect x="52" y="42" width="132" height="58" rx="10" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.6"/>
-      <text x="118" y="67" fill="#22c55e" font-size="13" font-weight="bold" text-anchor="middle">TD 跟踪微分器</text>
-      <text x="118" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle">安排过渡过程·提取微分</text>
+      <text x="118" y="67" fill="#22c55e" font-size="13" font-weight="bold" text-anchor="middle" class="fig-t-ok">TD 跟踪微分器</text>
+      <text x="118" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">安排过渡过程·提取微分</text>
       <!-- TD 输出 v1 v2 → Σ1 -->
       <path d="M184 71 L240 71 L240 139" fill="none" stroke="#22c55e" stroke-width="2" marker-end="url(#ar-g)"/>
-      <text x="246" y="112" fill="#22c55e" font-size="12">v₁ v₂</text>
+      <text x="246" y="112" fill="#22c55e" font-size="12" class="fig-t-ok">v₁ v₂</text>
       <!-- Σ1 求和 -->
       <circle cx="240" cy="156" r="15" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.6"/>
       <text x="240" y="161" fill="#ef4444" font-size="14" font-weight="bold" text-anchor="middle">Σ</text>
-      <text x="222" y="140" fill="#22c55e" font-size="11">+</text>
-      <text x="222" y="188" fill="#f59e0b" font-size="11">−</text>
+      <text x="222" y="140" fill="#22c55e" font-size="11" class="fig-t-ok">+</text>
+      <text x="222" y="188" fill="#f59e0b" font-size="11" class="fig-t-warn">−</text>
       <!-- Σ1 → LSEF -->
       <line x1="255" y1="156" x2="298" y2="156" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar-b)"/>
-      <text x="276" y="146" fill="#8b98a9" font-size="10.5" text-anchor="middle">e₁ e₂</text>
+      <text x="276" y="146" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">e₁ e₂</text>
       <!-- LSEF 框 -->
       <rect x="300" y="124" width="150" height="64" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="375" y="150" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">NLSEF / 线性PD (LSEF)</text>
-      <text x="375" y="170" fill="#8b98a9" font-size="11" text-anchor="middle">u₀ = kp·e₁ + kd·e₂</text>
+      <text x="375" y="150" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle" class="fig-t-info">NLSEF / 线性PD (LSEF)</text>
+      <text x="375" y="170" fill="#8b98a9" font-size="11" text-anchor="middle" class="fig-t-muted">u₀ = kp·e₁ + kd·e₂</text>
       <!-- LSEF → Σ2 -->
       <line x1="450" y1="156" x2="491" y2="156" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar-b)"/>
-      <text x="470" y="146" fill="#58a6ff" font-size="12" text-anchor="middle">u₀</text>
+      <text x="470" y="146" fill="#58a6ff" font-size="12" text-anchor="middle" class="fig-t-info">u₀</text>
       <!-- Σ2 求和(扰动补偿点) -->
       <circle cx="508" cy="156" r="15" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.6"/>
       <text x="508" y="161" fill="#ef4444" font-size="14" font-weight="bold" text-anchor="middle">Σ</text>
-      <text x="490" y="140" fill="#58a6ff" font-size="11">+</text>
-      <text x="490" y="188" fill="#ef4444" font-size="11">−</text>
+      <text x="490" y="140" fill="#58a6ff" font-size="11" class="fig-t-info">+</text>
+      <text x="490" y="188" fill="#ef4444" font-size="11" class="fig-t-bad">−</text>
       <!-- Σ2 → 对象 -->
       <line x1="523" y1="156" x2="554" y2="156" stroke="#22c55e" stroke-width="2" marker-end="url(#ar-g)"/>
-      <text x="538" y="146" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">u</text>
+      <text x="538" y="146" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle" class="fig-t-ok">u</text>
       <!-- 被控对象 -->
       <rect x="556" y="124" width="76" height="64" rx="10" fill="rgba(148,163,184,.12)" stroke="#94a3b8" stroke-width="1.6"/>
-      <text x="594" y="150" fill="#64748b" font-size="12" font-weight="bold" text-anchor="middle">被控对象</text>
-      <text x="594" y="170" fill="#8b98a9" font-size="10.5" text-anchor="middle">ÿ=f+b₀u</text>
+      <text x="594" y="150" fill="#64748b" font-size="12" font-weight="bold" text-anchor="middle" class="fig-t-muted">被控对象</text>
+      <text x="594" y="170" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">ÿ=f+b₀u</text>
       <!-- u 分支下行进 ESO -->
       <circle cx="540" cy="156" r="3.5" fill="#22c55e"/>
       <path d="M540 156 L540 262 L392 262 L392 290" fill="none" stroke="#22c55e" stroke-width="2" marker-end="url(#ar-g)"/>
-      <text x="546" y="228" fill="#22c55e" font-size="11">u(控制量)</text>
+      <text x="546" y="228" fill="#22c55e" font-size="11" class="fig-t-ok">u(控制量)</text>
       <!-- 对象输出 y 下行进 ESO -->
       <path d="M594 188 L594 324 L464 324" fill="none" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar-b)"/>
-      <text x="530" y="316" fill="#58a6ff" font-size="11">y(测量)</text>
+      <text x="530" y="316" fill="#58a6ff" font-size="11" class="fig-t-info">y(测量)</text>
       <!-- ESO 框 -->
       <rect x="160" y="292" width="304" height="64" rx="10" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="312" y="316" fill="#f59e0b" font-size="13" font-weight="bold" text-anchor="middle">ESO 扩张状态观测器</text>
-      <text x="312" y="336" fill="#8b98a9" font-size="10.5" text-anchor="middle">e = z₁−y · ż₁=z₂−β₁e · ż₂=z₃−β₂e+b₀u · ż₃=−β₃e</text>
-      <text x="312" y="351" fill="#8b98a9" font-size="10.5" text-anchor="middle">吃进 u 与 y,吐出 z₁ z₂(状态) + z₃(总扰动)</text>
+      <text x="312" y="316" fill="#f59e0b" font-size="13" font-weight="bold" text-anchor="middle" class="fig-t-warn">ESO 扩张状态观测器</text>
+      <text x="312" y="336" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">e = z₁−y · ż₁=z₂−β₁e · ż₂=z₃−β₂e+b₀u · ż₃=−β₃e</text>
+      <text x="312" y="351" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">吃进 u 与 y,吐出 z₁ z₂(状态) + z₃(总扰动)</text>
       <!-- z1 z2 上行进 Σ1 -->
       <path d="M230 292 L230 200 L240 200 L240 173" fill="none" stroke="#f59e0b" stroke-width="2" marker-end="url(#ar-o)"/>
-      <text x="196" y="238" fill="#f59e0b" font-size="11">z₁ z₂</text>
+      <text x="196" y="238" fill="#f59e0b" font-size="11" class="fig-t-warn">z₁ z₂</text>
       <!-- z3 经补偿盒进 Σ2 -->
       <path d="M330 292 L330 230 L373 230" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#ar-r)"/>
       <rect x="375" y="214" width="122" height="32" rx="8" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.4"/>
-      <text x="436" y="235" fill="#ef4444" font-size="11.5" font-weight="bold" text-anchor="middle">扰动补偿 −z₃/b₀</text>
+      <text x="436" y="235" fill="#ef4444" font-size="11.5" font-weight="bold" text-anchor="middle" class="fig-t-bad">扰动补偿 −z₃/b₀</text>
       <path d="M497 230 L508 230 L508 173" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#ar-r)"/>
       <!-- 图例 -->
-      <text x="320" y="374" fill="#8b98a9" font-size="10.5" text-anchor="middle">绿:指令/控制通道 · 蓝:测量通道 · 橙:观测器状态反馈 · 红:求和与扰动补偿</text>
+      <text x="320" y="374" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">绿:指令/控制通道 · 蓝:测量通道 · 橙:观测器状态反馈 · 红:求和与扰动补偿</text>
     </svg>
     <div class="my-fig-cap">图① ADRC 完整结构:ESO 是「心脏」—— 同时吃控制量 u 和测量 y,把总扰动 z₃ 估出来;控制律只做两件事:PD 出力 u₀ + 减去 z₃/b₀ 对消扰动</div>
   </div>
@@ -249,22 +264,22 @@
       <!-- 坐标轴 -->
       <line x1="70" y1="250" x2="585" y2="250" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#ax)"/>
       <line x1="70" y1="250" x2="70" y2="38" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#ax)"/>
-      <text x="575" y="270" fill="#8b98a9" font-size="12" text-anchor="end">t (s)</text>
-      <text x="30" y="34" fill="#8b98a9" font-size="12">|x−z| 估计误差</text>
+      <text x="575" y="270" fill="#8b98a9" font-size="12" text-anchor="end" class="fig-t-muted">t (s)</text>
+      <text x="30" y="34" fill="#8b98a9" font-size="12" class="fig-t-muted">|x−z| 估计误差</text>
       <!-- 零误差线 -->
       <line x1="70" y1="238" x2="580" y2="238" stroke="#8b98a9" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>
-      <text x="580" y="231" fill="#8b98a9" font-size="10" text-anchor="end">误差 = 0</text>
+      <text x="580" y="231" fill="#8b98a9" font-size="10" text-anchor="end" class="fig-t-muted">误差 = 0</text>
       <!-- ωo=50 绿:慢收敛 -->
       <path d="M70 70 C 200 92, 380 190, 560 234" fill="none" stroke="#22c55e" stroke-width="2.2"/>
       <!-- ωo=200 蓝:快收敛 -->
       <path d="M70 70 C 120 78, 160 170, 230 216 S 330 236, 420 237" fill="none" stroke="#58a6ff" stroke-width="2.2"/>
       <!-- ωo=2000 红:振荡发散 -->
       <path d="M70 100 L92 170 L114 52 L136 196 L158 40 L180 216 L202 30 L224 240 L246 20 L268 252 L290 12" fill="none" stroke="#ef4444" stroke-width="1.8"/>
-      <text x="298" y="20" fill="#ef4444" font-size="11.5" font-weight="bold">ωₒ 过高:振荡发散</text>
-      <text x="298" y="36" fill="#ef4444" font-size="10">(显式欧拉 + 噪声)</text>
+      <text x="298" y="20" fill="#ef4444" font-size="11.5" font-weight="bold" class="fig-t-bad">ωₒ 过高:振荡发散</text>
+      <text x="298" y="36" fill="#ef4444" font-size="10" class="fig-t-bad">(显式欧拉 + 噪声)</text>
       <!-- 注释 -->
-      <text x="150" y="130" fill="#22c55e" font-size="11.5">ωₒ=50:收敛慢,扰动「追不上」</text>
-      <text x="330" y="120" fill="#58a6ff" font-size="11.5" font-weight="bold">ωₒ=200:快速干净收敛 ✓</text>
+      <text x="150" y="130" fill="#22c55e" font-size="11.5" class="fig-t-ok">ωₒ=50:收敛慢,扰动「追不上」</text>
+      <text x="330" y="120" fill="#58a6ff" font-size="11.5" font-weight="bold" class="fig-t-info">ωₒ=200:快速干净收敛 ✓</text>
       <line x1="70" y1="100" x2="70" y2="100" stroke="#22c55e" stroke-width="2"/>
       <!-- 图例 -->
       <rect x="420" y="52" width="158" height="70" rx="8" fill="rgba(13,17,23,.45)" stroke="rgba(255,255,255,.12)"/>
@@ -585,29 +600,29 @@ float ladrc2_calc(ladrc2_t *a, float v1, float v2, float y)
       <!-- 坐标轴 -->
       <line x1="60" y1="280" x2="595" y2="280" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#cv)"/>
       <line x1="60" y1="280" x2="60" y2="34" stroke="#8b98a9" stroke-width="1.6" marker-end="url(#cv)"/>
-      <text x="585" y="300" fill="#8b98a9" font-size="12" text-anchor="end">t</text>
-      <text x="24" y="30" fill="#8b98a9" font-size="12">输出(速度/位置)</text>
+      <text x="585" y="300" fill="#8b98a9" font-size="12" text-anchor="end" class="fig-t-muted">t</text>
+      <text x="24" y="30" fill="#8b98a9" font-size="12" class="fig-t-muted">输出(速度/位置)</text>
       <!-- 稳态指令线 -->
       <line x1="60" y1="92" x2="590" y2="92" stroke="#8b98a9" stroke-width="1" stroke-dasharray="5 4"/>
-      <text x="66" y="84" fill="#8b98a9" font-size="10.5">稳态指令</text>
+      <text x="66" y="84" fill="#8b98a9" font-size="10.5" class="fig-t-muted">稳态指令</text>
       <!-- 扰动时刻 -->
       <line x1="330" y1="52" x2="330" y2="280" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="4 4"/>
-      <text x="338" y="62" fill="#ef4444" font-size="11.5" font-weight="bold">t₀ 突加负载</text>
+      <text x="338" y="62" fill="#ef4444" font-size="11.5" font-weight="bold" class="fig-t-bad">t₀ 突加负载</text>
       <!-- PI 曲线(橙): 上升→稳态→深跌→慢恢复 -->
       <path d="M60 262 C 120 250, 170 118, 230 96 L320 92 C 336 92, 340 196, 356 200 C 380 206, 420 150, 470 116 C 505 94, 545 94, 585 93" fill="none" stroke="#f59e0b" stroke-width="2.4"/>
       <!-- ADRC 曲线(蓝): 上升→稳态→浅跌→快恢复 -->
       <path d="M60 262 C 115 248, 150 110, 205 94 L320 92 C 336 92, 340 142, 354 144 C 372 146, 398 104, 430 95 C 455 90, 480 92, 585 92" fill="none" stroke="#58a6ff" stroke-width="2.4"/>
       <!-- 跌落深度标注 -->
       <line x1="356" y1="92" x2="356" y2="200" stroke="#f59e0b" stroke-width="1.2"/>
-      <text x="362" y="224" fill="#f59e0b" font-size="11">PI: 跌落深 Δ₁ · 恢复慢</text>
+      <text x="362" y="224" fill="#f59e0b" font-size="11" class="fig-t-warn">PI: 跌落深 Δ₁ · 恢复慢</text>
       <line x1="354" y1="92" x2="354" y2="144" stroke="#58a6ff" stroke-width="1.2" opacity=".8"/>
-      <text x="418" y="160" fill="#9ecbff" font-size="11">ADRC: 跌落浅 Δ₂ · 恢复快</text>
+      <text x="418" y="160" fill="#9ecbff" font-size="11" class="fig-t-info">ADRC: 跌落浅 Δ₂ · 恢复快</text>
       <!-- 图例 -->
       <rect x="420" y="40" width="168" height="54" rx="8" fill="rgba(13,17,23,.45)" stroke="rgba(255,255,255,.12)"/>
       <line x1="432" y1="60" x2="460" y2="60" stroke="#f59e0b" stroke-width="2.4"/><text x="468" y="64" class="my-lg" font-size="10.5">PI(整定至临界良好)</text>
       <line x1="432" y1="80" x2="460" y2="80" stroke="#58a6ff" stroke-width="2.4"/><text x="468" y="84" class="my-lg" font-size="10.5">LADRC(同对象同限幅)</text>
       <!-- 结论 -->
-      <text x="330" y="308" fill="#64748b" font-size="11" text-anchor="middle">跌落深度 Δ 主要由 ωₒ 决定 · 恢复时间 tr 主要由 ω_c 决定 · 恢复形态诊断 b₀ 方向</text>
+      <text x="330" y="308" fill="#64748b" font-size="11" text-anchor="middle" class="fig-t-muted">跌落深度 Δ 主要由 ωₒ 决定 · 恢复时间 tr 主要由 ω_c 决定 · 恢复形态诊断 b₀ 方向</text>
     </svg>
     <div class="my-fig-cap">图④ PI vs ADRC 突加负载对比(示意):两者阶跃跟踪差距不大,差距在扰动瞬间 —— ESO 在扰动「造成大错之前」就开始补偿,跌落更浅、恢复更快;交互版仿真见 00-01 页 ADRC 小节</div>
   </div>

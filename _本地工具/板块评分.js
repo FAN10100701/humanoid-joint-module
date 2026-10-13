@@ -272,7 +272,9 @@ function analyze(html, rel, key) {
     extLinks: (body.match(/https?:\/\//g) || []).length,
     quiz: cnt(/data-answer=/gi), explainN: explain.length, explainAvg,
     svg: svgs.length,
-    caps: Math.max((body.match(/class="[^"]*cap[^"]*"/gi) || []).length + cnt(/<figcaption/gi), cappedSvg),
+    /* V2.1.34: 图注与 SVG 同口径——都从全文(含 script 内 JS 生成的 svg/图注字符串)计数,
+       修复"JS 生成图 svg 有数、图注恒 0"的口径分裂(与 svg_audit.js 对齐) */
+    caps: Math.max((html.match(/class="[^"]*cap[^"]*"/gi) || []).length + (html.match(/<figcaption/gi) || []).length, cappedSvg),
     lightFill, overflow,
     imgAll, imgOK,
     formulaOK: !hasFormula || usesSiteJs,

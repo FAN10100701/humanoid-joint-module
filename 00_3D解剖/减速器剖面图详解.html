@@ -136,6 +136,21 @@ body[data-theme="dark"] .my-table th{background:#10233f;border-color:#1d3557;col
 body[data-theme="dark"] .my-table td{border-color:rgba(255,255,255,.09);color:#aab8c8;background:#10161f}
 body[data-theme="dark"] .my-src{color:#8b949e}
 </style>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -176,15 +191,15 @@ body[data-theme="dark"] .my-src{color:#8b949e}
         <g font-size="12" fill="#334155">
           <line x1="318" y1="150" x2="356" y2="118" stroke="#5b6472" stroke-width="1"/>
           <text x="362" y="122">刚轮 Circular Spline</text>
-          <text x="362" y="136" font-size="10" fill="#64748b">刚性内齿圈 · 齿数比柔轮多2</text>
+          <text x="362" y="136" font-size="10" fill="#64748b" class="fig-t-muted">刚性内齿圈 · 齿数比柔轮多2</text>
 
           <line x1="210" y1="70" x2="210" y2="30" stroke="#b8860b" stroke-width="1"/>
           <text x="216" y="26">柔轮 Flexspline</text>
-          <text x="216" y="40" font-size="10" fill="#64748b">薄壁弹性外齿 · 输出端</text><!-- 2026-09-19 上移:原 y=52 时灰字横穿刚轮顶弧(弧顶 y=42,目检实锤) -->
+          <text x="216" y="40" font-size="10" fill="#64748b" class="fig-t-muted">薄壁弹性外齿 · 输出端</text><!-- 2026-09-19 上移:原 y=52 时灰字横穿刚轮顶弧(弧顶 y=42,目检实锤) -->
 
           <line x1="146" y1="150" x2="66" y2="132" stroke="#2563eb" stroke-width="1"/>
           <text x="14" y="110">波发生器 Wave Generator</text>
-          <text x="14" y="124" font-size="10" fill="#64748b">椭圆凸轮+柔性轴承 · 输入端</text>
+          <text x="14" y="124" font-size="10" fill="#64748b" class="fig-t-muted">椭圆凸轮+柔性轴承 · 输入端</text>
         </g>
         <!-- 啮合点说明 -->
         <g font-size="11" fill="#dc2626">
@@ -237,7 +252,7 @@ body[data-theme="dark"] .my-src{color:#8b949e}
 
           <line x1="270" y1="185" x2="356" y2="170" stroke="#b8860b" stroke-width="1"/>
           <text x="362" y="166">行星轮 ×3</text>
-          <text x="362" y="180" font-size="10" fill="#64748b">既自转又公转 · 均布载荷</text>
+          <text x="362" y="180" font-size="10" fill="#64748b" class="fig-t-muted">既自转又公转 · 均布载荷</text>
 
           <line x1="320" y1="150" x2="356" y2="230" stroke="#5b6472" stroke-width="1"/>
           <text x="362" y="234">内齿圈（固定）</text>
@@ -293,7 +308,7 @@ body[data-theme="dark"] .my-src{color:#8b949e}
 
           <line x1="278" y1="110" x2="356" y2="80" stroke="#b8860b" stroke-width="1"/>
           <text x="362" y="84">摆线盘 Cycloid Disc</text>
-          <text x="362" y="98" font-size="10" fill="#64748b">外廓为摆线曲线 · 齿数=针齿数−1</text>
+          <text x="362" y="98" font-size="10" fill="#64748b" class="fig-t-muted">外廓为摆线曲线 · 齿数=针齿数−1</text>
 
           <line x1="316" y1="60" x2="356" y2="30" stroke="#5b6472" stroke-width="1"/>
           <text x="362" y="34">针齿圈（固定圆柱销）</text>

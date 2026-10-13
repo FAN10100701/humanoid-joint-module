@@ -37,6 +37,21 @@
     next: { t: "保研复试面试题库", u: "11_保研复试面试题库.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="container">
@@ -265,16 +280,16 @@
       }
       var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H
         +'" role="img" aria-label="近 12 个月学习热力图">'
-        +'<text x="16" y="14" font-size="11" fill="#64748b">一年前</text>'
-        +'<text x="'+(W-16)+'" y="14" font-size="11" fill="#64748b" text-anchor="end">今天</text>'
+        +'<text x="16" y="14" font-size="11" fill="#64748b" class="fig-t-muted">一年前</text>'
+        +'<text x="'+(W-16)+'" y="14" font-size="11" fill="#64748b" text-anchor="end" class="fig-t-muted">今天</text>'
         +cells
-        +'<text x="16" y="150" font-size="11" fill="#64748b">少</text>';
+        +'<text x="16" y="150" font-size="11" fill="#64748b" class="fig-t-muted">少</text>';
       for(var k=0;k<5;k++){
         svg+='<rect x="'+(38+k*18)+'" y="142" width="14" height="9" rx="2" fill="'+HEAT_COLS[k]+'"/>';
       }
-      svg+='<text x="132" y="150" font-size="11" fill="#64748b">多</text></svg>';
+      svg+='<text x="132" y="150" font-size="11" fill="#64748b" class="fig-t-muted">多</text></svg>';
       wrapYear.innerHTML=svg
-        +'<div class="my-hstat">近 12 个月:有活动 <b>'+activeDays+'</b> 天 · 最长连续 <b>'+maxRun+'</b> 天</div>';
+        +'<div class="my-hstat my-fig-cap">图① 近 12 个月学习热力图:有活动 <b>'+activeDays+'</b> 天 · 最长连续 <b>'+maxRun+'</b> 天</div>';
     }
 
     function show(year){

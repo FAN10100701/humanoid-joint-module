@@ -1,0 +1,126 @@
+# SerialLab · 网页端串口调试助手
+
+> 纯前端串口调试助手（Web Serial API）。零构建、零后端、零第三方依赖，保守 ES5。
+> 本文件是给 AI / 人类协作者的速览入口。动手前请一并读 `AGENTS.md` 与 `skills/html-webserial-app/SKILL.md`。
+
+## 目录
+
+```
+index.html            子应用外壳（零内联业务 JS，全部脚本外链）
+app.css               自带 --sl-* 设计令牌，双主题，类名前缀 sl-
+js/util.js            通用工具（叶子模块，零依赖）
+js/core.js            事件总线 + 运行状态 + 配置默认值/迁移/持久化
+js/codec.js           UTF-8 多字节切分保护 / 分帧 / 校验和
+js/expr.js            安全表达式求值（禁 eval）
+js/parser.js          文本解析 + HEX 结构表解析
+js/fft.js             零依赖 radix-2 FFT
+js/datastore.js       环形缓冲 + 通道元数据 + 原始帧记录
+js/transport.js       Web Serial 传输层 + 内置演示数据源
+js/plugins.js         声明式插件注册表 + 7 个内置渲染器 + 面板包
+js/views.js           工作区面板调度与节流渲染
+js/timeline.js        录制 / 冻结 / 回放
+js/exporters.js       数据导出 / 配置导入导出 / 单文件离线版装配
+js/ui.js              DOM 绑定 / 控件 / 对话框 / 主题 / 快捷键 / 发送引擎
+js/app.js             唯一编排者：装配数据管线并启动
+llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
+```
+
+脚本加载顺序即依赖顺序，不可打乱（`index.html` 底部按序外链）。
+
+## 单向数据流（唯一正确的通路）
+
+```
+接收：transport  emit "serial:data"（Uint8Array）
+   → app     分帧（文本按行 / HEX 按帧头帧尾长度字段 + 静默超时兜底）
+   → parser  解析
+   → datastore.pushFrame（值里出现的新键自动建通道） + pushRaw（原始记录）
+   → emit "frame"
+   → views/plugins 按 requestAnimationFrame 节流重绘；timeline 录制；ui 更新状态灯
+
+发送：ui / 发送引擎 → SL.app.send() → transport.write()（写队列串行化）
+      发送内容只进原始记录，绝不把「自己发出去的值」灌进通道
+```
+
+绕过这条通路的直接后果：图表不长数据、录制丢帧、导出缺列。新增功能请挂到这条链上。
+
+## 模块契约（改动前必读）
+
+- **模块间不互相持有引用**，跨模块通信一律走 `core.on/off/emit`。唯一的例外是数据 provider（views 传给渲染器）与 `SL.app.send`（ui 请求发送）。
+- 业务模块一律**不碰 DOM**（`ui.js` 是唯一例外，`views.js` 只建面板骨架）。
+- 用户可见文本一律 `textContent`，**禁止 innerHTML 拼用户数据**。
+- **禁止 eval / new Function**。用户填写的公式走 `expr.js` 的编译求值。
+- 每个模块文件尾有 UMD 尾（`module.exports`），供 `_本地工具/校验串口应用.js` 在 Node 里直接 require 真源断言。**新增模块请照写这个尾巴。**
+
+## 关键约定
+
+| 事项 | 约定 |
+|---|---|
+| 命名空间 | 全部挂 `window.SerialLab`（`SL`），模块名小写：`SL.util` `SL.core` `SL.codec` … |
+| 语法级别 | 保守 ES5：`var` + `function`，禁 `let/const/箭头函数/模板字符串/class`；可用 `Promise` `TextDecoder` `Uint8Array` 等浏览器 API |
+| localStorage 键 | 必须以 `humanoid-` 开头（站点自检 C4 白名单）；配置键固定 `humanoid-serial-config-v1` |
+| 主题 | 暗色写在 `:root`，浅色用 `html:not([data-theme-early="dark"])` **单选择器**覆盖；首帧由 head 内联脚本写 `data-theme-early` |
+| 类名前缀 | 本应用一律 `sl-`；禁止空 `class=""`；禁止私有/一次性类名 |
+| 配置写入 | 改 `core.config` → `core.saveConfig()` → `core.emit("config:changed", {scope})`，让下游按 scope 收敛 |
+| 控件接线 | 界面上的每个控件都必须用 `ui.js` 的 `addBind({el, path, ...})` 落到 `core.config` 上；`read/write` 用于控件取值与配置值类型不一致的场景（复选框↔字符串、下拉字面量 `\n` ↔ 真换行）。**只加控件不接线是真实缺陷**——V2.2.0 修过 14 个（波特率、编码、换行、自动重连、复位等待、HEX 发送…全部改不动） |
+| 显示层 vs 解析层 | 「HEX 显示」「显示时间戳」是**监视器面板的 opts**（`transport.hexRecv` / `transport.showTimestamp` 只是它们的持久化落点）；数据解析成通道由 `rule.active`（解析模式）决定。两者语义独立，别合并 |
+| 数值口径 | 时间轴用 `util.now()`（`performance.now`，单调）；绘图量程自动时留 `null` |
+
+## 容易踩的坑（都是真踩过的）
+
+1. `navigator.serial.requestPort()` **必须在真实用户手势的调用栈里**调用。
+2. 波特率等参数**不能热改**，必须 close → open（`transport.reopen()` 已内置 250ms 去抖）。
+3. 读循环释放顺序固定：`reader.cancel()` → `reader.releaseLock()` → `writer.releaseLock()` → `port.close()`。
+4. 断开与重连交叠会竞态：靠递增 `epoch` 让旧读循环自认过期（`transport.js` 里那套标志别删）。
+5. 开硬流控后**不要**手动设 RTS。
+6. Arduino / ESP 打开串口会因 DTR 复位，连上后要留复位等待窗口，其间禁止发送。
+7. `pagehide` / `beforeunload` 里必须释放端口，否则下次打开提示被占用。
+8. HEX 收帧的长度公式必须含校验和字节数与「含帧头」的偏移口径（见 `codec.extractFrames` 注释里的历史事故）。
+9. 触发应答必须带冷却与限流，否则匹配词与应答内容互相包含会瞬间打满串口。
+10. 界面上的 `file://` 打开**无法使用真实串口**（非安全上下文），这是平台限制，不要试图绕过 —— 只能引导用户用 https/localhost。
+11. **演示帧必须跟随用户配置的帧结构**：`transport.buildDemoHexFrameByRule(rule,seq,t)` 按 `core.config.rule.hex` 合成，`demoRuleUsable(rule)` 判定可用性，不可用才回退内置 AA55 帧。若演示永远只发 AA55，用户配好自定义协议后进演示会「一条通道都建不出来」，看起来像坏了。
+12. 规则驱动合成器与内置 AA55 帧**必须逐字节等价**（`_本地工具/校验串口应用.js` 有断言锁死）：帧头 → [长度字段] → 字段 → [帧尾] → 校验和的顺序不能变，序号字节要填在「第一个没人占用的空档」，且**必须在算校验和之前**写入（校验范围可能覆盖它）。
+13. 写 E2E 想注入 `humanoid-serial-config-v1` 时，**不能**「先开子应用 → 注入 → 刷新」：`app.js` 在 `beforeunload` 会把内存配置回写，注入必被覆盖。正确姿势是先落到非子应用页（如 `/404.html`）注入，再 `goto` 子应用。
+
+## 面板描述符（用户 DIY 显示的唯一入口）
+
+```js
+{
+  type: "timeplot",              // 必填：渲染器 id（未知则降级为 table，绝不抛异常）
+  id: "p-xxx",                   // 可选：留空自动生成；重复时自动换新 id
+  title: "时域波形",              // 可选：留空用渲染器 label；超 40 字截断
+  channels: ["auto"],            // 通道键名数组；"auto" = 自动取前 N 个可见通道
+  expr: "(cur*24)",              // 可选：映射公式，用通道名作变量
+  axis: { yAuto: true, yMin: null, yMax: null },
+  window: 500,                   // 显示最近多少个采样点（10 ~ 100000）
+  colors: { "cur": "#3b82f6" },  // 每通道覆盖色
+  opts: { ... }                  // 渲染器私有选项（以渲染器 defaults 为白名单）
+}
+```
+
+内置渲染器：`timeplot` 时域折线 · `fftplot` 频域谱 · `bar` 柱状图 · `gauge` 仪表盘 ·
+`table` 数据表格 · `textmon` 文本监视器 · `plotxy` 二维轨迹。
+渲染器接口：`make(hostEl, panel)` → `{ update(dataProvider), resize(), destroy() }`。
+
+面板包（跨机器分享配置）：
+```json
+{ "kind": "seriallab-panel-pack", "version": 1, "panels": [ ... ], "channels": [ ... ] }
+```
+导入时 kind 不符或版本高于本应用支持值 → 拒绝并给出原因，**不要猜着解析**。
+
+## 新增渲染器的步骤
+
+1. 在 `js/plugins.js` 末尾照既有渲染器写一段 `P.register({ id, label, category, defaults, make })`；
+2. `make` 里用 `makeView(hostEl)` 建画布（已做 DPR 适配），`update(data)` 里用 `data.copy(key, n)` 取数，
+   再用 `drawFrame(view, yMin, yMax, pad, fmtY)` 画网格与刻度；
+3. 配色只从 `theme()` 取（`--sl-grid/--sl-axis/--sl-ink*`），不要在渲染器里硬编码颜色；
+4. 用 `P.register` 注册后，面板编辑器、快速添加、面板包导出会自动带上它，无需改 ui.js；
+5. 在 `_本地工具/校验串口应用.js` 里补一条断言（至少校验 `P.validate` 对它的归一化结果）。
+
+## 校验
+
+```bash
+node _本地工具/校验串口应用.js        # 纯函数 + 帧管线断言，期望输出 SERIAL OK
+node _本地工具/一键自检.ps1           # 站点级自检（本目录因 _ 前缀豁免索引检查，但仍受 JS 语法与 localStorage 键名约束）
+```
+
+`skills/html-webserial-app/SKILL.md` 里有从零开发同类应用的完整流程与踩坑清单。

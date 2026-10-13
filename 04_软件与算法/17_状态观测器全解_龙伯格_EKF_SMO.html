@@ -70,6 +70,21 @@
     next: { t: "ADRC自抗扰控制与嵌入式实现", u: "18_ADRC自抗扰控制与嵌入式实现.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -142,7 +157,7 @@
         <marker id="lg-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
       </defs>
       <!-- u 输入 -->
-      <text x="16" y="154" fill="#22c55e" font-size="14" font-weight="bold">u</text>
+      <text x="16" y="154" fill="#22c55e" font-size="14" font-weight="bold" class="fig-t-ok">u</text>
       <line x1="34" y1="150" x2="86" y2="150" stroke="#22c55e" stroke-width="2" marker-end="url(#lg-arr-g)"/>
       <circle cx="86" cy="150" r="3.5" fill="#22c55e"/>
       <!-- u 分支: 向上到对象 -->
@@ -151,41 +166,41 @@
       <path d="M86 150 L86 226 L146 226" fill="none" stroke="#22c55e" stroke-width="2" marker-end="url(#lg-arr-g)"/>
       <!-- 被控对象框 -->
       <rect x="150" y="44" width="188" height="60" rx="10" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="244" y="70" fill="#58a6ff" font-size="14" font-weight="bold" text-anchor="middle">被控对象(真实电机)</text>
-      <text x="244" y="90" fill="#8b98a9" font-size="12" text-anchor="middle">ẋ = Ax + Bu</text>
+      <text x="244" y="70" fill="#58a6ff" font-size="14" font-weight="bold" text-anchor="middle" class="fig-t-info">被控对象(真实电机)</text>
+      <text x="244" y="90" fill="#8b98a9" font-size="12" text-anchor="middle" class="fig-t-muted">ẋ = Ax + Bu</text>
       <!-- 对象输出 y -->
       <line x1="338" y1="74" x2="540" y2="74" stroke="#58a6ff" stroke-width="2"/>
-      <text x="548" y="79" fill="#58a6ff" font-size="14" font-weight="bold" text-anchor="end">y</text>
-      <text x="420" y="66" fill="#58a6ff" font-size="12" text-anchor="middle">y = Cx(测量)</text>
+      <text x="548" y="79" fill="#58a6ff" font-size="14" font-weight="bold" text-anchor="end" class="fig-t-info">y</text>
+      <text x="420" y="66" fill="#58a6ff" font-size="12" text-anchor="middle" class="fig-t-info">y = Cx(测量)</text>
       <!-- y 向下进求和点 -->
       <circle cx="480" cy="74" r="3.5" fill="#58a6ff"/>
       <path d="M480 74 L480 136" fill="none" stroke="#58a6ff" stroke-width="2" marker-end="url(#lg-arr-b)"/>
       <!-- 求和圆 -->
       <circle cx="480" cy="152" r="16" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.6"/>
       <text x="480" y="158" fill="#ef4444" font-size="15" font-weight="bold" text-anchor="middle">Σ</text>
-      <text x="472" y="132" fill="#58a6ff" font-size="11" text-anchor="end">+</text>
-      <text x="472" y="182" fill="#f59e0b" font-size="11" text-anchor="end">−</text>
+      <text x="472" y="132" fill="#58a6ff" font-size="11" text-anchor="end" class="fig-t-info">+</text>
+      <text x="472" y="182" fill="#f59e0b" font-size="11" text-anchor="end" class="fig-t-warn">−</text>
       <!-- 观测器输出 ŷ 向上进求和点 -->
       <line x1="480" y1="226" x2="480" y2="168" stroke="#f59e0b" stroke-width="2" marker-end="url(#lg-arr-o)"/>
-      <text x="490" y="216" fill="#f59e0b" font-size="12">ŷ = Cx̂(估计)</text>
+      <text x="490" y="216" fill="#f59e0b" font-size="12" class="fig-t-warn">ŷ = Cx̂(估计)</text>
       <!-- 误差 e 输出 -->
       <line x1="496" y1="152" x2="548" y2="152" stroke="#ef4444" stroke-width="2" marker-end="url(#lg-arr-r)"/>
-      <text x="546" y="144" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="end">e = y − ŷ</text>
+      <text x="546" y="144" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="end" class="fig-t-bad">e = y − ŷ</text>
       <!-- 反馈路径: 从求和点向左绕回观测器, 经 ×L 放大(进盒顶、出盒左,箭头段独立保留可见) -->
       <path d="M464 152 L390 152 L390 236" fill="none" stroke="#ef4444" stroke-width="2"/>
       <line x1="352" y1="252" x2="342" y2="252" stroke="#ef4444" stroke-width="2" marker-end="url(#lg-arr-r)"/>
       <rect x="352" y="236" width="76" height="32" rx="8" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.4"/>
-      <text x="390" y="257" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle">× L</text>
-      <text x="408" y="272" fill="#ef4444" font-size="11">误差反馈增益</text>
+      <text x="390" y="257" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle" class="fig-t-bad">× L</text>
+      <text x="408" y="272" fill="#ef4444" font-size="11" class="fig-t-bad">误差反馈增益</text>
       <!-- 观测器框 -->
       <rect x="150" y="196" width="188" height="60" rx="10" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.6"/>
-      <text x="244" y="222" fill="#f59e0b" font-size="14" font-weight="bold" text-anchor="middle">龙伯格观测器(模型拷贝)</text>
-      <text x="244" y="242" fill="#8b98a9" font-size="12" text-anchor="middle">x̂̇ = Ax̂ + Bu + L(y − Cx̂)</text>
+      <text x="244" y="222" fill="#f59e0b" font-size="14" font-weight="bold" text-anchor="middle" class="fig-t-warn">龙伯格观测器(模型拷贝)</text>
+      <text x="244" y="242" fill="#8b98a9" font-size="12" text-anchor="middle" class="fig-t-muted">x̂̇ = Ax̂ + Bu + L(y − Cx̂)</text>
       <!-- 观测器输出到求和点 -->
       <path d="M338 226 L480 226" fill="none" stroke="#f59e0b" stroke-width="2"/>
       <circle cx="480" cy="226" r="3.5" fill="#f59e0b"/>
       <!-- 底部标注 -->
-      <text x="290" y="288" fill="#8b98a9" font-size="12" text-anchor="middle">目标: ė = (A − LC)e → 0,估计 x̂ 收敛到真实 x</text>
+      <text x="290" y="288" fill="#8b98a9" font-size="12" text-anchor="middle" class="fig-t-muted">目标: ė = (A − LC)e → 0,估计 x̂ 收敛到真实 x</text>
     </svg>
     <div class="my-fig-cap">图① 龙伯格观测器结构:同一模型跑一份"拷贝",输出误差 e = y − ŷ 经增益 L 反馈校正,把估计状态拽回真实轨迹</div>
   </div>
@@ -294,40 +309,40 @@ void luenberger_step(luenberger_t *o, const float u[2], const float y[2], float 
         <marker id="ek-arr-g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e"/></marker>
       </defs>
       <!-- 输入 -->
-      <text x="14" y="86" fill="#22c55e" font-size="14" font-weight="bold">u = [vd vq]</text>
-      <text x="14" y="104" fill="#8b98a9" font-size="11">本拍施加的电压</text>
+      <text x="14" y="86" fill="#22c55e" font-size="14" font-weight="bold" class="fig-t-ok">u = [vd vq]</text>
+      <text x="14" y="104" fill="#8b98a9" font-size="11" class="fig-t-muted">本拍施加的电压</text>
       <line x1="110" y1="82" x2="164" y2="82" stroke="#22c55e" stroke-width="2" marker-end="url(#ek-arr-g)"/>
-      <text x="14" y="250" fill="#58a6ff" font-size="14" font-weight="bold">y = [id iq]</text>
-      <text x="14" y="268" fill="#8b98a9" font-size="11">实测电流(ADC)</text>
+      <text x="14" y="250" fill="#58a6ff" font-size="14" font-weight="bold" class="fig-t-info">y = [id iq]</text>
+      <text x="14" y="268" fill="#8b98a9" font-size="11" class="fig-t-muted">实测电流(ADC)</text>
       <line x1="110" y1="246" x2="330" y2="246" stroke="#58a6ff" stroke-width="2" marker-end="url(#ek-arr-b)"/>
       <circle cx="164" cy="82" r="3.5" fill="#22c55e"/>
       <path d="M164 82 L164 300 L360 300" fill="none" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="4 3"/>
-      <text x="174" y="164" fill="#22c55e" font-size="11">u 上一拍值(延迟补偿)</text>
+      <text x="174" y="164" fill="#22c55e" font-size="11" class="fig-t-ok">u 上一拍值(延迟补偿)</text>
       <!-- 预测框 -->
       <rect x="168" y="30" width="240" height="118" rx="12" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.8"/>
-      <text x="288" y="54" fill="#f59e0b" font-size="15" font-weight="bold" text-anchor="middle">① 预测 Predict(模型推)</text>
-      <text x="288" y="80" fill="#64748b" font-size="12.5" text-anchor="middle">x̂⁻ = f(x̂, u)</text>
-      <text x="288" y="102" fill="#64748b" font-size="12.5" text-anchor="middle">F = ∂f/∂x(雅可比, 含 cosθ sinθ)</text>
-      <text x="288" y="124" fill="#64748b" font-size="12.5" text-anchor="middle">P⁻ = F P Fᵀ + Q</text>
-      <text x="288" y="142" fill="#8b98a9" font-size="11" text-anchor="middle">"我觉得现在大概在哪"(先验)</text>
+      <text x="288" y="54" fill="#f59e0b" font-size="15" font-weight="bold" text-anchor="middle" class="fig-t-warn">① 预测 Predict(模型推)</text>
+      <text x="288" y="80" fill="#64748b" font-size="12.5" text-anchor="middle" class="fig-t-muted">x̂⁻ = f(x̂, u)</text>
+      <text x="288" y="102" fill="#64748b" font-size="12.5" text-anchor="middle" class="fig-t-muted">F = ∂f/∂x(雅可比, 含 cosθ sinθ)</text>
+      <text x="288" y="124" fill="#64748b" font-size="12.5" text-anchor="middle" class="fig-t-muted">P⁻ = F P Fᵀ + Q</text>
+      <text x="288" y="142" fill="#8b98a9" font-size="11" text-anchor="middle" class="fig-t-muted">"我觉得现在大概在哪"(先验)</text>
       <!-- 预测到更新箭头 -->
       <path d="M288 148 L288 196" fill="none" stroke="#f59e0b" stroke-width="2" marker-end="url(#ek-arr-o)"/>
-      <text x="296" y="178" fill="#8b98a9" font-size="11">x̂⁻, P⁻</text>
+      <text x="296" y="178" fill="#8b98a9" font-size="11" class="fig-t-muted">x̂⁻, P⁻</text>
       <!-- 更新框 -->
       <rect x="168" y="200" width="240" height="96" rx="12" fill="rgba(88,166,255,.12)" stroke="#58a6ff" stroke-width="1.8"/>
-      <text x="288" y="222" fill="#58a6ff" font-size="15" font-weight="bold" text-anchor="middle">② 更新 Correct(测量校)</text>
-      <text x="288" y="246" fill="#64748b" font-size="12.5" text-anchor="middle">K = P⁻Hᵀ(HP⁻Hᵀ + R)⁻¹</text>
-      <text x="288" y="268" fill="#64748b" font-size="12.5" text-anchor="middle">x̂ = x̂⁻ + K(y − H x̂⁻),  P = (I−KH)P⁻</text>
-      <text x="288" y="288" fill="#8b98a9" font-size="11" text-anchor="middle">"用测量残差修正自己"(后验)</text>
+      <text x="288" y="222" fill="#58a6ff" font-size="15" font-weight="bold" text-anchor="middle" class="fig-t-info">② 更新 Correct(测量校)</text>
+      <text x="288" y="246" fill="#64748b" font-size="12.5" text-anchor="middle" class="fig-t-muted">K = P⁻Hᵀ(HP⁻Hᵀ + R)⁻¹</text>
+      <text x="288" y="268" fill="#64748b" font-size="12.5" text-anchor="middle" class="fig-t-muted">x̂ = x̂⁻ + K(y − H x̂⁻),  P = (I−KH)P⁻</text>
+      <text x="288" y="288" fill="#8b98a9" font-size="11" text-anchor="middle" class="fig-t-muted">"用测量残差修正自己"(后验)</text>
       <!-- 循环 -->
       <path d="M408 248 L452 248 L452 88 L412 88" fill="none" stroke="#8b98a9" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#ek-arr)"/>
-      <text x="460" y="172" fill="#8b98a9" font-size="11">下一拍</text>
+      <text x="460" y="172" fill="#8b98a9" font-size="11" class="fig-t-muted">下一拍</text>
       <!-- 输出 -->
       <line x1="408" y1="222" x2="508" y2="222" stroke="#f59e0b" stroke-width="2" marker-end="url(#ek-arr-o)"/>
-      <text x="514" y="212" fill="#f59e0b" font-size="13" font-weight="bold">ω̂ θ̂</text>
-      <text x="514" y="230" fill="#8b98a9" font-size="11">给 Park 变换</text>
-      <text x="514" y="246" fill="#8b98a9" font-size="11">与速度环</text>
-      <text x="300" y="316" fill="#8b98a9" font-size="12" text-anchor="middle">Q = 过程噪声(模型不准的度量) · R = 测量噪声(ADC 不准的度量) · 每控制周期执行一次</text>
+      <text x="514" y="212" fill="#f59e0b" font-size="13" font-weight="bold" class="fig-t-warn">ω̂ θ̂</text>
+      <text x="514" y="230" fill="#8b98a9" font-size="11" class="fig-t-muted">给 Park 变换</text>
+      <text x="514" y="246" fill="#8b98a9" font-size="11" class="fig-t-muted">与速度环</text>
+      <text x="300" y="316" fill="#8b98a9" font-size="12" text-anchor="middle" class="fig-t-muted">Q = 过程噪声(模型不准的度量) · R = 测量噪声(ADC 不准的度量) · 每控制周期执行一次</text>
     </svg>
     <div class="my-fig-cap">图② EKF 两步循环:预测步"模型往外推",更新步"测量往回拉",增益 K 由协方差现场算出</div>
   </div>
@@ -424,55 +439,55 @@ void ekf_step(ekf_t *e, const float u[2], const float y[2], float T)
         <marker id="sm-arr-r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/></marker>
       </defs>
       <!-- 输入 -->
-      <text x="10" y="78" fill="#58a6ff" font-size="12.5" font-weight="bold">实测 iα iβ</text>
-      <text x="10" y="94" fill="#8b98a9" font-size="10.5">Clark 变换后</text>
+      <text x="10" y="78" fill="#58a6ff" font-size="12.5" font-weight="bold" class="fig-t-info">实测 iα iβ</text>
+      <text x="10" y="94" fill="#8b98a9" font-size="10.5" class="fig-t-muted">Clark 变换后</text>
       <line x1="84" y1="74" x2="116" y2="74" stroke="#58a6ff" stroke-width="2" marker-end="url(#sm-arr-b)"/>
       <!-- 求和点 -->
       <circle cx="130" cy="74" r="14" fill="rgba(239,68,68,.14)" stroke="#ef4444" stroke-width="1.6"/>
-      <text x="130" y="79" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle">Σ</text>
-      <text x="122" y="60" fill="#58a6ff" font-size="10">+</text>
-      <text x="140" y="96" fill="#ef4444" font-size="10">−</text>
+      <text x="130" y="79" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle" class="fig-t-bad">Σ</text>
+      <text x="122" y="60" fill="#58a6ff" font-size="10" class="fig-t-info">+</text>
+      <text x="140" y="96" fill="#ef4444" font-size="10" class="fig-t-bad">−</text>
       <!-- 电流误差 → 饱和函数 -->
       <line x1="144" y1="74" x2="176" y2="74" stroke="#ef4444" stroke-width="2" marker-end="url(#sm-arr-r)"/>
-      <text x="124" y="106" text-anchor="end" fill="#ef4444" font-size="10.5">e = i − î(滑模面 s=0)</text>
+      <text x="124" y="106" text-anchor="end" fill="#ef4444" font-size="10.5" class="fig-t-bad">e = i − î(滑模面 s=0)</text>
       <rect x="178" y="50" width="86" height="48" rx="9" fill="rgba(239,68,68,.12)" stroke="#ef4444" stroke-width="1.5"/>
-      <text x="221" y="70" fill="#ef4444" font-size="12" font-weight="bold" text-anchor="middle">饱和函数</text>
-      <text x="221" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle">z = k·sat(e/Δ)</text>
+      <text x="221" y="70" fill="#ef4444" font-size="12" font-weight="bold" text-anchor="middle" class="fig-t-bad">饱和函数</text>
+      <text x="221" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">z = k·sat(e/Δ)</text>
       <!-- sat → LPF -->
       <line x1="264" y1="74" x2="296" y2="74" stroke="#f59e0b" stroke-width="2" marker-end="url(#sm-arr-o)"/>
       <!-- LPF -->
       <rect x="298" y="50" width="98" height="48" rx="9" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="1.5"/>
-      <text x="347" y="70" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle">一阶低通 LPF</text>
-      <text x="347" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle">1/(τs+1) + 相位补偿</text>
+      <text x="347" y="70" fill="#f59e0b" font-size="12" font-weight="bold" text-anchor="middle" class="fig-t-warn">一阶低通 LPF</text>
+      <text x="347" y="86" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">1/(τs+1) + 相位补偿</text>
       <!-- LPF → EEMF 标签 → PLL -->
       <line x1="396" y1="74" x2="428" y2="74" stroke="#f59e0b" stroke-width="2" marker-end="url(#sm-arr-o)"/>
-      <text x="300" y="42" fill="#f59e0b" font-size="11">êα ≈ −ψf·ω·sinθ, êβ ≈ ψf·ω·cosθ(EEMF)</text>
+      <text x="232" y="26" fill="#f59e0b" font-size="11" class="fig-t-warn">êα ≈ −ψf·ω·sinθ, êβ ≈ ψf·ω·cosθ(EEMF)</text>
       <!-- PLL 大框 -->
       <rect x="430" y="34" width="180" height="150" rx="12" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1.8"/>
-      <text x="520" y="56" fill="#22c55e" font-size="13" font-weight="bold" text-anchor="middle">PLL 锁相环</text>
-      <text x="520" y="76" fill="#64748b" font-size="11.5" text-anchor="middle">ε = −êα·cosθ̂ − êβ·sinθ̂</text>
-      <text x="520" y="96" fill="#64748b" font-size="11.5" text-anchor="middle">≈ ψf·ω·sin(θ−θ̂)</text>
-      <text x="520" y="120" fill="#22c55e" font-size="11.5" text-anchor="middle">PI → ω̂(平滑转速)</text>
-      <text x="520" y="140" fill="#22c55e" font-size="11.5" text-anchor="middle">∫ω̂ → θ̂(wrap 0~2π)</text>
-      <text x="520" y="166" fill="#8b98a9" font-size="10.5" text-anchor="middle">对相位误差闭环 = 又一层低通</text>
+      <text x="520" y="56" fill="#22c55e" font-size="13" font-weight="bold" text-anchor="middle" class="fig-t-ok">PLL 锁相环</text>
+      <text x="520" y="76" fill="#64748b" font-size="11.5" text-anchor="middle" class="fig-t-muted">ε = −êα·cosθ̂ − êβ·sinθ̂</text>
+      <text x="520" y="96" fill="#64748b" font-size="11.5" text-anchor="middle" class="fig-t-muted">≈ ψf·ω·sin(θ−θ̂)</text>
+      <text x="520" y="120" fill="#22c55e" font-size="11.5" text-anchor="middle" class="fig-t-ok">PI → ω̂(平滑转速)</text>
+      <text x="520" y="140" fill="#22c55e" font-size="11.5" text-anchor="middle" class="fig-t-ok">∫ω̂ → θ̂(wrap 0~2π)</text>
+      <text x="520" y="166" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">对相位误差闭环 = 又一层低通</text>
       <!-- PLL 输出 -->
       <line x1="520" y1="184" x2="520" y2="192" stroke="#22c55e" stroke-width="2" marker-end="url(#sm-arr-g)"/>
-      <text x="486" y="206" fill="#22c55e" font-size="11.5" font-weight="bold">θ̂ ω̂ → Park/速度环</text>
+      <text x="486" y="206" fill="#22c55e" font-size="11.5" font-weight="bold" class="fig-t-ok">θ̂ ω̂ → Park/速度环</text>
       <!-- sat 开关项反馈给电流观测器 -->
       <path d="M221 98 L221 192" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#sm-arr-r)"/>
-      <text x="228" y="146" fill="#ef4444" font-size="10.5">开关项 z</text>
+      <text x="228" y="146" fill="#ef4444" font-size="10.5" class="fig-t-bad">开关项 z</text>
       <!-- 电流观测器模型框 -->
       <rect x="150" y="196" width="220" height="62" rx="10" fill="rgba(88,166,255,.1)" stroke="#58a6ff" stroke-width="1.5"/>
-      <text x="260" y="219" fill="#58a6ff" font-size="12" font-weight="bold" text-anchor="middle">电流观测器模型</text>
-      <text x="260" y="239" fill="#8b98a9" font-size="10.5" text-anchor="middle">dî/dt = (v − Rs·î + z)/Ls</text>
+      <text x="260" y="219" fill="#58a6ff" font-size="12" font-weight="bold" text-anchor="middle" class="fig-t-info">电流观测器模型</text>
+      <text x="260" y="239" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">dî/dt = (v − Rs·î + z)/Ls</text>
       <!-- v 输入 -->
-      <text x="88" y="228" fill="#22c55e" font-size="12.5" font-weight="bold">vα vβ</text>
-      <text x="88" y="244" fill="#8b98a9" font-size="10.5">施加电压</text>
+      <text x="88" y="228" fill="#22c55e" font-size="12.5" font-weight="bold" class="fig-t-ok">vα vβ</text>
+      <text x="88" y="244" fill="#8b98a9" font-size="10.5" class="fig-t-muted">施加电压</text>
       <line x1="130" y1="228" x2="150" y2="228" stroke="#22c55e" stroke-width="2" marker-end="url(#sm-arr-g)"/>
       <!-- î 反馈到求和点 -->
       <path d="M150 212 L130 212 L130 88" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#sm-arr-b)"/>
-      <text x="120" y="180" fill="#58a6ff" font-size="10.5" transform="rotate(-90 120 180)">估计电流 î</text>
-      <text x="310" y="286" fill="#8b98a9" font-size="11.5" text-anchor="middle">误差滑到零 → 开关项均值 ≈ EEMF → LPF 滤毛刺 → PLL 解调出 θ̂ 与 ω̂</text>
+      <text x="120" y="180" fill="#58a6ff" font-size="10.5" transform="rotate(-90 120 180)" class="fig-t-info">估计电流 î</text>
+      <text x="310" y="286" fill="#8b98a9" font-size="11.5" text-anchor="middle" class="fig-t-muted">误差滑到零 → 开关项均值 ≈ EEMF → LPF 滤毛刺 → PLL 解调出 θ̂ 与 ω̂</text>
     </svg>
     <div class="my-fig-cap">图③ SMO + PLL 全链路:电流误差 → 饱和开关 → 电流模型(î 反馈) → LPF → EEMF → PLL → θ̂ ω̂</div>
   </div>
@@ -569,40 +584,40 @@ void smo_step(smo_t *s, const float val[2], const float ial[2], float Ts)
       </defs>
       <!-- 左: 电机截面 -->
       <circle cx="150" cy="140" r="104" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="150" y="24" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle">定子(IPM 电机截面)</text>
+      <text x="150" y="24" fill="#58a6ff" font-size="12.5" font-weight="bold" text-anchor="middle" class="fig-t-info">定子(IPM 电机截面)</text>
       <!-- 转子 -->
       <circle cx="150" cy="140" r="52" fill="rgba(245,158,11,.14)" stroke="#f59e0b" stroke-width="1.8"/>
-      <text x="150" y="168" fill="#f59e0b" font-size="11.5" text-anchor="middle">转子(永磁体)</text>
+      <text x="150" y="168" fill="#f59e0b" font-size="11.5" text-anchor="middle" class="fig-t-warn">转子(永磁体)</text>
       <!-- d 轴(磁极方向, 垂直向上) -->
       <line x1="150" y1="140" x2="150" y2="52" stroke="#ef4444" stroke-width="2.2" marker-end="url(#hf-arr)"/>
-      <text x="158" y="66" fill="#ef4444" font-size="12.5" font-weight="bold">d 轴</text>
+      <text x="158" y="66" fill="#ef4444" font-size="12.5" font-weight="bold" class="fig-t-bad">d 轴</text>
       <!-- q 轴(水平) -->
       <line x1="150" y1="140" x2="242" y2="140" stroke="#22c55e" stroke-width="2.2" stroke-dasharray="6 4" marker-end="url(#hf-arr)"/>
-      <text x="196" y="132" fill="#22c55e" font-size="12.5" font-weight="bold">q 轴</text>
+      <text x="196" y="132" fill="#22c55e" font-size="12.5" font-weight="bold" class="fig-t-ok">q 轴</text>
       <!-- 凸极示意: 双弧 -->
       <path d="M110 84 A 74 74 0 0 1 190 84" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="3 3"/>
       <path d="M100 140 A 50 32 0 0 0 200 140" fill="none" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="3 3"/>
-      <text x="150" y="216" fill="#8b98a9" font-size="11.5" text-anchor="middle">凸极率 ρ = Lq/Ld &gt; 1(IPM)</text>
-      <text x="150" y="234" fill="#8b98a9" font-size="11.5" text-anchor="middle">表贴式 SPM: ρ ≈ 1 → 无凸极,HFI 失效</text>
-      <text x="150" y="264" fill="#ef4444" font-size="11" text-anchor="middle">d 轴:磁阻大 → Ld 小</text>
-      <text x="150" y="282" fill="#22c55e" font-size="11" text-anchor="middle">q 轴:磁阻小 → Lq 大</text>
+      <text x="150" y="216" fill="#8b98a9" font-size="11.5" text-anchor="middle" class="fig-t-muted">凸极率 ρ = Lq/Ld &gt; 1(IPM)</text>
+      <text x="150" y="234" fill="#8b98a9" font-size="11.5" text-anchor="middle" class="fig-t-muted">表贴式 SPM: ρ ≈ 1 → 无凸极,HFI 失效</text>
+      <text x="150" y="264" fill="#ef4444" font-size="11" text-anchor="middle" class="fig-t-bad">d 轴:磁阻大 → Ld 小</text>
+      <text x="150" y="282" fill="#22c55e" font-size="11" text-anchor="middle" class="fig-t-ok">q 轴:磁阻小 → Lq 大</text>
       <!-- 中间箭头 -->
       <line x1="272" y1="140" x2="318" y2="140" stroke="#8b98a9" stroke-width="2" marker-end="url(#hf-arr)"/>
-      <text x="296" y="126" fill="#8b98a9" font-size="10.5" text-anchor="middle">注入 v_h</text>
-      <text x="296" y="160" fill="#8b98a9" font-size="10.5" text-anchor="middle">看响应</text>
+      <text x="296" y="126" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">注入 v_h</text>
+      <text x="296" y="160" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">看响应</text>
       <!-- 右: 解调曲线 -->
       <line x1="340" y1="230" x2="580" y2="230" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#hf-arr)"/>
       <line x1="460" y1="246" x2="460" y2="52" stroke="#8b98a9" stroke-width="1.5" marker-end="url(#hf-arr)"/>
-      <text x="566" y="248" fill="#8b98a9" font-size="11" text-anchor="end">Δθ = θ − θ̂</text>
-      <text x="452" y="60" fill="#8b98a9" font-size="11" text-anchor="end">解调幅值</text>
+      <text x="566" y="248" fill="#8b98a9" font-size="11" text-anchor="end" class="fig-t-muted">Δθ = θ − θ̂</text>
+      <text x="452" y="60" fill="#8b98a9" font-size="11" text-anchor="end" class="fig-t-muted">解调幅值</text>
       <!-- cos(2Δθ) 曲线 -->
       <path d="M340 230 C 368 230 396 88 460 88 C 524 88 552 230 580 230" fill="none" stroke="#58a6ff" stroke-width="2.4"/>
-      <text x="462" y="106" fill="#58a6ff" font-size="11.5" text-anchor="middle">幅值 ∝ cos(2Δθ)</text>
+      <text x="462" y="106" fill="#58a6ff" font-size="11.5" text-anchor="middle" class="fig-t-info">幅值 ∝ cos(2Δθ)</text>
       <!-- 零差点 -->
       <circle cx="460" cy="88" r="5" fill="#f59e0b"/>
       <line x1="460" y1="88" x2="460" y2="230" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4 3"/>
-      <text x="460" y="262" fill="#f59e0b" font-size="11.5" text-anchor="middle">Δθ = 0:幅值最大 → PLL 把 θ̂ 拉向 θ</text>
-      <text x="460" y="280" fill="#8b98a9" font-size="11" text-anchor="middle">二倍频特性: ±180° 有歧义, 靠磁饱和极性辨识消除</text>
+      <text x="460" y="262" fill="#f59e0b" font-size="11.5" text-anchor="middle" class="fig-t-warn">Δθ = 0:幅值最大 → PLL 把 θ̂ 拉向 θ</text>
+      <text x="460" y="280" fill="#8b98a9" font-size="11" text-anchor="middle" class="fig-t-muted">二倍频特性: ±180° 有歧义, 靠磁饱和极性辨识消除</text>
     </svg>
     <div class="my-fig-cap">图④ HFI 凸极原理:IPM 的 L<sub>d</sub>≠L<sub>q</sub> 让高频响应随转子位置变化,解调出 sin2Δθ 信号即可锁相</div>
   </div>
@@ -646,34 +661,34 @@ void smo_step(smo_t *s, const float val[2], const float ial[2], float Ts)
       <rect x="40" y="96" width="240" height="58" fill="rgba(239,68,68,.16)" stroke="#ef4444" stroke-width="1.6"/>
       <rect x="280" y="96" width="90" height="58" fill="rgba(245,158,11,.18)" stroke="#f59e0b" stroke-width="1.6"/>
       <rect x="370" y="96" width="230" height="58" fill="rgba(88,166,255,.14)" stroke="#58a6ff" stroke-width="1.6"/>
-      <text x="160" y="120" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle">零低速:HFI 高频注入</text>
-      <text x="160" y="140" fill="#8b98a9" font-size="10.5" text-anchor="middle">(或 IF 开环启动兜底)</text>
-      <text x="325" y="120" fill="#f59e0b" font-size="12.5" font-weight="bold" text-anchor="middle">切换带</text>
-      <text x="325" y="138" fill="#8b98a9" font-size="10.5" text-anchor="middle">滞环+加权渐变</text>
-      <text x="485" y="120" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle">中高速:SMO / EKF / MRAS</text>
-      <text x="485" y="140" fill="#8b98a9" font-size="10.5" text-anchor="middle">EEMF 信噪比充足, 观测器接管</text>
+      <text x="160" y="120" fill="#ef4444" font-size="13" font-weight="bold" text-anchor="middle" class="fig-t-bad">零低速:HFI 高频注入</text>
+      <text x="160" y="140" fill="#8b98a9" class="fig-t-baddeep" font-size="10.5" text-anchor="middle" class="fig-t-baddeep">(或 IF 开环启动兜底)</text>
+      <text x="325" y="120" fill="#f59e0b" font-size="12.5" font-weight="bold" text-anchor="middle" class="fig-t-warn">切换带</text>
+      <text x="325" y="138" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">滞环+加权渐变</text>
+      <text x="485" y="120" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle" class="fig-t-info">中高速:SMO / EKF / MRAS</text>
+      <text x="485" y="140" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">EEMF 信噪比充足, 观测器接管</text>
       <!-- 横轴 -->
       <line x1="40" y1="176" x2="610" y2="176" stroke="#8b98a9" stroke-width="1.8" marker-end="url(#sw-arr)"/>
-      <text x="612" y="164" fill="#8b98a9" font-size="11.5" text-anchor="end">转速 ω →</text>
+      <text x="612" y="164" fill="#8b98a9" font-size="11.5" text-anchor="end" class="fig-t-muted">转速 ω →</text>
       <!-- 刻度 -->
       <line x1="40" y1="172" x2="40" y2="180" stroke="#8b98a9" stroke-width="1.5"/>
-      <text x="40" y="194" fill="#8b98a9" font-size="10.5" text-anchor="middle">0</text>
+      <text x="40" y="194" fill="#8b98a9" font-size="10.5" text-anchor="middle" class="fig-t-muted">0</text>
       <line x1="280" y1="172" x2="280" y2="180" stroke="#f59e0b" stroke-width="1.5"/>
-      <text x="280" y="194" fill="#f59e0b" font-size="10.5" text-anchor="middle">5% ωN</text>
+      <text x="280" y="194" fill="#f59e0b" font-size="10.5" text-anchor="middle" class="fig-t-warn">5% ωN</text>
       <line x1="370" y1="172" x2="370" y2="180" stroke="#58a6ff" stroke-width="1.5"/>
-      <text x="370" y="194" fill="#58a6ff" font-size="10.5" text-anchor="middle">10% ωN</text>
-      <text x="600" y="194" fill="#8b98a9" font-size="10.5" text-anchor="end">100% ωN(额定)</text>
+      <text x="370" y="194" fill="#58a6ff" font-size="10.5" text-anchor="middle" class="fig-t-info">10% ωN</text>
+      <text x="600" y="194" fill="#8b98a9" font-size="10.5" text-anchor="end" class="fig-t-muted">100% ωN(额定)</text>
       <!-- 滞环标注: 升速切出 -->
       <path d="M370 88 L370 66 L500 66" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#sw-arr-b)"/>
-      <text x="388" y="60" fill="#58a6ff" font-size="11">升速 ≥10%:切出 HFI(HFI 静默退后台)</text>
+      <text x="388" y="60" fill="#58a6ff" font-size="11" class="fig-t-info">升速 ≥10%:切出 HFI(HFI 静默退后台)</text>
       <circle cx="370" cy="88" r="4" fill="#58a6ff"/>
       <!-- 滞环标注: 降速切回 -->
       <path d="M280 88 L280 40 L140 40" fill="none" stroke="#ef4444" stroke-width="1.8" marker-end="url(#sw-arr-r)"/>
-      <text x="288" y="34" fill="#ef4444" font-size="11">降速 ≤5%:切回 HFI(滞环 5%, 防临界抖动)</text>
+      <text x="288" y="34" fill="#ef4444" font-size="11" class="fig-t-bad">降速 ≤5%:切回 HFI(滞环 5%, 防临界抖动)</text>
       <circle cx="280" cy="88" r="4" fill="#ef4444"/>
       <!-- 底部说明 -->
-      <text x="310" y="226" fill="#8b98a9" font-size="11.5" text-anchor="middle">带内: θ̂ = w·θ̂_HFI + (1−w)·θ̂_SMO(w 随 ω 线性渐变, 角度差先 wrap ±π)</text>
-      <text x="310" y="244" fill="#8b98a9" font-size="11.5" text-anchor="middle">判定源可用 ω̂、EEMF 幅值或 EKF 的 P 矩阵置信度</text>
+      <text x="310" y="226" fill="#8b98a9" font-size="11.5" text-anchor="middle" class="fig-t-muted">带内: θ̂ = w·θ̂_HFI + (1−w)·θ̂_SMO(w 随 ω 线性渐变, 角度差先 wrap ±π)</text>
+      <text x="310" y="244" fill="#8b98a9" font-size="11.5" text-anchor="middle" class="fig-t-muted">判定源可用 ω̂、EEMF 幅值或 EKF 的 P 矩阵置信度</text>
     </svg>
     <div class="my-fig-cap">图⑤ 无感全速域切换策略:低速 HFI → 切换带滞环渐变 → 中高速基波观测器,双阈值防临界振荡</div>
   </div>

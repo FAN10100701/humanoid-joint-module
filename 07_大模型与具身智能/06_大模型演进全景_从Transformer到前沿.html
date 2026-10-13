@@ -50,6 +50,21 @@
     next: { t: "大模型结构实验室:动手演示", u: "07_大模型结构实验室_动手演示.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="container">
@@ -88,25 +103,25 @@
       <line x1="60" y1="225" x2="60" y2="170" stroke="#58a6ff" stroke-width="1"/>
       <text x="60" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2017</text>
       <text x="60" y="157" text-anchor="middle" class="my-lg" font-size="11">Transformer</text>
-      <text x="60" y="172" text-anchor="middle" fill="#64748b" font-size="10">注意力即一切</text>
+      <text x="60" y="172" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">注意力即一切</text>
       <!-- 2018 下 -->
       <circle cx="140" cy="230" r="5" fill="#58a6ff"/>
       <line x1="140" y1="235" x2="140" y2="290" stroke="#58a6ff" stroke-width="1"/>
       <text x="140" y="308" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2018</text>
       <text x="140" y="325" text-anchor="middle" class="my-lg" font-size="11">GPT-1 · BERT</text>
-      <text x="140" y="340" text-anchor="middle" fill="#64748b" font-size="10">生成/理解双线</text>
+      <text x="140" y="340" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">生成/理解双线</text>
       <!-- 2019 上 -->
       <circle cx="220" cy="230" r="5" fill="#58a6ff"/>
       <line x1="220" y1="225" x2="220" y2="170" stroke="#58a6ff" stroke-width="1"/>
       <text x="220" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2019</text>
       <text x="220" y="157" text-anchor="middle" class="my-lg" font-size="11">GPT-2(15亿)</text>
-      <text x="220" y="172" text-anchor="middle" fill="#64748b" font-size="10">纯生成路线</text>
+      <text x="220" y="172" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">纯生成路线</text>
       <!-- 2020 下 -->
       <circle cx="300" cy="230" r="5" fill="#f59e0b"/>
       <line x1="300" y1="235" x2="300" y2="290" stroke="#f59e0b" stroke-width="1"/>
       <text x="300" y="308" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2020</text>
       <text x="300" y="325" text-anchor="middle" class="my-lg" font-size="11">GPT-3(1750亿)</text>
-      <text x="300" y="340" text-anchor="middle" fill="#64748b" font-size="10">缩放定律提出</text>
+      <text x="300" y="340" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">缩放定律提出</text>
       <!-- 2022 上 -->
       <circle cx="440" cy="230" r="5" fill="#f59e0b"/>
       <line x1="440" y1="225" x2="440" y2="170" stroke="#f59e0b" stroke-width="1"/>
@@ -118,25 +133,25 @@
       <line x1="520" y1="235" x2="520" y2="290" stroke="#22c55e" stroke-width="1"/>
       <text x="520" y="308" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2023</text>
       <text x="520" y="325" text-anchor="middle" class="my-lg" font-size="11">GPT-4 · Llama</text>
-      <text x="520" y="340" text-anchor="middle" fill="#64748b" font-size="10">开源浪潮启动</text>
+      <text x="520" y="340" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">开源浪潮启动</text>
       <!-- 2024 上 -->
       <circle cx="600" cy="230" r="5" fill="#22c55e"/>
       <line x1="600" y1="225" x2="600" y2="170" stroke="#22c55e" stroke-width="1"/>
       <text x="600" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2024</text>
       <text x="600" y="157" text-anchor="middle" class="my-lg" font-size="11">MoE 大年 · o1</text>
-      <text x="600" y="172" text-anchor="middle" fill="#64748b" font-size="10">V2/V3 架构创新</text>
+      <text x="600" y="172" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">V2/V3 架构创新</text>
       <!-- 2025 下 -->
       <circle cx="670" cy="230" r="5" fill="#22c55e"/>
       <line x1="670" y1="235" x2="670" y2="290" stroke="#22c55e" stroke-width="1"/>
       <text x="670" y="308" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2025</text>
       <text x="670" y="325" text-anchor="middle" class="my-t" font-size="11" font-weight="bold">R1 思考元年</text>
-      <text x="670" y="340" text-anchor="middle" fill="#64748b" font-size="10">GPT-5 · K2 · Qwen3</text>
+      <text x="670" y="340" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">GPT-5 · K2 · Qwen3</text>
       <!-- 2026 上 -->
       <circle cx="735" cy="230" r="5" fill="#ef4444"/>
       <line x1="735" y1="225" x2="735" y2="170" stroke="#ef4444" stroke-width="1"/>
       <text x="735" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">2026</text>
       <text x="735" y="157" text-anchor="middle" class="my-lg" font-size="11">V4 稀疏注意力</text>
-      <text x="735" y="172" text-anchor="middle" fill="#64748b" font-size="10">Agent 原生化</text>
+      <text x="735" y="172" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">Agent 原生化</text>
       <!-- 底部时代带 -->
       <rect x="30" y="392" width="236" height="24" rx="6" fill="#58a6ff" fill-opacity=".09" stroke="#58a6ff" stroke-opacity=".4"/>
       <text x="148" y="408" text-anchor="middle" class="my-lg" font-size="11">架构奠基期 2017-2019</text>
@@ -166,28 +181,28 @@
       <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
         <rect x="82" y="388" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
         <text x="180" y="402" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
-        <text x="180" y="416" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+        <text x="180" y="416" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">残差 + 归一化</text>
       </g>
       <line x1="180" y1="388" x2="180" y2="382" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- Encoder: Feed Forward -->
       <g class="my-tts" data-say="Feed Forward"><title>点击朗读:Feed Forward(前馈网络)</title>
         <rect x="82" y="348" width="196" height="34" rx="6" fill="#58a6ff" fill-opacity=".13" stroke="#58a6ff" stroke-opacity=".55"/>
         <text x="180" y="362" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Feed Forward</text>
-        <text x="180" y="376" text-anchor="middle" fill="#64748b" font-size="8.5">前馈网络(独立消化)</text>
+        <text x="180" y="376" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">前馈网络(独立消化)</text>
       </g>
       <line x1="180" y1="348" x2="180" y2="342" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- Encoder: Add & Norm -->
       <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
         <rect x="82" y="308" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
         <text x="180" y="322" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
-        <text x="180" y="336" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+        <text x="180" y="336" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">残差 + 归一化</text>
       </g>
       <line x1="180" y1="308" x2="180" y2="302" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- Encoder: Multi-Head Attention -->
       <g class="my-tts" data-say="Multi-Head Attention"><title>点击朗读:Multi-Head Attention(多头注意力)</title>
         <rect x="82" y="268" width="196" height="34" rx="6" fill="#f59e0b" fill-opacity=".13" stroke="#f59e0b" stroke-opacity=".55"/>
         <text x="180" y="282" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Multi-Head Attention</text>
-        <text x="180" y="296" text-anchor="middle" fill="#64748b" font-size="8.5">多头注意力(词间开会)</text>
+        <text x="180" y="296" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">多头注意力(词间开会)</text>
       </g>
       <line x1="180" y1="268" x2="180" y2="262" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- ===== Decoder 塔 N× 大框 ===== -->
@@ -197,42 +212,42 @@
       <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
         <rect x="442" y="380" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
         <text x="540" y="394" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
-        <text x="540" y="408" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+        <text x="540" y="408" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">残差 + 归一化</text>
       </g>
       <line x1="540" y1="380" x2="540" y2="374" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- Decoder: Feed Forward -->
       <g class="my-tts" data-say="Feed Forward"><title>点击朗读:Feed Forward(前馈网络)</title>
         <rect x="442" y="340" width="196" height="34" rx="6" fill="#58a6ff" fill-opacity=".13" stroke="#58a6ff" stroke-opacity=".55"/>
         <text x="540" y="354" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Feed Forward</text>
-        <text x="540" y="368" text-anchor="middle" fill="#64748b" font-size="8.5">前馈网络(独立消化)</text>
+        <text x="540" y="368" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">前馈网络(独立消化)</text>
       </g>
       <line x1="540" y1="340" x2="540" y2="334" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- Decoder: Add & Norm -->
       <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
         <rect x="442" y="300" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
         <text x="540" y="314" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
-        <text x="540" y="328" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+        <text x="540" y="328" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">残差 + 归一化</text>
       </g>
       <line x1="540" y1="300" x2="540" y2="294" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- Decoder: Multi-Head Attention(交叉) -->
       <g class="my-tts" data-say="Multi-Head Attention"><title>点击朗读:Multi-Head Attention(交叉注意力:Q 来自 Decoder,K/V 来自 Encoder)</title>
         <rect x="442" y="260" width="196" height="34" rx="6" fill="#f59e0b" fill-opacity=".13" stroke="#f59e0b" stroke-opacity=".55"/>
         <text x="540" y="274" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Multi-Head Attention</text>
-        <text x="540" y="288" text-anchor="middle" fill="#64748b" font-size="8.5">交叉注意力(问 Encoder 查资料)</text>
+        <text x="540" y="288" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">交叉注意力(问 Encoder 查资料)</text>
       </g>
       <line x1="540" y1="260" x2="540" y2="254" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- Decoder: Add & Norm -->
       <g class="my-tts" data-say="Add and Norm"><title>点击朗读:Add and Norm(残差与归一化)</title>
         <rect x="442" y="220" width="196" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
         <text x="540" y="234" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Add &amp; Norm</text>
-        <text x="540" y="248" text-anchor="middle" fill="#64748b" font-size="8.5">残差 + 归一化</text>
+        <text x="540" y="248" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">残差 + 归一化</text>
       </g>
       <line x1="540" y1="220" x2="540" y2="214" stroke="#58a6ff" stroke-width="1.4"/>
       <!-- Decoder: Masked Multi-Head Attention -->
       <g class="my-tts" data-say="Masked Multi-Head Attention"><title>点击朗读:Masked Multi-Head Attention(带掩码的多头注意力)</title>
         <rect x="442" y="172" width="196" height="42" rx="6" fill="#f59e0b" fill-opacity=".13" stroke="#f59e0b" stroke-opacity=".55"/>
         <text x="540" y="189" text-anchor="middle" class="my-lg" font-size="10.5" font-weight="bold">Masked Multi-Head Attention</text>
-        <text x="540" y="205" text-anchor="middle" fill="#64748b" font-size="8.5">带掩码:不许偷看后面的词</text>
+        <text x="540" y="205" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">带掩码:不许偷看后面的词</text>
       </g>
       <!-- ===== 顶部输出链(Decoder 上方) ===== -->
       <line x1="540" y1="130" x2="540" y2="118" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
@@ -248,11 +263,11 @@
       <line x1="540" y1="48" x2="540" y2="42" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
       <g class="my-tts" data-say="Output Probabilities"><title>点击朗读:Output Probabilities(输出概率)</title>
         <text x="540" y="18" text-anchor="middle" class="my-lg" font-size="11.5" font-weight="bold">Output Probabilities</text>
-        <text x="540" y="33" text-anchor="middle" fill="#64748b" font-size="8.5">下一个词的概率分布</text>
+        <text x="540" y="33" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">下一个词的概率分布</text>
       </g>
       <!-- ===== Encoder 塔顶输出 → Decoder 交叉注意力 ===== -->
       <path d="M180,214 L180,190 L360,190 L360,277 L424,277" fill="none" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#tfAr)"/>
-      <text x="262" y="182" text-anchor="middle" fill="#64748b" font-size="9.5">K · V(Encoder 的理解结果)</text>
+      <text x="262" y="182" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">K · V(Encoder 的理解结果)</text>
       <!-- ===== 底部:输入 / 嵌入 / 位置编码 ===== -->
       <!-- Encoder 底 -->
       <line x1="180" y1="452" x2="180" y2="430" stroke="#58a6ff" stroke-width="1.4"/>
@@ -263,18 +278,18 @@
         <path d="M116,452 q4,-7 8,0 q4,7 8,0" fill="none" stroke="#f59e0b" stroke-width="1.3"/>
         <text x="10" y="446" class="my-lg" font-size="9.5">Positional</text>
         <text x="10" y="459" class="my-lg" font-size="9.5">Encoding</text>
-        <text x="10" y="472" fill="#64748b" font-size="8.5">位置编码(位置戳)</text>
+        <text x="10" y="472" fill="#64748b" font-size="8.5" class="fig-t-muted">位置编码(位置戳)</text>
       </g>
       <line x1="135" y1="452" x2="168" y2="452" stroke="#58a6ff" stroke-width="1.4"/>
       <g class="my-tts" data-say="Input Embedding"><title>点击朗读:Input Embedding(输入嵌入)</title>
         <rect x="82" y="474" width="196" height="34" rx="6" fill="#ec4899" fill-opacity=".12" stroke="#ec4899" stroke-opacity=".5"/>
         <text x="180" y="488" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Input Embedding</text>
-        <text x="180" y="502" text-anchor="middle" fill="#64748b" font-size="8.5">输入嵌入(查表变向量)</text>
+        <text x="180" y="502" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">输入嵌入(查表变向量)</text>
       </g>
       <line x1="180" y1="474" x2="180" y2="463" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
       <g class="my-tts" data-say="Inputs"><title>点击朗读:Inputs(输入)</title>
         <text x="180" y="530" text-anchor="middle" class="my-lg" font-size="11.5" font-weight="bold">Inputs</text>
-        <text x="180" y="543" text-anchor="middle" fill="#64748b" font-size="8.5">输入序列</text>
+        <text x="180" y="543" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">输入序列</text>
       </g>
       <!-- Decoder 底 -->
       <line x1="540" y1="452" x2="540" y2="430" stroke="#58a6ff" stroke-width="1.4"/>
@@ -285,18 +300,18 @@
         <path d="M476,452 q4,-7 8,0 q4,7 8,0" fill="none" stroke="#f59e0b" stroke-width="1.3"/>
         <text x="432" y="446" text-anchor="end" class="my-lg" font-size="9.5">Positional</text>
         <text x="432" y="459" text-anchor="end" class="my-lg" font-size="9.5">Encoding</text>
-        <text x="432" y="472" text-anchor="end" fill="#64748b" font-size="8.5">位置编码(位置戳)</text>
+        <text x="432" y="472" text-anchor="end" fill="#64748b" font-size="8.5" class="fig-t-muted">位置编码(位置戳)</text>
       </g>
       <line x1="495" y1="452" x2="528" y2="452" stroke="#58a6ff" stroke-width="1.4"/>
       <g class="my-tts" data-say="Output Embedding"><title>点击朗读:Output Embedding(输出嵌入)</title>
         <rect x="442" y="474" width="196" height="34" rx="6" fill="#ec4899" fill-opacity=".12" stroke="#ec4899" stroke-opacity=".5"/>
         <text x="540" y="488" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Output Embedding</text>
-        <text x="540" y="502" text-anchor="middle" fill="#64748b" font-size="8.5">输出嵌入(已生成的词)</text>
+        <text x="540" y="502" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">输出嵌入(已生成的词)</text>
       </g>
       <line x1="540" y1="474" x2="540" y2="463" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#tfAr)"/>
       <g class="my-tts" data-say="Outputs, shifted right"><title>点击朗读:Outputs, shifted right(输出序列,整体右移一位)</title>
         <text x="540" y="524" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">Outputs (shifted right)</text>
-        <text x="540" y="538" text-anchor="middle" fill="#64748b" font-size="8.5">输出序列(训练时右移一位)</text>
+        <text x="540" y="538" text-anchor="middle" fill="#64748b" font-size="8.5" class="fig-t-muted">输出序列(训练时右移一位)</text>
       </g>
       <!-- 提示角标 -->
       <text x="12" y="24" class="my-t" font-size="10.5" font-weight="bold">🔊 点击任意色块朗读英文术语</text>
@@ -315,13 +330,13 @@
       <!-- 三个源盒 -->
       <rect x="30" y="40" width="210" height="56" rx="8" fill="#58a6ff" fill-opacity=".08" stroke="#58a6ff" stroke-opacity=".5"/>
       <text x="135" y="62" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">Encoder-Decoder</text>
-      <text x="135" y="80" text-anchor="middle" fill="#64748b" font-size="10">代表:T5 / 原始论文</text>
+      <text x="135" y="80" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">代表:T5 / 原始论文</text>
       <rect x="30" y="118" width="210" height="56" rx="8" fill="#f59e0b" fill-opacity=".08" stroke="#f59e0b" stroke-opacity=".5"/>
       <text x="135" y="140" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">Encoder-only</text>
-      <text x="135" y="158" text-anchor="middle" fill="#64748b" font-size="10">代表:BERT(理解任务)</text>
+      <text x="135" y="158" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">代表:BERT(理解任务)</text>
       <rect x="30" y="196" width="210" height="56" rx="8" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".6" stroke-width="1.5"/>
       <text x="135" y="218" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">Decoder-only</text>
-      <text x="135" y="236" text-anchor="middle" fill="#64748b" font-size="10">代表:GPT 系列</text>
+      <text x="135" y="236" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">代表:GPT 系列</text>
       <!-- 汇聚箭头:前两条虚线(式微),最后一条实线(主流) -->
       <path d="M240,68 C330,68 340,130 428,148" fill="none" stroke="#58a6ff" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arB1)" opacity=".65"/>
       <path d="M240,146 C310,146 360,155 428,162" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arB1)" opacity=".65"/>
@@ -329,13 +344,13 @@
       <!-- 收敛大盒 -->
       <rect x="434" y="96" width="236" height="130" rx="10" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".6" stroke-width="1.5"/>
       <text x="552" y="130" text-anchor="middle" class="my-lg" font-size="13" font-weight="bold">Decoder-only</text>
-      <text x="552" y="150" text-anchor="middle" fill="#64748b" font-size="10.5">2026 年前沿模型几乎全部采用</text>
+      <text x="552" y="150" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">2026 年前沿模型几乎全部采用</text>
       <text x="552" y="170" text-anchor="middle" class="my-lg" font-size="10.5">GPT · Llama · Qwen · DeepSeek</text>
       <text x="552" y="190" text-anchor="middle" class="my-lg" font-size="10.5">Kimi · Gemini(稀疏化变体)</text>
       <text x="552" y="212" text-anchor="middle" class="my-tg" font-size="10.5">✓ 训练信号简单 ✓ 天然适配生成</text>
       <line x1="350" y1="252" x2="350" y2="252" stroke="#64748b"/>
       <!-- 底部原因 -->
-      <text x="350" y="266" text-anchor="middle" fill="#64748b" font-size="10.5">收敛原因:下一个词预测可在任何文本上训练;生成与解码过程天然对齐;推理时 KV Cache 增量友好</text>
+      <text x="350" y="266" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">收敛原因:下一个词预测可在任何文本上训练;生成与解码过程天然对齐;推理时 KV Cache 增量友好</text>
     </svg>
     <div class="my-fig-cap">图③ 架构收敛:三种形态最终汇聚到 Decoder-only(虚线=式微路线,实线=主流路线)</div>
   </div>
@@ -362,12 +377,12 @@
       <text x="180" y="26" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">Kaplan 缩放定律(2020)</text>
       <line x1="55" y1="230" x2="330" y2="230" stroke="#64748b" stroke-width="1.2" marker-end="url(#arB2)"/>
       <line x1="55" y1="230" x2="55" y2="48" stroke="#64748b" stroke-width="1.2" marker-end="url(#arB2)"/>
-      <text x="322" y="248" text-anchor="middle" fill="#64748b" font-size="10">算力(对数轴)</text>
-      <text x="42" y="44" text-anchor="middle" fill="#64748b" font-size="10">损失</text>
+      <text x="322" y="248" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">算力(对数轴)</text>
+      <text x="42" y="44" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">损失</text>
       <polyline points="70,215 110,205 150,192 190,177 230,160 270,140 310,112" fill="none" stroke="#58a6ff" stroke-width="2.2"/>
       <text x="196" y="196" text-anchor="middle" class="my-t" font-size="10.5">对数坐标下近似直线:</text>
-      <text x="196" y="211" text-anchor="middle" fill="#64748b" font-size="10">规模每翻倍,损失可预测地下降</text>
-      <text x="180" y="278" text-anchor="middle" fill="#64748b" font-size="10.5">结论:算力、参数、数据同比例堆,性能可预测提升</text>
+      <text x="196" y="211" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">规模每翻倍,损失可预测地下降</text>
+      <text x="180" y="278" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">结论:算力、参数、数据同比例堆,性能可预测提升</text>
       <!-- 分隔线 -->
       <line x1="360" y1="36" x2="360" y2="264" stroke="#64748b" stroke-width="1" stroke-dasharray="4 4" opacity=".5"/>
       <!-- 右半:Chinchilla 天平 -->
@@ -379,8 +394,8 @@
       <rect x="588" y="162" width="84" height="34" rx="6" fill="#22c55e" fill-opacity=".1" stroke="#22c55e" stroke-opacity=".55"/>
       <text x="630" y="184" text-anchor="middle" class="my-lg" font-size="11">数据 1.4T token</text>
       <text x="530" y="132" text-anchor="middle" class="my-t" font-size="11" font-weight="bold">最优配比 ≈ 每 1 参数喂 20 token</text>
-      <text x="530" y="222" text-anchor="middle" fill="#64748b" font-size="10.5">同算力下:70B + 大量数据 反超 175B + 少量数据</text>
-      <text x="530" y="240" text-anchor="middle" fill="#64748b" font-size="10.5">GPT-3 属于「参数过大、数据喂少」的失衡配置</text>
+      <text x="530" y="222" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">同算力下:70B + 大量数据 反超 175B + 少量数据</text>
+      <text x="530" y="240" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">GPT-3 属于「参数过大、数据喂少」的失衡配置</text>
       <text x="530" y="278" text-anchor="middle" class="my-tg" font-size="10.5">此后业界转向「小参数、多数据」:Llama 系列是直接受益者</text>
     </svg>
     <div class="my-fig-cap">图④ 缩放定律与 Chinchilla 修正:左为 Kaplan 版「堆就完了」,右为 Chinchilla 版「参数与数据要配平」</div>
@@ -410,53 +425,53 @@
       <!-- 列参数:4列 x=24/204/384/564 宽170 -->
       <!-- MHA -->
       <text x="109" y="24" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">MHA 多头注意力</text>
-      <text x="109" y="40" text-anchor="middle" fill="#64748b" font-size="9.5">2017 基线,每 Q 头配独立 KV 头</text>
-      <text x="109" y="66" text-anchor="middle" fill="#64748b" font-size="9.5">Q 头</text>
+      <text x="109" y="40" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">2017 基线,每 Q 头配独立 KV 头</text>
+      <text x="109" y="66" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">Q 头</text>
       <rect x="59" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="83" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="107" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="131" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
-      <text x="109" y="106" text-anchor="middle" fill="#64748b" font-size="9.5">KV 头</text>
+      <text x="109" y="106" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">KV 头</text>
       <rect x="59" y="112" width="20" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/><rect x="83" y="112" width="20" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/><rect x="107" y="112" width="20" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/><rect x="131" y="112" width="20" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/>
       <line x1="109" y1="128" x2="109" y2="150" stroke="#64748b" stroke-width="1"/>
       <rect x="59" y="150" width="100" height="16" rx="4" fill="#ef4444" fill-opacity=".6"/>
-      <text x="109" y="162" text-anchor="middle" font-size="9.5" fill="#ffffff">缓存 100%</text>
+      <text x="109" y="162" text-anchor="middle" font-size="9.5" class="fig-t-baddeep" fill="#ffffff">缓存 100%</text>
       <!-- MQA -->
       <text x="289" y="24" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">MQA 共享 KV</text>
-      <text x="289" y="40" text-anchor="middle" fill="#64748b" font-size="9.5">2019,所有 Q 头共用 1 份 KV</text>
-      <text x="289" y="66" text-anchor="middle" fill="#64748b" font-size="9.5">Q 头</text>
+      <text x="289" y="40" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">2019,所有 Q 头共用 1 份 KV</text>
+      <text x="289" y="66" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">Q 头</text>
       <rect x="239" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="263" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="287" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="311" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
-      <text x="289" y="106" text-anchor="middle" fill="#64748b" font-size="9.5">KV 头</text>
+      <text x="289" y="106" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">KV 头</text>
       <rect x="239" y="112" width="92" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/>
-      <text x="285" y="123" text-anchor="middle" font-size="8.5" fill="#64748b">仅 1 份</text>
+      <text x="285" y="123" text-anchor="middle" font-size="8.5" fill="#64748b" class="fig-t-muted">仅 1 份</text>
       <line x1="289" y1="128" x2="289" y2="150" stroke="#64748b" stroke-width="1"/>
       <rect x="247" y="150" width="12" height="16" rx="3" fill="#22c55e" fill-opacity=".75"/>
       <text x="289" y="162" text-anchor="middle" font-size="9.5" class="my-tg">约 3%</text>
       <!-- GQA -->
       <text x="469" y="24" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">GQA 分组共享</text>
-      <text x="469" y="40" text-anchor="middle" fill="#64748b" font-size="9.5">2023,Llama-2-70B 起标配</text>
-      <text x="469" y="66" text-anchor="middle" fill="#64748b" font-size="9.5">Q 头</text>
+      <text x="469" y="40" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">2023,Llama-2-70B 起标配</text>
+      <text x="469" y="66" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">Q 头</text>
       <rect x="419" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="443" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="467" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="491" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
-      <text x="469" y="106" text-anchor="middle" fill="#64748b" font-size="9.5">KV 头(2 组,示意)</text>
+      <text x="469" y="106" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">KV 头(2 组,示意)</text>
       <rect x="419" y="112" width="44" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/><rect x="467" y="112" width="44" height="14" rx="2" fill="#f59e0b" fill-opacity=".25" stroke="#f59e0b"/>
       <line x1="469" y1="128" x2="469" y2="150" stroke="#64748b" stroke-width="1"/>
       <rect x="419" y="150" width="25" height="16" rx="4" fill="#22c55e" fill-opacity=".75"/>
       <text x="469" y="162" text-anchor="middle" font-size="9.5" class="my-tg">约 25%(8 组)</text>
       <!-- MLA -->
       <text x="649" y="24" text-anchor="middle" class="my-lg" font-size="12" font-weight="bold">MLA 低秩压缩</text>
-      <text x="649" y="40" text-anchor="middle" fill="#64748b" font-size="9.5">2024,DeepSeek-V2 首创</text>
-      <text x="649" y="66" text-anchor="middle" fill="#64748b" font-size="9.5">Q 头</text>
+      <text x="649" y="40" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">2024,DeepSeek-V2 首创</text>
+      <text x="649" y="66" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">Q 头</text>
       <rect x="599" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="623" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="647" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="671" y="72" width="20" height="14" rx="2" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
-      <text x="649" y="106" text-anchor="middle" fill="#64748b" font-size="9.5">KV 压缩潜向量</text>
+      <text x="649" y="106" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">KV 压缩潜向量</text>
       <rect x="599" y="112" width="92" height="14" rx="2" fill="#22c55e" fill-opacity=".28" stroke="#22c55e"/>
-      <text x="645" y="123" text-anchor="middle" font-size="8.5" fill="#64748b">c_kv ≈ 压缩到低维</text>
+      <text x="645" y="123" text-anchor="middle" font-size="8.5" fill="#64748b" class="fig-t-okdeep">c_kv ≈ 压缩到低维</text>
       <line x1="649" y1="128" x2="649" y2="150" stroke="#64748b" stroke-width="1"/>
       <rect x="599" y="150" width="7" height="16" rx="3" fill="#22c55e" fill-opacity=".9"/>
       <text x="649" y="162" text-anchor="middle" font-size="9.5" class="my-tg">约 6%</text>
       <!-- 底部说明 -->
       <rect x="24" y="196" width="672" height="118" rx="8" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-opacity=".25"/>
       <text x="360" y="222" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">一条主线:KV 头越省,KV Cache 越小,推理能同时服务的请求越多</text>
-      <text x="360" y="246" text-anchor="middle" fill="#64748b" font-size="10.5">柱高为相对 MHA 的 KV Cache 占用(以 32 个 Q 头、GQA 8 组为例的约值,精度 FP16 口径)</text>
-      <text x="360" y="266" text-anchor="middle" fill="#64748b" font-size="10.5">MQA 省得最狠但精度损失明显;GQA 是「精度几乎无损」的折中,成为开源标配;</text>
-      <text x="360" y="286" text-anchor="middle" fill="#64748b" font-size="10.5">MLA 走第三条路:不砍头数,而是把 KV 投影到低维潜空间压缩,恢复时几乎无损,</text>
-      <text x="360" y="304" text-anchor="middle" fill="#64748b" font-size="10.5">缓存约为 MHA 的 1/16 级别(DeepSeek-V2 论文口径约 5.7%~13%,随配置不同)</text>
+      <text x="360" y="246" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">柱高为相对 MHA 的 KV Cache 占用(以 32 个 Q 头、GQA 8 组为例的约值,精度 FP16 口径)</text>
+      <text x="360" y="266" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">MQA 省得最狠但精度损失明显;GQA 是「精度几乎无损」的折中,成为开源标配;</text>
+      <text x="360" y="286" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">MLA 走第三条路:不砍头数,而是把 KV 投影到低维潜空间压缩,恢复时几乎无损,</text>
+      <text x="360" y="304" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">缓存约为 MHA 的 1/16 级别(DeepSeek-V2 论文口径约 5.7%~13%,随配置不同)</text>
     </svg>
     <div class="my-fig-cap">图⑤ 注意力四变体:上为 Q/KV 头结构示意(蓝=Q 头,橙=KV 头),中柱为 KV Cache 相对占用,下为演进逻辑</div>
   </div>
@@ -494,50 +509,50 @@
       <text x="134" y="46" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">训练侧</text>
       <rect x="40" y="60" width="188" height="66" rx="7" fill="#58a6ff" fill-opacity=".09" stroke="#58a6ff" stroke-opacity=".35"/>
       <text x="134" y="82" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">① 高质量数据枯竭</text>
-      <text x="134" y="100" text-anchor="middle" fill="#64748b" font-size="9.5">解法:合成数据 / RL 自产思维链</text>
-      <text x="134" y="115" text-anchor="middle" fill="#64748b" font-size="9.5">/ 多模态数据 / 精选配比</text>
+      <text x="134" y="100" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:合成数据 / RL 自产思维链</text>
+      <text x="134" y="115" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 多模态数据 / 精选配比</text>
       <rect x="40" y="140" width="188" height="66" rx="7" fill="#58a6ff" fill-opacity=".09" stroke="#58a6ff" stroke-opacity=".35"/>
       <text x="134" y="162" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">② 算力与互联墙</text>
-      <text x="134" y="180" text-anchor="middle" fill="#64748b" font-size="9.5">解法:模型/专家并行、FP8 训练</text>
-      <text x="134" y="195" text-anchor="middle" fill="#64748b" font-size="9.5">/ 通信与计算重叠调度</text>
+      <text x="134" y="180" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:模型/专家并行、FP8 训练</text>
+      <text x="134" y="195" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 通信与计算重叠调度</text>
       <rect x="40" y="220" width="188" height="66" rx="7" fill="#58a6ff" fill-opacity=".09" stroke="#58a6ff" stroke-opacity=".35"/>
       <text x="134" y="242" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">③ 评测污染与基准失效</text>
-      <text x="134" y="260" text-anchor="middle" fill="#64748b" font-size="9.5">解法:私域测试集、动态换题</text>
-      <text x="134" y="275" text-anchor="middle" fill="#64748b" font-size="9.5">/ 真实任务基准(SWE-bench)</text>
-      <text x="134" y="322" text-anchor="middle" fill="#64748b" font-size="9.5">「喂什么、怎么验」</text>
+      <text x="134" y="260" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:私域测试集、动态换题</text>
+      <text x="134" y="275" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 真实任务基准(SWE-bench)</text>
+      <text x="134" y="322" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">「喂什么、怎么验」</text>
       <rect x="252" y="20" width="220" height="330" rx="10" fill="#f59e0b" fill-opacity=".05" stroke="#f59e0b" stroke-opacity=".3"/>
       <text x="362" y="46" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">推理侧</text>
       <rect x="268" y="60" width="188" height="60" rx="7" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".35"/>
       <text x="362" y="82" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">④ 注意力二次方复杂度</text>
-      <text x="362" y="100" text-anchor="middle" fill="#64748b" font-size="9.5">解法:稀疏注意力(DSA/CSA)</text>
-      <text x="362" y="113" text-anchor="middle" fill="#64748b" font-size="9.5">/ 线性注意力 / 滑窗+全局混合</text>
+      <text x="362" y="100" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:稀疏注意力(DSA/CSA)</text>
+      <text x="362" y="113" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 线性注意力 / 滑窗+全局混合</text>
       <rect x="268" y="134" width="188" height="60" rx="7" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".35"/>
       <text x="362" y="156" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑤ KV Cache 显存带宽</text>
-      <text x="362" y="174" text-anchor="middle" fill="#64748b" font-size="9.5">解法:GQA/MLA、KV 量化</text>
-      <text x="362" y="187" text-anchor="middle" fill="#64748b" font-size="9.5">/ PagedAttention 分页管理</text>
+      <text x="362" y="174" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:GQA/MLA、KV 量化</text>
+      <text x="362" y="187" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ PagedAttention 分页管理</text>
       <rect x="268" y="208" width="188" height="60" rx="7" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".35"/>
       <text x="362" y="230" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑥ 延迟与吞吐平衡</text>
-      <text x="362" y="248" text-anchor="middle" fill="#64748b" font-size="9.5">解法:连续批处理、投机解码</text>
-      <text x="362" y="261" text-anchor="middle" fill="#64748b" font-size="9.5">/ 多 token 预测 / prefill 拆分</text>
+      <text x="362" y="248" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:连续批处理、投机解码</text>
+      <text x="362" y="261" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 多 token 预测 / prefill 拆分</text>
       <rect x="268" y="282" width="188" height="60" rx="7" fill="#f59e0b" fill-opacity=".09" stroke="#f59e0b" stroke-opacity=".35"/>
       <text x="362" y="304" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑦ 端侧部署与能耗</text>
-      <text x="362" y="322" text-anchor="middle" fill="#64748b" font-size="9.5">解法:INT4/FP8 量化、蒸馏</text>
-      <text x="362" y="335" text-anchor="middle" fill="#64748b" font-size="9.5">/ 云端+端侧协同推理</text>
+      <text x="362" y="322" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:INT4/FP8 量化、蒸馏</text>
+      <text x="362" y="335" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 云端+端侧协同推理</text>
       <rect x="480" y="20" width="220" height="330" rx="10" fill="#22c55e" fill-opacity=".05" stroke="#22c55e" stroke-opacity=".3"/>
       <text x="590" y="46" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">行为侧</text>
       <rect x="496" y="60" width="188" height="60" rx="7" fill="#22c55e" fill-opacity=".09" stroke="#22c55e" stroke-opacity=".35"/>
       <text x="590" y="82" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑧ 幻觉与可靠性</text>
-      <text x="590" y="100" text-anchor="middle" fill="#64748b" font-size="9.5">解法:RAG 检索增强、工具调用</text>
-      <text x="590" y="113" text-anchor="middle" fill="#64748b" font-size="9.5">/ 引用溯源、置信度校准</text>
+      <text x="590" y="100" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:RAG 检索增强、工具调用</text>
+      <text x="590" y="113" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 引用溯源、置信度校准</text>
       <rect x="496" y="134" width="188" height="60" rx="7" fill="#22c55e" fill-opacity=".09" stroke="#22c55e" stroke-opacity=".35"/>
       <text x="590" y="156" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑨ 对齐税与奖励黑客</text>
-      <text x="590" y="174" text-anchor="middle" fill="#64748b" font-size="9.5">解法:可验证奖励、DPO</text>
-      <text x="590" y="187" text-anchor="middle" fill="#64748b" font-size="9.5">/ 过程奖励 PRM、评测去重</text>
+      <text x="590" y="174" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:可验证奖励、DPO</text>
+      <text x="590" y="187" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 过程奖励 PRM、评测去重</text>
       <rect x="496" y="208" width="188" height="60" rx="7" fill="#22c55e" fill-opacity=".09" stroke="#22c55e" stroke-opacity=".35"/>
       <text x="590" y="230" text-anchor="middle" class="my-lg" font-size="11" font-weight="bold">⑩ Agent 长程可靠性</text>
-      <text x="590" y="248" text-anchor="middle" fill="#64748b" font-size="9.5">解法:任务分解、反思重试</text>
-      <text x="590" y="261" text-anchor="middle" fill="#64748b" font-size="9.5">/ 沙箱执行、记忆与上下文管理</text>
-      <text x="590" y="322" text-anchor="middle" fill="#64748b" font-size="9.5">「答得对、装得像、靠得住」</text>
+      <text x="590" y="248" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">解法:任务分解、反思重试</text>
+      <text x="590" y="261" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">/ 沙箱执行、记忆与上下文管理</text>
+      <text x="590" y="322" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">「答得对、装得像、靠得住」</text>
     </svg>
     <div class="my-fig-cap">图⑥ 工程十大问题全景:训练侧管「喂什么、怎么验」,推理侧管「跑得动、跑得省」,行为侧管「答得对、靠得住」</div>
   </div>
@@ -550,24 +565,24 @@
       </defs>
       <!-- 左半 prefill -->
       <text x="180" y="28" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">阶段一 Prefill 预填充</text>
-      <text x="180" y="46" text-anchor="middle" fill="#64748b" font-size="10">整段 prompt 一次性并行进网络</text>
+      <text x="180" y="46" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">整段 prompt 一次性并行进网络</text>
       <rect x="40" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="72" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="104" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="136" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/><rect x="168" y="70" width="26" height="20" rx="3" fill="#58a6ff" fill-opacity=".25" stroke="#58a6ff"/>
-      <text x="117" y="110" text-anchor="middle" fill="#64748b" font-size="9.5">prompt 的全部 token</text>
+      <text x="117" y="110" text-anchor="middle" fill="#64748b" font-size="9.5" class="fig-t-muted">prompt 的全部 token</text>
       <line x1="117" y1="60" x2="117" y2="66" stroke="#64748b"/>
       <line x1="200" y1="80" x2="240" y2="80" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arB3)"/>
       <rect x="246" y="58" width="110" height="44" rx="8" fill="#58a6ff" fill-opacity=".12" stroke="#58a6ff" stroke-opacity=".55"/>
       <text x="301" y="76" text-anchor="middle" class="my-lg" font-size="10.5">全并行计算</text>
-      <text x="301" y="92" text-anchor="middle" fill="#64748b" font-size="9">GPU 算力打满</text>
+      <text x="301" y="92" text-anchor="middle" fill="#64748b" font-size="9" class="fig-t-muted">GPU 算力打满</text>
       <line x1="301" y1="102" x2="301" y2="130" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#arB3)"/>
       <rect x="236" y="136" width="130" height="36" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-opacity=".5"/>
       <text x="301" y="158" text-anchor="middle" class="my-lg" font-size="10.5">产出完整 KV Cache</text>
       <text x="180" y="200" text-anchor="middle" class="my-t" font-size="10.5" font-weight="bold">计算密集(compute-bound)</text>
-      <text x="180" y="218" text-anchor="middle" fill="#64748b" font-size="10">决定首字延迟 TTFT;prompt 越长越久</text>
+      <text x="180" y="218" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">决定首字延迟 TTFT;prompt 越长越久</text>
       <!-- 中分隔 -->
       <line x1="384" y1="24" x2="384" y2="230" stroke="#64748b" stroke-width="1" stroke-dasharray="5 5" opacity=".5"/>
       <!-- 右半 decode -->
       <text x="548" y="28" text-anchor="middle" class="my-lg" font-size="12.5" font-weight="bold">阶段二 Decode 解码</text>
-      <text x="548" y="46" text-anchor="middle" fill="#64748b" font-size="10">一个一个 token 往外蹦</text>
+      <text x="548" y="46" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">一个一个 token 往外蹦</text>
       <rect x="420" y="58" width="120" height="44" rx="8" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-opacity=".5"/>
       <text x="480" y="76" text-anchor="middle" class="my-lg" font-size="10.5">每步都要读:全部权重</text>
       <text x="480" y="93" text-anchor="middle" class="my-lg" font-size="10.5">+ 已积累的全部 KV Cache</text>
@@ -575,13 +590,13 @@
       <rect x="486" y="130" width="124" height="36" rx="8" fill="#58a6ff" fill-opacity=".12" stroke="#58a6ff" stroke-opacity=".55"/>
       <text x="548" y="152" text-anchor="middle" class="my-lg" font-size="10.5">只生成 1 个新 token</text>
       <path d="M612,148 C660,148 660,80 546,74" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arB3o)"/>
-      <text x="648" y="118" text-anchor="middle" fill="#64748b" font-size="9">新 token 并入</text>
-      <text x="648" y="131" text-anchor="middle" fill="#64748b" font-size="9">KV 循环变大</text>
+      <text x="648" y="118" text-anchor="middle" fill="#64748b" font-size="9" class="fig-t-muted">新 token 并入</text>
+      <text x="648" y="131" text-anchor="middle" fill="#64748b" font-size="9" class="fig-t-muted">KV 循环变大</text>
       <text x="548" y="200" text-anchor="middle" class="my-bwd" font-size="10.5" font-weight="bold">访存密集(memory-bound)</text>
-      <text x="548" y="218" text-anchor="middle" fill="#64748b" font-size="10">算力在「等数据」,决定每字延迟 TPOT</text>
+      <text x="548" y="218" text-anchor="middle" fill="#64748b" font-size="10" class="fig-t-muted">算力在「等数据」,决定每字延迟 TPOT</text>
       <!-- 底部解法条 -->
       <rect x="40" y="244" width="640" height="40" rx="8" fill="#58a6ff" fill-opacity=".05" stroke="#58a6ff" stroke-opacity=".25"/>
-      <text x="360" y="268" text-anchor="middle" fill="#64748b" font-size="10.5">对症解法:连续批处理(拼车) · PagedAttention(KV 分页防碎片) · 投机解码(小模型草稿+大模型验证) · KV 量化压缩</text>
+      <text x="360" y="268" text-anchor="middle" fill="#64748b" font-size="10.5" class="fig-t-muted">对症解法:连续批处理(拼车) · PagedAttention(KV 分页防碎片) · 投机解码(小模型草稿+大模型验证) · KV 量化压缩</text>
     </svg>
     <div class="my-fig-cap">图⑦ 推理两阶段:prefill 是「大灶台一次炒一桌菜」,decode 是「一位一位上菜还要每上一口回锅一次」——瓶颈从算力迁到显存带宽</div>
   </div>

@@ -1,0 +1,1968 @@
+/* ============================================================
+   网页端串口调试助手 · SerialLab
+   模块：ui（界面层）
+   职责：DOM 绑定 / 控件同步 / 对话框 / 提示条 / 主题 / 快捷键 / 发送引擎
+   依赖：core、util、transport、parser、codec、plugins、views、datastore、timeline、exporters
+   约定：
+     - 本模块是唯一直接操作 index.html 静态节点的模块；业务模块一律不碰 DOM
+     - 所有用户可见文本一律走 textContent，禁止 innerHTML（站点 XSS 基线）
+     - 配置写入统一走 core.config + saveConfig，随后 emit("config:changed")
+     - app.js 负责数据管线，ui 只通过 SL.app.send()/sendPreset() 请求发送
+     - 发送引擎（定时轮询 / 触发应答 / 预设回包检测）放在本模块：
+       它订阅 core 的 "frame" / "serial:opened" 事件，与数据管线解耦
+   ============================================================ */
+;(function (global) {
+  "use strict";
+
+  var SL = global.SerialLab = global.SerialLab || {};
+  var U = SL.util;
+  var core = SL.core;
+  var T = SL.transport;
+
+  var UI = {};
+
+  UI.VERSION = "1.0.0";
+
+  /* ------------------------------------------------------------
+     0) 小工具
+     ------------------------------------------------------------ */
+  function $(id) { return document.getElementById(id); }
+
+  /* 建元素：cls 为空时不写 className，避免产出空 class（站点样式规约） */
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined && text !== null) { e.textContent = String(text); }
+    return e;
+  }
+
+  function pad(n, len) {
+    var s = String(n);
+    while (s.length < len) { s = "0" + s; }
+    return s;
+  }
+
+  function hex4(n) {
+    if (typeof n !== "number" || !isFinite(n)) { return "----"; }
+    return pad(n.toString(16).toUpperCase(), 4);
+  }
+
+  function fmtMs(ms) {
+    var s = Math.round((ms || 0) / 100) / 10;
+    if (s < 60) { return s + "s"; }
+    return Math.floor(s / 60) + "m" + Math.round(s % 60) + "s";
+  }
+
+  function setPath(obj, path, val) {
+    var parts = String(path).split(".");
+    var o = obj;
+    for (var i = 0; i < parts.length - 1; i++) {
+      if (!o[parts[i]] || typeof o[parts[i]] !== "object") { o[parts[i]] = {}; }
+      o = o[parts[i]];
+    }
+    o[parts[parts.length - 1]] = val;
+  }
+
+  function getPath(obj, path) {
+    var parts = String(path).split(".");
+    var o = obj;
+    for (var i = 0; i < parts.length; i++) {
+      if (o === null || o === undefined) { return undefined; }
+      o = o[parts[i]];
+    }
+    return o;
+  }
+
+  /* 配置变更落盘 + 广播（所有控件共用） */
+  var saveTimer = null;
+  function touch(scope) {
+    core.saveConfig();
+    core.emit("config:changed", { scope: scope || "all" });
+  }
+
+  function touchLazy(scope) {
+    if (saveTimer) { clearTimeout(saveTimer); }
+    saveTimer = setTimeout(function () { saveTimer = null; touch(scope); }, 350);
+  }
+
+  /* 泛绑定：把 DOM 控件与配置路径接起来
+     spec = { el, path, type:"chk"|"num"|"text"|"select", scope, apply(v), read(node), write(node,v) }
+     read/write 用于控件取值与配置取值**类型不一致**的场景：
+       - 复选框 ↔ 字符串（如 flow："none"|"hardware"）
+       - 下拉的 value 是字面量 "\\n"，而配置里存的是真换行 "\n" */
+  function bind(spec) {
+    var node = typeof spec.el === "string" ? $(spec.el) : spec.el;
+    if (!node) { return null; }
+    function read() {
+      if (spec.read) { return spec.read(node); }
+      if (spec.type === "chk") { return !!node.checked; }
+      if (spec.type === "num") { var v = parseFloat(node.value); return isFinite(v) ? v : 0; }
+      if (spec.type === "select") { return node.value; }
+      return node.value;
+    }
+    function write() {
+      var v = getPath(core.config, spec.path);
+      if (spec.write) { spec.write(node, v); return; }
+      if (spec.type === "chk") { node.checked = !!v; }
+      else if (v === undefined || v === null) { node.value = ""; }
+      else { node.value = String(v); }
+    }
+    node.addEventListener("change", function () {
+      setPath(core.config, spec.path, read());
+      touch(spec.scope);
+      if (spec.apply) { spec.apply(read()); }
+    });
+    write();
+    return { node: node, sync: write };
+  }
+
+  var bindings = [];
+  function addBind(spec) { var b = bind(spec); if (b) { bindings.push(b); } return b; }
+
+  function syncForms() {
+    for (var i = 0; i < bindings.length; i++) { bindings[i].sync(); }
+  }
+
+  /* ------------------------------------------------------------
+     1) 提示条
+     ------------------------------------------------------------ */
+  var TOAST_CLS = { info: "", ok: "is-ok", warn: "is-warn", bad: "is-bad", error: "is-bad" };
+
+  UI.toast = function (level, msg, ms) {
+    var host = $("slToasts");
+    if (!host) { return; }
+    var d = el("div", "sl-toast " + (TOAST_CLS[level] === undefined ? "" : TOAST_CLS[level]));
+    d.textContent = String(msg);
+    host.appendChild(d);
+    var life = ms || ((level === "bad" || level === "error") ? 6000 : 3600);
+    global.setTimeout(function () {
+      if (d.parentNode) { d.parentNode.removeChild(d); }
+    }, life);
+  };
+
+  /* ------------------------------------------------------------
+     2) 通用对话框
+     ------------------------------------------------------------ */
+  var modalOnClose = null;
+
+  UI.modal = function (opts) {
+    var m = $("slModal");
+    if (!m) { return; }
+    opts = opts || {};
+    $("slModalTitle").textContent = opts.title || "";
+    var body = $("slModalBody");
+    body.textContent = "";
+    if (opts.body) { body.appendChild(opts.body); }
+
+    var foot = $("slModalFoot");
+    foot.textContent = "";
+    var buttons = opts.buttons || [{ label: "关闭" }];
+    for (var i = 0; i < buttons.length; i++) {
+      (function (b) {
+        var btn = el("button", "sl-btn" + (b.primary ? " is-primary" : "") + (b.danger ? " is-danger" : ""), b.label);
+        btn.type = "button";
+        btn.addEventListener("click", function () {
+          if (b.onClick && b.onClick() === false) { return; }
+          UI.closeModal();
+        });
+        foot.appendChild(btn);
+      })(buttons[i]);
+    }
+
+    modalOnClose = opts.onClose || null;
+    m.hidden = false;
+    if (opts.focus) {
+      global.setTimeout(function () {
+        var f = body.querySelector(opts.focus);
+        if (f && f.focus) { f.focus(); }
+      }, 0);
+    }
+  };
+
+  UI.closeModal = function () {
+    var m = $("slModal");
+    if (!m || m.hidden) { return; }
+    m.hidden = true;
+    $("slModalBody").textContent = "";
+    $("slModalFoot").textContent = "";
+    var f = modalOnClose;
+    modalOnClose = null;
+    if (f) { f(); }
+  };
+
+  UI.isModalOpen = function () {
+    var m = $("slModal");
+    return !!(m && !m.hidden);
+  };
+
+  /* 单行/多行输入框对话框，返回 Promise<string|null> */
+  UI.prompt = function (title, opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var wrap = el("div");
+      if (opts.label) { wrap.appendChild(el("div", "sl-field", opts.label)); }
+      if (opts.hint) { wrap.appendChild(el("p", "sl-hint", opts.hint)); }
+
+      var input;
+      if (opts.multiline) {
+        input = el("textarea", "sl-mono-input");
+        input.rows = opts.rows || 8;
+        input.style.width = "100%";
+      } else {
+        input = el("input", "sl-mono-input");
+        input.type = "text";
+        input.style.width = "100%";
+      }
+      input.value = (opts.value === undefined || opts.value === null) ? "" : String(opts.value);
+      if (opts.placeholder) { input.placeholder = opts.placeholder; }
+      wrap.appendChild(input);
+
+      var errEl = el("p", "sl-hint");
+      wrap.appendChild(errEl);
+
+      if (opts.hint2) { wrap.appendChild(el("p", "sl-hint", opts.hint2)); }
+
+      UI.modal({
+        title: title,
+        body: wrap,
+        focus: opts.multiline ? "textarea" : "input",
+        onClose: function () { resolve(null); },
+        buttons: [
+          {
+            label: opts.okText || "确定", primary: true,
+            onClick: function () {
+              var v = input.value;
+              if (opts.validate) {
+                var e = opts.validate(v);
+                if (e) { errEl.textContent = e; return false; }
+              }
+              resolve(v);
+              return true;
+            }
+          },
+          { label: "取消", onClick: function () { resolve(null); return true; } }
+        ]
+      });
+    });
+  };
+
+  UI.confirm = function (title, msg, okText) {
+    return new Promise(function (resolve) {
+      var wrap = el("div");
+      wrap.appendChild(el("p", "sl-note", msg));
+      UI.modal({
+        title: title,
+        body: wrap,
+        onClose: function () { resolve(false); },
+        buttons: [
+          { label: okText || "确定", danger: true, onClick: function () { resolve(true); return true; } },
+          { label: "取消", onClick: function () { resolve(false); return true; } }
+        ]
+      });
+    });
+  };
+
+  /* 静态内容展示（标题 + 段落数组），零 innerHTML */
+  UI.showArticle = function (title, blocks) {
+    var wrap = el("div");
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+      if (b.h) { wrap.appendChild(el("h3", "sl-group-title", b.h)); }
+      if (b.p) { wrap.appendChild(el("p", "sl-hint", b.p)); }
+      if (b.code) {
+        var pre = el("pre", "sl-prompt");
+        pre.textContent = b.code;
+        wrap.appendChild(pre);
+      }
+      if (b.list) {
+        var ul = el("ul");
+        for (var j = 0; j < b.list.length; j++) { ul.appendChild(el("li", null, b.list[j])); }
+        wrap.appendChild(ul);
+      }
+    }
+    UI.modal({ title: title, body: wrap, buttons: [{ label: "关闭" }] });
+  };
+
+  /* ------------------------------------------------------------
+     3) 主题
+     ------------------------------------------------------------ */
+  var THEME_KEY = "site-theme";
+
+  function resolveTheme(mode) {
+    if (mode === "dark" || mode === "light") { return mode; }
+    if (global.matchMedia && global.matchMedia("(prefers-color-scheme: dark)").matches) { return "dark"; }
+    return "light";
+  }
+
+  UI.applyTheme = function (mode) {
+    mode = (mode === "light" || mode === "dark") ? mode : "auto";
+    core.config.ui.theme = mode;
+    var resolved = resolveTheme(mode);
+    var root = document.documentElement;
+    root.setAttribute("data-theme", resolved);
+    root.setAttribute("data-theme-early", resolved);
+    try { localStorage.setItem(THEME_KEY, resolved); } catch (e) { /* 隐私模式：仅本次生效 */ }
+    if (SL.plugins) { SL.plugins.invalidateTheme(); }
+    if (SL.views) { SL.views.redraw(); }
+    core.saveConfig();
+    return resolved;
+  };
+
+  UI.cycleTheme = function () {
+    var order = ["auto", "light", "dark"];
+    var cur = core.config.ui.theme || "auto";
+    var next = order[(order.indexOf(cur) + 1 + order.length) % order.length];
+    var resolved = UI.applyTheme(next);
+    var label = (next === "auto") ? "跟随系统" : (next === "light" ? "浅色" : "深色");
+    UI.toast("info", "主题：" + label + "（当前生效 " + (resolved === "dark" ? "深色" : "浅色") + "）");
+  };
+
+  /* ------------------------------------------------------------
+     4) 连接条 / 设备面板
+     ------------------------------------------------------------ */
+  var CONN_TEXT = {
+    unsupported: "不支持",
+    idle: "未连接",
+    requesting: "选择设备…",
+    opening: "打开中…",
+    open: "已连接",
+    closing: "关闭中…",
+    error: "连接异常"
+  };
+
+  var lastSent = "";
+  var signalTimer = null;
+  var resetTimer = null;
+
+  function renderConn() {
+    var conn = core.state.conn;
+    var demo = core.state.demo;
+    var dot = $("slDot");
+    if (dot) {
+      var cls = "sl-dot";
+      if (conn === "open") { cls += " is-open"; }
+      else if (conn === "requesting" || conn === "opening" || conn === "closing") { cls += " is-busy"; }
+      else if (conn === "error") { cls += " is-bad"; }
+      dot.className = cls;
+    }
+    var st = $("slState");
+    if (st) {
+      st.textContent = demo ? "演示模式" : (CONN_TEXT[conn] || conn);
+    }
+
+    var info = core.state.portInfo;
+    $("slVidPid").textContent = info
+      ? ("VID " + hex4(info.usbVendorId) + " · PID " + hex4(info.usbProductId))
+      : (demo ? "虚拟设备" : "-");
+
+    var busy = (conn === "requesting" || conn === "opening" || conn === "closing");
+    $("slBtnConnect").disabled = busy || conn === "open" || conn === "unsupported";
+    $("slBtnDisconnect").disabled = !(conn === "open");
+    $("slBtnDemo").textContent = demo ? "退出演示模式" : "进入演示模式";
+    $("slBtnDemo").disabled = (conn === "open" && !demo) || busy;
+    $("slBtnReconnect").disabled = !(core.state.portInfo && conn === "idle");
+
+    $("slTxCount").textContent = T.stats.tx;
+    $("slRxCount").textContent = T.stats.rx;
+
+    var hint = $("slSendHint");
+    if (hint) {
+      if (!T.isSupported() && !demo) {
+        hint.textContent = "当前浏览器不支持 Web Serial：可进入演示模式体验全部解析、绘图与导出功能。";
+      } else if (conn !== "open") {
+        hint.textContent = "未连接。连接设备或进入演示模式后可发送。";
+      } else if (T.isResetting()) {
+        hint.textContent = "设备正在复位（Arduino/ESP 打开串口会自动重启），稍候再发送。";
+      } else {
+        hint.textContent = demo
+          ? "演示模式：发送内容会被回显到监视器，便于验证解析规则。"
+          : "已连接。回车即可发送；HEX 模式下内容支持空格分隔。";
+      }
+    }
+    $("slSendInput").disabled = (conn !== "open");
+  }
+
+  function renderSignals(sig) {
+    var box = $("slModem");
+    if (!box) { return; }
+    if (!sig) { box.textContent = "CTS - · DSR - · DCD - · RI -"; return; }
+    function m(v) { return v ? "1" : "0"; }
+    box.textContent = "CTS " + m(sig.clearToSend) + " · DSR " + m(sig.dataSetReady)
+      + " · DCD " + m(sig.dataCarrierDetect) + " · RI " + m(sig.ringIndicator);
+  }
+
+  function startSignalPoll() {
+    stopSignalPoll();
+    if (!core.state.port) { renderSignals(null); return; }
+    signalTimer = setInterval(function () {
+      if (!core.state.port) { return; }
+      T.readSignals().then(renderSignals);
+    }, 1000);
+  }
+
+  function stopSignalPoll() {
+    if (signalTimer) { clearInterval(signalTimer); signalTimer = null; }
+  }
+
+  function markResetWindow() {
+    if (resetTimer) { clearInterval(resetTimer); resetTimer = null; }
+    if (!T.isResetting()) { renderConn(); return; }
+    renderConn();
+    resetTimer = setInterval(function () {
+      if (!T.isResetting()) {
+        clearInterval(resetTimer);
+        resetTimer = null;
+        UI.toast("info", "设备复位等待结束，可以发送了");
+      }
+      renderConn();
+    }, 300);
+  }
+
+  function wireConnectionBar() {
+    $("slBtnConnect").addEventListener("click", function () {
+      T.connect(core.config.transport)["catch"](function () {
+        /* connect 内部已提示并记录日志，这里只需刷新界面 */
+        renderConn();
+      });
+    });
+
+    $("slBtnDisconnect").addEventListener("click", function () {
+      T.disconnect();
+    });
+
+    $("slBtnReconnect").addEventListener("click", function () {
+      var cfg = core.config.transport;
+      T.disconnect().then(function () { return T.connect(cfg); })["catch"](function () {
+        renderConn();
+      });
+    });
+
+    $("slBtnDemo").addEventListener("click", function () {
+      if (core.state.demo) {
+        T.stopDemo();
+        T.disconnect();
+        UI.toast("info", "已退出演示模式");
+        return;
+      }
+      T.startDemo({
+        mode: core.config.rule.active === "hex" ? "hex" : "text",
+        periodMs: 20
+      });
+      UI.toast("ok", "已进入演示模式（合成数据 50Hz）");
+    });
+
+    /* 设备参数（波特率/数据位/停止位/校验/流控）的接线见 wireDeviceAndShow() */
+
+    $("slBtnDtr").addEventListener("click", function () { flipSignal("dtr"); });
+    $("slBtnRts").addEventListener("click", function () { flipSignal("rts"); });
+    $("slBtnBreak").addEventListener("click", function () {
+      T.setSignals({ brk: true }).then(function () {
+        return T.setSignals({ brk: false });
+      }).then(function () {
+        UI.toast("info", "已发送 BREAK 信号");
+      })["catch"](function () {
+        UI.toast("warn", "当前设备不支持 BREAK 信号");
+      });
+    });
+
+    $("slBlurDisconnect").addEventListener("change", function () {
+      if (!this.checked) { return; }
+      if (!confirmLoose("开启后，本页失去焦点会自动断开串口。确定开启吗？")) {
+        this.checked = false;
+        core.config.transport.blurDisconnect = false;
+        core.saveConfig();
+      }
+    });
+
+    global.addEventListener("blur", function () {
+      if (core.config.transport.blurDisconnect && core.state.conn === "open") {
+        T.disconnect().then(function () { UI.toast("info", "页面失焦，已自动断开"); });
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------
+     4b) 设备参数 + 编码显示 + 发送行为 的接线
+     原则：控件先落进 core.config（可持久化），再按需触发副作用。
+     bind() 内部顺序是 setPath → touch → apply，因此 reopen 时读到的
+     必然是**新**参数，不会出现「按旧参数重开」。
+     ------------------------------------------------------------ */
+  /* 下拉的 value 是字面反斜杠串（HTML 属性不解析 \n），与配置里的真控制字符互转 */
+  var EOL_TO_CFG = { "\\n": "\n", "\\r": "\r", "\\r\\n": "\r\n", "": "" };
+  var EOL_TO_DOM = { "\n": "\\n", "\r": "\\r", "\r\n": "\\r\\n", "": "" };
+
+  function reopenIfOpen() {
+    if (!core.state.port) { return; }
+    T.reopen().then(function (ok) {
+      if (ok) { UI.toast("ok", "参数已生效（端口已重新打开）"); }
+    });
+  }
+
+  /* 显示层开关（时间戳 / HEX 显示）落成监视器面板的 opts */
+  function applyMonitorDisplay() {
+    var apps = SL.views.list();
+    for (var i = 0; i < apps.length; i++) {
+      if (apps[i].type !== "textmon") { continue; }
+      var opts = U.clone(apps[i].opts || {});
+      opts.showTimestamp = core.config.transport.showTimestamp !== false;
+      opts.showHex = !!core.config.transport.hexRecv;
+      SL.views.updatePanel(apps[i].id, { opts: opts });
+    }
+  }
+
+  function wireDeviceAndShow() {
+    /* --- 串口参数：改了立刻写配置，已连接时顺带重开端口 --- */
+    addBind({ el: "slBaud", path: "transport.baudRate", type: "num", scope: "transport", apply: reopenIfOpen });
+    addBind({ el: "slDataBits", path: "transport.dataBits", type: "num", scope: "transport", apply: reopenIfOpen });
+    addBind({ el: "slStopBits", path: "transport.stopBits", type: "num", scope: "transport", apply: reopenIfOpen });
+    addBind({ el: "slParity", path: "transport.parity", type: "select", scope: "transport", apply: reopenIfOpen });
+    /* 硬流控复选框 ↔ 配置里的字符串 "none"|"hardware" */
+    addBind({
+      el: "slFlow", path: "transport.flow", type: "chk", scope: "transport", apply: reopenIfOpen,
+      read: function (n) { return n.checked ? "hardware" : "none"; },
+      write: function (n, v) { n.checked = (v === "hardware"); }
+    });
+
+    /* --- 连接行为 --- */
+    addBind({ el: "slAutoReconnect", path: "transport.autoReconnect", type: "chk", scope: "transport" });
+    addBind({ el: "slResetWait", path: "transport.resetWaitMs", type: "num", scope: "transport" });
+
+    /* --- 编码与发送换行 --- */
+    addBind({ el: "slEncoding", path: "transport.encoding", type: "select", scope: "transport" });
+    addBind({
+      el: "slLineEnding", path: "transport.lineEnding", type: "select", scope: "transport",
+      read: function (n) { return EOL_TO_CFG[n.value] !== undefined ? EOL_TO_CFG[n.value] : "\n"; },
+      write: function (n, v) { n.value = (EOL_TO_DOM[v] !== undefined) ? EOL_TO_DOM[v] : "\\n"; }
+    });
+    addBind({ el: "slAppendEnding", path: "transport.appendLineEnding", type: "chk", scope: "transport" });
+
+    /* --- HEX 发送：顶栏与底部发送条两个开关同源，改动互相同步 --- */
+    var bTop = null, bBottom = null;
+    bTop = addBind({
+      el: "slHexSend", path: "transport.hexSend", type: "chk", scope: "transport",
+      apply: function () { if (bBottom) { bBottom.sync(); } }
+    });
+    bBottom = addBind({
+      el: "slSendHex", path: "transport.hexSend", type: "chk", scope: "transport",
+      apply: function () { if (bTop) { bTop.sync(); } }
+    });
+
+    /* --- 显示层：时间戳 / HEX 显示，改动即时应用到监视器面板 --- */
+    addBind({
+      el: "slShowTs", path: "transport.showTimestamp", type: "chk", scope: "transport",
+      apply: applyMonitorDisplay
+    });
+    addBind({
+      el: "slHexRecv", path: "transport.hexRecv", type: "chk", scope: "transport",
+      apply: applyMonitorDisplay
+    });
+  }
+
+  function confirmLoose(msg) {
+    /* 原生 confirm 仅用于极少数“确认开关”场景，避免打断式对话框把流程搞复杂 */
+    return global.confirm ? global.confirm(msg) : true;
+  }
+
+  var signalState = { dtr: false, rts: false };
+  function flipSignal(which) {
+    if (!core.state.port) {
+      UI.toast("warn", "先连接设备才能控制信号线");
+      return;
+    }
+    signalState[which] = !signalState[which];
+    var patch = {};
+    patch[which] = signalState[which];
+    T.setSignals(patch).then(function (ok) {
+      if (!ok) { UI.toast("warn", "设备不支持该信号线（或已开启硬流控）"); }
+      else { UI.toast("info", which.toUpperCase() + " → " + (signalState[which] ? "1" : "0")); }
+    });
+  }
+
+  /* ------------------------------------------------------------
+     5) 解析面板（文本规则 / HEX 结构表）
+     ------------------------------------------------------------ */
+  var FIELD_TYPES = [
+    { v: "int8", n: 1 }, { v: "uint8", n: 1 },
+    { v: "int16", n: 2 }, { v: "uint16", n: 2 },
+    { v: "int32", n: 4 }, { v: "uint32", n: 4 },
+    { v: "float32", n: 4 }
+  ];
+
+  function typeSize(type) {
+    for (var i = 0; i < FIELD_TYPES.length; i++) {
+      if (FIELD_TYPES[i].v === type) { return FIELD_TYPES[i].n; }
+    }
+    return 1;
+  }
+
+  function renderRuleMode() {
+    var hex = core.config.rule.active === "hex";
+    $("slTextRule").style.display = hex ? "none" : "block";
+    $("slHexRule").style.display = hex ? "block" : "none";
+    var radios = document.querySelectorAll('input[name="slRuleMode"]');
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].checked = (radios[i].value === (hex ? "hex" : "text"));
+    }
+  }
+
+  function renderFields() {
+    var host = $("slFields");
+    if (!host) { return; }
+    host.textContent = "";
+    var fields = core.config.rule.hex.fields || [];
+    if (!fields.length) {
+      host.appendChild(el("p", "sl-hint", "还没有字段。点下方「新增字段」，或在演示模式下点「套用示例」。" ));
+      return;
+    }
+    var wrap = el("div", "sl-table-wrap");
+    var table = el("table", "sl-table");
+
+    var head = el("tr");
+    var titles = ["键名", "类型", "偏移", "长度", "缩放", "大端", ""];
+    for (var h = 0; h < titles.length; h++) { head.appendChild(el("th", null, titles[h])); }
+    table.appendChild(head);
+
+    for (var i = 0; i < fields.length; i++) {
+      (function (idx) {
+        var f = fields[idx];
+        var tr = el("tr");
+
+        var tdKey = el("td");
+        var keyIn = el("input", "sl-mono-input");
+        keyIn.type = "text"; keyIn.value = f.key || ""; keyIn.size = 8;
+        keyIn.addEventListener("change", function () {
+          f.key = keyIn.value.replace(/^\s+|\s+$/g, "");
+          touch("rule");
+        });
+        tdKey.appendChild(keyIn);
+        tr.appendChild(tdKey);
+
+        var tdType = el("td");
+        var sel = el("select");
+        for (var t = 0; t < FIELD_TYPES.length; t++) {
+          var o = el("option", null, FIELD_TYPES[t].v);
+          o.value = FIELD_TYPES[t].v;
+          sel.appendChild(o);
+        }
+        sel.value = f.type || "uint8";
+        sel.addEventListener("change", function () {
+          f.type = sel.value;
+          f.size = typeSize(sel.value);
+          renderFields();
+          touch("rule");
+        });
+        tdType.appendChild(sel);
+        tr.appendChild(tdType);
+
+        tr.appendChild(numCell(f, "offset", 0, 0, 1));
+        tr.appendChild(numCell(f, "size", typeSize(f.type || "uint8"), 1, 4));
+        tr.appendChild(numCell(f, "scale", (f.scale === undefined ? 1 : f.scale), -1, 0.001, 6));
+
+        var tdBig = el("td");
+        var big = el("input");
+        big.type = "checkbox"; big.checked = !!f.big;
+        big.addEventListener("change", function () { f.big = big.checked; touch("rule"); });
+        tdBig.appendChild(big);
+        tr.appendChild(tdBig);
+
+        var tdDel = el("td");
+        var del = el("button", "sl-btn is-sm is-danger", "删");
+        del.type = "button";
+        del.addEventListener("click", function () {
+          fields.splice(idx, 1);
+          renderFields();
+          touch("rule");
+        });
+        tdDel.appendChild(del);
+        tr.appendChild(tdDel);
+
+        table.appendChild(tr);
+      })(i);
+    }
+    wrap.appendChild(table);
+    host.appendChild(wrap);
+  }
+
+  function numCell(obj, key, def, min, step, max) {
+    var td = el("td");
+    var inp = el("input");
+    inp.type = "number";
+    inp.value = (obj[key] === undefined || obj[key] === null) ? String(def) : String(obj[key]);
+    if (min !== undefined && min !== -1) { inp.min = String(min); }
+    if (max !== undefined) { inp.max = String(max); }
+    if (step) { inp.step = String(step); }
+    inp.style.width = "72px";
+    inp.addEventListener("change", function () {
+      var v = parseFloat(inp.value);
+      obj[key] = isFinite(v) ? v : def;
+      inp.value = String(obj[key]);
+      touch("rule");
+    });
+    td.appendChild(inp);
+    return td;
+  }
+
+  function wireParsePane() {
+    var radios = document.querySelectorAll('input[name="slRuleMode"]');
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].addEventListener("change", function () {
+        if (!this.checked) { return; }
+        core.config.rule.active = this.value;
+        renderRuleMode();
+        touch("rule");
+      });
+    }
+
+    $("slSepEq").addEventListener("change", onSepChange);
+    $("slSepColon").addEventListener("change", onSepChange);
+
+    $("slSuffixCh").addEventListener("change", function () {
+      core.config.rule.text.suffixChannels = this.checked;
+      touch("rule");
+    });
+
+    $("slHexHead").addEventListener("change", function () { onHexRuleChange(this, "head"); });
+    $("slHexTail").addEventListener("change", function () { onHexRuleChange(this, "tail"); });
+    $("slHexHead").addEventListener("input", function () {
+      if (this.value.replace(/\s/g, "") === "" || U.hexToBytes(this.value)) {
+        this.style.borderColor = "";
+      } else { this.style.borderColor = "rgba(239,68,68,.7)"; }
+    });
+
+    $("slBtnAddField").addEventListener("click", function () {
+      var fields = core.config.rule.hex.fields || (core.config.rule.hex.fields = []);
+      fields.push({ key: "ch" + (fields.length + 1), type: "int16", offset: 0, size: 2, scale: 1, big: false });
+      renderFields();
+      touch("rule");
+    });
+
+    $("slBtnSample").addEventListener("click", applySample);
+  }
+
+  function onSepChange() {
+    var seps = [];
+    if ($("slSepEq").checked) { seps.push("="); }
+    if ($("slSepColon").checked) { seps.push(":"); }
+    if (!seps.length) {
+      /* 分隔符不能为空，否则文本解析退化成“永远解析不出内容” */
+      $("slSepEq").checked = true;
+      seps = ["="];
+      UI.toast("warn", "至少要保留一个分隔符，已自动勾选等号");
+    }
+    core.config.rule.text.seps = seps;
+    touch("rule");
+  }
+
+  function onHexRuleChange(node, key) {
+    var v = String(node.value || "").replace(/\s/g, "");
+    if (v && !U.hexToBytes(v)) {
+      UI.toast("bad", "「" + (key === "head" ? "帧头" : "帧尾") + "」必须是偶数位十六进制，如 AA55");
+      node.value = core.config.rule.hex[key] || "";
+      return;
+    }
+    core.config.rule.hex[key] = v;
+    node.value = v;
+    touch("rule");
+  }
+
+  function applySample() {
+    var r = core.config.rule;
+    if (r.active === "hex") {
+      var demo = T.demoHexRule();
+      r.hex.head = demo.head;
+      r.hex.tail = demo.tail;
+      r.hex.len = U.clone(demo.len);
+      r.hex.fields = U.clone(demo.fields);
+      r.hex.checksum = U.clone(demo.checksum);
+      syncForms();
+      renderFields();
+      UI.toast("ok", "已套用演示 HEX 帧结构（AA55 帧头 + 3 个 int16 字段 + 累加和校验）");
+    } else {
+      r.text.seps = ["=", ":"];
+      r.text.suffixChannels = true;
+      syncForms();
+      UI.toast("ok", "已套用演示文本规则（同时识别 = 与 :，后缀数字视为独立通道）");
+    }
+    touch("rule");
+  }
+
+  function wireHexRuleInputs() {
+    var nums = [
+      ["slLenOffset", "rule.hex.len.offset", 0],
+      ["slLenSize", "rule.hex.len.size", 0],
+      ["slCkFrom", "rule.hex.checksum.from", 0],
+      ["slCkTo", "rule.hex.checksum.to", -1]
+    ];
+    for (var i = 0; i < nums.length; i++) {
+      addBind({ el: nums[i][0], path: nums[i][1], type: "num", scope: "rule" });
+    }
+    addBind({ el: "slLenMode", path: "rule.hex.len.mode", type: "select", scope: "rule" });
+    addBind({ el: "slCkType", path: "rule.hex.checksum.type", type: "select", scope: "rule" });
+  }
+
+  /* ------------------------------------------------------------
+     6) 通道面板
+     ------------------------------------------------------------ */
+  function renderChannels() {
+    var host = $("slChannels");
+    if (!host) { return; }
+    host.textContent = "";
+    var list = SL.datastore.listChannels();
+    if (!list.length) {
+      host.appendChild(el("p", "sl-hint", "还没有通道。收到第一帧被解析出数值后会自动建立通道。"));
+      return;
+    }
+    var table = el("table", "sl-table");
+    var head = el("tr");
+    var titles = ["", "键名", "标签", "单位", "精度", "显示", ""];
+    for (var h = 0; h < titles.length; h++) { head.appendChild(el("th", null, titles[h])); }
+    table.appendChild(head);
+
+    for (var i = 0; i < list.length; i++) {
+      (function (ch) {
+        var tr = el("tr");
+
+        var tdC = el("td");
+        var sw = el("span", "sl-swatch");
+        sw.style.background = ch.color;
+        tdC.appendChild(sw);
+        tr.appendChild(tdC);
+
+        tr.appendChild(el("td", null, ch.key));
+
+        var tdLabel = el("td");
+        var labelIn = el("input");
+        labelIn.type = "text"; labelIn.value = ch.label || ch.key; labelIn.size = 7;
+        labelIn.addEventListener("change", function () {
+          SL.datastore.upsertChannel({ key: ch.key, label: labelIn.value });
+          persistChannels();
+        });
+        tdLabel.appendChild(labelIn);
+        tr.appendChild(tdLabel);
+
+        var tdUnit = el("td");
+        var unitIn = el("input");
+        unitIn.type = "text"; unitIn.value = ch.unit || ""; unitIn.size = 4;
+        unitIn.addEventListener("change", function () {
+          SL.datastore.upsertChannel({ key: ch.key, unit: unitIn.value });
+          persistChannels();
+        });
+        tdUnit.appendChild(unitIn);
+        tr.appendChild(tdUnit);
+
+        var tdPre = el("td");
+        var preIn = el("input");
+        preIn.type = "number"; preIn.min = "0"; preIn.max = "8";
+        preIn.value = String(ch.precision === undefined ? 3 : ch.precision);
+        preIn.style.width = "52px";
+        preIn.addEventListener("change", function () {
+          var v = parseInt(preIn.value, 10);
+          SL.datastore.upsertChannel({ key: ch.key, precision: isNaN(v) ? 3 : v });
+          persistChannels();
+        });
+        tdPre.appendChild(preIn);
+        tr.appendChild(tdPre);
+
+        var tdVis = el("td");
+        var vis = el("input");
+        vis.type = "checkbox"; vis.checked = ch.visible !== false;
+        vis.addEventListener("change", function () {
+          SL.datastore.upsertChannel({ key: ch.key, visible: vis.checked });
+          persistChannels();
+        });
+        tdVis.appendChild(vis);
+        tr.appendChild(tdVis);
+
+        var tdDel = el("td");
+        var del = el("button", "sl-btn is-sm is-danger", "删");
+        del.type = "button";
+        del.addEventListener("click", function () {
+          SL.datastore.removeChannel(ch.key);
+          persistChannels();
+          renderChannels();
+        });
+        tdDel.appendChild(del);
+        tr.appendChild(tdDel);
+
+        table.appendChild(tr);
+      })(list[i]);
+    }
+    host.appendChild(table);
+  }
+
+  function persistChannels() {
+    core.config.channels = SL.datastore.snapshot();
+    touchLazy("channels");
+  }
+
+  function wireChannelsPane() {
+    $("slBtnAddChannel").addEventListener("click", function () {
+      UI.prompt("新增通道", {
+        label: "通道键名",
+        hint: "键名必须与设备实际发出的字段名一致，例如 temp、cur、pos1。",
+        placeholder: "temp",
+        validate: function (v) {
+          var k = String(v || "").replace(/^\s+|\s+$/g, "");
+          if (!k) { return "键名不能为空"; }
+          if (!/^[A-Za-z_][A-Za-z0-9_.\-]*$/.test(k)) { return "键名只能包含字母、数字、下划线、点与连字符，且不能以数字开头"; }
+          if (SL.datastore.getChannel(k)) { return "该通道已存在"; }
+          return "";
+        }
+      }).then(function (v) {
+        if (v === null) { return; }
+        var k = String(v).replace(/^\s+|\s+$/g, "");
+        SL.datastore.upsertChannel({ key: k, label: k });
+        persistChannels();
+        renderChannels();
+        UI.toast("ok", "已新增通道 " + k);
+      });
+    });
+
+    $("slBtnClearChannels").addEventListener("click", function () {
+      UI.confirm("清空数据", "将清空所有通道的已缓数据与原始记录（保留通道设置）。此操作不可撤销。", "清空数据")
+        .then(function (ok) {
+          if (!ok) { return; }
+          SL.datastore.clear(true);
+          renderChannels();
+          UI.toast("ok", "已清空缓存数据");
+        });
+    });
+  }
+
+  /* ------------------------------------------------------------
+     7) 发送面板（定时 / 触发 / 预设）
+     ------------------------------------------------------------ */
+  var SEND_LISTS = {
+    timed: {
+      host: "slTimed", minLen: 1,
+      hint: "启用后按间隔自动发送，适合轮询寄存器。",
+      def: function () { return { id: U.nextId("t"), enabled: false, text: "", hex: false, intervalMs: 1000 }; },
+      cols: [
+        { k: "enabled", t: "chk" },
+        { k: "text", t: "text", ph: "要发送的内容", wide: true },
+        { k: "hex", t: "chk", label: "HEX" },
+        { k: "intervalMs", t: "num", label: "间隔ms", min: 20, step: 10, w: 84 }
+      ]
+    },
+    triggers: {
+      host: "slTriggers", minLen: 1,
+      hint: "接收内容包含「匹配」时自动发送「应答」。",
+      def: function () { return { id: U.nextId("g"), enabled: false, match: "", reply: "", hex: false }; },
+      cols: [
+        { k: "enabled", t: "chk" },
+        { k: "match", t: "text", ph: "接收匹配", wide: true },
+        { k: "reply", t: "text", ph: "自动应答", wide: true },
+        { k: "hex", t: "chk", label: "HEX" }
+      ]
+    },
+    presets: {
+      host: "slPresets", minLen: 1,
+      hint: "可绑定单字符快捷键（焦点不在输入框时生效）。",
+      def: function () { return { id: U.nextId("p"), enabled: true, name: "预设", text: "", hex: false, expect: "", waitMs: 1000, shortcut: "" }; },
+      cols: [
+        { k: "enabled", t: "chk" },
+        { k: "shortcut", t: "text", ph: "键", w: 42, maxLen: 1 },
+        { k: "name", t: "text", ph: "名称", w: 76 },
+        { k: "text", t: "text", ph: "发送内容", wide: true },
+        { k: "hex", t: "chk", label: "HEX" },
+        { k: "expect", t: "text", ph: "期望回包", w: 90 },
+        { k: "waitMs", t: "num", label: "超时ms", min: 0, step: 100, w: 84 }
+      ]
+    }
+  };
+
+  function renderSendList(kind) {
+    var spec = SEND_LISTS[kind];
+    var host = $(spec.host);
+    if (!host) { return; }
+    host.textContent = "";
+    var list = core.config.send[kind] || (core.config.send[kind] = []);
+
+    if (!list.length) {
+      host.appendChild(el("p", "sl-hint", "（空）" + spec.hint));
+      return;
+    }
+
+    for (var i = 0; i < list.length; i++) {
+      (function (item, idx) {
+        var row = el("div", "sl-row");
+        for (var c = 0; c < spec.cols.length; c++) {
+          row.appendChild(sendCell(item, spec.cols[c], kind));
+        }
+        var del = el("button", "sl-btn is-sm is-danger", "删");
+        del.type = "button";
+        del.addEventListener("click", function () {
+          list.splice(idx, 1);
+          renderSendList(kind);
+          touch("send");
+        });
+        row.appendChild(del);
+        host.appendChild(row);
+      })(list[i], i);
+    }
+  }
+
+  function sendCell(item, col, kind) {
+    if (col.t === "chk") {
+      var lab = el("label", "sl-chk");
+      var cb = el("input");
+      cb.type = "checkbox";
+      cb.checked = item[col.k] !== false && !!item[col.k];
+      cb.addEventListener("change", function () {
+        item[col.k] = cb.checked;
+        touch("send");
+      });
+      lab.appendChild(cb);
+      if (col.label) { lab.appendChild(el("span", null, col.label)); }
+      return lab;
+    }
+    if (col.t === "num") {
+      var wrapN = el("span", "sl-field");
+      if (col.label) { wrapN.appendChild(el("span", null, col.label)); }
+      var num = el("input");
+      num.type = "number";
+      num.value = String(item[col.k] === undefined ? 0 : item[col.k]);
+      if (col.min !== undefined) { num.min = String(col.min); }
+      if (col.step) { num.step = String(col.step); }
+      num.style.width = (col.w || 84) + "px";
+      num.addEventListener("change", function () {
+        var v = parseFloat(num.value);
+        item[col.k] = isFinite(v) ? v : 0;
+        touch("send");
+      });
+      wrapN.appendChild(num);
+      return wrapN;
+    }
+    var inp = el("input", (col.k === "text" || col.k === "reply" || col.k === "expect") ? "sl-mono-input" : "");
+    inp.type = "text";
+    if (col.w) { inp.style.width = col.w + "px"; }
+    else if (col.wide) { inp.style.flex = "1 1 130px"; inp.style.minWidth = "90px"; }
+    if (col.ph) { inp.placeholder = col.ph; }
+    if (col.maxLen) { inp.maxLength = col.maxLen; }
+    inp.value = item[col.k] === undefined ? "" : String(item[col.k]);
+    inp.addEventListener("change", function () {
+      var v = inp.value;
+      if (col.maxLen && v.length > col.maxLen) { v = v.slice(0, col.maxLen); inp.value = v; }
+      item[col.k] = v;
+      touch("send");
+    });
+    return inp;
+  }
+
+  function wireSendPane() {
+    $("slBtnAddTimed").addEventListener("click", function () { addSendItem("timed"); });
+    $("slBtnAddTrigger").addEventListener("click", function () { addSendItem("triggers"); });
+    $("slBtnAddPreset").addEventListener("click", function () { addSendItem("presets"); });
+  }
+
+  function addSendItem(kind) {
+    var spec = SEND_LISTS[kind];
+    var list = core.config.send[kind] || (core.config.send[kind] = []);
+    list.push(spec.def());
+    renderSendList(kind);
+    touch("send");
+    /* 新加的项聚焦到内容输入框，减少一次点击 */
+    var host = $(spec.host);
+    if (host && host.lastChild) {
+      var inputs = host.lastChild.querySelectorAll("input[type=text]");
+      if (inputs.length) {
+        var idx = (kind === "presets") ? Math.min(2, inputs.length - 1) : 0;
+        inputs[idx].focus();
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------
+     8) 插件（图表框）面板
+     ------------------------------------------------------------ */
+  function renderPluginTypes() {
+    var sel = $("slPluginType");
+    if (!sel) { return; }
+    var keep = sel.value;
+    sel.textContent = "";
+    var list = SL.plugins.list();
+    for (var i = 0; i < list.length; i++) {
+      var o = el("option", null, list[i].label + "（" + list[i].id + "）");
+      o.value = list[i].id;
+      sel.appendChild(o);
+    }
+    if (keep) { sel.value = keep; }
+  }
+
+  function renderPanelList() {
+    var host = $("slPanelList");
+    if (!host) { return; }
+    host.textContent = "";
+    var list = SL.views.list();
+    if (!list.length) {
+      host.appendChild(el("p", "sl-hint", "工作区还没有图表框。选中渲染器后点「添加到工作区」。"));
+      return;
+    }
+    for (var i = 0; i < list.length; i++) {
+      (function (p) {
+        var row = el("div", "sl-row");
+        var sw = el("span", "sl-swatch");
+        sw.style.background = (p.colors && p.colors[(p.channels || [])[0]]) || "#3b82f6";
+        row.appendChild(sw);
+        row.appendChild(el("span", null, p.title));
+        row.appendChild(el("span", "sl-panel-type", p.type + " · " + (p.channels || []).join(",")));
+
+        var edit = el("button", "sl-btn is-sm", "编辑");
+        edit.type = "button";
+        edit.addEventListener("click", function () { openPanelEditor(p.id); });
+        row.appendChild(edit);
+
+        var del = el("button", "sl-btn is-sm is-danger", "删");
+        del.type = "button";
+        del.addEventListener("click", function () {
+          SL.views.removePanel(p.id);
+          renderPanelList();
+        });
+        row.appendChild(del);
+
+        host.appendChild(row);
+      })(list[i]);
+    }
+  }
+
+  /* 面板编辑器：DIY 的核心入口（标题 / 通道 / 公式 / 窗口 / 量程 / 颜色） */
+  function openPanelEditor(id) {
+    var panel = SL.views.getPanel(id);
+    if (!panel) { return; }
+    var r = SL.plugins.get(panel.type);
+    var work = U.clone(panel);
+
+    var wrap = el("div");
+    wrap.appendChild(el("p", "sl-hint", "渲染器：" + (r ? r.label : panel.type) + "（" + panel.type + "）"));
+
+    var grid = el("div", "sl-kv");
+    function field(label, node, hint) {
+      grid.appendChild(el("dt", null, label));
+      var dd = el("dd");
+      dd.appendChild(node);
+      if (hint) { dd.appendChild(el("p", "sl-hint", hint)); }
+      grid.appendChild(dd);
+      return node;
+    }
+
+    var titleIn = el("input", "sl-mono-input");
+    titleIn.type = "text"; titleIn.value = work.title; titleIn.style.width = "100%";
+    field("标题", titleIn);
+
+    var chanIn = el("input", "sl-mono-input");
+    chanIn.type = "text";
+    chanIn.value = (work.channels || []).join(",");
+    chanIn.style.width = "100%";
+    field("通道", chanIn, "逗号分隔的通道键名；填 auto 表示自动取前几个通道。仪表盘只取第一个。");
+
+    var exprIn = el("input", "sl-mono-input");
+    exprIn.type = "text"; exprIn.value = work.expr || ""; exprIn.style.width = "100%";
+    field("映射公式", exprIn, "可选。用通道名作变量，例如 (cur*24) 把电流换算成功率。禁 eval，只支持四则运算与白名单函数。");
+
+    var winIn = el("input");
+    winIn.type = "number"; winIn.min = "10"; winIn.max = "100000";
+    winIn.value = String(work.window || 500);
+    field("窗口点数", winIn, "图表显示最近多少个采样点（10 ~ 100000）。");
+
+    var yMinIn = el("input");
+    yMinIn.type = "number"; yMinIn.value = (work.axis && work.axis.yMin !== null && work.axis.yMin !== undefined) ? String(work.axis.yMin) : "";
+    yMinIn.placeholder = "自动";
+    var yMaxIn = el("input");
+    yMaxIn.type = "number"; yMaxIn.value = (work.axis && work.axis.yMax !== null && work.axis.yMax !== undefined) ? String(work.axis.yMax) : "";
+    yMaxIn.placeholder = "自动";
+    var yWrap = el("div", "sl-row");
+    yWrap.appendChild(yMinIn);
+    yWrap.appendChild(el("span", null, "~"));
+    yWrap.appendChild(yMaxIn);
+    field("纵轴范围", yWrap, "都留空 = 自动量程。");
+
+    var colWrap = el("div", "sl-row");
+    var keys = (work.channels || []).filter(function (k) { return k !== "auto"; });
+    if (keys.length) {
+      var colorIns = {};
+      for (var k = 0; k < keys.length; k++) {
+        (function (key) {
+          var cw = el("span", "sl-field");
+          cw.appendChild(el("span", null, key));
+          var ci = el("input");
+          ci.type = "text"; ci.size = 8;
+          ci.value = (work.colors && work.colors[key]) || "";
+          ci.placeholder = "#3b82f6";
+          colorIns[key] = ci;
+          cw.appendChild(ci);
+          colWrap.appendChild(cw);
+        })(keys[k]);
+      }
+      work._colorIns = colorIns;
+    } else {
+      colWrap.appendChild(el("span", "sl-hint", "通道选了 auto 时按默认色板着色。"));
+    }
+    field("通道颜色", colWrap);
+
+    wrap.appendChild(grid);
+
+    UI.modal({
+      title: "编辑图表框",
+      body: wrap,
+      focus: "input",
+      buttons: [
+        {
+          label: "保存", primary: true,
+          onClick: function () {
+            var patch = {
+              title: titleIn.value.replace(/^\s+|\s+$/g, ""),
+              channels: splitChannels(chanIn.value),
+              expr: exprIn.value,
+              window: parseInt(winIn.value, 10),
+              axis: {},
+              colors: {}
+            };
+            var yMin = parseFloat(yMinIn.value);
+            var yMax = parseFloat(yMaxIn.value);
+            patch.axis.yMin = isFinite(yMin) ? yMin : null;
+            patch.axis.yMax = isFinite(yMax) ? yMax : null;
+            if (patch.axis.yMin === null && patch.axis.yMax === null) { patch.axis.yAuto = true; }
+            for (var key in (work._colorIns || {})) {
+              if (!Object.prototype.hasOwnProperty.call(work._colorIns, key)) { continue; }
+              var cv = work._colorIns[key].value.replace(/^\s+|\s+$/g, "");
+              if (cv) { patch.colors[key] = cv; }
+            }
+            var res = SL.plugins.validate({
+              type: panel.type, id: panel.id, title: patch.title,
+              channels: patch.channels, expr: patch.expr, window: patch.window,
+              axis: patch.axis, colors: patch.colors, opts: panel.opts
+            });
+            if (!res.panel) {
+              UI.toast("bad", "面板配置无效：" + res.errors.join("；"));
+              return false;
+            }
+            SL.views.updatePanel(panel.id, res.panel);
+            if (res.errors.length) { UI.toast("warn", "已自动修正：" + res.errors[0]); }
+            renderPanelList();
+            UI.toast("ok", "图表框已更新");
+            return true;
+          }
+        },
+        { label: "取消" }
+      ]
+    });
+  }
+
+  function splitChannels(str) {
+    var parts = String(str || "").split(/[,，\s]+/);
+    var out = [];
+    for (var i = 0; i < parts.length; i++) {
+      var s = parts[i].replace(/^\s+|\s+$/g, "");
+      if (s) { out.push(s); }
+    }
+    return out.length ? out : ["auto"];
+  }
+
+  function wirePluginsPane() {
+    $("slBtnAddPanel").addEventListener("click", function () {
+      var sel = $("slPluginType");
+      var type = sel.value || "timeplot";
+      var r = SL.plugins.get(type);
+      var panel = SL.views.addPanel({
+        type: type,
+        title: r ? r.label : type,
+        channels: ["auto"]
+      });
+      if (panel) {
+        renderPanelList();
+        UI.toast("ok", "已添加「" + panel.title + "」；在面板里点「编辑」可绑定通道与公式");
+      }
+    });
+
+    $("slBtnExportPack").addEventListener("click", function () {
+      var list = SL.views.list();
+      if (!list.length) { UI.toast("warn", "工作区还没有图表框可导出"); return; }
+      var pack = SL.plugins.exportPack(list, SL.datastore.snapshot());
+      var text = JSON.stringify(pack, null, 1);
+      var ok = SL.exporters.downloadText(text, "seriallab_面板包_" + SL.exporters.stamp() + ".json", "application/json");
+      UI.toast(ok ? "ok" : "bad", ok ? "已导出面板包（含 " + list.length + " 个图表框与通道配色）" : "导出失败");
+    });
+
+    $("slBtnImportPack").addEventListener("click", function () {
+      askText("导入面板包", "把面板包 JSON 粘贴到这里：", "").then(function (text) {
+        if (text === null) { return; }
+        var res = SL.plugins.importPack(text);
+        if (!res.ok && !res.panels.length) {
+          UI.toast("bad", "导入失败：" + res.errors.join("；"));
+          return;
+        }
+        for (var c = 0; c < res.channels.length; c++) { SL.datastore.upsertChannel(res.channels[c]); }
+        for (var i = 0; i < res.panels.length; i++) { SL.views.addPanel(res.panels[i], true); }
+        persistChannels();
+        renderChannels();
+        renderPanelList();
+        SL.views.redraw();
+        UI.toast("ok", "已导入 " + res.panels.length + " 个图表框");
+        if (res.errors.length) { UI.toast("warn", "有 " + res.errors.length + " 处配置被自动修正"); }
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------
+     9) 录制面板
+     ------------------------------------------------------------ */
+  function renderRecords() {
+    var host = $("slRecords");
+    if (!host) { return; }
+    host.textContent = "";
+    var list = SL.timeline.list();
+    if (!list.length) {
+      host.appendChild(el("p", "sl-hint", "还没有录制。点「开始录制」把流过的帧存进内存。"));
+      return;
+    }
+    for (var i = 0; i < list.length; i++) {
+      (function (rec) {
+        var s = SL.timeline.summary(rec);
+        var row = el("div", "sl-row");
+        row.appendChild(el("span", null, rec.name));
+        row.appendChild(el("span", "sl-panel-type", s.frames + " 帧 · " + fmtMs(s.durationMs)));
+
+        var play = el("button", "sl-btn is-sm", "回放");
+        play.type = "button";
+        play.addEventListener("click", function () { SL.timeline.play(rec); });
+        row.appendChild(play);
+
+        var exp = el("button", "sl-btn is-sm", "导出");
+        exp.type = "button";
+        exp.addEventListener("click", function () {
+          var ok = SL.exporters.downloadText(SL.timeline.toJSON(rec),
+            "seriallab_录制_" + SL.exporters.stamp() + ".json", "application/json");
+          UI.toast(ok ? "ok" : "bad", ok ? "已导出该条录制" : "导出失败");
+        });
+        row.appendChild(exp);
+
+        var del = el("button", "sl-btn is-sm is-danger", "删");
+        del.type = "button";
+        del.addEventListener("click", function () {
+          SL.timeline.remove(rec.id);
+          renderRecords();
+        });
+        row.appendChild(del);
+
+        host.appendChild(row);
+      })(list[i]);
+    }
+  }
+
+  function renderRecordState() {
+    var on = SL.timeline.isRecording();
+    $("slBtnRecord").textContent = on ? "停止录制" : "开始录制";
+    $("slBtnRecord").className = "sl-btn is-sm" + (on ? " is-danger" : " is-primary");
+    var frozen = SL.timeline.isFrozen();
+    $("slBtnFreeze").textContent = frozen ? "恢复显示" : "冻结显示";
+    $("slRecHint").textContent = on
+      ? ("正在录制…已记录 " + SL.timeline.frameCount() + " 帧（回放/导出在停止后进行）")
+      : "录制中的原始帧会进内存缓冲，停止后可在下方回放或导出。";
+  }
+
+  function wireTimelinePane() {
+    $("slBtnRecord").addEventListener("click", function () {
+      if (SL.timeline.isRecording()) {
+        var rec = SL.timeline.stopRecord();
+        renderRecords();
+        renderRecordState();
+        if (rec) { UI.toast("ok", "录制结束：" + rec.frames.length + " 帧"); }
+      } else {
+        SL.timeline.startRecord();
+        renderRecordState();
+        UI.toast("info", "开始录制");
+      }
+    });
+
+    $("slBtnFreeze").addEventListener("click", function () {
+      SL.timeline.toggleFreeze();
+      renderRecordState();
+    });
+
+    $("slBtnExportRec").addEventListener("click", function () {
+      if (!SL.timeline.list().length) { UI.toast("warn", "还没有录制可导出"); return; }
+      var ok = SL.exporters.downloadText(SL.timeline.toJSON(),
+        "seriallab_录制集_" + SL.exporters.stamp() + ".json", "application/json");
+      UI.toast(ok ? "ok" : "bad", ok ? "已导出全部录制" : "导出失败");
+    });
+
+    $("slBtnImportRec").addEventListener("click", function () {
+      askText("导入录制", "把录制 JSON 粘贴到这里：", "").then(function (text) {
+        if (text === null) { return; }
+        var res = SL.timeline.fromJSON(text);
+        if (!res.ok) {
+          UI.toast("bad", "导入失败：" + res.errors.join("；"));
+          return;
+        }
+        renderRecords();
+        UI.toast("ok", "已导入 " + res.added + " 条录制");
+      });
+    });
+  }
+
+  function askText(title, hint, value) {
+    return UI.prompt(title, {
+      multiline: true, rows: 12, hint: hint, value: value,
+      hint2: "也可以直接点「导入文件」从本地选 JSON 文件。"
+    });
+  }
+
+  /* ------------------------------------------------------------
+     10) 数据面板
+     ------------------------------------------------------------ */
+  function copyText(text) {
+    return new Promise(function (resolve) {
+      if (global.navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { resolve(true); }, function () { resolve(fallbackCopy(text)); });
+        return;
+      }
+      resolve(fallbackCopy(text));
+    });
+  }
+
+  function fallbackCopy(text) {
+    try {
+      var ta = el("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return !!ok;
+    } catch (e) { return false; }
+  }
+
+  function wireDataPane() {
+    $("slBtnExpCsv").addEventListener("click", function () { SL.exporters.exportParsedCsv(); });
+    $("slBtnExpRaw").addEventListener("click", function () { SL.exporters.exportRawCsv(); });
+    $("slBtnExpJson").addEventListener("click", function () { SL.exporters.exportJson(); });
+    $("slBtnExpBin").addEventListener("click", function () { SL.exporters.exportBin(); });
+    $("slBtnExpTxt").addEventListener("click", function () { SL.exporters.exportTxt(); });
+
+    $("slBtnCfgCopy").addEventListener("click", function () {
+      copyText(SL.exporters.configToText()).then(function (ok) {
+        UI.toast(ok ? "ok" : "bad", ok ? "配置 JSON 已复制到剪贴板" : "复制失败，请用「导出文件」");
+      });
+    });
+
+    $("slBtnCfgImport").addEventListener("click", function () {
+      askText("粘贴导入配置", "把配置 JSON 粘贴到这里：", "").then(function (text) {
+        if (text === null) { return; }
+        applyConfigText(text);
+      });
+    });
+
+    $("slBtnCfgExport").addEventListener("click", function () { SL.exporters.exportConfigFile(); });
+
+    $("slBtnCfgFile").addEventListener("click", function () {
+      pickFile(".json,application/json").then(function (text) {
+        if (text === null) { return; }
+        applyConfigText(text);
+      });
+    });
+
+    $("slBtnCfgClear").addEventListener("click", function () {
+      UI.confirm("清空配置", "将把串口参数、解析规则、发送工作流、通道与图表框全部恢复默认，并清空本地存储。请先导出一份配置备份。", "清空并恢复默认")
+        .then(function (ok) {
+          if (!ok) { return; }
+          core.clearConfig();
+          bootFromConfig();
+          UI.toast("ok", "已恢复默认配置");
+        });
+    });
+
+    $("slBtnOffline").addEventListener("click", function () { SL.exporters.exportOffline(); });
+
+    $("slBtnPrompt2").addEventListener("click", showAiPrompt);
+    $("slBtnPrompt").addEventListener("click", showAiPrompt);
+  }
+
+  function applyConfigText(text) {
+    var res = SL.exporters.configFromText(text);
+    if (!res.ok) {
+      UI.toast("bad", "导入失败：" + res.errors.join("；"));
+      return;
+    }
+    res.config.ui = res.config.ui || {};
+    core.config = res.config;
+    core.saveConfig();
+    bootFromConfig();
+    UI.toast("ok", "配置已导入并生效");
+  }
+
+  function pickFile(accept) {
+    return new Promise(function (resolve) {
+      var input = el("input");
+      input.type = "file";
+      input.accept = accept || "";
+      input.style.display = "none";
+      input.addEventListener("change", function () {
+        var f = input.files && input.files[0];
+        if (!f) { resolve(null); return; }
+        /* util.readTextFile 是回调式（与站点既有习语一致），这里包一层 Promise */
+        U.readTextFile(f, function (err, text) {
+          if (err) {
+            UI.toast("bad", "读取文件失败：" + err);
+            resolve(null);
+            return;
+          }
+          resolve(text);
+        });
+      });
+      document.body.appendChild(input);
+      input.click();
+      global.setTimeout(function () {
+        if (input.parentNode) { input.parentNode.removeChild(input); }
+      }, 60000);
+    });
+  }
+
+  function renderLogs() {
+    var host = $("slLogList");
+    if (!host) { return; }
+    var logs = core.getLogs();
+    host.textContent = "";
+    if (!logs.length) {
+      host.appendChild(el("p", "sl-hint", "暂无日志。"));
+      return;
+    }
+    var table = el("table", "sl-table");
+    var start = Math.max(0, logs.length - 60);
+    for (var i = logs.length - 1; i >= start; i--) {
+      var tr = el("tr");
+      var d = new Date(logs[i].t);
+      tr.appendChild(el("td", null, pad(d.getHours(), 2) + ":" + pad(d.getMinutes(), 2) + ":" + pad(d.getSeconds(), 2)));
+      tr.appendChild(el("td", null, logs[i].level));
+      tr.appendChild(el("td", null, logs[i].msg));
+      table.appendChild(tr);
+    }
+    host.appendChild(table);
+  }
+
+  /* ------------------------------------------------------------
+     11) 底部发送条 + 预设快捷键
+     ------------------------------------------------------------ */
+  function wireSendBar() {
+    $("slBtnSend").addEventListener("click", sendFromInput);
+    $("slSendInput").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendFromInput();
+      }
+    });
+    $("slBtnSendAgain").addEventListener("click", function () {
+      if (!lastSent) { UI.toast("warn", "还没有发送过内容"); return; }
+      SL.app.send(lastSent, {
+        hex: core.config.transport.hexSend,
+        appendLineEnding: core.config.transport.appendLineEnding
+      });
+    });
+  }
+
+  function sendFromInput() {
+    var input = $("slSendInput");
+    var text = input.value;
+    if (!text) { UI.toast("warn", "请输入要发送的内容"); return; }
+    var sent = SL.app.send(text, {
+      hex: core.config.transport.hexSend,
+      appendLineEnding: core.config.transport.appendLineEnding
+    });
+    if (sent) {
+      lastSent = text;
+      input.value = "";
+    }
+  }
+
+  /* 预设快捷键：焦点不在输入控件时生效 */
+  function onGlobalKey(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) { return; }
+    var t = e.target;
+    var tag = t && t.tagName ? t.tagName.toUpperCase() : "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable)) { return; }
+    if (UI.isModalOpen()) { return; }
+    var key = e.key;
+    if (!key || key.length !== 1) { return; }
+    var presets = core.config.send.presets || [];
+    for (var i = 0; i < presets.length; i++) {
+      var p = presets[i];
+      if (p && p.enabled !== false && p.shortcut && p.shortcut === key) {
+        e.preventDefault();
+        SL.app.sendPreset(p.id);
+        return;
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------
+     12) 帮助与 AI 开发提示词
+     ------------------------------------------------------------ */
+  function showHelp() {
+    UI.showArticle("串口调试助手 · 使用帮助", [
+      { h: "① 连接设备", p: "点「连接设备」在弹出的对话框里选择串口。Web Serial 要求 Chromium 内核浏览器（Chrome / Edge 89+）并运行在 HTTPS 或 localhost 下；Safari 与手机浏览器不提供该能力。没有硬件时点「进入演示模式」，全部解析、绘图、插件与导出功能都能体验。" },
+      { h: "② 解析数据", p: "文本模式直接识别 key=value 与 key:value（等号、冒号都支持，后缀数字如 temp1/temp2 会保留为独立通道）。HEX 模式按结构表解帧：设帧头/帧尾或长度字段定界，再逐个字段声明类型、偏移、字节序与缩放系数；校验支持累加和、异或、累加和(16) 与 CRC16-Modbus。点「套用示例」可以一键填入演示帧结构。" },
+      { h: "②-1 文本格式速查", p: "每行写出键值对即可：等号与冒号都认，一行里多个数值对用逗号连写，后缀数字如 temp1/temp2 各自成为独立通道，数值支持整数、小数与科学计数法。", code: "temp=25.3, cur:1.02\npos:90 vel=12.5\nacc1=0.2, acc2=0.3" },
+      { h: "②-2 默认（演示）HEX 帧的字节级布局", p: "演示模式与「套用示例」用的就是下面这一帧，共 11 字节：", code: "偏移  0   1    2     3     4-5            6-7             8-9            10\n字节  AA  55   seq   len=6 pos(i16×.01)  cur(i16×.001)  temp(i16×.01)  sum8", list: [
+        "长度字段：偏移 3、1 字节、含义「载荷长度」；偏移是相对整帧起始（含帧头）算的，不是相对载荷。",
+        "sum8 = 帧首到第 9 字节的累加和低 8 位；校验和固定放在帧尾。",
+        "演示波形：pos = 90·sin(2π·0.5t)、cur = 3.2·sin(2π·0.5t+0.6)、temp = 42 + 3·sin(2π·0.02t)。",
+        "配好自定义规则后再进演示模式，合成数据会按你的帧结构生成 —— 没有硬件也能验证解析、通道与画图。"
+      ] },
+      { h: "②-3 自定义 HEX 帧怎么配（在「解析」页签）", list: [
+        "帧头 / 帧尾：填十六进制串（如 AA55），留空表示不按该方式定界。",
+        "长度字段：偏移（相对整帧起始，含帧头）、字节数（0=不用，1~4）、含义（载荷长度 / 整帧长度）。",
+        "校验：类型（无 / 累加和8 / 异或8 / 累加和16 / CRC16-Modbus）、起始、结束（-1 = 到载荷末尾）。",
+        "字段表：逐个填 键名 / 类型（int8~uint32、float32）/ 偏移 / 长度 / 缩放 / 大端。",
+        "六个最容易踩的坑：长度字段只按小端解析；校验固定在帧尾；长度字段与帧尾并存时以长度字段为准；字段偏移是相对整帧起始；未知类型按无符号整数处理；不支持位域与变长字段。"
+      ] },
+      { h: "②-4 显示层开关（设备页签「编码与显示」）", p: "「HEX 显示」勾上后串口监视器按十六进制字节流显示；「显示时间戳」决定每行是否带时间；「HEX 发送」勾上后底部发送的内容按十六进制解析（顶栏与发送条两个开关同步）。要把数据解析成通道，请用「解析」页签的模式单选 —— 一个管显示、一个管解析，互不冲突。" },
+      { h: "③ DIY 显示", p: "「插件」标签页里选渲染器 → 添加到工作区 → 点该图框的「编辑」绑定通道、写映射公式、调量程与配色。公式只支持四则运算与白名单函数（abs/sqrt/sin/cos/log/…），用通道名作变量，例如 (cur*24)。面板可拖动标题栏排序，配置与配色可通过「面板包」导出分享。" },
+      { h: "④ 发送", p: "底部输入框回车即发；HEX 模式内容写 AA 55 01（可空格分隔）。「发送」标签页里还能配定时轮询、触发应答（收到含「匹配」的内容自动回「应答」）与预设发送（可绑单字符快捷键，焦点不在输入框时生效，支持期望回包与超时提示）。" },
+      { h: "⑤ 录制与导出", p: "「录制」标签页把流过的帧存进内存，停止后可回放、导出为 JSON；冻结显示只暂停画面、不断开数据。数据页可导出解析结果 CSV（带 BOM，Excel 中文不乱码）、原始记录 CSV、JSON、BIN 与 TXT。" },
+      { h: "已知限制（务必先看）", list: [
+        "file:// 直接打开的单文件离线版无法使用真实串口 —— file:// 不是安全上下文，浏览器禁止 Web Serial。真机调试请用本地 HTTP 服务或在线版本。",
+        "改波特率、数据位、停止位、校验或流控需要关闭端口重开，应用会自动完成（约四分之一秒）。",
+        "Arduino / ESP 打开串口时 DTR 拉低会自动复位，连接后的「复位等待」时间内不建议发送。",
+        "录制数据只放内存，刷新页面即丢失。长时间实验请用录制并导出 JSON。"
+      ] },
+      { h: "面向 AI 的开发说明", p: "本子应用自带 llms.txt、AGENTS.md 与 skills/html-webserial-app/SKILL.md，可用于开发同类应用，或以本应用为基座二次开发。点顶栏「AI 开发提示词」可查看并复制一份浓缩版。" }
+    ]);
+  }
+
+  /* 浓缩版开发提示词：离线可用，不依赖网络读取 */
+  var AI_PROMPT = [
+    "# 任务：开发一个网页端串口调试助手（或在本应用基础上二次开发）",
+    "",
+    "## 硬约束（不可违反）",
+    "1. 只用 Web Serial API（navigator.serial）连接串口；必须运行在 HTTPS 或 localhost（file:// 下 requestPort 会被拒绝）。",
+    "2. 零构建、零后端、零第三方运行时依赖；纯静态文件，可离线使用。",
+    "3. 保守 ES5 语法（可用 Promise / TextDecoder 等浏览器 API，禁止 let/const/箭头函数/模板字符串）。",
+    "4. 用户可见文本一律 textContent，禁止 innerHTML 拼接用户数据。",
+    "5. 禁止 eval / new Function；用户填写的公式必须走自研词法分析 + 调度场 + RPN 求值。",
+    "6. 遵循站点现有目录与命名：子应用放 06_学习工具/_<名称>/，前端脚本全部外置为 .js（不要内联业务 JS）。",
+    "",
+    "## 模块划分（单一全局命名空间 window.SerialLab，模块间不互相持有引用）",
+    "- util      通用工具（叶子模块，零依赖）",
+    "- core      事件总线 on/off/emit + 运行状态 core.state + 配置默认值/迁移/持久化",
+    "- codec     编解码与分帧：UTF-8 多字节切分保护、按行分帧、按帧头/帧尾/长度字段收帧、校验和",
+    "- parser    协议解析：文本 key=value / key:value、HEX 结构表（偏移/类型/字节序/缩放）、校验和比对",
+    "- expr      安全表达式求值（禁 eval）",
+    "- fft       零依赖 radix-2 FFT + 汉宁窗 + 单边幅值谱",
+    "- datastore 环形缓冲（零分配遍历）+ 通道元数据 + 原始帧记录 + 统计",
+    "- transport Web Serial 传输层：状态机、读循环、写队列、参数变更重开、手动信号、内置演示数据源",
+    "- plugins   声明式插件系统 + 内置渲染器（timeplot/fftplot/bar/gauge/table/textmon/plotxy）",
+    "- views     工作区面板增删排序折叠 + requestAnimationFrame 节流渲染循环",
+    "- timeline  录制 / 冻结 / 回放 / 录制 JSON 导入导出",
+    "- exporters CSV(带 BOM)/JSON/BIN/TXT 导出、配置导入导出、单文件离线版装配",
+    "- ui        DOM 绑定、控件与配置双向同步、对话框、提示条、主题、快捷键、发送引擎",
+    "- app       唯一编排者：装配数据管线并 boot",
+    "",
+    "## 单向数据流（严格遵守）",
+    "transport.serial:data → codec 分帧 → parser 解析 → datastore.pushFrame → emit(frame)",
+    "→ views/plugins 按 requestAnimationFrame 节流重绘 → ui 更新状态灯与计数",
+    "发送方向：ui/发送引擎 → core.emit 请求 → app → transport.write（写队列串行化）",
+    "",
+    "## Web Serial 关键坑位（逐条落实）",
+    "1. requestPort() 必须在真实用户手势的调用栈里触发。",
+    "2. 波特率等参数不能热改，必须 close → open，并用去抖避免拖动时反复重开。",
+    "3. 释放顺序固定：reader.cancel() → reader.releaseLock() → writer.releaseLock() → port.close()。",
+    "4. 断开与重连交叠会竞态：用递增 epoch（代次）标记读写循环，旧循环必须自认过期并静默退出。",
+    "5. 开硬流控时不要手动设 RTS，否则二者互相打架。",
+    "6. Arduino/ESP 打开串口因 DTR 拉低会复位，需给复位等待窗口并在其间禁止发送。",
+    "7. pagehide / beforeunload 里释放端口，否则下次打开会提示被占用。",
+    "",
+    "## 解析与绘图要点",
+    "- 文本解析同时支持 = 与 :，后缀数字（temp1/temp2）保留为独立通道；",
+    "  整数与小数用统一正则，键后不是数值时跳过该键继续匹配。",
+    "- HEX 解析任何越界都返回 {ok:false} 而不是抛异常 —— 渲染层必须零崩溃。",
+    "- UTF-8 解码要按起始字节判定应有长度，尾部不完整序列留给下一块，绝不产出替换字符。",
+    "- 绘图用 <canvas> + devicePixelRatio 缩放（ctx.setTransform(dpr,0,0,dpr,0,0)）；",
+    "  绘制节流到 20~25fps，滚动出视口的面板跳过重绘，单个面板异常必须被隔离。",
+    "",
+    "## 声明式插件（用户 DIY 的唯一入口）",
+    "面板描述符 JSON（不含任何可执行代码）：",
+    "  { type, id, title, channels:[\"auto\"|\"键名\"], expr, axis:{yAuto,yMin,yMax}, window, colors:{键名:\"#hex\"}, opts:{...} }",
+    "流程：内置 renderer 注册表 → validate(desc) 归一化并修正（未知 type 降级为 table，绝不抛异常）→ instantiate 建画布。",
+    "渲染器接口：make(hostEl, panel) → { update(dataProvider), resize(), destroy() }；",
+    "dataProvider 形如 { channels(), count(key), forEach(key,n,cb), copy(key,n), stat(key), recentRaw(n), now() }。",
+    "面板包（导出/导入配置）格式：{ kind:\"seriallab-panel-pack\", version:1, panels:[...], channels:[...] }，高版本必须拒绝而不是猜测解析。",
+    "",
+    "## 交付清单",
+    "- 全部业务 JS 外置；index.html 只留静态标记与一个首帧主题引导脚本；",
+    "- 双主题：暗色为 :root 令牌，浅色用 html:not([data-theme-early=\"dark\"]) 单选择器覆盖；",
+    "- 导出 CSV 带 UTF-8 BOM，Excel 打开中文不乱码；",
+    "- 配置持久化用带前缀的键（humanoid-serial-config-v1），便于站点自检白名单；",
+    "- 提供 llms.txt / AGENTS.md / SKILL.md，便于 AI 与本应用协同开发。",
+    "",
+    "（本提示词是本应用的浓缩版；完整说明见同目录 llms.txt、AGENTS.md 与 skills/html-webserial-app/SKILL.md）"
+  ].join("\n");
+
+  function showAiPrompt() {
+    var wrap = el("div");
+    wrap.appendChild(el("p", "sl-hint", "下面是一份可直接喂给 AI 的开发提示词（浓缩版）。复制后粘贴到任意 AI 编码助手里，即可开发同类串口调试应用，或在本应用基础上继续扩展。完整文档见同目录 llms.txt、AGENTS.md 与 skills/html-webserial-app/SKILL.md。"));
+    var ta = el("textarea", "sl-prompt");
+    ta.readOnly = true;
+    ta.value = AI_PROMPT;
+    wrap.appendChild(ta);
+
+    UI.modal({
+      title: "AI 开发提示词",
+      body: wrap,
+      buttons: [
+        {
+          label: "复制全文", primary: true,
+          onClick: function () {
+            copyText(AI_PROMPT).then(function (ok) {
+              UI.toast(ok ? "ok" : "bad", ok ? "提示词已复制（" + AI_PROMPT.length + " 字符）" : "复制失败，请手动全选复制");
+            });
+            return false;   /* 不关闭对话框，方便用户再次操作 */
+          }
+        },
+        {
+          label: "下载为 txt",
+          onClick: function () {
+            var ok = SL.exporters.downloadText(AI_PROMPT, "串口调试助手_AI开发提示词.txt");
+            UI.toast(ok ? "ok" : "bad", ok ? "已下载提示词 txt" : "下载失败");
+            return false;
+          }
+        },
+        { label: "关闭" }
+      ]
+    });
+  }
+
+  /* ------------------------------------------------------------
+     13) 顶栏 / 舞台栏
+     ------------------------------------------------------------ */
+  function wireTop() {
+    $("slBtnHelp").addEventListener("click", showHelp);
+    $("slBtnTheme").addEventListener("click", UI.cycleTheme);
+    $("slBtnSide").addEventListener("click", function () {
+      var side = $("slSide");
+      var hid = side.className.indexOf("is-hidden") >= 0;
+      side.className = hid ? "sl-side" : "sl-side is-hidden";
+      this.textContent = hid ? "收起左栏" : "展开左栏";
+      if (SL.views) { global.setTimeout(function () { SL.views.redraw(); }, 30); }
+    });
+
+    $("slTabs").addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || t.tagName !== "BUTTON") { return; }
+      var pane = t.getAttribute("data-pane");
+      if (!pane) { return; }
+      var tabs = $("slTabs").getElementsByTagName("button");
+      for (var i = 0; i < tabs.length; i++) {
+        var on = (tabs[i] === t);
+        tabs[i].className = "sl-tab" + (on ? " is-on" : "");
+      }
+      var panes = document.querySelectorAll(".sl-panes > .sl-pane");
+      for (var j = 0; j < panes.length; j++) {
+        var isOn = panes[j].getAttribute("data-pane") === pane;
+        panes[j].className = isOn ? "sl-pane is-on" : "sl-pane";
+      }
+    });
+  }
+
+  function wireStage() {
+    $("slBtnAddMonitor").addEventListener("click", function () {
+      var p = SL.views.addPanel({
+        type: "textmon", title: "串口监视器", channels: [], window: 400
+      });
+      if (p) { renderPanelList(); }
+    });
+
+    $("slBtnClearPanels").addEventListener("click", function () {
+      if (!SL.views.count()) { UI.toast("warn", "工作区已经是空的"); return; }
+      UI.confirm("清空面板", "将移除工作区里全部图表框（不影响已收到的数据与配置里的通道）。", "清空面板")
+        .then(function (ok) {
+          if (!ok) { return; }
+          SL.views.clearPanels();
+          renderPanelList();
+          UI.toast("ok", "已清空面板");
+        });
+    });
+
+    $("slBtnClearData").addEventListener("click", function () {
+      UI.confirm("清空缓存", "将清空各通道已缓数据与原始收发记录（保留通道设置与图表框）。", "清空缓存")
+        .then(function (ok) {
+          if (!ok) { return; }
+          SL.datastore.clear(true);
+          renderChannels();
+          UI.toast("ok", "已清空缓存数据");
+        });
+    });
+  }
+
+  /* ------------------------------------------------------------
+     14) 能力检测与降级
+     ------------------------------------------------------------ */
+  function renderCapability() {
+    var banner = $("slBanner");
+    var why = $("slBannerWhy");
+    if (T.isSupported()) {
+      banner.className = "sl-banner";
+      return;
+    }
+    banner.className = "sl-banner is-on";
+    var reason = "";
+    if (global.isSecureContext === false) {
+      reason = "（检测到当前页面不是安全上下文：请用 https:// 或 http://localhost 打开）";
+    } else if (!global.navigator || !("serial" in global.navigator)) {
+      reason = "（未检测到 navigator.serial：当前浏览器内核不支持）";
+    }
+    if (why) { why.textContent = reason; }
+    $("slBtnConnect").disabled = true;
+  }
+
+  /* ------------------------------------------------------------
+     15) 输出区副标题（便于排障时一眼看出当前口径）
+     ------------------------------------------------------------ */
+  function renderVersion() {
+    var box = $("slVersion");
+    if (box) { box.textContent = "v" + UI.VERSION; }
+  }
+
+  /* ------------------------------------------------------------
+     16) 配置 → 界面（含重启式同步）
+     ------------------------------------------------------------ */
+  function bootFromConfig() {
+    /* 主题：先落定，避免图表用错配色 */
+    UI.applyTheme(core.config.ui.theme || "auto");
+    syncForms();
+    renderRuleMode();
+    renderFields();
+    renderSendList("timed");
+    renderSendList("triggers");
+    renderSendList("presets");
+    renderRecords();
+    renderRecordState();
+    renderChannels();
+    renderPanelList();
+    renderConn();
+    renderLogs();
+  }
+
+  /* ------------------------------------------------------------
+     17) 总线订阅
+     ------------------------------------------------------------ */
+  function wireBus() {
+    core.on("toast", function (p) {
+      if (!p) { return; }
+      UI.toast(p.level || "info", p.msg || "");
+    });
+
+    core.on("state", function () { renderConn(); });
+
+    core.on("serial:state", function () {
+      renderConn();
+      if (core.state.conn === "open") {
+        startSignalPoll();
+        markResetWindow();
+      } else if (core.state.conn === "idle" || core.state.conn === "error") {
+        stopSignalPoll();
+        renderSignals(null);
+      }
+    });
+
+    core.on("serial:opened", function () { renderConn(); startSignalPoll(); markResetWindow(); });
+    core.on("serial:closed", function () { stopSignalPoll(); renderSignals(null); renderConn(); });
+    core.on("serial:error", function (p) {
+      var msg = (p && p.error && p.error.message) || "串口错误";
+      UI.toast("bad", msg);
+    });
+    core.on("serial:autoreconnect", function () {
+      UI.toast("info", "正在尝试自动重连…");
+      T.connect(core.config.transport)["catch"](function () { /* connect 内部已提示 */ });
+    });
+
+    /* 计数刷新（1 秒一次；不用每帧刷新 DOM） */
+    setInterval(function () {
+      if (core.state.conn !== "open") { return; }
+      $("slTxCount").textContent = T.stats.tx;
+      $("slRxCount").textContent = T.stats.rx;
+    }, 1000);
+
+    core.on("channels", function () { renderChannels(); });
+    core.on("data:clear", function () { renderChannels(); });
+
+    core.on("panels:changed", function () { renderPanelList(); });
+
+    core.on("timeline:record", function () { renderRecordState(); });
+    core.on("timeline:progress", function () { renderRecordState(); });
+    core.on("timeline:list", function () { renderRecords(); });
+    core.on("timeline:freeze", function () { renderRecordState(); });
+    core.on("timeline:play", function (p) {
+      if (p && p.state === "start") { UI.toast("info", "回放中…（速度 " + p.speed + "×）"); }
+    });
+
+    core.on("log", function () {
+      /* 日志列表不是热点，节流到 400ms 足够 */
+      if (renderLogs._t) { return; }
+      renderLogs._t = true;
+      global.setTimeout(function () { renderLogs._t = false; renderLogs(); }, 400);
+    });
+
+    core.on("config:savefail", function (p) {
+      if (p && p.quota) {
+        UI.toast("bad", "本地存储已满，配置未能保存。请用「导出文件」备份后清理浏览器存储。", 9000);
+      } else {
+        UI.toast("warn", "配置保存失败（可能是隐私模式禁用了本地存储）");
+      }
+    });
+
+    core.on("config:dirty", function () { touchLazy("panels"); });
+  }
+
+  /* ------------------------------------------------------------
+     18) boot
+     ------------------------------------------------------------ */
+  var booted = false;
+
+  UI.boot = function () {
+    if (booted) { return; }
+    booted = true;
+
+    renderVersion();
+    renderCapability();
+
+    wireTop();
+    wireStage();
+    wireConnectionBar();
+    wireDeviceAndShow();
+    wireHexRuleInputs();
+    wireParsePane();
+    wireChannelsPane();
+    wireSendPane();
+    wirePluginsPane();
+    wireTimelinePane();
+    wireDataPane();
+    wireSendBar();
+    wireBus();
+
+    $("slModalClose").addEventListener("click", UI.closeModal);
+    $("slModal").addEventListener("click", function (e) {
+      if (e.target === this) { UI.closeModal(); }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && UI.isModalOpen()) { UI.closeModal(); return; }
+      onGlobalKey(e);
+    });
+
+    /* 系统主题变化：仅在「跟随系统」时需要重画 */
+    if (global.matchMedia) {
+      var mq = global.matchMedia("(prefers-color-scheme: dark)");
+      var onChange = function () {
+        if ((core.config.ui.theme || "auto") === "auto") { UI.applyTheme("auto"); }
+      };
+      if (mq.addEventListener) { mq.addEventListener("change", onChange); }
+      else if (mq.addListener) { mq.addListener(onChange); }
+    }
+
+    renderPluginTypes();
+    bootFromConfig();
+    renderConn();
+  };
+
+  SL.ui = UI;
+})(typeof window !== "undefined" ? window : globalThis);

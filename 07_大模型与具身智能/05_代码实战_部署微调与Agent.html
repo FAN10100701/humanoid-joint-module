@@ -11,6 +11,21 @@
     prev:{t:"基座选型与开源生态",u:"04_基座选型与开源生态.html"},
     next:{t:"大模型演进全景:从 Transformer 到前沿",u:"06_大模型演进全景_从Transformer到前沿.html"} };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="container">
@@ -99,12 +114,12 @@ while True:
 
   <div class="my-svg" style="max-width:620px;margin:14px auto"><svg viewBox="0 0 520 180" role="img" aria-label="显存对比条形图">
 <g font-size="10.5" fill="currentColor">
-  <text x="46" y="22" text-anchor="end">0.6B</text><rect x="54" y="12" width="24"  height="12" rx="3" fill="#ef4444"/><rect x="54" y="26" width="10" height="12" rx="3" fill="#22c55e"/><text x="84" y="22">FP16 1.2G</text><text x="84" y="36" fill="#86efac">INT4 0.5G</text>
-  <text x="46" y="62" text-anchor="end">4B</text><rect x="54" y="52" width="150" height="12" rx="3" fill="#ef4444"/><rect x="54" y="66" width="47" height="12" rx="3" fill="#22c55e"/><text x="210" y="62">FP16 8G</text><text x="210" y="76" fill="#86efac">INT4 2.5G</text>
-  <text x="46" y="102" text-anchor="end">7~8B</text><rect x="54" y="92" width="290" height="12" rx="3" fill="#ef4444"/><rect x="54" y="106" width="82" height="12" rx="3" fill="#22c55e"/><text x="350" y="102">FP16 16G</text><text x="350" y="116" fill="#86efac">INT4 4.5G</text>
-  <text x="46" y="142" text-anchor="end">14B</text><rect x="54" y="132" width="340" height="12" rx="3" fill="#ef4444"/><rect x="54" y="146" width="97" height="12" rx="3" fill="#22c55e"/><text x="400" y="142">FP16 28G</text><text x="400" y="156" fill="#86efac">INT4 8G</text>
+  <text x="46" y="22" text-anchor="end">0.6B</text><rect x="54" y="12" width="24"  height="12" rx="3" fill="#ef4444"/><rect x="54" y="26" width="10" height="12" rx="3" fill="#22c55e"/><text x="84" y="22">FP16 1.2G</text><text x="84" y="36" fill="#86efac" class="fig-t-ok">INT4 0.5G</text>
+  <text x="46" y="62" text-anchor="end">4B</text><rect x="54" y="52" width="150" height="12" rx="3" fill="#ef4444"/><rect x="54" y="66" width="47" height="12" rx="3" fill="#22c55e"/><text x="210" y="62">FP16 8G</text><text x="210" y="76" fill="#86efac" class="fig-t-ok">INT4 2.5G</text>
+  <text x="46" y="102" text-anchor="end">7~8B</text><rect x="54" y="92" width="290" height="12" rx="3" fill="#ef4444"/><rect x="54" y="106" width="82" height="12" rx="3" fill="#22c55e"/><text x="350" y="102">FP16 16G</text><text x="350" y="116" fill="#86efac" class="fig-t-ok">INT4 4.5G</text>
+  <text x="46" y="142" text-anchor="end">14B</text><rect x="54" y="132" width="340" height="12" rx="3" fill="#ef4444"/><rect x="54" y="146" width="97" height="12" rx="3" fill="#22c55e"/><text x="400" y="142">FP16 28G</text><text x="400" y="156" fill="#86efac" class="fig-t-ok">INT4 8G</text>
 </g>
-<text x="10" y="174" font-size="10.5" fill="#64748b">红=FP16 权重,绿=INT4 权重;32B:FP16 64G vs INT4 18G —— 量化是消费级显卡的第一杠杆</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图:不同量化精度与模型规模下的显存占用对比(FP16/INT8/INT4)</div></div>
+<text x="10" y="174" font-size="10.5" fill="#64748b" class="fig-t-muted">红=FP16 权重,绿=INT4 权重;32B:FP16 64G vs INT4 18G —— 量化是消费级显卡的第一杠杆</text></svg><div class="my-fig-cap" style="font-size:12.5px;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.6">图:不同量化精度与模型规模下的显存占用对比(FP16/INT8/INT4)</div></div>
   <h2><span class="h2-num">7</span> 显存估算速查表</h2>
   <div class="table-wrap"><table>
     <tr><th>模型规模</th><th>FP16 权重</th><th>INT4 权重</th><th>推理建议</th><th>LoRA 微调建议</th></tr>

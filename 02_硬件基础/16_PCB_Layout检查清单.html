@@ -31,6 +31,21 @@
     next: { t: "Hdrive 融合方案完整指南", u: "../03_项目实操/06_本次项目核心_Hdrive融合方案完整指南.html" }
   };
 </script>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="container">
@@ -67,21 +82,21 @@
     <svg viewBox="0 0 680 320" style="width:100%;height:auto;display:block" role="img" aria-label="2层板功率环路最小化示意">
       <!-- 板框 -->
       <rect x="16" y="16" width="648" height="288" rx="10" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
-      <text x="30" y="40" font-size="12" fill="#64748b">PCB 顶层(Top:功率+信号)/ 底层(Bottom:完整 GND 铺铜)</text>
+      <text x="30" y="40" font-size="12" fill="#64748b" class="fig-t-muted">PCB 顶层(Top:功率+信号)/ 底层(Bottom:完整 GND 铺铜)</text>
       <!-- 母线电容 -->
       <rect x="70" y="110" width="46" height="90" rx="6" fill="none" stroke="#2563eb" stroke-width="2"/>
       <line x1="70" y1="155" x2="116" y2="155" stroke="#2563eb" stroke-width="1.5"/>
-      <text x="58" y="228" font-size="13" fill="#2563eb" font-weight="bold">母线电容</text>
-      <text x="76" y="126" font-size="13" fill="#2563eb" font-weight="bold">+</text>
+      <text x="58" y="228" font-size="13" fill="#2563eb" font-weight="bold" class="fig-t-info">母线电容</text>
+      <text x="76" y="126" font-size="13" fill="#2563eb" font-weight="bold" class="fig-t-info">+</text>
       <text x="76" y="194" font-size="14" fill="#2563eb" font-weight="bold">−</text>
       <!-- 上管 / 下管 -->
       <rect x="360" y="70" width="120" height="52" rx="6" fill="none" stroke="#16a34a" stroke-width="2"/>
-      <text x="380" y="101" font-size="13" fill="#16a34a" font-weight="bold">上管 MOS(Q_H)</text>
+      <text x="380" y="101" font-size="13" fill="#16a34a" font-weight="bold" class="fig-t-ok">上管 MOS(Q_H)</text>
       <rect x="360" y="196" width="120" height="52" rx="6" fill="none" stroke="#16a34a" stroke-width="2"/>
-      <text x="380" y="227" font-size="13" fill="#16a34a" font-weight="bold">下管 MOS(Q_L)</text>
+      <text x="380" y="227" font-size="13" fill="#16a34a" font-weight="bold" class="fig-t-ok">下管 MOS(Q_L)</text>
       <!-- 相输出 -->
       <circle cx="530" cy="159" r="6" fill="#d97706"/>
-      <text x="546" y="163" font-size="13" fill="#d97706" font-weight="bold">相输出 PHASE → 电机</text>
+      <text x="546" y="163" font-size="13" fill="#d97706" font-weight="bold" class="fig-t-warn">相输出 PHASE → 电机</text>
       <!-- 功率环路箭头(最小面积回路) -->
       <path d="M 116 122 L 300 122 L 300 96 L 360 96" fill="none" stroke="#dc2626" stroke-width="3"/>
       <polygon points="360,96 348,90 348,102" fill="#dc2626"/>
@@ -92,10 +107,10 @@
       <polygon points="116,198 128,192 128,204" fill="#dc2626"/>
       <!-- 环路面积阴影 -->
       <rect x="300" y="122" width="60" height="76" fill="rgba(220,38,38,.08)" stroke="none"/>
-      <text x="150" y="152" font-size="13" fill="#dc2626" font-weight="bold">换流环路:电容+ → 上管 → 相线 → 下管 → 电容−</text>
+      <text x="150" y="152" font-size="13" fill="#dc2626" font-weight="bold" class="fig-t-bad">换流环路:电容+ → 上管 → 相线 → 下管 → 电容−</text>
       <text x="150" y="176" font-size="14" fill="#dc2626" font-weight="bold">环路面积目标 &lt; 5 cm²(电容紧贴桥臂)</text>
       <!-- 底层回流提示 -->
-      <text x="30" y="292" font-size="12" fill="#64748b">底层 GND 铺铜整块不割裂,提供对称回流路径;星形接地点 = 3 个下管源极 + 电容负极 + 采样电阻共点</text>
+      <text x="30" y="292" font-size="12" fill="#64748b" class="fig-t-muted">底层 GND 铺铜整块不割裂,提供对称回流路径;星形接地点 = 3 个下管源极 + 电容负极 + 采样电阻共点</text>
     </svg>
     <div class="my-fig-cap">图①:2 层板功率环路最小化——电容紧贴桥臂,环路面积目标 &lt;5 cm²,环路越小寄生电感与 EMI 越低</div>
   </div>
@@ -105,38 +120,38 @@
     <svg viewBox="0 0 680 340" style="width:100%;height:auto;display:block" role="img" aria-label="4层板叠层剖面示意">
       <!-- L1 -->
       <rect x="40" y="50" width="600" height="16" rx="3" fill="#2563eb" opacity="0.75"/>
-      <text x="40" y="42" font-size="13" fill="#2563eb" font-weight="bold">L1 信号 + 功率(Top)</text>
+      <text x="40" y="42" font-size="13" fill="#2563eb" font-weight="bold" class="fig-t-info">L1 信号 + 功率(Top)</text>
       <!-- 介质 -->
-      <text x="655" y="88" font-size="11" fill="#64748b">FR4</text>
+      <text x="655" y="88" font-size="11" fill="#64748b" class="fig-t-muted">FR4</text>
       <!-- L2 -->
       <rect x="40" y="130" width="600" height="16" rx="3" fill="#16a34a" opacity="0.75"/>
-      <text x="40" y="124" font-size="13" fill="#16a34a" font-weight="bold">L2 GND(完整地平面,信号首选参考层)</text>
-      <text x="655" y="168" font-size="11" fill="#64748b">FR4</text>
+      <text x="40" y="124" font-size="13" fill="#16a34a" font-weight="bold" class="fig-t-ok">L2 GND(完整地平面,信号首选参考层)</text>
+      <text x="655" y="168" font-size="11" fill="#64748b" class="fig-t-muted">FR4</text>
       <!-- L3 -->
       <rect x="40" y="210" width="600" height="16" rx="3" fill="#d97706" opacity="0.75"/>
-      <text x="40" y="204" font-size="13" fill="#d97706" font-weight="bold">L3 电源(电源平面,与 L2 相邻构成平面电容)</text>
-      <text x="655" y="248" font-size="11" fill="#64748b">FR4</text>
+      <text x="40" y="204" font-size="13" fill="#d97706" font-weight="bold" class="fig-t-warn">L3 电源(电源平面,与 L2 相邻构成平面电容)</text>
+      <text x="655" y="248" font-size="11" fill="#64748b" class="fig-t-muted">FR4</text>
       <!-- L4 -->
       <rect x="40" y="290" width="600" height="16" rx="3" fill="#2563eb" opacity="0.45"/>
-      <text x="40" y="284" font-size="13" fill="#2563eb" font-weight="bold">L4 信号 + 功率(Bottom)</text>
+      <text x="40" y="284" font-size="13" fill="#2563eb" font-weight="bold" class="fig-t-info">L4 信号 + 功率(Bottom)</text>
       <!-- 信号换层过孔:L1 → L4 -->
       <line x1="430" y1="58" x2="430" y2="298" stroke="#dc2626" stroke-width="4"/>
       <circle cx="430" cy="58" r="7" fill="none" stroke="#dc2626" stroke-width="2.5"/>
       <circle cx="430" cy="298" r="7" fill="none" stroke="#dc2626" stroke-width="2.5"/>
-      <text x="392" y="326" font-size="13" fill="#dc2626" font-weight="bold">信号换层过孔(L1→L4)</text>
+      <text x="392" y="326" font-size="13" fill="#dc2626" font-weight="bold" class="fig-t-bad">信号换层过孔(L1→L4)</text>
       <!-- 回流地过孔:L2 ↔ L4 -->
       <line x1="480" y1="138" x2="480" y2="298" stroke="#16a34a" stroke-width="4"/>
       <circle cx="480" cy="138" r="7" fill="none" stroke="#16a34a" stroke-width="2.5"/>
       <circle cx="480" cy="298" r="7" fill="none" stroke="#16a34a" stroke-width="2.5"/>
-      <text x="452" y="126" font-size="13" fill="#16a34a" font-weight="bold">回流地过孔</text>
+      <text x="452" y="126" font-size="13" fill="#16a34a" font-weight="bold" class="fig-t-ok">回流地过孔</text>
       <!-- 回流路径箭头:L2 上流向地过孔 -->
       <path d="M 180 138 L 460 138" fill="none" stroke="#16a34a" stroke-width="3" stroke-dasharray="8 4"/>
       <polygon points="470,138 456,131 456,145" fill="#16a34a"/>
-      <text x="180" y="168" font-size="12" fill="#16a34a">回流电流紧贴信号线正下方沿 L2 流动</text>
+      <text x="180" y="168" font-size="12" fill="#16a34a" class="fig-t-ok">回流电流紧贴信号线正下方沿 L2 流动</text>
       <!-- 注释 -->
-      <text x="500" y="230" font-size="12" fill="#64748b">规则:换层过孔旁</text>
-      <text x="500" y="248" font-size="12" fill="#64748b">1~2 mm 内加回流地过孔,</text>
-      <text x="500" y="266" font-size="12" fill="#64748b">否则回流绕远 → 环路面积暴涨</text>
+      <text x="500" y="230" font-size="12" fill="#64748b" class="fig-t-warndeep">规则:换层过孔旁</text>
+      <text x="500" y="248" font-size="12" fill="#64748b" class="fig-t-muted">1~2 mm 内加回流地过孔,</text>
+      <text x="500" y="266" font-size="12" fill="#64748b" class="fig-t-muted">否则回流绕远 → 环路面积暴涨</text>
       <path d="M 496 236 L 488 200" fill="none" stroke="#64748b" stroke-width="1"/>
     </svg>
     <div class="my-fig-cap">图②:4 层板叠层剖面与换孔回流——L2 完整地平面是信号首选参考层,换层过孔旁 1~2 mm 内加回流地过孔</div>

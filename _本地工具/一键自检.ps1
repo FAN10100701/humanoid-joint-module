@@ -548,6 +548,40 @@ if (Test-Path $c16sw) {
   $c16bad | Select-Object -First 8 | ForEach-Object { Write-Host ("   MISSING: " + $_) }
 } else { $c16bad += "sw.js missing"; Check "C16 precache targets exist" $false "sw.js missing" }
 
+# ---- C18: SVG in-figure text dual-theme WCAG contrast (user-reported regressions, V2.1.34b) ----
+# Every <text>/<tspan> fill inside inline <svg> is checked against BOTH theme backgrounds
+# (or the figure own dark canvas / opaque rect). fig-t-* classes are resolved to their palette
+# values so the check validates what the browser actually renders. Exit 1 on any failure.
+# Tool path resolved via filesystem enumeration: PS 5.1 mangles non-ASCII literals (hard rule 3).
+$c18tool = Get-ChildItem -Path $root -Recurse -Filter "svg_text_contrast.js" -File | Select-Object -First 1
+if ($c18tool) {
+  $c18out = & node $c18tool.FullName 2>&1
+  Check "C18 svg text dual-theme contrast" ($LASTEXITCODE -eq 0) (($c18out | Select-Object -Last 1).ToString())
+  $c18out | Select-Object -First 6 | ForEach-Object { Write-Host ("   " + $_) }
+} else {
+  Check "C18 svg text dual-theme contrast" $false "tool not found"
+}
+# ---- C17: no HTML may sync-load a local library file > 500KB (A-20 regression guard, V2.1.34) ----
+# A >500KB lib pulled via a plain <script src> blocks first paint for every visitor.
+# Load such libs lazily (IntersectionObserver / dynamic import) instead.
+# A-20 precedent: mermaid.min.js (2.5MB) was eager-loaded for one page's three diagrams.
+$c17bad = @()
+$c17n = 0
+Get-ChildItem -Path $root -Recurse -Filter *.html -File | ForEach-Object {
+  $c17rel = $_.FullName.Substring($root.Length + 1)
+  $c17txt = [IO.File]::ReadAllText($_.FullName, [Text.Encoding]::UTF8)
+  foreach ($m in [regex]::Matches($c17txt, '<script[^>]+src="([^"]+)"')) {
+    $c17src = $m.Groups[1].Value
+    if ($c17src -match '^(https?:)?//') { continue }
+    $c17p = Join-Path $_.DirectoryName ($c17src -replace "/", [IO.Path]::DirectorySeparatorChar)
+    if (-not (Test-Path $c17p)) { continue }
+    $c17n++
+    if ((Get-Item $c17p).Length -gt 512000) { $c17bad += ($c17rel + " -> " + $c17src) }
+  }
+}
+Check "C17 no >500KB sync lib script" ($c17bad.Count -eq 0) ($c17n.ToString() + " local lib refs scanned")
+$c17bad | Select-Object -First 8 | ForEach-Object { Write-Host ("   HEAVY: " + $_) }
+
 Write-Host ""
 if($fail -eq 0){ Write-Host "ALL CHECKS PASSED"; exit 0 }
 Write-Host ("CHECKS FAILED: " + $fail)

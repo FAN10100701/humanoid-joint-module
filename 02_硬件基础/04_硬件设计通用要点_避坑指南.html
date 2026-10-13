@@ -59,6 +59,21 @@
 </style>
 
 <style id="v2128-contrast3">html:not([data-theme-early="dark"]) .my-ref-tag{color:#64748b}</style>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 
@@ -389,50 +404,50 @@
     </defs>
     <rect x="60" y="12" width="320" height="44" rx="8" fill="#2563eb" fill-opacity=".08" stroke="#2563eb"/>
     <text x="76" y="30" font-size="11.5" class="my-lg" font-weight="bold">① 静态短路检查</text>
-    <text x="76" y="48" font-size="10" fill="#64748b">不上电,万用表测各电源对 GND 电阻</text>
+    <text x="76" y="48" font-size="10" fill="#64748b" class="fig-t-muted">不上电,万用表测各电源对 GND 电阻</text>
     <line x1="380" y1="34" x2="466" y2="34" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#pkR)"/>
     <rect x="470" y="12" width="250" height="44" rx="8" fill="#ef4444" fill-opacity=".08" stroke="#ef4444" stroke-dasharray="5 3"/>
     <text x="486" y="30" font-size="11" class="my-bwd" font-weight="bold">✗ 短路 / 阻值异常</text>
-    <text x="486" y="48" font-size="10" fill="#64748b">定位返修后重测本步</text>
+    <text x="486" y="48" font-size="10" fill="#64748b" class="fig-t-muted">定位返修后重测本步</text>
     <line x1="220" y1="56" x2="220" y2="74" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#pkB)"/>
-    <text x="230" y="70" font-size="9" fill="#64748b">通过</text>
+    <text x="230" y="70" font-size="9" fill="#64748b" class="fig-t-muted">通过</text>
     <rect x="60" y="76" width="320" height="44" rx="8" fill="#2563eb" fill-opacity=".08" stroke="#2563eb"/>
     <text x="76" y="94" font-size="11.5" class="my-lg" font-weight="bold">② 限流上电 100mA(不接电机)</text>
-    <text x="76" y="112" font-size="10" fill="#64748b">测 3.3V / 5V / 12V 是否正常、有无发烫</text>
+    <text x="76" y="112" font-size="10" fill="#64748b" class="fig-t-muted">测 3.3V / 5V / 12V 是否正常、有无发烫</text>
     <line x1="380" y1="98" x2="466" y2="98" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#pkR)"/>
     <rect x="470" y="76" width="250" height="44" rx="8" fill="#ef4444" fill-opacity=".08" stroke="#ef4444" stroke-dasharray="5 3"/>
     <text x="486" y="94" font-size="11" class="my-bwd" font-weight="bold">✗ 电压异常 / 发烫</text>
-    <text x="486" y="112" font-size="10" fill="#64748b">查电源路径与去耦,重测本步</text>
+    <text x="486" y="112" font-size="10" fill="#64748b" class="fig-t-muted">查电源路径与去耦,重测本步</text>
     <line x1="220" y1="120" x2="220" y2="138" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#pkB)"/>
-    <text x="230" y="134" font-size="9" fill="#64748b">通过</text>
+    <text x="230" y="134" font-size="9" fill="#64748b" class="fig-t-muted">通过</text>
     <rect x="60" y="140" width="320" height="44" rx="8" fill="#2563eb" fill-opacity=".08" stroke="#2563eb"/>
     <text x="76" y="158" font-size="11.5" class="my-lg" font-weight="bold">③ SWD 下载点灯</text>
-    <text x="76" y="176" font-size="10" fill="#64748b">确认能识别 MCU,下载测试程序(点灯)</text>
+    <text x="76" y="176" font-size="10" fill="#64748b" class="fig-t-muted">确认能识别 MCU,下载测试程序(点灯)</text>
     <line x1="220" y1="184" x2="220" y2="202" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#pkB)"/>
-    <text x="230" y="198" font-size="9" fill="#64748b">通过</text>
+    <text x="230" y="198" font-size="9" fill="#64748b" class="fig-t-muted">通过</text>
     <rect x="60" y="204" width="320" height="44" rx="8" fill="#2563eb" fill-opacity=".08" stroke="#2563eb"/>
     <text x="76" y="222" font-size="11.5" class="my-lg" font-weight="bold">④ 栅极波形检查(仍不接电机)</text>
-    <text x="76" y="240" font-size="10" fill="#64748b">50% 占空比 PWM,示波器看有无振铃/直通</text>
+    <text x="76" y="240" font-size="10" fill="#64748b" class="fig-t-muted">50% 占空比 PWM,示波器看有无振铃/直通</text>
     <line x1="380" y1="226" x2="466" y2="226" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#pkR)"/>
     <rect x="470" y="204" width="250" height="44" rx="8" fill="#ef4444" fill-opacity=".08" stroke="#ef4444" stroke-dasharray="5 3"/>
     <text x="486" y="222" font-size="11" class="my-bwd" font-weight="bold">✗ 振铃 / 直通</text>
-    <text x="486" y="240" font-size="10" fill="#64748b">调死区与 RC,严禁带载上电</text>
+    <text x="486" y="240" font-size="10" fill="#64748b" class="fig-t-muted">调死区与 RC,严禁带载上电</text>
     <line x1="220" y1="248" x2="220" y2="266" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#pkB)"/>
-    <text x="230" y="262" font-size="9" fill="#64748b">通过</text>
+    <text x="230" y="262" font-size="9" fill="#64748b" class="fig-t-muted">通过</text>
     <rect x="60" y="268" width="320" height="44" rx="8" fill="#2563eb" fill-opacity=".08" stroke="#2563eb"/>
     <text x="76" y="286" font-size="11.5" class="my-lg" font-weight="bold">⑤ 开环测试</text>
-    <text x="76" y="304" font-size="10" fill="#64748b">接电机空载,测三相电流正弦度</text>
+    <text x="76" y="304" font-size="10" fill="#64748b" class="fig-t-muted">接电机空载,测三相电流正弦度</text>
     <line x1="220" y1="312" x2="220" y2="330" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#pkB)"/>
-    <text x="230" y="326" font-size="9" fill="#64748b">通过</text>
+    <text x="230" y="326" font-size="9" fill="#64748b" class="fig-t-muted">通过</text>
     <rect x="60" y="332" width="320" height="44" rx="8" fill="#2563eb" fill-opacity=".08" stroke="#2563eb"/>
     <text x="76" y="350" font-size="11.5" class="my-lg" font-weight="bold">⑥ 零点校准</text>
-    <text x="76" y="368" font-size="10" fill="#64748b">电流采样零点 + 编码器零位</text>
+    <text x="76" y="368" font-size="10" fill="#64748b" class="fig-t-muted">电流采样零点 + 编码器零位</text>
     <line x1="220" y1="376" x2="220" y2="394" stroke="#58a6ff" stroke-width="1.4" marker-end="url(#pkB)"/>
-    <text x="230" y="390" font-size="9" fill="#64748b">完成</text>
+    <text x="230" y="390" font-size="9" fill="#64748b" class="fig-t-muted">完成</text>
     <rect x="60" y="396" width="320" height="44" rx="8" fill="#22c55e" fill-opacity=".1" stroke="#22c55e"/>
     <text x="76" y="414" font-size="11.5" class="my-grn" font-weight="bold">⑦ 闭环 FOC</text>
-    <text x="76" y="432" font-size="10" fill="#64748b">速度环 → 位置环,逐步加负载 → 转整机调试</text>
-    <text x="8" y="458" font-size="9.5" fill="#64748b">任何一步不通过都停在原步返修,严禁跳步;带载上电前必须完成 ①~④。全程手不离电源开关,异味/冒烟立即断电。</text>
+    <text x="76" y="432" font-size="10" fill="#64748b" class="fig-t-muted">速度环 → 位置环,逐步加负载 → 转整机调试</text>
+    <text x="8" y="458" font-size="9.5" fill="#64748b" class="fig-t-muted">任何一步不通过都停在原步返修,严禁跳步;带载上电前必须完成 ①~④。全程手不离电源开关,异味/冒烟立即断电。</text>
   </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:驱动板「投板 → 闭环」避坑检查流程——七步顺序推进,三处高危关卡(短路 / 电源 / 栅极波形)不通过立即返修重测,与下方上电步骤清单一一对应</div></div>
 
   <h3>必须预留的测试点(不加会后悔!)</h3>

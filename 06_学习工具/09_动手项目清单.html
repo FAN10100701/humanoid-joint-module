@@ -39,6 +39,21 @@
 <style id="v2128-contrast2">/* V2.1.28 对比度轮二批:浅色覆写补齐 */
   html:not([data-theme-early="dark"]) .my-proj a{color:#1d4ed8}
 </style>
+<style>/* fig-t palette(V2.1.34b):SVG 图内文字双主题语义色 — CSS fill 覆盖演示属性,原 fill 留作兜底 */
+.fig-t-muted{fill:#59677e}html[data-theme-early="dark"] .fig-t-muted,html[data-theme="dark"] .fig-t-muted,body[data-theme="dark"] .fig-t-muted{fill:#94a3b8}
+.fig-t-info{fill:#1d4ed8}html[data-theme-early="dark"] .fig-t-info,html[data-theme="dark"] .fig-t-info,body[data-theme="dark"] .fig-t-info{fill:#58a6ff}
+.fig-t-ok{fill:#166534}html[data-theme-early="dark"] .fig-t-ok,html[data-theme="dark"] .fig-t-ok,body[data-theme="dark"] .fig-t-ok{fill:#4ade80}
+.fig-t-warn{fill:#9a3412}html[data-theme-early="dark"] .fig-t-warn,html[data-theme="dark"] .fig-t-warn,body[data-theme="dark"] .fig-t-warn{fill:#fb923c}
+.fig-t-bad{fill:#b91c1c}html[data-theme-early="dark"] .fig-t-bad,html[data-theme="dark"] .fig-t-bad,body[data-theme="dark"] .fig-t-bad{fill:#f87171}
+.fig-t-purple{fill:#6b21a8}html[data-theme-early="dark"] .fig-t-purple,html[data-theme="dark"] .fig-t-purple,body[data-theme="dark"] .fig-t-purple{fill:#c084fc}
+.fig-t-cyan{fill:#155e75}html[data-theme-early="dark"] .fig-t-cyan,html[data-theme="dark"] .fig-t-cyan,body[data-theme="dark"] .fig-t-cyan{fill:#22d3ee}
+.fig-t-pink{fill:#9d174d}html[data-theme-early="dark"] .fig-t-pink,html[data-theme="dark"] .fig-t-pink,body[data-theme="dark"] .fig-t-pink{fill:#f472b6}
+.fig-t-yellow{fill:#854d0e}html[data-theme-early="dark"] .fig-t-yellow,html[data-theme="dark"] .fig-t-yellow,body[data-theme="dark"] .fig-t-yellow{fill:#facc15}
+.fig-t-baddeep{fill:#6b1010}html[data-theme-early="dark"] .fig-t-baddeep,html[data-theme="dark"] .fig-t-baddeep,body[data-theme="dark"] .fig-t-baddeep{fill:#fecaca}
+.fig-t-okdeep{fill:#0e3a1f}html[data-theme-early="dark"] .fig-t-okdeep,html[data-theme="dark"] .fig-t-okdeep,body[data-theme="dark"] .fig-t-okdeep{fill:#bbf7d0}
+.fig-t-warndeep{fill:#451a03}html[data-theme-early="dark"] .fig-t-warndeep,html[data-theme="dark"] .fig-t-warndeep,body[data-theme="dark"] .fig-t-warndeep{fill:#ffffff}
+.fig-t-infodeep{fill:#1e40af}html[data-theme-early="dark"] .fig-t-infodeep,html[data-theme="dark"] .fig-t-infodeep,body[data-theme="dark"] .fig-t-infodeep{fill:#dbeafe}
+</style>
 </head>
 <body>
 <div class="container">
@@ -135,31 +150,31 @@
   <div class="my-svg" style="max-width:780px;margin:16px auto"><svg viewBox="0 0 760 340" role="img" aria-label="动手项目 L1 到 L5 难度阶梯图:层级、周期、预算与项目编号" font-family="Microsoft YaHei,sans-serif">
     <rect x="30" y="238" width="128" height="60" rx="8" fill="#22c55e" fill-opacity=".1" stroke="#22c55e"/>
     <text x="94" y="262" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L1 · 点亮读取</text>
-    <text x="94" y="282" font-size="10" fill="#64748b" text-anchor="middle">半天~1天 · P1~P2</text>
+    <text x="94" y="282" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">半天~1天 · P1~P2</text>
     <rect x="174" y="198" width="128" height="100" rx="8" fill="#22c55e" fill-opacity=".14" stroke="#22c55e"/>
     <text x="238" y="226" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L2 · 闭环入门</text>
-    <text x="238" y="248" font-size="10" fill="#64748b" text-anchor="middle">1~2 周 · P3~P4</text>
-    <text x="238" y="268" font-size="10" fill="#64748b" text-anchor="middle">第一次「电机变刚性」</text>
+    <text x="238" y="248" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">1~2 周 · P3~P4</text>
+    <text x="238" y="268" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">第一次「电机变刚性」</text>
     <rect x="318" y="158" width="128" height="140" rx="8" fill="#f59e0b" fill-opacity=".12" stroke="#f59e0b"/>
     <text x="382" y="186" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L3 · 关节模组</text>
-    <text x="382" y="208" font-size="10" fill="#64748b" text-anchor="middle">2~4 周 · P5~P7</text>
-    <text x="382" y="228" font-size="10" fill="#64748b" text-anchor="middle">标定 + 总线 + RL</text>
+    <text x="382" y="208" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">2~4 周 · P5~P7</text>
+    <text x="382" y="228" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">标定 + 总线 + RL</text>
     <rect x="462" y="118" width="128" height="180" rx="8" fill="#f59e0b" fill-opacity=".18" stroke="#f59e0b"/>
     <text x="526" y="146" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L4 · 系统集成</text>
-    <text x="526" y="168" font-size="10" fill="#64748b" text-anchor="middle">1~2 月 · P8~P10</text>
-    <text x="526" y="188" font-size="10" fill="#64748b" text-anchor="middle">力控 + ROS2 + 仿真</text>
+    <text x="526" y="168" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">1~2 月 · P8~P10</text>
+    <text x="526" y="188" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">力控 + ROS2 + 仿真</text>
     <rect x="606" y="78" width="128" height="220" rx="8" fill="#ef4444" fill-opacity=".1" stroke="#ef4444"/>
     <text x="670" y="106" font-size="12" class="my-lg" text-anchor="middle" font-weight="bold">L5 · 整机级</text>
-    <text x="670" y="128" font-size="10" fill="#64748b" text-anchor="middle">季度级 · P11~P12</text>
-    <text x="670" y="148" font-size="10" fill="#64748b" text-anchor="middle">腿组摆动/跳跃</text>
-    <text x="670" y="166" font-size="10" fill="#64748b" text-anchor="middle">MoveIt 上真机</text>
+    <text x="670" y="128" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">季度级 · P11~P12</text>
+    <text x="670" y="148" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">腿组摆动/跳跃</text>
+    <text x="670" y="166" font-size="10" fill="#64748b" text-anchor="middle" class="fig-t-muted">MoveIt 上真机</text>
     <text x="94" y="228" font-size="10" class="my-sub-o" text-anchor="middle">¥100~200</text>
     <text x="238" y="188" font-size="10" class="my-sub-o" text-anchor="middle">+电流采样驱动 ¥300 级</text>
     <text x="382" y="148" font-size="10" class="my-sub-o" text-anchor="middle">¥800~2000</text>
     <text x="526" y="108" font-size="10" class="my-sub-o" text-anchor="middle">+主控/传感 千元级</text>
     <text x="670" y="68" font-size="10" class="my-sub-o" text-anchor="middle">¥5000+,先吊挂!</text>
     <line x1="30" y1="306" x2="734" y2="306" stroke="#64748b" stroke-opacity=".2"/>
-    <text x="30" y="326" font-size="10" fill="#64748b">阶梯只能逐级爬:每级的「验收标准」是下一级的入场券——P5 全套标定不过关,P8 力控的手感地图全是噪声。预算路线见第 3 节。</text>
+    <text x="30" y="326" font-size="10" fill="#64748b" class="fig-t-muted">阶梯只能逐级爬:每级的「验收标准」是下一级的入场券——P5 全套标定不过关,P8 力控的手感地图全是噪声。预算路线见第 3 节。</text>
   </svg><div class="my-fig-cap" style="font-size:12.5px;color:#64748b;text-align:center;margin-top:8px;line-height:1.6">图 1:动手项目难度阶梯——L1~L5 五级台阶对应周期、预算与项目编号;台阶高度即门槛,逐级验收、逐级进阶,配色与本页各难度块的绿/橙/红一致</div></div>
 
   <h2><span class="h2-num">1</span> 项目记录规范:每个项目都该留下这六样东西</h2>
