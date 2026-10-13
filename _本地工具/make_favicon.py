@@ -11,6 +11,7 @@
   python make_favicon.py --keep deepsea 深海  # 仅输出 512px 备选图到 _本地工具/备选图标/
 小尺寸优化:16/32px 用 small 变体(去耳朵/去辉光/加粗眼睛),避免糊
 """
+import os
 import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -185,7 +186,9 @@ def svg_text(pal):
 </svg>
 '''
 
-root = r"D:\HuaweiMoveData\Users\亓剑清\Desktop\人形机器人关节模组"
+# 仓库根：从本文件位置（_本地工具/）上溯 1 级。不写死本机绝对路径，
+# 避免用户名与个人目录结构随公开仓库（GitHub Pages）泄露。
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def build_official(pal):
     full = render(pal, small=False)

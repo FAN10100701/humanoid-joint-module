@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """修复后全站校验：底表对比 + JS 语法 + HTML 配平 + 路径真实性"""
-import re, subprocess, sys
+import re, shutil, subprocess, sys
 from pathlib import Path
 from html.parser import HTMLParser
 
-ROOT = Path(r"D:\HuaweiMoveData\Users\亓剑清\Desktop\人形机器人关节模组")
-NODE = r"C:\Users\亓剑清\.workbuddy\binaries\node\versions\22.22.2\node.exe"
+# 仓库根：从本文件位置（docs/审计/）上溯 2 级。不写死本机绝对路径，
+# 避免用户名与个人目录结构随公开仓库（GitHub Pages）泄露。
+ROOT = Path(__file__).resolve().parents[2]
+# node 解释器：优先取 PATH 中的 node，找不到再退回裸命令名（由调用方报错）
+NODE = shutil.which("node") or "node"
 
 def load_base(p):
     rows = []

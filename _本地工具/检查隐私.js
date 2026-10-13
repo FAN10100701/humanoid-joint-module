@@ -8,7 +8,9 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const EXTS = new Set(['.html', '.htm', '.js', '.css', '.json', '.xml', '.md', '.txt', '.svg', '.webmanifest', '.ps1', '.bat', '.py', '.yml']);
-const SKIP = /(edge_prof|node_modules|\.git(\\|\/|$)|_视频素材|\.trae|\.zcode|\.edge_profile|\.browsers|\.venv|\.workbuddy|\.idea|\.vscode|_local-tool备份|\.mimosa|\.v2c|\.video_agent|\.agents)/;
+// 跳过「不入库」的目录：与 .gitignore 的忽略清单保持同步。
+// 若某目录将来要入库，必须先从本 SKIP 移除再跑本脚本。
+const SKIP = /(edge_prof|node_modules|\.git(\\|\/|$)|_视频素材|_blender-scripts|\.trae|\.zcode|\.edge_profile|\.browsers|\.venv|\.workbuddy|\.idea|\.vscode|_local-tool备份|\.mimosa|\.v2c|\.video_agent|\.agents)/;
 
 // 白名单（已知且已接受项——新增例外先查 AUDIT.md 再加这里）
 const WL_EMAIL = ['2061624805@qq.com', 'jump@gw.company.com', 'zhangsan@', 'example@', 'user@', 'name@', 'your@', 'xxx@', 'email@example', 'you@example.com'];
@@ -38,7 +40,9 @@ for (const f of files) {
     high.push(rel + ' -> API-KEY-SHAPE: ' + m[0].slice(0, 12) + '...');
   }
   // 2) Windows 用户绝对路径（含用户名泄漏）
-  for (const m of c.matchAll(/[C-Z]:\\+Users\\+[^\s"'<>()，。；]{2,40}/g)) warn.push(rel + ' -> WIN-PATH: ' + m[0]);
+  //    覆盖两种形态：盘符:\Users\用户名 与 盘符:\任意目录(可多层)\Users\用户名
+  //    （旧正则要求盘符后紧跟 Users\，漏掉了「盘符 + 迁移目录 + Users + 用户名」这类——A-80）
+  for (const m of c.matchAll(/[A-Za-z]:\\(?:[^\\\/\s"'<>()，。；]{1,40}\\)*Users\\[^\\\/\s"'<>()，。；]{1,40}/g)) warn.push(rel + ' -> WIN-PATH: ' + m[0]);
   // 3) 内网 IP
   for (const m of c.matchAll(/\b(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b/g)) {
     if (!WL_IP.includes(m[0])) warn.push(rel + ' -> PRIVATE-IP: ' + m[0]);

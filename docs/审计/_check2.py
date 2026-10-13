@@ -3,7 +3,9 @@
 import re
 from pathlib import Path
 
-ROOT = Path(r"D:\HuaweiMoveData\Users\亓剑清\Desktop\人形机器人关节模组")
+# 仓库根：从本文件位置（docs/审计/）上溯 2 级。不写死本机绝对路径，
+# 避免用户名与个人目录结构随公开仓库（GitHub Pages）泄露。
+ROOT = Path(__file__).resolve().parents[2]
 
 checks = [
     ("E 02-04 算例", "02_硬件基础/04_硬件设计通用要点_避坑指南.html", ["数值算例"]),
