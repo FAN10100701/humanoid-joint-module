@@ -716,6 +716,58 @@ check("上限同源: 复位后时间线与数据仓再次一致",
   Timeline.maxFrames() === Store.rawCap(),
   Timeline.maxFrames() + " vs " + Store.rawCap());
 
+/* ========== ⑰ V2.2.3：编码识别 / GBK / 文本评分 / 配置 v4 ========== */
+const GBK = (X.codec || SL.codec);
+
+(function () {
+  /* GBK 解码：「你好」的 GBK 字节 = C4 E3 BA C3 */
+  const gbkBytes = new Uint8Array([0xC4, 0xE3, 0xBA, 0xC3]);
+  const dec = GBK.decodeText(gbkBytes, "gbk");
+  check("GBK: 收方向能正确解码中文", dec.text === "你好", JSON.stringify(dec.text));
+
+  /* GBK 发送：ASCII 直通；非 ASCII 落 UTF-8（不炸） */
+  const g1 = GBK.encodeText("AT+RST", "gbk");
+  check("GBK: 发送 ASCII 直通", g1.length === 6 && g1[0] === 0x41, g1.length + "B");
+  const g2 = GBK.encodeText("你好", "gbk");
+  check("GBK: 发送非 ASCII 落 UTF-8 字节（不产生空码）",
+    g2.length === 6 && g2[0] === 0xE4, g2.length + "B");
+
+  /* 编码智能识别三分诊 */
+  const asciiU8 = new TextEncoder().encode("temp=25.3, cur=1.02\nrpm=1800\n");
+  const r1 = GBK.analyzeEncoding(asciiU8);
+  check("识别: 纯 ASCII → ascii", r1.guess === "ascii", r1.guess + " / " + r1.detail);
+
+  const utf8U8 = new TextEncoder().encode("温度=25.3℃，电流=1.02A\n");
+  const r2 = GBK.analyzeEncoding(utf8U8);
+  check("识别: 合法 UTF-8 中文 → utf-8", r2.guess === "utf-8", r2.guess);
+
+  const r3 = GBK.analyzeEncoding(gbkBytes);
+  check("识别: GBK 字节 → gbk（UTF-8 严格校验失败而 GB18030 通过）", r3.guess === "gbk", r3.guess);
+
+  const noise = new Uint8Array(64);
+  let seed = 42;
+  for (let i = 0; i < noise.length; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF;
+    noise[i] = 0x80 + ((seed >> 8) & 0x7F);        /* 全高位非法序列 */
+  }
+  const r4 = GBK.analyzeEncoding(noise);
+  check("识别: 高位噪声 → binary/latin1（不误报 gbk/utf-8）",
+    r4.guess === "binary" || r4.guess === "latin1", r4.guess);
+
+  /* 文本可疑度评分：正常文本高分、随机高位低分（波特率扫描的判据） */
+  const s1 = GBK.plainScore(asciiU8);
+  const s2 = GBK.plainScore(noise);
+  check("评分: 正常文本 ≥ 0.85", s1 >= 0.85, s1.toFixed(3));
+  check("评分: 采样错位噪声 < 0.6", s2 < 0.6, s2.toFixed(3));
+
+  /* 配置 v3 → v4：老配置自动补 demo 段 */
+  const migrated = core.migrateConfig({ version: 3, transport: { baudRate: 9600 } });
+  check("配置: v3 迁移到 v4 后补齐 demo.faults 且保留原值",
+    migrated.version === 4 && migrated.demo && migrated.demo.faults
+      && migrated.demo.faults.drop === 0 && migrated.transport.baudRate === 9600,
+    JSON.stringify(migrated.demo));
+})();
+
 console.log("");
 console.log(fails === 0 ? "SERIAL OK" : ("SERIAL FAIL: " + fails));
 process.exit(fails === 0 ? 0 : 1);

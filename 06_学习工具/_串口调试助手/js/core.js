@@ -79,7 +79,7 @@
      3) 全局配置：默认值 / 版本迁移 / 持久化
      持久化键 humanoid-serial-config-v1 —— 前缀 humanoid- 是站点自检 C4 的白名单要求
      ------------------------------------------------------------ */
-  var CFG_VERSION = 3;
+  var CFG_VERSION = 4;
   var CFG_KEY = "humanoid-serial-config-v1";
 
   core.CFG_VERSION = CFG_VERSION;
@@ -172,6 +172,20 @@
         httpPort: 7788,          /* 收件箱端口，须与 serial-inbox.py --port 一致 */
         httpIntervalMs: 5000,    /* 上报间隔 ms（下限 1000，防止打满本地服务） */
         bundleSamples: 400       /* 每次调试包携带的原始样本条数（20~5000） */
+      },
+
+      /* ---- 演示模式行为（V2.2.3）：理想正弦太平滑，量程/滤波/极值统计的潜在
+         问题在它面前全部隐身；拟真形态（阶跃、超调、纹波、噪声、频谱多峰）
+         与故障注入（丢帧/错帧/粘包/乱码）才能把它们逼出来，让无硬件演示
+         也能演练整条排错链路（失败行标红、失败分布、乱码监测、AI 调试包）。 ---- */
+      demo: {
+        realistic: false,        /* true = 拟真电机信号替换理想正弦 */
+        faults: {
+          drop: 0,               /* 丢帧概率 %（整拍不发送） */
+          corrupt: 0,            /* 破坏完整性 %（HEX 翻转载荷位 → 校验错；文本插非法 UTF-8 字节） */
+          stick: 0,              /* 粘包概率 %（两帧并一拍 / 两行并一行） */
+          garbage: 0             /* 乱码噪声概率 %（插入高位随机字节） */
+        }
       }
     };
   };
@@ -212,6 +226,14 @@
       cfg.ui = mergeDeep(d3.ui, cfg.ui || {});
       cfg.ai = mergeDeep(d3.ai, cfg.ai || {});
       v = 3;
+    }
+
+    /* v3 -> v4：新增「演示模式行为」段落（拟真信号 / 故障注入概率） */
+    if (v < 4) {
+      var d4 = core.defaultConfig();
+      cfg.version = 4;
+      cfg.demo = mergeDeep(d4.demo, cfg.demo || {});
+      v = 4;
     }
 
     /* 未来版本（用户在本机改高过）按原样返回，由调用方决定是否拒绝 */

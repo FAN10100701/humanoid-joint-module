@@ -124,6 +124,16 @@
       } else {
         text = C._latin1Decode(head);
       }
+    } else if (enc === "gbk" || enc === "gb2312" || enc === "gb18030") {
+      /* GBK 系（国产传感器/PLC 中文日志最常见）。TextDecoder 的 "gbk" 与
+         "gb18030" label 指向同一实现，gb18030 是超集，统一用它，个别字节
+         序列在 gbk 下非法但 gb18030 能容错解出。 */
+      if (typeof TextDecoder !== "undefined") {
+        try { text = new TextDecoder("gb18030").decode(head); }
+        catch (e) { text = C._latin1Decode(head); }
+      } else {
+        text = C._latin1Decode(head);
+      }
     } else if (enc === "ascii") {
       var as = [];
       for (var a = 0; a < head.length; a++) { as.push(String.fromCharCode(head[a] & 0x7F)); }
@@ -175,6 +185,19 @@
       for (var m = 0; m < str.length; m++) { s2[m] = str.charCodeAt(m) & 0x7F; }
       return s2;
     }
+    if (enc === "gbk" || enc === "gb2312" || enc === "gb18030") {
+      /* 发送方向的 GBK 编码需要整表映射（几万条），浏览器没有 TextEncoder 对应物，
+         不值得为它塞一张大表。ASCII 直通；非 ASCII 落 UTF-8 字节（接收方按 UTF-8
+         也能对上），UI 侧在选 GBK 时给出「发送仅 ASCII 直通」的提示。 */
+      var hasNonAscii = false;
+      for (var g = 0; g < str.length; g++) { if (str.charCodeAt(g) > 0x7F) { hasNonAscii = true; break; } }
+      if (!hasNonAscii) {
+        var g2 = new Uint8Array(str.length);
+        for (var g3 = 0; g3 < str.length; g3++) { g2[g3] = str.charCodeAt(g3) & 0x7F; }
+        return g2;
+      }
+      return C.encodeText(str, "utf-8");
+    }
     var l = new Uint8Array(str.length);
     for (var n = 0; n < str.length; n++) { l[n] = str.charCodeAt(n) & 0xFF; }
     return l;
@@ -182,6 +205,111 @@
 
   C.bytesToHex = U.bytesToHex;
   C.hexToBytes = U.hexToBytes;
+
+  /* ------------------------------------------------------------
+     2.5) 接收方向的「编码智能识别」与「文本可疑度」评分
+     背景：Web Serial 在 OS 层已按波特率完成电平采样，应用拿到的是字节流——
+     编码选错可以在字节层识别修正；而波特率不匹配的字节错位发生在采样层，
+     字节层无法逆推，只能「换波特率重开端口再采样」扫描比对（见 transport.scanBaudrate）。
+     ------------------------------------------------------------ */
+
+  /* 可打印占比：0x09 \t / 0x0A \n / 0x0D \r / 0x20~0x7E 视为可打印 */
+  C.printableRatio = function (u8) {
+    if (!u8 || !u8.length) { return 1; }
+    var n = 0;
+    for (var i = 0; i < u8.length; i++) {
+      var b = u8[i];
+      if (b === 9 || b === 10 || b === 13 || (b >= 0x20 && b <= 0x7E)) { n++; }
+    }
+    return n / u8.length;
+  };
+
+  /* 严格试解：TextDecoder fatal 模式下非法序列会抛异常，比非 fatal 数 U+FFFD 更可靠 */
+  function tryStrictDecode(u8, label) {
+    if (typeof TextDecoder === "undefined") { return null; }
+    try { return new TextDecoder(label, { fatal: true }).decode(u8); }
+    catch (e) { return null; }
+  }
+
+  /* 编码智能识别：对一段原始字节给出「最可能是哪种编码」的判断。
+     返回 { guess, printable, detail }：
+       guess = "utf-8"  严格校验通过且含多字节序列（中文等）——强信号
+             = "ascii"  全部 7 位 ASCII（utf-8/gbk 解出来都一样，用 utf-8 即可）
+             = "gbk"    UTF-8 严格校验失败、但 GB18030 严格校验通过——设备多半是 GBK
+             = "binary" 可打印占比过低——多半是二进制协议被当文本看，建议 HEX 视图
+             = "latin1" 有高位字节但两种编码都过不了——可能是被采样错位污染的字节流
+                        （这正是波特率不匹配的典型表现）或自定义 8-bit 编码
+       detail  给人看的判断依据说明（直接展示给用户） */
+  C.analyzeEncoding = function (u8) {
+    var out = { guess: "utf-8", printable: 1, detail: "" };
+    if (!u8 || u8.length < 4) {
+      out.detail = "样本太少，多收一些数据再识别";
+      return out;
+    }
+    var sample = u8.length > 4096 ? u8.subarray(0, 4096) : u8;
+    var pr = C.printableRatio(sample);
+    out.printable = pr;
+
+    var hasHigh = false;
+    for (var i = 0; i < sample.length; i++) { if (sample[i] > 0x7F) { hasHigh = true; break; } }
+
+    var utf8Text = null;
+    var usable = C.decodableLen(sample, "utf-8");
+    if (usable === sample.length) { utf8Text = tryStrictDecode(sample, "utf-8"); }
+
+    if (utf8Text !== null) {
+      if (!hasHigh) {
+        out.guess = "ascii";
+        out.detail = "全部是 7 位 ASCII 文本，当前编码即可正常显示";
+      } else {
+        out.guess = "utf-8";
+        out.detail = "是合法的 UTF-8 多字节文本（含中文等非 ASCII 字符）";
+      }
+      return out;
+    }
+
+    /* UTF-8 严格校验失败 → 再试 GB18030（GBK 超集） */
+    if (hasHigh) {
+      var usableGbk = sample.length;               /* gb18030 双字节为主，尾部截断概率低，全量试 */
+      var gbkText = tryStrictDecode(sample.subarray(0, usableGbk), "gb18030");
+      if (gbkText !== null) {
+        out.guess = "gbk";
+        out.detail = "不是合法 UTF-8，但可完整按 GBK 解码——设备大概率用的是 GBK 编码";
+        return out;
+      }
+    }
+
+    if (pr < 0.30) {
+      out.guess = "binary";
+      out.detail = "可打印字符仅占 " + Math.round(pr * 100) + "%——更像二进制协议流，建议切 HEX 视图或配置帧结构解析";
+    } else {
+      out.guess = "latin1";
+      out.detail = "高位字节按 UTF-8/GBK 都解不通——常见于波特率不匹配造成的采样错位，建议扫描波特率";
+    }
+    return out;
+  };
+
+  /* 文本可疑度评分（波特率扫描用）：0~1，越高越像「按该波特率采样出的正常文本」。
+     组成：可打印占比(0.55) + UTF-8 严格可解(0.30) + 行结束符存在(0.15)。
+     波特率不匹配的字节流通常可打印率骤降且 UTF-8 非法，得分显著低于正确档。 */
+  C.plainScore = function (u8) {
+    if (!u8 || !u8.length) { return 0; }
+    var pr = C.printableRatio(u8);
+    var s = pr * 0.55;
+    var hasHigh = false;
+    for (var i = 0; i < u8.length; i++) { if (u8[i] > 0x7F) { hasHigh = true; break; } }
+    if (hasHigh) {
+      var usable = C.decodableLen(u8, "utf-8");
+      if (usable === u8.length && tryStrictDecode(u8, "utf-8") !== null) { s += 0.30; }
+    } else {
+      s += 0.30;                                   /* 纯 ASCII 一定合法 */
+    }
+    var hasEol = false;
+    for (var k = 0; k < u8.length; k++) { if (u8[k] === 10 || u8[k] === 13) { hasEol = true; break; } }
+    if (hasEol) { s += 0.15; }
+    return Math.min(1, s);
+  };
+
 
   /* ------------------------------------------------------------
      3) 行分帧

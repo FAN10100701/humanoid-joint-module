@@ -801,23 +801,30 @@ table.sl-table th {
 
 table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
 
-/* ---------------- 分组与说明 ---------------- */
+/* ---------------- 分组与说明 ----------------
+   V2.2.3 通透化：原来是「卡片堆」（底色 + 边框 + 圆角，视觉厚重、密度低），
+   改为「分隔线 + 弱化分组标题」——内容直接躺在栏上，标题小一号做路标，
+   视觉层级从「框住内容」变为「划分内容」，滚动时更轻、更透。 */
 .sl-group {
-  border: 1px solid var(--sl-border);
-  border-radius: var(--sl-radius-sm);
-  padding: 9px 11px;
-  margin-bottom: 9px;
-  background: var(--sl-bg-soft);
+  border: none;
+  border-top: 1px solid var(--sl-border);
+  border-radius: 0;
+  padding: 10px 2px 8px;
+  margin-bottom: 2px;
+  background: transparent;
 }
 
+.sl-panes .sl-group:first-child { border-top: none; padding-top: 2px; }
+
 .sl-group > h3 {
-  margin: 0 0 7px;
-  font-size: 12.5px;
+  margin: 0 0 6px;
+  font-size: 11.5px;
   font-weight: 800;
-  color: var(--sl-ink);
+  letter-spacing: .05em;
+  color: var(--sl-ink-2);
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
 }
 
 .sl-row {
@@ -855,6 +862,152 @@ table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
   border-left-color: var(--sl-bad);
   background: rgba(239, 68, 68, .12);
 }
+
+/* ---------------- V2.2.3：参数徽章 / 预设网格 / 乱码排查条 / 状态胶囊 ---------------- */
+
+/* 实时参数徽章：一眼看清「此刻端口按什么参数在跑」 */
+.sl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--sl-border);
+  background: var(--sl-bg-soft);
+  color: var(--sl-ink-2);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: Consolas, "Courier New", monospace;
+  white-space: nowrap;
+  transition: background .15s var(--sl-ease), border-color .15s var(--sl-ease), color .15s var(--sl-ease);
+}
+
+.sl-badge[data-state="open"] {
+  border-color: rgba(34, 197, 94, .45);
+  background: rgba(34, 197, 94, .14);
+  color: var(--sl-ok-ink);
+}
+
+.sl-badge[data-state="busy"] {
+  border-color: rgba(245, 158, 11, .45);
+  background: rgba(245, 158, 11, .14);
+  color: var(--sl-warn-ink);
+}
+
+.sl-badge[data-state="garbled"] {
+  border-color: rgba(239, 68, 68, .5);
+  background: rgba(239, 68, 68, .14);
+  color: var(--sl-bad-ink);
+}
+
+/* 2×2 紧凑参数网格（替代原先散落的四行） */
+.sl-param-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  margin: 6px 0;
+}
+
+.sl-param-grid .sl-field {
+  justify-content: space-between;
+  white-space: nowrap;
+}
+
+.sl-param-grid select,
+.sl-param-grid input[type="number"] { width: 108px; }
+
+/* 乱码排查条：监测到高替换字符率时出现，三分诊直达对策 */
+.sl-garble {
+  border: 1px solid rgba(239, 68, 68, .4);
+  border-left: 3px solid var(--sl-bad);
+  background: rgba(239, 68, 68, .10);
+  border-radius: 0 var(--sl-radius-sm) var(--sl-radius-sm) 0;
+  padding: 7px 10px;
+  margin: 7px 0 2px;
+  font-size: 12px;
+  color: var(--sl-ink-2);
+  line-height: 1.6;
+}
+
+.sl-garble > b { color: var(--sl-bad-ink); margin-right: 6px; }
+
+/* 运行/暂停胶囊：整色三态（绿=运行 / 橙=已暂停 / 灰=未连接），与「连接设备」
+   实心主色形成「状态 vs 操作」的明确分工；点击动作不变 */
+.sl-run[data-state="running"] {
+  border-color: rgba(34, 197, 94, .5);
+  background: rgba(34, 197, 94, .16);
+  color: var(--sl-ok-ink);
+}
+
+.sl-run[data-state="running"]:hover { background: rgba(34, 197, 94, .28); }
+
+.sl-run[data-state="paused"] {
+  border-color: rgba(245, 158, 11, .5);
+  background: rgba(245, 158, 11, .16);
+  color: var(--sl-warn-ink);
+}
+
+.sl-run[data-state="paused"]:hover { background: rgba(245, 158, 11, .28); }
+
+.sl-run[data-state="paused"] .sl-run-dot {
+  background: var(--sl-warn);
+  box-shadow: 0 0 7px var(--sl-warn);
+}
+
+/* 描边次级按钮：与实心主按钮形成主次对比（主操作实心、次操作描边） */
+.sl-btn.is-ghost {
+  background: transparent;
+  border-color: var(--sl-border);
+  color: var(--sl-ink-2);
+}
+
+.sl-btn.is-ghost:hover {
+  border-color: var(--sl-border-hi);
+  background: rgba(59, 130, 246, .12);
+  color: var(--sl-accent-ink);
+}
+
+/* 危险按钮升级为实底，与描边次级/实心主色拉开层级（断开=红色实底） */
+.sl-btn.is-danger {
+  background: linear-gradient(135deg, #f87171, var(--sl-bad));
+  border-color: transparent;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.sl-btn.is-danger:hover { filter: brightness(1.12); background: linear-gradient(135deg, #f87171, var(--sl-bad)); color: #ffffff; }
+
+.sl-btn.is-danger[disabled] {
+  background: var(--sl-bg-soft);
+  border-color: var(--sl-border);
+  color: var(--sl-ink-3);
+  font-weight: 400;
+}
+
+/* 全局悬浮简介（data-tip）：JS 渲染进 .sl-tipbox（fixed 定位，跟随元素、
+   屏幕边缘自动翻转、长悬浮 400ms 后出现）。纯 CSS 伪元素方案会被左栏
+   overflow 滚动容器裁剪，故用 DOM 方案。 */
+.sl-tipbox {
+  position: fixed;
+  z-index: 9999;
+  max-width: 300px;
+  padding: 7px 10px;
+  border-radius: var(--sl-radius-sm);
+  border: 1px solid var(--sl-border-hi);
+  background: var(--sl-tip);
+  color: #e6edf3;
+  font-size: 12px;
+  line-height: 1.6;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity .12s var(--sl-ease), transform .12s var(--sl-ease);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
+}
+
+.sl-tipbox.is-on { opacity: 1; transform: translateY(0); }
+
+[data-tip] { cursor: help; }
 
 /* 协议预设按钮：一键套用 */
 .sl-preset {

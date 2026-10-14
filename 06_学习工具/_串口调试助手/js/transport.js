@@ -272,6 +272,119 @@
   };
 
   /* ------------------------------------------------------------
+     4.5) 波特率扫描探测
+     平台事实：UART 采样在 OS 层完成，波特率错配的字节错位无法在字节层逆推，
+     只能「逐候选波特率重开端口 → 采一段字节 → 按文本可疑度打分 → 选最高分」。
+     用 getPorts() 取已授权端口（免二次弹窗）；每档采样约 350ms。
+     ⚠ 部分开发板（Arduino/ESP）开端口会因 DTR 拉低自动复位——扫描会让设备
+     反复复位十一次，UI 侧必须先确认。扫描要求当前未连接（扫描期间端口被反复开关）。
+     ------------------------------------------------------------ */
+  var scanning = false;
+  T.scanBaudrate = function (opts) {
+    opts = opts || {};
+    var candidates = opts.candidates ||
+      [1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 230400, 460800, 921600];
+    var sampleMs = opts.sampleMs || 350;
+    if (!T.isSupported()) {
+      return Promise.reject(new Error("当前浏览器不支持 Web Serial"));
+    }
+    if (scanning) { return Promise.reject(new Error("扫描已在进行中")); }
+    if (core.state.conn === "open" || core.state.demo) {
+      return Promise.reject(new Error("请先断开连接 / 退出演示模式，再扫描波特率"));
+    }
+    return navigator.serial.getPorts().then(function (ports) {
+      if (!ports || !ports.length) {
+        throw new Error("还没有已授权的端口：请先「连接设备」选择一次（之后扫描免弹窗）");
+      }
+      var port = ports[0];
+      scanning = true;
+      var results = [];
+      var best = { baud: 0, score: -1, bytes: 0 };
+
+      function sampleOnce(baud) {
+        /* 打开 → 采样 sampleMs → 收尾释放（顺序：cancel → releaseLock → close） */
+        return port.open({
+          baudRate: baud, dataBits: 8, stopBits: 1, parity: "none", flowControl: "none", bufferSize: 8192
+        })["catch"](function () { return null; }).then(function (opened) {
+          if (!opened) { return { baud: baud, score: -1, bytes: 0, error: "打不开" }; }
+          return new Promise(function (resolve) {
+            var chunks = [];
+            var reader = null;
+            var done = false;
+            var timer = setTimeout(function () { done = true; }, sampleMs);
+            function finish() {
+              if (reader) {
+                try { reader.cancel(); } catch (e) { /* 已断 */ }
+              }
+            }
+            function pump() {
+              if (!port.readable) { resolve(); return; }
+              try { reader = port.readable.getReader(); } catch (e0) { resolve(); return; }
+              (function loop() {
+                reader.read().then(function (r) {
+                  if (done) { resolve(); return; }
+                  if (r.value && r.value.length) { chunks.push(r.value); }
+                  loop();
+                }, function () { resolve(); });
+              })();
+            }
+            pump();
+            (function waitClose() {
+              if (done) {
+                clearTimeout(timer);
+                (function release() {
+                  try { reader.cancel(); } catch (e1) { /* 已断 */ }
+                  setTimeout(function () {
+                    try { reader.releaseLock(); } catch (e2) { /* 已释放 */ }
+                    resolve();
+                  }, 60);
+                })();
+              } else { setTimeout(waitClose, 20); }
+            })();
+          }).then(function () {
+            return delay(40);
+          }).then(function () {
+            return port.close()["catch"](function () { /* 忽略 */ });
+          }).then(function () {
+            var total = 0, i;
+            for (i = 0; i < chunks.length; i++) { total += chunks[i].length; }
+            var all = new Uint8Array(total);
+            var off = 0;
+            for (i = 0; i < chunks.length; i++) { all.set(chunks[i], off); off += chunks[i].length; }
+            var score = (total >= 16) ? SL.codec.plainScore(all) : -1;
+            core.emit("serial:scan", { baud: baud, score: score, bytes: total, phase: "done" });
+            return { baud: baud, score: score, bytes: total };
+          });
+        });
+      }
+
+      function step(i) {
+        if (i >= candidates.length) {
+          scanning = false;
+          return Promise.resolve({ ok: true, best: best, results: results });
+        }
+        var baud = candidates[i];
+        core.emit("serial:scan", { baud: baud, phase: "open", index: i, total: candidates.length });
+        return sampleOnce(baud).then(function (r) {
+          results.push(r);
+          /* 字节太少（<16）不足判据，不参与选优；并列高分取先到的（低波特率更通用） */
+          if (r.score > best.score && r.bytes >= 16) { best = { baud: r.baud, score: r.score, bytes: r.bytes }; }
+          return delay(30).then(function () { return step(i + 1); });
+        }, function (e) {
+          results.push({ baud: baud, score: -1, bytes: 0, error: (e && e.message) || String(e) });
+          return delay(30).then(function () { return step(i + 1); });
+        });
+      }
+
+      return step(0)["catch"](function (e) {
+        scanning = false;
+        throw e;
+      });
+    });
+  };
+  T.isScanning = function () { return scanning; };
+
+  /* ------------------------------------------------------------
      5) 发送
      ------------------------------------------------------------ */
   T.write = function (u8) {
@@ -360,6 +473,81 @@
     { key: "volt", unit: "V", gen: function (t) { return 24 + 0.15 * Math.sin(2 * Math.PI * 11 * t); } }
   ];
 
+  /* 拟真电机信号（core.config.demo.realistic 打开时替换上面的理想正弦）：
+     确定性伪随机目标每 2.2s 阶跃一次 + 欠阻尼二阶响应（有超调振铃）+
+     稳态纹波 + 测量噪声。目的：理想正弦太平滑，量程/滤波/极值统计的潜在
+     问题在它面前全部隐身；拟真形态（阶跃、超调、噪声、频谱多峰）才能把它们逼出来。 */
+  function prand(n) {
+    var x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+  /* 欠阻尼二阶阶跃响应：x(t) = A·(1 − e^(−ζωt)·(cos ωd t + ζ/√(1−ζ²)·sin ωd t)) */
+  function stepResp(t, seg, amp, wn, zeta) {
+    var Tsw = 2.2;
+    var tn = t - seg * Tsw;
+    var env = Math.exp(-zeta * wn * tn);
+    var wd = wn * Math.sqrt(1 - zeta * zeta);
+    return amp * (1 - env * (Math.cos(wd * tn) + (zeta / Math.sqrt(1 - zeta * zeta)) * Math.sin(wd * tn)));
+  }
+  function demoRealisticOf(key, t) {
+    var seg = Math.floor(t / 2.2);
+    var nz = (prand(Math.floor(t * 50)) - 0.5);          /* 50Hz 测量噪声，确定性可复现 */
+    var rip = Math.sin(2 * Math.PI * 7 * t);             /* 稳态纹波 */
+    if (key === "pos") { return stepResp(t, seg, (prand(seg * 3 + 1) - 0.5) * 240, 9, 0.35) + nz * 1.2; }
+    if (key === "vel") { return stepResp(t, seg, (prand(seg * 5 + 2) - 0.5) * 600, 11, 0.3) + rip * 2 + nz * 3; }
+    if (key === "cur") { return stepResp(t, seg, (prand(seg * 7 + 3) - 0.5) * 16, 13, 0.28) + rip * 0.4 + nz * 0.35; }
+    if (key === "temp") { return 42 + (prand(seg + 9) - 0.5) * 8 + t * 0.05 + nz * 0.15; }
+    if (key === "volt") { return 24 + rip * 0.12 + nz * 0.05 + Math.sin(2 * Math.PI * 0.5 * t) * 0.3; }
+    return null;                                          /* 不认识的键交给原有生成器 */
+  }
+  /* 演示字段统一取值入口：拟真开关 → 专用生成器 → 文本演示波形 → 通用轮转 */
+  function demoFieldValue(key, idx, t) {
+    if (core.config.demo && core.config.demo.realistic) {
+      var r = demoRealisticOf(key, t);
+      if (r !== null && isFinite(r)) { return r; }
+    }
+    if (DEMO_HEX_GEN[key]) { return DEMO_HEX_GEN[key](t); }
+    for (var i = 0; i < DEMO_FIELDS.length; i++) {
+      if (DEMO_FIELDS[i].key === key) { return DEMO_FIELDS[i].gen(t); }
+    }
+    var kind = idx % 3;
+    var f = 0.25 + (idx % 5) * 0.9;          /* 0.25~3.85 Hz，避免同频叠峰 */
+    if (kind === 0) { return 50 * Math.sin(2 * Math.PI * f * t + idx); }
+    if (kind === 1) { return ((Math.floor(f * t) % 2) === 0) ? -40 : 40; }
+    return ((f * t) % 1) * 80 - 40;
+  }
+
+  /* ---------------- 故障注入（演示模式的「造故障」开关） ----------------
+     目的：无硬件也能演练整条排错链路——失败行标红、失败原因分布、AI 调试包
+     的失败样本、乱码监测提示。四类故障都是随机触发，概率来自配置（百分比）：
+       drop     整拍不发送（丢帧——时域出现断线，录制序号不连续）
+       corrupt  破坏数据完整性（HEX：翻转载荷 1 字节让校验必错；文本：行尾插非法 UTF-8 字节）
+       stick    粘包（HEX：两帧并一拍；文本：两行并一行）
+       garbage  插入一段高位随机噪声字节（UTF-8 解码出替换字符——正是「乱码」的显微镜） */
+  function demoFaultCfg() {
+    return (core.config.demo && core.config.demo.faults) || null;
+  }
+  function faultHit(name) {
+    var f = demoFaultCfg();
+    return !!(f && f[name] > 0 && Math.random() * 100 < f[name]);
+  }
+  function garbageBytes() {
+    var n = 6 + Math.floor(Math.random() * 18);
+    var g = new Uint8Array(n);
+    for (var i = 0; i < n; i++) {
+      /* 大概率高位字节（UTF-8 非法序列 → 替换字符），小概率控制字节 */
+      g[i] = (Math.random() < 0.7) ? (0x80 + Math.floor(Math.random() * 0x80)) : Math.floor(Math.random() * 0x20);
+    }
+    return g;
+  }
+  function corruptHexFrame(u8) {
+    if (!u8 || !u8.length) { return u8; }
+    var c = new Uint8Array(u8);
+    var at = Math.floor(Math.random() * c.length);
+    c[at] = c[at] ^ (1 << Math.floor(Math.random() * 8));   /* 翻转 1 位：校验必错、肉眼难辨 */
+    return c;
+  }
+
   /* 演示用 HEX 帧：AA 55 | seq | len | pos(i16×0.01) cur(i16×0.001) temp(i16×0.01) | sum8 */
   function buildDemoHexFrame(seq, t) {
     var pos = Math.round(90 * Math.sin(2 * Math.PI * 0.5 * t) / 0.01);
@@ -428,19 +616,9 @@
     temp: function (t) { return 42 + 3 * Math.sin(2 * Math.PI * 0.02 * t); }
   };
 
-  /* 字段取值：HEX 演示帧的三种认识的键用 DEMO_HEX_GEN，其余认识的键沿用
-     文本演示波形，都不认识就按序号轮转正弦/阶梯/斜坡，
-     保证时域有形状、频域有单峰（正好用来验证画图能力） */
+  /* 字段取值：统一走 demoFieldValue（拟真开关 / 专用生成器 / 演示波形 / 通用轮转） */
   function demoValueOf(key, idx, t) {
-    if (DEMO_HEX_GEN[key]) { return DEMO_HEX_GEN[key](t); }
-    for (var i = 0; i < DEMO_FIELDS.length; i++) {
-      if (DEMO_FIELDS[i].key === key) { return DEMO_FIELDS[i].gen(t); }
-    }
-    var kind = idx % 3;
-    var f = 0.25 + (idx % 5) * 0.9;          /* 0.25~3.85 Hz，避免同频叠峰 */
-    if (kind === 0) { return 50 * Math.sin(2 * Math.PI * f * t + idx); }
-    if (kind === 1) { return ((Math.floor(f * t) % 2) === 0) ? -40 : 40; }
-    return ((f * t) % 1) * 80 - 40;
+    return demoFieldValue(key, idx, t);
   }
 
   /* 按 parser.readField 的类型口径写入一个字段值（含缩放反算与截断） */
@@ -562,6 +740,10 @@
     demoTimer = setInterval(function () {
       if (!core.state.demo) { return; }
       var t = (U.now() - t0) / 1000;
+      var faults = demoFaultCfg();
+
+      /* 故障①丢帧：整拍不发送（录制序号断档，时域断线） */
+      if (faultHit("drop")) { return; }
 
       if (demoMode === "hex") {
         seq = (seq + 1) & 0xFF;
@@ -569,18 +751,64 @@
         var rule = core.config.rule.hex;
         var frame = T.demoRuleUsable(rule) ? T.buildDemoHexFrameByRule(rule, seq, t) : null;
         if (!frame) { frame = buildDemoHexFrame(seq, t); }
+
+        /* 故障②破坏完整性：翻转载荷 1 位 → 校验必错（失败行标红、AI 包失败分布有内容） */
+        if (faultHit("corrupt")) { frame = corruptHexFrame(frame); }
+
         T.stats.rx += frame.length;
         core.emit("serial:data", frame);
+
+        /* 故障③粘包：紧跟再发一帧（两帧并一拍，考验分帧器） */
+        if (faultHit("stick")) {
+          var seq2 = (seq + 1) & 0xFF;
+          var frame2 = T.demoRuleUsable(rule) ? T.buildDemoHexFrameByRule(rule, seq2, t) : null;
+          if (!frame2) { frame2 = buildDemoHexFrame(seq2, t); }
+          seq = seq2;
+          T.stats.rx += frame2.length;
+          core.emit("serial:data", frame2);
+        }
       } else {
         var parts = [];
         for (var i = 0; i < DEMO_FIELDS.length; i++) {
           var f = DEMO_FIELDS[i];
-          parts.push(f.key + "=" + f.gen(t).toFixed(3));
+          parts.push(f.key + "=" + demoFieldValue(f.key, i, t).toFixed(3));
         }
-        var line = parts.join(",") + (opts.lineEnding === undefined ? "\n" : opts.lineEnding);
-        var bytes = SL.codec.encodeText(line, "utf-8");
+        var lines = parts.join(",") + (opts.lineEnding === undefined ? "\n" : opts.lineEnding);
+
+        /* 故障③粘包（文本版）：下一行并入本行发出（两行并一行） */
+        if (faultHit("stick")) {
+          parts = [];
+          for (var j = 0; j < DEMO_FIELDS.length; j++) {
+            var f2 = DEMO_FIELDS[j];
+            parts.push(f2.key + "=" + demoFieldValue(f2.key, j, t + 0.02).toFixed(3));
+          }
+          lines += parts.join(",");
+        }
+
+        var bytes = SL.codec.encodeText(lines, "utf-8");
+
+        /* 故障②破坏完整性（文本版）：行尾插非法 UTF-8 序列 →
+           E5 80 E5 → 1 个替换字符，E5 0A → 再 1 个 = 每行 2 个 U+FFFD（约 3%），
+           稳定超过乱码监测的 2% 阈值，且不影响行内键值解析 */
+        if (faultHit("corrupt")) {
+          var dirty = new Uint8Array(bytes.length + 4);
+          dirty.set(bytes, 0);
+          dirty[bytes.length] = 0xE5;
+          dirty[bytes.length + 1] = 0x80;
+          dirty[bytes.length + 2] = 0xE5;
+          dirty[bytes.length + 3] = 0x0A;
+          bytes = dirty;
+        }
+
         T.stats.rx += bytes.length;
         core.emit("serial:data", bytes);
+      }
+
+      /* 故障④乱码噪声：插一段高位随机字节（UTF-8 解出替换字符的显微镜） */
+      if (faultHit("garbage")) {
+        var g = garbageBytes();
+        T.stats.rx += g.length;
+        core.emit("serial:data", g);
       }
     }, periodMs);
 
@@ -593,6 +821,12 @@
   T.stopDemo = function () {
     if (demoTimer) { clearInterval(demoTimer); demoTimer = null; }
     if (core.state.demo) { core.set("demo", false); }
+    /* 退出演示要回到「未连接」：旧版只清 demo 标志、连接态停在 open，
+       状态灯与发送框会残留「已连接」的假象 */
+    if (core.state.conn === "open") {
+      setState("idle");
+      core.emit("serial:closed", { demo: true });
+    }
   };
 
   T.demoMode = function () { return demoMode; };

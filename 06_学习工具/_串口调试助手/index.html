@@ -32,9 +32,12 @@
       <span class="sl-mono" id="slVidPid">-</span>
     </span>
 
-    <button class="sl-btn is-primary" id="slBtnConnect" type="button">连接设备</button>
-    <button class="sl-btn" id="slBtnDemo" type="button">演示模式</button>
-    <button class="sl-btn is-danger" id="slBtnDisconnect" type="button" disabled>断开</button>
+    <button class="sl-btn is-primary" id="slBtnConnect" type="button"
+            data-tip="选择并打开串口设备（弹一次授权框，之后可用「重连」免弹窗）">连接设备</button>
+    <button class="sl-btn is-ghost" id="slBtnDemo" type="button"
+            data-tip="不连硬件，用合成数据跑完整条解析、绘图、录制、导出链路；可在「设备」页签开拟真信号与故障注入">演示模式</button>
+    <button class="sl-btn is-danger" id="slBtnDisconnect" type="button" disabled
+            data-tip="关闭串口并释放设备（数据会保留在缓冲里）">断开</button>
 
     <span class="sl-top-spacer"></span>
 
@@ -81,54 +84,99 @@
         <!-- ===== 设备 ===== -->
         <section class="sl-pane is-on" data-pane="device">
           <div class="sl-group">
-            <h3>🔗 连接</h3>
-            <div class="sl-row">
-              <button class="sl-btn is-sm" id="slBtnReconnect" type="button" disabled>重连</button>
-              <label class="sl-chk"><input type="checkbox" id="slAutoReconnect">自动重连</label>
-              <label class="sl-chk"><input type="checkbox" id="slBlurDisconnect">失焦自动断连</label>
-            </div>
-            <p class="sl-hint">连接需要你先在弹窗里选择设备；换波特率会自动关端口重开（改动即时生效）。</p>
-          </div>
+            <h3>🔌 连接与参数</h3>
 
-          <div class="sl-group">
-            <h3>⚙️ 串口参数</h3>
+            <!-- 实时参数徽章：一眼看清「此刻端口到底按什么参数在跑」 -->
             <div class="sl-row">
+              <span class="sl-badge" id="slParamBadge" data-state="idle"
+                    data-tip="端口当前的实时参数摘要；未连接时显示灰态。改参数后立即刷新">未连接</span>
+              <button class="sl-btn is-sm" id="slBtnReconnect" type="button" disabled
+                      data-tip="用上次的端口与参数直接重连（免弹窗）">重连</button>
+            </div>
+
+            <!-- 常用预设：一键套用整套参数 -->
+            <div class="sl-row">
+              <span class="sl-field sl-grow">常用预设
+                <select id="slSerialPreset"
+                        data-tip="一键套用常用波特率/数据位/停止位/校验组合；选「自定义」不影响当前值">
+                  <option value="">自定义…</option>
+                  <option value="9600-8N1">9600 · 8N1（传感器 / GPS / PLC）</option>
+                  <option value="19200-8N1">19200 · 8N1</option>
+                  <option value="38400-8N1">38400 · 8N1</option>
+                  <option value="57600-8N1">57600 · 8N1</option>
+                  <option value="115200-8N1">115200 · 8N1（最常用）</option>
+                  <option value="230400-8N1">230400 · 8N1</option>
+                  <option value="460800-8N1">460800 · 8N1（高速遥测）</option>
+                  <option value="921600-8N1">921600 · 8N1</option>
+                  <option value="115200-8E1">115200 · 8E1（部分仪器）</option>
+                  <option value="9600-8E1">9600 · 8E1</option>
+                  <option value="9600-7E1">9600 · 7E1（Modbus ASCII 常见）</option>
+                </select>
+              </span>
+            </div>
+
+            <!-- 紧凑参数网格：2×2 -->
+            <div class="sl-param-grid">
               <span class="sl-field">波特率
-                <select id="slBaud">
+                <select id="slBaud"
+                        data-tip="每秒传输的符号数。对不上 = 乱码首选嫌疑；可点「扫描波特率」自动探测">
                   <option>1200</option><option>2400</option><option>4800</option><option>9600</option>
-                  <option>19200</option><option>38400</option><option>57600</option>
+                  <option>14400</option><option>19200</option><option>38400</option><option>57600</option>
                   <option selected>115200</option>
                   <option>230400</option><option>460800</option><option>921600</option>
                 </select>
               </span>
               <span class="sl-field">数据位
-                <select id="slDataBits"><option selected>8</option><option>7</option></select>
+                <select id="slDataBits" data-tip="每帧数据位数：8 位最常用；7 位见于部分老仪器与 Modbus ASCII">
+                  <option selected>8</option><option>7</option>
+                </select>
               </span>
-            </div>
-            <div class="sl-row">
               <span class="sl-field">停止位
-                <select id="slStopBits"><option selected>1</option><option>2</option></select>
+                <select id="slStopBits" data-tip="帧尾停止位：1 位最常用；2 位见于部分老设备">
+                  <option selected>1</option><option>2</option>
+                </select>
               </span>
               <span class="sl-field">校验
-                <select id="slParity">
+                <select id="slParity" data-tip="奇偶校验位：无=最常用；偶/奇见于工业仪表">
                   <option value="none" selected>无</option>
                   <option value="even">偶</option>
                   <option value="odd">奇</option>
                 </select>
               </span>
             </div>
+
             <div class="sl-row">
-              <label class="sl-chk"><input type="checkbox" id="slFlow">RTS/CTS 硬流控</label>
+              <label class="sl-chk" data-tip="硬件握手：接了 RTS/CTS 线才开；开启后不再手动控制 RTS（二者冲突）"><input type="checkbox" id="slFlow">RTS/CTS 流控</label>
+              <label class="sl-chk" data-tip="拔插后自动尝试重连（同 VID/PID）"><input type="checkbox" id="slAutoReconnect">自动重连</label>
+              <label class="sl-chk" data-tip="窗口失去焦点就断开端口，把设备让给别的程序（避免独占）"><input type="checkbox" id="slBlurDisconnect">失焦断连</label>
             </div>
-            <p class="sl-hint">开启硬流控后不再手动控制 RTS（二者会冲突）。</p>
+
+            <!-- 乱码排查条：监测到高替换字符率时出现，三分诊直达对策 -->
+            <div class="sl-garble" id="slGarbleBar" hidden>
+              <b>⚠ 检测到疑似乱码</b>
+              <span id="slGarbleText"></span>
+              <div class="sl-row">
+                <button class="sl-btn is-sm" id="slBtnDetectEnc2" type="button">识别编码</button>
+                <button class="sl-btn is-sm" id="slBtnScanBaud2" type="button">扫描波特率</button>
+                <button class="sl-btn is-sm" id="slBtnHexView" type="button">切 HEX 显示</button>
+              </div>
+            </div>
+
+            <div class="sl-row sl-param-tools">
+              <button class="sl-btn is-sm" id="slBtnScanBaud" type="button"
+                      data-tip="自动探测波特率：逐档重开端口采样并按文本可疑度打分。⚠ Arduino/ESP 每开一次口会复位一次，扫描会让设备反复重启；需先连接过一次（免弹窗）">扫描波特率</button>
+              <button class="sl-btn is-sm" id="slBtnDetectEnc" type="button"
+                      data-tip="对最近收到的原始字节做编码判定（UTF-8 / GBK / 二进制嫌疑），一键切到最可能的编码">识别编码</button>
+            </div>
+            <p class="sl-hint">连接需要先在弹窗里选择设备；改参数会自动关端口重开（即时生效）。<b>乱码三分诊</b>：先「识别编码」→ 再「扫描波特率」→ 还不行多半是二进制协议，去「解析」页签配帧结构。</p>
           </div>
 
           <div class="sl-group">
             <h3>🔀 手动信号</h3>
             <div class="sl-row">
-              <button class="sl-btn is-sm" id="slBtnDtr" type="button">DTR 翻转</button>
-              <button class="sl-btn is-sm" id="slBtnRts" type="button">RTS 翻转</button>
-              <button class="sl-btn is-sm" id="slBtnBreak" type="button">BREAK</button>
+              <button class="sl-btn is-sm" id="slBtnDtr" type="button" data-tip="翻转 DTR（数据终端就绪）。很多开发板拉低 DTR 会复位">DTR 翻转</button>
+              <button class="sl-btn is-sm" id="slBtnRts" type="button" data-tip="翻转 RTS（请求发送）。开了硬流控后此项由硬件掌管">RTS 翻转</button>
+              <button class="sl-btn is-sm" id="slBtnBreak" type="button" data-tip="发送 BREAK 信号（持续拉低超过一帧），部分设备用它进入 bootloader">BREAK</button>
             </div>
           </div>
 
@@ -136,15 +184,16 @@
             <h3>🔤 编码与显示</h3>
             <div class="sl-row">
               <span class="sl-field">编码
-                <select id="slEncoding">
+                <select id="slEncoding" data-tip="收发文本的字符编码。中文设备常见 GBK；解出菱形问号多半就是编码选错">
                   <option value="utf-8" selected>UTF-8</option>
+                  <option value="gbk">GBK / GB2312</option>
                   <option value="ascii">ASCII</option>
                   <option value="latin1">Latin-1</option>
                   <option value="utf-16le">UTF-16LE</option>
                 </select>
               </span>
               <span class="sl-field">发送换行
-                <select id="slLineEnding">
+                <select id="slLineEnding" data-tip="发送文本时自动追加的行结束符">
                   <option value="\n" selected>LF (\n)</option>
                   <option value="\r">CR (\r)</option>
                   <option value="\r\n">CRLF (\r\n)</option>
@@ -153,17 +202,39 @@
               </span>
             </div>
             <div class="sl-row">
-              <label class="sl-chk"><input type="checkbox" id="slHexRecv">HEX 显示</label>
-              <label class="sl-chk"><input type="checkbox" id="slHexSend">HEX 发送</label>
-              <label class="sl-chk"><input type="checkbox" id="slShowTs" checked>显示时间戳</label>
+              <label class="sl-chk" data-tip="监视器按十六进制显示收到的每个字节（看二进制协议时用）"><input type="checkbox" id="slHexRecv">HEX 显示</label>
+              <label class="sl-chk" data-tip="发送框内容按十六进制解析发出（如 AA 55 01）"><input type="checkbox" id="slHexSend">HEX 发送</label>
+              <label class="sl-chk" data-tip="打印行首显示时间戳"><input type="checkbox" id="slShowTs" checked>显示时间戳</label>
             </div>
-            <p class="sl-hint">这三个只决定串口监视器「怎么显示」；把数据解析成通道请到「解析」页签，显示细节（时间格式/字号/标红）请到「显示」页签。</p>
+            <p class="sl-hint">这三个只决定监视器「怎么显示」；把数据解析成通道请到「解析」页签，显示细节（时间格式/字号/标红）请到「显示」页签。</p>
             <div class="sl-row">
               <span class="sl-field">复位等待
-                <input type="number" id="slResetWait" min="0" max="10000" step="100" value="1500"> ms
+                <input type="number" id="slResetWait" min="0" max="10000" step="100" value="1500" data-tip="连接后等待设备重启的时间（Arduino/ESP 打开串口会因 DTR 拉低自动复位）"> ms
               </span>
             </div>
-            <p class="sl-hint">Arduino / ESP 打开串口会因 DTR 拉低自动复位，连接后这段时间内不建议发送。</p>
+            <p class="sl-hint" id="slGbkSendHint" hidden>GBK 仅对收方向完整支持（解码）；发送方向 ASCII 直通，中文将以 UTF-8 字节发出。</p>
+          </div>
+
+          <div class="sl-group">
+            <h3>🧪 演示与故障注入</h3>
+            <div class="sl-row">
+              <label class="sl-chk" data-tip="演示信号从理想正弦换成拟真电机信号：目标阶跃 + 超调振铃 + 稳态纹波 + 测量噪声。更能暴露量程、滤波与极值统计的潜在问题"><input type="checkbox" id="slDemoRealistic">拟真电机信号（阶跃 / 超调 / 纹波 / 噪声）</label>
+            </div>
+            <div class="sl-param-grid">
+              <span class="sl-field">丢帧 %
+                <input type="number" id="slFaultDrop" min="0" max="100" value="0" data-tip="演示时随机整拍不发送——时域断线、录制序号断档">
+              </span>
+              <span class="sl-field">错帧 %
+                <input type="number" id="slFaultCorrupt" min="0" max="100" value="0" data-tip="随机破坏数据完整性：HEX 翻转载荷 1 位（校验必错）、文本插非法 UTF-8 字节">
+              </span>
+              <span class="sl-field">粘包 %
+                <input type="number" id="slFaultStick" min="0" max="100" value="0" data-tip="随机两帧并一拍发出——考验分帧器是否健壮">
+              </span>
+              <span class="sl-field">乱码 %
+                <input type="number" id="slFaultGarbage" min="0" max="100" value="0" data-tip="随机插入一段高位噪声字节——触发乱码监测提示条">
+              </span>
+            </div>
+            <p class="sl-hint">无硬件时演练整条排错链路：失败行标红、失败原因分布、AI 调试包失败样本、乱码监测。全部 0 = 关闭注入。</p>
           </div>
         </section>
 

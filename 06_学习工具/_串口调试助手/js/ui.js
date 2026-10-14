@@ -355,6 +355,9 @@
       ? ("VID " + hex4(info.usbVendorId) + " · PID " + hex4(info.usbProductId))
       : (demo ? "虚拟设备" : "-");
 
+    /* V2.2.3：实时参数徽章跟随连接态（乱码态由 garbleShown 决定） */
+    renderParamBadge();
+
     var busy = (conn === "requesting" || conn === "opening" || conn === "closing");
     $("slBtnConnect").disabled = busy || conn === "open" || conn === "unsupported";
     $("slBtnDisconnect").disabled = !(conn === "open");
@@ -560,6 +563,303 @@
       el: "slHexRecv", path: "transport.hexRecv", type: "chk", scope: "transport",
       apply: applyMonitorDisplay
     });
+  }
+
+  /* ------------------------------------------------------------
+     4.5) V2.2.3：参数徽章 / 参数预设 / 编码识别 / 波特率扫描 / 乱码排查 / 演示增强
+     ------------------------------------------------------------ */
+  var garbleShown = false;
+
+  /* 把某个 select/checkbox 的值改掉并触发 change（让 addBind 落配置） */
+  function setAndFire(id, val) {
+    var n = $(id);
+    if (!n) { return; }
+    n.value = val;
+    n.dispatchEvent(new Event("change"));
+  }
+
+  /* 实时参数徽章：一眼看清「此刻端口按什么参数在跑」 */
+  function renderParamBadge() {
+    var b = $("slParamBadge");
+    if (!b) { return; }
+    var conn = core.state.conn;
+    var demo = core.state.demo;
+    var t = core.config.transport;
+    if (garbleShown) { b.setAttribute("data-state", "garbled"); }
+    else if (conn === "open") { b.setAttribute("data-state", "open"); }
+    else if (conn === "requesting" || conn === "opening" || conn === "closing") { b.setAttribute("data-state", "busy"); }
+    else { b.setAttribute("data-state", "idle"); }
+    if (demo) { b.textContent = "演示模式 · 虚拟数据"; return; }
+    if (conn !== "open") {
+      b.textContent = "未连接 · 待命 " + (t.baudRate || 115200);
+      return;
+    }
+    var par = { none: "N", even: "E", odd: "O" }[t.parity || "none"] || "N";
+    var flow = (t.flow === "hardware") ? " · 流控" : "";
+    b.textContent = (t.baudRate || 115200) + " · " + (t.dataBits || 8) + par + (t.stopBits || 1)
+      + flow + " · " + String(t.encoding || "utf-8").toUpperCase();
+  }
+
+  /* 常用预设：把 "115200-8N1" 拆开写进四个控件（change 逐个触发，
+     reopenIfOpen 自带去抖，只重开一次端口） */
+  function applySerialPreset(v) {
+    var m = /^(\d+)-(\d)([NEO])(\d)$/.exec(String(v || ""));
+    if (!m) { return; }
+    var parity = { N: "none", E: "even", O: "odd" }[m[3]];
+    setAndFire("slBaud", m[1]);
+    setAndFire("slDataBits", m[2]);
+    setAndFire("slParity", parity);
+    setAndFire("slStopBits", m[4]);
+    UI.toast("ok", "已套用预设 " + m[1] + " · " + m[2] + m[3] + m[4] + (core.state.conn === "open" ? "（端口已重开）" : ""));
+  }
+
+  /* 取最近收到的原始字节（从记录的 HEX 字段拼回，最多 limit 字节） */
+  function recentBytes(limit) {
+    var recs = SL.datastore.recentRaw(300);
+    var hexes = [];
+    var total = 0;
+    for (var i = recs.length - 1; i >= 0 && total < limit; i--) {
+      var r = recs[i];
+      if (r.dir !== "rx" || !r.hex) { continue; }
+      hexes.unshift(r.hex);
+      total += r.hex.replace(/[^0-9A-Fa-f]/g, "").length / 2;
+    }
+    return SL.codec.hexToBytes(hexes.join(" "));
+  }
+
+  /* 编码智能识别：对最近字节跑三分诊，按结论一键切换 */
+  function detectEncodingNow() {
+    var u8 = recentBytes(4096);
+    if (!u8 || u8.length < 4) {
+      UI.toast("warn", "收到的数据太少——先连上设备收一段，再点识别");
+      return;
+    }
+    var r = SL.codec.analyzeEncoding(u8);
+    var cur = core.config.transport.encoding || "utf-8";
+    if (r.guess === "gbk") {
+      setAndFire("slEncoding", "gbk");
+      UI.toast("ok", "识别为 GBK，已切换。" + r.detail);
+    } else if (r.guess === "binary") {
+      if (!core.config.transport.hexRecv) { setAndFire("slHexRecv", "on"); }
+      UI.toast("info", "更像二进制协议，已切到 HEX 显示。" + r.detail);
+    } else if (r.guess === "latin1") {
+      UI.toast("warn", "两种编码都解不通（多半是波特率错位的采样噪声）——建议「扫描波特率」。" + r.detail);
+    } else if (r.guess === "ascii") {
+      if (cur !== "utf-8") { setAndFire("slEncoding", "utf-8"); UI.toast("ok", "识别为纯 ASCII，已切回 UTF-8（显示等价）"); }
+      else { UI.toast("ok", "识别为纯 ASCII，当前编码即可正常显示"); }
+    } else {
+      if (cur !== "utf-8") { setAndFire("slEncoding", "utf-8"); UI.toast("ok", "识别为 UTF-8，已切换。" + r.detail); }
+      else { UI.toast("ok", "确认是合法 UTF-8 文本，无需切换"); }
+    }
+    hideGarble();
+  }
+
+  /* 波特率扫描：确认 → 扫描（进度走 serial:scan 事件）→ 自动切到最高分档 */
+  function scanBaudUI() {
+    if (T.isScanning()) { return; }
+    if (core.state.conn === "open" || core.state.demo) {
+      UI.toast("warn", "请先断开连接 / 退出演示模式再扫描");
+      return;
+    }
+    UI.confirm(
+      "扫描波特率",
+      "将对 12 个常用波特率逐档重开端口、各采样约 350ms 并按文本可疑度打分，全程约 5 秒。\n\n⚠ 注意：Arduino / ESP 等开发板每次打开串口都会自动复位，扫描期间设备会反复重启约 12 次；扫描完成后会自动切到最高分档。",
+      "开始扫描"
+    ).then(function (ok) {
+      if (!ok) { return; }
+      T.scanBaudrate().then(function (res) {
+        renderScanButtons(null);
+        if (res.best && res.best.baud) {
+          setAndFire("slBaud", String(res.best.baud));
+          UI.toast("ok", "扫描完成：最像文本的是 " + res.best.baud + "（得分 " + res.best.score.toFixed(2) + "），已切换");
+        } else {
+          UI.toast("warn", "各档位都没采到像文本的数据——确认设备正在发送，或它本来就不是文本协议");
+        }
+      }, function (err) {
+        renderScanButtons(null);
+        UI.toast("bad", "扫描失败：" + ((err && err.message) || err));
+      });
+      renderScanButtons(0);
+    });
+  }
+
+  /* 扫描期间的按钮状态（两处按钮同源） */
+  function renderScanButtons(idx) {
+    var ids = ["slBtnScanBaud", "slBtnScanBaud2"];
+    for (var i = 0; i < ids.length; i++) {
+      var n = $(ids[i]);
+      if (!n) { continue; }
+      if (idx === null) { n.disabled = false; n.textContent = "扫描波特率"; }
+      else { n.disabled = true; n.textContent = "扫描中…"; }
+    }
+  }
+
+  /* 乱码排查条 */
+  function showGarble(rate) {
+    garbleShown = true;
+    var bar = $("slGarbleBar");
+    if (bar) {
+      bar.hidden = false;
+      $("slGarbleText").textContent = "最近 " + Math.round(rate * 100) + "% 的字符解码失败（显示为菱形问号）。"
+        + "通常是编码不对或波特率不匹配，按顺序试：";
+    }
+    UI.toast("warn", "检测到疑似乱码（解码失败率 " + Math.round(rate * 100) + "%），「设备」页签已给出排查建议");
+    renderParamBadge();
+  }
+
+  function hideGarble() {
+    garbleShown = false;
+    var bar = $("slGarbleBar");
+    if (bar) { bar.hidden = true; }
+    renderParamBadge();
+  }
+
+  /* 每秒乱码体检：统计最近 RX 记录文本里的 U+FFFD 替换字符率，
+     超过 5%（且样本够多）时提示一次，直到用户处理或重新连接 */
+  function garbleScan() {
+    if (core.state.conn !== "open" || garbleShown) { return; }
+    var recs = SL.datastore.recentRaw(80);
+    var chars = 0, bad = 0, rxCount = 0;
+    for (var i = 0; i < recs.length; i++) {
+      var r = recs[i];
+      if (r.dir !== "rx" || !r.text) { continue; }
+      rxCount++;
+      for (var k = 0; k < r.text.length; k++) {
+        chars++;
+        if (r.text.charCodeAt(k) === 0xFFFD) { bad++; }
+      }
+    }
+    if (rxCount >= 10 && chars >= 120) {
+      var rate = bad / chars;
+      /* 阈值 1%：正常 UTF-8/GBK 文本里替换字符应为 0（任何 FFFD 都可疑），
+         三重门（≥10 行、≥120 字符、>1%）已足够防误报；波特率错位的真乱码
+         远高于此（30%+），注入演示约 1.7%~3%（解码器会吞掉部分跨行非法序列） */
+      if (rate > 0.01) { showGarble(rate); }
+    }
+  }
+
+  /* 全局悬浮简介（data-tip → .sl-tipbox）：长悬浮 400ms 出现，
+     fixed 定位不被左栏滚动容器裁剪，屏幕边缘自动翻转 */
+  function initTooltips() {
+    if ($("slTipbox") || !document.createElement) { return; }
+    var box = document.createElement("div");
+    box.className = "sl-tipbox";
+    box.id = "slTipbox";
+    document.body.appendChild(box);
+    var cur = null, timer = null, lastRect = null;
+    function place(node) {
+      var tip = node.getAttribute("data-tip");
+      if (!tip) { return; }
+      box.textContent = tip;
+      box.classList.add("is-on");
+      var r = node.getBoundingClientRect();
+      lastRect = { left: r.left, top: r.top };
+      var bw = box.offsetWidth, bh = box.offsetHeight;
+      var x = r.left + r.width / 2 - bw / 2;
+      x = Math.max(8, Math.min(x, (global.innerWidth || 1200) - bw - 8));
+      var y = r.bottom + 8;
+      if (y + bh > (global.innerHeight || 800) - 8) { y = r.top - bh - 8; }
+      box.style.left = x + "px";
+      box.style.top = Math.max(8, y) + "px";
+    }
+    function clear() {
+      if (timer) { clearTimeout(timer); timer = null; }
+      box.classList.remove("is-on");
+      cur = null;
+    }
+    document.addEventListener("mouseover", function (e) {
+      var t = e.target;
+      var n = (t && t.closest) ? t.closest("[data-tip]") : null;
+      if (n === cur) { return; }
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (!n) { box.classList.remove("is-on"); cur = null; return; }
+      cur = n;
+      /* 位置基准要在进入时就记下（而不是 400ms 后 place 时）——监视器每帧
+         自动滚动会立刻涌入 scroll 事件，没有基准就会把刚起的 timer 清掉 */
+      var r0 = n.getBoundingClientRect();
+      lastRect = { left: r0.left, top: r0.top };
+      timer = setTimeout(function () { place(n); }, 400);
+    });
+    document.addEventListener("mousedown", clear);
+    /* 滚动只在「目标真的移动了」时才清：演示模式里监视器每帧自动滚动，
+       会源源不断触发 scroll(capture)——但顶栏元素根本没动，不该把悬浮
+       简介杀掉；左栏内部滚动时控件真的位移了，才需要收起重定位 */
+    document.addEventListener("scroll", function () {
+      if (!cur) { return; }
+      var r = cur.getBoundingClientRect();
+      if (!lastRect
+        || Math.abs(r.left - lastRect.left) > 4
+        || Math.abs(r.top - lastRect.top) > 4) { clear(); }
+    }, true);
+  }
+
+  function wireV223() {
+    /* --- 演示增强开关（拟真信号 + 故障注入概率） --- */
+    addBind({ el: "slDemoRealistic", path: "demo.realistic", type: "chk", scope: "demo" });
+    addBind({ el: "slFaultDrop", path: "demo.faults.drop", type: "num", scope: "demo" });
+    addBind({ el: "slFaultCorrupt", path: "demo.faults.corrupt", type: "num", scope: "demo" });
+    addBind({ el: "slFaultStick", path: "demo.faults.stick", type: "num", scope: "demo" });
+    addBind({ el: "slFaultGarbage", path: "demo.faults.garbage", type: "num", scope: "demo" });
+
+    /* --- 常用预设：套用 / 手改参数回「自定义」 --- */
+    var presetSel = $("slSerialPreset");
+    if (presetSel) {
+      presetSel.addEventListener("change", function () { applySerialPreset(presetSel.value); });
+      var four = ["slBaud", "slDataBits", "slStopBits", "slParity"];
+      for (var i = 0; i < four.length; i++) {
+        (function (id) {
+          var n = $(id);
+          if (n) { n.addEventListener("change", function () { presetSel.value = ""; }); }
+        })(four[i]);
+      }
+    }
+
+    /* --- 扫描 / 识别（参数工具行 + 排查条里各一组，同源） --- */
+    var scanIds = ["slBtnScanBaud", "slBtnScanBaud2"];
+    for (var s = 0; s < scanIds.length; s++) {
+      (function (id) {
+        var n = $(id);
+        if (n) { n.addEventListener("click", scanBaudUI); }
+      })(scanIds[s]);
+    }
+    var detIds = ["slBtnDetectEnc", "slBtnDetectEnc2"];
+    for (var d = 0; d < detIds.length; d++) {
+      (function (id) {
+        var n = $(id);
+        if (n) { n.addEventListener("click", detectEncodingNow); }
+      })(detIds[d]);
+    }
+    var hexBtn = $("slBtnHexView");
+    if (hexBtn) {
+      hexBtn.addEventListener("click", function () {
+        if (!core.config.transport.hexRecv) { setAndFire("slHexRecv", "on"); }
+        hideGarble();
+      });
+    }
+
+    /* --- 编码切换的连带：GBK 发送提示 / 徽章刷新 / 收起排查条 --- */
+    var encSel = $("slEncoding");
+    if (encSel) {
+      encSel.addEventListener("change", function () {
+        var hint = $("slGbkSendHint");
+        if (hint) { hint.hidden = (encSel.value !== "gbk"); }
+        hideGarble();
+        renderParamBadge();
+      });
+    }
+
+    /* --- 扫描进度事件 → 按钮文本与徽章 --- */
+    core.on("serial:scan", function (p) {
+      if (p && p.phase === "open") {
+        renderScanButtons(p.index || 0);
+        var b = $("slParamBadge");
+        if (b) { b.setAttribute("data-state", "busy"); b.textContent = "扫描中 " + p.baud + "…"; }
+      }
+    });
+
+    /* --- 连接状态变化：徽章跟随 + 乱码监测重置 --- */
+    core.on("serial:opened", function () { hideGarble(); });
+    core.on("serial:closed", function () { hideGarble(); });
   }
 
   function confirmLoose(msg) {
@@ -1633,6 +1933,8 @@
   function showHelp() {
     UI.showArticle("串口调试助手 · 使用帮助", [
       { h: "① 连接设备", p: "点「连接设备」在弹出的对话框里选择串口。Web Serial 要求 Chromium 内核浏览器（Chrome / Edge 89+）并运行在 HTTPS 或 localhost 下；Safari 与手机浏览器不提供该能力。没有硬件时点「进入演示模式」，全部解析、绘图、插件与导出功能都能体验。" },
+      { h: "①-1 乱码三分诊（监视器出现菱形问号时）", p: "乱码几乎只有三种原因，应用会监测解码失败率并在「设备」页签弹出排查条，按顺序试：一「识别编码」——对最近收到的原始字节做 UTF-8/GBK/二进制三分判定，一键切到最可能的编码（中文设备常见 GBK）；二「扫描波特率」——对 12 个常用波特率逐档重开端口采样打分并自动切换（⚠ Arduino/ESP 每开一次口会复位一次，扫描会让设备反复重启）；三还不行——多半是二进制协议被当文本看，切 HEX 显示或去「解析」页签配帧结构。注意：Web Serial 在操作系统层就按波特率完成了电平采样，波特率错配无法从字节流逆推，所以只能扫描比对，编码错配则可以在字节层直接识别。" },
+      { h: "①-2 演示与故障注入（「设备」页签底部）", p: "「拟真电机信号」把演示数据从理想正弦换成目标阶跃 + 超调振铃 + 稳态纹波 + 测量噪声——量程、滤波、极值统计的潜在问题在理想正弦面前全部隐身，拟真形态才能把它们逼出来。四个故障注入概率（丢帧/错帧/粘包/乱码）让你无硬件时演练整条排错链路：失败行标红、失败原因分布、AI 调试包的失败样本、乱码监测提示，全部会被真实触发。" },
       { h: "② 解析数据", p: "文本模式直接识别 key=value 与 key:value（等号、冒号都支持，后缀数字如 temp1/temp2 会保留为独立通道）。HEX 模式按结构表解帧：设帧头/帧尾或长度字段定界，再逐个字段声明类型、偏移、字节序与缩放系数；校验支持累加和、异或、累加和(16) 与 CRC16-Modbus。点「套用示例」可以一键填入演示帧结构。" },
       { h: "②-1 文本格式速查", p: "每行写出键值对即可：等号与冒号都认，一行里多个数值对用逗号连写，后缀数字如 temp1/temp2 各自成为独立通道，数值支持整数、小数与科学计数法。", code: "temp=25.3, cur:1.02\npos:90 vel=12.5\nacc1=0.2, acc2=0.3" },
       { h: "②-2 默认（演示）HEX 帧的字节级布局", p: "演示模式与「套用示例」用的就是下面这一帧，共 11 字节：", code: "偏移  0   1    2     3     4-5            6-7             8-9            10\n字节  AA  55   seq   len=6 pos(i16×.01)  cur(i16×.001)  temp(i16×.01)  sum8", list: [
@@ -1654,6 +1956,7 @@
       { h: "③-1 主区布局与运行控制", p: "主区是「上监视器 + 下波形」的上下分割：中间的横条可以上下拖动调整比例（键盘也可用：↑↓ 微调、Home 复位），比例会记进配置。监视器标题栏的「⛶」让主区独占全屏，「▭」把主区压成只剩标题条。顶栏左侧的绿色圆标是运行 / 暂停：点一下冻结画面，但数据仍在后台缓冲，恢复后接着看，不会丢。" },
       { h: "③-2 开源协议预设（「解析」页签顶部）", p: "内置四套社区事实标准的协议，点一下即套用：FireWater（VOFA+ 文本 name:value）、Teleplot（>name:value）、JustFloat（VOFA+ 二进制 float32×N + 帧尾 00 00 80 7F）、匿名 V1.0（AA AA + 功能字 + 长度 + 数据 + SUM8，数据 int16 大端）。套用后会立刻用缓存里的原始字节重放一次，当场就能看出解对没解对。" },
       { h: "③-3 面向 AI 的调试回路", p: "「显示」页签里有两个按钮专为「让 AI 直接调硬件」设计：一是「导出 AI 调试包」—— 一个自包含 JSON，含生效配置、帧结构说明、各通道统计、最近若干条原始记录（含解出值）与解析失败样本，整包丢给 AI 就不必来回截图粘贴；二是「按当前规则重放缓存」—— 改完帧结构不必让硬件重跑，用缓存里的原始字节立刻重解一遍。另外「自动存档」会在连上设备或进入演示后自动开始录制（滚动保留最近数据），随时可导出。" },
+      { h: "③-4 让 AI 直接读串口：本地桥 + MCP", p: "仓库里的 _本地工具/serial-bridge 是一个本地串口桥（Node + serialport），直接复用本应用 9 个真源模块的解析内核（结果与网页端逐字节一致），并已封装为 MCP server——在 AI 工具的 MCP 配置里加 {\"command\": \"node\", \"args\": [\"<仓库根>/_本地工具/serial-bridge/bridge.mjs\", \"mcp\"]} 后，AI 就能调用 serial_list / serial_read / serial_write / serial_parse / serial_assert 五个工具：读串口、发指令（会先征求确认）、离线解析、跑判据断言（退出码 0/2）自主迭代。不依赖 MCP 的两条路：勾选「持续写入本地文件」（NDJSON 逐行落盘）或「HTTP 上报」+ python _本地工具/serial-inbox.py 收件箱。数据只在你的本机流转，没有任何上传代码。详见介绍页第 7 节「AI 自动化调试接入」。" },
       { h: "④ 发送", p: "底部输入框回车即发；HEX 模式内容写 AA 55 01（可空格分隔）。「发送」标签页里还能配定时轮询、触发应答（收到含「匹配」的内容自动回「应答」）与预设发送（可绑单字符快捷键，焦点不在输入框时生效，支持期望回包与超时提示）。" },
       { h: "⑤ 录制与导出", p: "「录制」标签页把流过的帧存进内存，停止后可回放、导出为 JSON；「暂停刷新」只停画面、不断开数据（与顶栏绿圆标是同一个开关）。数据页可导出解析结果 CSV（带 BOM，Excel 中文不乱码）、原始记录 CSV、JSON、BIN 与 TXT。" },
       { h: "已知限制（务必先看）", list: [
@@ -2281,11 +2584,12 @@
       T.connect(core.config.transport)["catch"](function () { /* connect 内部已提示 */ });
     });
 
-    /* 计数刷新（1 秒一次；不用每帧刷新 DOM） */
+    /* 计数刷新（1 秒一次；不用每帧刷新 DOM）+ 乱码体检 */
     setInterval(function () {
       if (core.state.conn !== "open") { return; }
       $("slTxCount").textContent = T.stats.tx;
       $("slRxCount").textContent = T.stats.rx;
+      garbleScan();
     }, 1000);
 
     core.on("channels", function () { renderChannels(); });
@@ -2335,6 +2639,8 @@
     wireStage();
     wireConnectionBar();
     wireDeviceAndShow();
+    wireV223();
+    initTooltips();
     wireHexRuleInputs();
     wireParsePane();
     wireChannelsPane();

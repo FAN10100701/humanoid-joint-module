@@ -299,6 +299,26 @@ acc1=0.2, acc2=0.3</code></pre>
     <b>拿它当基座可以做什么</b>：把 <code>transport</code> 换成 WebSocket 或 Web Bluetooth 传输层，整套解析、绘图、录制与导出链路可以原样复用；把 <code>plugins</code> 的渲染器注册表加一项，就有了新图表类型；把 <code>parser</code> 的字段表扩成完整的 CAN 报文定义，就有了一个浏览器内的总线调试器。三条路都不需要改动数据管线的其他部分。
   </div>
 
+  <h3>AI 自动化调试接入：让 AI 直接读串口、跑判据（MCP）</h3>
+  <p>上面两条路（调试包 / 复制提示词）仍需要人做一次「搬运」。V2.2.2 起补上了完全自动的一条：仓库里的 <code>_本地工具/serial-bridge</code> 是一个<b>本地串口桥</b>（Node.js + serialport），它直接 <code>require</code> 本应用的 9 个真源模块复用同一份解析内核——<b>桥解析出的通道值与网页端逐字节一致</b>，不存在两套实现各算各的。桥已封装为 <b>MCP server</b>（Model Context Protocol），接入后任何支持 MCP 的 AI 会话都能直接调用五个工具：</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>MCP 工具</th><th>作用</th></tr>
+    <tr><td><code>serial_list</code></td><td>枚举本机可用串口</td></tr>
+    <tr><td><code>serial_read</code></td><td>按当前规则采一段数据（可指定时长/波特率/协议预设，产出通道值 + 完整调试包）</td></tr>
+    <tr><td><code>serial_write</code></td><td>向串口发送指令（HEX 或文本）——<b>危险动作，AI 会先征求你确认</b></td></tr>
+    <tr><td><code>serial_parse</code></td><td>离线解析一段 HEX（不碰硬件）：改规则试错、离线重放的主力工具</td></tr>
+    <tr><td><code>serial_assert</code></td><td>判据断言：<code>--expect "x&gt;0.5; y.max&lt;=1"</code>，退出码 0=通过 / 2=不通过——AI 自动判定「这轮改得对不对」的机器可读出口</td></tr>
+  </table>
+  </div>
+  <p><b>三步接入</b>（详细命令与参数见 <code>_本地工具/serial-bridge/README.md</code>）：</p>
+  <ul>
+    <li>① 安装：进 <code>_本地工具/serial-bridge</code> 执行 <code>npm install</code>（Node 18+，仅本地工具目录有依赖，站点本体仍是零依赖）；</li>
+    <li>② 在 AI 工具的 MCP 配置里加一个 server：<code>{"command": "node", "args": ["&lt;仓库根&gt;/_本地工具/serial-bridge/bridge.mjs", "mcp"]}</code>，路径换成你自己的仓库位置；</li>
+    <li>③ 在对话里直接说「读一下串口」「用 FireWater 预设采 3 秒」「断言 x&gt;0.5」即可。</li>
+  </ul>
+  <p>除了 MCP，还有两条不依赖任何协议的通路：<b>浏览器持续落盘</b>（应用内勾选「持续写入本地文件」，NDJSON 逐行追加，AI 拿文件路径就能读）与 <b>HTTP 收件箱</b>（勾选「HTTP 上报」+ 运行 <code>python _本地工具/serial-inbox.py</code>，数据实时落到 <code>latest.brief.txt</code> 等文件）。AI 拿到导出的数据文件后，可以像操作普通文件一样<b>下载、diff 两轮数据、甚至帮你 git 提交上传 GitHub</b>——这些都不需要额外权限，走的就是普通文件系统。隐私边界：串口数据只在你的本机流转，桥与收件箱没有任何上传代码；AI 能读到什么，取决于你让它读哪个文件。</p>
+
   <!-- ================= 7 排障 ================= -->
   <h2><span class="h2-num">8</span> 常见问题速查</h2>
   <div class="table-wrap">

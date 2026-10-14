@@ -719,6 +719,65 @@ def main():
             assert not errs, "AI 通道 JS 异常: " + "; ".join(errs[:3])
         check("serial_ai_channel AI通道:提示词/上限提示/HTTP收件箱/PNG导出", t_serial_ai_channel)
 
+        # ---------- 7d. V2.2.3:参数预设/徽章/GBK/演示故障注入/tooltip/胶囊状态 ----------
+        def t_serial_v223():
+            """V2.2.3 六项改动的浏览器层兜底。
+
+            断言线:
+            1) 参数徽章显示当前参数 + 常用预设一键套用 + 手改参数回「自定义」;
+            2) 编码下拉含 GBK、识别/扫描按钮存在;
+            3) 演示故障注入(错帧 100%)真实触发乱码监测提示条;
+            4) data-tip 长悬浮出现全局 tooltip(不被左栏裁剪);
+            5) 运行胶囊随连接态流转(idle→running)。
+            结尾把故障概率清零,避免污染后续用例与人工验收。
+            """
+            errs = make_page_errors_tracker(page)
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+
+            # --- 1) 徽章与预设 ---
+            badge = page.locator("#slParamBadge")
+            assert badge.count() == 1, "参数徽章缺失"
+            assert "115200" in badge.inner_text(), "徽章未显示待命波特率: %r" % badge.inner_text()
+            page.select_option("#slSerialPreset", "9600-8N1")
+            page.wait_for_function("document.querySelector('#slBaud').value === '9600'", timeout=5000)
+            assert page.input_value("#slParity") == "none", "预设未联动校验位"
+            assert page.input_value("#slStopBits") == "1", "预设未联动停止位"
+            page.select_option("#slBaud", "115200")
+            page.wait_for_function("document.querySelector('#slSerialPreset').value === ''", timeout=3000)
+
+            # --- 2) GBK 选项与识别/扫描按钮 ---
+            enc_opts = page.evaluate(
+                "Array.from(document.querySelectorAll('#slEncoding option')).map(function(o){return o.value;})")
+            assert "gbk" in enc_opts, "编码下拉缺 GBK: %r" % enc_opts
+            assert page.locator("#slBtnDetectEnc").count() == 1, "识别编码按钮缺失"
+            assert page.locator("#slBtnScanBaud").count() == 1, "扫描波特率按钮缺失"
+
+            # --- 3) 演示故障注入 → 乱码监测提示条 ---
+            page.fill("#slFaultCorrupt", "100")
+            page.dispatch_event("#slFaultCorrupt", "change")
+            page.click("#slBtnDemo")
+            page.wait_for_function(
+                "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
+            page.wait_for_selector("#slGarbleBar:not([hidden])", timeout=15000)
+            gt = page.locator("#slGarbleText").inner_text()
+            assert "解码失败" in gt, "排查条文案不对: %r" % gt
+            st = page.get_attribute("#slRun", "data-state")
+            assert st == "running", "演示模式下运行胶囊应为 running,实际 %r" % st
+
+            # --- 4) data-tip 悬浮简介 ---
+            page.hover("#slBtnConnect")
+            page.wait_for_selector("#slTipbox.is-on", timeout=3000)
+            tip = page.locator("#slTipbox").inner_text()
+            assert len(tip) > 8, "tooltip 内容过短: %r" % tip
+
+            # --- 收尾:故障清零 + 退出演示(配置会持久化,不能污染下一位) ---
+            page.fill("#slFaultCorrupt", "0")
+            page.dispatch_event("#slFaultCorrupt", "change")
+            page.click("#slBtnDemo")
+            assert not errs, "V2.2.3 JS 异常: " + "; ".join(errs[:3])
+        check("serial_v223 参数预设/徽章/GBK/故障注入/tooltip/胶囊", t_serial_v223)
+
         # ---------- 8. 404 页 ----------
         def t_404():
             errs = make_page_errors_tracker(page)
