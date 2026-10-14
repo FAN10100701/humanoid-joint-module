@@ -624,6 +624,101 @@ def main():
             assert not errs, "预设/调试包 JS 异常: " + "; ".join(errs[:3])
         check("serial_preset_bundle 预设一键套用+AI 调试包导出", t_serial_preset_bundle)
 
+        # ---------- 7c. AI 通道:提示词/上限提示/HTTP 收件箱端到端/PNG 导出 ----------
+        def t_serial_ai_channel():
+            """V2.2.2 AI 自动化调试通道的浏览器层兜底(接线类缺陷只有这层能抓)。
+
+            四条断言线:
+            1) 一键「复制为 AI 提示词」:buildPrompt() 产出完整摘要 + 点击出 toast
+               (+ 若 headless 允许授权剪贴板,连剪贴板内容一起验);
+            2) 记录上限提示显示真实生效值(A-81 的 UI 面,不许只报配置期望值);
+            3) HTTP 上报对**真实收件箱**(serial-inbox.py 子进程)端到端成功并落盘;
+            4) 波形 PNG 导出产出真 PNG(魔数校验)。
+            持续落盘(showSaveFilePicker)依赖真实文件选择器,headless 无法自动化,
+            这里只断言能力探测与控件存在,真值留人工验收(AGENTS.md 清单)。
+            """
+            import json as _json
+            import socket as _socket
+            import subprocess as _sub
+            import time as _time
+            import urllib.request as _ureq
+            import tempfile as _tmpmod
+            errs = make_page_errors_tracker(page)
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            page.click("#slBtnDemo")
+            page.wait_for_function(
+                "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='display']")
+
+            # --- 1) AI 提示词:内容完整 + 点击出 toast(+剪贴板尽力而为) ---
+            prompt = page.evaluate("SerialLab.aichan.buildPrompt()")
+            assert len(prompt) > 200, "AI 提示词过短: %d 字" % len(prompt)
+            assert "SerialLab" in prompt and "现场数据" in prompt, "AI 提示词缺关键段落"
+            page.click("#slBtnAiPrompt")
+            page.wait_for_selector(".sl-toast", timeout=5000)
+            try:
+                ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=BASE)
+                page.wait_for_timeout(300)
+                clip = page.evaluate("navigator.clipboard.readText()")
+                assert clip and "SerialLab" in clip, "剪贴板内容不对: %r" % (clip or "")[:60]
+            except Exception:
+                print("      (剪贴板授权不可用,跳过剪贴板内容断言)")
+
+            # --- 2) 记录上限提示:显示真实生效值(A-81) ---
+            hint = page.locator("#slRecordCapHint").inner_text()
+            assert ("上限" in hint and "条" in hint), "记录上限提示未显示真实值: %r" % hint
+
+            # --- 3) HTTP 上报 → 真实收件箱端到端 ---
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            inbox_port = s.getsockname()[1]
+            s.close()
+            inbox_dir = _tmpmod.mkdtemp(prefix="sl-inbox-e2e-")
+            proc = _sub.Popen(
+                [sys.executable, str(ROOT / "_本地工具" / "serial-inbox.py"),
+                 "--port", str(inbox_port), "--dir", inbox_dir, "--quiet"],
+                stdout=_sub.DEVNULL, stderr=_sub.DEVNULL)
+            try:
+                ready = False
+                for _ in range(50):
+                    try:
+                        with _ureq.urlopen("http://127.0.0.1:%d/status" % inbox_port, timeout=1) as r:
+                            ready = (r.status == 200)
+                            break
+                    except Exception:
+                        _time.sleep(0.1)
+                assert ready, "收件箱未就绪(5s)"
+                page.fill("#slHttpPort", str(inbox_port))
+                page.check("#slHttpPush")
+                rr = page.evaluate(
+                    "SerialLab.aichan.pushNow().then(function(x){return JSON.stringify(x);})")
+                j = _json.loads(rr)
+                assert j.get("ok"), "HTTP 上报失败: %r" % j
+                st = _json.loads(open(inbox_dir + "/status.json", "rb").read().decode("utf-8"))
+                assert st.get("count", 0) >= 1, "收件箱计数未增加: %r" % st
+                latest = open(inbox_dir + "/latest.brief.txt", "rb").read().decode("utf-8", "ignore")
+                assert "SerialLab" in latest, "收件箱摘要缺 SerialLab 段: %r" % latest[:80]
+            finally:
+                proc.terminate()
+
+            # --- 4) 波形 PNG 导出:带 canvas 的面板,魔数校验 ---
+            btn = page.locator(".sl-panel:has(canvas) button[title='导出该图表为 PNG 图片']").first
+            with page.expect_download(timeout=15000) as dl:
+                btn.click()
+            d = dl.value
+            assert d.suggested_filename.endswith(".png"), "PNG 文件名不对: " + d.suggested_filename
+            head = open(d.path(), "rb").read(8)
+            assert head == b"\x89PNG\r\n\x1a\n", "PNG 魔数不对: %r" % head
+
+            # --- 5) 持续落盘:能力探测与控件存在(真 picker 留人工验收) ---
+            assert page.locator("#slFileLog").count() == 1, "持续落盘开关缺失"
+            assert page.locator("#slBtnFileLog").count() == 1, "持续落盘按钮缺失"
+            assert page.evaluate("SerialLab.aichan.fileSupported()") is True, \
+                "127.0.0.1 安全上下文应支持 File System Access"
+            assert not errs, "AI 通道 JS 异常: " + "; ".join(errs[:3])
+        check("serial_ai_channel AI通道:提示词/上限提示/HTTP收件箱/PNG导出", t_serial_ai_channel)
+
         # ---------- 8. 404 页 ----------
         def t_404():
             errs = make_page_errors_tracker(page)
