@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.10";
+  UI.VERSION = "2.2.11";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -986,16 +986,12 @@
       for (var i = 0; i < opts.length; i++) {
         optHtml += '<option value="' + opts[i] + '"' + (opts[i] === cur ? " selected" : "") + ">" + opts[i] + " 点</option>";
       }
-      host.innerHTML = '<span class="sl-qk">窗口</span>' +
-        '<select class="sl-qk-enc" data-qk="win" title="横轴显示最近多少个采样点——太小抖动、太密看不清，按需调整">' +
+      host.innerHTML = '<select class="sl-qk-enc" data-qk="win" title="横轴窗口：显示最近多少个采样点——太小抖动、太密看不清">' +
         optHtml + "</select>" +
-        '<span class="sl-qk" title="纵轴下限（留空 = 自动量程）">Y</span>' +
-        '<input class="sl-qk-num" data-qk="ymin" type="number" step="any" placeholder="min" value="' +
+        '<input class="sl-qk-num" data-qk="ymin" type="number" step="any" placeholder="Y↓" title="纵轴下限（留空 = 自动量程）" value="' +
           (typeof axis.yMin === "number" ? axis.yMin : "") + '">' +
-        '<span class="sl-qk">~</span>' +
-        '<input class="sl-qk-num" data-qk="ymax" type="number" step="any" placeholder="max" value="' +
-          (typeof axis.yMax === "number" ? axis.yMax : "") + '">' +
-        '<span class="sl-qk" title="鼠标拖动看历史 · 滚轮缩放 · 双击回实时">🔍</span>';
+        '<input class="sl-qk-num" data-qk="ymax" type="number" step="any" placeholder="Y↑" title="纵轴上限（留空 = 自动量程）" value="' +
+          (typeof axis.yMax === "number" ? axis.yMax : "") + '">';
       return;
     }
 
@@ -1225,9 +1221,9 @@
         '<option value="us">微秒（相对口径 1.235482s）</option></select>' +
         '<i>墙钟精度上限是毫秒，微秒只对相对口径生效；改后对新收的行生效</i></div>' +
       '<div class="sl-set-row"><label>方向标记</label>' +
-        '<select id="slSetDirMode"><option value="tx">仅发送行（推荐：每行都标太吵）</option>' +
-        '<option value="all">每行都标</option><option value="off">不显示</option></select>' +
-        '<i>收到的行靠颜色区分（天蓝），发送行为琥珀色并带「→ 上位机」</i></div>' +
+        '<select id="slSetDirMode"><option value="brief">短标记（推荐：收「←」发「→ 上位机」）</option>' +
+        '<option value="tx">仅发送行</option><option value="all">每行全称</option><option value="off">不显示</option></select>' +
+        '<i>收到的行印「←」，发送行为琥珀色「→ 上位机」</i></div>' +
       '<div class="sl-set-row"><label>数字标红</label>' +
         '<label class="sl-chk"><input type="checkbox" id="slSetHighlight">把打印里的数字用醒目色标出</label></div>' +
       '<div class="sl-set-row"><label>设备别名</label>' +

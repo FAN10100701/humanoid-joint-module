@@ -550,6 +550,7 @@
       var viewOffset = 0;
       var dragging = false, dragX0 = 0, dragOff0 = 0, dragMoved = false;
       var lastLive = true;   /* V2.2.8：视角状态变化时回调，驱动 Auto 按钮状态灯 */
+      var backTipRect = null; /* V2.2.11：回看提示条命中区——点它直接回实时 */
       var WHEEL_MIN = 50, WHEEL_MAX = 5000, LOOKBACK_MAX = 50000;
 
       timeplotReset[panel.id] = function () { viewOffset = 0; };
@@ -591,12 +592,17 @@
       view.canvas.addEventListener("dblclick", function () { viewOffset = 0; });
 
       /* 点击图例 = 勾选 / 取消对应通道（隐藏通道不画线、不参与量程）；
-         拖动过视角后松手的这次 click 不算（防误触图例） */
+         点「回看历史」提示条 = 回实时；拖动过视角后松手的这次 click 不算（防误触） */
       view.canvas.addEventListener("click", function (e) {
         if (dragMoved) { dragMoved = false; return; }
         var r = view.canvas.getBoundingClientRect();
         var x = e.clientX - r.left;
         var y = e.clientY - r.top;
+        if (backTipRect && x >= backTipRect.x0 && x <= backTipRect.x1 &&
+            y >= backTipRect.y0 && y <= backTipRect.y1) {
+          viewOffset = 0;
+          return;
+        }
         for (var i = 0; i < legendHits.length; i++) {
           if (x >= legendHits[i].x0 && x <= legendHits[i].x1 && Math.abs(y - legendHits[i].y) <= 10) {
             var h = hiddenChans[panel.id] || (hiddenChans[panel.id] = {});
@@ -682,15 +688,28 @@
         ctx.fillText(U.fmt(yr.min, 3) + " ~ " + U.fmt(yr.max, 3), 4, view.h - pad.b + 3);
         ctx.restore();
 
-        /* 回看历史时右上角提示（双击或点 Auto 回实时） */
+        /* 回看历史时右上角提示条（可点击直接回实时） */
         if (viewOffset > 0) {
           ctx.save();
-          ctx.fillStyle = t.warn || "#f59e0b";
+          var tipText = "⏸ 回看历史 " + viewOffset + " 点 · 点此回实时";
           ctx.font = "bold 10px Consolas, monospace";
+          var tw = ctx.measureText(tipText).width;
+          var bx = view.w - PAD.r - tw - 10, by = 3, bh = 16;
+          ctx.fillStyle = "rgba(245, 158, 11, .18)";
+          ctx.strokeStyle = "#f59e0b";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.rect(bx, by, tw + 10, bh);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = t.warn || "#f59e0b";
           ctx.textBaseline = "middle";
-          ctx.textAlign = "right";
-          ctx.fillText("⏸ 回看历史 " + viewOffset + " 点 · 双击回实时", view.w - PAD.r - 4, 12);
+          ctx.textAlign = "left";
+          ctx.fillText(tipText, bx + 5, by + bh / 2);
           ctx.restore();
+          backTipRect = { x0: bx, y0: by, x1: bx + tw + 10, y1: by + bh };
+        } else {
+          backTipRect = null;
         }
       }
 
@@ -1284,7 +1303,7 @@
         var timeMode = (core.config.transport && core.config.transport.timeMode === "rel") ? "rel" : "abs";
         /* V2.2.6：时间戳精度（s / ms / us）与方向标记模式（all / tx / off） */
         var prec = (core.config.transport && core.config.transport.timePrec) || "ms";
-        var dirMode = (core.config.transport && core.config.transport.dirMode) || "tx";
+        var dirMode = (core.config.transport && core.config.transport.dirMode) || "brief";
         var base = (SL.app && SL.app.timeBase) ? SL.app.timeBase() : 0;
         var markNum = !!ui.highlightNumbers && !showHex;
         var markFail = ui.markFailed !== false;
@@ -1316,9 +1335,14 @@
             row += '<span class="sl-mon-t">' + U.esc(lab || "") + '</span>';
           }
           if (showDir) {
-            /* 仅发送模式：RX 行留空占位（列不塌），TX 行才有标记——区分效果不变、视觉噪音大减 */
-            var showThisDir = (dirMode === "all") || (dirMode === "tx" && tx);
-            row += '<span class="sl-mon-dir">' + (showThisDir ? (tx ? "→ 上位机" : "← 下位机") : "") + '</span>';
+            /* V2.2.11 默认 brief：RX 行只印「←」短标记（紧跟时间戳、不吵），
+               TX 行仍印「→ 上位机」——发送的行少而醒目，接收的方向一眼可辨；
+               用户在 ⋯ 设置里可切 仅发送/每行全称/不显示 */
+            var dirText = "";
+            if (dirMode === "all") { dirText = tx ? "→ 上位机" : "← 下位机"; }
+            else if (dirMode === "tx") { dirText = tx ? "→ 上位机" : ""; }
+            else if (dirMode === "brief") { dirText = tx ? "→ 上位机" : "←"; }
+            row += '<span class="sl-mon-dir">' + dirText + '</span>';
           }
           var text = showHex ? (rec.hex || rec.text || "") : (rec.text || rec.hex || "");
           var html = U.esc(text);

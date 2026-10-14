@@ -390,7 +390,8 @@ input[type="number"] { width: 78px; }
 .sl-iconbtn.sl-auto-btn {
   width: auto;            /* V2.2.10：Auto 是 4 字符文字钮，22px 方钮装不下 */
   min-width: 22px;
-  padding: 0 7px;
+  padding: 0 5px;         /* V2.2.11：再紧凑一点，窄面板下不再被裁成「Aut」 */
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -731,12 +732,12 @@ input[type="number"] { width: 78px; }
   border-radius: 4px;
   background: var(--sl-card, #fff);
   color: var(--sl-ink);
-  max-width: 92px;
+  max-width: 64px;   /* V2.2.11：面板头空间紧张，快捷条控件全部收窄 */
 }
 .sl-panel-quick .sl-qk-num {
   font-size: 11px;
-  width: 52px;
-  padding: 1px 3px;
+  width: 42px;
+  padding: 1px 2px;
   border: 1px solid var(--sl-border);
   border-radius: 4px;
   background: var(--sl-card, #fff);
@@ -943,13 +944,15 @@ input[type="number"] { width: 78px; }
    保证任何开关组合下内容列都紧贴左侧、不会留出一段空轨。 */
 .sl-mon-line {
   display: grid;
-  grid-template-columns: var(--sl-mon-ts-w) var(--sl-mon-dir-w) 1fr;
+  /* V2.2.11：固定列宽改 max-content——时间戳与方向标记贴着内容，
+     不再出现「时间戳后一大段空白」（brief 模式 RX 行只印「←」） */
+  grid-template-columns: max-content max-content 1fr;
   gap: 0 8px;
   align-items: start;
 }
 
-.sl-mon.is-nots .sl-mon-line { grid-template-columns: var(--sl-mon-dir-w) 1fr; }
-.sl-mon.is-nodir .sl-mon-line { grid-template-columns: var(--sl-mon-ts-w) 1fr; }
+.sl-mon.is-nots .sl-mon-line { grid-template-columns: max-content 1fr; }
+.sl-mon.is-nodir .sl-mon-line { grid-template-columns: max-content 1fr; }
 .sl-mon.is-nots.is-nodir .sl-mon-line { grid-template-columns: 1fr; }
 .sl-mon.is-hex .sl-mon-line { grid-template-columns: var(--sl-mon-ts-w) var(--sl-mon-dir-w) 1fr; }
 

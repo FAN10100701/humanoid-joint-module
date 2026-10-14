@@ -864,7 +864,7 @@ def main():
                 timeout=5000)
 
             # --- 4) V2.2.5:版本号对齐 / 顶栏单行 / 时域窗口调节 ---
-            assert page.evaluate("SerialLab.ui.VERSION") == "2.2.10", \
+            assert page.evaluate("SerialLab.ui.VERSION") == "2.2.11", \
                 "应用内版本号未跟随站点版本链: %r" % page.evaluate("SerialLab.ui.VERSION")
             assert page.locator("header #slModem").count() == 0, "流控信号应已移出顶栏(设备页签)"
             assert page.locator("#slModem").count() == 1, "设备页签缺流控信号读数"

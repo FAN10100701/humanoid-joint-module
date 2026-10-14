@@ -1200,10 +1200,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.10</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手对齐收尾:Auto 按钮自适应宽度(文字不再被裁) / Playwright 布局实测(240px 窄栏 0 超宽·发送条完整) / 测试页签补数据文件夹指路</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.11</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手入口与可读性修正:数据文件夹组提升到数据页签最顶 / 方向标记默认短标记(收←发→上位机) / 时间戳贴近内容 / 回看历史提示条可点击回实时 / 时域面板头瘦身(Auto 不再被裁)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>📁🧭 V2.2.11 · 2026-10-14 · 串口调试助手:入口提升 + 方向短标记 + 时间戳贴近 + 回看提示可点击 －</summary>
+        <div class="faq-a">📁 <b>「📁 数据文件夹」组提升到数据页签最顶</b>(用户反馈「没看见」——原来埋在导出/HTTP 组下面),一进页签第一眼就是绑定/开写/清理/CSV 直达。🧭 <b>方向标记默认短标记</b>:收「←」发「→ 上位机」,修「下位机提示不见了」(仅发送默认太激进);⋯设置可切四档。📏 <b>时间戳贴近内容</b>:grid 列改 max-content,修时间戳后大段空白。🚦 <b>回看历史提示条可点击回实时</b>(修「示波器不动了」困惑——之前只有双击/Auto 两条暗路)。🔲 <b>时域面板头瘦身</b>:快捷条去文字标签与装饰、控件收窄,窄面板下「Auto」不再被裁成「Aut」。✅ E2E 25/25 · 校验 SERIAL OK。</div>
+      </details>
+    <details class="faq">
         <summary>🔲📁 V2.2.10 · 2026-10-14 · 串口调试助手:对齐收尾——Auto 钮宽度/布局实测/文件夹指路 －</summary>
         <div class="faq-a">🔲 <b>Auto 按钮自适应宽度</b>:22px 方钮装「Auto」4 字符文字上下被裁(截图实证),改文字钮自适应。📏 <b>布局实测</b>(Playwright 双档压力:1146×700 与 ×560 + 左栏 240px):设备页签说明段 0 超宽、发送条完整贴底、无横向溢出——截图中的裁切/折行确认是 <b>SW 旧缓存</b>(Service Worker 更新需连刷两次生效)。📁 <b>数据文件夹指路</b>:「测试」页签说明补入口(左栏「数据」页签 → 📁 绑定数据文件夹)。✅ E2E 25/25 · 校验 SERIAL OK。</div>
       </details>
@@ -1512,7 +1516,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.10(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.11(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

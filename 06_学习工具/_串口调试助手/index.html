@@ -364,30 +364,12 @@
 
           <div class="sl-group">
             <h3>🤖 把数据送到 AI 能读到的地方</h3>
-            <p class="sl-hint">两条互补的通道：想「零配置、连上就能被 AI 读到」用文件落盘；想「跨浏览器、可被脚本轮询」用 HTTP 上报。两者都不影响正常调试。</p>
+            <p class="sl-hint">两条互补的通道：想「零配置、连上就能被 AI 读到」用上面的<b>数据文件夹</b>（推荐）；想「跨浏览器、可被脚本轮询」用 HTTP 上报。两者都不影响正常调试。</p>
             <div class="sl-row">
-              <label class="sl-chk"><input type="checkbox" id="slFileLog">持续写入本地文件</label>
+              <label class="sl-chk"><input type="checkbox" id="slFileLog">持续写入本地文件（单文件模式）</label>
               <button class="sl-btn is-sm" id="slBtnFileLog" type="button">选择文件并开始</button>
             </div>
-            <div class="sl-row">
-              <button class="sl-btn is-sm" id="slBtnBindFolder" type="button"
-                      data-tip="绑定一个本地文件夹，按规范命名落盘，AI / 脚本按 seriallab_v* 通配即可定位">📁 绑定数据文件夹</button>
-              <button class="sl-btn is-sm" id="slBtnDirLog" type="button" disabled>开写日志</button>
-              <button class="sl-btn is-sm" id="slBtnCleanLogs" type="button">清理历史</button>
-              <button class="sl-btn is-sm is-danger" id="slBtnWipeLogs" type="button">一键清空</button>
-            </div>
-            <div class="sl-row">
-              <span class="sl-field">功能标识
-                <input type="text" id="slLogTag" maxlength="24" placeholder="如 foc-test" style="width:110px">
-              </span>
-              <span class="sl-field">保留最近
-                <input type="number" id="slLogKeep" min="1" max="999" value="10" style="width:56px"> 个
-              </span>
-              <button class="sl-btn is-sm" id="slBtnExpCsvDir" type="button"
-                      data-tip="把解析结果 CSV 直接写进数据文件夹（不弹下载框），Excel 可直接打开">CSV → 数据文件夹</button>
-            </div>
-            <p class="sl-hint" id="slFolderHint">命名规范：<code>seriallab_v&lt;版本&gt;_log-&lt;功能标识&gt;_&lt;时间&gt;.ndjson</code>（持续调试流）与 <code>seriallab_v…_data-&lt;标识&gt;_&lt;时间&gt;.csv</code>（数据表）——AI / 脚本按 <code>seriallab_v*</code> 通配即可定位；超出「保留最近」个数的旧文件自动删除。落盘不受屏幕暂停影响，暂停期间照常写入。</p>
-            <p class="sl-hint" id="slFileLogHint">仅 Chromium 系浏览器。点「选择文件并开始」选一个保存位置（建议存到本仓库工作目录下），之后调试包会持续追加写入该文件，AI 直接读它即可，无需任何本地服务。刷新页面后需重选一次。</p>
+            <p class="sl-hint" id="slFileLogHint">仅 Chromium 系浏览器。点「选择文件并开始」选一个保存位置（建议存到本仓库工作目录下），之后调试包会持续追加写入该文件，AI 直接读它即可，无需任何本地服务。刷新页面后需重选一次。推荐用顶部「📁 数据文件夹」代替。</p>
             <div class="sl-row">
               <label class="sl-chk"><input type="checkbox" id="slHttpPush">HTTP 上报本地收件箱</label>
               <span class="sl-field">端口 <input type="number" id="slHttpPort" min="1024" max="65535" step="1" value="7788"></span>
@@ -494,6 +476,29 @@
 
         <!-- ===== 数据 ===== -->
         <section class="sl-pane" data-pane="data">
+          <!-- V2.2.11：数据文件夹组提升到页签最顶（用户找不到入口） -->
+          <div class="sl-group">
+            <h3>📁 数据文件夹（存给 AI / Excel）</h3>
+            <div class="sl-row">
+              <button class="sl-btn is-primary is-sm" id="slBtnBindFolder" type="button"
+                      data-tip="绑定一个本地文件夹，按规范命名落盘，AI / 脚本按 seriallab_v* 通配即可定位">📁 绑定数据文件夹</button>
+              <button class="sl-btn is-sm" id="slBtnDirLog" type="button" disabled>开写日志</button>
+              <button class="sl-btn is-sm" id="slBtnCleanLogs" type="button">清理历史</button>
+              <button class="sl-btn is-sm is-danger" id="slBtnWipeLogs" type="button">一键清空</button>
+            </div>
+            <div class="sl-row">
+              <span class="sl-field">功能标识
+                <input type="text" id="slLogTag" maxlength="24" placeholder="如 foc-test" style="width:110px">
+              </span>
+              <span class="sl-field">保留最近
+                <input type="number" id="slLogKeep" min="1" max="999" value="10" style="width:56px"> 个
+              </span>
+              <button class="sl-btn is-sm" id="slBtnExpCsvDir" type="button"
+                      data-tip="把解析结果 CSV 直接写进数据文件夹（不弹下载框），Excel 可直接打开">CSV → 数据文件夹</button>
+            </div>
+            <p class="sl-hint" id="slFolderHint">命名规范：<code>seriallab_v&lt;版本&gt;_log-&lt;功能标识&gt;_&lt;时间&gt;.ndjson</code>（持续调试流）与 <code>seriallab_v…_data-&lt;标识&gt;_&lt;时间&gt;.csv</code>（数据表）——AI / 脚本按 <code>seriallab_v*</code> 通配即可定位；超出「保留最近」个数的旧文件自动删除。落盘不受屏幕暂停影响，暂停期间照常写入。</p>
+          </div>
+
           <div class="sl-group">
             <h3>⤓ 导出数据</h3>
             <div class="sl-row">
