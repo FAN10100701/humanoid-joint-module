@@ -601,6 +601,9 @@
       </div>
     </aside>
 
+    <!-- V2.2.8：左栏拖宽手柄 -->
+    <div class="sl-side-grip" id="slSideGrip" title="拖动调整左栏宽度（240~440px）"></div>
+
     <!-- ---------- C 主区 ---------- -->
     <section class="sl-stage" id="slStage">
 
@@ -610,6 +613,8 @@
         <span class="sl-top-spacer"></span>
         <button class="sl-btn is-sm" id="slBtnMainFull" type="button">全屏主区</button>
         <button class="sl-btn is-sm" id="slBtnMainCollapse" type="button">收起主区</button>
+        <button class="sl-btn is-sm" id="slBtnSendBar" type="button"
+                title="显示 / 收起底部发送条（收起后仍可用「发送」页签发送）">收发送条</button>
         <button class="sl-btn is-sm" id="slBtnSplitReset" type="button">重置分割</button>
         <span class="sl-bar-sep"></span>
         <span class="sl-field">新图表
@@ -638,24 +643,24 @@
           <div class="sl-grid" id="slGrid"></div>
         </div>
       </div>
+
+      <!-- ==================== D 发送条（V2.2.8 移入主区：主区收起时跟随隐藏；可用「收发送条」收起） ==================== -->
+      <footer class="sl-send" id="slSendBar">
+        <div class="sl-send-row">
+          <span class="sl-field">发送</span>
+          <span class="sl-send-input"><input type="text" id="slSendInput" class="sl-mono-input" placeholder="输入内容；HEX 写 AA 55 01" autocomplete="off"></span>
+          <button class="sl-btn is-primary" id="slBtnSend" type="button">发送</button>
+          <button class="sl-btn" id="slBtnSendAgain" type="button">重发</button>
+          <label class="sl-chk"><input type="checkbox" id="slAppendEnding" checked>换行</label>
+          <label class="sl-chk"><input type="checkbox" id="slSendHex">HEX</label>
+          <span class="sl-hint" id="slSendHint">未连接——去「测试」页签可无硬件体验</span>
+          <button class="sl-link" id="slBtnSettings" type="button"
+                  title="设置：字号 / 时间戳精度 / 方向标记 / 设备别名">⋯</button>
+        </div>
+      </footer>
     </section>
 
   </div>
-
-  <!-- ==================== D 底部发送条 ==================== -->
-  <footer class="sl-send">
-    <div class="sl-send-row">
-      <span class="sl-field">发送</span>
-      <span class="sl-send-input"><input type="text" id="slSendInput" class="sl-mono-input" placeholder="输入内容；HEX 写 AA 55 01" autocomplete="off"></span>
-      <button class="sl-btn is-primary" id="slBtnSend" type="button">发送</button>
-      <button class="sl-btn" id="slBtnSendAgain" type="button">重发</button>
-      <label class="sl-chk"><input type="checkbox" id="slAppendEnding" checked>换行</label>
-      <label class="sl-chk"><input type="checkbox" id="slSendHex">HEX</label>
-      <span class="sl-hint" id="slSendHint">未连接——去「测试」页签可无硬件体验</span>
-      <button class="sl-link" id="slBtnSettings" type="button"
-              title="设置：字号 / 时间戳精度 / 方向标记 / 设备别名">⋯</button>
-    </div>
-  </footer>
 
 </div>
 

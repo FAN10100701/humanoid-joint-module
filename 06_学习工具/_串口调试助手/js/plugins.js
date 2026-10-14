@@ -549,9 +549,18 @@
       /* V2.2.6 示波器式视角：0 = 实时跟随；>0 = 向历史回看的点数 */
       var viewOffset = 0;
       var dragging = false, dragX0 = 0, dragOff0 = 0, dragMoved = false;
+      var lastLive = true;   /* V2.2.8：视角状态变化时回调，驱动 Auto 按钮状态灯 */
       var WHEEL_MIN = 50, WHEEL_MAX = 5000, LOOKBACK_MAX = 50000;
 
       timeplotReset[panel.id] = function () { viewOffset = 0; };
+
+      function notifyView() {
+        var live = viewOffset === 0;
+        if (live !== lastLive) {
+          lastLive = live;
+          if (SL.views && SL.views.setTimeplotViewLive) { SL.views.setTimeplotViewLive(panel.id, live); }
+        }
+      }
 
       /* 拖动 = 平移视角看历史；滚轮 = 缩放窗口（点数）；双击 = 回实时 */
       view.canvas.addEventListener("mousedown", function (e) {
@@ -600,6 +609,7 @@
       function draw(data) {
         view.fit();
         view.clear();
+        notifyView();
         var t = theme();
         var ctx = view.ctx;
         var chans = resolveChannels(panel, data, registry.timeplot);

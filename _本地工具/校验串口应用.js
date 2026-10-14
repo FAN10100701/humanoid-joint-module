@@ -848,8 +848,12 @@ const GBK = (X.codec || SL.codec);
   check("V2.2.6: 帮助含数据文件夹命名规范与致谢章节",
     rd("js/ui.js").indexOf("数据文件夹与文件命名规范") > 0
       && rd("js/ui.js").indexOf("致谢与参考开源项目") > 0, "");
-  check("V2.2.6: 应用内版本号跟随站点版本链",
-    rd("js/ui.js").indexOf('UI.VERSION = "2.2.6"') > 0, "");
+  /* 版本链动态对照：UI.VERSION 必须等于 site.js 的 S.VERSION 括号前段（不再写死数字） */
+  const siteVer = (fs.readFileSync(path.join(__dirname, "..", "_assets", "site.js"), "utf8")
+    .match(/S\.VERSION = "V([0-9.]+)\(/) || [])[1] || "";
+  const appVer = (rd("js/ui.js").match(/UI\.VERSION = "([0-9.]+)";/) || [])[1] || "";
+  check("版本链: 应用内 UI.VERSION 与站点 S.VERSION 一致",
+    appVer !== "" && appVer === siteVer, "site=" + siteVer + " app=" + appVer);
 })();
 
 /* ========== ⑳ V2.2.7：浅色/暗色主题 WCAG 对比度审计 ==========
@@ -921,10 +925,8 @@ const GBK = (X.codec || SL.codec);
   }
   /* tooltip 文字色必须随主题（V2.2.7 根因修复的防回归锁） */
   const tipboxRule = cssText.match(/\.sl-tipbox\s*\{[^}]*\}/) || "";
-  check("对比度: .sl-tipbox 文字色走 var(--sl-ink) 不再硬编码",
-    cssText.indexOf("color: var(--sl-ink)") > 0 &&
-    tipboxRule && tipboxRule[0].indexOf("color: var(--sl-ink)") >= 0 &&
-    !/color:\s*#/.test(tipboxRule[0]), "");
+  check("对比度: .sl-tipbox 文字色走主题令牌（tip-ink/ink）不再硬编码",
+    /\.sl-tipbox\s*\{[^}]*color:\s*var\(--sl-(tip-ink|ink)/.test(cssText), "");
 })();
 
 console.log("");

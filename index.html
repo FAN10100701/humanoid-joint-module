@@ -1200,10 +1200,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.7</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手可读性加固轮:修浅色模式悬浮简介白底白字(用户截图实证) / 浅色弱化文字加深至 WCAG AA / 对比度审计进自检(50 组合自动算比值,不达标即 FAIL) / E2E tooltip 实测断言</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.8</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手操作手感轮:左栏宽度可拖拽 + 9 页签均分单行 + 表单裁切修复 / 发送条移入主区可收起 / 时域 Auto 状态灯 / 演示数据中文键全链路 / 浅色可读性再加固(气泡专属深色 + 站点级弱化文字加深)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>🖐🈶 V2.2.8 · 2026-10-14 · 串口调试助手:操作手感轮——左栏拖宽/页签单行/发送条移主区/Auto 状态灯/中文演示 －</summary>
+        <div class="faq-a">🖐 <b>左栏宽度可拖拽</b>:右缘手柄悬停变蓝,240~440px 自由调节写进配置。📐 <b>9 页签均分单行</b>(flex 等宽,修「7+2 挤两行」);参数网格 <code>minmax(0,1fr)</code> 修右侧被裁与横向滚动。⌨ <b>发送条移入主区</b>(主区收起/全屏表现正确)+「收发送条」一键收起(状态记忆,收起后仍可用发送页签)。🚦 <b>Auto 状态灯</b>:回看历史或手动量程时按钮橙色高亮,点击 toast 确认并恢复——开没开一眼可见。🈶 <b>中文全链路</b>:解析键名支持中文,演示数据带「温度=…」,中文打印/通道/图例/统计无硬件可验。🔆 <b>浅色再加固</b>:气泡专属最深色令牌(12px 小字 ~19:1);<b>站点级 site.css 浅色弱化文字(#64748b→#556579)批量加深</b>。✅ 校验 SERIAL OK(版本链改动态对照) · E2E 25/25 PASS。</div>
+      </details>
+    <details class="faq">
         <summary>🔆🧪 V2.2.7 · 2026-10-14 · 串口调试助手:浅色可读性加固 + 对比度审计进自检 －</summary>
         <div class="faq-a">🔆 <b>修「浅色模式文字太浅」</b>(用户截图实证):①悬浮简介气泡<b>白底白字</b>——tooltip 文字色硬编码暗色浅灰白,浅色主题下气泡背景变白叠加后几乎不可读,修为随主题变量;②浅色弱化文字 <code>--sl-ink-3</code> 加深(#64748b 实测 4.43:1 不达标 → #556579);全站扫描确认无其它硬编码文字色。🧪 <b>对比度审计进自检</b>:校验脚本解析两套主题令牌,<b>10 文字色 × 5 类背景 = 50 组合</b>的 WCAG 比值全部自动计算,门限 4.5(AA),不达标直接 FAIL——调色问题从此由机器把关,不再靠截图;E2E 加浅色 tooltip 实测断言。当前暗色最差 5.75、浅色最差 4.67,全部达标。✅ 校验 171/171 · E2E 25/25 PASS。</div>
       </details>
@@ -1500,7 +1504,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.7(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.8(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.7";
+  UI.VERSION = "2.2.8";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1266,6 +1266,38 @@
   function wireV226() {
     var btn = $("slBtnSettings");
     if (btn) { btn.addEventListener("click", openSettings); }
+    wireSideGrip();
+  }
+
+  /* V2.2.8：左栏宽度拖拽（240~440px，写进配置；拖到 <240 松手也不突变）
+     收起仍走顶栏「收起左栏」按钮（slSide is-hidden），grip 在收起态自动隐藏 */
+  function wireSideGrip() {
+    var grip = $("slSideGrip");
+    var side = $("slSide");
+    if (!grip || !side) { return; }
+    if (core.config.ui.sideW) {
+      document.documentElement.style.setProperty("--sl-side-w", core.config.ui.sideW + "px");
+    }
+    var startX = null, startW = 0;
+    grip.addEventListener("mousedown", function (e) {
+      startX = e.clientX;
+      startW = side.getBoundingClientRect().width;
+      document.body.classList.add("sl-resizing");
+      e.preventDefault();
+    });
+    global.addEventListener("mousemove", function (e) {
+      if (startX === null) { return; }
+      var w = Math.min(440, Math.max(240, Math.round(startW + (e.clientX - startX))));
+      document.documentElement.style.setProperty("--sl-side-w", w + "px");
+    });
+    global.addEventListener("mouseup", function () {
+      if (startX === null) { return; }
+      var cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sl-side-w")) || startW;
+      core.config.ui.sideW = Math.round(Math.min(440, Math.max(240, cur)));
+      core.saveConfig();
+      startX = null;
+      document.body.classList.remove("sl-resizing");
+    });
   }
 
   function confirmLoose(msg) {
@@ -2419,7 +2451,7 @@
       { h: "①-1 乱码三分诊（监视器出现菱形问号时）", p: "乱码几乎只有三种原因，应用会监测解码失败率并在「设备」页签弹出排查条，按顺序试：一「识别编码」——对最近收到的原始字节做 UTF-8/GBK/二进制三分判定，一键切到最可能的编码（中文设备常见 GBK）；二「扫描波特率」——对 12 个常用波特率逐档重开端口采样打分并自动切换（⚠ Arduino/ESP 每开一次口会复位一次，扫描会让设备反复重启）；三还不行——多半是二进制协议被当文本看，切 HEX 显示或去「解析」页签配帧结构。注意：Web Serial 在操作系统层就按波特率完成了电平采样，波特率错配无法从字节流逆推，所以只能扫描比对，编码错配则可以在字节层直接识别。" },
       { h: "①-2 演示与故障注入（「设备」页签底部）", p: "「拟真电机信号」把演示数据从理想正弦换成目标阶跃 + 超调振铃 + 稳态纹波 + 测量噪声——量程、滤波、极值统计的潜在问题在理想正弦面前全部隐身，拟真形态才能把它们逼出来。四个故障注入概率（丢帧/错帧/粘包/乱码）让你无硬件时演练整条排错链路：失败行标红、失败原因分布、AI 调试包的失败样本、乱码监测提示，全部会被真实触发。" },
       { h: "② 解析数据", p: "文本模式直接识别 key=value 与 key:value（等号、冒号都支持，后缀数字如 temp1/temp2 会保留为独立通道）。HEX 模式按结构表解帧：设帧头/帧尾或长度字段定界，再逐个字段声明类型、偏移、字节序与缩放系数；校验支持累加和、异或、累加和(16) 与 CRC16-Modbus。点「套用示例」可以一键填入演示帧结构。" },
-      { h: "②-1 文本格式速查", p: "每行写出键值对即可：等号与冒号都认，一行里多个数值对用逗号连写，后缀数字如 temp1/temp2 各自成为独立通道，数值支持整数、小数与科学计数法。", code: "temp=25.3, cur:1.02\npos:90 vel=12.5\nacc1=0.2, acc2=0.3" },
+      { h: "②-1 文本格式速查", p: "每行写出键值对即可：等号与冒号都认，一行里多个数值对用逗号连写，后缀数字如 temp1/temp2 各自成为独立通道，数值支持整数、小数与科学计数法。键名支持中文（国产设备打印「温度=25.3」直接可解析，通道名与图例都显示中文）。", code: "temp=25.3, cur:1.02\npos:90 vel=12.5\n温度=36.8, 电流:1.02" },
       { h: "②-2 默认（演示）HEX 帧的字节级布局", p: "演示模式与「套用示例」用的就是下面这一帧，共 11 字节：", code: "偏移  0   1    2     3     4-5            6-7             8-9            10\n字节  AA  55   seq   len=6 pos(i16×.01)  cur(i16×.001)  temp(i16×.01)  sum8", list: [
         "长度字段：偏移 3、1 字节、含义「载荷长度」；偏移是相对整帧起始（含帧头）算的，不是相对载荷。",
         "sum8 = 帧首到第 9 字节的累加和低 8 位；校验和固定放在帧尾。",
@@ -2629,6 +2661,20 @@
       SL.views.setMainCollapsed(!on);
       this.textContent = !on ? "展开主区" : "收起主区";
     });
+
+    /* V2.2.8：发送条收起/展开（发送条已移入主区，收起后仍可用「发送」页签） */
+    function syncSendBar() {
+      var hid = !!core.config.ui.sendBarHidden;
+      var bar = $("slSendBar");
+      if (bar) { bar.hidden = hid; }
+      $("slBtnSendBar").textContent = hid ? "展开发送条" : "收发送条";
+    }
+    $("slBtnSendBar").addEventListener("click", function () {
+      core.config.ui.sendBarHidden = !core.config.ui.sendBarHidden;
+      core.saveConfig();
+      syncSendBar();
+    });
+    syncSendBar();
 
     $("slBtnSplitReset").addEventListener("click", function () {
       SL.views.setMonRatio(0.62);

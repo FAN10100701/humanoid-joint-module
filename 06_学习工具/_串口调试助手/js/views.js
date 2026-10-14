@@ -204,9 +204,11 @@
     }));
 
     if (panel.type === "timeplot") {
-      /* 时域折线专属：Auto = 回到实时跟随 + 恢复自动量程（渲染器内部状态 + axis 清除） */
-      head.appendChild(iconBtn("Auto", "回到实时跟随，并恢复自动量程与默认窗口", "is-auto", function () {
+      /* 时域折线专属：Auto = 回到实时跟随 + 恢复自动量程（渲染器内部状态 + axis 清除）。
+         V2.2.8：按钮带状态灯——回看历史或手动量程时高亮，一眼知道 Auto「有没有事做」。 */
+      head.appendChild(iconBtn("Auto", "回到实时跟随，并恢复自动量程与默认窗口", "sl-auto-btn", function () {
         V.resetTimeplotView(panel.id);
+        core.emit("toast", { level: "info", msg: "已回到实时跟随 + 自动量程" });
       }));
     }
 
@@ -258,6 +260,7 @@
     }
 
     stylePanel(el, panel);
+    if (panel.type === "timeplot") { syncAutoBtn(panel.id); }   /* 重建后按当前状态补状态灯 */
     return el;
   }
 
@@ -834,13 +837,41 @@
   V.isPanelPaused = function (id) { return !!pausedPanels[id]; };
 
   /* 时域折线 Auto：清手动 Y 轴 + 通知渲染器回实时跟随（渲染器内部状态自己清） */
+  var timeplotLiveState = {};   /* id -> true(实时跟随) / false(回看历史) */
+
+  /* 同步 Auto 按钮状态灯：回看历史或手动量程 → 高亮（is-off 类，橙色） */
+  function syncAutoBtn(id) {
+    var elp = els[id];
+    if (!elp) { return; }
+    var btn = elp.querySelector(".sl-auto-btn");
+    if (!btn) { return; }
+    var p = V.getPanel(id);
+    var manual = !!(p && p.axis && (p.axis.yMin !== undefined || p.axis.yMax !== undefined));
+    var live = timeplotLiveState[id] !== false;
+    var off = !live || manual;
+    btn.className = "sl-iconbtn sl-auto-btn" + (off ? " is-off" : "");
+    btn.title = off
+      ? "当前处于回看历史或手动量程——点此回到实时并恢复自动"
+      : "回到实时跟随，并恢复自动量程与默认窗口（当前已是实时+自动）";
+  }
+
   V.resetTimeplotView = function (id) {
     var p = V.getPanel(id);
     if (p && p.axis) { p.axis = {}; }
+    timeplotLiveState[id] = true;
     if (SL.plugins.resetTimeplot) { SL.plugins.resetTimeplot(id); }
     V.save();
+    syncAutoBtn(id);
     V.redraw();
   };
+
+  /* 渲染器在回看/实时切换时回调（拖动、双击、滚轮都会改变视角） */
+  V.setTimeplotViewLive = function (id, live) {
+    timeplotLiveState[id] = !!live;
+    syncAutoBtn(id);
+  };
+  /* 面板重建后按钮是新的，按当前状态补一次灯 */
+  V.refreshTimeplotBtn = function (id) { syncAutoBtn(id); };
 
   V.start = function () {
     if (running) { return; }

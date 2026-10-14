@@ -51,6 +51,7 @@
   --sl-grid: rgba(148, 163, 184, .16);
   --sl-axis: rgba(148, 163, 184, .45);
   --sl-tip: rgba(15, 20, 28, .96);
+  --sl-tip-ink: #e6edf3;      /* 气泡文字（暗色） */
 
   /* 尺寸与动效 */
   --sl-radius: 12px;
@@ -107,6 +108,7 @@ html:not([data-theme-early="dark"]) {
   --sl-grid: rgba(100, 116, 139, .20);
   --sl-axis: rgba(100, 116, 139, .55);
   --sl-tip: rgba(255, 255, 255, .98);
+  --sl-tip-ink: #0b1220;      /* 气泡文字（浅色）：12px 小字给到最大对比度 ~19:1 */
 
   --sl-c1: #2563eb;
   --sl-c2: #15803d;
@@ -385,6 +387,12 @@ input[type="number"] { width: 78px; }
 .sl-btn.is-sm { padding: 3px 9px; font-size: 11.5px; }
 
 /* 图标按钮（面板头部：主位 / 加宽 / 收起 / 移除） */
+.sl-iconbtn.is-off {
+  color: var(--sl-warn-ink);
+  border-color: var(--sl-warn);
+  background: rgba(245, 158, 11, .14);
+}
+
 .sl-iconbtn {
   width: 22px;
   height: 22px;
@@ -434,13 +442,27 @@ input[type="number"] { width: 78px; }
   min-height: 0;
 }
 
+/* V2.2.8：左栏右缘拖宽手柄——按住左右拖调宽度（240~440px，写进配置） */
+.sl-side-grip {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: transparent;
+  border-right: 1px solid var(--sl-border);
+  transition: background .15s;
+}
+.sl-side-grip:hover, body.sl-resizing .sl-side-grip {
+  background: var(--sl-brand);
+  opacity: .5;
+}
+.sl-side.is-hidden ~ .sl-side-grip { display: none; }
+
 .sl-side.is-hidden { display: none; }
 
 .sl-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  padding: 5px 5px 0;
+  gap: 1px;
+  padding: 4px 4px 0;
   border-bottom: 1px solid var(--sl-border);
   flex-shrink: 0;
 }
@@ -451,10 +473,13 @@ input[type="number"] { width: 78px; }
   color: var(--sl-ink-2);
   font-size: 11.5px;
   font-family: inherit;
-  padding: 4px 5px;
+  padding: 4px 4px;
   border-radius: var(--sl-radius-sm) var(--sl-radius-sm) 0 0;
   cursor: pointer;
   white-space: nowrap;
+  flex: 1 1 0;      /* V2.2.8：均分宽度——9 个页签单行对称铺满，不再 7+2 挤两行 */
+  min-width: 0;
+  text-align: center;
 }
 
 .sl-tab:hover { color: var(--sl-ink); }
@@ -1088,9 +1113,14 @@ table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
 /* 2×2 紧凑参数网格（替代原先散落的四行） */
 .sl-param-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));  /* V2.2.8：minmax(0,1fr) 允许收缩，修右侧被裁 */
   gap: 6px 10px;
   margin: 6px 0;
+}
+.sl-param-grid .sl-field { min-width: 0; }
+.sl-field select, .sl-field input {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .sl-param-grid .sl-field {
@@ -1181,8 +1211,9 @@ table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
   border: 1px solid var(--sl-border-hi);
   background: var(--sl-tip);
   /* V2.2.7 修：文字色必须随主题——此前硬编码暗色浅灰白，
-     浅色模式下气泡背景被覆盖成白色，白底白字几乎不可读（用户截图实证） */
-  color: var(--sl-ink);
+     浅色模式下气泡背景被覆盖成白色，白底白字几乎不可读（用户截图实证）。
+     V2.2.8 再加深一档：小字号气泡用专属最深色令牌 */
+  color: var(--sl-tip-ink, var(--sl-ink));
   font-size: 12px;
   line-height: 1.6;
   pointer-events: none;

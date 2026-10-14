@@ -494,7 +494,8 @@
     { key: "pos", unit: "°", gen: function (t) { return 90 * Math.sin(2 * Math.PI * 0.5 * t); } },
     { key: "vel", unit: "°/s", gen: function (t) { return 90 * 2 * Math.PI * 0.5 * Math.cos(2 * Math.PI * 0.5 * t); } },
     { key: "cur", unit: "A", gen: function (t) { return 3.2 * Math.sin(2 * Math.PI * 0.5 * t + 0.6) + 0.35 * Math.sin(2 * Math.PI * 7 * t); } },
-    { key: "temp", unit: "℃", gen: function (t) { return 42 + 3 * Math.sin(2 * Math.PI * 0.02 * t); } },
+    /* V2.2.8：文本演示行带中文键——无硬件也能验证「中文键值解析 + 中文通道名 + 中文显示」全链路 */
+    { key: "温度", unit: "℃", gen: function (t) { return 42 + 3 * Math.sin(2 * Math.PI * 0.02 * t); } },
     { key: "volt", unit: "V", gen: function (t) { return 24 + 0.15 * Math.sin(2 * Math.PI * 11 * t); } }
   ];
 
@@ -521,7 +522,7 @@
     if (key === "pos") { return stepResp(t, seg, (prand(seg * 3 + 1) - 0.5) * 240, 9, 0.35) + nz * 1.2; }
     if (key === "vel") { return stepResp(t, seg, (prand(seg * 5 + 2) - 0.5) * 600, 11, 0.3) + rip * 2 + nz * 3; }
     if (key === "cur") { return stepResp(t, seg, (prand(seg * 7 + 3) - 0.5) * 16, 13, 0.28) + rip * 0.4 + nz * 0.35; }
-    if (key === "temp") { return 42 + (prand(seg + 9) - 0.5) * 8 + t * 0.05 + nz * 0.15; }
+    if (key === "温度" || key === "temp") { return 42 + (prand(seg + 9) - 0.5) * 8 + t * 0.05 + nz * 0.15; }
     if (key === "volt") { return 24 + rip * 0.12 + nz * 0.05 + Math.sin(2 * Math.PI * 0.5 * t) * 0.3; }
     return null;                                          /* 不认识的键交给原有生成器 */
   }
