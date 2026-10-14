@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.12";
+  UI.VERSION = "2.2.13";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1224,8 +1224,10 @@
         '<select id="slSetDirMode"><option value="brief">短标记（推荐：收「←」发「→ 上位机」）</option>' +
         '<option value="tx">仅发送行</option><option value="all">每行全称</option><option value="off">不显示</option></select>' +
         '<i>收到的行印「←」，发送行为琥珀色「→ 上位机」</i></div>' +
-      '<div class="sl-set-row"><label>数字标红</label>' +
-        '<label class="sl-chk"><input type="checkbox" id="slSetHighlight">把打印里的数字用醒目色标出</label></div>' +
+      '<div class="sl-set-row"><label>数字高亮</label>' +
+        '<select id="slSetNumStyle"><option value="channel">通道色（跟波形对应）</option>' +
+        '<option value="red">全部标红加粗</option><option value="off">不标</option></select>' +
+        '<i>pos= 的数字就是 pos 曲线的颜色；键名/汉字/符号保持墨色，时间戳紫色</i></div>' +
       '<div class="sl-set-row"><label>设备别名</label>' +
         '<input type="text" id="slSetAlias" maxlength="24" placeholder="如：关节电机-左腿">' +
         '<i>连接后顶栏显示别名（悬停仍可见 VID/PID）</i></div>' +
@@ -1241,11 +1243,11 @@
     $("slSetPrec").value = t.timePrec || "ms";
     $("slSetDirMode").value = t.dirMode || "tx";
     $("slSetAlias").value = t.alias || "";
-    $("slSetHighlight").checked = !!uicfg.highlightNumbers;
+    $("slSetNumStyle").value = (uicfg.numStyle === "red" || uicfg.numStyle === "off") ? uicfg.numStyle : "channel";
     $("slSetFontSize").addEventListener("change", function () { setAndFire("slFontSize", this.value); });
     $("slSetTimeMode").addEventListener("change", function () { setAndFire("slTimeMode", this.value); });
-    $("slSetHighlight").addEventListener("change", function () {
-      setAndFire("slHighlightNum", this.checked ? "on" : "off");
+    $("slSetNumStyle").addEventListener("change", function () {
+      setAndFire("slNumStyle", this.value);
     });
     $("slSetPrec").addEventListener("change", function () {
       core.config.transport.timePrec = this.value;
@@ -2911,7 +2913,7 @@
       apply: function () { applyUiPrefs(); }
     });
     addBind({
-      el: "slHighlightNum", path: "ui.highlightNumbers", type: "chk", scope: "ui",
+      el: "slNumStyle", path: "ui.numStyle", type: "select", scope: "ui",
       apply: function () { if (SL.views) { SL.views.redraw(); } }
     });
     addBind({

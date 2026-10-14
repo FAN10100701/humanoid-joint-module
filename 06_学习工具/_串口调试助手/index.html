@@ -334,7 +334,13 @@
               <button class="sl-btn is-sm" id="slBtnFontReset" type="button">复位 12px</button>
             </div>
             <div class="sl-row">
-              <label class="sl-chk"><input type="checkbox" id="slHighlightNum">数字标红（把打印里的数字用醒目色标出）</label>
+              <span class="sl-field">数字高亮
+                <select id="slNumStyle" data-tip="打印行里的数值怎么标亮：跟波形通道同色（pos 的数字就是 pos 曲线的颜色）/ 全部标红加粗 / 不标">
+                  <option value="channel">通道色（跟波形对应）</option>
+                  <option value="red">全部标红加粗</option>
+                  <option value="off">不标</option>
+                </select>
+              </span>
             </div>
             <div class="sl-row">
               <label class="sl-chk"><input type="checkbox" id="slMarkFailed" checked>解析 / 校验失败的行整行标红并标注原因</label>

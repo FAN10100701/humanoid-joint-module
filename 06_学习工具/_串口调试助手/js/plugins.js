@@ -1293,6 +1293,21 @@
         });
       }
 
+      /* V2.2.13：键值对里的数字用「对应波形通道」的颜色标亮——
+         pos= 的数字就是 pos 曲线的颜色，数值与波形一眼锁定同一信号；
+         键名、等号、汉字、符号保持默认墨色（黑色留给文字），时间戳仍是紫色。
+         没匹配到通道的键值对保持原样不标。 */
+      function markByChannels(html, colorByKey) {
+        return html.replace(
+          /([A-Za-z_\u4e00-\u9fa5][A-Za-z0-9_\u4e00-\u9fa5\-.]*\s*[=:]\s*)(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+          function (m, keyPart, num) {
+            var k = keyPart.replace(/\s*[=:]\s*$/, "");
+            var color = colorByKey[k];
+            if (!color) { return m; }
+            return keyPart + '<span class="sl-mon-num" style="color:' + color + '">' + num + '</span>';
+          });
+      }
+
       function draw(data) {
         var recs = data.recentRaw ? data.recentRaw(panel.window || 500) : [];
         var opts = panel.opts || {};
@@ -1308,7 +1323,23 @@
         var prec = (core.config.transport && core.config.transport.timePrec) || "ms";
         var dirMode = (core.config.transport && core.config.transport.dirMode) || "brief";
         var base = (SL.app && SL.app.timeBase) ? SL.app.timeBase() : 0;
-        var markNum = !!ui.highlightNumbers && !showHex;
+        var markNum = false;
+        var markCh = false;
+        /* V2.2.13：数字高亮三档——channel（默认，跟波形通道同色）/ red（全红加粗）/ off */
+        var numStyle = (ui.numStyle === "red" || ui.numStyle === "off") ? ui.numStyle : "channel";
+        if (!showHex) {
+          if (numStyle === "red") { markNum = true; }
+          if (numStyle === "channel") { markCh = true; }
+        }
+        var colorByKey = null;
+        if (markCh) {
+          colorByKey = {};
+          var chs = data.channels ? data.channels() : [];
+          for (var ci = 0; ci < chs.length; ci++) {
+            if (chs[ci].key) { colorByKey[chs[ci].key] = chs[ci].color; }
+            if (chs[ci].label) { colorByKey[chs[ci].label] = chs[ci].color; }
+          }
+        }
         var markFail = ui.markFailed !== false;
 
         box.className = "sl-mon" +
@@ -1349,7 +1380,8 @@
           }
           var text = showHex ? (rec.hex || rec.text || "") : (rec.text || rec.hex || "");
           var html = U.esc(text);
-          if (markNum) { html = markNumbers(html); }
+          if (markCh) { html = markByChannels(html, colorByKey); }
+          else if (markNum) { html = markNumbers(html); }
           /* 失败原因写进内容列内部（而不是再加一个 grid 子项），
              否则会多出一列把三列对齐打乱 */
           if (failed && rec.reason) {

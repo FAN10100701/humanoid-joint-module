@@ -929,6 +929,22 @@ const GBK = (X.codec || SL.codec);
     /\.sl-tipbox\s*\{[^}]*color:\s*var\(--sl-(tip-ink|ink)/.test(cssText), "");
 })();
 
+/* ========== ㉑ V2.2.13：数字高亮跟通道色 ========== */
+(function () {
+  const APP = "06_学习工具/_串口调试助手";
+  const rd = function (rel) { return fs.readFileSync(path.join(__dirname, "..", APP, rel), "utf8"); };
+  check("V2.2.13: 数字高亮三档（channel 默认/red/off）",
+    rd("js/plugins.js").indexOf('numStyle === "red"') > 0
+      && rd("js/plugins.js").indexOf('"channel"') > 0, "");
+  check("V2.2.13: 键值对数字按波形通道色渲染 markByChannels",
+    rd("js/plugins.js").indexOf("markByChannels") > 0, "");
+  check("V2.2.13: 显示页签与设置中心都有数字高亮选择器",
+    rd("index.html").indexOf('id="slNumStyle"') > 0
+      && rd("js/ui.js").indexOf('id="slSetNumStyle"') > 0, "");
+  check("V2.2.13: 时间戳精度含秒档（低精度需求）",
+    rd("js/ui.js").indexOf('value="s"') > 0 || rd("js/ui.js").indexOf("秒（") > 0, "");
+})();
+
 console.log("");
 console.log(fails === 0 ? "SERIAL OK" : ("SERIAL FAIL: " + fails));
 process.exit(fails === 0 ? 0 : 1);

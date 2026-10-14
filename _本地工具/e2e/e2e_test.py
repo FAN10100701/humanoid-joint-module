@@ -552,24 +552,27 @@ def main():
                 "getComputedStyle(document.documentElement).getPropertyValue('--sl-mon-size').trim() === '17px'",
                 timeout=8000)
 
-            # ④ 数字标红:开启后正文里应出现 .sl-mon-num 片段
-            page.check("#slHighlightNum")
+            # ④ 数字高亮:通道色档(默认)下正文里应出现 .sl-mon-num 片段,再切「red」也应保留
+            page.select_option("#slNumStyle", "channel")
             page.wait_for_timeout(400)
-            assert page.locator("#slMainHost .sl-mon-num").count() > 0, "数字标红开启后没有标红片段"
+            assert page.locator("#slMainHost .sl-mon-num").count() > 0, "数字高亮通道色档没有标亮片段"
+            page.select_option("#slNumStyle", "red")
+            page.wait_for_timeout(400)
+            assert page.locator("#slMainHost .sl-mon-num").count() > 0, "数字高亮红档没有标亮片段"
 
             # ⑤ 全部落盘 + 刷新后回填
             page.wait_for_function(
                 "(()=>{var c=JSON.parse(localStorage.getItem('humanoid-serial-config-v1')||'{}');"
-                "return c.ui && c.ui.fontSize===17 && c.ui.highlightNumbers===true;})()", timeout=8000)
+                "return c.ui && c.ui.fontSize===17 && c.ui.numStyle==='red';})()", timeout=8000)
             cfg = page.evaluate("JSON.parse(localStorage.getItem('humanoid-serial-config-v1'))")
             assert cfg["transport"]["timeMode"] == "rel", "时间口径未落盘: %r" % cfg["transport"].get("timeMode")
             page.reload(wait_until="load")
             page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
             page.click("#slTabs .sl-tab[data-pane='display']")
             assert page.input_value("#slFontSize") == "17", "刷新后字号未回填"
-            assert page.is_checked("#slHighlightNum"), "刷新后数字标红未回填"
+            assert page.input_value("#slNumStyle") == "red", "刷新后数字高亮档未回填"
             assert not errs, "显示设置 JS 异常: " + "; ".join(errs[:3])
-        check("serial_display 时间口径/字号/数字标红/刷新回填", t_serial_display)
+        check("serial_display 时间口径/字号/数字高亮/刷新回填", t_serial_display)
 
         def t_serial_preset_bundle():
             """开源协议预设一键套用 + 面向 AI 的调试包导出。
@@ -864,7 +867,7 @@ def main():
                 timeout=5000)
 
             # --- 4) V2.2.5:版本号对齐 / 顶栏单行 / 时域窗口调节 ---
-            assert page.evaluate("SerialLab.ui.VERSION") == "2.2.12", \
+            assert page.evaluate("SerialLab.ui.VERSION") == "2.2.13", \
                 "应用内版本号未跟随站点版本链: %r" % page.evaluate("SerialLab.ui.VERSION")
             assert page.locator("header #slModem").count() == 0, "流控信号应已移出顶栏(设备页签)"
             assert page.locator("#slModem").count() == 1, "设备页签缺流控信号读数"
