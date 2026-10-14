@@ -88,7 +88,8 @@ html:not([data-theme-early="dark"]) {
 
   --sl-ink: #0f172a;
   --sl-ink-2: #475569;
-  --sl-ink-3: #64748b;
+  /* V2.2.7：#64748b 在页面底上只有 4.43:1（WCAG AA 不达标，用户截图实证偏浅）→ 加深 */
+  --sl-ink-3: #556579;
   --sl-accent-ink: #1d4ed8;
 
   --sl-brand: #2563eb;
@@ -1179,7 +1180,9 @@ table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
   border-radius: var(--sl-radius-sm);
   border: 1px solid var(--sl-border-hi);
   background: var(--sl-tip);
-  color: #e6edf3;
+  /* V2.2.7 修：文字色必须随主题——此前硬编码暗色浅灰白，
+     浅色模式下气泡背景被覆盖成白色，白底白字几乎不可读（用户截图实证） */
+  color: var(--sl-ink);
   font-size: 12px;
   line-height: 1.6;
   pointer-events: none;

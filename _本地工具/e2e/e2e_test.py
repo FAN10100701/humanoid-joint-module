@@ -777,11 +777,26 @@ def main():
             st = page.get_attribute("#slRun", "data-state")
             assert st == "running", "演示模式下运行胶囊应为 running,实际 %r" % st
 
-            # --- 4) data-tip 悬浮简介 ---
+            # --- 4) data-tip 悬浮简介（V2.2.7：浅色模式下文字必须可读） ---
             page.hover("#slBtnConnect")
             page.wait_for_selector("#slTipbox.is-on", timeout=3000)
             tip = page.locator("#slTipbox").inner_text()
             assert len(tip) > 8, "tooltip 内容过短: %r" % tip
+            # 实测对比度：tooltip 文字色 vs 气泡底色 ≥ 4.5（WCAG AA），两主题都查
+            tip_ct = page.evaluate("""(function(){
+              function pc(v){var m=v.match(/rgba?\\(([^)]+)\\)/);var p=m[1].split(",").map(parseFloat);
+                return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1};}
+              function comp(f,b){var a=f.a;return{r:f.r*a+b.r*(1-a),g:f.g*a+b.g*(1-a),b:f.b*a+b.b*(1-a)};}
+              function lum(c){function f(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}
+                return 0.2126*f(c.r)+0.7152*f(c.g)+0.0722*f(c.b);}
+              var box=document.querySelector('#slTipbox');
+              var cs=getComputedStyle(box);
+              var fg=pc(cs.color), bg=pc(cs.backgroundColor);
+              var bgc=comp(bg,{r:255,g:255,b:255});
+              var l1=lum(comp(fg,bgc)),l2=lum(bgc);
+              return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+            })()""")
+            assert tip_ct >= 4.5, "tooltip 文字对比度不足: %.2f" % tip_ct
 
             # --- 收尾:故障清零 + 退出演示(配置会持久化,不能污染下一位) ---
             # 故障控件在「测试」页签(此刻页面停在设备页签),先切过去再清零
@@ -849,7 +864,7 @@ def main():
                 timeout=5000)
 
             # --- 4) V2.2.5:版本号对齐 / 顶栏单行 / 时域窗口调节 ---
-            assert page.evaluate("SerialLab.ui.VERSION") == "2.2.6", \
+            assert page.evaluate("SerialLab.ui.VERSION") == "2.2.7", \
                 "应用内版本号未跟随站点版本链: %r" % page.evaluate("SerialLab.ui.VERSION")
             assert page.locator("header #slModem").count() == 0, "流控信号应已移出顶栏(设备页签)"
             assert page.locator("#slModem").count() == 1, "设备页签缺流控信号读数"

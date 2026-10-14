@@ -852,6 +852,81 @@ const GBK = (X.codec || SL.codec);
     rd("js/ui.js").indexOf('UI.VERSION = "2.2.6"') > 0, "");
 })();
 
+/* ========== ⑳ V2.2.7：浅色/暗色主题 WCAG 对比度审计 ==========
+   为什么要有这一组：V2.2.7 用户截图实证「浅色模式下说明文字/悬浮简介几乎看不清」
+   ——tooltip 文字色硬编码暗色浅灰白 + 浅色气泡白底；ink-3 浅色值只有 4.43:1。
+   这组把「每个文字色 × 每类背景」的 WCAG 对比度全部算一遍，门限 4.5（AA 正文），
+   以后任何人调色不达标直接 FAIL，不再靠截图抓。 */
+(function () {
+  const cssText = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
+
+  function pc(v) {
+    v = v.trim();
+    if (v[0] === "#") {
+      const h = v.slice(1);
+      return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16), a: 1 };
+    }
+    const m = v.match(/rgba?\(([^)]+)\)/);
+    if (m) {
+      const p = m[1].split(",").map(x => parseFloat(x));
+      return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+    }
+    return null;
+  }
+  function comp(f, b) {
+    const a = f.a;
+    return { r: f.r * a + b.r * (1 - a), g: f.g * a + b.g * (1 - a), b: f.b * a + b.b * (1 - a) };
+  }
+  function lum(c) {
+    const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  }
+  function contrast(f, b) {
+    const l1 = lum(comp(f, b)), l2 = lum(b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+  function themeColors(tag) {
+    const i = cssText.indexOf(tag);
+    const blk = cssText.slice(i, cssText.indexOf("}", cssText.indexOf("--sl-c8", i)));
+    const T = {};
+    const re = /--sl-([a-z0-9-]+):\s*([^;]+);/g;
+    let m;
+    while ((m = re.exec(blk))) { T[m[1]] = m[2].trim(); }
+    return T;
+  }
+  const INKS = ["ink", "ink-2", "ink-3", "ok-ink", "warn-ink", "bad-ink",
+    "ts-ink", "dir-tx-ink", "dir-rx-ink", "num-ink"];
+  for (const [name, tag] of [["暗色", ":root {"],
+        ["浅色", 'html:not([data-theme-early="dark"]) {']]) {
+    const T = themeColors(tag);
+    const bg = pc(T["bg"]);
+    const bgs = {
+      "页面": bg,
+      "面板": comp(pc(T["surface"]), bg),
+      "次级": comp(pc(T["surface-2"]), bg),
+      "气泡": comp(pc(T["tip"]), bg),
+      "画布": pc(T["canvas-bg"])
+    };
+    let worst = 99, worstAt = "";
+    for (const k of INKS) {
+      const c = pc(T[k]);
+      if (!c) { continue; }
+      for (const bn of Object.keys(bgs)) {
+        const v = contrast(c, bgs[bn]);
+        if (v < worst) { worst = v; worstAt = k + "@" + bn; }
+      }
+    }
+    check("对比度: " + name + "主题全部文字色×背景 ≥ 4.5 (AA)",
+      worst >= 4.5, "最差 " + worst.toFixed(2) + " @ " + worstAt);
+  }
+  /* tooltip 文字色必须随主题（V2.2.7 根因修复的防回归锁） */
+  const tipboxRule = cssText.match(/\.sl-tipbox\s*\{[^}]*\}/) || "";
+  check("对比度: .sl-tipbox 文字色走 var(--sl-ink) 不再硬编码",
+    cssText.indexOf("color: var(--sl-ink)") > 0 &&
+    tipboxRule && tipboxRule[0].indexOf("color: var(--sl-ink)") >= 0 &&
+    !/color:\s*#/.test(tipboxRule[0]), "");
+})();
+
 console.log("");
 console.log(fails === 0 ? "SERIAL OK" : ("SERIAL FAIL: " + fails));
 process.exit(fails === 0 ? 0 : 1);

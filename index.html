@@ -1200,10 +1200,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.6</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手示波器化 + 数据工作流轮:时域折线示波器式跟随(时间轴/拖动/缩放/Auto/面板级暂停) / 实时统计面板(有效值 RMS · 峰峰值 Vpp) / 数据文件夹规范存储(自动清理 · CSV 直达 · AI 文件契约) / 设置中心(时间戳精度 · 设备别名) / 帮助中心(搜索 + 目录 + 致谢)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.7</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手可读性加固轮:修浅色模式悬浮简介白底白字(用户截图实证) / 浅色弱化文字加深至 WCAG AA / 对比度审计进自检(50 组合自动算比值,不达标即 FAIL) / E2E tooltip 实测断言</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>🔆🧪 V2.2.7 · 2026-10-14 · 串口调试助手:浅色可读性加固 + 对比度审计进自检 －</summary>
+        <div class="faq-a">🔆 <b>修「浅色模式文字太浅」</b>(用户截图实证):①悬浮简介气泡<b>白底白字</b>——tooltip 文字色硬编码暗色浅灰白,浅色主题下气泡背景变白叠加后几乎不可读,修为随主题变量;②浅色弱化文字 <code>--sl-ink-3</code> 加深(#64748b 实测 4.43:1 不达标 → #556579);全站扫描确认无其它硬编码文字色。🧪 <b>对比度审计进自检</b>:校验脚本解析两套主题令牌,<b>10 文字色 × 5 类背景 = 50 组合</b>的 WCAG 比值全部自动计算,门限 4.5(AA),不达标直接 FAIL——调色问题从此由机器把关,不再靠截图;E2E 加浅色 tooltip 实测断言。当前暗色最差 5.75、浅色最差 4.67,全部达标。✅ 校验 171/171 · E2E 25/25 PASS。</div>
+      </details>
+    <details class="faq">
         <summary>📈📁 V2.2.6 · 2026-10-14 · 串口调试助手:时域示波器化 + 实时统计 + 数据文件夹规范存储 + 设置中心 + 帮助中心 －</summary>
         <div class="faq-a">📈 <b>时域示波器化</b>:X 轴时间刻度 + 数据左滚最新贴右;鼠标拖动回看历史(双击/「Auto」回实时)、滚轮缩放、Y 轴 min/max 手动范围、每个面板单独 ⏸(数据照收,顶栏绿圆标是全局暂停)。🧮 <b>实时统计</b>:新增渲染器,按窗口实时算 有效值 RMS(正弦=峰值/√2)/峰峰值 Vpp/均值/最大/最小——选通道即出数,验证滤波效果直接看数。📁 <b>数据文件夹</b>:绑定本地文件夹,按 <code>seriallab_v&lt;版本&gt;_log-&lt;功能标识&gt;_&lt;时间&gt;.ndjson</code> / <code>…_data-&lt;标识&gt;_&lt;时间&gt;.csv</code> 规范落盘(AI/脚本按 seriallab_v* 通配定位),超出保留个数自动清理、一键清空、CSV 不弹下载框直达文件夹,<b>屏幕暂停不影响落盘</b>。⚙ <b>设置中心</b>(右下角 ⋯):字号/时间口径/<b>时间戳精度(秒/毫秒/微秒)</b>/<b>方向标记三态</b>(默认仅发送行,RX 行不再每行印标记)/数字标红/<b>设备别名</b>(顶栏显示别名)。📖 <b>帮助中心</b>:搜索框 + 目录 chips + 数据文件夹命名规范/实时统计/示波器操作/频域谱四节 + <b>致谢与参考开源项目</b>(VOFA+/Teleplot/野火匿名协议)。🧹 细节:9 页签压缩单行、日志等级着色、顶栏计数悬停解释。✅ 校验 168/168 · E2E 25/25 PASS。</div>
       </details>
@@ -1496,7 +1500,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.6(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.7(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
