@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.11";
+  UI.VERSION = "2.2.12";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -2658,15 +2658,14 @@
     $("slBtnMainCollapse").addEventListener("click", function () {
       var on = SL.views.isMainCollapsed();
       SL.views.setMainCollapsed(!on);
-      this.textContent = !on ? "展开主区" : "收起主区";
+      this.textContent = !on ? "展开" : "收起";
     });
 
     /* V2.2.8：发送条收起/展开（发送条已移入主区，收起后仍可用「发送」页签） */
     function syncSendBar() {
       var hid = !!core.config.ui.sendBarHidden;
       var bar = $("slSendBar");
-      if (bar) { bar.hidden = hid; }
-      $("slBtnSendBar").textContent = hid ? "展开发送条" : "收发送条";
+      if (bar) { bar.hidden = hid; }   /* 按钮文字固定「发送条」，状态由 hidden 表达 */
     }
     $("slBtnSendBar").addEventListener("click", function () {
       core.config.ui.sendBarHidden = !core.config.ui.sendBarHidden;
@@ -2694,17 +2693,31 @@
 
     $("slBtnClearPanels").addEventListener("click", function () {
       if (!SL.views.count()) { UI.toast("warn", "工作区已经是空的"); return; }
-      UI.confirm("清空面板", "将移除工作区里全部图表框（不影响已收到的数据与配置里的通道）。", "清空面板")
+      UI.confirm("清空面板", "将移除工作区里全部图表框（不影响已收到的数据与配置里的通道）。清空后可点「↩ 撤销」一键恢复。", "清空面板")
         .then(function (ok) {
           if (!ok) { return; }
           SL.views.clearPanels();
           renderPanelList();
-          UI.toast("ok", "已清空面板");
+          /* V2.2.12：撤销按钮在清空后现身（再清空/恢复后继续可用） */
+          $("slBtnUndoClear").hidden = false;
+          UI.toast("info", "面板已清空——点工具条「↩ 撤销」可一键恢复");
         });
     });
 
+    /* 撤销清空：按快照原样重建全部图表框 */
+    $("slBtnUndoClear").addEventListener("click", function () {
+      var n = SL.views.undoClearPanels();
+      if (n > 0) {
+        renderPanelList();
+        UI.toast("ok", "已恢复 " + n + " 个面板");
+        this.hidden = true;
+      } else {
+        this.hidden = true;
+      }
+    });
+
     $("slBtnClearData").addEventListener("click", function () {
-      UI.confirm("清空缓存", "将清空各通道已缓数据与原始收发记录（保留通道设置与图表框）。", "清空缓存")
+      UI.confirm("清空缓存", "将清空各通道已缓数据与原始收发记录（保留通道设置与图表框）。此操作不可撤销，需要留档请先到「数据」页签导出或落盘。", "清空缓存")
         .then(function (ok) {
           if (!ok) { return; }
           SL.datastore.clear(true);

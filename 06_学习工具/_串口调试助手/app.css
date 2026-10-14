@@ -532,13 +532,17 @@ input[type="number"] { width: 78px; }
 .sl-stage-bar {
   display: flex;
   align-items: center;
-  gap: 7px;
-  flex-wrap: wrap;
+  gap: 6px;
+  /* V2.2.12：不再折行（用户反馈「清空缓存单独占一行太丑」）——
+     窄 stage 下整条横向滚动，按钮排布永远单行整齐 */
+  flex-wrap: nowrap;
+  overflow-x: auto;
   padding: 5px 11px;
   border-bottom: 1px solid var(--sl-border);
   flex-shrink: 0;
   background: var(--sl-surface-2);
 }
+.sl-stage-bar > * { flex: 0 0 auto; }   /* 按钮不压缩、标题/提示语不变形 */
 
 .sl-stage-title {
   font-size: 12.5px;

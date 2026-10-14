@@ -614,20 +614,22 @@
 
       <div class="sl-stage-bar">
         <span class="sl-stage-title">主区</span>
-        <span class="sl-stage-hint">监视器在上（主视觉）· 波形在下 · 中间分割线可拖拽</span>
+        <span class="sl-stage-hint">监视器在上 · 波形在下 · 分割线可拖拽</span>
         <span class="sl-top-spacer"></span>
-        <button class="sl-btn is-sm" id="slBtnMainFull" type="button">全屏主区</button>
-        <button class="sl-btn is-sm" id="slBtnMainCollapse" type="button">收起主区</button>
+        <button class="sl-btn is-sm" id="slBtnMainFull" type="button" title="主区独占整个主区区域">全屏</button>
+        <button class="sl-btn is-sm" id="slBtnMainCollapse" type="button" title="收起 / 展开主区（监视器）">收起</button>
         <button class="sl-btn is-sm" id="slBtnSendBar" type="button"
-                title="显示 / 收起底部发送条（收起后仍可用「发送」页签发送）">收发送条</button>
-        <button class="sl-btn is-sm" id="slBtnSplitReset" type="button">重置分割</button>
+                title="显示 / 收起底部发送条（收起后仍可用「发送」页签发送）">发送条</button>
+        <button class="sl-btn is-sm" id="slBtnSplitReset" type="button" title="恢复默认上下比例">重置分割</button>
         <span class="sl-bar-sep"></span>
         <span class="sl-field">新图表
           <select id="slQuickAdd"></select>
         </span>
-        <button class="sl-btn is-sm" id="slBtnAddPanel2" type="button">添加</button>
-        <button class="sl-btn is-sm" id="slBtnClearPanels" type="button">清空面板</button>
-        <button class="sl-btn is-sm" id="slBtnClearData" type="button">清空缓存</button>
+        <button class="sl-btn is-sm" id="slBtnAddPanel2" type="button" title="把选中的图表类型添加到波形工作区">＋</button>
+        <button class="sl-btn is-sm" id="slBtnClearPanels" type="button" title="移除工作区全部图表框（可撤销）">清面板</button>
+        <button class="sl-btn is-sm" id="slBtnClearData" type="button" title="清空通道已缓数据与原始记录（通道设置与图表框保留）">清缓存</button>
+        <button class="sl-btn is-sm" id="slBtnUndoClear" type="button" hidden
+                title="恢复刚被清空的面板布局">↩ 撤销</button>
       </div>
 
       <!-- C1：主位（默认 = 串口监视器），主视觉 -->

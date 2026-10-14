@@ -535,10 +535,31 @@
     return !!(el && el.className.indexOf("is-collapsed") >= 0);
   };
 
+  /* V2.2.12：清空面板支持撤销——清空前快照全部面板描述符，恢复时逐个重建 */
+  var clearSnapshot = null;
+
   V.clearPanels = function () {
+    if (panels.length) { clearSnapshot = JSON.parse(JSON.stringify(panels)); }
     var ids = [];
     for (var i = 0; i < panels.length; i++) { ids.push(panels[i].id); }
     for (var j = 0; j < ids.length; j++) { V.removePanel(ids[j]); }
+  };
+
+  V.canUndoClear = function () { return !!clearSnapshot; };
+
+  /* 撤销清空：按快照原样重建（id/窗口/量程/配色都保留），返回恢复的面板数 */
+  V.undoClearPanels = function () {
+    if (!clearSnapshot) { return 0; }
+    var snap = clearSnapshot;
+    clearSnapshot = null;
+    var n = 0;
+    for (var i = 0; i < snap.length; i++) {
+      try { V.addPanel(U.clone(snap[i]), true); n++; }
+      catch (e) { /* 单个恢复失败不拖累其它 */ }
+    }
+    V.redraw();
+    core.emit("panels:changed", { reason: "undo-clear" });
+    return n;
   };
 
   V.list = function () {
@@ -835,6 +856,15 @@
     return !!pausedPanels[id];
   };
   V.isPanelPaused = function (id) { return !!pausedPanels[id]; };
+
+  /* 单帧重绘：绕过面板级暂停（手动拖动/缩放时画面必须响应——
+     「暂停」只停自动刷新，不该把手动视角操作也冻成没反应） */
+  V.renderPanelOnce = function (id) {
+    var el = els[id];
+    var inst = instances[id];
+    if (!el || !inst) { return; }
+    try { inst.update(data); } catch (e) { /* 渲染异常由 redraw 的隔离逻辑处理 */ }
+  };
 
   /* 时域折线 Auto：清手动 Y 轴 + 通知渲染器回实时跟随（渲染器内部状态自己清） */
   var timeplotLiveState = {};   /* id -> true(实时跟随) / false(回看历史) */

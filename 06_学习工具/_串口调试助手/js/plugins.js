@@ -575,6 +575,8 @@
         if (Math.abs(dx) > 3) { dragMoved = true; }
         var off = dragOff0 + dx * (panel.window || 500) / plotW;
         viewOffset = Math.min(LOOKBACK_MAX, Math.max(0, Math.round(off)));
+        /* V2.2.12：面板被单独暂停时手动拖动也要有画面反馈（暂停只停自动刷新） */
+        if (SL.views && SL.views.renderPanelOnce) { SL.views.renderPanelOnce(panel.id); }
       }
       function onUp() { dragging = false; }
       global.addEventListener("mousemove", onMove);
@@ -587,6 +589,7 @@
         if (nw !== panel.window) {
           panel.window = nw;
           if (SL.views && SL.views.save) { SL.views.save(); }
+          if (SL.views && SL.views.renderPanelOnce) { SL.views.renderPanelOnce(panel.id); }
         }
       }, { passive: false });
       view.canvas.addEventListener("dblclick", function () { viewOffset = 0; });
