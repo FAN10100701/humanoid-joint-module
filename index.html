@@ -1200,10 +1200,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.9</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手窄栏排版收尾:左栏控件与说明在窄栏下全部正常折行(右侧被裁/横向滚动根治) / 悬浮气泡双弹修复(自绘+原生 title 同时弹,全局根除)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.10</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手对齐收尾:Auto 按钮自适应宽度(文字不再被裁) / Playwright 布局实测(240px 窄栏 0 超宽·发送条完整) / 测试页签补数据文件夹指路</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>🔲📁 V2.2.10 · 2026-10-14 · 串口调试助手:对齐收尾——Auto 钮宽度/布局实测/文件夹指路 －</summary>
+        <div class="faq-a">🔲 <b>Auto 按钮自适应宽度</b>:22px 方钮装「Auto」4 字符文字上下被裁(截图实证),改文字钮自适应。📏 <b>布局实测</b>(Playwright 双档压力:1146×700 与 ×560 + 左栏 240px):设备页签说明段 0 超宽、发送条完整贴底、无横向溢出——截图中的裁切/折行确认是 <b>SW 旧缓存</b>(Service Worker 更新需连刷两次生效)。📁 <b>数据文件夹指路</b>:「测试」页签说明补入口(左栏「数据」页签 → 📁 绑定数据文件夹)。✅ E2E 25/25 · 校验 SERIAL OK。</div>
+      </details>
+    <details class="faq">
         <summary>📐🫧 V2.2.9 · 2026-10-14 · 串口调试助手:窄栏排版收尾 + 悬浮气泡双弹修复 －</summary>
         <div class="faq-a">📐 <b>窄栏不裁切</b>:左栏页签内 select/input 限宽到容器内(长选项收缩显示、下拉里全文字),field 放开 nowrap 允许折行,说明文字 anywhere 断行——「右边长一截」「横向滚动条」「控件被裁半截」一并根治;顶栏/发送条紧凑单行不受影响。🫧 <b>气泡双弹修复</b>(用户截图实证):元素同时带 title 与 data-tip 时自绘气泡与浏览器原生气泡同时出现——命中自绘气泡时顺手摘除原生 title 全局根除;顶栏收发计数双属性已清理。✅ E2E 25/25 · 校验 SERIAL OK。</div>
       </details>
@@ -1508,7 +1512,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.9(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.10(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

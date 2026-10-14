@@ -387,6 +387,13 @@ input[type="number"] { width: 78px; }
 .sl-btn.is-sm { padding: 3px 9px; font-size: 11.5px; }
 
 /* 图标按钮（面板头部：主位 / 加宽 / 收起 / 移除） */
+.sl-iconbtn.sl-auto-btn {
+  width: auto;            /* V2.2.10：Auto 是 4 字符文字钮，22px 方钮装不下 */
+  min-width: 22px;
+  padding: 0 7px;
+  font-weight: 700;
+}
+
 .sl-iconbtn.is-off {
   color: var(--sl-warn-ink);
   border-color: var(--sl-warn);
