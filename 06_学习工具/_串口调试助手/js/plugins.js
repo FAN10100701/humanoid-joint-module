@@ -763,6 +763,10 @@
     var it = allSeries[m];
     if (cx + 70 > view.w - PAD.r) { break; }
     var off = !!hid[it.key];
+    /* V2.2.14：chip 加浅底色——看起来像可点的开关（点击显隐通道） */
+    var chipW = 12 + ctx.measureText(it.label).width + 8;
+    ctx.fillStyle = off ? "rgba(128, 138, 155, .10)" : "rgba(128, 138, 155, .16)";
+    ctx.fillRect(cx - 3, cy - 8, chipW, 16);
     ctx.globalAlpha = off ? 0.3 : 1;
     ctx.fillStyle = it.color;
     ctx.fillRect(cx, cy - 4, 8, 8);

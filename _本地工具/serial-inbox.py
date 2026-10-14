@@ -57,14 +57,34 @@ def ensure_dir(path):
     return path
 
 
+def _retry_write(fn, tries=4, delay=0.05):
+    """Windows 下 latest.json / recv 文件常被并发的读取端（AI / E2E / 浏览器）
+    短暂锁住导致 PermissionError——这是 E2E 偶发 500 的根因。
+    写入失败就退避重试几次，仍失败才抛给上层。"""
+    last = None
+    for i in range(tries):
+        try:
+            return fn()
+        except (PermissionError, OSError) as e:
+            last = e
+            time.sleep(delay * (i + 1))
+    raise last
+
+
 def write_text(path, text):
-    with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write(text)
+    def _do():
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        os.replace(tmp, path)   # 原子替换：读者要么读到旧整文件、要么读到新整文件
+    _retry_write(_do)
 
 
 def append_text(path, text):
-    with open(path, "a", encoding="utf-8", newline="\n") as f:
-        f.write(text)
+    def _do():
+        with open(path, "a", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+    _retry_write(_do)
 
 
 def save_payload(payload, out_dir):
