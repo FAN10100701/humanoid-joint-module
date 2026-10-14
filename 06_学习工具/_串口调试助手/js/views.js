@@ -166,6 +166,15 @@
     type.textContent = r ? r.label : panel.type;
     head.appendChild(type);
 
+    /* 文本监视器：预留快捷工具条容器（时间戳 / HEX / 编码），控件由 ui.js 统一填充。
+       放在标题之后、图标按钮之前，操作距离最近、最常点。 */
+    if (panel.type === "textmon") {
+      var quick = document.createElement("span");
+      quick.className = "sl-panel-quick";
+      quick.setAttribute("data-quick", "");
+      head.appendChild(quick);
+    }
+
     if (isMain(panel)) {
       head.appendChild(iconBtn("⛶", "全屏显示（再点一次还原）", "is-main-only", function () {
         V.toggleMainFull();
@@ -201,8 +210,9 @@
     }));
 
     head.addEventListener("pointerdown", function (e) {
-      /* 点在按钮上不触发拖拽 */
-      if (e.target && e.target.tagName === "BUTTON") { return; }
+      /* 点在按钮 / 表单控件上不触发拖拽 */
+      var tn = e.target && e.target.tagName;
+      if (tn === "BUTTON" || tn === "SELECT" || tn === "INPUT" || tn === "LABEL") { return; }
       startDrag(panel.id, e);
     });
 

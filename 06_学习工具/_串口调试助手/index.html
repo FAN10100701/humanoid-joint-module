@@ -34,15 +34,13 @@
 
     <button class="sl-btn is-primary" id="slBtnConnect" type="button"
             data-tip="选择并打开串口设备（弹一次授权框，之后可用「重连」免弹窗）">连接设备</button>
-    <button class="sl-btn is-ghost" id="slBtnDemo" type="button"
-            data-tip="不连硬件，用合成数据跑完整条解析、绘图、录制、导出链路；可在「设备」页签开拟真信号与故障注入">演示模式</button>
     <button class="sl-btn is-danger" id="slBtnDisconnect" type="button" disabled
             data-tip="关闭串口并释放设备（数据会保留在缓冲里）">断开</button>
 
     <span class="sl-top-spacer"></span>
 
     <span class="sl-field" id="slModem">CTS - · DSR - · DCD - · RI -</span>
-    <span class="sl-field sl-mono sl-count">收 <b id="slRxCount">0</b>B · 发 <b id="slTxCount">0</b>B</span>
+    <span class="sl-field sl-mono sl-count">←下位机 <b id="slRxCount">0</b>B · →下位机 <b id="slTxCount">0</b>B</span>
 
     <button class="sl-link" id="slBtnHelp" type="button">帮助</button>
     <button class="sl-link" id="slBtnPrompt" type="button">AI</button>
@@ -58,7 +56,7 @@
     <div>
       <b>当前浏览器不支持 Web Serial，无法连接真实串口。</b><br>
       需要 Chromium 内核浏览器（Chrome / Edge 89+）并运行在 <b>HTTPS 或 localhost</b> 下；
-      Safari 与移动端浏览器不提供该能力。你仍然可以点「演示模式」用合成数据体验全部解析、绘图与导出功能。
+      Safari 与移动端浏览器不提供该能力。你仍然可以打开左侧「测试」页签，用合成数据体验全部解析、绘图与导出功能。
       <span id="slBannerWhy"></span>
     </div>
   </div>
@@ -77,6 +75,7 @@
         <button class="sl-tab" type="button" data-pane="plugins">图表</button>
         <button class="sl-tab" type="button" data-pane="timeline">录制</button>
         <button class="sl-tab" type="button" data-pane="data">数据</button>
+        <button class="sl-tab" type="button" data-pane="test">测试</button>
       </div>
 
       <div class="sl-panes">
@@ -90,6 +89,8 @@
             <div class="sl-row">
               <span class="sl-badge" id="slParamBadge" data-state="idle"
                     data-tip="端口当前的实时参数摘要；未连接时显示灰态。改参数后立即刷新">未连接</span>
+              <button class="sl-btn is-sm" id="slBtnAuto" type="button"
+                      data-tip="⚡ 一键自适应：自动扫描波特率 + 识别编码并套用。前提：设备已上电正在发数据；没硬件请到「测试」页签">⚡ AUTO 自适应</button>
               <button class="sl-btn is-sm" id="slBtnReconnect" type="button" disabled
                       data-tip="用上次的端口与参数直接重连（免弹窗）">重连</button>
             </div>
@@ -213,28 +214,6 @@
               </span>
             </div>
             <p class="sl-hint" id="slGbkSendHint" hidden>GBK 仅对收方向完整支持（解码）；发送方向 ASCII 直通，中文将以 UTF-8 字节发出。</p>
-          </div>
-
-          <div class="sl-group">
-            <h3>🧪 演示与故障注入</h3>
-            <div class="sl-row">
-              <label class="sl-chk" data-tip="演示信号从理想正弦换成拟真电机信号：目标阶跃 + 超调振铃 + 稳态纹波 + 测量噪声。更能暴露量程、滤波与极值统计的潜在问题"><input type="checkbox" id="slDemoRealistic">拟真电机信号（阶跃 / 超调 / 纹波 / 噪声）</label>
-            </div>
-            <div class="sl-param-grid">
-              <span class="sl-field">丢帧 %
-                <input type="number" id="slFaultDrop" min="0" max="100" value="0" data-tip="演示时随机整拍不发送——时域断线、录制序号断档">
-              </span>
-              <span class="sl-field">错帧 %
-                <input type="number" id="slFaultCorrupt" min="0" max="100" value="0" data-tip="随机破坏数据完整性：HEX 翻转载荷 1 位（校验必错）、文本插非法 UTF-8 字节">
-              </span>
-              <span class="sl-field">粘包 %
-                <input type="number" id="slFaultStick" min="0" max="100" value="0" data-tip="随机两帧并一拍发出——考验分帧器是否健壮">
-              </span>
-              <span class="sl-field">乱码 %
-                <input type="number" id="slFaultGarbage" min="0" max="100" value="0" data-tip="随机插入一段高位噪声字节——触发乱码监测提示条">
-              </span>
-            </div>
-            <p class="sl-hint">无硬件时演练整条排错链路：失败行标红、失败原因分布、AI 调试包失败样本、乱码监测。全部 0 = 关闭注入。</p>
           </div>
         </section>
 
@@ -524,6 +503,76 @@
           </div>
         </section>
 
+        <!-- ===== 测试 =====
+             无硬件时的合成数据试验场：常用案例显眼，故障案例与手动参数收纳靠后 -->
+        <section class="sl-pane" data-pane="test">
+          <div class="sl-group">
+            <h3>🧪 运行控制</h3>
+            <div class="sl-row">
+              <button class="sl-btn is-primary" id="slBtnDemo" type="button"
+                      data-tip="不连硬件，用合成数据跑完整条解析、绘图、录制、导出链路；点案例卡片会自动套用该案例的参数">进入演示模式</button>
+              <span class="sl-badge" id="slTestBadge" data-state="idle"
+                    data-tip="当前正在跑的测试案例；再点一次同一案例卡片即停止">未在测试</span>
+            </div>
+            <p class="sl-hint">没硬件也能测：点一个案例卡片一键开跑，然后看监视器与波形的表现；再点一次同一卡片即停止。</p>
+          </div>
+
+          <div class="sl-group">
+            <h3>⭐ 常用案例</h3>
+            <div class="sl-case-grid">
+              <button class="sl-case is-hot" data-case="sine" type="button"
+                      data-tip="理想正弦 + 轻噪声，验证解析、波形、录制、导出全链路是否正常——新手上手第一条">
+                <b>⭐ 基础正弦波形</b><i>文本行 50Hz · 验证全链路</i>
+              </button>
+              <button class="sl-case is-hot" data-case="motor" type="button"
+                      data-tip="目标阶跃 + 欠阻尼超调 + 稳态纹波 + 测量噪声，最接近真实电机调试现场，能暴露量程、滤波与极值统计问题">
+                <b>⭐ 拟真电机信号</b><i>阶跃 / 超调 / 纹波 / 噪声</i>
+              </button>
+            </div>
+          </div>
+
+          <div class="sl-group">
+            <h3>🧯 故障注入案例</h3>
+            <div class="sl-case-grid is-quiet">
+              <button class="sl-case" data-case="corrupt" type="button"
+                      data-tip="随机破坏数据完整性：HEX 翻转载荷 1 位（校验必错）、文本插非法 UTF-8 字节——练习「失败行标红」与失败原因分布">
+                <b>🧯 校验错</b><i>错帧 30%</i>
+              </button>
+              <button class="sl-case" data-case="garble" type="button"
+                      data-tip="随机插入高位噪声字节——练习乱码监测提示条与「识别编码 / 扫描波特率」三分诊">
+                <b>🧯 乱码噪声</b><i>噪声 35%</i>
+              </button>
+              <button class="sl-case" data-case="lossy" type="button"
+                      data-tip="随机整拍不发 + 两帧并一拍——练习从时域断线与录制序号断档定位丢帧粘包">
+                <b>🧯 丢帧粘包</b><i>丢帧 18% · 粘包 22%</i>
+              </button>
+            </div>
+            <p class="sl-hint">特殊功能，日常调试用不到：注入对应故障后，练习在监视器与波形里识别「失败行标红 / 乱码排查条 / 时域断线」。</p>
+          </div>
+
+          <div class="sl-group">
+            <h3>🎛 手动调参（一般不用碰）</h3>
+            <div class="sl-row">
+              <label class="sl-chk" data-tip="演示信号从理想正弦换成拟真电机信号：目标阶跃 + 超调振铃 + 稳态纹波 + 测量噪声。更能暴露量程、滤波与极值统计的潜在问题"><input type="checkbox" id="slDemoRealistic">拟真电机信号（阶跃 / 超调 / 纹波 / 噪声）</label>
+            </div>
+            <div class="sl-param-grid">
+              <span class="sl-field">丢帧 %
+                <input type="number" id="slFaultDrop" min="0" max="100" value="0" data-tip="演示时随机整拍不发送——时域断线、录制序号断档">
+              </span>
+              <span class="sl-field">错帧 %
+                <input type="number" id="slFaultCorrupt" min="0" max="100" value="0" data-tip="随机破坏数据完整性：HEX 翻转载荷 1 位（校验必错）、文本插非法 UTF-8 字节">
+              </span>
+              <span class="sl-field">粘包 %
+                <input type="number" id="slFaultStick" min="0" max="100" value="0" data-tip="随机两帧并一拍发出——考验分帧器是否健壮">
+              </span>
+              <span class="sl-field">乱码 %
+                <input type="number" id="slFaultGarbage" min="0" max="100" value="0" data-tip="随机插入一段高位噪声字节——触发乱码监测提示条">
+              </span>
+            </div>
+            <p class="sl-hint">无硬件时演练整条排错链路：失败行标红、失败原因分布、AI 调试包失败样本、乱码监测。全部 0 = 关闭注入。案例卡片本质就是帮你预设这几个参数。</p>
+          </div>
+        </section>
+
       </div>
     </aside>
 
@@ -577,7 +626,7 @@
       <button class="sl-btn" id="slBtnSendAgain" type="button">重发</button>
       <label class="sl-chk"><input type="checkbox" id="slAppendEnding" checked>追加换行</label>
       <label class="sl-chk"><input type="checkbox" id="slSendHex">HEX</label>
-      <span class="sl-hint" id="slSendHint">未连接。连接设备或进入演示模式后可发送。</span>
+      <span class="sl-hint" id="slSendHint">未连接。连接设备，或到左侧「测试」页签一键开跑合成数据。</span>
     </div>
   </footer>
 

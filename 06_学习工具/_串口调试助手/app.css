@@ -63,7 +63,7 @@
   --sl-mon-grow: 620;
   --sl-grid-grow: 380;
   --sl-mon-ts-w: 92px;
-  --sl-mon-dir-w: 24px;
+  --sl-mon-dir-w: 46px;
   --sl-mon-size: 12px;
 
   /* 通道默认色板（8 色，够区分常见工况） */
@@ -654,6 +654,71 @@ input[type="number"] { width: 78px; }
   border: 1px solid var(--sl-border);
   border-radius: 4px;
 }
+
+/* 文本监视器面板头快捷工具条（时间戳 / HEX / 编码）——紧凑内联控件 */
+.sl-panel-quick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.sl-panel-quick .sl-qk {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--sl-ink-2);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sl-panel-quick .sl-qk input { margin: 0; accent-color: var(--sl-acc, #3b82f6); }
+.sl-panel-quick .sl-qk-enc {
+  font-size: 11px;
+  padding: 1px 2px;
+  border: 1px solid var(--sl-border);
+  border-radius: 4px;
+  background: var(--sl-card, #fff);
+  color: var(--sl-ink);
+  max-width: 92px;
+}
+
+/* 「测试」页签：案例卡片。常用案例（is-hot）主色高亮显眼，
+   故障案例（is-quiet 容器内）普通描边、三列紧凑收纳。 */
+.sl-case-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0;
+}
+.sl-case-grid.is-quiet { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.sl-case {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--sl-border);
+  border-radius: 8px;
+  background: var(--sl-card, #fff);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.sl-case b { font-size: 12.5px; color: var(--sl-ink); font-weight: 600; }
+.sl-case i { font-style: normal; font-size: 11px; color: var(--sl-ink-3); }
+.sl-case:hover {
+  border-color: var(--sl-brand);
+  box-shadow: 0 1px 4px rgba(37, 99, 235, .15);
+}
+.sl-case.is-hot {
+  border: 1.5px solid var(--sl-brand);
+  background: rgba(37, 99, 235, .07);
+}
+.sl-case.is-hot b { color: var(--sl-brand); }
+.sl-case-grid.is-quiet .sl-case { padding: 7px 9px; }
+.sl-case-grid.is-quiet .sl-case b { font-size: 11.5px; }
 
 .sl-panel-body {
   flex: 1 1 auto;

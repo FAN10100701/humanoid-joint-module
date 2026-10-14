@@ -353,7 +353,8 @@
             for (i = 0; i < chunks.length; i++) { all.set(chunks[i], off); off += chunks[i].length; }
             var score = (total >= 16) ? SL.codec.plainScore(all) : -1;
             core.emit("serial:scan", { baud: baud, score: score, bytes: total, phase: "done" });
-            return { baud: baud, score: score, bytes: total };
+            /* sample 一并带回：AUTO 自适应要在最高分档的字节上再跑编码识别 */
+            return { baud: baud, score: score, bytes: total, sample: (total >= 16) ? all : null };
           });
         });
       }
@@ -368,7 +369,9 @@
         return sampleOnce(baud).then(function (r) {
           results.push(r);
           /* 字节太少（<16）不足判据，不参与选优；并列高分取先到的（低波特率更通用） */
-          if (r.score > best.score && r.bytes >= 16) { best = { baud: r.baud, score: r.score, bytes: r.bytes }; }
+          if (r.score > best.score && r.bytes >= 16) {
+            best = { baud: r.baud, score: r.score, bytes: r.bytes, sample: r.sample || null };
+          }
           return delay(30).then(function () { return step(i + 1); });
         }, function (e) {
           results.push({ baud: baud, score: -1, bytes: 0, error: (e && e.message) || String(e) });
@@ -383,6 +386,28 @@
     });
   };
   T.isScanning = function () { return scanning; };
+
+  /* V2.2.4：AUTO 一键自适应 = 波特率扫描 + 最高分档字节上的编码识别。
+     只负责「探测并给出结论」，不碰配置与控件——切换动作由 ui 层完成。
+     返回：{ ok:true, baud, score, bytes, encoding, detail } 或
+           { ok:false, reason:"nosignal" }（没采到足够字节）；
+     端口未授权 / 不支持 / 正在扫描等情况由 scanBaudrate 的 reject 透传。 */
+  T.autoAdapt = function (opts) {
+    return T.scanBaudrate(opts).then(function (res) {
+      if (!res || !res.ok || !res.best || !res.best.baud || !res.best.sample) {
+        return { ok: false, reason: "nosignal", results: res && res.results };
+      }
+      var an = SL.codec.analyzeEncoding(res.best.sample);
+      return {
+        ok: true,
+        baud: res.best.baud,
+        score: res.best.score,
+        bytes: res.best.bytes,
+        encoding: an.guess,
+        detail: an.detail || ""
+      };
+    });
+  };
 
   /* ------------------------------------------------------------
      5) 发送

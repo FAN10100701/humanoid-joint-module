@@ -266,7 +266,7 @@ def main():
             assert re.match(r"^v\d+\.\d+", ver), "版本号未渲染: %r" % ver
             missing = page.evaluate("(ns)=>{var s=window.SerialLab||{};return ns.filter(function(k){return !s[k];});}", SL_MODULES)
             assert not missing, "SerialLab 模块未挂载: " + ", ".join(missing)
-            assert page.locator("#slTabs .sl-tab").count() == 8, "左栏页签数不对: %d" % page.locator("#slTabs .sl-tab").count()
+            assert page.locator("#slTabs .sl-tab").count() == 9, "左栏页签数不对: %d" % page.locator("#slTabs .sl-tab").count()  # V2.2.4 新增「测试」页签
             # 无 Web Serial 时必须走「降级横幅 + 连接按钮禁用」而不是报错
             if not page.evaluate("!!(navigator.serial)"):
                 cls = page.locator("#slBanner").get_attribute("class") or ""
@@ -286,6 +286,7 @@ def main():
             assert page.locator("#slStageMain .sl-panel--main").count() == 1, "主位面板不在 C1 槽内"
             n0 = page.locator("#slGrid .sl-panel").count()
             assert n0 == 1, "首次进入工作区面板数不对(应只有时域波形): %d" % n0
+            page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
             page.click("#slBtnDemo")  # 演示模式:合成数据 50Hz,无需真实硬件
             page.wait_for_function(
                 "document.querySelector('#slState') && document.querySelector('#slState').textContent.indexOf('演示') >= 0",
@@ -319,6 +320,7 @@ def main():
 
         def t_serial_export():
             page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
             page.click("#slBtnDemo")
             page.select_option("#slQuickAdd", "textmon")  # 面板变更 → 配置落盘
             page.click("#slBtnAddPanel2")
@@ -389,6 +391,7 @@ def main():
                     "checksum": {"type": "xor8", "from": 0, "to": -1}}}})
             page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
             page.wait_for_selector("#slGrid .sl-panel", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
             page.click("#slBtnDemo")   # 演示数据须按用户帧结构合成,否则一条通道都建不出来
             page.wait_for_function(
                 "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
@@ -484,6 +487,7 @@ def main():
             page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
             assert page.locator("#slRun .sl-run-dot").count() == 1, "绿圆标未渲染"
             assert page.get_attribute("#slRun", "data-state") == "idle", "未连接时圆标不是 idle 态"
+            page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
             page.click("#slBtnDemo")
             page.wait_for_function(
                 "document.getElementById('slRun').getAttribute('data-state') === 'running'",
@@ -514,6 +518,7 @@ def main():
             errs = make_page_errors_tracker(page)
             page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
             page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
             page.click("#slBtnDemo")
             page.wait_for_function(
                 "document.querySelector('#slState').textContent.indexOf('演示') >= 0", timeout=10000)
@@ -595,6 +600,7 @@ def main():
                 "套用预设后帧头输入框未同步回填: %r" % head_val
 
             # 回切演示模式:演示数据须按新规则(匿名 V1.0)合成,能解出 func/x/y/z
+            page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
             page.click("#slBtnDemo")
             page.wait_for_function(
                 "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
@@ -646,6 +652,7 @@ def main():
             errs = make_page_errors_tracker(page)
             page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
             page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
             page.click("#slBtnDemo")
             page.wait_for_function(
                 "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
@@ -754,11 +761,16 @@ def main():
             assert page.locator("#slBtnScanBaud").count() == 1, "扫描波特率按钮缺失"
 
             # --- 3) 演示故障注入 → 乱码监测提示条 ---
+            page.click("#slTabs .sl-tab[data-pane='test']")  # 故障注入控件已挪进「测试」页签
             page.fill("#slFaultCorrupt", "100")
             page.dispatch_event("#slFaultCorrupt", "change")
+            page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
             page.click("#slBtnDemo")
             page.wait_for_function(
                 "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
+            # 乱码排查条在「设备」页签里(V2.2.4 演示按钮挪进测试页签后,
+            # 此刻页面停在测试页签)——切回设备页签再等它出现
+            page.click("#slTabs .sl-tab[data-pane='device']")
             page.wait_for_selector("#slGarbleBar:not([hidden])", timeout=15000)
             gt = page.locator("#slGarbleText").inner_text()
             assert "解码失败" in gt, "排查条文案不对: %r" % gt
@@ -772,11 +784,77 @@ def main():
             assert len(tip) > 8, "tooltip 内容过短: %r" % tip
 
             # --- 收尾:故障清零 + 退出演示(配置会持久化,不能污染下一位) ---
+            # 故障控件在「测试」页签(此刻页面停在设备页签),先切过去再清零
+            page.click("#slTabs .sl-tab[data-pane='test']")
             page.fill("#slFaultCorrupt", "0")
             page.dispatch_event("#slFaultCorrupt", "change")
             page.click("#slBtnDemo")
+            page.click("#slBtnDemo")
             assert not errs, "V2.2.3 JS 异常: " + "; ".join(errs[:3])
         check("serial_v223 参数预设/徽章/GBK/故障注入/tooltip/胶囊", t_serial_v223)
+
+        # ---------- 7b. V2.2.4:测试页签/案例卡片/快捷工具条/AUTO ----------
+        def t_serial_v224():
+            errs = make_page_errors_tracker(page)
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+
+            # --- 1) 页签与结构 ---
+            page.click("#slTabs .sl-tab[data-pane='test']")
+            assert page.locator(".sl-case[data-case='sine']").count() == 1, "缺正弦案例卡"
+            assert page.locator(".sl-case[data-case='motor']").count() == 1, "缺电机案例卡"
+            assert page.locator(".sl-case[data-case='lossy']").count() == 1, "缺丢帧案例卡"
+            assert page.locator("#slBtnAuto").count() == 1, "缺 AUTO 按钮"
+            assert page.inner_text("#slTestBadge") == "未在测试", "案例徽章初始态不对"
+            # 顶栏不再有演示按钮
+            assert page.locator("header #slBtnDemo").count() == 0, "顶栏仍有演示按钮"
+
+            # --- 2) 点「拟真电机」案例 → 配置写入 + 徽章 + 自动补波形 ---
+            page.click(".sl-case[data-case='motor']")
+            page.wait_for_function(
+                "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
+            page.wait_for_function(
+                "SerialLab.core.config.demo.realistic === true", timeout=5000)
+            assert "拟真电机信号" in page.inner_text("#slTestBadge"), \
+                "徽章未显示案例名: %r" % page.inner_text("#slTestBadge")
+            # 演示启动且无图表面板时自动补时域波形
+            page.wait_for_function(
+                "SerialLab.views.list().some(function(p){return p.type !== 'textmon';})",
+                timeout=8000)
+            # 自愈开关:再点同一案例 = 停止
+            page.click(".sl-case[data-case='motor']")
+            page.wait_for_function(
+                "SerialLab.core.state.demo === false", timeout=8000)
+            assert page.inner_text("#slTestBadge") == "未在测试", "停止后徽章未归位"
+
+            # --- 3) 监视器快捷工具条:存在且与左栏同源联动 ---
+            page.wait_for_selector("[data-quick] .sl-qk-enc", timeout=8000)
+            n_chk = page.locator("[data-quick] input[type='checkbox']").count()
+            assert n_chk == 2, "快捷条应有时间戳/HEX 两个开关,实际 %d" % n_chk
+            # 勾快捷条 HEX → 左栏 HEX 显示同步选中
+            page.check("[data-quick] input[data-qk='hex']")
+            page.wait_for_function(
+                "document.querySelector('#slHexRecv').checked === true", timeout=5000)
+            page.wait_for_function(
+                "SerialLab.core.config.transport.hexRecv === true", timeout=5000)
+            # 快捷条编码选 GBK → 左栏编码同步
+            page.select_option("[data-quick] .sl-qk-enc", "gbk")
+            page.wait_for_function(
+                "document.querySelector('#slEncoding').value === 'gbk'", timeout=5000)
+            # 左栏改时间戳 → 快捷条回显同步(slShowTs 在设备页签,先切过去)
+            page.click("#slTabs .sl-tab[data-pane='device']")
+            page.uncheck("#slShowTs")
+            page.wait_for_function(
+                "!document.querySelector('[data-quick] input[data-qk=\\'ts\\']').checked",
+                timeout=5000)
+
+            # --- 4) 收尾:恢复默认显示与编码(配置持久化,不污染下一位) ---
+            page.check("#slShowTs")
+            page.select_option("#slEncoding", "utf-8")
+            page.click("#slTabs .sl-tab[data-pane='device']")
+            page.uncheck("#slHexRecv")
+            assert not errs, "V2.2.4 JS 异常: " + "; ".join(errs[:3])
+        check("serial_v224 测试页签/案例卡片/自动补波形/快捷工具条联动", t_serial_v224)
 
         # ---------- 8. 404 页 ----------
         def t_404():

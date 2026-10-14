@@ -357,6 +357,8 @@
 
     /* V2.2.3：实时参数徽章跟随连接态（乱码态由 garbleShown 决定） */
     renderParamBadge();
+    /* V2.2.4：测试案例徽章跟随连接态 */
+    renderTestBadge();
 
     var busy = (conn === "requesting" || conn === "opening" || conn === "closing");
     $("slBtnConnect").disabled = busy || conn === "open" || conn === "unsupported";
@@ -377,7 +379,7 @@
       if (!T.isSupported() && !demo) {
         hint.textContent = "当前浏览器不支持 Web Serial：可进入演示模式体验全部解析、绘图与导出功能。";
       } else if (conn !== "open") {
-        hint.textContent = "未连接。连接设备或进入演示模式后可发送。";
+        hint.textContent = "未连接。连接设备，或到左侧「测试」页签一键开跑合成数据。";
       } else if (T.isResetting()) {
         hint.textContent = "设备正在复位（Arduino/ESP 打开串口会自动重启），稍候再发送。";
       } else {
@@ -444,19 +446,7 @@
       });
     });
 
-    $("slBtnDemo").addEventListener("click", function () {
-      if (core.state.demo) {
-        T.stopDemo();
-        T.disconnect();
-        UI.toast("info", "已退出演示模式");
-        return;
-      }
-      T.startDemo({
-        mode: core.config.rule.active === "hex" ? "hex" : "text",
-        periodMs: 20
-      });
-      UI.toast("ok", "已进入演示模式（合成数据 50Hz）");
-    });
+    /* 演示入口已挪入「测试」页签（V2.2.4），接线见 wireTestPane() */
 
     /* 设备参数（波特率/数据位/停止位/校验/流控）的接线见 wireDeviceAndShow() */
 
@@ -570,11 +560,18 @@
      ------------------------------------------------------------ */
   var garbleShown = false;
 
-  /* 把某个 select/checkbox 的值改掉并触发 change（让 addBind 落配置） */
+  /* 把某个 select/number/checkbox 的值改掉并触发 change（让 addBind 落配置）。
+     V2.2.4 修:checkbox 的状态在 .checked 不在 .value——旧版对复选框
+     setAndFire("xxx","on") 实际没勾上,配置也就没写(V2.2.3 的
+     slBtnHexView 一路就已中招,本轮被测试案例卡片踩实后补上)。 */
   function setAndFire(id, val) {
     var n = $(id);
     if (!n) { return; }
-    n.value = val;
+    if (n.type === "checkbox") {
+      n.checked = (val === true || val === "on" || val === 1);
+    } else {
+      n.value = val;
+    }
     n.dispatchEvent(new Event("change"));
   }
 
@@ -683,7 +680,7 @@
     });
   }
 
-  /* 扫描期间的按钮状态（两处按钮同源） */
+  /* 扫描期间的按钮状态（两处按钮同源；AUTO 按钮跟随同一进度） */
   function renderScanButtons(idx) {
     var ids = ["slBtnScanBaud", "slBtnScanBaud2"];
     for (var i = 0; i < ids.length; i++) {
@@ -692,6 +689,49 @@
       if (idx === null) { n.disabled = false; n.textContent = "扫描波特率"; }
       else { n.disabled = true; n.textContent = "扫描中…"; }
     }
+    var auto = $("slBtnAuto");
+    if (auto) {
+      if (idx === null) { auto.disabled = false; auto.textContent = "⚡ AUTO 自适应"; }
+      else { auto.disabled = true; auto.textContent = "自适应中…"; }
+    }
+  }
+
+  /* V2.2.4：AUTO 一键自适应 = 扫波特率 + 识别编码 + 一键套用。
+     结论映射：ascii→utf-8（显示等价）、gbk→gbk、latin1/binary→latin1 兜底；
+     没采到数据时给出明确指引（设备要在发数据 / 没硬件去测试页签）。 */
+  function autoAdaptUI() {
+    if (T.isScanning()) { return; }
+    if (core.state.conn === "open" || core.state.demo) {
+      UI.toast("warn", "请先断开连接 / 退出演示模式再自适应");
+      return;
+    }
+    UI.confirm(
+      "AUTO 自适应",
+      "将对 12 个常用波特率逐档重开端口采样（全程约 5 秒），选出最像文本的波特率，并用该档采到的字节自动识别编码（UTF-8 / GBK / Latin-1），最后一键套用。\n\n⚠ 前提：设备已上电且正在发数据；Arduino / ESP 扫描期间会反复复位。\n没有硬件？到「测试」页签开一个案例即可体验。",
+      "开始自适应"
+    ).then(function (ok) {
+      if (!ok) { return; }
+      renderScanButtons(0);
+      T.autoAdapt().then(function (r) {
+        renderScanButtons(null);
+        if (!r.ok) {
+          UI.toast("warn", "AUTO 没采到足够数据：确认设备上电且正在发数据；没硬件可到「测试」页签开案例体验");
+          return;
+        }
+        setAndFire("slBaud", String(r.baud));
+        var encMap = { "ascii": "utf-8", "utf-8": "utf-8", "gbk": "gbk", "latin1": "latin1", "binary": "latin1" };
+        var encName = { "ascii": "ASCII", "utf-8": "UTF-8", "gbk": "GBK", "latin1": "Latin-1", "binary": "Latin-1" };
+        var target = encMap[r.encoding] || "utf-8";
+        setAndFire("slEncoding", target);
+        UI.toast("ok", "AUTO 完成：" + r.baud + " 波特率 · " + (encName[r.encoding] || r.encoding)
+          + (target === "utf-8" && r.encoding === "ascii" ? "（纯 ASCII，按 UTF-8 显示）" : "")
+          + " · 已套用。" + r.detail);
+        hideGarble();
+      }, function (err) {
+        renderScanButtons(null);
+        UI.toast("bad", "AUTO 失败：" + ((err && err.message) || err));
+      });
+    });
   }
 
   /* 乱码排查条 */
@@ -829,6 +869,8 @@
         if (n) { n.addEventListener("click", detectEncodingNow); }
       })(detIds[d]);
     }
+    var autoBtn = $("slBtnAuto");
+    if (autoBtn) { autoBtn.addEventListener("click", autoAdaptUI); }
     var hexBtn = $("slBtnHexView");
     if (hexBtn) {
       hexBtn.addEventListener("click", function () {
@@ -860,6 +902,177 @@
     /* --- 连接状态变化：徽章跟随 + 乱码监测重置 --- */
     core.on("serial:opened", function () { hideGarble(); });
     core.on("serial:closed", function () { hideGarble(); });
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.4：监视器面板快捷工具条（时间戳 / HEX / 编码）
+     原理：快捷条控件不直接写配置，而是 setAndFire 反向驱动左栏
+     同源控件（slShowTs / slHexRecv / slEncoding），让 addBind 继续
+     当唯一写手——左栏与快捷条状态天然互相同步，行为口径一致。
+     ------------------------------------------------------------ */
+  var QK_ENC_OPTS = [
+    ["utf-8", "UTF-8"], ["gbk", "GBK"], ["ascii", "ASCII"],
+    ["latin1", "Latin-1"], ["utf-16le", "UTF-16LE"]
+  ];
+
+  function fillQuick(host) {
+    var t = core.config.transport || {};
+    var ts = t.showTimestamp !== false;
+    var hex = !!t.hexRecv;
+    var enc = t.encoding || "utf-8";
+    var optHtml = "";
+    for (var i = 0; i < QK_ENC_OPTS.length; i++) {
+      optHtml += '<option value="' + QK_ENC_OPTS[i][0] + '"' +
+        (QK_ENC_OPTS[i][0] === enc ? " selected" : "") + ">" + QK_ENC_OPTS[i][1] + "</option>";
+    }
+    host.innerHTML =
+      '<label class="sl-qk" title="显示 / 隐藏行首时间戳（同左栏「显示」页签）">' +
+        '<input type="checkbox" data-qk="ts"' + (ts ? " checked" : "") + '>时间戳</label>' +
+      '<label class="sl-qk" title="以 HEX 十六进制显示收到的字节（同左栏「HEX 显示」）">' +
+        '<input type="checkbox" data-qk="hex"' + (hex ? " checked" : "") + '>HEX</label>' +
+      '<select class="sl-qk-enc" data-qk="enc" title="收码字符编码（同左栏「编码」，含 GBK）">' +
+        optHtml + '</select>';
+  }
+
+  function refreshAllQuick() {
+    var hosts = document.querySelectorAll("[data-quick]");
+    for (var i = 0; i < hosts.length; i++) { fillQuick(hosts[i]); }
+  }
+
+  function initPanelQuick() {
+    document.addEventListener("change", function (e) {
+      var t = e.target;
+      if (!t || !t.getAttribute) { return; }
+      /* ① 快捷条内控件改动 → 反向驱动左栏同源控件；setAndFire 派发的
+         change 会被下面 ② 分支接住并回头刷新快捷条，闭环不递归 */
+      var node = t;
+      while (node && node !== document.body) {
+        if (node.getAttribute && node.getAttribute("data-quick") !== null) { break; }
+        node = node.parentNode;
+      }
+      if (node && node !== document.body) {
+        var k = t.getAttribute("data-qk");
+        if (k === "ts") { setAndFire("slShowTs", t.checked ? "on" : "off"); }
+        else if (k === "hex") { setAndFire("slHexRecv", t.checked ? "on" : "off"); }
+        else if (k === "enc") { setAndFire("slEncoding", t.value); }
+        return;
+      }
+      /* ② 左栏三个同源控件变化 → 快捷条回显最新配置 */
+      if (t.id === "slShowTs" || t.id === "slHexRecv" || t.id === "slEncoding") {
+        refreshAllQuick();
+      }
+    }, true);
+    /* 面板动态增删 / 主位互换 / 更新重建后补齐快捷条内容 */
+    core.on("panels:changed", function () { refreshAllQuick(); });
+    refreshAllQuick();
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.4：演示开始时保证有波形面板
+     没有硬件的用户常带着「只有监视器」的 saved 配置进来，点演示却只能
+     看到滚动的文本看不到曲线。这里在演示启动时检查：若一个图表面板都
+     没有，就自动补一个时域波形（描述符与首次默认面板一致）。
+     ------------------------------------------------------------ */
+  function ensureDemoWave() {
+    var apps = SL.views.list();
+    for (var i = 0; i < apps.length; i++) {
+      if (apps[i].type !== "textmon") { return; }   /* 已有任意图表面板，不打扰 */
+    }
+    SL.views.addPanel({
+      type: "timeplot", title: "时域波形",
+      channels: ["auto"], window: 500, h: 300
+    }, true);
+    UI.toast("ok", "演示已自动添加「时域波形」面板，可直接看曲线");
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.4：「测试」页签——演示与故障注入收纳为案例卡片
+     常用案例（⭐）显眼，故障案例与手动参数收纳靠后；点卡片 = 套参数 +
+     开演示，再点一次同一卡片 = 停止。案例参数仍走 setAndFire（addBind
+     是唯一写手），左栏控件、徽章、配置持久化天然保持一致。
+     ------------------------------------------------------------ */
+  var TEST_CASES = {
+    sine:    { label: "⭐ 基础正弦波形", realistic: false,
+               faults: { drop: 0, corrupt: 0, stick: 0, garbage: 0 } },
+    motor:   { label: "⭐ 拟真电机信号", realistic: true,
+               faults: { drop: 0, corrupt: 0, stick: 0, garbage: 0 } },
+    corrupt: { label: "🧯 校验错", realistic: false,
+               faults: { drop: 0, corrupt: 30, stick: 0, garbage: 0 } },
+    garble:  { label: "🧯 乱码噪声", realistic: false,
+               faults: { drop: 0, corrupt: 0, stick: 0, garbage: 35 } },
+    lossy:   { label: "🧯 丢帧粘包", realistic: false,
+               faults: { drop: 18, corrupt: 0, stick: 22, garbage: 0 } }
+  };
+  var runningCase = "";
+
+  function renderTestBadge() {
+    var b = $("slTestBadge");
+    if (!b) { return; }
+    if (runningCase) {
+      b.setAttribute("data-state", "open");
+      b.textContent = "▶ " + runningCase;
+    } else if (core.state.demo) {
+      b.setAttribute("data-state", "busy");
+      b.textContent = "▶ 演示（自定义参数）";
+    } else {
+      b.setAttribute("data-state", "idle");
+      b.textContent = "未在测试";
+    }
+  }
+
+  function stopTestCase(silent) {
+    runningCase = "";
+    if (core.state.demo) {
+      T.stopDemo();
+      T.disconnect();
+      if (!silent) { UI.toast("info", "测试已停止"); }
+    }
+    renderTestBadge();
+  }
+
+  function startTestCase() {
+    T.startDemo({
+      mode: core.config.rule.active === "hex" ? "hex" : "text",
+      periodMs: 20
+    });
+    renderTestBadge();
+  }
+
+  function runTestCase(key) {
+    var c = TEST_CASES[key];
+    if (!c) { return; }
+    /* 自愈开关：再点同一案例 = 停止 */
+    if (runningCase === c.label && core.state.demo) { stopTestCase(); return; }
+    T.stopDemo();
+    setAndFire("slDemoRealistic", c.realistic ? "on" : "off");
+    setAndFire("slFaultDrop", String(c.faults.drop));
+    setAndFire("slFaultCorrupt", String(c.faults.corrupt));
+    setAndFire("slFaultStick", String(c.faults.stick));
+    setAndFire("slFaultGarbage", String(c.faults.garbage));
+    runningCase = c.label;
+    startTestCase();
+    UI.toast("ok", "测试案例「" + c.label + "」已开跑（合成数据 50Hz）");
+  }
+
+  function wireTestPane() {
+    var btn = $("slBtnDemo");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        if (core.state.demo) { stopTestCase(); return; }
+        runningCase = "";
+        startTestCase();
+        UI.toast("ok", "已进入演示模式（合成数据 50Hz）");
+      });
+    }
+    var cards = document.querySelectorAll(".sl-case[data-case]");
+    for (var i = 0; i < cards.length; i++) {
+      (function (n) {
+        n.addEventListener("click", function () { runTestCase(n.getAttribute("data-case")); });
+      })(cards[i]);
+    }
+    /* 连接态变化 → 案例徽章跟随（演示被外部停止时归位） */
+    core.on("serial:closed", function () { if (runningCase) { stopTestCase(true); } });
+    core.on("serial:opened", function () { renderTestBadge(); });
   }
 
   function confirmLoose(msg) {
@@ -2605,6 +2818,11 @@
       if (p && p.state === "start") { UI.toast("info", "回放中…（速度 " + p.speed + "×）"); }
     });
 
+    /* 演示启动 → 若没有任何图表面板则自动补一个时域波形 */
+    core.on("serial:opened", function (p) {
+      if (p && p.demo) { ensureDemoWave(); }
+    });
+
     core.on("log", function () {
       /* 日志列表不是热点，节流到 400ms 足够 */
       if (renderLogs._t) { return; }
@@ -2640,6 +2858,8 @@
     wireConnectionBar();
     wireDeviceAndShow();
     wireV223();
+    initPanelQuick();
+    wireTestPane();
     initTooltips();
     wireHexRuleInputs();
     wireParsePane();

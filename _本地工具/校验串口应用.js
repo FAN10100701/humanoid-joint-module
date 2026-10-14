@@ -768,6 +768,50 @@ const GBK = (X.codec || SL.codec);
     JSON.stringify(migrated.demo));
 })();
 
+/* ========== ⑱ V2.2.4：AUTO 自适应 / 测试页签 / 演示自动补波形 ========== */
+(function () {
+  /* AUTO 一键自适应：transport 层 API 存在（探测与结论，不碰配置） */
+  check("AUTO: transport.autoAdapt 是函数", typeof Tpt.autoAdapt === "function",
+    typeof Tpt.autoAdapt);
+  check("AUTO: transport.isScanning 是函数", typeof Tpt.isScanning === "function",
+    typeof Tpt.isScanning);
+
+  /* 演示自动补波形：ensureDemoWave 用的描述符必须通过插件校验 */
+  const wave = Plugins.validate({
+    type: "timeplot", title: "时域波形",
+    channels: ["auto"], window: 500, h: 300
+  });
+  check("演示补波形: 时域波形描述符合法",
+    !!wave.panel && (!wave.errors || wave.errors.length === 0),
+    wave.errors && wave.errors.join("；"));
+
+  /* 测试页签结构：演示入口挪进测试 pane、案例卡片齐全、AUTO 按钮在设备 pane */
+  const html = fs.readFileSync(
+    path.join(JS, "..", "index.html"), "utf8");
+  const testPaneIdx = html.indexOf('data-pane="test"');
+  const demoBtnIdx = html.indexOf('id="slBtnDemo"');
+  check("测试页签: 左栏存在 data-pane=test 的页签与面板", testPaneIdx > 0, testPaneIdx);
+  check("测试页签: 演示按钮已挪进测试页签（不再出现在顶栏）",
+    demoBtnIdx > testPaneIdx, "demo@" + demoBtnIdx + " test@" + testPaneIdx);
+  check("测试页签: 顶栏不再有演示按钮（连接与断开之间）",
+    html.indexOf('id="slBtnDisconnect"') < demoBtnIdx || demoBtnIdx < 0, "");
+  const cases = ["sine", "motor", "corrupt", "garble", "lossy"];
+  const missing = cases.filter(function (k) {
+    return html.indexOf('data-case="' + k + '"') < 0;
+  });
+  check("测试页签: 五个案例卡片齐全(sine/motor/corrupt/garble/lossy)",
+    missing.length === 0, "缺 " + missing.join(","));
+  check("AUTO: 设备页签有 slBtnAuto 按钮", html.indexOf('id="slBtnAuto"') > 0, "");
+  check("测试页签: 有案例状态徽章 slTestBadge", html.indexOf('id="slTestBadge"') > 0, "");
+  check("快捷工具条: 监视器面板头预留 data-quick 容器（views.js）",
+    fs.readFileSync(path.join(JS, "views.js"), "utf8").indexOf('data-quick') > 0, "");
+  check("RX/TX: 监视器方向标记已改为 下位机/上位机",
+    fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"下位机"') > 0
+      && fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"上位机"') > 0, "");
+  check("RX/TX: 顶栏计数已改为 ←下位机/→下位机",
+    html.indexOf("←下位机") > 0 && html.indexOf("→下位机") > 0, "");
+})();
+
 console.log("");
 console.log(fails === 0 ? "SERIAL OK" : ("SERIAL FAIL: " + fails));
 process.exit(fails === 0 ? 0 : 1);

@@ -528,7 +528,7 @@
           ctx.fillStyle = t.ink3;
           ctx.font = "11px Consolas, monospace";
           ctx.textBaseline = "middle";
-          ctx.fillText("暂无数据（连接设备或进入演示模式）", 12, view.h / 2);
+          ctx.fillText("暂无数据（连接设备，或到「测试」页签开演示）", 12, view.h / 2);
           return;
         }
 
@@ -1068,7 +1068,7 @@
             row += '<span class="sl-mon-t">' + U.esc(lab || "") + '</span>';
           }
           if (showDir) {
-            row += '<span class="sl-mon-dir">' + (tx ? "TX" : "RX") + '</span>';
+            row += '<span class="sl-mon-dir">' + (tx ? "上位机" : "下位机") + '</span>';
           }
           var text = showHex ? (rec.hex || rec.text || "") : (rec.text || rec.hex || "");
           var html = U.esc(text);
