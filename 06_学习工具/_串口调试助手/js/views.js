@@ -142,7 +142,8 @@
     b.textContent = text;
     b.title = title;
     b.setAttribute("aria-label", title);
-    b.onclick = function (e) { e.stopPropagation(); onclick(); };
+    /* 回传按钮自身：暂停等需要切换文字/提示的按钮直接改自己的 DOM */
+    b.onclick = function (e) { e.stopPropagation(); onclick(b); };
     return b;
   }
 
@@ -200,6 +201,20 @@
           core.emit("toast", { level: "warn", msg: (r && r.reason) || "导出图片失败" });
         }
       });
+    }));
+
+    if (panel.type === "timeplot") {
+      /* 时域折线专属：Auto = 回到实时跟随 + 恢复自动量程（渲染器内部状态 + axis 清除） */
+      head.appendChild(iconBtn("Auto", "回到实时跟随，并恢复自动量程与默认窗口", "is-auto", function () {
+        V.resetTimeplotView(panel.id);
+      }));
+    }
+
+    /* 面板级暂停：只冻结这张卡片的重绘（数据照收），与顶栏全局暂停互不影响 */
+    head.appendChild(iconBtn("⏸", "暂停 / 恢复此面板刷新（数据仍在后台缓冲）", "is-pause", function () {
+      var paused = V.togglePanelPause(panel.id);
+      this.textContent = paused ? "▶" : "⏸";
+      this.title = paused ? "恢复此面板刷新" : "暂停 / 恢复此面板刷新（数据仍在后台缓冲）";
     }));
 
     head.appendChild(iconBtn("▾", "收起 / 展开", "", function () {
@@ -777,6 +792,8 @@
   }
 
   /* 立即重绘全部（可见）面板；单个面板异常被隔离 */
+  var pausedPanels = {};   /* V2.2.6：面板级暂停——只冻结该面板重绘，数据照收 */
+
   V.redraw = function () {
     if (!gridHost) { return; }
     for (var i = 0; i < panels.length; i++) {
@@ -785,6 +802,7 @@
       var inst = instances[p.id];
       if (!el || !inst) { continue; }
       if (el.className.indexOf("is-collapsed") >= 0) { continue; }
+      if (pausedPanels[p.id]) { continue; }
       /* 滚动出视口的面板暂不重绘，省 CPU（主位永远可见，不做剔除） */
       var body = el.lastElementChild;
       if (!isMain(p) && body) {
@@ -805,6 +823,23 @@
         instances[p.id] = { update: function () {}, resize: function () {}, destroy: function () {} };
       }
     }
+  };
+
+  /* 面板级暂停：切换并返回新状态（true=已暂停） */
+  V.togglePanelPause = function (id) {
+    pausedPanels[id] = !pausedPanels[id];
+    if (!pausedPanels[id]) { V.redraw(); }   /* 恢复时立刻画一帧，不必等下个节拍 */
+    return !!pausedPanels[id];
+  };
+  V.isPanelPaused = function (id) { return !!pausedPanels[id]; };
+
+  /* 时域折线 Auto：清手动 Y 轴 + 通知渲染器回实时跟随（渲染器内部状态自己清） */
+  V.resetTimeplotView = function (id) {
+    var p = V.getPanel(id);
+    if (p && p.axis) { p.axis = {}; }
+    if (SL.plugins.resetTimeplot) { SL.plugins.resetTimeplot(id); }
+    V.save();
+    V.redraw();
   };
 
   V.start = function () {

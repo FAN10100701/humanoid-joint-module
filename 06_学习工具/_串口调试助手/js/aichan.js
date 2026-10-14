@@ -234,6 +234,184 @@
 
   AI.fileLogging = function () { return !!fileWriter; };
 
+  /* ---------------- 2b) 数据文件夹模式（V2.2.6）----------------
+     绑定一个本地文件夹，按规范命名落盘：
+       seriallab_v<版本>_<功能标识>_<日期时间>.ndjson   （持续调试流）
+       seriallab_v<版本>_<功能标识>_<日期时间>.csv      （手动导出的数据表）
+     功能标识可自定义（如 foc-test），AI / 脚本按 seriallab_v* 通配即可定位。
+     目录里只认这个前缀，历史超量自动清理（保留最近 N 个）。 */
+  var dirHandle = null;
+  var dirFileHandle = null;
+  var dirWriter = null;
+  var dirWriting = false, dirPending = "";
+
+  function aiCfg() { return core.config.ai || {}; }
+
+  function buildLogName(kind, ext) {
+    var tag = String(aiCfg().tag || "debug").replace(/[\\/:*?"<>|\s]+/g, "-").slice(0, 24) || "debug";
+    return "seriallab_v" + (SL.version || "0") + "_" + kind + "-" + tag + "_" + stamp() + "." + ext;
+  }
+
+  function writeDirLine(line) {
+    if (!dirWriter) { return Promise.reject(new Error("尚未绑定数据文件夹")); }
+    if (dirWriting) { dirPending = line; return Promise.resolve(); }
+    dirWriting = true;
+    return Promise.resolve(dirWriter.write(line + "\n"))["catch"](function (e) {
+      fileLastErr = String((e && e.message) || e);
+      dirWriter = null;
+      emit();
+    })["then"](function () {
+      dirWriting = false;
+      if (dirPending) { var p = dirPending; dirPending = ""; return writeDirLine(p); }
+      return null;
+    });
+  }
+
+  /* 绑定文件夹（用户手势里调用）；绑定后立刻做一次超量清理 */
+  AI.bindFolder = function () {
+    if (!AI.fileSupported()) {
+      return Promise.resolve({ ok: false, reason: "当前浏览器不支持 File System Access API" });
+    }
+    return global.showDirectoryPicker({ mode: "readwrite" }).then(function (h) {
+      dirHandle = h;
+      aiCfg().folderName = h.name;
+      core.saveConfig();
+      emit();
+      return AI.cleanLogs();
+    }).then(function (r) {
+      var cleaned = (r && r.ok) ? r.removed : 0;
+      return { ok: true, dir: dirHandle && dirHandle.name, cleaned: cleaned };
+    })["catch"](function (e) {
+      var msg = (e && e.name === "AbortError") ? "已取消选择" : String((e && e.message) || e);
+      return { ok: false, reason: msg };
+    });
+  };
+
+  AI.folderBound = function () { return !!dirHandle; };
+  AI.folderName = function () { return dirHandle ? dirHandle.name : (aiCfg().folderName || ""); };
+
+  /* 在数据文件夹里开一个规范命名的持续日志（与「选择文件并开始」二选一） */
+  AI.startDirLog = function () {
+    if (!AI.fileSupported()) {
+      return Promise.resolve({ ok: false, reason: "当前浏览器不支持 File System Access API" });
+    }
+    if (!dirHandle) { return Promise.resolve({ ok: false, reason: "先点「绑定数据文件夹」" }); }
+    var name = buildLogName("log", "ndjson");
+    return dirHandle.getFileHandle(name, { create: true }).then(function (fh) {
+      dirFileHandle = fh;
+      return fh.createWritable();
+    }).then(function (w) {
+      dirWriter = w;
+      fileSeq = 0;
+      return writeDirLine(JSON.stringify(logMeta()));
+    }).then(function () {
+      emit();
+      return { ok: true, name: dirFileHandle.name };
+    })["catch"](function (e) {
+      var msg = (e && e.name === "AbortError") ? "已取消" : String((e && e.message) || e);
+      fileLastErr = msg;
+      dirWriter = null;
+      emit();
+      return { ok: false, reason: msg };
+    });
+  };
+
+  AI.dirLogging = function () { return !!dirWriter; };
+
+  AI.stopDirLog = function () {
+    var w = dirWriter;
+    dirWriter = null;
+    if (w && w.close) {
+      try { return Promise.resolve(w.close()).then(function () { emit(); return { ok: true }; }); }
+      catch (e) { /* 已关 */ }
+    }
+    emit();
+    return Promise.resolve({ ok: true });
+  };
+
+  /* 追加到目录日志（appendToFile 的目录版） */
+  AI.appendToDirLog = function () {
+    if (!dirWriter) { return Promise.resolve({ ok: false, reason: "目录日志未开启" }); }
+    var packed = AI.wireBundle(60);
+    if (!packed) { return Promise.resolve({ ok: false, reason: "导出模块未就绪" }); }
+    fileSeq++;
+    var rec = {
+      seq: fileSeq,
+      tWall: Date.now(),
+      iso: new Date().toISOString(),
+      brief: packed.brief,
+      bundle: packed.bundle
+    };
+    return writeDirLine(JSON.stringify(rec)).then(function () {
+      emit();
+      return { ok: true, seq: fileSeq };
+    });
+  };
+
+  /* 列出数据文件夹里的 seriallab_v* 文件（名字/大小/修改时间） */
+  AI.listLogs = function () {
+    if (!dirHandle) { return Promise.resolve({ ok: false, reason: "尚未绑定数据文件夹" }); }
+    var out = [];
+    var iter = dirHandle.entries();
+    function step() {
+      return iter.next().then(function (r) {
+        if (r.done) { return { ok: true, files: out }; }
+        var name = r.value[0], fh = r.value[1];
+        if (fh.kind === "file" && /^seriallab_v.*\.(ndjson|jsonl|csv)$/i.test(name)) {
+          return fh.getFile().then(function (f) {
+            out.push({ name: name, size: f.size, lastModified: f.lastModified });
+            return step();
+          }, function () { return step(); });
+        }
+        return step();
+      });
+    }
+    return step()["catch"](function (e) {
+      return { ok: false, reason: String((e && e.message) || e) };
+    });
+  };
+
+  /* 清理：wipe=true 全删；否则按保留数量（config.ai.logKeep，默认 10）留下最新的 */
+  AI.cleanLogs = function (wipe) {
+    return AI.listLogs().then(function (res) {
+      if (!res.ok) { return res; }
+      var keepN = parseInt(aiCfg().logKeep, 10);
+      if (!(keepN > 0)) { keepN = 10; }
+      var files = res.files.slice().sort(function (a, b) { return b.lastModified - a.lastModified; });
+      var victims = wipe ? files : files.slice(keepN);
+      var chain = Promise.resolve();
+      var removed = 0;
+      for (var i = 0; i < victims.length; i++) {
+        (function (name) {
+          chain = chain.then(function () {
+            return dirHandle.removeEntry(name).then(function () { removed++; }, function () { /* 已不在 */ });
+          });
+        })(victims[i].name);
+      }
+      return chain.then(function () {
+        return { ok: true, removed: removed, remain: files.length - removed };
+      });
+    });
+  };
+
+  /* CSV 直接写进数据文件夹（Excel 可直接打开；带 BOM 中文不乱码） */
+  AI.writeCsvToFolder = function (csvText) {
+    if (!dirHandle) { return Promise.resolve({ ok: false, reason: "先绑定数据文件夹" }); }
+    var name = buildLogName("data", "csv");
+    return dirHandle.getFileHandle(name, { create: true }).then(function (fh) {
+      return fh.createWritable();
+    }).then(function (w) {
+      var text = (SL.exporters && SL.exporters.withBom) ? SL.exporters.withBom(csvText) : ("\ufeff" + csvText);
+      return w.write(text).then(function () {
+        return w.close();
+      });
+    }).then(function () {
+      return { ok: true, name: name };
+    })["catch"](function (e) {
+      return { ok: false, reason: String((e && e.message) || e) };
+    });
+  };
+
   /* ---------------- 3) HTTP 上报本地收件箱 ---------------- */
   AI.inboxUrl = function () {
     var ai = core.config.ai || {};
@@ -291,12 +469,14 @@
   function tick() {
     var ai = core.config.ai || {};
     if (ai.httpPush) { AI.pushNow(); }
-    if (ai.fileLog) { AI.appendToFile(); }
+    /* 目录日志优先：绑了文件夹就走规范命名的那套；没有再用单文件模式 */
+    if (dirWriter) { AI.appendToDirLog(); }
+    else if (ai.fileLog) { AI.appendToFile(); }
   }
 
   function refresh() {
     var ai = core.config.ai || {};
-    var want = !!(ai.fileLog || ai.httpPush);
+    var want = !!(ai.fileLog || ai.httpPush || dirWriter);
     var ms = U.clamp(parseInt(ai.httpIntervalMs, 10) || 5000, 1000, 600000);
     ai.httpIntervalMs = ms;
     if (!want) {

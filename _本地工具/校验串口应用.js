@@ -31,7 +31,7 @@ const JS = path.join(__dirname, "..", "06_学习工具", "_串口调试助手", 
 /* 按依赖顺序加载真源文件:模块把接口挂在 globalThis.SerialLab 上,
    同时导出 module.exports(这里用不上返回值,只为触发副作用与语法解析) */
 ["util", "core", "codec", "expr", "fft", "parser", "datastore",
- "transport", "plugins", "timeline", "exporters", "views"].forEach(function (n) {
+ "transport", "plugins", "timeline", "exporters", "views", "aichan"].forEach(function (n) {
   require(path.join(JS, n + ".js"));
 });
 
@@ -248,7 +248,7 @@ check("transport: DEMO_FIELDS 五路合成信号", Tpt.DEMO_FIELDS.length === 5)
 /* ============================================================
    ⑦ plugins（描述符校验与降级）
    ============================================================ */
-check("plugins: 内置七种渲染器注册齐全", Plugins.list().length === 7,
+check("plugins: 内置八种渲染器注册齐全", Plugins.list().length === 8,
   Plugins.list().map(r => r.id).join(","));
 check("plugins: 未知渲染器降级为数据表格并记录问题", (() => {
   const r = Plugins.validate({ type: "no-such-renderer" });
@@ -808,13 +808,48 @@ const GBK = (X.codec || SL.codec);
   check("RX/TX: 监视器方向标记已改为 箭头+下位机/上位机",
     fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"← 下位机"') > 0
       && fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"→ 上位机"') > 0, "");
-  check("V2.2.5: 应用内版本号跟随站点版本链",
-    fs.readFileSync(path.join(JS, "ui.js"), "utf8").indexOf('UI.VERSION = "2.2.5"') > 0, "");
   check("V2.2.5: 流控信号已移出顶栏(设备页签内)",
     fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('id="slModem"') >
       fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('data-pane="test"'), "");
   check("RX/TX: 顶栏计数已改为 ←下位机/→下位机",
     html.indexOf("←下位机") > 0 && html.indexOf("→下位机") > 0, "");
+})();
+
+/* ========== ⑲ V2.2.6：示波器时域 / 统计面板 / 数据文件夹 / 帮助中心 ========== */
+(function () {
+  const APP = "06_学习工具/_串口调试助手";
+  const rd = function (rel) { return fs.readFileSync(path.join(__dirname, "..", APP, rel), "utf8"); };
+
+  /* 实时统计渲染器已注册（含 RMS / VPP 指标） */
+  const reg = Plugins.list().some(function (x) { return x.id === "statsboard"; });
+  check("V2.2.6: 实时统计渲染器 statsboard 已注册", reg, "");
+  check("V2.2.6: 时域 Auto 重置钩子 P.resetTimeplot 存在",
+    typeof Plugins.resetTimeplot === "function", typeof Plugins.resetTimeplot);
+
+  /* 数据文件夹 API 全套 */
+  const AI = SL.aichan || (globalThis.SerialLab && globalThis.SerialLab.aichan);
+  check("V2.2.6: aichan 数据文件夹 API（bindFolder/startDirLog/listLogs/cleanLogs/writeCsvToFolder）",
+    !!AI && typeof AI.bindFolder === "function" && typeof AI.startDirLog === "function"
+      && typeof AI.listLogs === "function" && typeof AI.cleanLogs === "function"
+      && typeof AI.writeCsvToFolder === "function", !!AI);
+
+  /* 规范命名前缀 seriallab_v<版本>_<kind>-<tag>_<stamp> */
+  check("V2.2.6: 落盘命名规范 seriallab_v 前缀", rd("js/aichan.js").indexOf('seriallab_v') > 0, "");
+
+  /* 面板级暂停 + 示波器视角 + 设置中心 + 帮助增强 */
+  check("V2.2.6: 面板级暂停 togglePanelPause 存在",
+    typeof SL.views.togglePanelPause === "function", "");
+  check("V2.2.6: 方向标记三态（仅发送默认）",
+    rd("js/plugins.js").indexOf('dirMode') > 0 && rd("js/plugins.js").indexOf('"tx"') > 0, "");
+  check("V2.2.6: 时间戳精度可设（timePrec s/ms/us）",
+    rd("js/plugins.js").indexOf("timePrec") > 0 && rd("js/ui.js").indexOf("slSetPrec") > 0, "");
+  check("V2.2.6: 设置中心入口（右下角 ⋯）",
+    rd("index.html").indexOf('id="slBtnSettings"') > 0, "");
+  check("V2.2.6: 帮助含数据文件夹命名规范与致谢章节",
+    rd("js/ui.js").indexOf("数据文件夹与文件命名规范") > 0
+      && rd("js/ui.js").indexOf("致谢与参考开源项目") > 0, "");
+  check("V2.2.6: 应用内版本号跟随站点版本链",
+    rd("js/ui.js").indexOf('UI.VERSION = "2.2.6"') > 0, "");
 })();
 
 console.log("");

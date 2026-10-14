@@ -438,8 +438,8 @@ input[type="number"] { width: 78px; }
 .sl-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
-  padding: 7px 7px 0;
+  gap: 2px;
+  padding: 5px 5px 0;
   border-bottom: 1px solid var(--sl-border);
   flex-shrink: 0;
 }
@@ -448,9 +448,9 @@ input[type="number"] { width: 78px; }
   background: transparent;
   border: 1px solid transparent;
   color: var(--sl-ink-2);
-  font-size: 12px;
+  font-size: 11.5px;
   font-family: inherit;
-  padding: 5px 8px;
+  padding: 4px 5px;
   border-radius: var(--sl-radius-sm) var(--sl-radius-sm) 0 0;
   cursor: pointer;
   white-space: nowrap;
@@ -690,6 +690,114 @@ input[type="number"] { width: 78px; }
   color: var(--sl-ink);
   max-width: 92px;
 }
+.sl-panel-quick .sl-qk-num {
+  font-size: 11px;
+  width: 52px;
+  padding: 1px 3px;
+  border: 1px solid var(--sl-border);
+  border-radius: 4px;
+  background: var(--sl-card, #fff);
+  color: var(--sl-ink);
+}
+
+/* 实时统计面板（statsboard）：每通道一行，等宽数字右对齐 */
+.sl-stats {
+  font-size: 12px;
+  overflow: auto;
+  height: 100%;
+  box-sizing: border-box;
+}
+.sl-stats-row {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(6, 1fr);
+  gap: 0 10px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--sl-border);
+  align-items: center;
+  min-width: 500px;
+}
+.sl-stats-row.is-head {
+  color: var(--sl-ink-3);
+  font-size: 11px;
+  position: sticky;
+  top: 0;
+  background: var(--sl-card, #fff);
+  z-index: 1;
+}
+.sl-stats-row > span {
+  font-family: Consolas, monospace;
+  font-size: 11.5px;
+  text-align: right;
+  white-space: nowrap;
+}
+.sl-stats-row > span:first-child { text-align: left; font-family: inherit; overflow: hidden; text-overflow: ellipsis; }
+.sl-stats-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.sl-stats-unit { font-style: normal; color: var(--sl-ink-3); font-size: 10.5px; margin-left: 4px; }
+
+/* 设置中心弹窗（右下角 ⋯） */
+.sl-settings { padding: 4px 2px; min-width: 420px; }
+.sl-set-row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--sl-border);
+}
+.sl-set-row:last-of-type { border-bottom: none; }
+.sl-set-row > label { font-size: 12.5px; color: var(--sl-ink); font-weight: 600; }
+.sl-set-row > select,
+.sl-set-row > input[type="text"] {
+  font-size: 12.5px;
+  padding: 4px 6px;
+  border: 1px solid var(--sl-border);
+  border-radius: 4px;
+  background: var(--sl-card, #fff);
+  color: var(--sl-ink);
+  max-width: 300px;
+}
+.sl-set-row > i,
+.sl-set-row > p { font-style: normal; font-size: 11px; color: var(--sl-ink-3); grid-column: 2; }
+.sl-settings .sl-hint { margin-top: 10px; }
+
+/* 帮助文章：搜索框 + 目录 chips + 章节 */
+.sl-article-tools { margin-bottom: 10px; }
+.sl-article-search {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12.5px;
+  padding: 6px 9px;
+  border: 1px solid var(--sl-border);
+  border-radius: 6px;
+  background: var(--sl-card, #fff);
+  color: var(--sl-ink);
+  margin-bottom: 8px;
+}
+.sl-article-toc { display: flex; flex-wrap: wrap; gap: 5px; }
+.sl-toc-chip {
+  font-size: 11px;
+  padding: 3px 9px;
+  border: 1px solid var(--sl-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sl-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sl-toc-chip:hover { border-color: var(--sl-brand); color: var(--sl-brand); }
+.sl-article-sec { padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px dashed var(--sl-border); }
+.sl-article-sec:last-child { border-bottom: none; }
+
+/* 日志等级着色：error 红 / warn 琥珀 */
+.sl-log-level.is-bad { color: var(--sl-bad, #ef4444); font-weight: 700; }
+.sl-log-level.is-warn { color: #d97706; font-weight: 600; }
 
 /* 「测试」页签：案例卡片。常用案例（is-hot）主色高亮、单列横排——
    标题与副题一行放下不再折行；故障案例（is-quiet 容器内）三列紧凑收纳。 */

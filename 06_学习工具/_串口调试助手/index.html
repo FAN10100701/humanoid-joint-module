@@ -41,7 +41,8 @@
 
     <span class="sl-top-spacer"></span>
 
-    <span class="sl-field sl-mono sl-count">←下位机 <b id="slRxCount">0</b>B · →下位机 <b id="slTxCount">0</b>B</span>
+    <span class="sl-field sl-mono sl-count" title="←下位机 = 下位机发给电脑的字节数（RX）；→下位机 = 电脑发给下位机的字节数（TX）。每秒刷新一次"
+          data-tip="←下位机：收到的字节数（RX）；→下位机：发出的字节数（TX）">←下位机 <b id="slRxCount">0</b>B · →下位机 <b id="slTxCount">0</b>B</span>
 
     <span class="sl-bar-sep"></span>
 
@@ -368,6 +369,24 @@
               <label class="sl-chk"><input type="checkbox" id="slFileLog">持续写入本地文件</label>
               <button class="sl-btn is-sm" id="slBtnFileLog" type="button">选择文件并开始</button>
             </div>
+            <div class="sl-row">
+              <button class="sl-btn is-sm" id="slBtnBindFolder" type="button"
+                      data-tip="绑定一个本地文件夹，按规范命名落盘，AI / 脚本按 seriallab_v* 通配即可定位">📁 绑定数据文件夹</button>
+              <button class="sl-btn is-sm" id="slBtnDirLog" type="button" disabled>开写日志</button>
+              <button class="sl-btn is-sm" id="slBtnCleanLogs" type="button">清理历史</button>
+              <button class="sl-btn is-sm is-danger" id="slBtnWipeLogs" type="button">一键清空</button>
+            </div>
+            <div class="sl-row">
+              <span class="sl-field">功能标识
+                <input type="text" id="slLogTag" maxlength="24" placeholder="如 foc-test" style="width:110px">
+              </span>
+              <span class="sl-field">保留最近
+                <input type="number" id="slLogKeep" min="1" max="999" value="10" style="width:56px"> 个
+              </span>
+              <button class="sl-btn is-sm" id="slBtnExpCsvDir" type="button"
+                      data-tip="把解析结果 CSV 直接写进数据文件夹（不弹下载框），Excel 可直接打开">CSV → 数据文件夹</button>
+            </div>
+            <p class="sl-hint" id="slFolderHint">命名规范：<code>seriallab_v&lt;版本&gt;_log-&lt;功能标识&gt;_&lt;时间&gt;.ndjson</code>（持续调试流）与 <code>seriallab_v…_data-&lt;标识&gt;_&lt;时间&gt;.csv</code>（数据表）——AI / 脚本按 <code>seriallab_v*</code> 通配即可定位；超出「保留最近」个数的旧文件自动删除。落盘不受屏幕暂停影响，暂停期间照常写入。</p>
             <p class="sl-hint" id="slFileLogHint">仅 Chromium 系浏览器。点「选择文件并开始」选一个保存位置（建议存到本仓库工作目录下），之后调试包会持续追加写入该文件，AI 直接读它即可，无需任何本地服务。刷新页面后需重选一次。</p>
             <div class="sl-row">
               <label class="sl-chk"><input type="checkbox" id="slHttpPush">HTTP 上报本地收件箱</label>
@@ -633,6 +652,8 @@
       <label class="sl-chk"><input type="checkbox" id="slAppendEnding" checked>换行</label>
       <label class="sl-chk"><input type="checkbox" id="slSendHex">HEX</label>
       <span class="sl-hint" id="slSendHint">未连接——去「测试」页签可无硬件体验</span>
+      <button class="sl-link" id="slBtnSettings" type="button"
+              title="设置：字号 / 时间戳精度 / 方向标记 / 设备别名">⋯</button>
     </div>
   </footer>
 

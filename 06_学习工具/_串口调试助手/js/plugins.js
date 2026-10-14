@@ -202,15 +202,19 @@
   }
   P.resolveChannels = resolveChannels;
 
-  /* 组装绘图序列；若描述符带 expr，则按「同索引对齐各通道」逐点重算 */
-  function buildSeries(panel, data, chans) {
+  /* 组装绘图序列；若描述符带 expr，则按「同索引对齐各通道」逐点重算。
+     offset：向历史回看的点数——0 = 实时跟随（最近 window 点），
+     >0 = 取 [最新-offset-window, 最新-offset) 这段（示波器式回看）。 */
+  function buildSeries(panel, data, chans, offset) {
+    offset = Math.max(0, offset | 0);
     var series = [];
     var i;
     var raw = [];
+    var cnt = panel.window || 500;
 
-    /* 先把各通道最近 window 个点取出来（一次复制，后面按索引对齐） */
+    /* 先把各通道最近 window+offset 个点取出来（一次复制，后面按索引对齐） */
     for (i = 0; i < chans.length; i++) {
-      raw.push(data.copy(chans[i].key, panel.window || 500));
+      raw.push(data.copy(chans[i].key, cnt + offset));
     }
 
     var hasExpr = false;
@@ -226,6 +230,10 @@
     for (i = 0; i < chans.length; i++) {
       var c = chans[i];
       var src = raw[i];
+      if (offset > 0 && src.v.length > cnt) {
+        /* 去掉最新 offset 个点，窗口平移到历史段 */
+        src = { v: src.v.slice(0, cnt), t: src.t.slice(0, cnt) };
+      }
       var vals = new Array(src.v.length);
       if (hasExpr && src.v.length) {
         /* 从末尾对齐：让各通道最近的点互相配对，等长同步采样时结果完全正确 */
@@ -506,10 +514,26 @@
 
   var PAD = { l: 42, r: 10, t: 20, b: 16 };
 
-  /* V2.2.5：各时域面板的「图例隐藏通道」表（key=panel.id）。
+  /* V2.2.6：各时域面板的「图例隐藏通道」表（key=panel.id）。
      放模块级而不是面板描述符里：updatePanel 会重建面板元素，
      但 panel.id 不变——调节窗口等重建操作后勾选状态得以保留。 */
   var hiddenChans = {};
+
+  /* V2.2.6：时域面板的 reset 钩子表（Auto 按钮用）——渲染器 make 时登记 */
+  var timeplotReset = {};
+  P.resetTimeplot = function (id) {
+    if (timeplotReset[id]) { timeplotReset[id](); }
+  };
+
+  /* 时间标注：epoch 毫秒显示时分秒，相对毫秒显示秒 */
+  function tLabel(ms) {
+    if (ms > 1e12) {
+      var d = new Date(ms);
+      return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) +
+        ":" + ("0" + d.getSeconds()).slice(-2);
+    }
+    return (ms / 1000).toFixed(1) + "s";
+  }
 
   /* ---------- 1) 时域折线 ---------- */
   P.register({
@@ -522,8 +546,45 @@
       var view = makeView(hostEl);
       var legendHits = [];    /* 图例命中区（draw 时刷新），点击切换显隐 */
 
-      /* 点击图例 = 勾选 / 取消对应通道（隐藏通道不画线、不参与量程） */
+      /* V2.2.6 示波器式视角：0 = 实时跟随；>0 = 向历史回看的点数 */
+      var viewOffset = 0;
+      var dragging = false, dragX0 = 0, dragOff0 = 0, dragMoved = false;
+      var WHEEL_MIN = 50, WHEEL_MAX = 5000, LOOKBACK_MAX = 50000;
+
+      timeplotReset[panel.id] = function () { viewOffset = 0; };
+
+      /* 拖动 = 平移视角看历史；滚轮 = 缩放窗口（点数）；双击 = 回实时 */
+      view.canvas.addEventListener("mousedown", function (e) {
+        dragging = true; dragX0 = e.clientX; dragOff0 = viewOffset; dragMoved = false;
+        e.preventDefault();
+      });
+      function onMove(e) {
+        if (!dragging) { return; }
+        var plotW = Math.max(1, view.w - PAD.l - PAD.r);
+        var dx = e.clientX - dragX0;
+        if (Math.abs(dx) > 3) { dragMoved = true; }
+        var off = dragOff0 + dx * (panel.window || 500) / plotW;
+        viewOffset = Math.min(LOOKBACK_MAX, Math.max(0, Math.round(off)));
+      }
+      function onUp() { dragging = false; }
+      global.addEventListener("mousemove", onMove);
+      global.addEventListener("mouseup", onUp);
+      view.canvas.addEventListener("wheel", function (e) {
+        e.preventDefault();
+        var factor = (e.deltaY > 0) ? 1.15 : (1 / 1.15);
+        var nw = Math.round((panel.window || 500) * factor);
+        nw = Math.min(WHEEL_MAX, Math.max(WHEEL_MIN, nw));
+        if (nw !== panel.window) {
+          panel.window = nw;
+          if (SL.views && SL.views.save) { SL.views.save(); }
+        }
+      }, { passive: false });
+      view.canvas.addEventListener("dblclick", function () { viewOffset = 0; });
+
+      /* 点击图例 = 勾选 / 取消对应通道（隐藏通道不画线、不参与量程）；
+         拖动过视角后松手的这次 click 不算（防误触图例） */
       view.canvas.addEventListener("click", function (e) {
+        if (dragMoved) { dragMoved = false; return; }
         var r = view.canvas.getBoundingClientRect();
         var x = e.clientX - r.left;
         var y = e.clientY - r.top;
@@ -542,7 +603,7 @@
         var t = theme();
         var ctx = view.ctx;
         var chans = resolveChannels(panel, data, registry.timeplot);
-        var allSeries = buildSeries(panel, data, chans);
+        var allSeries = buildSeries(panel, data, chans, viewOffset);
         var hid = hiddenChans[panel.id] || {};
 
         /* 隐藏通道不参与画线与量程，但仍出现在图例里（灰显，可点回来） */
@@ -601,6 +662,7 @@
         }
 
         drawLegend(ctx, view, allSeries, hid, pad);
+        drawTimeAxis(ctx, view, series);
 
         /* 左上角标出当前量程 */
         ctx.save();
@@ -608,6 +670,37 @@
         ctx.font = "10px Consolas, monospace";
         ctx.textBaseline = "top";
         ctx.fillText(U.fmt(yr.min, 3) + " ~ " + U.fmt(yr.max, 3), 4, view.h - pad.b + 3);
+        ctx.restore();
+
+        /* 回看历史时右上角提示（双击或点 Auto 回实时） */
+        if (viewOffset > 0) {
+          ctx.save();
+          ctx.fillStyle = t.warn || "#f59e0b";
+          ctx.font = "bold 10px Consolas, monospace";
+          ctx.textBaseline = "middle";
+          ctx.textAlign = "right";
+          ctx.fillText("⏸ 回看历史 " + viewOffset + " 点 · 双击回实时", view.w - PAD.r - 4, 12);
+          ctx.restore();
+        }
+      }
+
+      /* 底部时间刻度：起点 / 终点时刻（epoch 显示时分秒，相对数据显示秒） */
+      function drawTimeAxis(ctx, view, series) {
+        var s0 = null;
+        for (var i = 0; i < series.length; i++) {
+          if (series[i].t && series[i].t.length > 1) { s0 = series[i]; break; }
+        }
+        if (!s0) { return; }
+        var t0 = s0.t[0], t1 = s0.t[s0.t.length - 1];
+        var t = theme();
+        ctx.save();
+        ctx.fillStyle = t.ink3;
+        ctx.font = "10px Consolas, monospace";
+        ctx.textBaseline = "top";
+        ctx.textAlign = "left";
+        ctx.fillText(tLabel(t0), PAD.l, view.h - PAD.b + 3);
+        ctx.textAlign = "right";
+        ctx.fillText(tLabel(t1) + " · 窗口 " + (panel.window || 500) + " 点 · 拖动看历史 / 滚轮缩放", view.w - PAD.r, view.h - PAD.b + 3);
         ctx.restore();
       }
 
@@ -648,7 +741,91 @@
       return {
         update: draw,
         resize: function () { view.fit(); },
-        destroy: function () { view.destroy(); }
+        destroy: function () {
+          global.removeEventListener("mousemove", onMove);
+          global.removeEventListener("mouseup", onUp);
+          delete timeplotReset[panel.id];
+          view.destroy();
+        }
+      };
+    }
+  });
+
+  /* ---------- 实时统计（V2.2.6，时域统计视图）----------
+     每通道一行：有效值 RMS（去均值，正弦信号即 峰值/√2）/ 峰峰值 / 均值 / 最大 / 最小 / 样本数。
+     只统计当前窗口（面板窗口可调），随数据实时刷新。 */
+  P.register({
+    id: "statsboard",
+    label: "实时统计",
+    category: "统计",
+    autoCount: 4,
+    defaults: { window: 500, h: 240, opts: { metrics: ["rms", "vpp", "mean", "max", "min", "n"] } },
+    make: function (hostEl, panel) {
+      var table = document.createElement("div");
+      table.className = "sl-stats";
+      hostEl.appendChild(table);
+      var METRICS = [
+        ["rms", "有效值RMS", "交流有效值（去均值）——标准正弦波 = 峰值/√2"],
+        ["vpp", "峰峰值Vpp", "最大值 − 最小值"],
+        ["mean", "均值", "算术平均（直流分量）"],
+        ["max", "最大", "窗口内最大值"],
+        ["min", "最小", "窗口内最小值"],
+        ["n", "样本", "窗口内样本点数"]
+      ];
+
+      function draw(data) {
+        var chans = resolveChannels(panel, data, registry.statsboard);
+        var want = (panel.opts && panel.opts.metrics) || ["rms", "vpp", "mean", "max", "min", "n"];
+        var head = '<div class="sl-stats-row is-head"><span>通道</span>';
+        var m, i;
+        for (m = 0; m < want.length; m++) {
+          var meta = null;
+          for (i = 0; i < METRICS.length; i++) { if (METRICS[i][0] === want[m]) { meta = METRICS[i]; break; } }
+          head += '<span title="' + (meta ? U.esc(meta[2]) : "") + '">' + (meta ? meta[1] : U.esc(want[m])) + "</span>";
+        }
+        head += "</div>";
+
+        var body = "";
+        for (i = 0; i < chans.length; i++) {
+          var src = data.copy(chans[i].key, panel.window || 500);
+          var v = src.v;
+          var n = v.length;
+          var sum = 0, mn = Infinity, mx = -Infinity;
+          var j;
+          for (j = 0; j < n; j++) {
+            sum += v[j];
+            if (v[j] < mn) { mn = v[j]; }
+            if (v[j] > mx) { mx = v[j]; }
+          }
+          var mean = n ? sum / n : 0;
+          var sq = 0;
+          for (j = 0; j < n; j++) { var d0 = v[j] - mean; sq += d0 * d0; }
+          var rms = n ? Math.sqrt(sq / n) : 0;
+          var unit = chans[i].unit ? " <i class=\"sl-stats-unit\">" + U.esc(chans[i].unit) + "</i>" : "";
+          var row = '<div class="sl-stats-row"><span><i class="sl-stats-dot" style="background:' +
+            chans[i].color + '"></i>' + U.esc(chans[i].label || chans[i].key) + unit + "</span>";
+          for (m = 0; m < want.length; m++) {
+            var name = want[m], val;
+            if (name === "rms") { val = n ? U.fmt(rms, 4) : "-"; }
+            else if (name === "vpp") { val = n ? U.fmt(mx - mn, 4) : "-"; }
+            else if (name === "mean") { val = n ? U.fmt(mean, 4) : "-"; }
+            else if (name === "max") { val = n ? U.fmt(mx, 4) : "-"; }
+            else if (name === "min") { val = n ? U.fmt(mn, 4) : "-"; }
+            else if (name === "n") { val = String(n); }
+            else { val = "-"; }
+            row += "<span>" + val + "</span>";
+          }
+          body += row + "</div>";
+        }
+        table.innerHTML = chans.length
+          ? head + body
+          : '<div class="sl-panel-msg">暂无通道——等数据进来后自动出现</div>';
+      }
+
+      return {
+        update: draw,
+        resize: function () {},
+        destroy: function () { hostEl.innerHTML = ""; }
       };
     }
   });
@@ -1095,6 +1272,10 @@
         var showDir = opts.showDir !== false;
         var ui = core.config.ui || {};
         var timeMode = (core.config.transport && core.config.transport.timeMode === "rel") ? "rel" : "abs";
+        /* V2.2.6：时间戳精度（s / ms / us）与方向标记模式（all / tx / off） */
+        var prec = (core.config.transport && core.config.transport.timePrec) || "ms";
+        var dirMode = (core.config.transport && core.config.transport.dirMode) || "tx";
+        var base = (SL.app && SL.app.timeBase) ? SL.app.timeBase() : 0;
         var markNum = !!ui.highlightNumbers && !showHex;
         var markFail = ui.markFailed !== false;
 
@@ -1112,11 +1293,22 @@
           var row = '<div class="' + cls + '">';
 
           if (showTs) {
-            var lab = timeMode === "rel" ? rec.tLabel : rec.tLabelAbs;
+            var lab;
+            if (timeMode === "rel") {
+              var dt = rec.t - base;
+              lab = prec === "s" ? (Math.round(dt / 100) / 10).toFixed(1) + "s"
+                  : prec === "us" ? (dt / 1000).toFixed(6) + "s"
+                  : (rec.tLabel || "");
+            } else {
+              /* 墙钟精度上限是毫秒：us 档绝对口径与 ms 相同 */
+              lab = prec === "s" ? U.fmtClock(rec.tWall, false) : (rec.tLabelAbs || "");
+            }
             row += '<span class="sl-mon-t">' + U.esc(lab || "") + '</span>';
           }
           if (showDir) {
-            row += '<span class="sl-mon-dir">' + (tx ? "→ 上位机" : "← 下位机") + '</span>';
+            /* 仅发送模式：RX 行留空占位（列不塌），TX 行才有标记——区分效果不变、视觉噪音大减 */
+            var showThisDir = (dirMode === "all") || (dirMode === "tx" && tx);
+            row += '<span class="sl-mon-dir">' + (showThisDir ? (tx ? "→ 上位机" : "← 下位机") : "") + '</span>';
           }
           var text = showHex ? (rec.hex || rec.text || "") : (rec.text || rec.hex || "");
           var html = U.esc(text);

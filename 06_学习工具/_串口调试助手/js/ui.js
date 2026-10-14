@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.5";
+  UI.VERSION = "2.2.6";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -266,21 +266,61 @@
 
   /* 静态内容展示（标题 + 段落数组），零 innerHTML */
   UI.showArticle = function (title, blocks) {
-    var wrap = el("div");
+    var wrap = el("div", "sl-article");
+    var body = el("div", "sl-article-body");
+    var heads = [];
     for (var i = 0; i < blocks.length; i++) {
       var b = blocks[i];
-      if (b.h) { wrap.appendChild(el("h3", "sl-group-title", b.h)); }
-      if (b.p) { wrap.appendChild(el("p", "sl-hint", b.p)); }
+      var sec = el("section", "sl-article-sec");
+      sec.setAttribute("data-text", ((b.h || "") + " " + (b.p || "") + " " + (b.list || []).join(" ")).toLowerCase());
+      if (b.h) { sec.appendChild(el("h3", "sl-group-title", b.h)); heads.push({ h: b.h, sec: sec }); }
+      if (b.p) { sec.appendChild(el("p", "sl-hint", b.p)); }
       if (b.code) {
         var pre = el("pre", "sl-prompt");
         pre.textContent = b.code;
-        wrap.appendChild(pre);
+        sec.appendChild(pre);
       }
       if (b.list) {
         var ul = el("ul");
         for (var j = 0; j < b.list.length; j++) { ul.appendChild(el("li", null, b.list[j])); }
-        wrap.appendChild(ul);
+        sec.appendChild(ul);
       }
+      body.appendChild(sec);
+    }
+    wrap.appendChild(body);
+
+    /* V2.2.6：章节够多时给顶部搜索框 + 目录 chips（点击跳转、输入即过滤） */
+    if (heads.length >= 4) {
+      var tools = el("div", "sl-article-tools");
+      var input = el("input", "sl-article-search");
+      input.type = "search";
+      input.placeholder = "搜索本帮助（如：乱码 / HEX / MCP / 命名）";
+      var toc = el("div", "sl-article-toc");
+      var filter = function (q) {
+        q = String(q || "").replace(/^\s+|\s+$/g, "").toLowerCase();
+        var secs = body.children;
+        for (var s = 0; s < secs.length; s++) {
+          var t = secs[s].getAttribute("data-text") || "";
+          secs[s].style.display = (!q || t.indexOf(q) >= 0) ? "" : "none";
+        }
+      };
+      for (var k = 0; k < heads.length; k++) {
+        (function (sec, label) {
+          var chip = el("button", "sl-toc-chip", label);
+          chip.type = "button";
+          chip.addEventListener("click", function () {
+            input.value = "";
+            filter("");
+            try { sec.scrollIntoView({ behavior: "smooth", block: "start" }); }
+            catch (e0) { sec.scrollIntoView(); }
+          });
+          toc.appendChild(chip);
+        })(heads[k].sec, heads[k].h);
+      }
+      input.addEventListener("input", function () { filter(input.value); });
+      tools.appendChild(input);
+      tools.appendChild(toc);
+      wrap.insertBefore(tools, body);
     }
     UI.modal({ title: title, body: wrap, buttons: [{ label: "关闭" }] });
   };
@@ -353,9 +393,14 @@
     }
 
     var info = core.state.portInfo;
+    var alias = (core.config.transport && core.config.transport.alias) || "";
     $("slVidPid").textContent = info
-      ? ("VID " + hex4(info.usbVendorId) + " · PID " + hex4(info.usbProductId))
+      ? (alias || ("VID " + hex4(info.usbVendorId) + " · PID " + hex4(info.usbProductId)))
       : (demo ? "虚拟设备" : "-");
+    $("slVidPid").title = info
+      ? ("VID " + hex4(info.usbVendorId) + " · PID " + hex4(info.usbProductId)
+        + (alias ? " · 别名「" + alias + "」" : "") + "（右下角 ⋯ 可设设备别名）")
+      : "";
 
     /* V2.2.3：实时参数徽章跟随连接态（乱码态由 garbleShown 决定） */
     renderParamBadge();
@@ -924,13 +969,13 @@
   ];
 
   function fillQuick(host) {
-    /* 时域折线的快捷条：横轴窗口（采样点数）——数据太密时收窄窗口即可看清 */
+    /* 时域折线的快捷条：横轴窗口 + Y 轴手动范围（纵轴自由调节） */
     var plotId = host.getAttribute("data-quick-plot");
     if (plotId) {
-      var cur = null;
+      var cur = null, axis = {};
       var apps = SL.views.list();
       for (var p = 0; p < apps.length; p++) {
-        if (apps[p].id === plotId) { cur = apps[p].window || 500; break; }
+        if (apps[p].id === plotId) { cur = apps[p].window || 500; axis = apps[p].axis || {}; break; }
       }
       if (cur === null) { return; }
       var opts = [100, 250, 500, 1000, 2000];
@@ -940,7 +985,14 @@
       }
       host.innerHTML = '<span class="sl-qk">窗口</span>' +
         '<select class="sl-qk-enc" data-qk="win" title="横轴显示最近多少个采样点——太小抖动、太密看不清，按需调整">' +
-        optHtml + "</select>";
+        optHtml + "</select>" +
+        '<span class="sl-qk" title="纵轴下限（留空 = 自动量程）">Y</span>' +
+        '<input class="sl-qk-num" data-qk="ymin" type="number" step="any" placeholder="min" value="' +
+          (typeof axis.yMin === "number" ? axis.yMin : "") + '">' +
+        '<span class="sl-qk">~</span>' +
+        '<input class="sl-qk-num" data-qk="ymax" type="number" step="any" placeholder="max" value="' +
+          (typeof axis.yMax === "number" ? axis.yMax : "") + '">' +
+        '<span class="sl-qk" title="鼠标拖动看历史 · 滚轮缩放 · 双击回实时">🔍</span>';
       return;
     }
 
@@ -989,6 +1041,19 @@
           var pid = node.getAttribute("data-quick-plot");
           var n = parseInt(t.value, 10);
           if (pid && n > 0) { SL.views.updatePanel(pid, { window: n }); }
+        }
+        else if (k === "ymin" || k === "ymax") {
+          /* 时域折线快捷条：Y 轴手动范围（留空 = 自动量程） */
+          var pid2 = node.getAttribute("data-quick-plot");
+          if (pid2) {
+            var pn = SL.views.getPanel(pid2);
+            if (pn) {
+              var ax = U.clone(pn.axis || {});
+              var v = parseFloat(t.value);
+              if (isFinite(v)) { ax[k] = v; } else { delete ax[k]; }
+              SL.views.updatePanel(pid2, { axis: ax });
+            }
+          }
         }
         return;
       }
@@ -1131,6 +1196,76 @@
     /* 连接态变化 → 案例徽章跟随（演示被外部停止时归位） */
     core.on("serial:closed", function () { if (runningCase) { stopTestCase(true); } });
     core.on("serial:opened", function () { renderTestBadge(); });
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.6：设置中心（右下角 ⋯）——低频显示与设备项集中一处
+     字号/口径/数字标红与「显示」页签同源（setAndFire 走 addBind）；
+     时间戳精度/方向标记模式/设备别名是新增 transport 项，直写配置。
+     ------------------------------------------------------------ */
+  function openSettings() {
+    var t = core.config.transport;
+    var uicfg = core.config.ui || {};
+    var box = document.createElement("div");
+    box.className = "sl-settings";
+    box.innerHTML =
+      '<div class="sl-set-row"><label>监视器字号</label>' +
+        '<select id="slSetFontSize">' +
+          '<option>11</option><option>12</option><option>13</option><option>14</option>' +
+          '<option>15</option><option>16</option><option>17</option><option>18</option></select></div>' +
+      '<div class="sl-set-row"><label>时间口径</label>' +
+        '<select id="slSetTimeMode"><option value="abs">绝对时刻（23:06:40.125）</option>' +
+        '<option value="rel">相对秒（1.235s）</option></select></div>' +
+      '<div class="sl-set-row"><label>时间戳精度</label>' +
+        '<select id="slSetPrec"><option value="s">秒（23:06:40 / 1.2s）</option>' +
+        '<option value="ms">毫秒（23:06:40.125 / 1.235s）</option>' +
+        '<option value="us">微秒（相对口径 1.235482s）</option></select>' +
+        '<i>墙钟精度上限是毫秒，微秒只对相对口径生效；改后对新收的行生效</i></div>' +
+      '<div class="sl-set-row"><label>方向标记</label>' +
+        '<select id="slSetDirMode"><option value="tx">仅发送行（推荐：每行都标太吵）</option>' +
+        '<option value="all">每行都标</option><option value="off">不显示</option></select>' +
+        '<i>收到的行靠颜色区分（天蓝），发送行为琥珀色并带「→ 上位机」</i></div>' +
+      '<div class="sl-set-row"><label>数字标红</label>' +
+        '<label class="sl-chk"><input type="checkbox" id="slSetHighlight">把打印里的数字用醒目色标出</label></div>' +
+      '<div class="sl-set-row"><label>设备别名</label>' +
+        '<input type="text" id="slSetAlias" maxlength="24" placeholder="如：关节电机-左腿">' +
+        '<i>连接后顶栏显示别名（悬停仍可见 VID/PID）</i></div>' +
+      '<p class="sl-hint">这些项与「显示」页签同源，改一处两边同步。</p>';
+    UI.modal({
+      title: "⚙ 设置",
+      body: box,
+      buttons: [{ label: "完成", primary: true }],
+      focus: "#slSetPrec"
+    });
+    $("slSetFontSize").value = String(uicfg.fontSize || 12);
+    $("slSetTimeMode").value = t.timeMode === "rel" ? "rel" : "abs";
+    $("slSetPrec").value = t.timePrec || "ms";
+    $("slSetDirMode").value = t.dirMode || "tx";
+    $("slSetAlias").value = t.alias || "";
+    $("slSetHighlight").checked = !!uicfg.highlightNumbers;
+    $("slSetFontSize").addEventListener("change", function () { setAndFire("slFontSize", this.value); });
+    $("slSetTimeMode").addEventListener("change", function () { setAndFire("slTimeMode", this.value); });
+    $("slSetHighlight").addEventListener("change", function () {
+      setAndFire("slHighlightNum", this.checked ? "on" : "off");
+    });
+    $("slSetPrec").addEventListener("change", function () {
+      core.config.transport.timePrec = this.value;
+      core.saveConfig();
+    });
+    $("slSetDirMode").addEventListener("change", function () {
+      core.config.transport.dirMode = this.value;
+      core.saveConfig();
+    });
+    $("slSetAlias").addEventListener("change", function () {
+      core.config.transport.alias = String(this.value).replace(/^\s+|\s+$/g, "").slice(0, 24);
+      core.saveConfig();
+      renderConn();
+    });
+  }
+
+  function wireV226() {
+    var btn = $("slBtnSettings");
+    if (btn) { btn.addEventListener("click", openSettings); }
   }
 
   function confirmLoose(msg) {
@@ -2045,6 +2180,81 @@
     $("slBtnExpBin").addEventListener("click", function () { SL.exporters.exportBin(); });
     $("slBtnExpTxt").addEventListener("click", function () { SL.exporters.exportTxt(); });
 
+    /* --- V2.2.6 数据文件夹：绑定 / 规范命名落盘 / 清理 / CSV 直达 --- */
+    var AI = SL.aichan;
+    $("slLogTag").value = (core.config.ai && core.config.ai.tag) || "";
+    $("slLogKeep").value = (core.config.ai && core.config.ai.logKeep) || 10;
+    $("slLogTag").addEventListener("change", function () {
+      core.config.ai.tag = String(this.value).replace(/^\s+|\s+$/g, "").slice(0, 24);
+      core.saveConfig();
+    });
+    $("slLogKeep").addEventListener("change", function () {
+      var n = parseInt(this.value, 10);
+      core.config.ai.logKeep = (n > 0 && n <= 999) ? n : 10;
+      this.value = core.config.ai.logKeep;
+      core.saveConfig();
+    });
+    function syncDirButtons() {
+      var bound = AI.folderBound();
+      var logging = AI.dirLogging();
+      $("slBtnDirLog").disabled = !bound;
+      $("slBtnDirLog").textContent = logging ? "停写日志" : "开写日志";
+      $("slBtnBindFolder").textContent = bound ? ("📁 " + AI.folderName()) : "📁 绑定数据文件夹";
+    }
+    $("slBtnBindFolder").addEventListener("click", function () {
+      AI.bindFolder().then(function (r) {
+        if (r.ok) {
+          UI.toast("ok", "已绑定数据文件夹「" + r.dir + "」" + (r.cleaned ? "，自动清理了 " + r.cleaned + " 个过期文件" : ""));
+        } else {
+          UI.toast("warn", r.reason || "绑定失败");
+        }
+        syncDirButtons();
+      });
+    });
+    $("slBtnDirLog").addEventListener("click", function () {
+      if (AI.dirLogging()) {
+        AI.stopDirLog().then(function () {
+          UI.toast("info", "目录日志已停写");
+          syncDirButtons();
+        });
+        return;
+      }
+      AI.startDirLog().then(function (r) {
+        if (r.ok) {
+          UI.toast("ok", "正在写入 " + r.name + "（落盘不受屏幕暂停影响）");
+        } else {
+          UI.toast("warn", r.reason || "开写失败");
+        }
+        syncDirButtons();
+      });
+    });
+    $("slBtnCleanLogs").addEventListener("click", function () {
+      AI.cleanLogs(false).then(function (r) {
+        UI.toast(r.ok ? "ok" : "warn", r.ok
+          ? ("清理完成：删除 " + r.removed + " 个，保留最近 " + ((core.config.ai && core.config.ai.logKeep) || 10) + " 个")
+          : (r.reason || "清理失败"));
+      });
+    });
+    $("slBtnWipeLogs").addEventListener("click", function () {
+      UI.confirm("一键清空调试信息", "将删除数据文件夹里全部 seriallab_v* 文件（日志与数据表），不可恢复。确定清空吗？", "全部删除")
+        .then(function (ok) {
+          if (!ok) { return; }
+          AI.cleanLogs(true).then(function (r) {
+            UI.toast(r.ok ? "ok" : "warn", r.ok ? "已删除 " + r.removed + " 个文件" : (r.reason || "清空失败"));
+          });
+        });
+    });
+    $("slBtnExpCsvDir").addEventListener("click", function () {
+      var r = SL.exporters.buildParsedCsv();
+      if (!r || r.rows.length <= 1) {
+        UI.toast("warn", "还没有可导出的解析数据");
+        return;
+      }
+      AI.writeCsvToFolder(r.csv).then(function (res) {
+        UI.toast(res.ok ? "ok" : "warn", res.ok ? "已写入数据文件夹：" + res.name : (res.reason || "写入失败"));
+      });
+    });
+
     $("slBtnCfgCopy").addEventListener("click", function () {
       copyText(SL.exporters.configToText()).then(function (ok) {
         UI.toast(ok ? "ok" : "bad", ok ? "配置 JSON 已复制到剪贴板" : "复制失败，请用「导出文件」");
@@ -2136,8 +2346,10 @@
     for (var i = logs.length - 1; i >= start; i--) {
       var tr = el("tr");
       var d = new Date(logs[i].t);
+      /* V2.2.6：等级着色——error 红 / warn 琥珀，info 默认灰，一眼分轻重 */
+      var lvCls = logs[i].level === "error" ? " is-bad" : logs[i].level === "warn" ? " is-warn" : "";
       tr.appendChild(el("td", null, pad(d.getHours(), 2) + ":" + pad(d.getMinutes(), 2) + ":" + pad(d.getSeconds(), 2)));
-      tr.appendChild(el("td", null, logs[i].level));
+      tr.appendChild(el("td", "sl-log-level" + lvCls, logs[i].level));
       tr.appendChild(el("td", null, logs[i].msg));
       table.appendChild(tr);
     }
@@ -2230,13 +2442,30 @@
       { h: "③-4 让 AI 直接读串口：本地桥 + MCP", p: "仓库里的 _本地工具/serial-bridge 是一个本地串口桥（Node + serialport），直接复用本应用 9 个真源模块的解析内核（结果与网页端逐字节一致），并已封装为 MCP server——在 AI 工具的 MCP 配置里加 {\"command\": \"node\", \"args\": [\"<仓库根>/_本地工具/serial-bridge/bridge.mjs\", \"mcp\"]} 后，AI 就能调用 serial_list / serial_read / serial_write / serial_parse / serial_assert 五个工具：读串口、发指令（会先征求确认）、离线解析、跑判据断言（退出码 0/2）自主迭代。不依赖 MCP 的两条路：勾选「持续写入本地文件」（NDJSON 逐行落盘）或「HTTP 上报」+ python _本地工具/serial-inbox.py 收件箱。数据只在你的本机流转，没有任何上传代码。详见介绍页第 7 节「AI 自动化调试接入」。" },
       { h: "④ 发送", p: "底部输入框回车即发；HEX 模式内容写 AA 55 01（可空格分隔）。「发送」标签页里还能配定时轮询、触发应答（收到含「匹配」的内容自动回「应答」）与预设发送（可绑单字符快捷键，焦点不在输入框时生效，支持期望回包与超时提示）。" },
       { h: "⑤ 录制与导出", p: "「录制」标签页把流过的帧存进内存，停止后可回放、导出为 JSON；「暂停刷新」只停画面、不断开数据（与顶栏绿圆标是同一个开关）。数据页可导出解析结果 CSV（带 BOM，Excel 中文不乱码）、原始记录 CSV、JSON、BIN 与 TXT。" },
+      { h: "⑤-1 数据文件夹与文件命名规范（给 AI / 脚本定位用）", p: "「数据」页签可绑定一个本地文件夹，所有产物按统一规范命名，AI 或脚本按 seriallab_v* 通配即可快速定位目标调试信息：", list: [
+        "持续调试流：seriallab_v<版本>_log-<功能标识>_<日期时间>.ndjson —— 每行一个 JSON（首行 meta 说明结构），AI 逐行读即可按时间轴复盘「每个时间段发生了什么」；",
+        "数据表：seriallab_v<版本>_data-<功能标识>_<日期时间>.csv —— 带 BOM，Excel 直接打开，按列做统计、滤波对比分析；",
+        "功能标识在页签里自定义（如 foc-test / pid-tune），便于区分不同实验；",
+        "超出「保留最近 N 个」的旧文件自动删除；「清理历史」手动清、「一键清空」全删（有确认）；",
+        "屏幕暂停不影响落盘——暂停只是冻结画面，文件照常实时写入，AI 看到的时间轴是连续的。"
+      ] },
+      { h: "⑤-2 实时统计（有效值 / 峰峰值）", p: "「图表」页签新增「实时统计」渲染器：选通道后自动实时计算 有效值 RMS（去均值口径，标准正弦 = 峰值/√2）、峰峰值 Vpp、均值（直流分量）、最大、最小、样本数，只统计当前窗口（面板窗口可调），适合验证滤波前后的有效值变化。" },
+      { h: "⑤-3 时域折线的示波器操作", p: "数据按时间轴向左滚动、最新点始终贴右缘；鼠标拖动可回看历史（右上角有黄色「回看历史」提示），滚轮缩放窗口点数，双击或点面板头「Auto」回到实时并恢复自动量程；图例可点击勾选 / 隐藏通道（隐藏的灰显）；面板头的「⏸」只暂停这张卡片（数据照收），顶栏绿圆标是全局暂停；快捷条上「窗口」下拉与 Y 轴 min/max 输入可自由调节横纵范围。" },
+      { h: "⑤-4 频域谱（FFT）在哪里", p: "频谱分析视图已内置：「图表」页签选「频域谱」或顶栏「新图表」下拉添加——对通道做 radix-2 FFT + 汉宁窗，显示单边幅值谱，与「时域折线」并排放正好是「时域看波形、频域看分量」的组合。采样率默认按相邻点时间间隔反推，也可在面板编辑器里指定。" },
       { h: "已知限制（务必先看）", list: [
         "file:// 直接打开的单文件离线版无法使用真实串口 —— file:// 不是安全上下文，浏览器禁止 Web Serial。真机调试请用本地 HTTP 服务或在线版本。",
         "改波特率、数据位、停止位、校验或流控需要关闭端口重开，应用会自动完成（约四分之一秒）。",
         "Arduino / ESP 打开串口时 DTR 拉低会自动复位，连接后的「复位等待」时间内不建议发送。",
         "录制数据只放内存，刷新页面即丢失。长时间实验请用录制并导出 JSON。"
       ] },
-      { h: "面向 AI 的开发说明", p: "本子应用自带 llms.txt、AGENTS.md 与 skills/html-webserial-app/SKILL.md，可用于开发同类应用，或以本应用为基座二次开发。点顶栏「AI 开发提示词」可查看并复制一份浓缩版。" }
+      { h: "面向 AI 的开发说明", p: "本子应用自带 llms.txt、AGENTS.md 与 skills/html-webserial-app/SKILL.md，可用于开发同类应用，或以本应用为基座二次开发。点顶栏「AI 开发提示词」可查看并复制一份浓缩版。" },
+      { h: "致谢与参考开源项目", p: "本应用在格式与交互上借鉴并兼容了以下社区项目的事实标准，在此致谢——它们各自都是更完整的上位机/调试工具，按需选用：", list: [
+        "VOFA+ —— 文本 FireWater 协议（name:value）与二进制 JustFloat 协议（float32 小端 + 帧尾 00 00 80 7F）均来自 VOFA+ 的社区约定，本站的对应预设与它直接互通；",
+        "Teleplot / VS Code Teleplot 插件 —— >name:value 遥测行格式来自 Teleplot 的约定；",
+        "匿名上位机 V1.0（匿名科创 / 野火例程生态）—— AA AA 帧头 + 功能字 + 长度 + int16 大端 + SUM8 的帧结构来自该协议公开定义；",
+        "SerialWeb 等网页串口助手 —— 时间戳双口径、HEX/文本双视图等显示习惯对齐此类工具；",
+        "Web Serial API —— Chromium 团队的标准能力，本应用是它的一个零依赖实现。"
+      ] }
     ]);
   }
 
@@ -2918,6 +3147,7 @@
     wireV223();
     initPanelQuick();
     wireTestPane();
+    wireV226();
     initTooltips();
     wireHexRuleInputs();
     wireParsePane();
