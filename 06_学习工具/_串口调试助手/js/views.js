@@ -167,11 +167,12 @@
     head.appendChild(type);
 
     /* 文本监视器：预留快捷工具条容器（时间戳 / HEX / 编码），控件由 ui.js 统一填充。
-       放在标题之后、图标按钮之前，操作距离最近、最常点。 */
-    if (panel.type === "textmon") {
+       时域折线：预留窗口调节容器（横轴采样点数）。都在标题之后、图标按钮之前。 */
+    if (panel.type === "textmon" || panel.type === "timeplot") {
       var quick = document.createElement("span");
       quick.className = "sl-panel-quick";
       quick.setAttribute("data-quick", "");
+      if (panel.type === "timeplot") { quick.setAttribute("data-quick-plot", panel.id); }
       head.appendChild(quick);
     }
 

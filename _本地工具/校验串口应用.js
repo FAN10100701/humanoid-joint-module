@@ -805,9 +805,14 @@ const GBK = (X.codec || SL.codec);
   check("测试页签: 有案例状态徽章 slTestBadge", html.indexOf('id="slTestBadge"') > 0, "");
   check("快捷工具条: 监视器面板头预留 data-quick 容器（views.js）",
     fs.readFileSync(path.join(JS, "views.js"), "utf8").indexOf('data-quick') > 0, "");
-  check("RX/TX: 监视器方向标记已改为 下位机/上位机",
-    fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"下位机"') > 0
-      && fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"上位机"') > 0, "");
+  check("RX/TX: 监视器方向标记已改为 箭头+下位机/上位机",
+    fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"← 下位机"') > 0
+      && fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"→ 上位机"') > 0, "");
+  check("V2.2.5: 应用内版本号跟随站点版本链",
+    fs.readFileSync(path.join(JS, "ui.js"), "utf8").indexOf('UI.VERSION = "2.2.5"') > 0, "");
+  check("V2.2.5: 流控信号已移出顶栏(设备页签内)",
+    fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('id="slModem"') >
+      fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('data-pane="test"'), "");
   check("RX/TX: 顶栏计数已改为 ←下位机/→下位机",
     html.indexOf("←下位机") > 0 && html.indexOf("→下位机") > 0, "");
 })();

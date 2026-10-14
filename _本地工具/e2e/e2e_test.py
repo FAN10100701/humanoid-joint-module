@@ -828,9 +828,9 @@ def main():
             assert page.inner_text("#slTestBadge") == "未在测试", "停止后徽章未归位"
 
             # --- 3) 监视器快捷工具条:存在且与左栏同源联动 ---
-            page.wait_for_selector("[data-quick] .sl-qk-enc", timeout=8000)
+            page.wait_for_selector("[data-quick] .sl-qk-enc[data-qk='enc']", timeout=8000)
             n_chk = page.locator("[data-quick] input[type='checkbox']").count()
-            assert n_chk == 2, "快捷条应有时间戳/HEX 两个开关,实际 %d" % n_chk
+            assert n_chk == 2, "监视器快捷条应有时间戳/HEX 两个开关,实际 %d" % n_chk
             # 勾快捷条 HEX → 左栏 HEX 显示同步选中
             page.check("[data-quick] input[data-qk='hex']")
             page.wait_for_function(
@@ -838,7 +838,7 @@ def main():
             page.wait_for_function(
                 "SerialLab.core.config.transport.hexRecv === true", timeout=5000)
             # 快捷条编码选 GBK → 左栏编码同步
-            page.select_option("[data-quick] .sl-qk-enc", "gbk")
+            page.select_option("[data-quick] .sl-qk-enc[data-qk='enc']", "gbk")
             page.wait_for_function(
                 "document.querySelector('#slEncoding').value === 'gbk'", timeout=5000)
             # 左栏改时间戳 → 快捷条回显同步(slShowTs 在设备页签,先切过去)
@@ -848,10 +848,22 @@ def main():
                 "!document.querySelector('[data-quick] input[data-qk=\\'ts\\']').checked",
                 timeout=5000)
 
-            # --- 4) 收尾:恢复默认显示与编码(配置持久化,不污染下一位) ---
+            # --- 4) V2.2.5:版本号对齐 / 顶栏单行 / 时域窗口调节 ---
+            assert page.evaluate("SerialLab.ui.VERSION") == "2.2.5", \
+                "应用内版本号未跟随站点版本链: %r" % page.evaluate("SerialLab.ui.VERSION")
+            assert page.locator("header #slModem").count() == 0, "流控信号应已移出顶栏(设备页签)"
+            assert page.locator("#slModem").count() == 1, "设备页签缺流控信号读数"
+            # 时域折线面板头有窗口下拉,切 100 点 → 面板 window 生效
+            win_sel = page.locator("[data-quick-plot] .sl-qk-enc[data-qk='win']")
+            assert win_sel.count() >= 1, "时域面板缺窗口调节下拉"
+            win_sel.first.select_option("100")
+            page.wait_for_function(
+                "SerialLab.views.list().some(function(p){return p.type==='timeplot' && p.window===100;})",
+                timeout=8000)
+
+            # --- 5) 收尾:恢复默认显示与编码(配置持久化,不污染下一位) ---
             page.check("#slShowTs")
             page.select_option("#slEncoding", "utf-8")
-            page.click("#slTabs .sl-tab[data-pane='device']")
             page.uncheck("#slHexRecv")
             assert not errs, "V2.2.4 JS 异常: " + "; ".join(errs[:3])
         check("serial_v224 测试页签/案例卡片/自动补波形/快捷工具条联动", t_serial_v224)

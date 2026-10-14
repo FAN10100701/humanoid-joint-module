@@ -14,11 +14,13 @@
 
 <div class="sl-app" id="slApp">
 
-  <!-- ==================== A 顶栏：全局且低频的动作 ==================== -->
+  <!-- ==================== A 顶栏：全局且低频的动作（单行紧凑，参考主流桌面软件） ==================== -->
   <header class="sl-top">
     <a class="sl-brand" href="../21_串口调试助手.html" title="返回功能介绍页">
       🔌 串口调试助手 <span class="sl-ver" id="slVersion">--</span>
     </a>
+
+    <span class="sl-bar-sep"></span>
 
     <!-- 运行 / 暂停：绿色圆标（运行中）↔ 灰色圆标（已暂停），参照 VOFA+ 左上角那枚 -->
     <button class="sl-run" id="slRun" type="button" data-state="idle" aria-pressed="false"
@@ -39,15 +41,16 @@
 
     <span class="sl-top-spacer"></span>
 
-    <span class="sl-field" id="slModem">CTS - · DSR - · DCD - · RI -</span>
     <span class="sl-field sl-mono sl-count">←下位机 <b id="slRxCount">0</b>B · →下位机 <b id="slTxCount">0</b>B</span>
+
+    <span class="sl-bar-sep"></span>
 
     <button class="sl-link" id="slBtnHelp" type="button">帮助</button>
     <button class="sl-link" id="slBtnPrompt" type="button">AI</button>
     <button class="sl-link" id="slBtnTheme" type="button">主题</button>
     <button class="sl-link" id="slBtnDefaults" type="button">恢复默认</button>
     <button class="sl-link" id="slBtnSide" type="button">收起左栏</button>
-    <a class="sl-link" href="../../index.html">学习首页</a>
+    <a class="sl-link" href="../../index.html" title="返回学习站首页">学习首页</a>
   </header>
 
   <!-- ==================== 能力降级横幅 ==================== -->
@@ -178,6 +181,9 @@
               <button class="sl-btn is-sm" id="slBtnDtr" type="button" data-tip="翻转 DTR（数据终端就绪）。很多开发板拉低 DTR 会复位">DTR 翻转</button>
               <button class="sl-btn is-sm" id="slBtnRts" type="button" data-tip="翻转 RTS（请求发送）。开了硬流控后此项由硬件掌管">RTS 翻转</button>
               <button class="sl-btn is-sm" id="slBtnBreak" type="button" data-tip="发送 BREAK 信号（持续拉低超过一帧），部分设备用它进入 bootloader">BREAK</button>
+            </div>
+            <div class="sl-row">
+              <span class="sl-field sl-mono" id="slModem" data-tip="硬件流控 / 载波信号的实时读数（连接后自动刷新）：CTS 对方允许我发、DSR 对方就绪、DCD 载波检测、RI 振铃">CTS - · DSR - · DCD - · RI -</span>
             </div>
           </div>
 
@@ -621,12 +627,12 @@
   <footer class="sl-send">
     <div class="sl-send-row">
       <span class="sl-field">发送</span>
-      <span class="sl-send-input"><input type="text" id="slSendInput" class="sl-mono-input" placeholder="输入要发送的内容；HEX 模式下写 AA 55 01（可空格分隔）" autocomplete="off"></span>
+      <span class="sl-send-input"><input type="text" id="slSendInput" class="sl-mono-input" placeholder="输入内容；HEX 写 AA 55 01" autocomplete="off"></span>
       <button class="sl-btn is-primary" id="slBtnSend" type="button">发送</button>
       <button class="sl-btn" id="slBtnSendAgain" type="button">重发</button>
-      <label class="sl-chk"><input type="checkbox" id="slAppendEnding" checked>追加换行</label>
+      <label class="sl-chk"><input type="checkbox" id="slAppendEnding" checked>换行</label>
       <label class="sl-chk"><input type="checkbox" id="slSendHex">HEX</label>
-      <span class="sl-hint" id="slSendHint">未连接。连接设备，或到左侧「测试」页签一键开跑合成数据。</span>
+      <span class="sl-hint" id="slSendHint">未连接——去「测试」页签可无硬件体验</span>
     </div>
   </footer>
 

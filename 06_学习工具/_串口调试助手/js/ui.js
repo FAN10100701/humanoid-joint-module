@@ -21,7 +21,9 @@
 
   var UI = {};
 
-  UI.VERSION = "1.0.0";
+  /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
+     V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
+  UI.VERSION = "2.2.5";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -376,16 +378,17 @@
 
     var hint = $("slSendHint");
     if (hint) {
+      /* V2.2.5：发送条提示语一律短句（长文案会撑出横向滚动条） */
       if (!T.isSupported() && !demo) {
-        hint.textContent = "当前浏览器不支持 Web Serial：可进入演示模式体验全部解析、绘图与导出功能。";
+        hint.textContent = "浏览器不支持 Web Serial，可用「测试」页签体验";
       } else if (conn !== "open") {
-        hint.textContent = "未连接。连接设备，或到左侧「测试」页签一键开跑合成数据。";
+        hint.textContent = "未连接——去「测试」页签可无硬件体验";
       } else if (T.isResetting()) {
-        hint.textContent = "设备正在复位（Arduino/ESP 打开串口会自动重启），稍候再发送。";
+        hint.textContent = "设备复位中，稍候再发送";
       } else {
         hint.textContent = demo
-          ? "演示模式：发送内容会被回显到监视器，便于验证解析规则。"
-          : "已连接。回车即可发送；HEX 模式下内容支持空格分隔。";
+          ? "演示中。发送内容会回显到监视器"
+          : "已连接。回车发送；HEX 可空格分隔";
       }
     }
     $("slSendInput").disabled = (conn !== "open");
@@ -740,11 +743,15 @@
     var bar = $("slGarbleBar");
     if (bar) {
       bar.hidden = false;
-      $("slGarbleText").textContent = "最近 " + Math.round(rate * 100) + "% 的字符解码失败（显示为菱形问号）。"
-        + "通常是编码不对或波特率不匹配，按顺序试：";
+      var tipText = "通常是编码不对、波特率不匹配，或者它本来是二进制协议（点「HEX 显示」看字节，或到「测试」页签开文本案例对照）。按顺序试：";
+      if (core.state.demo) {
+        tipText = "演示中出乱码 = 你开了故障注入，或解析规则是 HEX 二进制帧（文本视图只显示解码噪声）。按顺序试：";
+      }
+      $("slGarbleText").textContent = "最近 " + Math.round(rate * 100) + "% 的字符解码失败（显示为菱形问号）。" + tipText;
     }
     UI.toast("warn", "检测到疑似乱码（解码失败率 " + Math.round(rate * 100) + "%），「设备」页签已给出排查建议");
     renderParamBadge();
+    renderTestBadge();
   }
 
   function hideGarble() {
@@ -752,6 +759,7 @@
     var bar = $("slGarbleBar");
     if (bar) { bar.hidden = true; }
     renderParamBadge();
+    renderTestBadge();
   }
 
   /* 每秒乱码体检：统计最近 RX 记录文本里的 U+FFFD 替换字符率，
@@ -916,14 +924,35 @@
   ];
 
   function fillQuick(host) {
+    /* 时域折线的快捷条：横轴窗口（采样点数）——数据太密时收窄窗口即可看清 */
+    var plotId = host.getAttribute("data-quick-plot");
+    if (plotId) {
+      var cur = null;
+      var apps = SL.views.list();
+      for (var p = 0; p < apps.length; p++) {
+        if (apps[p].id === plotId) { cur = apps[p].window || 500; break; }
+      }
+      if (cur === null) { return; }
+      var opts = [100, 250, 500, 1000, 2000];
+      var optHtml = "";
+      for (var i = 0; i < opts.length; i++) {
+        optHtml += '<option value="' + opts[i] + '"' + (opts[i] === cur ? " selected" : "") + ">" + opts[i] + " 点</option>";
+      }
+      host.innerHTML = '<span class="sl-qk">窗口</span>' +
+        '<select class="sl-qk-enc" data-qk="win" title="横轴显示最近多少个采样点——太小抖动、太密看不清，按需调整">' +
+        optHtml + "</select>";
+      return;
+    }
+
+    /* 文本监视器的快捷条：时间戳 / HEX / 编码 */
     var t = core.config.transport || {};
     var ts = t.showTimestamp !== false;
     var hex = !!t.hexRecv;
     var enc = t.encoding || "utf-8";
-    var optHtml = "";
-    for (var i = 0; i < QK_ENC_OPTS.length; i++) {
-      optHtml += '<option value="' + QK_ENC_OPTS[i][0] + '"' +
-        (QK_ENC_OPTS[i][0] === enc ? " selected" : "") + ">" + QK_ENC_OPTS[i][1] + "</option>";
+    var encOptHtml = "";
+    for (var e = 0; e < QK_ENC_OPTS.length; e++) {
+      encOptHtml += '<option value="' + QK_ENC_OPTS[e][0] + '"' +
+        (QK_ENC_OPTS[e][0] === enc ? " selected" : "") + ">" + QK_ENC_OPTS[e][1] + "</option>";
     }
     host.innerHTML =
       '<label class="sl-qk" title="显示 / 隐藏行首时间戳（同左栏「显示」页签）">' +
@@ -931,7 +960,7 @@
       '<label class="sl-qk" title="以 HEX 十六进制显示收到的字节（同左栏「HEX 显示」）">' +
         '<input type="checkbox" data-qk="hex"' + (hex ? " checked" : "") + '>HEX</label>' +
       '<select class="sl-qk-enc" data-qk="enc" title="收码字符编码（同左栏「编码」，含 GBK）">' +
-        optHtml + '</select>';
+        encOptHtml + '</select>';
   }
 
   function refreshAllQuick() {
@@ -955,6 +984,12 @@
         if (k === "ts") { setAndFire("slShowTs", t.checked ? "on" : "off"); }
         else if (k === "hex") { setAndFire("slHexRecv", t.checked ? "on" : "off"); }
         else if (k === "enc") { setAndFire("slEncoding", t.value); }
+        else if (k === "win") {
+          /* 时域折线快捷条：横轴窗口（面板级配置，不走 transport） */
+          var pid = node.getAttribute("data-quick-plot");
+          var n = parseInt(t.value, 10);
+          if (pid && n > 0) { SL.views.updatePanel(pid, { window: n }); }
+        }
         return;
       }
       /* ② 左栏三个同源控件变化 → 快捷条回显最新配置 */
@@ -1009,8 +1044,14 @@
     var b = $("slTestBadge");
     if (!b) { return; }
     if (runningCase) {
-      b.setAttribute("data-state", "open");
-      b.textContent = "▶ " + runningCase;
+      /* 演示中出现乱码 → 徽章转红引导去设备页签（排查条在那里） */
+      if (garbleShown) {
+        b.setAttribute("data-state", "garbled");
+        b.textContent = "⚠ 乱码 · 去「设备」页签排查";
+      } else {
+        b.setAttribute("data-state", "open");
+        b.textContent = "▶ " + runningCase;
+      }
     } else if (core.state.demo) {
       b.setAttribute("data-state", "busy");
       b.textContent = "▶ 演示（自定义参数）";
@@ -1030,11 +1071,14 @@
     renderTestBadge();
   }
 
+  /* 测试案例固定走文本行 + UTF-8：案例数据本来就是文本行定义，
+     而且演示模式会跟随「解析」页签的规则——如果用户遗留了 HEX 二进制
+     规则（比如点过二进制协议预设），文本监视器看到的就全是解码噪声，
+     用户会误以为「乱码没修好」。案例是合成数据，全链路可控，直接锁定。 */
   function startTestCase() {
-    T.startDemo({
-      mode: core.config.rule.active === "hex" ? "hex" : "text",
-      periodMs: 20
-    });
+    var t = core.config.transport;
+    if ((t.encoding || "utf-8") !== "utf-8") { setAndFire("slEncoding", "utf-8"); }
+    T.startDemo({ mode: "text", periodMs: 20 });
     renderTestBadge();
   }
 
@@ -1051,7 +1095,10 @@
     setAndFire("slFaultGarbage", String(c.faults.garbage));
     runningCase = c.label;
     startTestCase();
-    UI.toast("ok", "测试案例「" + c.label + "」已开跑（合成数据 50Hz）");
+    var ruleHint = (core.config.rule.active === "hex")
+      ? "；当前解析规则为 HEX 二进制帧，监视器里这些文本行解不出字段——要测你的帧结构请用「进入演示模式」"
+      : "";
+    UI.toast("ok", "测试案例「" + c.label + "」已开跑（合成文本行 50Hz）" + ruleHint);
   }
 
   function wireTestPane() {
@@ -1060,8 +1107,19 @@
       btn.addEventListener("click", function () {
         if (core.state.demo) { stopTestCase(); return; }
         runningCase = "";
-        startTestCase();
-        UI.toast("ok", "已进入演示模式（合成数据 50Hz）");
+        var t = core.config.transport;
+        if ((t.encoding || "utf-8") !== "utf-8") { setAndFire("slEncoding", "utf-8"); }
+        var hexRule = core.config.rule.active === "hex";
+        T.startDemo({
+          mode: hexRule ? "hex" : "text",
+          periodMs: 20
+        });
+        renderTestBadge();
+        if (hexRule) {
+          UI.toast("info", "已按你的 HEX 帧规则合成二进制数据——文本视图显示的是解码噪声，请切 HEX 显示或看波形");
+        } else {
+          UI.toast("ok", "已进入演示模式（合成数据 50Hz）");
+        }
       });
     }
     var cards = document.querySelectorAll(".sl-case[data-case]");

@@ -1200,10 +1200,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.4</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手测试页签收纳轮:演示与故障注入收纳进「测试」页签(五案例一键开跑) / ⚡AUTO 一键自适应(扫波特率+识别编码+一键套用) / 演示必出波形(自动补面板) / 监视器面板头快捷工具条(时间戳/HEX/编码) / 方向文案接地气(下位机/上位机)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.5</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手乱码根因修复 + 界面微调轮:测试案例强制文本行+UTF-8(修「测试数据依旧乱码」) / 应用内版本号对齐站点版本链 / 顶栏 Word/VSCode 风单行重构 / 时域折线横轴窗口调节 + 图例点击显隐通道 / 方向标记 ←下位机 · →上位机 / 发送条防溢出</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>🈯🖥 V2.2.5 · 2026-10-14 · 串口调试助手:测试乱码根因修复 + 顶栏单行重构 + 时域窗口调节与图例勾选 + 版本号对齐 －</summary>
+        <div class="faq-a">🈯 <b>「测试数据依旧乱码」的真根因</b>:波形图例是 func/x/y/z(匿名 V1.0 二进制协议字段)——<b>解析规则遗留为 HEX 二进制帧</b>时,演示跟随规则按二进制合成,文本监视器全是解码噪声(波形正常恰恰说明 HEX 解析在工作)。修复:①<b>案例卡片强制文本行+UTF-8</b>(合成数据全链路可控,不再被遗留规则带偏);②「进入演示模式」仍跟随规则但 HEX 下开跑 toast 明说「文本视图是解码噪声」;③乱码排查条文案按场景分流;④测试页签徽章乱码联动转红引导去设备页签。🔢 <b>应用内版本号对齐</b>:UI.VERSION 从 1.0.0 跟随站点版本链,不再让用户误读「没更新」。🖥 <b>顶栏单行重构(参考 Word/VSCode)</b>:流控信号 CTS/DSR/DCD/RI 移到设备页签(顺带补人话说明),右侧链接钮去边框改纯文字+hover 底色,分隔线分组,<b>「学习首页」不再掉行</b>。📈 <b>时域折线两件套</b>:面板头新增<b>横轴窗口下拉</b>(100~2000 点,太密就收窄);<b>图例可点击勾选通道</b>——点图例显隐对应曲线,隐藏通道灰显不参与量程,勾选状态调窗口也不丢。🧹 细节:方向标记改「← 下位机 / → 上位机」;案例卡片单列横排不再折行;发送条提示语短句化+省略号收缩防横向滚动。✅ 校验 158/158 · E2E 25/25 PASS。</div>
+      </details>
+    <details class="faq">
         <summary>🧪⚡ V2.2.4 · 2026-10-14 · 串口调试助手测试页签收纳:五案例一键开跑 + AUTO 一键自适应 + 演示必出波形 + 监视器快捷工具条 + 下位机/上位机文案 －</summary>
         <div class="faq-a">🧪 <b>演示入口收纳进「测试」页签(测试功能不再占顶栏)</b>:顶栏「演示模式」按钮移除,全部收进左栏新「<b>测试</b>」页签——<b>常用案例</b>两张高亮卡片(⭐基础正弦波形=验证全链路、⭐拟真电机信号=阶跃/超调/纹波/噪声)<b>点卡片即一键开跑</b>(自动套参数+启动演示+自动补波形,再点一次即停止);<b>故障注入案例</b>三张简约卡片(🧯校验错/🧯乱码噪声/🧯丢帧粘包)专练排错链路;原「演示与故障注入」控件挪进「手动调参(一般不用碰)」;案例状态徽章实时显示当前案例名。⚡ <b>AUTO 一键自适应</b>:设备页签显眼新按钮——自动完成「扫波特率(12 档)→ 用最高分档字节识别编码(UTF-8/GBK/Latin-1)→ 一键套用」三步;没采到数据给明确指引(设备要在发数据/没硬件去测试页签)。📈 <b>演示必出波形</b>:演示启动时一个图表面板都没有就自动补一个时域波形——修掉「恢复的旧配置只有监视器,点演示只看到滚动文本看不到曲线」。🕒 <b>监视器面板头快捷工具条</b>:标题右侧 <code>[时间戳][HEX][编码▾]</code> 三控件随手改(对齐 VOFA+ 习惯),与左栏同源双向联动,编码含 GBK。🔤 <b>方向文案接地气</b>:监视器每行 TX/RX 改为「<b>上位机/下位机</b>」,顶栏计数改「←下位机 xB · →下位机 xB」(箭头即数据流向)。🛠 顺手修一个 V2.2.3 起的潜伏缺陷:<code>setAndFire</code> 对复选框只赋 value 不勾选——排查条「切 HEX 显示」按钮与测试案例卡片实际没把配置写进去,现按 .checked 正确落盘。✅ 校验 155/155 · E2E 25/25 PASS。</div>
       </details>
@@ -1488,7 +1492,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.4(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.5(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

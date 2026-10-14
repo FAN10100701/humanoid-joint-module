@@ -506,6 +506,11 @@
 
   var PAD = { l: 42, r: 10, t: 20, b: 16 };
 
+  /* V2.2.5：各时域面板的「图例隐藏通道」表（key=panel.id）。
+     放模块级而不是面板描述符里：updatePanel 会重建面板元素，
+     但 panel.id 不变——调节窗口等重建操作后勾选状态得以保留。 */
+  var hiddenChans = {};
+
   /* ---------- 1) 时域折线 ---------- */
   P.register({
     id: "timeplot",
@@ -515,6 +520,21 @@
     defaults: { window: 500, h: 300, opts: { lineWidth: 1.4, showDot: true } },
     make: function (hostEl, panel) {
       var view = makeView(hostEl);
+      var legendHits = [];    /* 图例命中区（draw 时刷新），点击切换显隐 */
+
+      /* 点击图例 = 勾选 / 取消对应通道（隐藏通道不画线、不参与量程） */
+      view.canvas.addEventListener("click", function (e) {
+        var r = view.canvas.getBoundingClientRect();
+        var x = e.clientX - r.left;
+        var y = e.clientY - r.top;
+        for (var i = 0; i < legendHits.length; i++) {
+          if (x >= legendHits[i].x0 && x <= legendHits[i].x1 && Math.abs(y - legendHits[i].y) <= 10) {
+            var h = hiddenChans[panel.id] || (hiddenChans[panel.id] = {});
+            h[legendHits[i].key] = !h[legendHits[i].key];
+            return;
+          }
+        }
+      });
 
       function draw(data) {
         view.fit();
@@ -522,13 +542,24 @@
         var t = theme();
         var ctx = view.ctx;
         var chans = resolveChannels(panel, data, registry.timeplot);
-        var series = buildSeries(panel, data, chans);
+        var allSeries = buildSeries(panel, data, chans);
+        var hid = hiddenChans[panel.id] || {};
+
+        /* 隐藏通道不参与画线与量程，但仍出现在图例里（灰显，可点回来） */
+        var series = [];
+        var i;
+        for (i = 0; i < allSeries.length; i++) {
+          if (!hid[allSeries[i].key]) { series.push(allSeries[i]); }
+        }
 
         if (!series.length) {
           ctx.fillStyle = t.ink3;
           ctx.font = "11px Consolas, monospace";
           ctx.textBaseline = "middle";
-          ctx.fillText("暂无数据（连接设备，或到「测试」页签开演示）", 12, view.h / 2);
+          ctx.fillText(allSeries.length
+            ? "所有通道都已隐藏——点击图例勾回"
+            : "暂无数据（连接设备，或到「测试」页签开演示）", 12, view.h / 2);
+          drawLegend(ctx, view, allSeries, hid, null);
           return;
         }
 
@@ -537,7 +568,7 @@
         var map = drawFrame(view, yr.min, yr.max, pad);
         var lw = (panel.opts && panel.opts.lineWidth) || 1.4;
 
-        for (var i = 0; i < series.length; i++) {
+        for (i = 0; i < series.length; i++) {
           var s = series[i];
           ctx.save();
           ctx.strokeStyle = s.color;
@@ -569,24 +600,7 @@
           ctx.restore();
         }
 
-        /* 图例（左上角） */
-        var items = [];
-        for (var k = 0; k < series.length; k++) {
-          items.push({ color: series[k].color, label: series[k].label });
-        }
-        ctx.save();
-        ctx.font = "10px Consolas, monospace";
-        ctx.textBaseline = "middle";
-        var cx = pad.l + 4, cy = 9;
-        for (var m = 0; m < items.length; m++) {
-          if (cx + 60 > view.w - pad.r) { break; }
-          ctx.fillStyle = items[m].color;
-          ctx.fillRect(cx, cy - 4, 8, 8);
-          ctx.fillStyle = t.ink2;
-          ctx.fillText(items[m].label, cx + 12, cy);
-          cx += 12 + ctx.measureText(items[m].label).width + 12;
-        }
-        ctx.restore();
+        drawLegend(ctx, view, allSeries, hid, pad);
 
         /* 左上角标出当前量程 */
         ctx.save();
@@ -594,6 +608,40 @@
         ctx.font = "10px Consolas, monospace";
         ctx.textBaseline = "top";
         ctx.fillText(U.fmt(yr.min, 3) + " ~ " + U.fmt(yr.max, 3), 4, view.h - pad.b + 3);
+        ctx.restore();
+      }
+
+      /* 图例（左上角）：可点击。隐藏的通道灰显；记录命中区给 click 用 */
+      function drawLegend(ctx, view, allSeries, hid, pad) {
+        var t = theme();
+        legendHits = [];
+        ctx.save();
+        ctx.font = "10px Consolas, monospace";
+        ctx.textBaseline = "middle";
+        var cx = PAD.l + 4, cy = 9;
+        for (var m = 0; m < allSeries.length; m++) {
+          var it = allSeries[m];
+          if (cx + 70 > view.w - PAD.r) { break; }
+          var off = !!hid[it.key];
+          ctx.globalAlpha = off ? 0.3 : 1;
+          ctx.fillStyle = it.color;
+          ctx.fillRect(cx, cy - 4, 8, 8);
+          if (off) {
+            /* 隐藏通道的色块上画一道斜杠，明示「已关」 */
+            ctx.strokeStyle = t.ink2;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 1, cy + 5);
+            ctx.lineTo(cx + 9, cy - 5);
+            ctx.stroke();
+          }
+          ctx.fillStyle = off ? t.ink3 : t.ink2;
+          ctx.fillText(it.label, cx + 12, cy);
+          var wEnd = cx + 12 + ctx.measureText(it.label).width + 8;
+          legendHits.push({ key: it.key, x0: cx - 2, x1: wEnd, y: cy });
+          cx = wEnd + 4;
+          ctx.globalAlpha = 1;
+        }
         ctx.restore();
       }
 
@@ -1068,7 +1116,7 @@
             row += '<span class="sl-mon-t">' + U.esc(lab || "") + '</span>';
           }
           if (showDir) {
-            row += '<span class="sl-mon-dir">' + (tx ? "上位机" : "下位机") + '</span>';
+            row += '<span class="sl-mon-dir">' + (tx ? "→ 上位机" : "← 下位机") + '</span>';
           }
           var text = showHex ? (rec.hex || rec.text || "") : (rec.text || rec.hex || "");
           var html = U.esc(text);
