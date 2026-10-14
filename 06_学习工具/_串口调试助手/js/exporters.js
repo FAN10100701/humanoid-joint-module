@@ -554,6 +554,22 @@
       if (flat.length) { hints.push("以下通道数值恒定（span=0），可能是固定增益、占位字段或解析偏移错位：" + flat.join(", ")); }
     }
     hints.push("本包内的 samples 保留原始 HEX 与解出值，可据此离线复算；改完规则后在本应用「按当前规则重放缓存」即可验证，不必让硬件重跑。");
+    /* 显示设置快照：下面的 hints 与后面的 bundle 都要用，必须先算一次。
+       注意：此处若直接引用 bundle.settings 会踩 var 提升——bundle 在下方才赋值，
+       届时它是 undefined，整段直接抛 TypeError（曾致 debugBundle 完全不可用）。 */
+    var displaySnap = (function () {
+      var d = U.clone(cfg.ui || {});
+      d.recordCapRequested = (cfg.ui && cfg.ui.recordCap) || 20000;
+      d.recordCapEffective = (SL.datastore && SL.datastore.rawCap) ? SL.datastore.rawCap() : 0;
+      d.rawRecordsHeld = (SL.datastore && SL.datastore.rawCount) ? SL.datastore.rawCount() : 0;
+      d.timelineMaxFrames = (SL.timeline && SL.timeline.maxFrames) ? SL.timeline.maxFrames() : 0;
+      return d;
+    })();
+    /* 记录窗口是「AI 会不会误判数据完整性」的关键（A-81）：必须说清本包只覆盖哪一段 */
+    hints.push("记录窗口：原始记录缓冲上限 " + (displaySnap.recordCapEffective || 0)
+      + " 条，当前持有 " + (displaySnap.rawRecordsHeld || 0)
+      + " 条（timelineMaxFrames=" + (displaySnap.timelineMaxFrames || 0)
+      + "）。若这段时间短于实际观测时长，说明本包只代表最近一段——要长时间留证请开「持续写入本地文件」或调高「存档上限」。");
 
     var generatedAt = new Date();
     var bundle = {
@@ -574,7 +590,9 @@
       /* 设置快照：AI 要能看懂「用户当前是怎么配的」，否则给出的建议会答非所问 */
       settings: {
         transport: U.clone(tp),
-        display: U.clone(cfg.ui || {}),
+        /* display 里额外带上「真实生效的记录上限」：只给配置里的期望值会误导 AI（A-81）。
+           直接复用上面算好的 displaySnap，避免两处口径漂移 */
+        display: displaySnap,
         panels: (function () {
           var ps = cfg.panels || [];
           var o = [];
@@ -633,7 +651,8 @@
       + " · 数字标红 " + (bundle.settings.display.highlightNumbers ? "开" : "关")
       + " · 失败行标红 " + (bundle.settings.display.markFailed !== false ? "开" : "关")
       + " · 自动存档 " + (bundle.settings.display.autoRecord !== false ? "开" : "关")
-      + "（上限 " + (bundle.settings.display.recordCap || 20000) + " 帧）"
+      + "（上限 " + (bundle.settings.display.recordCapEffective || bundle.settings.display.recordCap || 20000)
+      + " 条，当前持有 " + (bundle.settings.display.rawRecordsHeld || 0) + " 条）"
       + " · 图表框 " + bundle.settings.panels.length + " 个");
     B.push("");
     B.push("[帧结构]");

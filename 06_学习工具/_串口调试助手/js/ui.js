@@ -1886,9 +1886,10 @@
     ui.drawInterval = di;
     if (SL.views) { SL.views.setDrawInterval(di); }
 
-    if (SL.timeline && SL.timeline.setMaxFrames) {
-      SL.timeline.setMaxFrames(parseInt(ui.recordCap, 10) || 20000);
-    }
+    /* 记录上限：录制帧数与原始记录条数**同源**（AUDIT A-81）。
+       必须走 app.applyRecordCaps()，绝不在界面层单独设 timeline ——
+       旧版就是这么漏掉原始缓冲的，结果「界面写 2 万、AI 只拿到 5 千」。 */
+    if (SL.app && SL.app.applyRecordCaps) { SL.app.applyRecordCaps(); }
 
     /* 左栏收起状态 */
     var side = $("slSide");
@@ -1898,6 +1899,8 @@
     }
 
     renderRun();
+    renderRecordCapHint();
+    renderAiState();
     if (SL.views && SL.views.redraw) { SL.views.redraw(); }
   }
 
@@ -1930,6 +1933,7 @@
       bootFromConfig();
       applyUiPrefs();
       renderPresets();
+      if (SL.aichan && SL.aichan.reset) { SL.aichan.reset(); }
       UI.toast("ok", "已恢复默认设置");
     });
   }
@@ -1997,6 +2001,38 @@
     }
   }
 
+  /* AI 通道状态：把「配置想做什么」与「实际在做什么」分开说清楚，
+     免得又出现「界面说开了、其实没在跑」（与 A-77 同一类病）。 */
+  function renderAiState() {
+    var host = $("slAiChannelState");
+    if (!host) { return; }
+    if (!SL.aichan) { host.textContent = "通道状态：AI 通道模块未就绪"; return; }
+    var st = SL.aichan.status();
+    var f = st.file, h = st.http;
+    var parts = [];
+    parts.push("文件落盘 " + (f.active
+      ? ("进行中（已写 " + f.count + " 笔 → " + f.name + "）")
+      : (f.needsPick ? "待选择文件" : "未启用")));
+    parts.push("HTTP 上报 " + (h.configured
+      ? ("每 " + h.intervalMs + " ms → " + SL.aichan.inboxUrl() + "（已成功 " + h.count + " 次）")
+      : "未启用"));
+    if (f.error) { parts.push("文件错误：" + f.error); }
+    if (h.error) { parts.push("上报错误：" + h.error); }
+    host.textContent = "通道状态：" + parts.join(" · ");
+  }
+
+  /* 记录上限的「真实生效值」：读 datastore 实况，不读配置里的期望值——
+     这正是 A-81 的教训（界面说 2 万，实际 5 千）。 */
+  function renderRecordCapHint() {
+    var host = $("slRecordCapHint");
+    if (!host) { return; }
+    var real = (SL.datastore && SL.datastore.rawCap) ? SL.datastore.rawCap() : 0;
+    var now = (SL.datastore && SL.datastore.rawCount) ? SL.datastore.rawCount() : 0;
+    var tmax = (SL.timeline && SL.timeline.maxFrames) ? SL.timeline.maxFrames() : 0;
+    host.textContent = "实际生效：原始记录保留最近 " + real + " 条（当前已存 " + now +
+      " 条），录制上限 " + tmax + " 帧。两者同源，由上面的「存档上限」一并控制。";
+  }
+
   function wireDisplayPane() {
     /* 时间戳口径：绝对时刻 / 相对秒 —— 渲染层每帧现读配置，改完直接重绘即可 */
     addBind({
@@ -2032,9 +2068,9 @@
     addBind({
       el: "slRecordCap", path: "ui.recordCap", type: "num", scope: "ui",
       apply: function () {
-        if (SL.timeline && SL.timeline.setMaxFrames) {
-          SL.timeline.setMaxFrames(parseInt(core.config.ui.recordCap, 10) || 20000);
-        }
+        /* 改上限要同时作用到「录制帧数」与「原始记录条数」——applyRecordCaps 是唯一入口 */
+        if (SL.app && SL.app.applyRecordCaps) { SL.app.applyRecordCaps(); }
+        renderRecordCapHint();
       }
     });
 
@@ -2047,6 +2083,92 @@
     });
 
     $("slBtnDebugBundle").addEventListener("click", exportDebugBundle);
+
+    /* ---- 面向 AI 的四条通道 ----
+       ① 复制提示词 ② 持续写本地文件 ③ HTTP 上报本地收件箱
+       ④ 本地串口桥（不在界面里，见 _本地工具/serial-bridge）
+       界面只做「开/关 + 状态显示」，具体行为都在 aichan.js（它不碰 DOM）。 */
+
+    /* ① 复制提示词：aichan 只负责「造文本」，剪贴板走本层既有的 copyText()（含 DOM 兜底） */
+    $("slBtnAiPrompt").addEventListener("click", function () {
+      if (!SL.aichan || !SL.aichan.buildPrompt) { UI.toast("bad", "AI 通道模块未就绪"); return; }
+      var text = SL.aichan.buildPrompt();
+      if (!text) { UI.toast("bad", "调试包模块未就绪，无法生成提示词"); return; }
+      copyText(text).then(function (ok) {
+        if (ok) {
+          UI.toast("ok", "已复制 AI 提示词（" + text.length + " 字符），直接粘给 AI 即可", 8000);
+        } else {
+          UI.toast("warn", "剪贴板不可用。请改用「导出 AI 调试包」，把文件拖进对话", 9000);
+        }
+      });
+    });
+
+    /* ② 持续写本地文件（Chromium 专用；文件句柄必须来自用户手势） */
+    addBind({
+      el: "slFileLog", path: "ai.fileLog", type: "chk", scope: "ai",
+      apply: function () { if (SL.aichan) { SL.aichan.refresh(); } renderAiState(); }
+    });
+
+    $("slBtnFileLog").addEventListener("click", function () {
+      if (!SL.aichan) { return; }
+      if (SL.aichan.fileLogging()) {
+        SL.aichan.stopFileLog().then(function () {
+          core.config.ai.fileLog = false;
+          syncForms();
+          core.saveConfig();
+          renderAiState();
+          UI.toast("ok", "已停止写入本地文件");
+        });
+        return;
+      }
+      if (!SL.aichan.fileSupported()) {
+        UI.toast("warn", "当前浏览器不支持 File System Access API，请改用下方 HTTP 上报通道", 9000);
+        return;
+      }
+      SL.aichan.startFileLog().then(function (r) {
+        if (r && r.ok) {
+          core.config.ai.fileLog = true;
+          syncForms();
+          core.saveConfig();
+          UI.toast("ok", "已开始写入 " + (r.name || "所选文件") + "，AI 可直接读这个文件", 9000);
+        } else if (r && r.reason) {
+          UI.toast("warn", "未开始落盘：" + r.reason, 9000);
+        }
+        renderAiState();
+      });
+    });
+
+    /* ③ HTTP 上报本地收件箱（跨浏览器可用；失败只提示，不影响调试） */
+    addBind({
+      el: "slHttpPush", path: "ai.httpPush", type: "chk", scope: "ai",
+      apply: function () {
+        if (SL.aichan) { SL.aichan.refresh(); }
+        renderAiState();
+        if (core.config.ai && core.config.ai.httpPush) {
+          UI.toast("info", "已开启 HTTP 上报。若一直失败，先确认本地收件箱在跑：python _本地工具/serial-inbox.py", 9000);
+        }
+      }
+    });
+    addBind({
+      el: "slHttpPort", path: "ai.httpPort", type: "num", scope: "ai",
+      apply: function () { if (SL.aichan) { SL.aichan.refresh(); } renderAiState(); }
+    });
+
+    core.on("ai:state", renderAiState);
+    renderAiState();
+
+    /* ④ 图表 PNG：波形也是「AI 能读的形式」，一张带标题与时刻的图省掉大半描述 */
+    $("slBtnPngAll").addEventListener("click", function () {
+      if (!SL.views || !SL.views.exportAllPng) { return; }
+      SL.views.exportAllPng().then(function (r) {
+        if (r && r.ok) {
+          UI.toast("ok", "已导出 " + r.done + " 张图表图片" +
+            (r.fail ? ("（另有 " + r.fail + " 个面板跳过：文本监视器/数据表格不是画布）") : ""), 7000);
+        } else {
+          UI.toast("warn", "没有可导出的画布图表（文本监视器与数据表格不能导出为图片）", 7000);
+        }
+      });
+    });
 
     $("slBtnReplay").addEventListener("click", function () {
       var res = SL.app && SL.app.replayBuffered ? SL.app.replayBuffered(5000) : null;

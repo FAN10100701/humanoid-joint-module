@@ -1,0 +1,201 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cyco.top/06_学习工具/_串口调试助手/debug-bundle.schema.json",
+  "title": "SerialLab 串口调试包（debug-bundle）",
+  "description": "串口调试助手「导出 AI 调试包」与本地桥 `parse`/`read` 的 `debugBundle` 字段共用同一份契约。签名函数：06_学习工具/_串口调试助手/js/exporters.js 的 E.debugBundle()。AI 消费本包前应先按本 schema 自校验：字段缺失意味着判断依据不全，不要据此下结论。",
+  "type": "object",
+  "required": [
+    "kind", "version", "generatedAt", "app", "connection", "rule",
+    "frameLayout", "settings", "availablePresets", "channels",
+    "stats", "samples", "failures", "hints", "brief"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "seriallab-debug-bundle",
+      "description": "固定标识，用于识别「这是不是本应用的调试包」"
+    },
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "本契约版本。字段增删必须同时改这里与下文，并同步校验脚本"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "生成时刻（ISO 8601）。AI 据此判断数据新鲜度"
+    },
+    "app": {
+      "type": "object",
+      "required": ["name", "configVersion"],
+      "properties": {
+        "name": { "type": "string" },
+        "configVersion": {
+          "type": "integer",
+          "description": "生成时的配置结构版本（core.CFG_VERSION）。与 usage 不符说明配置经历过迁移"
+        }
+      }
+    },
+    "connection": {
+      "type": "object",
+      "description": "连接与传输层现状。AI 判断「数据是不是真从硬件来的」靠 demo/paused",
+      "required": ["conn", "demo", "paused", "baudRate", "dataBits", "stopBits", "parity", "encoding"],
+      "properties": {
+        "conn": { "type": "string", "description": "idle / connecting / open / error 等" },
+        "demo": { "type": "boolean", "description": "true = 演示数据源，非真实串口" },
+        "paused": { "type": "boolean", "description": "true = 已暂停刷新，包内不含暂停期间的新数据" },
+        "baudRate": { "type": "number" },
+        "dataBits": { "type": "number" },
+        "stopBits": { "type": "number" },
+        "parity": { "type": "string" },
+        "flow": { "type": "string" },
+        "encoding": { "type": "string" },
+        "timeMode": { "type": "string", "enum": ["abs", "rel"], "description": "abs=绝对时刻 rel=相对秒" },
+        "hexRecv": { "type": "boolean" }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "description": "当前生效的解析规则。AI 判断「分帧为什么会错」必须看这里",
+      "required": ["active", "detail"],
+      "properties": {
+        "active": { "type": "string", "enum": ["hex", "text"], "description": "二进制分帧 or 文本分行" },
+        "detail": { "type": "object", "description": "完整的规则对象（帧头/帧尾/长度字段/字段表/校验/分隔符等）" }
+      }
+    },
+    "frameLayout": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "人类可读的帧结构逐行说明（describeRule 产出），可直接给 AI 当上下文"
+    },
+    "settings": {
+      "type": "object",
+      "description": "用户当前设置快照。AI 若不看这里就提建议，容易答非所问",
+      "required": ["transport", "display", "panels", "send"],
+      "properties": {
+        "transport": { "type": "object" },
+        "display": {
+          "type": "object",
+          "description": "显示设置 + 记录窗口的真实口径（防 A-81 类误判）",
+          "required": ["recordCapRequested", "recordCapEffective", "rawRecordsHeld", "timelineMaxFrames"],
+          "properties": {
+            "recordCapRequested": { "type": "number", "description": "配置里期望的存档上限" },
+            "recordCapEffective": { "type": "number", "description": "真实生效上限（datastore.rawCap()）。与 requested 不一致即配置未生效" },
+            "rawRecordsHeld": { "type": "number", "description": "当前实际持有的原始记录条数" },
+            "timelineMaxFrames": { "type": "number", "description": "时间线窗口上限，必须与 recordCapEffective 同源" }
+          }
+        },
+        "panels": { "type": "array", "items": { "type": "object" } },
+        "send": {
+          "type": "object",
+          "properties": {
+            "timed": { "type": "number" },
+            "triggers": { "type": "number" },
+            "presets": { "type": "number" }
+          }
+        }
+      }
+    },
+    "availablePresets": {
+      "type": "array",
+      "description": "内置开源协议预设清单，AI 可据此建议切换",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "brand": { "type": "string" },
+          "note": { "type": "string" },
+          "sample": { "type": "string", "description": "可直接喂 parse 的示例字节（hex 或文本）" }
+        }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "description": "已解析出的数值通道（含统计量）。空数组 = 还没解出任何通道",
+      "items": {
+        "type": "object",
+        "required": ["key", "count", "color"],
+        "properties": {
+          "key": { "type": "string" },
+          "label": { "type": "string" },
+          "unit": { "type": "string" },
+          "color": { "type": "string", "description": "该通道在图表里的颜色，便于和截图对照" },
+          "precision": { "type": "number" },
+          "source": { "type": "string" },
+          "visible": { "type": "boolean" },
+          "count": { "type": "number" },
+          "last": { "type": ["number", "null"] },
+          "min": { "type": ["number", "null"] },
+          "max": { "type": ["number", "null"] },
+          "avg": { "type": ["number", "null"] },
+          "span": { "type": ["number", "null"], "description": "span=0 说明该通道恒定，可能是占位字段或解析偏移错位" }
+        }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "required": ["rawRecords", "parsedFrames", "bytes", "tx", "rx", "failedFrames", "failureReasons", "sampleWindow"],
+      "properties": {
+        "rawRecords": { "type": "number" },
+        "parsedFrames": { "type": "number" },
+        "bytes": { "type": "number" },
+        "tx": { "type": "number" },
+        "rx": { "type": "number" },
+        "failedFrames": { "type": "number", "description": "全窗口失败帧总数（不只是采样窗）" },
+        "failureReasons": {
+          "type": "array",
+          "description": "失败原因分布，按次数降序",
+          "items": {
+            "type": "object",
+            "required": ["reason", "count"],
+            "properties": {
+              "reason": { "type": "string" },
+              "count": { "type": "number" }
+            }
+          }
+        },
+        "sampleWindow": { "type": "number" }
+      }
+    },
+    "samples": {
+      "type": "array",
+      "description": "采样窗内的原始收发记录（保留 HEX 与解出值，可离线复算）",
+      "items": {
+        "type": "object",
+        "required": ["seq", "dir"],
+        "properties": {
+          "seq": { "type": "number" },
+          "dir": { "type": "string", "enum": ["RX", "TX"] },
+          "tAbs": { "type": "string" },
+          "tRel": { "type": "string" },
+          "hex": { "type": "string" },
+          "text": { "type": "string" },
+          "ok": { "type": "boolean", "description": "仅在 false 时出现，表示该条解析/校验失败" },
+          "reason": { "type": "string" },
+          "values": {
+            "type": "object",
+            "description": "本条解出的通道值",
+            "additionalProperties": { "type": "number" }
+          }
+        }
+      }
+    },
+    "failures": {
+      "type": "array",
+      "description": "失败样本明细（最多 40 条），与 samples 中 ok=false 的条目同形",
+      "items": { "type": "object" }
+    },
+    "hints": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "给 AI 的定位提示（规则可疑点、恒定通道、记录窗口说明等）"
+    },
+    "brief": {
+      "type": "string",
+      "description": "纯文本摘要，含 [连接]/[显示设置]/[帧结构]/[统计]/[通道]/[给 AI 的提示]/[使用方法] 各段。人可直接粘给 AI，比 JSON 省 token"
+    }
+  }
+}

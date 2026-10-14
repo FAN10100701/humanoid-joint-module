@@ -1,6 +1,6 @@
 ---
 name: html-webserial-app
-description: 用纯前端技术（Web Serial API）开发网页端串口 / 设备调试类应用，或在本站「串口调试助手」基座上二次开发（加渲染器、加发送方式、换传输层）。凡任务涉及「做一个网页串口助手 / 串口调试器 / 设备数据监视与绘图工具」「用 Web Serial 连串口」「浏览器里画实时波形」「把串口数据解析并导出 CSV」「给串口调试助手加一个新图表 / 新发送模式」「把 SerialLab 改成 WebSocket / Web Bluetooth / CAN 调试器」，或需要理解本应用的数据管线、主位上下分割布局模型、双时钟口径与暂停单一真源、插件描述符、配置与面板包格式、给 AI 的调试包时，必须使用本 skill。内含 Web Serial 必踩坑位（含 Grid stretch 拉爆波形等 5 个界面层事故坑）、14 模块参考架构、声明式插件 schema、发送引擎护栏与验收清单。
+description: 用纯前端技术（Web Serial API）开发网页端串口 / 设备调试类应用，或在本站「串口调试助手」基座上二次开发（加渲染器、加发送方式、换传输层、加 AI 自动化通道）。凡任务涉及「做一个网页串口助手 / 串口调试器 / 设备数据监视与绘图工具」「用 Web Serial 连串口」「浏览器里画实时波形」「把串口数据解析并导出 CSV」「给串口调试助手加一个新图表 / 新发送模式」「把 SerialLab 改成 WebSocket / Web Bluetooth / CAN 调试器」「让 AI / Agent 自己读串口数据、自动判定并迭代调试」，或需要理解本应用的数据管线、主位上下分割布局模型、双时钟口径与暂停单一真源、插件描述符、配置与面板包格式、给 AI 的调试包与其 JSON Schema 契约、由本地桥 + MCP 组成的 AI 自主调试闭环时，必须使用本 skill。内含 Web Serial 必踩坑位（含 Grid stretch 拉爆波形等 5 个界面层事故坑）、15 模块参考架构、声明式插件 schema、发送引擎护栏、AI 四条通道与「单一来源」类缺陷的防范、验收清单。
 ---
 
 # 网页端串口调试助手 · 开发与二次开发
@@ -11,8 +11,11 @@ description: 用纯前端技术（Web Serial API）开发网页端串口 / 设�
 - 给本站的 `06_学习工具/_串口调试助手/` 加功能（新渲染器、新发送方式、新导出格式、新解析字段类型）。
 - 以它为基座换成别的传输层（WebSocket / Web Bluetooth / 串口转网口）或别的协议（CAN、Modbus、自定义帧）。
 - 排查「连上了但没数据 / 有数据但画不出图 / 帧收不齐」这类问题。
+- **让 AI / Agent 自己读串口数据**：需要判断「浏览器能不能被自动化」（不能）、要设计「AI 自主读数据并迭代调试」的通道、
+  或要复用本项目已跑通的方案（复制提示词 / NDJSON 落盘 / HTTP 收件箱 / 本地桥 + MCP）时，见 §九·二。
 
 配套文档（同目录，动前先读）：`llms.txt`（模块契约与约定速览）、`AGENTS.md`（本目录硬规则与验收清单）。
+调试包契约：`debug-bundle.schema.json`。本地桥用法：`_本地工具/serial-bridge/README.md`。
 
 ---
 
@@ -70,7 +73,7 @@ description: 用纯前端技术（Web Serial API）开发网页端串口 / 设�
 
 ---
 
-## 三、参考架构：14 个单一职责模块 + 一条单向数据流
+## 三、参考架构：15 个单一职责模块 + 一条单向数据流
 
 单一全局命名空间（本项目 `window.SerialLab`），模块之间**不互相持有引用**，跨模块只走事件总线。
 
@@ -89,15 +92,18 @@ views      ── 面板增删/排序/折叠 + 主位与工作区两槽位路由
 timeline   ── 录制 / 暂停 / 回放 / 录制文件导入导出 + 帧数上限与滚动淘汰
 exporters  ── CSV(带 BOM)/JSON/BIN/TXT 导出、配置导入导出、单文件离线版装配
              + **AI 调试包 debugBundle()**（自包含 JSON + 纯文本摘要，见 §九）
+             + 图表 PNG 导出（合成标题栏 + 全部 canvas + 主题底色）
+aichan     ── AI 通道：把现场送到 AI 能读到的地方（NDJSON 持续落盘 / HTTP 上报 / 一键落提示词）
+             纯逻辑不碰 DOM，开关状态经 core.emit("ai:state") 交给 ui 渲染（见 §九·二）
 ui         ── DOM 绑定、控件与配置双向同步、对话框、提示条、主题、快捷键、发送引擎
              + 显示偏好面板（节流/字号/数字标红/自动存档/恢复默认）、开源协议预设、运行圆标
-app        ── 唯一编排者：装配数据管线并启动 + 缓存字节重放（规则热更新）
+app        ── 唯一编排者：装配数据管线并启动 + 缓存字节重放（规则热更新）+ 记录上限单一入口
 ```
 
 依赖方向严格单向，`app` 是唯一的顶层：
 
 ```
-util → core → codec → expr/parser/fft/datastore → transport/plugins → views/timeline/exporters → ui → app
+util → core → codec → expr/parser/fft/datastore → transport/plugins → views/timeline/exporters/aichan → ui → app
 ```
 
 **数据流（唯一正确的通路）**
@@ -323,9 +329,47 @@ util → core → codec → expr/parser/fft/datastore → transport/plugins → 
 - **`brief` 是一段可直接贴进聊天框的纯文本**：连接状态 → 规则 → 通道清单与统计 → 失败计数与原因 → 前几条样本 HEX。
   它保证「懒得下文件、只想贴一段文字」的用户也能用。
 - **导出前自检**：`brief` 里不允许出现 `undefined` / `NaN` / `[object`（写断言锁住），否则 AI 会读到脏数据。
+- **必须报「真实生效值」而不是「配置期望值」**：曾出现配置说上限 2 万、实际只留 5 千的情况，AI 据此误判「数据完整」。
+  凡是有中间层的量（记录上限、窗口帧数）都要把**生效值 + 当前持有量**一起写进 `settings.display`，并在 `hints` 里说清
+  「本包只覆盖最近哪一段」。
 - **配套「规则热重放」**：`App.replayBuffered(limit)` 用**已缓存的原始字节**按当前规则重新分帧解析，
   于是「AI 建议你把帧头从 `AA55` 改成 `AAAA`」→ 用户改完规则 → 一键重放 → 立刻验证，**不用重烧固件、不用重新采数据**。
   采集与解析解耦，这是「AI 自动化调试硬件」闭环的关键一环。
+- **契约要机器可校验**：把结构写成 `debug-bundle.schema.json`（draft-07），并让校验脚本按它**反向校验实现产出**。
+  字段少给一个，AI 不会报错，只会给出貌似合理的错误结论——所以契约不能只写在文档里。
+
+### 九·二 让 AI 自己读数据：四条通道（浏览器做不到的部分交给本地）
+
+先记住这条平台红线：**Web Serial 的 `navigator.serial.requestPort()` 必须在真实用户手势的调用栈里调用，
+且端口选择是浏览器原生弹窗——AI 永远无法接管浏览器的串口。** 所以「AI 自主读写串口」必须在浏览器之外另起一条路。
+本项目把它拆成四条递进通道，**全部共用同一份解析内核**（这是关键：不存在「网页对了但 AI 那份是错的」）：
+
+| 级别 | 通道 | 实现 | 适用 |
+|---|---|---|---|
+| L1 人工搬运 | 一键「复制 AI 提示词」 | `aichan.buildPrompt()` 造文本 + ui 层 `copyText()` 写剪贴板 | 人粘到任意 AI 对话 |
+| L2 文件直读 | 浏览器把每帧写成 NDJSON 持续落盘 | `aichan` 持 `FileSystemFileHandle`（`showSaveFilePicker` + `createWritable`），串行闸 + 单行 pending 缓冲 | AI 直接读文件 |
+| L2 接口直读 | 定时 POST 到本地收件箱 | `aichan` + `_本地工具/serial-inbox.py`（Python 标准库 `ThreadingHTTPServer`） | AI 读接口/看板 |
+| L3/L4 自主迭代 | 本地串口桥：直接开关串口、解析、断言 | `_本地工具/serial-bridge/bridge.mjs`（Node + `serialport`），可作 MCP server 暴露 5 个工具 | AI 自主闭环 |
+
+**桥为什么能保证与网页同源**：它 `require` 的是子应用 `js/` 下的**真源**（10 个模块，靠文件尾的 UMD 尾在 Node 里加载），
+不是重新实现的简化版。因此 `parse`/`read` 解出的通道与统计，与浏览器里看到的**逐字节一致**。
+
+**自主迭代闭环**：`read` 采一段 → `assert --expect "rpm>1750; cur.max<3.2"`
+（判据语法 `通道名[.min|.max|.avg|.span] 比较符 数值`，多条用 `;` 分隔；**退出码 0 通过 / 2 不通过**，
+让 Agent 靠退出码分支而不用解析文本）→ 改代码 → 重烧 → 再跑同一组判据。
+`list`/`parse`/`assert`/`selftest` **不需要硬件**，所以调协议规则时可以用同一份 `dump.bin` 反复重放。
+
+**MCP 封装的两个坑**：①stdio 服务必须**劫持 `process.stdout.write`**，把各命令的裸输出收进 JSON-RPC 的
+`content[].text`，否则会污染协议流把连接打坏；②`mcp` 是长驻服务，不能像其他命令那样跑完就 `process.exit`。
+
+**落盘 / 上报的三个真实约束**：
+- File System Access API 的句柄**不跨刷新持久化**，刷新后必须重新选文件（要在 UI 上明确提示，而不是静默不再写）。
+- 线上 https 页面向 `http://127.0.0.1` 发 POST 会触发 Chrome 的 **Private Network Access 预检**，服务端必须回
+  `Access-Control-Allow-Private-Network: true`，否则请求被静默拦掉。
+- 上报默认**关闭**，且只发到用户自己指定的本机地址（本项目 `httpPort` 默认 7788）；不要做成「默认开着往远端发」。
+
+**给下一代应用的可迁移结论**：任何「浏览器里做不到」的自动化需求，正确解法都是
+**把内核抽成可在 Node 里加载的纯逻辑模块 + 在浏览器之外再挂一层薄壳**，而不是试图绕过浏览器安全模型。
 
 ---
 
@@ -337,8 +381,11 @@ util → core → codec → expr/parser/fft/datastore → transport/plugins → 
    首帧由 `<head>` 内联脚本写 `data-theme-early`，否则浅色用户会看到深色闪烁。
 4. 所有文字对比度 ≥ 3.0（站点有对比度审计脚本会扫）。
 5. 禁止空 `class=""` 与一次性私有类名；类名带统一前缀（本项目 `sl-`）。
-6. 每个模块文件尾保留 UMD 尾，供 Node 校验脚本 require 真源断言。
-7. 不显示、不记录任何密钥/账号/本机路径；串口数据不出本机（没有任何上报代码）。
+6. 每个模块文件尾保留 UMD 尾，供 Node 校验脚本 require 真源断言——**这也是本地桥能复用同一份内核的前提**（§九·二）。
+7. **串口数据默认不出本机**。本项目有两处**用户显式开启**的外发：①可选 HTTP 上报（默认关，目标由用户自己填的本机地址，
+   本项目 `httpPort` 默认 7788）；②配置里的 AI 端点（用户在 13_AI答疑助手 页自己配，直连所填供应商，不经本站服务器）。
+   做同类应用时守两条：**默认关、目标可见**；绝不做「默认开着往固定远端发」。
+8. **契约类文件（JSON Schema）与校验断言必须成对出现**：只写 schema 不写反向校验，schema 会静默漂移成废纸。
 
 ---
 
@@ -361,24 +408,41 @@ util → core → codec → expr/parser/fft/datastore → transport/plugins → 
 - **四套开源协议预设端到端**：FireWater / JustFloat / Teleplot / 匿名 V1.0 各造一帧喂进分帧器并解出预期通道；
   匿名 V1.0 示例帧的 SUM8 **错 1 位即被拒**（这条锁住「校验和口径」这类隐性回归）；
 - **AI 调试包结构**：字段齐全、计数与实际一致、`brief` 不含 `undefined`/`NaN`/`[object`、`samples` 被限幅。
+- **调试包契约**：按 `debug-bundle.schema.json` **反向校验**实际产出（字段集 / 嵌套类型 / 必需项），
+  且 schema 里的 `kind`、`version` 常量与实现一致（改契约必须同步改实现）；
+- **记录上限「单一来源」**：`recordCapEffective` / `rawRecordsHeld` / `timelineMaxFrames` 三者与 `datastore.rawCap()`
+  一致、区间合法、越界被夹紧、改上限后调试包立刻反映新值、**「先设时间线后设数据仓」不会被夹到旧值**。
+  这类「同一个量有两个来源」的缺陷不会报错，只会让 AI 拿到自相矛盾的现场。
+
+**本地桥自检**（改了 `js/` 下任何模块就跑，不需要硬件）：
+```bash
+cd _本地工具/serial-bridge && node bridge.mjs selftest
+```
+它用 4 套协议预设各造一段字节喂进**同一份内核**，校验解析结果与网页端一致。这是「内核改动是否破坏 AI 侧解析」的最快反馈。
 
 **浏览器人工验收**：见 `AGENTS.md` 的「手工验收清单」（控件接线与配置落盘 → 演示模式 → 七种图表 → 发送回显 → 录制回放 → 五种导出 → 双主题）。
 其中几类最容易被漏掉：① 设备参数与显示开关**改完要刷新一次看是否回填**（只加控件不接线是真实事故，本项目 V2.2.0 修过 14 个）；
 ② 自定义 HEX 规则进演示模式能出通道（无硬件时的唯一验证路径）；③ **主区上下分割**：拖分割线后监视器与波形各自独立滚动、
 波形不被拉长，`ratio` 落盘后刷新页面仍保持；④ **运行绿圆标三态**与页签开关显示一致（同源 `core.state.paused`）；
 ⑤ **显示设置**：绝对时刻格式正确、时间戳与正文颜色不同、字号改动即时生效、数字标红生效、恢复默认能一键复位；
-⑥ **预设套用**：套用后帧头/帧尾输入框立即回填，且用缓存字节重放能出通道；⑦ **AI 调试包**能下载且 JSON 可被 `JSON.parse`。
+⑥ **预设套用**：套用后帧头/帧尾输入框立即回填，且用缓存字节重放能出通道；⑦ **AI 调试包**能下载且 JSON 可被 `JSON.parse`；
+⑧ **AI 通道四件**：一键复制提示词进剪贴板；NDJSON 文件在持续增长（刷新后应提示句柄失效）；HTTP 上报开启后本地收件箱出现产物；
+AI 通道状态区能分清「配置想做什么」与「实际在做什么」；⑨ 设置里把存档上限改成 5 万后**界面提示立刻显示 5 万**（不是旧值）。
 
 **浏览器层专项（E2E）**：本项目在 `_本地工具/e2e/e2e_test.py` 里已有**九条**子应用用例兜底
-（`serial_shell` / `serial_pipeline` / `serial_export` / `serial_stage` / `serial_run` / `serial_display` /
-`serial_preset_bundle` 等），改布局与交互层后要跑全量而非只跑 `--fast`。
+（`serial_shell` / `serial_pipeline` / `serial_export` / `serial_wiring` / `serial_demo_rule` / `serial_stage` /
+`serial_run` / `serial_display` / `serial_preset_bundle`），改布局与交互层后要跑全量而非只跑 `--fast`。
 
 **连真机验收**：打开设备 → 参数与固件一致 → 复位等待结束后收发 → 文本/HEX 两模式各解析一路 → 拔插设备看是否能自动重连。
 
 ---
 
-## 十二、二次开发路线（三条，互不冲突）
+## 十二、二次开发路线（四条，互不冲突）
 
+0. **加 AI 自动化能力**（最省力、收益最大）：**不要碰浏览器侧**——`requestPort()` 的用户手势约束绕不过去。
+   正确做法是在浏览器之外再挂一层薄壳（本项目 `_本地工具/serial-bridge`），让它 `require` 同一份内核真源，
+   把「采一段 → 解析 → 断言 → 退出码」做成命令行/MCP 工具。收益是 AI 能自主闭环迭代硬件与协议，
+   成本只是一个 800 行的 Node 脚本 + 一个 MCP 配置片段。**先做这一条，再考虑下面三条。**
 1. **换传输层**：把 `transport.js` 换成 WebSocket / Web Bluetooth / 串口服务器 HTTP 长轮询，只需保持
    `emit "serial:data"（Uint8Array）+ write(u8)` 这两个接口，解析、绘图、录制、导出整条链路原样复用。
    WebSocket 版尤其简单：`ws.onmessage` 把 `ArrayBuffer` 转 `Uint8Array` 直接 emit。

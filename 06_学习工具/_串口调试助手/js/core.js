@@ -79,7 +79,7 @@
      3) 全局配置：默认值 / 版本迁移 / 持久化
      持久化键 humanoid-serial-config-v1 —— 前缀 humanoid- 是站点自检 C4 的白名单要求
      ------------------------------------------------------------ */
-  var CFG_VERSION = 2;
+  var CFG_VERSION = 3;
   var CFG_KEY = "humanoid-serial-config-v1";
 
   core.CFG_VERSION = CFG_VERSION;
@@ -157,7 +157,21 @@
         highlightNumbers: false, /* 数字标红：把监视器里的数字用醒目色标出 */
         markFailed: true,        /* 解析失败 / 校验失败的行整行标红 */
         autoRecord: true,        /* 连上设备或进入演示后自动开始录制（供导出/AI 读取） */
-        recordCap: 20000         /* 录制缓冲帧数上限 */
+        recordCap: 20000         /* 记录上限（帧）：同时管「时间线录制帧数」与「原始收发记录条数」。
+                                    两者必须同源——旧版只驱动前者，后者写死 5000，于是 UI 与 AI
+                                    调试包都声称「上限 2 万帧」而实际只给得出 5 千条（AUDIT A-81） */
+      },
+
+      /* ---- 面向 AI 的自动化通道（设计说明见 docs/维护/串口调试助手_评估与优化路线图.md 第三节） ----
+         四条通道互相独立、可单开：① 一键复制提示词（无配置，永远可用）
+         ② 持续写本地文件（fileLog）③ HTTP 上报本地收件箱（httpPush）
+         ④ 本地串口桥 + MCP（_本地工具/serial-bridge，不走浏览器，与本配置无关） */
+      ai: {
+        fileLog: false,          /* 持续把调试包写进本地文件（File System Access API，仅 Chromium；需手势授权一次） */
+        httpPush: false,         /* 定时把调试包 POST 到本地收件箱（配 _本地工具/serial-inbox.py） */
+        httpPort: 7788,          /* 收件箱端口，须与 serial-inbox.py --port 一致 */
+        httpIntervalMs: 5000,    /* 上报间隔 ms（下限 1000，防止打满本地服务） */
+        bundleSamples: 400       /* 每次调试包携带的原始样本条数（20~5000） */
       }
     };
   };
@@ -189,6 +203,15 @@
       cfg.transport = mergeDeep(d2.transport, cfg.transport || {});
       cfg.ui = mergeDeep(d2.ui, cfg.ui || {});
       v = 2;
+    }
+
+    /* v2 -> v3：新增「面向 AI 的自动化通道」段落（文件落盘 / HTTP 上报 / 采样条数） */
+    if (v < 3) {
+      var d3 = core.defaultConfig();
+      cfg.version = 3;
+      cfg.ui = mergeDeep(d3.ui, cfg.ui || {});
+      cfg.ai = mergeDeep(d3.ai, cfg.ai || {});
+      v = 3;
     }
 
     /* 未来版本（用户在本机改高过）按原样返回，由调用方决定是否拒绝 */

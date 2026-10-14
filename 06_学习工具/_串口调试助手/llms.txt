@@ -20,6 +20,8 @@ js/plugins.js         声明式插件注册表 + 7 个内置渲染器 + 面板�
 js/views.js           主区上下分割 / 面板调度与节流渲染
 js/timeline.js        录制 / 暂停刷新 / 回放
 js/exporters.js       数据导出 / 配置导入导出 / 单文件离线版装配 / AI 调试包
+js/aichan.js          AI 通道：NDJSON 持续落盘 + HTTP 上报（不碰 DOM，状态走事件总线）
+debug-bundle.schema.json  AI 调试包的正式契约（JSON Schema，供 AI 消费前自校验）
 js/ui.js              DOM 绑定 / 控件 / 对话框 / 主题 / 快捷键 / 发送引擎
 js/app.js             唯一编排者：装配数据管线并启动
 llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
@@ -71,10 +73,34 @@ llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
 | 面板 body 约定 | `Plugins.instantiate(panel, el.lastElementChild)` 依赖「面板最后一个子元素是 body」→ 任何附着元素（如缩放手柄 `.sl-panel-grip`）必须 `body.appendChild()`，**不能挂到 el 末尾** |
 | canvas 宿主绑定 | canvas 渲染器持有创建时的宿主引用，**跨槽位移 DOM 会让画布塌成 0×0** → `views.moveToSlot()` 是「销毁渲染器 + 重建面板 + 重建渲染器」，不是搬 DOM |
 | 布局字段不走 opts | `slot` / `h` / `span` 三个布局字段由 `P.validate()` 直接挂在 panel 上（**不在 `renderer.defaults.opts` 白名单里**，写进 opts 会被丢掉） |
-| 配置版本 | `core.CFG_VERSION` 当前 = **2**。新增配置段必须写迁移（`migrateConfig`，只补齐缺失字段、不覆盖用户改过的值）。v1→v2 加了整个 `ui` 显示段 |
+| 配置版本 | `core.CFG_VERSION` 当前 = **3**。新增配置段必须写迁移（`migrateConfig`，只补齐缺失字段、不覆盖用户改过的值）。v1→v2 加了整个 `ui` 显示段；v2→v3 加了 `ai` 段（文件落盘 / HTTP 上报） |
 | 数字标红 | 动态文本**先过 `U.esc()`**，再用「实体引用优先」的正则 `&#?\w+;\|(-?\d+(?:\.\d+)?)` 切分。顺序反了会把 `&#39;` / `&amp;` 拆成 `&#39` + `;` |
 | 开源协议预设 | `core.presets()` 返回 4 条（`firewater` / `teleplot` / `justfloat` / `ano10`），`core.presetRule(id)` 用 `mergeDeep(defaultConfig().rule, p.rule)` 补齐成可直接写进 `config.rule` 的完整规则。**每条预设的 `kind` 必须等于 `rule.active`**（校验脚本断言） |
-| AI 调试包 | `exporters.debugBundle(opts)` → 自包含 JSON + `.brief` 纯文本摘要。**新增任何影响解析行为的配置，都要同步补进 `frameLayout` / `settings` / `hints`**，否则 AI 拿不到判断依据。配套 `app.replayBuffered(limit)` 用缓存字节重放验证规则 |
+| AI 调试包 | `exporters.debugBundle(opts)` → 自包含 JSON + `.brief` 纯文本摘要，契约见 `debug-bundle.schema.json`。**新增任何影响解析行为的配置，都要同步补进 `frameLayout` / `settings` / `hints`**，否则 AI 拿不到判断依据。配套 `app.replayBuffered(limit)` 用缓存字节重放验证规则 |
+| **记录上限只有一个来源** | 「能保留多少条记录」的权威口径是 `datastore.rawCap()`（由 `ui.recordCap` 经 `app.applyRecordCaps()` 落地）。**禁止再引入第二个上限**：`timeline` 已删除自带的 `MAX_FRAMES`，改为 `effMax()` 跟随数据仓；`setMaxFrames` 刻意不在设值时夹紧（会被调用顺序夹到旧值）。`导出/UI 显示的一律是真实生效值，不是配置期望值`——否则 AI 会误判「数据完整」（AUDIT A-81） |
+| 记录上限区间 | `[200, 500000]`，由 `datastore.setRawCap` 夹紧（越界返回夹紧后的真实值，不静默接受）。`ui.recordCap` 默认 20000 |
+| AI 通道开关 | 配置段 `ai`：`fileLog`（浏览器持续写 NDJSON 到本地文件，需 File System Access API，句柄不跨刷新持久化）/ `httpPush` + `httpPort`（POST 到本地收件箱，默认 7788）/ `httpIntervalMs` / `bundleSamples`。开关状态经 `core.emit("ai:state")` 给 ui 渲染，**aichan.js 自己不碰 DOM** |
+
+## 让 AI 自己读数据（四条通道，按自动化等级递进）
+
+**为什么必须有子应用之外的东西**：Web Serial 的 `requestPort()` 必须在真实用户手势的调用栈里调用，且端口选择是浏览器原生弹窗 —— **AI 永远无法接管浏览器的串口**。所以「AI 自主读写串口」只能落在浏览器之外，本应用提供四条由弱到强的通道：
+
+| 级别 | 通道 | 落地文件 | 谁在用 |
+|---|---|---|---|
+| L1 人工搬运 | 「复制 AI 提示词」一键生成现场上下文 | `js/aichan.js` `buildPrompt()` + `ui.js` `copyText()` | 人，粘到任意 AI 对话 |
+| L2 文件直读 | 浏览器把每帧写成 NDJSON 持续落盘；AI 直接读文件 | `js/aichan.js`（File System Access API） | AI 读文件 |
+| L2 接口直读 | 浏览器定时 POST 到本地收件箱；AI 读 `latest.brief.txt` | `js/aichan.js` + `_本地工具/serial-inbox.py` | AI 读接口/文件 |
+| L3/L4 直接控制 | 本地桥直接开关串口、解析、判定，并可自主迭代 | `_本地工具/serial-bridge/bridge.mjs`（+ MCP） | AI 调工具/命令行 |
+
+**关键设计：四条通道共用同一份解析内核。** 桥直接 `require` 本目录 `js/` 下的真源（不抄副本、不重写），因此**在浏览器里看到的现象，AI 在命令行/接口里看到的是同一份**。改内核 = 四条通道同时生效，不存在「网页对了但 AI 那份是错的」。
+
+**闭环（读 → 判 → 改 → 烧 → 再跑）**：`serial_read` 采一段 → `serial_assert --expect "rpm>1750; cur.max<3.2"`（退出码 0 通过 / 2 不通过）→ 改代码 → 重烧 → 再跑同一组 `expect`。`parse`/`assert` 不依赖硬件，所以调协议规则时可以用同一份 `dump.bin` 反复重放。
+
+**给本目录加 AI 能力时的规矩**：
+1. 新能力优先加在**已有内核模块**上，别在桥里另写一份逻辑（会立刻产生两份口径）。
+2. 新增的对外结构（调试包字段、断言语法）必须同时更新 `debug-bundle.schema.json` 与 `_本地工具/校验串口应用.js` 的 ⑯ 节断言 —— schema 是 AI 消费侧的验收口径，漂移了 AI 不会报错，只会给出看似合理的错误结论。
+3. `aichan.js` **不碰 DOM**：状态经 `core.emit("ai:state")` 交给 `ui.js` 渲染。
+4. 桥不需要硬件就能跑 `list`/`parse`/`assert`/`selftest` —— 回归时先用这些，别把「有没有插设备」变成能不能验证的前提。
 
 ## 容易踩的坑（都是真踩过的）
 
@@ -95,6 +121,10 @@ llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
 15. **`syncForms()` 只刷新 `addBind` 注册过的控件**：像 `#slHexHead` / `#slHexTail` 这类走自定义接线的输入框刷不到，改完规则必须走 `refreshRuleInputs()`，否则「配置变了但界面还是旧值」。新增任何「非 addBind 的控件」都要记得进这个函数。
 16. **新增下拉/列表类控件要用同一份数据源填充**：V2.2.1 修过「舞台栏的『新图表』下拉从未被填充」（`renderPluginTypes` 只填了另一处），表现为点添加永远是默认值。同一份列表有多个入口时，函数里一次填完。
 17. **状态类 UI 要订阅真源，不要只在入口回调里刷**：运行圆标曾经只在点击时刷新，进演示模式后仍停在灰「暂停」态。正确做法是在 `core.on("state")` 里统一刷（`renderConn` → `renderRun` + `renderRecordState`）。
+18. **不要往旧函数里塞新逻辑却不看变量的声明顺序**：`debugBundle()` 里 `hints` 段引用过下方才 `var bundle = {...}` 赋值的 `bundle`，`var` 提升让它是 `undefined` → 一按「导出 AI 调试包」就 TypeError，连本地桥的调试包一起废（两者同源）。新增引用前先确认变量已赋值，或把数据先算好提到前面（AUDIT A-82）。
+19. **「能保留多少条」这类口径只许有一个来源**：`datastore`（数据仓容量）、`timeline`（时间线窗口）曾各写一个上限（5000 / 200000），用户把存档上限调到 20 万以上时时间线静默截断；UI 与调试包还只报配置「期望值」而非真实生效值，AI 据此误判数据完整（AUDIT A-81）。约定：权威口径 = `datastore.rawCap()`，其余一律跟随；**对外显示一律用真实生效值**。
+20. **线上 https 页面向 `http://127.0.0.1` 发请求会触发 PNA 预检**：Chrome 先发 `OPTIONS`，服务端必须回 `Access-Control-Allow-Private-Network: true`，否则请求被静默拦掉（`serial-inbox.py` 已处理）。
+21. **`_本地工具/` 里的文件是要入库的**：`检查隐私.js` 不跳过该目录，`.gitignore` 只排除 `node_modules/`。写文档/示例配置时**不要写本机绝对路径**（含用户名），用 `<本项目根目录>` 这类占位符 —— 正斜杠形态的路径不会触发该脚本的 WIN-PATH 正则，别指望它兜住。
 
 ## 面板描述符（用户 DIY 显示的唯一入口）
 
@@ -139,11 +169,14 @@ llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
 ## 校验
 
 ```bash
-node _本地工具/校验串口应用.js        # 纯函数 + 帧管线断言（126 项），期望输出 SERIAL OK
+node _本地工具/校验串口应用.js        # 纯函数 + 帧管线 + 调试包契约断言（135 项），期望输出 SERIAL OK
 node _本地工具/一键自检.ps1           # 站点级自检（本目录因 _ 前缀豁免索引检查，但仍受 JS 语法与 localStorage 键名约束）
 python _本地工具/e2e/e2e_test.py      # 浏览器层 E2E（22 用例，其中 8 条针对本子应用）；接线/布局/圆标类缺陷只有它能抓
+cd _本地工具/serial-bridge && npm install && node bridge.mjs selftest   # 桥：4 套协议预设全过（不需要硬件）
 ```
 
 改动任何模块后，四条都要跑：`_本地工具/校验串口应用.js`（纯函数）、`一键自检.ps1`（站点级静态）、`e2e_test.py`（浏览器层）、以及人工在浏览器里过一遍 `AGENTS.md` 的验收清单。
+
+改了内核模块（`js/` 下任何被桥 require 的文件）后，**额外跑一次 `node bridge.mjs selftest`** —— 桥直接复用同一份真源，它是「内核改动是否破坏了 AI 侧解析」的最快反馈。
 
 `skills/html-webserial-app/SKILL.md` 里有从零开发同类应用的完整流程与踩坑清单。

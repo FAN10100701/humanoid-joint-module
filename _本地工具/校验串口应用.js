@@ -15,11 +15,17 @@
      ⑩ timeline  录制序列化往返 / kind 与版本闸门
      ⑪ demo      规则驱动的演示帧（自定义帧头/长度/校验/字段表自洽 + 回退口径）
      ⑫ 端到端   用演示源真源构造的帧,必须恰好被收帧函数收齐并被结构表解出原值
+     ⑬ 预设     四套内置开源协议(文本/二进制)各自能被自身规则解出预期值
+     ⑭ 兼容     fmtRelative 等时间格式的进位与非法输入兜底
+     ⑮ 调试包   debugBundle 字段齐全 / 摘要段落 / 收发与失败计数（AI 读数据的交付面）
+     ⑯ 契约     按 debug-bundle.schema.json 反向校验实现产出（防 schema 与代码漂移）
+                 + 记录上限「单一来源」断言（数据仓容量为唯一权威，时间线跟随，防 A-81 复现）
    运行: node _本地工具\校验串口应用.js     期望输出 SERIAL OK(退出码 0)
 */
 "use strict";
 
 const path = require("path");
+const fs = require("fs");
 const JS = path.join(__dirname, "..", "06_学习工具", "_串口调试助手", "js");
 
 /* 按依赖顺序加载真源文件:模块把接口挂在 globalThis.SerialLab 上,
@@ -584,6 +590,131 @@ check("调试包: options.samples 被限幅且不抛异常",
     return a.samples.length === 3 && b.samples.length === 3;
   })());
 check("调试包: 导出函数已挂载", typeof X.exportDebugBundleFile === "function");
+
+/* ============================================================
+   ⑯ 调试包契约自校验（debug-bundle.schema.json）+ 记录上限同源
+   ------------------------------------------------------------
+   为什么要有这一节：
+   ① schema 是「AI 消费侧」的验收口径。字段少给一个，AI 就缺一份判断依据，
+      而它不会报错、只会给出看似合理的错误结论 —— 所以契约必须可机器校验。
+   ② 让**唯一的契约文件**反过来校验实现产出，避免 schema 与代码各改各的（漂移）。
+   ③ A-81 的教训：同一条记录上限曾存在两个来源。这里把「必须同源」变成断言。
+   ============================================================ */
+const SCHEMA_PATH = path.join(__dirname, "..", "06_学习工具", "_串口调试助手", "debug-bundle.schema.json");
+
+let schema = null;
+try { schema = JSON.parse(fs.readFileSync(SCHEMA_PATH, "utf8")); } catch (e) { /* 下面断言会报错 */ }
+check("契约: debug-bundle.schema.json 存在且是合法 JSON", !!schema, SCHEMA_PATH);
+check("契约: schema 自带 $schema/title/$id，可被外部工具直接消费",
+  !!schema && !!schema.$schema && !!schema.title && !!schema.$id);
+check("契约: schema 顶层 required 覆盖全部 15 个交付字段",
+  !!schema && schema.required.length === 15,
+  schema ? schema.required.join(",") : "");
+
+/* 极简 JSON Schema 校验器（draft-07 子集，零依赖）
+   覆盖本契约实际用到的关键字：type(含联合) / const / enum / required / items / properties */
+function schemaErrors(sch, val, at) {
+  at = at || "$";
+  const errs = [];
+  if (!sch || typeof sch !== "object") { return errs; }
+
+  if (sch.const !== undefined && val !== sch.const) {
+    errs.push(at + " 应为常量 " + JSON.stringify(sch.const) + "，实为 " + JSON.stringify(val));
+    return errs;
+  }
+  if (sch.enum && sch.enum.indexOf(val) < 0) {
+    errs.push(at + " 不在枚举 [" + sch.enum.join(",") + "] 内（实为 " + JSON.stringify(val) + "）");
+  }
+
+  if (sch.type) {
+    const want = Array.isArray(sch.type) ? sch.type : [sch.type];
+    const okType = want.some(function (t) {
+      if (t === "array") { return Array.isArray(val); }
+      if (t === "integer") { return typeof val === "number" && isFinite(val) && val % 1 === 0; }
+      if (t === "number") { return typeof val === "number" && isFinite(val); }
+      if (t === "null") { return val === null; }
+      if (t === "object") { return val !== null && typeof val === "object" && !Array.isArray(val); }
+      return typeof val === t;
+    });
+    if (!okType) {
+      errs.push(at + " 类型应为 " + want.join("|") + "，实为 "
+        + (val === null ? "null" : Array.isArray(val) ? "array" : typeof val));
+      return errs;   /* 类型不符就不再往下钻，避免雪崩式误报 */
+    }
+  }
+
+  if (sch.required && val !== null && typeof val === "object" && !Array.isArray(val)) {
+    for (let i = 0; i < sch.required.length; i++) {
+      const k = sch.required[i];
+      if (val[k] === undefined) { errs.push(at + " 缺必需字段 " + k); }
+    }
+  }
+  if (sch.properties && val !== null && typeof val === "object" && !Array.isArray(val)) {
+    for (const k in sch.properties) {
+      if (!Object.prototype.hasOwnProperty.call(sch.properties, k)) { continue; }
+      if (val[k] === undefined) { continue; }   /* 非必需字段缺失不算错 */
+      errs.push(...schemaErrors(sch.properties[k], val[k], at + "." + k));
+    }
+  }
+  if (sch.items && Array.isArray(val)) {
+    for (let i = 0; i < val.length; i++) {
+      errs.push(...schemaErrors(sch.items, val[i], at + "[" + i + "]"));
+    }
+  }
+  return errs;
+}
+
+const contractErrs = schema ? schemaErrors(schema, bundle, "$") : ["schema 不可用"];
+check("契约: 实际产出的调试包完全符合 schema（15 字段 × 嵌套类型 × 必需项）",
+  contractErrs.length === 0,
+  contractErrs.slice(0, 4).join(" ; "));
+check("契约: schema 的 kind/version 常量与实现一致（改契约必须同步改实现）",
+  !!schema && schema.properties.kind.const === bundle.kind
+  && schema.properties.version.const === bundle.version,
+  bundle.kind + "@" + bundle.version);
+
+/* —— 记录上限同源（A-81 防回归）——
+   三处必须指向同一个数：配置生效值、数据仓真实容量、时间线窗口上限。
+   只要有人再引入第二个来源，这条就会红。 */
+check("上限同源: 调试包报的生效上限 === datastore 真实容量",
+  bundle.settings.display.recordCapEffective === Store.rawCap(),
+  bundle.settings.display.recordCapEffective + " vs " + Store.rawCap());
+check("上限同源: 时间线窗口上限 === datastore 真实容量",
+  bundle.settings.display.timelineMaxFrames === Store.rawCap(),
+  bundle.settings.display.timelineMaxFrames + " vs " + Store.rawCap());
+check("上限同源: 持有条数 === datastore 实际条数",
+  bundle.settings.display.rawRecordsHeld === Store.rawCount(),
+  bundle.settings.display.rawRecordsHeld + " vs " + Store.rawCount());
+check("上限同源: 生效上限在合法区间 [200, 500000]",
+  Store.rawCap() >= 200 && Store.rawCap() <= 500000, String(Store.rawCap()));
+check("上限同源: setRawCap 越界时被夹紧而非静默接受",
+  Store.setRawCap(10) === 200 && Store.setRawCap(999999) === 500000,
+  "low=" + Store.setRawCap(1) + " high=" + Store.setRawCap(9e9));
+Store.setRawCap(20000);   /* 复位，别影响后续断言 */
+check("上限同源: 改上限后调试包立刻反映新值（不缓存旧口径）",
+  X.debugBundle({ samples: 20 }).settings.display.recordCapEffective === 20000,
+  String(X.debugBundle({ samples: 20 }).settings.display.recordCapEffective));
+
+/* —— 时间线必须跟随数据仓，且不得自行截断 ——
+   旧实现 timeline 自带 MAX_FRAMES=200000：用户把「存档上限」调到 20 万以上时，
+   数据仓留着、时间线静默截断到 20 万 —— 两个来源的对不上。以下四条锁住新口径。 */
+check("上限同源: 未显式设置时，时间线上限跟随数据仓",
+  (() => { Timeline.setMaxFrames(0); Store.setRawCap(120000); return Timeline.maxFrames() === 120000; })(),
+  Timeline.maxFrames() + " vs " + Store.rawCap());
+check("上限同源: 显式设置更小的值时以设置值为准（用户想少留就少留）",
+  Timeline.setMaxFrames(30000) === undefined && Timeline.maxFrames() === 30000,
+  String(Timeline.maxFrames()));
+check("上限同源: 显式设置超过数据仓容量时不越界（旧实现此处静默截断到 20 万）",
+  (() => { Store.setRawCap(400000); Timeline.setMaxFrames(999999); return Timeline.maxFrames() === 400000; })(),
+  Timeline.maxFrames() + " vs " + Store.rawCap());
+check("上限同源: 设置与容量各自独立，且「先设时间线后设容量」也不被夹到旧值",
+  (() => { Store.setRawCap(5000); Timeline.setMaxFrames(400000); Store.setRawCap(400000);
+           return Timeline.maxFrames() === 400000; })(),
+  String(Timeline.maxFrames()));
+Store.setRawCap(20000); Timeline.setMaxFrames(20000);   /* 复位 */
+check("上限同源: 复位后时间线与数据仓再次一致",
+  Timeline.maxFrames() === Store.rawCap(),
+  Timeline.maxFrames() + " vs " + Store.rawCap());
 
 console.log("");
 console.log(fails === 0 ? "SERIAL OK" : ("SERIAL FAIL: " + fails));

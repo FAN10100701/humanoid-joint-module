@@ -32,11 +32,79 @@
   var totalFrames = 0;
   var totalBytes = 0;
 
-  /* 原始收发记录（文本监视器显示 / 导出用），只保留最近 RAW_CAP 条。
-     5000 条约几百 KB，足够一次实验数据的导出；更长时间的记录请用「时间线录制」。 */
-  var RAW_CAP = 5000;
-  var rawLog = [];
-  D.RAW_CAP = RAW_CAP;
+  /* 原始收发记录（文本监视器显示 / 导出用）——改用环形缓冲，写入 O(1)。
+     两个历史问题在这里一并解决（AUDIT A-81）：
+       1) 旧实现是 `Array.push + shift()`，溢出时整体搬移（O(n)）。上限一旦调大，
+          高速流下每次收帧都在搬数组，会拖慢主线程 —— 所以不能只改大数字就算了。
+       2) 上限写死 5000，与配置里的 ui.recordCap（20000）不一致：UI 与 AI 调试包都
+          声称「上限 2 万帧」，而 recentRaw() 实际只给得出 5000 条，长测会静默丢数据。
+     现在上限由配置驱动（app.js 调 setRawCap），并暴露真实生效值供 UI/调试包显示。 */
+  var RAW_CAP_DEFAULT = 5000;
+
+  function RawRing(cap) {
+    this.cap = cap;
+    this.buf = new Array(cap);
+    this.len = 0;
+    this.head = 0;
+  }
+
+  RawRing.prototype.push = function (rec) {
+    var idx;
+    if (this.len === this.cap) {
+      idx = this.head;
+      this.head = (this.head + 1) % this.cap;
+    } else {
+      idx = (this.head + this.len) % this.cap;
+      this.len++;
+    }
+    this.buf[idx] = rec;
+  };
+
+  /* 取最近 n 条（n 为空或超出则给全部），按时间先后顺序 */
+  RawRing.prototype.toArray = function (n) {
+    var cnt = (n && n < this.len) ? n : this.len;
+    var out = new Array(cnt);
+    if (!cnt) { return out; }
+    var start = (this.head + this.len - cnt) % this.cap;
+    for (var i = 0; i < cnt; i++) { out[i] = this.buf[(start + i) % this.cap]; }
+    return out;
+  };
+
+  RawRing.prototype.clear = function () {
+    this.buf = new Array(this.cap);
+    this.len = 0;
+    this.head = 0;
+  };
+
+  /* 改容量：保留最近 min(旧, 新) 条 */
+  RawRing.prototype.resize = function (cap) {
+    if (cap === this.cap) { return; }
+    var keep = this.toArray(cap);
+    this.cap = cap;
+    this.buf = new Array(cap);
+    this.head = 0;
+    this.len = keep.length;
+    for (var i = 0; i < keep.length; i++) { this.buf[i] = keep[i]; }
+  };
+
+  var rawRing = new RawRing(RAW_CAP_DEFAULT);
+
+  /* 兼容旧字段：默认上限（文档与校验脚本可读） */
+  D.RAW_CAP = RAW_CAP_DEFAULT;
+
+  /* 设置原始记录上限（帧）。返回真正生效的值。
+     下限 200 防止填 0 把监视器清空；上限 50 万防内存失控。 */
+  D.setRawCap = function (n) {
+    n = parseInt(n, 10);
+    if (!isFinite(n) || n <= 0) { n = RAW_CAP_DEFAULT; }
+    n = U.clamp(n, 200, 500000);
+    rawRing.resize(n);
+    return rawRing.cap;
+  };
+
+  /* 当前真实生效的原始记录上限 —— UI 与 AI 调试包必须显示这个值，
+     不能显示配置里的「期望值」，否则又会出现「文档与事实不符」。 */
+  D.rawCap = function () { return rawRing.cap; };
 
   /* ---------------- 环形缓冲 ---------------- */
   function Ring(cap) {
@@ -246,16 +314,12 @@
      rec = { t, tLabel, dir:"rx"|"tx", display, text, hex, values, ok } */
   D.pushRaw = function (rec) {
     if (!rec) { return; }
-    rawLog.push(rec);
-    if (rawLog.length > RAW_CAP) { rawLog.shift(); }
+    rawRing.push(rec);
   };
 
-  D.recentRaw = function (n) {
-    if (!n || n >= rawLog.length) { return rawLog.slice(0); }
-    return rawLog.slice(rawLog.length - n);
-  };
+  D.recentRaw = function (n) { return rawRing.toArray(n); };
 
-  D.rawCount = function () { return rawLog.length; };
+  D.rawCount = function () { return rawRing.len; };
 
   /* ---------------- 清理 ----------------
      keepChannels=true 保留通道元数据（颜色/标签不被打回默认）；
@@ -265,7 +329,7 @@
     for (var k in rings) {
       if (Object.prototype.hasOwnProperty.call(rings, k)) { rings[k].clear(); }
     }
-    if (!keepRaw) { rawLog = []; }
+    if (!keepRaw) { rawRing.clear(); }
     totalFrames = 0;
     totalBytes = 0;
     if (!keepChannels) {

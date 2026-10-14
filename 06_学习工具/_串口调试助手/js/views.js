@@ -182,6 +182,16 @@
       }));
     }
 
+    head.appendChild(iconBtn("⤓", "导出该图表为 PNG 图片", "", function () {
+      V.exportPanelPng(panel.id).then(function (r) {
+        if (r && r.ok) {
+          core.emit("toast", { level: "ok", msg: "已导出图表图片：" + r.name });
+        } else {
+          core.emit("toast", { level: "warn", msg: (r && r.reason) || "导出图片失败" });
+        }
+      });
+    }));
+
     head.appendChild(iconBtn("▾", "收起 / 展开", "", function () {
       V.toggleCollapse(panel.id);
     }));
@@ -511,6 +521,141 @@
   V.getPanel = function (id) {
     for (var i = 0; i < panels.length; i++) { if (panels[i].id === id) { return panels[i]; } }
     return null;
+  };
+
+  /* ------------------------------------------------------------
+     画布导出 PNG（让「人写文档」和「AI 看图」都有素材）
+     做法刻意通用：不要求每个渲染器各自实现导出，而是把该面板里的所有 <canvas>
+     合成到一张带标题 / 类型 / 时间戳 / 主题底色的新画布上。
+     好处是 7 个画布渲染器一次性全覆盖，将来新增渲染器也不必改这里。
+     DOM 型渲染器（文本监视器 / 数据表格）没有画布 —— 明确告知，而不是给一张空图。
+     ------------------------------------------------------------ */
+  function panelElById(id) {
+    return document.querySelector('.sl-panel[data-panel-id="' + id + '"]');
+  }
+
+  function liveCanvases(el) {
+    var list = el ? el.querySelectorAll("canvas") : [];
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].width > 0 && list[i].height > 0) { out.push(list[i]); }
+    }
+    return out;
+  }
+
+  /* 底色与字色都从实际计算样式取，避免在渲染层硬编码主题色 */
+  function pngColors(el) {
+    var bg = "#ffffff", ink = "#111111";
+    try {
+      var cs = global.getComputedStyle(el);
+      if (cs && cs.backgroundColor && cs.backgroundColor !== "rgba(0, 0, 0, 0)") { bg = cs.backgroundColor; }
+      var hs = global.getComputedStyle(el.querySelector(".sl-panel-head"));
+      if (hs && hs.color) { ink = hs.color; }
+    } catch (e) { /* 样式取不到就用兜底色 */ }
+    return { bg: bg, ink: ink };
+  }
+
+  /* 时间戳用墙钟（绝对时刻），与监视器口径一致 */
+  function pngStamp(d) {
+    d = d || new Date();
+    return d.getFullYear() + "-" + U.pad2(d.getMonth() + 1) + "-" + U.pad2(d.getDate())
+      + " " + U.pad2(d.getHours()) + ":" + U.pad2(d.getMinutes()) + ":" + U.pad2(d.getSeconds());
+  }
+
+  /* 合成一张面板图。返回 canvas；没有画布时返回 null */
+  function composePanel(el, panel) {
+    var cans = liveCanvases(el);
+    if (!cans.length) { return null; }
+    var pad = 12, headH = 34, gap = 8;
+    var w = 0, h = pad + headH;
+    for (var i = 0; i < cans.length; i++) {
+      if (cans[i].width > w) { w = cans[i].width; }
+      h += cans[i].height + gap;
+    }
+    w += pad * 2;
+    h += pad;
+
+    var col = pngColors(el);
+    var out = document.createElement("canvas");
+    out.width = w;
+    out.height = h;
+    var g = out.getContext("2d");
+    if (!g) { return null; }
+    g.fillStyle = col.bg;
+    g.fillRect(0, 0, w, h);
+
+    /* 标题行：面板标题 + 渲染器 + 生成时刻 —— AI 读图时靠这一行知道「看的是什么」 */
+    g.fillStyle = col.ink;
+    g.textBaseline = "middle";
+    g.font = "500 15px system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif";
+    g.fillText(String(panel.title || "图表"), pad, pad + 12);
+    var r = Plugins.get(panel.type);
+    var sub = (r ? r.label : panel.type) + " · " + pngStamp();
+    g.font = "400 12px system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif";
+    g.fillText(sub, w - pad - g.measureText(sub).width, pad + 13);
+    g.globalAlpha = 0.35;
+    g.fillRect(pad, pad + headH - 6, w - pad * 2, 1);
+    g.globalAlpha = 1;
+
+    var y = pad + headH;
+    for (var j = 0; j < cans.length; j++) {
+      g.drawImage(cans[j], pad, y, cans[j].width, cans[j].height);
+      y += cans[j].height + gap;
+    }
+    return out;
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise(function (resolve) {
+      if (canvas.toBlob) {
+        canvas.toBlob(function (b) { resolve(b); }, "image/png");
+        return;
+      }
+      try {
+        var url = canvas.toDataURL("image/png");
+        var bin = global.atob(url.split(",")[1]);
+        var u8 = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) { u8[i] = bin.charCodeAt(i); }
+        resolve(new Blob([u8], { type: "image/png" }));
+      } catch (e) { resolve(null); }
+    });
+  }
+
+  function safeName(s) {
+    return String(s == null ? "" : s).replace(/[\\/:*?"<>|\s]+/g, "_").slice(0, 40);
+  }
+
+  /* 导出单个面板为 PNG（文件名带面板名与时刻，便于多轮迭代时对照） */
+  V.exportPanelPng = function (id) {
+    var panel = V.getPanel(id);
+    var el = panelElById(id);
+    if (!panel || !el) { return Promise.resolve({ ok: false, reason: "找不到该图表" }); }
+    var canvas = composePanel(el, panel);
+    if (!canvas) {
+      return Promise.resolve({ ok: false, reason: "该图表不是画布渲染器（文本监视器 / 数据表格无法导出为图片）" });
+    }
+    return canvasToBlob(canvas).then(function (b) {
+      if (!b) { return { ok: false, reason: "浏览器拒绝生成图片" }; }
+      var name = "seriallab-" + safeName(panel.title) + "-" + pngStamp().replace(/[: ]/g, "") + ".png";
+      var ok = U.download(b, name);
+      return { ok: !!ok, name: name };
+    });
+  };
+
+  /* 导出全部画布面板：串行下载（浏览器对并发下载有节流，串行更可靠） */
+  V.exportAllPng = function () {
+    var ids = [];
+    for (var i = 0; i < panels.length; i++) { ids.push(panels[i].id); }
+    var done = 0, fail = 0;
+    return ids.reduce(function (p, id) {
+      return p.then(function () {
+        return V.exportPanelPng(id).then(function (r) {
+          if (r && r.ok) { done++; } else { fail++; }
+        });
+      });
+    }, Promise.resolve(null)).then(function () {
+      return { ok: done > 0, done: done, fail: fail, total: ids.length };
+    });
   };
 
   V.count = function () { return panels.length; };

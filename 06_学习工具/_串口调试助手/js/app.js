@@ -495,11 +495,23 @@
 
   App.armAutoRecord = function () { autoArmed = true; autoDone = false; };
 
+  /* 记录上限同源化（A-81）：一个配置项同时管「时间线录制帧数」与「原始收发记录条数」。
+     两处必须一起改——旧版只驱动前者，后者写死 5000，于是 UI 与 AI 调试包都声称
+     「上限 2 万帧」而 recentRaw() 实际只给得出 5 千条，长测静默丢数据。
+     返回原始记录的**真实生效上限**，供 UI 与调试包显示。 */
+  function applyRecordCaps() {
+    var cap = (core.config.ui && core.config.ui.recordCap) || 20000;
+    if (Timeline && Timeline.setMaxFrames) { Timeline.setMaxFrames(cap); }
+    if (Store && Store.setRawCap) { Store.setRawCap(cap); }
+    return (Store && Store.rawCap) ? Store.rawCap() : cap;
+  }
+  App.applyRecordCaps = applyRecordCaps;
+
   function ensureAutoRecord() {
     if (!Timeline || !Timeline.isRecording) { return false; }
     if (core.config.ui && core.config.ui.autoRecord === false) { return false; }
     if (Timeline.isRecording()) { return false; }
-    Timeline.setMaxFrames((core.config.ui && core.config.ui.recordCap) || 20000);
+    applyRecordCaps();
     Timeline.setRolling(true);
     Timeline.startRecord("自动存档");
     return true;
@@ -583,10 +595,8 @@
       Views.start();
     }
 
-    /* c2) 自动存档的缓冲上限（滚动模式在真正开录时再打开） */
-    if (Timeline && Timeline.setMaxFrames) {
-      Timeline.setMaxFrames((core.config.ui && core.config.ui.recordCap) || 20000);
-    }
+    /* c2) 记录上限（录制帧数 + 原始记录条数，同源；滚动模式在真正开录时再打开） */
+    applyRecordCaps();
 
     /* d) 数据管线与发送引擎 */
     wirePipeline();
@@ -594,6 +604,10 @@
 
     /* e) 界面最后启动（它会读配置把控件一次性同步到位） */
     SL.ui.boot();
+
+    /* e2) AI 通道：把「配置开着但文件句柄已丢失」的情况说清楚（刷新后必然如此，
+        因为浏览器不允许页面记住文件位置） */
+    if (SL.aichan && SL.aichan.boot) { SL.aichan.boot(); }
 
     /* f) 配置变化就落盘，保证刷新不丢 */
     core.on("panels:changed", function () { core.saveConfig(); });

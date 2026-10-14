@@ -16,20 +16,34 @@
 
   var T = {};
 
-  var MAX_FRAMES = 200000;    /* 单次录制帧数上限，约 1 小时 @50Hz */
   var MAX_KEEP = 20;          /* 内存里最多保留多少条录制 */
 
-  /* 自动存档用的可调上限与滚动模式：
-     手动录制是「一次性存档」，到顶就停（保住完整的事故现场）；
+  /* 单次录制帧数上限 —— 这里**不再自带一份数字**（AUDIT A-81 的同源要求）。
+     旧实现写死 200000，而数据仓的容量上限是 500000：用户把「存档上限」调到
+     20 万以上时，数据仓留着、时间线却静默截断到 20 万，两处口径又对不上——
+     这正是 A-81「同一件事有两个来源」的复现。
+     现在的唯一权威是「数据仓真实容量」（datastore.rawCap），时间线跟随它：
+       · 未显式设置（0）→ 直接用数据仓容量；
+       · 显式设置 → 取「设置值」与「数据仓容量」的较小者，绝不会超出数据仓。
+     补充：手动录制是「一次性存档」，到顶就停（保住完整的事故现场）；
      自动存档是「滚动缓冲」，到顶丢最旧的 20% 继续录——因为它的用途是
      「随时导出最近一段给 AI 看」，保留最新数据比保留全部更有用。 */
-  var maxFrames = MAX_FRAMES;
+  var maxFrames = 0;          /* 0 = 未显式设置，跟随数据仓 */
   var rolling = false;
 
+  function effMax() {
+    var cap = SL.datastore.rawCap();
+    return (maxFrames > 0 && maxFrames < cap) ? maxFrames : cap;
+  }
+
   T.setMaxFrames = function (n) {
-    maxFrames = (typeof n === "number" && n > 0) ? Math.min(n, MAX_FRAMES) : MAX_FRAMES;
+    /* 此处刻意不做夹紧：夹紧需要读数据仓容量，而调用方可能先设时间线再设数据仓，
+       顺序一换就会被夹到旧值上。统一延迟到 effMax() 取用那一刻判定。 */
+    maxFrames = (typeof n === "number" && n > 0) ? n : 0;
   };
-  T.maxFrames = function () { return maxFrames; };
+  /* 返回真实生效上限（不是「设置值」）。UI 与 AI 调试包必须显示这个值，
+     否则又会出现「文档与事实不符」。 */
+  T.maxFrames = effMax;
   T.setRolling = function (on) { rolling = !!on; };
   T.isRolling = function () { return rolling; };
 
@@ -109,11 +123,11 @@
   core.on("frame", function (frame) {
     if (!cur) { return; }
     if (frame && frame.source === "playback") { return; }   /* 回放出来的帧不再录进去 */
-    if (cur.frames.length >= maxFrames) {
+    if (cur.frames.length >= effMax()) {
       if (rolling) {
-        cur.frames.splice(0, Math.floor(maxFrames * 0.2));
+        cur.frames.splice(0, Math.floor(effMax() * 0.2));
       } else {
-        core.log("warn", "录制已达上限（" + maxFrames + " 帧），自动停止");
+        core.log("warn", "录制已达上限（" + effMax() + " 帧），自动停止");
         T.stopRecord();
         return;
       }
@@ -249,13 +263,16 @@
     var list = Object.prototype.toString.call(obj.records) === "[object Array]" ? obj.records : [];
     var errors = [];
     var added = 0;
+    /* 导入闸门高度：跟随数据仓容量，不另设一个数字（A-81 同源要求）。
+       循环外取一次即可，别在条件里反复调用。 */
+    var importCap = effMax();
 
     for (var i = 0; i < list.length; i++) {
       var r = list[i];
       if (!r || typeof r !== "object") { errors.push("第 " + (i + 1) + " 条记录非法，已跳过"); continue; }
       var frames = Object.prototype.toString.call(r.frames) === "[object Array]" ? r.frames : [];
       var clean = [];
-      for (var j = 0; j < frames.length && j < MAX_FRAMES; j++) {
+      for (var j = 0; j < frames.length && j < importCap; j++) {
         var f = frames[j];
         if (!f || typeof f !== "object") { continue; }
         clean.push({

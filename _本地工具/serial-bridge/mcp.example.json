@@ -1,0 +1,12 @@
+{
+  "_说明": "SerialLab 本地串口桥的 MCP 配置示例。把它合并进 <用户主目录>\\.workbuddy\\mcp.json 的 mcpServers 段即可。args[0] 请换成你本机该文件的绝对路径（Windows 下建议用正斜杠 /，JSON 中若用反斜杠须写成 \\\\）。写完后需在连接器管理页右上角『自定义连接器』入口对新 server 点一次『信任』才会生效。",
+  "mcpServers": {
+    "seriallab": {
+      "command": "node",
+      "args": [
+        "<本项目根目录的绝对路径>/_本地工具/serial-bridge/bridge.mjs",
+        "mcp"
+      ]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "seriallab-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SerialLab 本地串口桥：让 AI Agent 直接读写串口，并复用子应用的解析内核（同一份源码，结果与浏览器逐字节一致）",
+  "bin": {
+    "serial-bridge": "./bridge.mjs"
+  },
+  "scripts": {
+    "list": "node bridge.mjs list",
+    "selftest": "node bridge.mjs selftest"
+  },
+  "dependencies": {
+    "serialport": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
