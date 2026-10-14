@@ -680,7 +680,7 @@
           ctx.restore();
         }
 
-        drawLegend(ctx, view, allSeries, hid, pad);
+        drawLegend(ctx, view, allSeries, hid, pad, legendHits);
         drawTimeAxis(ctx, view, series);
 
         /* 左上角标出当前量程 */
@@ -737,39 +737,6 @@
       }
 
       /* 图例（左上角）：可点击。隐藏的通道灰显；记录命中区给 click 用 */
-      function drawLegend(ctx, view, allSeries, hid, pad) {
-        var t = theme();
-        legendHits = [];
-        ctx.save();
-        ctx.font = "10px Consolas, monospace";
-        ctx.textBaseline = "middle";
-        var cx = PAD.l + 4, cy = 9;
-        for (var m = 0; m < allSeries.length; m++) {
-          var it = allSeries[m];
-          if (cx + 70 > view.w - PAD.r) { break; }
-          var off = !!hid[it.key];
-          ctx.globalAlpha = off ? 0.3 : 1;
-          ctx.fillStyle = it.color;
-          ctx.fillRect(cx, cy - 4, 8, 8);
-          if (off) {
-            /* 隐藏通道的色块上画一道斜杠，明示「已关」 */
-            ctx.strokeStyle = t.ink2;
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.moveTo(cx - 1, cy + 5);
-            ctx.lineTo(cx + 9, cy - 5);
-            ctx.stroke();
-          }
-          ctx.fillStyle = off ? t.ink3 : t.ink2;
-          ctx.fillText(it.label, cx + 12, cy);
-          var wEnd = cx + 12 + ctx.measureText(it.label).width + 8;
-          legendHits.push({ key: it.key, x0: cx - 2, x1: wEnd, y: cy });
-          cx = wEnd + 4;
-          ctx.globalAlpha = 1;
-        }
-        ctx.restore();
-      }
-
       return {
         update: draw,
         resize: function () { view.fit(); },
@@ -782,6 +749,41 @@
       };
     }
   });
+
+  /* V2.2.14：时域/频域共用图例——色块 + 名字的「可点开关」样式（带浅底色提示可点击），
+     点击 = 显隐对应通道（legendHits 由调用方提供，命中判定在各自 canvas click 里） */
+  function drawLegend(ctx, view, allSeries, hid, pad, legendHits) {
+  var t = theme();
+  legendHits = [];
+  ctx.save();
+  ctx.font = "10px Consolas, monospace";
+  ctx.textBaseline = "middle";
+  var cx = PAD.l + 4, cy = 9;
+  for (var m = 0; m < allSeries.length; m++) {
+    var it = allSeries[m];
+    if (cx + 70 > view.w - PAD.r) { break; }
+    var off = !!hid[it.key];
+    ctx.globalAlpha = off ? 0.3 : 1;
+    ctx.fillStyle = it.color;
+    ctx.fillRect(cx, cy - 4, 8, 8);
+    if (off) {
+      /* 隐藏通道的色块上画一道斜杠，明示「已关」 */
+      ctx.strokeStyle = t.ink2;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx - 1, cy + 5);
+      ctx.lineTo(cx + 9, cy - 5);
+      ctx.stroke();
+    }
+    ctx.fillStyle = off ? t.ink3 : t.ink2;
+    ctx.fillText(it.label, cx + 12, cy);
+    var wEnd = cx + 12 + ctx.measureText(it.label).width + 8;
+    legendHits.push({ key: it.key, x0: cx - 2, x1: wEnd, y: cy });
+    cx = wEnd + 4;
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+  }
 
   /* ---------- 实时统计（V2.2.6，时域统计视图）----------
      每通道一行：有效值 RMS（去均值，正弦信号即 峰值/√2）/ 峰峰值 / 均值 / 最大 / 最小 / 样本数。
@@ -871,6 +873,21 @@
     defaults: { window: 1024, h: 300, opts: { maxN: 4096, logScale: true } },
     make: function (hostEl, panel) {
       var view = makeView(hostEl);
+      var legendHits = [];    /* V2.2.14：图例命中区——频域谱也有点击显隐了 */
+
+      /* 点击图例 = 显隐对应通道（与时域折线同一套 hiddenChans 状态，互通） */
+      view.canvas.addEventListener("click", function (e) {
+        var r = view.canvas.getBoundingClientRect();
+        var x = e.clientX - r.left;
+        var y = e.clientY - r.top;
+        for (var i = 0; i < legendHits.length; i++) {
+          if (x >= legendHits[i].x0 && x <= legendHits[i].x1 && Math.abs(y - legendHits[i].y) <= 10) {
+            var h = hiddenChans[panel.id] || (hiddenChans[panel.id] = {});
+            h[legendHits[i].key] = !h[legendHits[i].key];
+            return;
+          }
+        }
+      });
 
       function draw(data) {
         view.fit();
@@ -878,7 +895,13 @@
         var t = theme();
         var ctx = view.ctx;
         var chans = resolveChannels(panel, data, registry.fftplot);
-        var series = buildSeries(panel, data, chans);
+        var allSeries = buildSeries(panel, data, chans);
+        var hid = hiddenChans[panel.id] || {};
+        /* 隐藏通道不参与谱线与量程，但留在图例里可点回 */
+        var series = [];
+        for (var si = 0; si < allSeries.length; si++) {
+          if (!hid[allSeries[si].key]) { series.push(allSeries[si]); }
+        }
 
         var spectrums = [];
         var i, j;
@@ -900,7 +923,10 @@
           ctx.fillStyle = t.ink3;
           ctx.font = "11px Consolas, monospace";
           ctx.textBaseline = "middle";
-          ctx.fillText("样本不足（至少需要 16 个点才能做频谱）", 12, view.h / 2);
+          ctx.fillText(allSeries.length
+            ? "所有通道都已隐藏——点击图例勾回"
+            : "样本不足（至少需要 16 个点才能做频谱）", 12, view.h / 2);
+          drawLegend(ctx, view, allSeries, hid, null, legendHits);
           return;
         }
 
@@ -933,7 +959,7 @@
           var a = useDb ? sc.sp.magsDb : sc.sp.magsLin;
           ctx.save();
           ctx.strokeStyle = sc.color;
-          ctx.lineWidth = 1.3;
+          ctx.lineWidth = 1.6;   /* V2.2.14：谱线加粗一点，多通道叠加时更好分辨 */
           ctx.beginPath();
           var started = false;
           for (j = 0; j < a.length; j++) {
@@ -946,24 +972,28 @@
           }
           ctx.stroke();
 
-          /* 峰值频率标注 */
+          /* 峰值频率标注（V2.2.14：跳过直流/近零频分量；每通道错开一行，
+             修掉「0·1.49Hz」这种两条标注重叠成天书的排布） */
           if (sc.sp.peak && sc.sp.peak.mag > 0) {
             var pf = sc.sp.peak.freq;
-            if (pf <= fMax) {
+            if (pf <= fMax && pf > fMax * 0.02) {
               var px = pad.l + (pf / fMax) * map.plotW;
               var pMag = useDb ? (20 * Math.log(sc.sp.peak.mag + 1e-12) / Math.LN10) : sc.sp.peak.mag;
               ctx.fillStyle = sc.color;
               ctx.beginPath();
-              ctx.arc(px, map.yOf(pMag), 2.4, 0, Math.PI * 2);
+              ctx.arc(px, map.yOf(pMag), 2.6, 0, Math.PI * 2);
               ctx.fill();
-              ctx.fillStyle = t.ink2;
-              ctx.font = "10px Consolas, monospace";
+              ctx.fillStyle = sc.color;
+              ctx.font = "bold 10px Consolas, monospace";
               ctx.textBaseline = "bottom";
-              ctx.fillText(U.fmt(pf, 2) + "Hz", Math.min(px + 4, view.w - 52), pad.t + 10);
+              ctx.fillText(U.fmt(pf, 2) + "Hz", Math.min(px + 4, view.w - 56), pad.t + 12 + i * 13);
             }
           }
           ctx.restore();
         }
+
+        /* 图例（与时域同款：chip 可点击显隐通道） */
+        drawLegend(ctx, view, allSeries, hid, pad, legendHits);
 
         ctx.save();
         ctx.fillStyle = t.ink3;
