@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.8";
+  UI.VERSION = "2.2.9";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -867,6 +867,9 @@
       if (timer) { clearTimeout(timer); timer = null; }
       if (!n) { box.classList.remove("is-on"); cur = null; return; }
       cur = n;
+      /* V2.2.9：自绘气泡与浏览器原生 title 会同时弹（用户截图实证出现两个气泡）——
+         命中 [data-tip] 时顺手摘掉原生 title，全局根除，以后写双属性也不会再犯 */
+      if (n.getAttribute("title")) { n.removeAttribute("title"); }
       /* 位置基准要在进入时就记下（而不是 400ms 后 place 时）——监视器每帧
          自动滚动会立刻涌入 scroll 事件，没有基准就会把刚起的 timer 清掉 */
       var r0 = n.getBoundingClientRect();

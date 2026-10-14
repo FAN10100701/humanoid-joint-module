@@ -495,9 +495,19 @@ input[type="number"] { width: 78px; }
 .sl-panes {
   flex: 1 1 auto;
   overflow-y: auto;
+  overflow-x: hidden;   /* V2.2.9：内容再超宽也不出横向滚动条（折行已根治，兜底防裁切观感） */
   padding: 11px;
   min-height: 0;
 }
+
+/* V2.2.9：窄栏（240px 起）不裁切——
+   ①field 放开 nowrap 允许折行（标签与控件可分两行，好过被裁掉半截）；
+   ②select/input 限宽到容器内（option 文字再长也只收缩显示，下拉里仍是全文字）；
+   ③说明文字 anywhere 断行，长串/中英混排不再把容器撑破。
+   只作用于左栏页签内，顶栏/发送条的紧凑 nowrap 不受影响。 */
+.sl-panes .sl-field { white-space: normal; flex-wrap: wrap; min-width: 0; }
+.sl-panes select, .sl-panes input { max-width: 100%; min-width: 0; }
+.sl-panes .sl-hint, .sl-panes p, .sl-panes li { overflow-wrap: anywhere; }
 
 .sl-pane { display: none; }
 .sl-pane.is-on { display: block; }
