@@ -1843,3 +1843,8 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 }
 /* 触摸拖拽时不要让页面跟着滚（否则手指一动页面就滑走了，「不丝滑」的常见来源） */
 .sl-panel-head { touch-action: none; }
+/* ---------------- V2.2.31：快捷条的「⋯」 ---------------- */
+/* 低频控件（手动量程 Y↓/Y↑）默认收起，点开才占位置 —— 缓解窄面板下控件挤成一团 */
+.sl-qk-more { display: none; align-items: center; gap: var(--sl-gap-sm); }
+.sl-qk-more.is-open { display: inline-flex; }
+.sl-qk-more-btn { font-weight: 600; letter-spacing: 1px; }

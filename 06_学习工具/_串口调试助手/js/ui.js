@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.30";
+  UI.VERSION = "2.2.31";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1040,10 +1040,23 @@
       }
       host.innerHTML = '<select class="sl-qk-enc" data-qk="win" title="横轴窗口：显示最近多少个采样点——太小抖动、太密看不清">' +
         optHtml + "</select>" +
+        '<button type="button" class="sl-iconbtn sl-qk-more-btn" title="更多：手动量程（Y↓ 下限 / Y↑ 上限）——留空即自动量程">⋯</button>' +
+        '<span class="sl-qk-more">' +
         '<input class="sl-qk-num" data-qk="ymin" type="number" step="any" placeholder="Y↓" title="纵轴下限（留空 = 自动量程）" value="' +
           (typeof axis.yMin === "number" ? axis.yMin : "") + '">' +
         '<input class="sl-qk-num" data-qk="ymax" type="number" step="any" placeholder="Y↑" title="纵轴上限（留空 = 自动量程）" value="' +
           (typeof axis.yMax === "number" ? axis.yMax : "") + '">';
+      /* V2.2.31：快捷条收窄 —— 低频控件（手动量程 Y↓/Y↑）收进「⋯」，高频的（窗口下拉）留明面。
+         开关委托到 host：host 不会被 innerHTML 重建，只绑一次；__qkMoreBound 守卫防重复绑定。 */
+      if (!host.__qkMoreBound) {
+        host.__qkMoreBound = true;
+        host.addEventListener("click", function (e) {
+          var tb = (e.target && e.target.closest) ? e.target.closest(".sl-qk-more-btn") : null;
+          if (!tb) { return; }
+          var box = host.querySelector(".sl-qk-more");
+          if (box) { box.classList.toggle("is-open"); }
+        });
+      }
       return;
     }
 

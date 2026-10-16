@@ -1984,3 +1984,19 @@ scanRegression().then(function () {
   check("A-113: 取最接近该频率的 bin（不能假设索引等于频率——频谱的 bin 间隔由采样率与点数决定）",
     /if \(dq < hbd\) \{ hbd = dq; hbi = hz; \}/.test(sPlug), "");
 })();
+/* ⑯-m 快捷条「⋯」收窄低频控件（V2.2.31） */
+(function () {
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
+  const sCss = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8").replace(/\r\n/g, "\n");
+  check("A-114: 快捷条把手动量程（Y↓/Y↑）收进「⋯」，窗口下拉留明面",
+    sUi.indexOf('class="sl-iconbtn sl-qk-more-btn"') > 0
+      && sUi.indexOf('class="sl-qk-more"') > 0
+      && sUi.indexOf('data-qk="ymin"') > 0, "");
+  check("A-114: 「⋯」开关委托到 host（host 不被 innerHTML 重建，只绑一次）+ 守卫防重复绑定",
+    sUi.indexOf("host.__qkMoreBound") > 0
+      && sUi.indexOf('e.target.closest(".sl-qk-more-btn")') > 0
+      && sUi.indexOf('box.classList.toggle("is-open")') > 0, "");
+  check("A-114: 收起态用 CSS 控制（不删元素——删了会连带毁掉已绑定的接线）",
+    /\.sl-qk-more \{ display: none;/.test(sCss)
+      && /\.sl-qk-more\.is-open \{ display: inline-flex; \}/.test(sCss), "");
+})();

@@ -8,9 +8,9 @@
    - 页面: stale-while-revalidate(访问过的页面离线可用)
    - 00_3D 目录: 交给 3D 页自己的 Service Worker(本 sw 不碰)
    - ⚠ 双SW纪律: 改动任一覆盖域内的文件后,必须 bump 对应 CACHE/SW_VERSION,否则用户端永远吃旧文件
-   - 版本: V2.2.30 · 2026-10-16(升级站点时改 CACHE 名以强制更新;activate 收敛为只清 hrl-site- 域缓存(A-57 缓存互删根治),en-audio MP3 走 _assets SWR 播放时缓存+MD5 寻址不回源;V2.1.31 起预缓存拆 CORE/LAZY 两层,V2.1.32 加 KaTeX CDN cache-first 特例(A-28),V2.1.33 补 srs.js/mistakes.js 进 CORE,V2.2.0 补串口调试助手入口页进 CORE + 子应用 17 个文件进 LAZY(约 230KB,不抢首屏),V2.2.2 补 aichan.js 进 LAZY,V2.2.3~V2.2.30 子应用文件清单未变(仅内容更新,靠 CACHE 名刷新))
+   - 版本: V2.2.31 · 2026-10-16(升级站点时改 CACHE 名以强制更新;activate 收敛为只清 hrl-site- 域缓存(A-57 缓存互删根治),en-audio MP3 走 _assets SWR 播放时缓存+MD5 寻址不回源;V2.1.31 起预缓存拆 CORE/LAZY 两层,V2.1.32 加 KaTeX CDN cache-first 特例(A-28),V2.1.33 补 srs.js/mistakes.js 进 CORE,V2.2.0 补串口调试助手入口页进 CORE + 子应用 17 个文件进 LAZY(约 230KB,不抢首屏),V2.2.2 补 aichan.js 进 LAZY,V2.2.3~V2.2.31 子应用文件清单未变(仅内容更新,靠 CACHE 名刷新))
    ============================================================ */
-var CACHE = "hrl-site-v2.2.30";
+var CACHE = "hrl-site-v2.2.31";
 var PRECACHE = [
   "./index.html",
   "./404.html",
