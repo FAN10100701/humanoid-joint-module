@@ -753,6 +753,8 @@
       /* V2.2.6 示波器式视角：0 = 实时跟随；>0 = 向历史回看的点数 */
       var viewOffset = 0;
       var dragging = false, dragX0 = 0, dragOff0 = 0, dragMoved = false;
+        /* V2.2.29：悬停准线的位置存**闭包变量**，不写 panel（原因见绘制处的注释）。 */
+        var hoverFrac = null;
       var lastLive = true;   /* V2.2.8：视角状态变化时回调，驱动 Auto 按钮状态灯 */
       var backTipRect = null; /* V2.2.11：回看提示条命中区——点它直接回实时 */
       var WHEEL_MIN = 50, WHEEL_MAX = 5000, LOOKBACK_MAX = 50000;
@@ -802,6 +804,16 @@
           SL.views.redraw();
           return false;
         });
+
+        
+        /* V2.2.29：悬停准线（跟随鼠标）。位置只写闭包变量；不主动 redraw（面板本就有节流重绘循环）。 */
+        view.canvas.addEventListener("mousemove", function (e) {
+          var pwh = Math.max(1, view.w - PAD.l - PAD.r);
+          var frh = (e.offsetX - PAD.l) / pwh;
+          if (!(frh >= 0) || frh > 1) { hoverFrac = null; return; }
+          hoverFrac = frh;
+        });
+        view.canvas.addEventListener("mouseleave", function () { hoverFrac = null; });
 
         
         view.canvas.addEventListener("wheel", function (e) {
@@ -978,6 +990,55 @@
             ctx.textAlign = "left";
             ctx.fillStyle = cAcc;
             ctx.fillText(m.length > 150 ? (m.slice(0, 149) + "…") : m, PAD.l + 4, pad.t + plotH - 20);
+            ctx.restore();
+          }
+
+          
+          /* V2.2.29：鼠标悬停示数（准线）。
+             与 Shift 游标的分工：游标是**钉住**的（量两点之间的 Δt/Δy/斜率），
+             准线是**跟随**的（看某一点此刻的值）—— 两者并存，正对应「区间测量」与「点测量」。
+             ⚠ 两个踩过的坑这里都避开了：
+               1) 位置存**闭包变量**，不写 panel —— 实测 draw 手里的 panel 与 views.list()
+                  返回的是同一个 id 的两个不同对象，写 panel 会一半生效；
+               2) 颜色用现成的主题对象 t 与通道自带颜色，**不调 g()** —— 上一版在这里调
+                  g("--sl-ink3") 直接中断了整个重绘循环（实测 _hoverStage 停在 31）。
+             位置存绘图区宽度比例，窗口缩放/回看/数据增长都不会错位。 */
+          panel._hoverStage = 1;
+          if (hoverFrac !== null && series.length) {
+            panel._hoverStage = 2;
+            var hn = series[0].v.length;
+            var hi = Math.max(0, Math.min(hn - 1, Math.round(Math.max(0, Math.min(1, hoverFrac)) * (hn - 1))));
+            var hx = map.xOf(hi, hn);
+            panel._hoverStage = 3;
+            ctx.save();
+            ctx.strokeStyle = t.ink3;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(hx, pad.t);
+            ctx.lineTo(hx, pad.t + plotH);
+            ctx.stroke();
+            panel._hoverStage = 4;
+            var hl = "";
+            var ht = (series[0].t && typeof series[0].t[hi] === "number") ? series[0].t[hi] : 0;
+            ctx.font = "11px Consolas, monospace";
+            ctx.textBaseline = "top";
+            var boxX = hx + 6;
+            if (boxX > PAD.l + plotW - 150) { boxX = hx - 156; }
+            panel._hoverStage = 5;
+            for (var hj = 0; hj < series.length; hj++) {
+              var hv = series[hj].v[hi];
+              if (!isFinite(hv)) { continue; }
+              ctx.fillStyle = series[hj].color;
+              ctx.beginPath();
+              ctx.arc(hx, map.yOf(hv), 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillText(series[hj].label + " " + U.fmt(hv, 4), Math.max(PAD.l + 2, boxX), pad.t + 6 + hj * 13);
+              hl += (hl ? "  " : "") + series[hj].label + "=" + U.fmt(hv, 4);
+            }
+            panel._hoverStage = 6;
+            if (ht) { hl = "t=" + (ht >= 1000 ? (U.fmt(ht / 1000, 3) + "s") : (U.fmt(ht, 2) + "ms")) + "  " + hl; }
+            panel._hoverText = hl;
+            panel._hoverStage = 7;
             ctx.restore();
           }
 

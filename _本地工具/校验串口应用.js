@@ -1944,3 +1944,23 @@ scanRegression().then(function () {
   check("A-111: 「复制测量」按钮必须在触发按钮**之外**（插进回调里按钮根本不会出现——踩过）",
     /core\.emit\("panel:trigger", \{ id: panel\.id \}\);[\s\S]{0,40}?\}\)\);[\s\S]{0,300}?sl-meas-copy/.test(sViews), "");
 })();
+/* ============================================================
+   ⑯-k 鼠标悬停示数（准线）（V2.2.29）
+   ============================================================ */
+(function () {
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  check("A-112: 悬停位置存**闭包变量**，不写 panel（draw 手里的 panel 与 views.list() 可能是同一 id 的两个对象）",
+    sPlug.indexOf("var hoverFrac = null;") > 0
+      && sPlug.indexOf("hoverFrac = frh;") > 0
+      && sPlug.indexOf("if (hoverFrac !== null && series.length) {") > 0
+      && sPlug.indexOf("panel._hoverX") < 0, "");
+  check("A-112: 悬停绘制**不得调用 g()**（上一版调 g(\"--sl-ink3\") 直接中断了整个重绘循环，实测 _hoverStage 停在 31）",
+    sPlug.indexOf("ctx.strokeStyle = t.ink3;") > 0
+      && !/if \(hoverFrac !== null[\s\S]{0,1400}?g\("--sl-/.test(sPlug), "");
+  check("A-112: 移出画布必须清掉准线（mouseleave → hoverFrac = null）",
+    sPlug.indexOf('view.canvas.addEventListener("mouseleave", function () { hoverFrac = null; });') > 0, "");
+  check("A-112: 准线块带分级计数器（_hoverStage 1→7）—— 这是本轮唯一能定位失败行的手段",
+    sPlug.indexOf("panel._hoverStage = 1;") > 0 && sPlug.indexOf("panel._hoverStage = 7;") > 0, "");
+  check("A-112: 读数写进 _hoverText（供复制通道复用），含时间与各通道路值",
+    sPlug.indexOf("panel._hoverText = hl;") > 0 && sPlug.indexOf('hl = "t=" + (ht >= 1000') > 0, "");
+})();
