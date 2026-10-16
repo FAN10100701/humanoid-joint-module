@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.26";
+  UI.VERSION = "2.2.27";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1262,6 +1262,30 @@
       }
     }, true);
     /* 面板动态增删 / 主位互换 / 更新重建后补齐快捷条内容 */
+    /* V2.2.27：快捷条里的「≈ 时长」要在数据到达后自己出现，所以需要周期刷新。
+       ⚠ **不能**周期性地 refreshAllQuick()：它用 innerHTML 重建整个快捷条，
+       重建会让元素**短暂消失** —— 用户正好点击、或脚本正好轮询就撞上 null
+       （实测 E2E serial_v224 就是这么红的：wait_for_function 读到 null 的 .checked）。
+       我还试过「只在采样间隔变化时重建」，同样没用 —— 实测时间戳本来就有抖动，
+       签名每秒都变，等于没减少重建 ✗。
+       正解是**只改文案、不搬 DOM**：直接改已有 <option> 的 text 字段。 */
+    global.setInterval(function () {
+      var pv = SL.datastore.recentRaw(2);
+      if (pv.length < 2) { return; }
+      var iv = pv[1].t - pv[0].t;
+      if (!(iv > 0)) { return; }
+      var sels = document.querySelectorAll("[data-quick-plot] select[data-qk='win']");
+      for (var si = 0; si < sels.length; si++) {
+        var os = sels[si].options;
+        for (var oi = 0; oi < os.length; oi++) {
+          var n2 = parseInt(os[oi].value, 10);
+          if (!(n2 > 0)) { continue; }
+          var ms2 = n2 * iv;
+          var want = n2 + " 点 ≈ " + (ms2 >= 1000 ? (U.fmt(ms2 / 1000, 2) + "s") : (U.fmt(ms2, 1) + "ms"));
+          if (os[oi].text !== want) { os[oi].text = want; }
+        }
+      }
+    }, 1000);
     core.on("panels:changed", function () { refreshAllQuick(); refreshPanelBriefs(); refreshLegends(); });
     /* 面板头「复制」按钮（views.js 发事件，剪贴板归 ui.js —— 子应用硬规则 18） */
     core.on("panel:copyText", function (e) {

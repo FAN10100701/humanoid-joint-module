@@ -1901,3 +1901,20 @@ scanRegression().then(function () {
     /var spanMs = \(t1 > t0\)/.test(sPlug)
       && /var t0 = s0\.t\[0\], t1 = s0\.t\[s0\.t\.length - 1\];/.test(sPlug), "");
 })();
+/* ============================================================
+   ⑯-i 第三批(其二)：快捷条点数带工程时长（V2.2.27）
+   ⚠ 本 IIFE 内自己读文件（外层同名 const 是函数作用域的）。
+   ============================================================ */
+(function () {
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  check("A-110: 快捷条点数带工程时长（≈ 秒），采样间隔取自数据而非配置",
+    sUi.indexOf("var pv = SL.datastore.recentRaw(2);") > 0
+      && sUi.indexOf('var want = n2 + " 点 ≈ "') > 0
+      && /ms2 >= 1000 \? \(U\.fmt\(ms2 \/ 1000, 2\) \+ "s"\) : \(U\.fmt\(ms2, 1\) \+ "ms"\)/.test(sUi), "");
+  check("A-110: 周期更新必须**只改文案、不搬 DOM**（innerHTML 重建会让元素短暂消失，点击/轮询会撞上 null）",
+    sUi.indexOf("if (os[oi].text !== want) { os[oi].text = want; }") > 0
+      && sUi.indexOf("select[data-qk='win']") > 0
+      && !/setInterval\(function \(\) \{ refreshAllQuick\(\); \}, 1000\)/.test(sUi), "");
+  check("A-110: 不得用「焦点保护」式早退挡掉同步（左栏改 → 快捷条回显是 E2E serial_v224 的期望行为）",
+    sUi.indexOf("焦点保护") < 0, "");
+})();
