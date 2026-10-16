@@ -725,6 +725,12 @@
 
   /* V2.2.6：时域面板的 reset 钩子表（Auto 按钮用）——渲染器 make 时登记 */
   var timeplotReset = {};
+  /* V2.2.30：频谱侧的悬停状态。
+     用模块级 id→状态表而不是闭包变量：本渲染器的 setup 段没有唯一锚点，
+     而往 draw 里声明变量每帧都会重置（会导致监听器被反复注册 ✗）。
+     这正是代码库里 timeplotReset / viewClear / viewTrigger 一直用表的原因。 */
+  var fftHoverState = {};   /* id -> 绘图区宽度比例；缺失 = 无准线 */
+  var fftHoverBound = {};   /* id -> 是否已注册监听（保证只注册一次） */
   P.resetTimeplot = function (id) {
     if (timeplotReset[id]) { timeplotReset[id](); }
   };
@@ -1459,7 +1465,58 @@ var spanMs = (t1 > t0) ? (t1 - t0) : 0;
         ctx.fillStyle = t.ink3;
         ctx.font = "10px Consolas, monospace";
         ctx.textBaseline = "top";
-        ctx.fillText((useDb ? "幅值 dB" : "幅值") + " · 横轴 0~" + U.fmt(fMax, 1) + "Hz", 4, view.h - pad.b + 3);
+        /* V2.2.30：频谱侧的悬停示数（与波形侧同一套「测量层」）。
+             坐标映射是频谱自己的：x = pad.l + (f / fMax) * map.plotW，读数给「频率 Hz + 各通道在该频率处的幅值」。
+             ⚠ 两条踩过的坑照旧避开：状态放**模块级 id 表**（不写 panel、也不放 draw 内的局部变量）；
+                颜色只用 t 与通道自带颜色，**不调 g()**（上一版调 g 直接把整个重绘循环打断了）。
+             ⚠ 监听器用一次性守卫注册：本渲染器没有已知的 setup 锚点，盲选锚点正是前几轮栽跟头的地方。 */
+          if (!fftHoverBound[panel.id]) {
+            fftHoverBound[panel.id] = true;
+            view.canvas.addEventListener("mousemove", function (e) {
+              var pw2 = Math.max(1, view.w - pad.l - pad.r);
+              var f2 = (e.offsetX - pad.l) / pw2;
+              if (!(f2 >= 0) || f2 > 1) { delete fftHoverState[panel.id]; return; }
+              fftHoverState[panel.id] = f2;
+            });
+            view.canvas.addEventListener("mouseleave", function () { delete fftHoverState[panel.id]; });
+          }
+          if (typeof fftHoverState[panel.id] === "number" && spectrums.length) {
+            var hfq = Math.max(0, Math.min(1, fftHoverState[panel.id])) * fMax;
+            var hxq = pad.l + (fMax > 0 ? (hfq / fMax) * map.plotW : 0);
+            ctx.save();
+            ctx.strokeStyle = t.ink3;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(hxq, pad.t);
+            ctx.lineTo(hxq, pad.t + (view.h - pad.t - pad.b));
+            ctx.stroke();
+            ctx.font = "11px Consolas, monospace";
+            ctx.textBaseline = "top";
+            var hbox = hxq + 6;
+            if (hbox > pad.l + map.plotW - 150) { hbox = hxq - 156; }
+            var htxt = U.fmt(hfq, hfq < 100 ? 2 : 1) + "Hz";
+            for (var hk = 0; hk < spectrums.length; hk++) {
+              var hfr = spectrums[hk].sp.freqs, harr = useDb ? spectrums[hk].sp.magsDb : spectrums[hk].sp.magsLin;
+              var hbi = 0, hbd = Infinity;
+              for (var hz = 0; hz < hfr.length; hz++) {
+                var dq = Math.abs(hfr[hz] - hfq);
+                if (dq < hbd) { hbd = dq; hbi = hz; }
+              }
+              var hval = harr[hbi];
+              if (!isFinite(hval)) { continue; }
+              ctx.fillStyle = spectrums[hk].color;
+              ctx.beginPath();
+              ctx.arc(hxq, map.yOf(hval), 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillText(spectrums[hk].label + " " + U.fmt(hval, useDb ? 2 : 5), Math.max(pad.l + 2, hbox), pad.t + 6 + hk * 13);
+              htxt += "  " + spectrums[hk].label + "=" + U.fmt(hval, useDb ? 2 : 5);
+            }
+            panel._hoverText = htxt;
+            ctx.restore();
+          }
+
+          
+          ctx.fillText((useDb ? "幅值 dB" : "幅值") + " · 横轴 0~" + U.fmt(fMax, 1) + "Hz", 4, view.h - pad.b + 3);
         ctx.restore();
       }
 

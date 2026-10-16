@@ -1964,3 +1964,23 @@ scanRegression().then(function () {
   check("A-112: 读数写进 _hoverText（供复制通道复用），含时间与各通道路值",
     sPlug.indexOf("panel._hoverText = hl;") > 0 && sPlug.indexOf('hl = "t=" + (ht >= 1000') > 0, "");
 })();
+/* ============================================================
+   ⑯-l 频谱侧悬停示数（V2.2.30）
+   ============================================================ */
+(function () {
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  check("A-113: 频谱侧悬停存在，坐标映射用频谱自己的 pad/fMax（与波形侧不是同一套）",
+    sPlug.indexOf("var hfq = Math.max(0, Math.min(1, fftHoverState[panel.id])) * fMax;") > 0
+      && sPlug.indexOf("var hxq = pad.l + (fMax > 0 ? (hfq / fMax) * map.plotW : 0);") > 0, "");
+  check("A-113: 悬停状态放**模块级 id 表**（不写 panel、也不放 draw 内局部变量——后者每帧重置会反复注册监听）",
+    sPlug.indexOf("var fftHoverState = {};") > 0 && sPlug.indexOf("var fftHoverBound = {};") > 0
+      && /if \(!fftHoverBound\[panel\.id\]\) \{/.test(sPlug), "");
+  check("A-113: 频谱侧悬停同样不得调 g()（用 t.ink3 与通道自带颜色）",
+    sPlug.indexOf("ctx.strokeStyle = t.ink3;") > 0
+      && !/fftHoverState\[panel\.id\][\s\S]{0,1600}?g\("--sl-/.test(sPlug), "");
+  check("A-113: 读数含频率 Hz 与各通道幅值，并存进 _hoverText 供复制通道复用",
+    sPlug.indexOf('var htxt = U.fmt(hfq, hfq < 100 ? 2 : 1) + "Hz";') > 0
+      && sPlug.indexOf("panel._hoverText = htxt;") > 0, "");
+  check("A-113: 取最接近该频率的 bin（不能假设索引等于频率——频谱的 bin 间隔由采样率与点数决定）",
+    /if \(dq < hbd\) \{ hbd = dq; hbi = hz; \}/.test(sPlug), "");
+})();
