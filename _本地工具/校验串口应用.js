@@ -1801,3 +1801,37 @@ scanRegression().then(function () {
   check("A-106: 触摸拖拽不滚页面（touch-action: none 挂在面板头）",
     /\.sl-panel-head \{ touch-action: none; \}/.test(sCss), "");
 })();
+/* ============================================================
+   ⑯-f 显示模块优化·第一批：触发对齐 + min/max 降采样（V2.2.24）
+   用户原话：「各个模块波形显示频谱图显示等还能优化使用吗，有没有更合理的方式」。
+   ⚠ 这些变量必须在本 IIFE 内自己读（上面 IIFE 里的同名 const 是函数作用域的）。
+   ============================================================ */
+(function () {
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+
+  check("A-107: 触发搜索区间受 [preN, n-need] 约束（否则永远等待：最新跨越后面总凑不出窗口）",
+    sPlug.indexOf("var need = win - preN;") > 0
+      && sPlug.indexOf("var limit = n - need;") > 0
+      && /for \(i = Math\.min\(n - 1, limit\); i >= Math\.max\(1, preN\); i--\)/.test(sPlug), "");
+  check("A-107: 开触发时多取一屏（只取 window 个点会永远凑不出「触发点 + 之后一屏」）",
+    sPlug.indexOf("var trigOn = !!(panel.opts && panel.opts.trigger && panel.opts.trigger.on);") > 0
+      && sPlug.indexOf("var fetch = trigOn ? (cnt * 2 + 1) : (cnt + offset);") > 0, "");
+  check("A-107: 降采样按「每像素列取 min/max」—— 数学上不可能丢尖峰（尖峰要么成为 max，要么落在 [min,max] 内）",
+    /var plotW = Math\.max\(1, view\.w - PAD\.l - PAD\.r\);/.test(sPlug)
+      && /if \(nPts > plotW \* 2\) \{/.test(sPlug)
+      && /if \(vv < lo\) \{ lo = vv; \}/.test(sPlug)
+      && /if \(vv > hi\) \{ hi = vv; \}/.test(sPlug)
+      && /ctx\.moveTo\(xx, map\.yOf\(hi\)\);/.test(sPlug), "");
+  check("A-107: 点数不多时仍走逐点路径（常见窗口画面与优化前完全一致），且路径可观测",
+    sPlug.indexOf("panel._dsCols = 0;") > 0 && sPlug.indexOf("panel._dsCols = plotW;") > 0, "");
+  check("A-107: 触发设置走事件总线 + 覆盖表（不写进描述符——那会被 validate 丢掉，已踩过一次）",
+    sViews.indexOf('core.emit("panel:trigger", { id: panel.id });') > 0
+      && sUi.indexOf('core.on("panel:trigger"') > 0
+      && sViews.indexOf("var viewTrigger = {};") > 0
+      && /if \(viewTrigger\[panel\.id\]\) \{/.test(sViews), "");
+  check("A-107: 弹窗里的值必须在 closeModal **之前**取出（关弹窗会清空 body，之后读是 null.value）",
+    /var edge = \$\("slTrigEdge"\)\.value === "fall" \? "fall" : "rise";[\s\S]{0,420}?UI\.closeModal\(\);/.test(sUi)
+      && !/UI\.closeModal\(\);[\s\S]{0,240}?\$\("slTrigEdge"\)/.test(sUi), "");
+})();

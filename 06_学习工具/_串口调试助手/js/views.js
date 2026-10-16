@@ -171,6 +171,10 @@
       panel.opts = panel.opts || {};
       panel.opts.chanOn = viewChanOverride[panel.id];
     }
+    if (viewTrigger[panel.id]) {
+      panel.opts = panel.opts || {};
+      panel.opts.trigger = viewTrigger[panel.id];
+    }
     var el = document.createElement("div");
     el.className = "sl-panel";
     el.setAttribute("data-panel-id", panel.id);
@@ -260,6 +264,13 @@
       head.appendChild(iconBtn("Auto", "回到实时跟随，并恢复自动量程与默认窗口", "sl-auto-btn", function () {
         V.resetTimeplotView(panel.id);
         core.emit("toast", { level: "info", msg: "已回到实时跟随 + 自动量程" });
+      }));
+
+      /* V2.2.24：触发设置。为什么它值得占一个按钮：不做触发时波形永远在滚动，
+         周期信号在屏幕上停不下来 —— 相位/超调/振铃/上升时间全都看不出来。
+         按钮只发事件，弹窗与写入都在 ui.js（业务模块不碰 DOM）。 */
+      head.appendChild(iconBtn("触发", "触发对齐（示波器语义）：按指定方向跨过阈值的那一刻固定在屏幕上，波形就稳住了——调电机看相位/超调/振铃必须用它", "sl-text-btn sl-trigger-btn", function () {
+        core.emit("panel:trigger", { id: panel.id });
       }));
     }
 
@@ -718,7 +729,30 @@
   };
 
   /* 手动「应用给其他图表」：把这块屏的覆盖并给所有图表面板（监视器不参与，它显示的是行不是通道） */
-  V.applyPanelChanToAll = function (id) {
+  /* ------------------------------------------------------------------
+     V2.2.24：每面板的触发设置（示波器语义）
+     与 viewChanOverride 同一套路（存表 + buildPanelEl 重建时重新注入）——
+     面板描述符走 updatePanel/validate 会丢掉自定义 opts 字段，这个坑已经踩过一次。
+     触发开启时渲染器会多取一屏数据并做对齐，见 plugins.js 的 applyTrigger。
+     ------------------------------------------------------------------ */
+  var viewTrigger = {};
+
+  V.panelTrigger = function (id) { return viewTrigger[id] || null; };
+
+  V.setPanelTrigger = function (id, tr) {
+    var p = V.getPanel(id);
+    if (!p) { return false; }
+    if (!tr || !tr.on) {
+      delete viewTrigger[id];
+      if (p.opts) { delete p.opts.trigger; }
+    } else {
+      viewTrigger[id] = tr;
+      p.opts = p.opts || {};
+      p.opts.trigger = tr;
+    }
+    V.redraw();
+    return true;
+  };  V.applyPanelChanToAll = function (id) {
     var src = viewChanOverride[id];
     if (!src) { return 0; }
     var n = 0;

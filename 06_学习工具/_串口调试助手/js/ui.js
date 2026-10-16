@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.23";
+  UI.VERSION = "2.2.24";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1238,6 +1238,10 @@
     core.on("panel:copyText", function (e) {
       if (e && e.id) { copyMonitorText(e.id); }
     });
+    /* V2.2.24：面板头「触发」按钮（views.js 发事件，弹窗与写入都在 ui.js） */
+    core.on("panel:trigger", function (e) {
+      if (e && e.id) { openTriggerDialog(e.id); }
+    });
     core.on("data:clear", function () { refreshPanelBriefs(); refreshLegends(); });
     refreshAllQuick();
   }
@@ -1652,6 +1656,88 @@
     for (var i = 0; i < hosts.length; i++) { fillLegend(hosts[i]); }
   }
 
+  /* ------------------------------------------------------------
+     V2.2.24：波形「触发对齐」设置弹窗（示波器语义）
+     为什么值得一个专门弹窗：不做触发时波形永远在滚动，周期信号在屏幕上停不下来，
+     相位/超调/振铃/上升时间全都看不出来 —— 这不是「方不方便」，是「能不能看清」。
+     字段只要三个：看哪一路、往哪个方向跨过多少、触发点放在屏幕什么位置。
+     阈值默认取该通道的均值，开箱即用（不让用户先去别处找一个数）。
+     ------------------------------------------------------------ */
+  function openTriggerDialog(id) {
+    var panel = SL.views.getPanel(id);
+    if (!panel) { return; }
+    var chans = SL.datastore.listChannels();
+    var cur = SL.views.panelTrigger(id) || {};
+    var key = cur.key || (chans.length ? chans[0].key : "");
+    var box = document.createElement("div");
+    box.className = "sl-proto";
+    var optHtml = "";
+    for (var i = 0; i < chans.length; i++) {
+      var c = chans[i];
+      optHtml += '<option value="' + c.key + '"' + (key === c.key ? " selected" : "") + ">"
+        + (c.label || c.key) + "</option>";
+    }
+    box.innerHTML =
+      '<div class="sl-set-row"><label>触发</label>' +
+        '<label class="sl-set-chk"><input type="checkbox" id="slTrigOn">开启（波形按触发点对齐，不再滚动）</label></div>' +
+      '<div class="sl-set-row"><label>触发通道</label><select id="slTrigKey">' +
+        (optHtml || '<option value="">（还没有通道）</option>') + "</select></div>" +
+      '<div class="sl-set-row"><label>跨过方向</label><select id="slTrigEdge">' +
+        '<option value="rise">上升跨过（由小变大穿过阈值）</option>' +
+        '<option value="fall">下降跨过（由大变小穿过阈值）</option></select></div>' +
+      '<div class="sl-set-row"><label>阈值</label><input type="number" step="any" id="slTrigLevel">' +
+        '<i>留空则取该通道当前均值；电机调试常用「位置上升跨过中点」</i></div>' +
+      '<div class="sl-set-row"><label>触发点位置</label><input type="number" min="0" max="90" step="5" id="slTrigPre">' +
+        '<i>百分比：触发那一刻放在屏幕从左往右的位置（20 = 左边 20% 显示触发前的波形）</i></div>';
+    UI.modal({
+      title: "波形触发对齐（示波器语义）",
+      body: box,
+      buttons: [
+        { label: "应用", primary: true, onClick: function () { applyTriggerDialog(id); return false; } },
+        { label: "关闭触发", onClick: function () {
+            SL.views.setPanelTrigger(id, null);
+            core.emit("toast", { level: "info", msg: "已关闭触发，波形回到实时滚动" });
+            return false;
+          } },
+        { label: "关闭" }
+      ],
+      focus: "#slTrigLevel"
+    });
+    $("slTrigOn").checked = !!cur.on;
+    $("slTrigEdge").value = cur.edge === "fall" ? "fall" : "rise";
+    $("slTrigPre").value = String(typeof cur.pre === "number" ? Math.round(cur.pre * 100) : 20);
+    if (typeof cur.level === "number" && isFinite(cur.level)) {
+      $("slTrigLevel").value = String(cur.level);
+    } else if (key) {
+      var st = SL.datastore.stat(key);
+      if (st && typeof st.avg === "number" && isFinite(st.avg)) { $("slTrigLevel").value = String(Math.round(st.avg * 1000) / 1000); }
+    }
+  }
+
+  function applyTriggerDialog(id) {
+    var key = String($("slTrigKey").value || "");
+    if (!key) { core.emit("toast", { level: "warn", msg: "还没有通道可供触发" }); return; }
+    var lv = parseFloat($("slTrigLevel").value);
+    if (!isFinite(lv)) {
+      var st = SL.datastore.stat(key);
+      lv = (st && isFinite(st.avg)) ? st.avg : 0;
+    }
+    var pre = parseFloat($("slTrigPre").value);
+    if (!isFinite(pre)) { pre = 20; }
+    pre = Math.max(0, Math.min(90, pre)) / 100;
+    /* ⚠ edge 必须在 closeModal **之前**读出来：弹窗一关，body 里的控件就被清空了，
+       之后再去 $("slTrigEdge").value 会拿到 null.value 并抛错（第一版就是这么炸的）。 */
+    var edge = $("slTrigEdge").value === "fall" ? "fall" : "rise";
+    SL.views.setPanelTrigger(id, {
+      on: $("slTrigOn").checked === true,
+      key: key,
+      edge: edge,
+      level: lv,
+      pre: pre
+    });
+    UI.closeModal();
+    core.emit("toast", { level: "ok", msg: "触发已应用：" + key + (edge === "fall" ? " 下降跨过 " : " 上升跨过 ") + lv });
+  }
   function openSettings() {
     var t = core.config.transport;
     var uicfg = core.config.ui || {};

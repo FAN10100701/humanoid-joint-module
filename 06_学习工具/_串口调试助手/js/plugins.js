@@ -224,10 +224,15 @@
     var i;
     var raw = [];
     var cnt = panel.window || 500;
+    /* V2.2.24：开了触发就**多取一屏**。触发点可能落在窗口里的任何位置，
+       只取 window 个点的话永远凑不出「触发点 + 之后那一屏」，会一直是「等待中」——
+       这是实现触发时最容易漏、且症状很迷惑的一处。 */
+    var trigOn = !!(panel.opts && panel.opts.trigger && panel.opts.trigger.on);
+    var fetch = trigOn ? (cnt * 2 + 1) : (cnt + offset);
 
-    /* 先把各通道最近 window+offset 个点取出来（一次复制，后面按索引对齐） */
+    /* 先把各通道最近 fetch 个点取出来（一次复制，后面按索引对齐） */
     for (i = 0; i < chans.length; i++) {
-      raw.push(data.copy(chans[i].key, cnt + offset));
+      raw.push(data.copy(chans[i].key, fetch));
     }
 
     var hasExpr = false;
@@ -243,8 +248,8 @@
     for (i = 0; i < chans.length; i++) {
       var c = chans[i];
       var src = raw[i];
-      if (offset > 0 && src.v.length > cnt) {
-        /* 去掉最新 offset 个点，窗口平移到历史段 */
+      /* 开触发时不走「回看」：窗口位置由触发点决定（触发本身就是一种定位历史的方式） */
+      if (!trigOn && offset > 0 && src.v.length > cnt) {
         src = { v: src.v.slice(0, cnt), t: src.t.slice(0, cnt) };
       }
       var vals = new Array(src.v.length);
@@ -272,7 +277,71 @@
         v: vals
       });
     }
+    applyTrigger(panel, series);
     return series;
+  }
+
+  /* ------------------------------------------------------------------
+     V2.2.24：波形「触发对齐」（示波器语义）
+     为什么这是波形显示最该补的一条：不做触发时画面永远在滚动，周期信号在屏幕上
+     根本停不下来 —— 相位、超调、振铃、上升时间全都看不出来。
+     触发只做一件事：找到「信号按指定方向跨过阈值」的那一刻，把它固定在窗口的某个
+     横向位置（默认 20%），于是波形立刻稳住。
+     panel.opts.trigger = { on, key, edge: "rise"|"fall", level, pre: 0..0.9 }
+     状态写进 panel._trigState，渲染器据此画角标（已触发 / 等待触发…）。
+     ------------------------------------------------------------------ */
+  function applyTrigger(panel, series) {
+    var tr = panel.opts && panel.opts.trigger;
+    panel._trigState = "";
+    panel._trigAt = -1;
+    if (!tr || !tr.on) { return; }
+    var win = panel.window || 500;
+    var s = null, i;
+    for (i = 0; i < series.length; i++) {
+      if (series[i].key === tr.key) { s = series[i]; break; }
+    }
+    if (!s) {
+      panel._trigState = "等待触发…（通道 " + tr.key + " 不在本屏）";
+      return;
+    }
+    var v = s.v, n = v.length;
+    var pre = Math.max(0, Math.min(0.9, typeof tr.pre === "number" ? tr.pre : 0.2));
+    var level = (typeof tr.level === "number" && isFinite(tr.level)) ? tr.level : 0;
+    var rise = tr.edge !== "fall";
+
+        /* 触发点之后还需要 need 个点才能铺满一屏，所以只能挑「足够靠前」的那次跨越。
+       ⚠ 第一版从最新往回找**最新**的那次跨越，结果永远在等待：最新的跨越总在最近，
+       它后面凑不出 need 个点；等它够老了，又出现了更新的跨越 —— 如此循环。
+       正确做法是把搜索范围限制在 [preN, n-need]，在这个区间里取**最靠后**的一次跨越。
+       随着新数据到来这个区间整体前移，跨越点每隔一个周期跳一次，
+       而跳变恰好落在同相位置，画面看起来是连续的（真示波器也是这个行为）。 */
+    var preN = Math.round(win * pre);
+    var need = win - preN;
+    var limit = n - need;                /* 触发点索引的上限 */
+    if (limit < preN) {
+      panel._trigState = "等待触发…（还差 " + Math.max(0, preN + need - n) + " 点铺满一屏）";
+      return;
+    }
+    var k = -1;
+    for (i = Math.min(n - 1, limit); i >= Math.max(1, preN); i--) {
+      var a = v[i - 1], b = v[i];
+      if (!isFinite(a) || !isFinite(b)) { continue; }
+      if (rise ? (a < level && b >= level) : (a > level && b <= level)) { k = i; break; }
+    }
+    if (k < 0) { panel._trigState = "等待触发…（这段时间里没跨过 " + level + "）"; return; }
+    var end = k + need;
+    var from = k - preN;
+    for (i = 0; i < series.length; i++) {
+      series[i] = {
+        key: series[i].key, label: series[i].label, unit: series[i].unit, color: series[i].color,
+        /* 时间轴同样要切：它按索引与 v 一一对应（下面按索引对齐各通道） */
+        t: series[i].t ? series[i].t.slice(from, from + win) : null,
+        v: series[i].v.slice(from, from + win)
+      };
+    }
+    panel._trigAt = preN;
+    panel._trigState = "已触发 " + tr.key + (rise ? " ↑ " : " ↓ ") + level
+      + "（触发点在屏幕 " + Math.round(pre * 100) + "% 处）";
   }
 
   /* 自动量程 */
@@ -787,6 +856,13 @@
         var map = drawFrame(view, yr.min, yr.max, pad);
         var lw = (panel.opts && panel.opts.lineWidth) || 1.4;
 
+        /* V2.2.24：每个通道按「每像素列取 min/max」画。
+           窗口上限是 10 万点，逐点画既卡又糊（几百个点挤进同一像素列，画出来是一团）；
+           min/max 是示波软件的标准做法：每列只画一根 min→max 的竖线 ——
+           于是 10 万点也流畅，而且**毛刺不会被丢掉**（抓偶发尖峰全靠它）。
+           点数不多时（每列不足 2 点）仍走逐点连线，常见窗口下画面与原来完全一致。 */
+        var plotW = Math.max(1, view.w - PAD.l - PAD.r);
+        var plotH = Math.max(1, view.h - pad.t - pad.b);
         for (i = 0; i < series.length; i++) {
           var s = series[i];
           ctx.save();
@@ -794,20 +870,42 @@
           ctx.lineWidth = lw;
           ctx.lineJoin = "round";
           ctx.beginPath();
+          var nPts = s.v.length;
           var started = false;
-          for (var j = 0; j < s.v.length; j++) {
-            var val = s.v[j];
-            if (!isFinite(val)) { started = false; continue; }
-            var x = map.xOf(j, s.v.length);
-            var y = map.yOf(val);
-            if (!started) { ctx.moveTo(x, y); started = true; }
-            else { ctx.lineTo(x, y); }
+          if (nPts > plotW * 2) {
+            panel._dsCols = plotW;      /* 可观测：本帧走了列采样（供测试与排查用） */
+          var perCol = nPts / plotW;
+            for (var col = 0; col < plotW; col++) {
+              var c0 = Math.floor(col * perCol);
+              var c1 = Math.min(nPts, Math.max(c0 + 1, Math.floor((col + 1) * perCol)));
+              var lo = Infinity, hi = -Infinity;
+              for (var q2 = c0; q2 < c1; q2++) {
+                var vv = s.v[q2];
+                if (!isFinite(vv)) { continue; }
+                if (vv < lo) { lo = vv; }
+                if (vv > hi) { hi = vv; }
+              }
+              if (lo === Infinity) { continue; }
+              var xx = map.xOf(c0, nPts);
+              ctx.moveTo(xx, map.yOf(hi));
+              ctx.lineTo(xx, map.yOf(lo));
+            }
+          } else {
+            panel._dsCols = 0;         /* 本帧走逐点路径（点数不多，画面与优化前完全一致） */
+            for (var j = 0; j < nPts; j++) {
+              var val = s.v[j];
+              if (!isFinite(val)) { started = false; continue; }
+              var x = map.xOf(j, nPts);
+              var y = map.yOf(val);
+              if (!started) { ctx.moveTo(x, y); started = true; }
+              else { ctx.lineTo(x, y); }
+            }
           }
           ctx.stroke();
 
           /* 最新点标记 */
           if (panel.opts && panel.opts.showDot && s.v.length) {
-            var lastIdx = s.v.length - 1;
+            var lastIdx = (panel._trigAt >= 0 && panel._trigAt < s.v.length) ? panel._trigAt : (s.v.length - 1);
             var lv = s.v[lastIdx];
             if (isFinite(lv)) {
               ctx.fillStyle = s.color;
@@ -819,7 +917,33 @@
           ctx.restore();
         }
 
-        drawLegend(ctx, view, allSeries, hid, pad, legendHits);
+                    /* V2.2.24：触发的可视化 —— 触发点一条竖虚线 + 左下角状态角标。
+               不做触发时这段完全不画（零开销、也不占视觉）。
+               角标放**左下**：左上角是 DOM 图例的地盘，画在左上会叠在一起。 */
+            if (panel.opts && panel.opts.trigger && panel.opts.trigger.on) {
+              if (panel._trigAt >= 0 && series.length && series[0].v.length) {
+                var tx = map.xOf(panel._trigAt, series[0].v.length);
+                ctx.save();
+                ctx.strokeStyle = g("--sl-warn", "#f59e0b");
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.moveTo(tx, pad.t);
+                ctx.lineTo(tx, pad.t + plotH);
+                ctx.stroke();
+                ctx.restore();
+              }
+              if (panel._trigState) {
+                ctx.save();
+                ctx.font = "11px Consolas, monospace";
+                ctx.textBaseline = "bottom";
+                ctx.textAlign = "left";
+                ctx.fillStyle = panel._trigAt >= 0 ? g("--sl-ok", "#22c55e") : g("--sl-warn", "#f59e0b");
+                ctx.fillText(panel._trigState, PAD.l + 4, pad.t + plotH - 3);
+                ctx.restore();
+              }
+            }
+            drawLegend(ctx, view, allSeries, hid, pad, legendHits);
         var ax = drawTimeAxis(ctx, view, series);
 
         /* 当前量程标签。注释一直写着「左上角标出当前量程」，但代码画在底行 x=4——
@@ -1179,7 +1303,7 @@
         }
 
         /* 图例（与时域同款：chip 可点击显隐通道） */
-        drawLegend(ctx, view, allSeries, hid, pad, legendHits);
+            drawLegend(ctx, view, allSeries, hid, pad, legendHits);
 
         ctx.save();
         ctx.fillStyle = t.ink3;
