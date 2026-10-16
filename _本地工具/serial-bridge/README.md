@@ -150,9 +150,12 @@ node bridge.mjs assert --in capture.json --expect "temp<40; volt.span<=0.5" --ou
 <通道名>[.<统计量>] <比较符> <数值>
 ```
 
-- 统计量（可省）：`.min` / `.max` / `.avg` / `.span` / `.value`
+- 统计量（可省）：`.min` / `.max` / `.avg` / `.span` / `.count` / `.value`
   - **裸通道名 = 最后一次值**（等价 `.value`）
   - `.min/.max/.avg/.span` = 整个采集窗口的统计量
+  - `.count` = 窗口内该通道的**有效样本数**。判「数据到底有没有在流」要用它：
+    只看 `.min/.max` 时，设备已经卡死但窗口里还剩旧样本，照样会 PASS（V2.2.19 补上；
+    此前 snapshot 里有 `count` 字段，但判据口径的白名单漏了它）
 - 比较符：`>` `<` `>=` `<=` `==` `!=`
 - 多条判据用 `;` 分隔，**全部通过才算 PASS**
 
@@ -216,6 +219,44 @@ node bridge.mjs trial list --max-rounds 20     # 看 remaining / budgetExhausted
 这道闸**不依赖 AI 自觉**：没有它，AI 手里的「循环改进」就是没有终止条件的 `while`。
 被拒绝的那一轮**不会写进台账**，所以循环控制方拿到退出码 3 就知道该停下汇报
 （要接着跑必须显式调大 `--max-rounds`，是一个有意识的决定，而不是默默继续）。
+
+### 7.5）一条命令跑完一整轮：`_本地工具/迭代一轮.ps1`
+
+把上面第 1~7 步串成一条命令：**编译 → 烧录 → 采样 → 判据 → 记台账**，不需要人工点 Keil。
+脚本本身**纯 ASCII**（PS 5.1 把无 BOM UTF-8 当 GBK 读，中文注释可能炸脚本），
+且**不写死任何本机路径**（`_本地工具/` 下的文件都会入库，红线 19）。
+
+```powershell
+# 首次：把本机设置（Keil / CubeProgrammer / 工程路径）存进 gitignore 的 _data 目录
+powershell -ExecutionPolicy Bypass -File <tools>\<script> -Project <工程>.uvprojx -Save
+
+# 之后：一条命令，不带参数
+powershell -ExecutionPolicy Bypass -File <tools>\<script>
+
+# 只测不烧（板子上已经是目标固件时）、或只跑某一组判据
+powershell -ExecutionPolicy Bypass -File <tools>\<script> -NoBuild -NoFlash
+powershell -ExecutionPolicy Bypass -File <tools>\<script> -Only rpm-peak
+
+# 把上一版固件烧回去（编译/烧录失败时脚本会自动做这一步）
+powershell -ExecutionPolicy Bypass -File <tools>\<script> -Rollback
+```
+
+**判据集**是 `_本地工具/serial-judge.json`：顶层 `ms` 声明判据假设的**采样窗口**，
+`groups[]` 每项一组 `{ name, expect, desc }`，跑一轮会为每组各记一行 trial。
+
+| 退出码 | 含义 |
+|---|---|
+| `0` | 全部判据 PASS |
+| `2` | 编译失败（**自动回退**上一版固件） |
+| `3` | 烧录失败（**自动回退**） |
+| `4` | 有判据 FAIL（**不回退** —— 那正是迭代要的信息，记进台账给下一轮用） |
+| `5` | 轮数预算用尽（桥返回 3） |
+
+> ⚠ 两个实跑踩出来的坑，已写进脚本注释与断言：
+> ① **窗口必须 ≥ 判据所需**。配置里存了 3000ms，而「位置走完阶跃行程」需要 ≥5s，
+> 于是健康固件被误判 FAIL —— 现在窗口取「配置与判据声明中的较大者」。
+> ② **判据口径要能表达「数据在流」**。只写 `.min/.max` 时，设备卡死但窗口里还有旧样本
+> 照样 PASS；这就是上面补 `.count` 的原因（首次实跑 `tick.count>=20` 直接报错，才发现的）。
 
 ### 8）`mcp` —— 以 MCP stdio 服务运行
 

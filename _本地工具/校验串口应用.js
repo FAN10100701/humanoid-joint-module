@@ -1205,6 +1205,89 @@ const GBK = (X.codec || SL.codec);
     ui16.indexOf('if (key === " " && tag !== "BUTTON" && tag !== "A")') > 0, "");
   check("A-91: 带修饰键的快捷键与既有「无修饰键预设单键」分成两个处理器，注册顺序明确",
     /onAppShortcut\(e\);[\s\S]{0,80}?onGlobalKey\(e\);/.test(ui16), "");
+
+  /* ---- A-92：数字对齐 + 间距刻度 ---- */
+  check("A-92: 数字输入框右对齐 + 等宽数字（数值字段左对齐时小数点/个位参差）",
+    /input\[type="number"\] \{\n\s*text-align: right;\n\s*font-variant-numeric: tabular-nums;\n\}/.test(css16), "");
+  check("A-92: 顶栏计数有稳定宽度并右对齐（否则数字涨到 6 位时右边那排按钮被一路挤）",
+    /\.sl-count b \{[\s\S]{0,320}?display: inline-block;[\s\S]{0,120}?min-width: 6ch;[\s\S]{0,120}?text-align: right;/.test(css16), "");
+  check("A-92: 数值统计表本来就右对齐，且首列左对齐（别在重构里丢掉）",
+    /\.sl-stats-row > span \{[\s\S]{0,160}?text-align: right;/.test(css16)
+      && /\.sl-stats-row > span:first-child \{ text-align: left;/.test(css16), "");
+  check("A-92: 间距刻度令牌存在，且新建的组件都用令牌、不写死 px",
+    css16.indexOf("--sl-gap: 8px;") > 0 && css16.indexOf("--sl-gap-sm: 6px;") > 0
+      && /\.sl-chan-r1 \{[\s\S]{0,120}?gap: var\(--sl-gap-sm\);/.test(css16)
+      && /\.sl-chan-r2 \{[\s\S]{0,120}?gap: var\(--sl-gap\);/.test(css16)
+      && css16.indexOf(".sl-pal { display: flex; flex-direction: column; gap: var(--sl-gap);") > 0
+      && /\.sl-pal-row \{[\s\S]{0,120}?gap: var\(--sl-gap\);/.test(css16)
+      && /\.sl-zero-act \{[\s\S]{0,140}?gap: var\(--sl-gap\);/.test(css16), "");
+  check("A-92: 新组件块内不得再出现写死的 gap: 8px / 6px（令牌唯一入口）",
+    !/\.sl-chan-r1 \{[\s\S]{0,120}?gap: 6px;/.test(css16)
+      && !/\.sl-chan-r2 \{[\s\S]{0,120}?gap: 8px;/.test(css16)
+      && !/\.sl-pal-row \{[\s\S]{0,120}?gap: 8px;/.test(css16), "");
+})();
+
+/* ========== 自动迭代闭环（AUDIT A-92）==========
+   一条命令跑完「改 -> 编 -> 烧 -> 测 -> 判 -> 记台账」。
+   脚本必须纯 ASCII（PS 5.1 把无 BOM UTF-8 当 GBK 读，红线 3）且不写死本机路径
+   （红线 19：_本地工具/ 下的文件都会入库）。 */
+(function () {
+  const { execFileSync } = require("child_process");
+  const ITER = path.join(__dirname, "迭代一轮.ps1");
+  const JUDGE = path.join(__dirname, "serial-judge.json");
+  const BRIDGE = path.join(__dirname, "serial-bridge", "bridge.mjs");
+
+  check("C: 迭代一轮.ps1 存在", fs.existsSync(ITER), "");
+  if (!fs.existsSync(ITER)) { return; }
+  const buf = fs.readFileSync(ITER);
+  let nonAscii = 0;
+  for (let i = 0; i < buf.length; i++) { if (buf[i] > 127) { nonAscii++; } }
+  check("C: 迭代一轮.ps1 是纯 ASCII（红线 3：非 ASCII 会被 PS 5.1 按 GBK 解码，注释里也可能炸出成对引号）",
+    nonAscii === 0, nonAscii + " 个非 ASCII 字节");
+  const iterSrc = buf.toString("utf8");
+  check("C: 迭代一轮.ps1 不写死本机绝对路径（红线 19）",
+    !/[A-Za-z]:\\/.test(iterSrc), "");
+  check("C: 五段流程齐全（编译 / 烧录 / 采样 / 判据 / 台账）",
+    iterSrc.indexOf('"BUILD: "') > 0 && iterSrc.indexOf('"FLASH: "') > 0
+      && iterSrc.indexOf('"SAMPLE: "') > 0 && iterSrc.indexOf('"JUDGE: "') > 0
+      && iterSrc.indexOf("trial list") > 0, "");
+  check("C: 采样窗口不得短于判据声明的窗口（实跑踩过：配置 3000ms 压过判据 6000ms，健康固件被误判 FAIL）",
+    iterSrc.indexOf("if ($judgeMs -gt $Ms) { $Ms = $judgeMs;") > 0, "");
+  check("C: 编译/烧录失败自动回退上一版固件（判据 FAIL 不回退——那正是迭代要的信息）",
+    iterSrc.indexOf("function Invoke-Rollback") > 0
+      && iterSrc.indexOf('Invoke-Rollback ("build exit " + $rc)') > 0
+      && iterSrc.indexOf('Invoke-Rollback ("flash exit " + $rc)') > 0, "");
+  check("C: 退出码语义完整（0 全过 / 2 编译失败 / 3 烧录失败 / 4 判据失败 / 5 轮数用尽）",
+    iterSrc.indexOf("exit 5") > 0 && iterSrc.indexOf("exit 4") > 0
+      && iterSrc.indexOf("Fail 3") > 0 && iterSrc.indexOf("Fail 2") > 0, "");
+
+  const jr = JSON.parse(fs.readFileSync(JUDGE, "utf8"));
+  check("C: 判据集自带采样窗口与多组判据（每组 name + expect），窗口与判据同源",
+    typeof jr.ms === "number" && jr.ms > 0
+      && Array.isArray(jr.groups) && jr.groups.length >= 3
+      && jr.groups.every(function (g) { return g.name && g.expect; }), "");
+
+  /* 功能性：`.count` 必须真能当判据用。snapshot 里一直有 count 字段，
+     但 assert 的口径白名单漏了它 —— 于是「数据到底有没有在流」这条最根本的判据
+     根本写不出来（第一次实跑就是这么 FAIL 的）。这里真起子进程验一次。 */
+  const dataDir = path.join(__dirname, "serial-bridge", "_data");
+  if (!fs.existsSync(dataDir)) { fs.mkdirSync(dataDir, { recursive: true }); }
+  const fake = path.join(dataDir, "assert-fixture.json");
+  fs.writeFileSync(fake, JSON.stringify({
+    channels: { tick: { value: 5, min: 1, max: 9, avg: 5, span: 8, count: 7 } }
+  }));
+  const runA = function (expr) {
+    try {
+      execFileSync(process.execPath, [BRIDGE, "assert", "--in", fake, "--expect", expr],
+        { encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
+      return 0;
+    } catch (e) { return e.status; }
+  };
+  const okCount = runA("tick.count>=7");
+  const badCount = runA("tick.count>=8");
+  check("C: 桥的 assert 支持 .count（窗口内有效样本数）—— 边界两侧都要对",
+    okCount === 0 && badCount === 2, ">=7 exit=" + okCount + " / >=8 exit=" + badCount);
+  try { fs.unlinkSync(fake); } catch (e2) { /* 清理失败不影响断言 */ }
 })();
 
 /* ========== V2.2.15：桥的省流开关功能性回归（AUDIT A-85①④）==========

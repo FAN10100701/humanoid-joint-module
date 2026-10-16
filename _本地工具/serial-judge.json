@@ -1,0 +1,38 @@
+{
+  "_note": "串口迭代判据集。每组 = 一条独立判据，跑一轮会为每组各记一行 trial。",
+  "_note2": "metric 写法见 _本地工具/serial-bridge/README.md：<key>.value / .min / .max / .count，",
+  "_note3": "多条用分号分隔，例如 \"rpm.max>=2900; cur.max<2.5\"。",
+  "_note4": "groups 里的 expect 是「设计意图」而不是「当前实测值」——故意留出余量，",
+  "_note5": "否则固件一退化判据还是 PASS，等于没判。",
+  "_note6": "ms = 判据假设的采样窗口。窗口必须 >= 一个阶跃周期（本固件 5s），",
+  "_note7": "否则 pos 走不完行程，判据会误报 FAIL——这是第一次实跑踩到的（3s 窗口下 pos-travel 失败）。",
+  "_note8": "可用口径：key / key.min / key.max / key.avg / key.span / key.count（count=窗口内有效样本数）。",
+  "ms": 6000,
+  "groups": [
+    {
+      "name": "stream",
+      "expect": "tick.count>=20; pos.count>=20",
+      "desc": "数据流是否连续（帧数与通道数都在涨）"
+    },
+    {
+      "name": "rpm-peak",
+      "expect": "rpm.max>=2900",
+      "desc": "转速三角波峰值是否达设计值 2976（低太多 = 限幅/周期被改坏）"
+    },
+    {
+      "name": "cur-limit",
+      "expect": "cur.max<2.5",
+      "desc": "电流峰值上限（实测约 1.83，超 2.5 说明误差项或纹波被放大）"
+    },
+    {
+      "name": "temp-rise",
+      "expect": "temp.value<46",
+      "desc": "温度不应超过 46（缓慢上升是设计行为，突升才是异常）"
+    },
+    {
+      "name": "pos-travel",
+      "expect": "pos.min<900; pos.max>3800",
+      "desc": "位置是否走完 500→4000 的阶跃行程"
+    }
+  ]
+}

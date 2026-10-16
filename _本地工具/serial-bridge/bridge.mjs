@@ -553,7 +553,8 @@ async function cmdParse(flags) {
 /* ------------------------------------------------------------------
    命令：assert —— 按阈值判定，给「自动迭代」做闭环判据
    支持：key > 1750 / key.min >= 0 / key.max < 3.2 / key.span <= 0.5 / key == 0
-   取值口径：裸 key = 最后一次值；.min/.max/.avg/.span = 窗口统计
+        key.count >= 20（窗口内该通道的有效样本数）
+   取值口径：裸 key = 最后一次值；.min/.max/.avg/.span/.count = 窗口统计
    ------------------------------------------------------------------ */
 function readSnapshotForAssert(flags) {
   if (flags.in) {
@@ -571,7 +572,10 @@ function evalCheck(expr, snap) {
   let key = rawKey, field = 'value';
   if (dot > 0) {
     const maybe = rawKey.slice(dot + 1);
-    if (['min', 'max', 'avg', 'span', 'value'].includes(maybe)) {
+    /* .count = 窗口内该通道的有效样本数。它是「数据到底有没有在流」最直接的判据：
+       只看 .min/.max 时，设备卡死但窗口里还剩旧样本也会 PASS。
+       snapshot 里本来就有 count 字段，早先只是白名单漏了它（AUDIT A-92）。 */
+    if (['min', 'max', 'avg', 'span', 'count', 'value'].includes(maybe)) {
       key = rawKey.slice(0, dot);
       field = maybe;
     }
