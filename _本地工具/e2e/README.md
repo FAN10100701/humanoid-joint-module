@@ -43,7 +43,32 @@ python "_本地工具/e2e/e2e_test.py" --fast    # 只跑功能用例(秒级~1 �
 
 > 串口助手子应用在 `06_学习工具/_串口调试助手/`(`_` 前缀),**不进 search-index,因此 `full_site_smoke` 覆盖不到它**(AUDIT A-71);九条 `serial_*` 用例即为它的浏览器层兜底,纯函数层则由 `_本地工具/校验串口应用.js`(126 项)覆盖。
 
+## 锚点落点专项 `e2e_anchor.py`(V2.2.16 新增)
+
+```bash
+python "_本地工具/e2e/e2e_anchor.py"
+```
+
+`e2e_test.py` 是"功能对不对",这个文件是"**时序**对不对":锚点跳转只能**整整一段**,
+不许停下再起步、不许倒退、不许瞬移,且落点必须压在 `scroll-margin-top` 处。
+
+| 用例 | 覆盖 |
+|---|---|
+| anchor_nav_badge | 首页顶栏版本胶囊 → #version:一整段连续滚动 + 落点准 + hash 同步 |
+| anchor_hero_badge | hero 版本角标(第二入口)同上 |
+| anchor_cold_load | 带 `#version` 冷加载(内容页点版本胶囊走的就是这条路) |
+| anchor_inner_up | 页内锚点**向上**跳(quicknav → #sec5):方向感知的同一组断言 |
+| anchor_takeover | 滚动途中用户自己滚走,动画立即交还,不许被拽回锚点 |
+| anchor_reduced_motion | `prefers-reduced-motion: reduce`:不做动画,落点照样准 |
+| anchor_from_content_page | 内容页点版本胶囊跨页跳转后落点准 |
+
+判据是**逐帧 scrollY 轨迹**:倒退帧数、"停下再起步"次数、单帧最大位移。
+防的正是「点版本信息连续跳三次」那类回归——旧实现每次重落都重启一次浏览器原生平滑滚动,
+而首页 `.sec` 的 `content-visibility:auto` 会让目标绝对位置在滚动途中移动 1500px 左右。
+**单列一个文件**的原因:`e2e_test.py` 由另一路会话同期在改(并行会话协议,一个文件同时刻只有一个会话在写);
+两边都落定后可合并进主套件。
+
 ## 约定
 
 - 本目录**豁免"校验脚本零依赖"硬规则**(AGENTS.md 硬规则 4 注):允许 Python+Playwright 开发依赖,仅本地/CI 使用,不入站点部署白名单。
-- CI:`.github/workflows/self-check.yml` 的 `e2e` job 在 push/PR 时自动跑全量。
+- CI:`.github/workflows/self-check.yml` 的 `e2e` job 在 push/PR 时自动跑全量(含 `e2e_anchor.py`)。

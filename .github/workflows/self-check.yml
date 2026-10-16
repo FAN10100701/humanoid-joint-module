@@ -58,3 +58,9 @@ jobs:
       - name: Run E2E tests
         run: |
           python "_本地工具/e2e/e2e_test.py"
+
+      # 锚点落点专项(时序类):点一次锚点只能"一整段"滚过去,不许停下再起步/倒退/瞬移。
+      # 单列一个文件是因为 e2e_test.py 由另一路会话同期在改(E2E 里只有功能断言,没有逐帧轨迹判据)。
+      - name: Run anchor landing E2E
+        run: |
+          python "_本地工具/e2e/e2e_anchor.py"

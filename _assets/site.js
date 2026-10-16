@@ -1220,41 +1220,192 @@
     render();
   }
 
-  /* ---------- 锚点二次校正(V2.1.27 引入,V2.1.28 扩展) ----------
-     场景:①带 #secN/#version 进入;②进入后点上栏板块/页内锚点(hashchange,此前完全不覆盖)。
-     根因:首次进入(冷缓存)时 KaTeX/图片/计数动画/轮播注入让版面持续长高,
-     原生锚点按旧布局一次性落点,回流后即偏离;固定 0.9s/2s 两次重锚在冷加载时不够晚。
-     方案:监听版面高度,变化就重锚、连续两次不变即收工(上限 6.5s,避免常驻定时器);
-     用户手动滚动(滚轮/触摸/按键)视为接管,立即停止;再次点击锚点(hashchange)重新接管。 */
-  function initHashReanchor(){
-    var touched = false, timer = null, lastH = 0, stable = 0, deadline = 0;
-    function mark(){ touched = true; stop(); }
-    function stop(){ if(timer){ clearInterval(timer); timer = null; } }
-    function realign(){
-      if(!location.hash || location.hash === "#") return;
+  /* ---------- 锚点落点(自绘实时追靶,V2.2.16 重写 V2.1.27/28 的 initHashReanchor) ----------
+     故障现场:首页点版本角标(#version)「连续跳三次」。根因是旧实现「版面高度一变就
+     scrollIntoView 重落一次」:每次调用都把浏览器原生平滑滚动从头重启(ease-in 重新起步),
+     而首页 .sec 挂了 content-visibility:auto,滚动途中板块逐个渲染、文档总高与目标绝对位置
+     持续变化——实测 #version 顶边 8213→6699(漂移 1514px),于是一次跳转被切成 3 段,
+     每段都从头加速,肉眼即「跳三次」。同时实测「完全不校正」的原生落点偏 1430px,
+     所以校正本身是必需的,不能一删了之。
+     方案:①锚点点击改由本站接管(URL 用 pushState 同步,不再让浏览器原生瞬跳);
+     ②落点自绘——rAF 逐帧重新量目标位置(目标会移动就跟着移动),位置只进不退(倒走=可见跳变),
+     落点误差 <1px;动画期间临时把 html 的 scroll-behavior 置 auto,避免每次 scrollTo 又触发原生缓动;
+     ③落定后进入观察期:图片/KaTeX/板块惰性渲染迟到导致目标绝对位置再变时,仍以平滑追靶跟一次
+     (旧的「重落」正是跳变来源),用户滚开或超时即收工,绝不常驻定时器;
+     ④用户滚轮/触摸/滚动键随时接管;prefers-reduced-motion 与异常路径退回原生 scrollIntoView。
+     保留 A-56 的目标(落点准=各页 scroll-margin-top 生效的位置),去掉它的副作用(多次重启的跳变)。 */
+  function initAnchorLanding(){
+    var DUR_MIN = 320, DUR_MAX = 1100, DRIFT = 4, SESSION_MS = 8000, WATCH_STEP = 150;
+    var STEP_MAX = 90;   /* 单帧位移上限:动画是时间轴驱动,遇上惰性板块渲染那样的长帧
+                            (实测单帧 360ms)会让位移一口气跳几百像素——按帧封顶,宁可慢一点也不瞬移 */
+    var raf = 0, watch = 0, userOut = false, sessionEnd = 0, lastTargetY = 0;
+
+    function num(v){ v = parseFloat(v); return isNaN(v) ? 0 : v; }
+    function top(){ return window.pageYOffset || document.documentElement.scrollTop || (document.body ? document.body.scrollTop : 0) || 0; }
+    function viewMax(){
+      var d = document.documentElement;
+      var h = Math.max(d.scrollHeight, document.body ? document.body.scrollHeight : 0);
+      return Math.max(0, h - window.innerHeight);
+    }
+    function elOf(hash){
       var id;
-      try{ id = decodeURIComponent(location.hash.slice(1)); }catch(e){ id = location.hash.slice(1); }
-      var el = id && document.getElementById(id);
-      if(el) el.scrollIntoView(true);   /* 各页 scroll-margin-top 照常生效 */
+      try{ id = decodeURIComponent(String(hash || "").slice(1)); }catch(e){ id = String(hash || "").slice(1); }
+      if(!id) return null;
+      try{ return document.getElementById(id); }catch(e2){ return null; }
     }
-    function tick(){
-      if(touched){ stop(); return; }
-      var h = document.documentElement.scrollHeight;
-      if(h !== lastH){ lastH = h; stable = 0; realign(); }   /* 版面仍在长高:跟着重锚 */
-      else if(++stable >= 2){ stop(); }                       /* 连续两次不变:布局已稳,收工 */
-      if(Date.now() > deadline) stop();                       /* 兜底上限,绝不常驻 */
+    /* 目标绝对位置:各页 scroll-margin-top 照常生效(顶栏不遮挡),并夹在可滚动范围内 */
+    function targetY(el){
+      var m = 0;
+      try{ m = num(getComputedStyle(el).scrollMarginTop); }catch(e){}
+      var y = el.getBoundingClientRect().top + top() - m;
+      var max = viewMax();
+      return y < 0 ? 0 : (y > max ? max : y);
     }
-    function start(){
-      touched = false; lastH = 0; stable = 0;
-      deadline = Date.now() + 6500;
-      stop(); realign();
-      timer = setInterval(tick, 300);
+    function behavior(on){ try{ document.documentElement.style.scrollBehavior = on ? "auto" : ""; }catch(e){} }
+    function moveTo(y){ try{ window.scrollTo(0, y); }catch(e){ document.documentElement.scrollTop = y; } }
+    /* 瞬移必须先把 scroll-behavior 置 auto:站内 html{scroll-behavior:smooth} 会把这次
+       scrollTo 变成一段新的平滑滚动(旧实现的重落跳变正来自此),落完再还原 */
+    function jumpTo(y){ behavior(true); moveTo(Math.round(y)); behavior(false); }
+    function stopRaf(){ if(raf){ cancelAnimationFrame(raf); raf = 0; } }
+    function stopWatch(){ if(watch){ clearInterval(watch); watch = 0; } }
+    function halt(){ stopRaf(); stopWatch(); behavior(false); }
+    function nativeJump(el){ try{ el.scrollIntoView(true); }catch(e){ try{ el.scrollIntoView(); }catch(e2){} } }
+
+    /* prefers-reduced-motion:不做动画,直接落定(与浏览器原生锚点一致的手感);
+       惰性板块在落点附近渲染后目标位置还会微移,由观察期再补一次(首页实测 ≤240px)。 */
+
+    /* 落定后的观察期:版面还在动(图片/公式/惰性板块)就再跟一次。
+       两个信号分开看——目标绝对位置变了=版面动了(该跟);滚动位置自己变了=页面被滚走了
+       (用户/回顶按钮/别的脚本,不抢控制权)。旧写法只看"离目标远不远",惰性板块一渲染
+       目标就挪走上千像素,会被误判成"用户滚走了"而放弃校正(reduced-motion 路径实测偏 1790px)。 */
+    function watchLayout(el){
+      stopWatch();
+      if(userOut) return;
+      lastTargetY = targetY(el);
+      var lastY = top();
+      watch = setInterval(function(){
+        try{
+          if(userOut || Date.now() > sessionEnd){ stopWatch(); return; }
+          var cur = top();
+          if(Math.abs(cur - lastY) > 2){ stopWatch(); return; }   /* 被滚走了:交还控制权 */
+          lastY = cur;
+          var t = targetY(el);
+          if(Math.abs(t - lastTargetY) <= DRIFT) return;
+          lastTargetY = t;
+          glide(el);
+        }catch(err){ stopWatch(); }
+      }, WATCH_STEP);
     }
-    window.addEventListener("wheel", mark, { passive: true });
-    window.addEventListener("touchstart", mark, { passive: true });
-    window.addEventListener("keydown", mark);
-    window.addEventListener("hashchange", function(){ start(); });   /* 点上栏板块/页内锚点 */
-    if(location.hash && location.hash !== "#") start();              /* 带锚点进入 */
+
+    function glide(el, depth){
+      stopRaf(); stopWatch();
+      if(userOut || !el) return;
+      var lvl = depth || 0;
+      var from = top(), to = targetY(el);
+      var reduce = false;
+      try{ reduce = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){}
+      if(reduce || Math.abs(to - from) < 1){    /* 少动效 / 已到位:直接落定,不启动动画 */
+        jumpTo(to);
+        watchLayout(el);
+        return;
+      }
+      var dur = Math.min(DUR_MAX, Math.max(DUR_MIN, DUR_MIN + Math.abs(to - from) * 0.14));
+      behavior(true);
+      var t0 = 0, settle = 0;
+      function step(ts){
+        if(userOut){ halt(); return; }
+        if(!t0) t0 = ts;
+        var tgt = targetY(el);                          /* 每帧现量:惰性板块渲染会让目标一路移动 */
+        var cur = top();
+        var p = Math.min(1, (ts - t0) / dur);
+        var want;
+        if(p < 1){
+          settle = 0;
+          want = from + (tgt - from) * (1 - Math.pow(1 - p, 3));   /* easeOutCubic */
+        }else{
+          settle++;
+          want = cur + (tgt - cur) * 0.25;              /* 收尾:时间轴跑完改指数逼近 */
+        }
+        if(tgt > cur ? want < cur : want > cur) want = cur;        /* 只进不退:倒走就是用户看到的跳变 */
+        if(want - cur > STEP_MAX) want = cur + STEP_MAX;           /* 长帧不瞬移(见 STEP_MAX 注释) */
+        else if(cur - want > STEP_MAX) want = cur - STEP_MAX;
+        var y = Math.round(want);
+        if(y !== Math.round(cur)) moveTo(y);
+        if(p < 1 || (Math.abs(tgt - cur) >= 1 && settle < 90)){
+          raf = requestAnimationFrame(frame);
+        }else{
+          var rest = tgt - cur;
+          /* 收尾时版面还在挪(目标又跑远)就再平滑跟一段,绝不瞬移补差;自限 5 层防病态循环 */
+          if(Math.abs(rest) > 8 && lvl < 5){ glide(el, lvl + 1); return; }
+          if(Math.abs(rest) >= 0.6) moveTo(Math.round(tgt));
+          behavior(false);
+          watchLayout(el);
+        }
+      }
+      /* 动画里出任何意外都要把 scroll-behavior 还原(否则整站原生平滑滚动被永久关掉) */
+      function frame(ts){
+        raf = 0;
+        try{ step(ts); }catch(err){ halt(); }
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    function session(el){
+      if(!el) return;
+      userOut = false;
+      sessionEnd = Date.now() + SESSION_MS;
+      glide(el);
+    }
+
+    /* ---- 接管页内锚点点击:URL 照旧变(pushState),落点由上面的追靶动画决定 ---- */
+    function anchorOf(node){
+      while(node && node.nodeType === 1 && node !== document.documentElement){
+        if(node.tagName === "A") return node;
+        node = node.parentNode;
+      }
+      return null;
+    }
+    function localFragment(a){
+      if(!a.hash) return false;
+      if((a.getAttribute("href") || "").charAt(0) === "#") return true;   /* 纯 #id */
+      try{                                                                /* xxx.html#id:同文档才接管 */
+        return a.protocol === location.protocol && a.host === location.host
+          && a.pathname === location.pathname && a.search === location.search;
+      }catch(e){ return false; }
+    }
+    document.addEventListener("click", function(e){
+      if(e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var a = anchorOf(e.target);
+      if(!a || (a.target && a.target !== "_self") || a.hasAttribute("download")) return;
+      if(!localFragment(a)) return;
+      var el = elOf(a.hash);
+      if(!el) return;                                    /* 目标不存在:交回浏览器原生行为 */
+      e.preventDefault();
+      if(location.hash !== a.hash){
+        try{ history.pushState(null, "", a.hash); }
+        catch(err){ try{ location.hash = a.hash; return; }catch(e2){} }
+      }
+      session(el);
+    }, false);
+
+    /* 未经接管的情况(浏览器前进后退、页面自己改 hash、同文档但路径写法不同)照样接管校正 */
+    window.addEventListener("hashchange", function(){ var el = elOf(location.hash); if(el) session(el); });
+    if(location.hash && location.hash !== "#"){           /* 带锚点冷加载:原生已落错位,这里平滑落正 */
+      var first = elOf(location.hash);
+      if(first) session(first);
+    }
+
+    /* 用户一动就交还控制权(滚轮/触摸/滚动类按键);随后再点锚点会重新开始一次校正 */
+    function takeOver(){ userOut = true; halt(); }
+    window.addEventListener("wheel", takeOver, { passive: true });
+    window.addEventListener("touchstart", takeOver, { passive: true });
+    window.addEventListener("keydown", function(e){
+      var k = e.keyCode || e.which || 0;
+      /* 32 空格 / 33-40 PageUp·PageDown·Home·End·方向键:用户在滚页面(输入框打字不算) */
+      if(k === 32 || (k >= 33 && k <= 40)) takeOver();
+    });
+    /* 环境异常(无 rAF 等)时退回原生锚点行为,至少不会卡住不动 */
+    if(typeof window.requestAnimationFrame !== "function"){ glide = function(el){ nativeJump(el); }; }
   }
 
   /* ---------- V2.1.11 顶栏阅读进度环(scroll rAF 节流) ---------- */
@@ -1666,7 +1817,7 @@
     injectLearningGoals, injectPageStamp, initPrintBtn, initGlass, initAiFab, initNotes, initReader, initPB,
     initOnboarding, initSW, initAutoSave, initTermTip, initComments,
     initKaTeX, injectJsonLd, initScrollProgress, initReveal, initMagnet, initEnModule,
-    initHashReanchor
+    initAnchorLanding
   ];
   function bootSite(){
     for(var i = 0; i < INIT_CHAIN.length; i++){
