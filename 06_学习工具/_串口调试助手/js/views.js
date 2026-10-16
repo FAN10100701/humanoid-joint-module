@@ -168,7 +168,10 @@
     more.className = "sl-pn-more";
     for (var i = 0; i < buttons.length; i++) { more.appendChild(buttons[i]); }
 
-    wrap.appendChild(iconBtn("⋯", "更多：移到主位 / 加宽 / 导出 PNG", "sl-pn-more-btn", function () {
+    /* ⚠ 用「⋮」不用「⋯」：时域波形的**快捷条**里已经有一个「⋯」（手动量程 Y↓/Y↑），
+       两者含义完全不同（一个是量程、一个是移到主位/加宽/导出），长得一样必然点错。
+       实测初版就是两个「⋯」并排（探针数出 3 个 ⋯ 按钮），这条属于「同一性」问题。 */
+    wrap.appendChild(iconBtn("⋮", "更多：移到主位 / 加宽 / 导出 PNG", "sl-pn-more-btn", function () {
       more.classList.toggle("is-open");
     }));
     wrap.appendChild(more);

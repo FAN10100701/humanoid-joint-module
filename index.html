@@ -1200,7 +1200,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.32</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-16 · 修两个时域波形真 bug:Y 手动量程一直没生效(快捷条 data-qk 是小写 ymin/ymax,而描述符契约只认驼峰 yMin/yMax,旧代码 ax[k]=v 写进一个 validate 看不见也不报错的键,量程纹丝不动 —— 改用 QK_AXIS_KEY 映射,实测画布刻度从自动量程变成 -1000/-500/0/500/1000) + 一开触发整块波形连画布一起消失(draw 里调了 theme() 的局部函数 g(),g is not defined 抛异常,被 views.redraw 的 catch 换成「该图框渲染出错」并 destroy 掉画布;顺带修掉 Shift 游标里同一条死代码,且那处令牌名 --sl-accent 根本不存在) + 面板头 ⇱/⇔/⤓ 收进「⋯」(CSS 收放不删元素、委托到宿主只绑一次、绝对定位浮层) + E2E 加可参数化造数助手(正弦/方波/噪声/双音 × 任意通道 × 任意点数,经真管线入仓)与频谱独立 DFT 交叉验证(期望值不调应用代码,同 bin <1dB,幅值精确复原 100.0/40.0) + 新增「合并同类项」(多块同名图表框一键收拢;保留第一块其余移除,不搬 DOM 以免 canvas 归零;同类=同类型+同标题,手动改过标题的不合并;显示设置不一致则跳过并报告,不静默丢配置)。校验 360→376 项,E2E 27→31/31 / 上一批:频谱侧悬停示数(同一套测量层搬到频谱:准线 + 该频率处各通道幅值,取最接近的 bin;实测 3.21Hz/7.9Hz 跟随更新)</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.33</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-16 · 排版同一性:字号收成一套梯度 —— 全应用量过一遍,发现同一角色散着 2~3 个不同的数(面板标题 12.5 vs 紧挨着的类型角标 11.5;次级文字同时有 11.5 与 12;等宽族三种写法;弹窗小标题 13.5 比它自己的正文 12.5 还小),现全部经 --sl-fs-title/sub/weak/micro 令牌引用,面板标题与类型角标**共用同一个变量**(V2.2.22 只统一了字体族、字号仍小一号,这次连字号一起);canvas 里图例/悬停读数由 10px 提到 11px。**并堵住入口**:断言禁止 app.css 再出现裸 px 字号,想加一档必须改白名单。顺带修掉我自己刚引入的同一性问题:面板头菜单原也用「⋯」,与快捷条的手动量程「⋯」在同一块面板里出现两个、含义不同 → 改成「⋮」。校验 376→381 项,E2E 31/31 / 上一批:修两个时域波形真 bug:Y 手动量程一直没生效(快捷条 data-qk 是小写 ymin/ymax,而描述符契约只认驼峰 yMin/yMax,旧代码 ax[k]=v 写进一个 validate 看不见也不报错的键,量程纹丝不动 —— 改用 QK_AXIS_KEY 映射,实测画布刻度从自动量程变成 -1000/-500/0/500/1000) + 一开触发整块波形连画布一起消失(draw 里调了 theme() 的局部函数 g(),g is not defined 抛异常,被 views.redraw 的 catch 换成「该图框渲染出错」并 destroy 掉画布) + 面板头 ⇱/⇔/⤓ 收进「⋮」 + 新增「合并同类项」 + E2E 可参数化造数与频谱独立 DFT 交叉验证</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
@@ -1554,7 +1554,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.32(2026-10-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.33(2026-10-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

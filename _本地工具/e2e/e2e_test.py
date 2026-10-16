@@ -13,7 +13,7 @@ V2.1.33 新增:与 _本地工具/一键自检.ps1(静态 37 项)互补的"浏览
 主题切换持久化 / 打卡写入 / 自测题答错→错题本→复习闭环 / 词典 Anki 导出 / 热力图 /
 计划生成器 / AI 无 Key 提示 / 串口调试助手子应用(外壳+模块挂载 / 演示数据管线 / 导出+配置落盘 /
 控件接线 / 自定义协议 / 主区形态 / 运行圆标 / 显示设置 / 协议预设与 AI 调试包 / AI 通道 /
-**可参数化造数与频谱真断言** / **Y 手动量程与触发对齐** / 面板头「⋯」) /
+**可参数化造数与频谱真断言** / **Y 手动量程与触发对齐** / 面板头「⋮」) /
 404 页 / Service Worker 注册 / KaTeX(仅在线环境,离线自动跳过)。
 
 注:串口调试助手子应用位于 06_学习工具/_串口调试助手/(_ 前缀,不进 search-index),
@@ -845,13 +845,13 @@ def main():
                 proc.terminate()
 
             # --- 4) 波形 PNG 导出:带 canvas 的面板,魔数校验 ---
-            # V2.2.32：⤓ 已收进面板头的「⋯」菜单 —— 先展开那一块面板的菜单，
+            # V2.2.32：⤓ 已收进面板头的「⋮」菜单 —— 先展开那一块面板的菜单，
             # 再点它自己的导出按钮（菜单默认 display:none，不展开点不到 ✗）。
             png_panel = page.locator(".sl-panel:has(canvas)").first
             png_panel.locator(".sl-pn-more-btn").click()
             page.wait_for_timeout(200)
             btn = png_panel.locator("button[title='导出该图表为 PNG 图片']").first
-            assert btn.is_visible(), "展开「⋯」后导出 PNG 按钮仍不可见"
+            assert btn.is_visible(), "展开「⋮」后导出 PNG 按钮仍不可见"
             with page.expect_download(timeout=15000) as dl:
                 btn.click()
             d = dl.value
@@ -1505,15 +1505,31 @@ def main():
             assert st3["stage"] == 4, "数据不足一屏时应报「还差 N 点」(阶段 %r, %r)" % (st3["stage"], st3["state"])
             assert "还差" in (st3["state"] or ""), "不足一屏的提示不对: %r" % st3
 
-            # ---------- ③ 面板头「⋯」：三个低频图标钮收进去，但仍可达、仍接线 ----------
+            # ---------- ③ 面板头「⋮」：三个低频图标钮收进去，但仍可达、仍接线 ----------
+            # ⚠ 面板头菜单是「⋮」（竖排），快捷条那个才是「⋯」（手动量程）——
+            #   初版两处都用 ⋯，同一块面板里 2 个可见的 ⋯ 含义完全不同 ✗。
             head = page.locator('.sl-panel[data-panel-id="%s"] .sl-panel-head' % pid)
-            assert head.locator(".sl-pn-more-btn").count() == 1, "面板头没有「⋯」按钮"
+            assert head.locator(".sl-pn-more-btn").count() == 1, "面板头没有「⋮」按钮"
             more = head.locator(".sl-pn-more").first
-            assert not more.is_visible(), "「⋯」菜单默认应是收起的"
+            assert not more.is_visible(), "「⋮」菜单默认应是收起的"
+            # 收纳的同一性:同一符号不得在一个面板头里出现两次(用户分不清哪个是哪个)
+            dup = page.evaluate("""(pid) => {
+                var h = document.querySelector('.sl-panel[data-panel-id="' + pid + '"] .sl-panel-head');
+                if (!h) { return -1; }
+                var seen = {}, dup = [];
+                h.querySelectorAll('button').forEach(function (b) {
+                  var t = b.textContent;
+                  if (t === '⋯' || t === '⋮') {
+                    if (seen[t]) { dup.push(t); } else { seen[t] = 1; }
+                  }
+                });
+                return dup.length;
+            }""", pid)
+            assert dup == 0, "面板头里有重复的「⋯/⋮」符号：用户分不清哪个是哪个"
             # 收起 ≠ 删元素:按钮必须仍在 DOM 里(删了会毁掉已绑定的接线)
             inner = more.inner_text()
             for sym in ("⇱", "⇔", "⤓"):
-                assert sym in inner, "菜单里缺 %s（收进「⋯」不能把按钮弄丢）" % sym
+                assert sym in inner, "菜单里缺 %s（收进「⋮」不能把按钮弄丢）" % sym
             # 旧版这三个是散在面板头的独立按钮,现在不该再散着
             loose = page.evaluate("""(pid) => {
                 var h = document.querySelector('.sl-panel[data-panel-id="' + pid + '"] .sl-panel-head');
@@ -1525,11 +1541,11 @@ def main():
                 }
                 return n;
             }""", pid)
-            assert loose == 0, "面板头还散着 %d 个低频图标钮（没收进「⋯」）" % loose
+            assert loose == 0, "面板头还散着 %d 个低频图标钮（没收进「⋮」）" % loose
 
             head.locator(".sl-pn-more-btn").click()
             page.wait_for_timeout(200)
-            assert more.is_visible(), "点「⋯」没有展开菜单"
+            assert more.is_visible(), "点「⋮」没有展开菜单"
             # 菜单里的「⇔ 加宽」必须真的接线（点一下 span 要变 2）—— 只隐藏不接线是假收拢
             before_span = page.evaluate(
                 "(pid) => SerialLab.views.getPanel(pid).span", pid)
@@ -1543,8 +1559,8 @@ def main():
             page.wait_for_timeout(250)
             assert not more.is_visible(), "点面板头别处后菜单没有收起"
 
-            assert not errs, "Y 量程/触发/⋯菜单 JS 异常: " + "; ".join(errs[:3])
-        check("serial_yaxis_trigger Y 手动量程落地（A-116）+ 触发对齐三态 + 面板头「⋯」", t_serial_yaxis_trigger)
+            assert not errs, "Y 量程/触发/⋮菜单 JS 异常: " + "; ".join(errs[:3])
+        check("serial_yaxis_trigger Y 手动量程落地（A-116）+ 触发对齐三态 + 面板头「⋮」", t_serial_yaxis_trigger)
 
         def t_serial_merge():
             """A-119「合并同类项」：多块同名图表框一键收拢，且**不静默丢配置**。

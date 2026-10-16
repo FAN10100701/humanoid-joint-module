@@ -1746,7 +1746,61 @@ scanRegression().then(function () {
 
   check("A-104: 面板头「标题 vs 类型标签」同名时不重复画、字体族与标题统一",
     /var r = Plugins\.get\(panel\.type\);[\s\S]{0,80}?var typeLabel = r \? r\.label : panel\.type;[\s\S]{0,80}?if \(typeLabel !== panel\.title\) \{/.test(sViews)
-      && /\.sl-panel-type \{[\s\S]{0,420}?font-family: inherit;/.test(sCss), "");
+      && /\.sl-panel-type \{[\s\S]{0,700}?font-family: inherit;/.test(sCss), "");
+
+  /* V2.2.33：标题与类型角标必须**同源字号**。
+     用户反复反馈「角标字号跟其他模块不一致，展开后又一致了」—— 根因是两者各写一个数
+     （V2.2.22 只统一了字体族、字号仍是 12.5 vs 11.5）。这条直接盯「同一个变量」。 */
+  check("A-120: 面板标题与类型角标共用同一个字号变量（不再各写一个数）",
+    /--sl-panel-title-size:\s*12\.5px;/.test(sCss)
+      && /\.sl-panel-title \{[\s\S]{0,120}?font-size: var\(--sl-panel-title-size\);/.test(sCss)
+      && /\.sl-panel-type \{[\s\S]{0,700}?font-size: var\(--sl-panel-title-size\);/.test(sCss), "");
+
+  /* ------------------------------------------------------------------
+     V2.2.33：字号梯度总闸门 —— 这是本轮真正值钱的一条。
+     用户「说了很多遍了没一个意识到」的那个问题，本质不是某一行写错，而是
+     **同一角色散落着 11 / 11.5 / 12px 三个值**，谁都不知道「正确值」是哪个，
+     于是每次只改自己看到的那一处，下次又漂 ✗。
+     所以除了修具体的值，还要**堵住入口**：app.css 里除梯度变量自身与少数
+     有意为之的层级（页面大标题 / 正文 / 品牌字）外，不得再出现裸 px 字号。
+     白名单是「值 → 允许一次」的清单，写死在这里 —— 想加新字号必须同时改这张
+     清单（也就是必须显式承认「我又引入了一档」），不再可能悄悄漂开。
+     canvas 的 ctx.font 在 js 里，不受本断言约束（另有 A-112/A-113/A-117 管它）。
+     ------------------------------------------------------------------ */
+  /* 页面级的三档有意保留为字面量：正文 13.5（= body 的 0.92em 基准）、品牌字 14.5、
+     零状态大标题 14、命令面板输入 13 —— 它们是「页面级」而不是「控件级」，各有唯一用处，
+     所以白名单写死成「恰好各 1 处」。想新增页面级字号，必须同时改这张清单（= 显式承认）。 */
+  const ALLOWED_LITERAL_FS = { "14.5px": 1, "14px": 1, "13.5px": 1, "13px": 1 };  const fsCount = {};
+  const fsRe = /font-size:\s*([0-9.]+px)/g;
+  let mFs;
+  while ((mFs = fsRe.exec(sCss)) !== null) {
+    fsCount[mFs[1]] = (fsCount[mFs[1]] || 0) + 1;
+  }
+  const stray = [];
+  for (const k in fsCount) {
+    if (!Object.prototype.hasOwnProperty.call(fsCount, k)) { continue; }
+    const allow = ALLOWED_LITERAL_FS[k];
+    if (allow === undefined) { stray.push(k + "×" + fsCount[k]); }
+    else if (fsCount[k] !== allow) { stray.push(k + "×" + fsCount[k] + "(白名单只许 " + allow + " 处)"); }
+  }
+  check("A-120: app.css 里除字号梯度变量外不得再出现裸 px 字号（堵住漂移的入口）",
+    stray.length === 0, "残留: " + stray.join(" / "));
+
+  check("A-120: 字号梯度四个令牌齐备，且面板头用的是标题档",
+    /--sl-fs-title:\s*12\.5px;/.test(sCss) && /--sl-fs-sub:\s*11\.5px;/.test(sCss)
+      && /--sl-fs-weak:\s*11px;/.test(sCss) && /--sl-fs-micro:\s*10\.5px;/.test(sCss), "");
+
+  check("A-120: 等宽字体族单源（不再散落 Consolas 的三种写法）",
+    /--sl-ff-mono: Consolas, "Courier New", monospace;/.test(sCss)
+      && sCss.indexOf("font-family: Consolas") < 0, "");
+
+  /* V2.2.33：面板头里**同一符号不得出现两次**。
+     时域波形的快捷条已经有一个「⋯」（手动量程），我加面板头菜单时又用了「⋯」——
+     实测同一块面板里有 3 个 ⋯ 按钮、2 个可见，含义完全不同却长得一样 ✗。
+     面板头菜单改用「⋮」（竖排），与快捷条的「⋯」在字形上分得开。 */
+  check("A-120: 面板头菜单用「⋮」，与快捷条的「⋯」区分开（同一符号不能出现两次）",
+    sViews.indexOf('iconBtn("⋮", "更多：移到主位 / 加宽 / 导出 PNG"') > 0
+      && /sl-pn-more-btn[\s\S]{0,200}?⋮|⋮[\s\S]{0,200}?sl-pn-more-btn/.test(sViews), "");
 
   check("A-104: 每面板勾选走「覆盖表」而不是「快照」—— 新出现的通道默认仍然会出现",
     /var on = \(panel\.opts && panel\.opts\.chanOn\) \|\| null;/.test(sPlug)

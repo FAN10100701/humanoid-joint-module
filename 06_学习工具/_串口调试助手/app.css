@@ -16,6 +16,26 @@
 
 /* ---------------- 设计令牌 ---------------- */
 :root {
+  /* 字号梯度【单一真源，V2.2.33】。
+     为什么必须单源：用户反复反馈「角标字号跟其他模块不一致，展开后又一致了」，
+     根因就是**同一角色散落着 11 / 11.5 / 12px 三个值** —— 面板标题 12.5px 而它旁边的
+     类型角标 11.5px、收起态摘要又是 11px 等宽（收起看得见、展开就消失，于是"展开后又一致"）。
+     改法：把字号收成 4 级 + 1 个等宽族，全部经变量引用，并在 校验串口应用.js 里断言
+     「app.css 里不得再出现裸 px 字号（canvas 绘制除外）」—— 任何人都不能再偷偷加一个值。
+       标题级 12.5 面板标题/区块标题/控件正文     （= body 的 0.92em，不另写值）
+       次级   11.5 类型角标/图例标签/页签/提示     （**新值：角标与标题同源，不再小一号**）
+       弱化   11   摘要/次要动作钮/快捷条/步骤说明
+       微     10.5 单位后缀这类极小字 */
+  --sl-fs-title: 12.5px;
+  --sl-fs-sub: 11.5px;
+  --sl-fs-weak: 11px;
+  --sl-fs-micro: 10.5px;
+  --sl-ff-mono: Consolas, "Courier New", monospace;
+  /* 面板头「标题」与「类型角标」共用同一个值 —— 这是 V2.2.33 修的那个坑：
+     两者若各自写一个数，就会一大一小（V2.2.22 就只统一了字体族、没统一字号）。
+     单源后两者不可能再漂开，断言也直接盯这一条。 */
+  --sl-panel-title-size: 12.5px;
+
   /* 表面与描边 */
   --sl-bg: #0d1117;
   --sl-bg-soft: #0a0f16;
@@ -155,7 +175,7 @@ body {
 }
 
 code, kbd, pre, .sl-mono {
-  font-family: Consolas, "Courier New", Menlo, monospace;
+  font-family: var(--sl-ff-mono);
 }
 
 a { color: var(--sl-accent-ink); }
@@ -190,10 +210,10 @@ a { color: var(--sl-accent-ink); }
 }
 
 .sl-brand .sl-ver {
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   font-weight: 600;
   color: var(--sl-ink-3);
-  font-family: Consolas, monospace;
+  font-family: var(--sl-ff-mono);
 }
 
 .sl-top-spacer { flex: 1 1 auto; }
@@ -208,7 +228,7 @@ a { color: var(--sl-accent-ink); }
 /* V2.2.5：顶栏链接钮去边框（纯文字 + hover 底色），视觉密度向 VSCode 看齐；
    分组语义由两侧 .sl-bar-sep 承担 */
 .sl-link {
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
   color: var(--sl-ink-2);
   text-decoration: none;
   padding: 4px 7px;
@@ -235,7 +255,7 @@ a { color: var(--sl-accent-ink); }
   border: 1px solid rgba(34, 197, 94, .45);
   background: rgba(34, 197, 94, .14);
   color: var(--sl-ok-ink);
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -299,7 +319,7 @@ a { color: var(--sl-accent-ink); }
 .sl-dot.is-bad { background: var(--sl-bad); box-shadow: 0 0 7px var(--sl-bad); }
 
 .sl-state {
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   font-weight: 700;
   color: var(--sl-ink-2);
   min-width: 62px;
@@ -309,7 +329,7 @@ a { color: var(--sl-accent-ink); }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink-2);
   white-space: nowrap;
 }
@@ -334,7 +354,7 @@ input[type="text"], input[type="number"], select, textarea {
   border-radius: var(--sl-radius-sm);
   color: var(--sl-ink);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   padding: 4px 8px;
   outline: none;
 }
@@ -354,14 +374,14 @@ input[type="number"] {
 input[type="number"] { width: 78px; }
 
 .sl-mono-input {
-  font-family: Consolas, "Courier New", monospace;
+  font-family: var(--sl-ff-mono);
 }
 
 .sl-chk {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink-2);
   cursor: pointer;
   white-space: nowrap;
@@ -374,7 +394,7 @@ input[type="number"] { width: 78px; }
   background: rgba(59, 130, 246, .14);
   border: 1px solid rgba(59, 130, 246, .42);
   color: var(--sl-accent-ink);
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   font-family: inherit;
   padding: 5px 12px;
   border-radius: var(--sl-radius-sm);
@@ -408,7 +428,7 @@ input[type="number"] { width: 78px; }
   filter: none;
 }
 
-.sl-btn.is-sm { padding: 3px 9px; font-size: 11.5px; }
+.sl-btn.is-sm { padding: 3px 9px; font-size: var(--sl-fs-sub); }
 
 /* 图标按钮（面板头部：主位 / 加宽 / 收起 / 移除） */
 /* 文字型面板按钮需要 width:auto —— 22px 方钮装不下「Auto」/「清屏」/「收起」。
@@ -419,7 +439,7 @@ input[type="number"] { width: 78px; }
   width: auto;
   min-width: 22px;
   padding: 0 5px;         /* V2.2.11：再紧凑一点，窄面板下不再被裁成「Aut」 */
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   font-weight: 700;
 }
 
@@ -429,8 +449,8 @@ input[type="number"] { width: 78px; }
   min-width: 0;
   max-width: 46%;
   margin-right: 4px;
-  font-family: Consolas, monospace;
-  font-size: 11px;
+  font-family: var(--sl-ff-mono);
+  font-size: var(--sl-fs-weak);
   color: var(--sl-ink-3);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -442,7 +462,7 @@ input[type="number"] { width: 78px; }
   display: inline-flex;
   align-items: center;
   gap: var(--sl-gap-sm);
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink);
 }
 
@@ -452,8 +472,8 @@ input[type="number"] { width: 78px; }
 .sl-proto textarea {
   width: 100%;
   box-sizing: border-box;
-  font-family: Consolas, monospace;
-  font-size: 12px;
+  font-family: var(--sl-ff-mono);
+  font-size: var(--sl-fs-sub);
   line-height: 1.5;
   resize: vertical;
 }
@@ -465,8 +485,8 @@ input[type="number"] { width: 78px; }
   overflow: auto;
 }
 .sl-proto-line {
-  font-family: Consolas, monospace;
-  font-size: 12px;
+  font-family: var(--sl-ff-mono);
+  font-size: var(--sl-fs-sub);
   line-height: 1.65;
   color: var(--sl-ink);
   white-space: pre-wrap;
@@ -495,7 +515,7 @@ input[type="number"] { width: 78px; }
   border-radius: 5px;
   background: transparent;
   color: var(--sl-ink-3);
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
   line-height: 1;
   font-family: inherit;
   cursor: pointer;
@@ -561,7 +581,7 @@ input[type="number"] { width: 78px; }
   background: transparent;
   border: 1px solid transparent;
   color: var(--sl-ink-2);
-  font-size: 11.5px;
+  font-size: var(--sl-fs-sub);
   font-family: inherit;
   padding: 4px 4px;
   border-radius: var(--sl-radius-sm) var(--sl-radius-sm) 0 0;
@@ -653,7 +673,7 @@ input[type="number"] { width: 78px; }
 .sl-zero-steps {
   margin: 0;
   padding-left: 20px;
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
   line-height: 2;
   color: var(--sl-ink-2);
 }
@@ -683,13 +703,13 @@ input[type="number"] { width: 78px; }
 .sl-stage-bar > * { flex: 0 0 auto; }   /* 按钮不压缩、标题/提示语不变形 */
 
 .sl-stage-title {
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   font-weight: 700;
   color: var(--sl-ink-2);
 }
 
 .sl-stage-hint {
-  font-size: 11.5px;
+  font-size: var(--sl-fs-sub);
   color: var(--sl-ink-3);
 }
 
@@ -834,7 +854,7 @@ input[type="number"] { width: 78px; }
 }
 
 .sl-panel-title {
-  font-size: 12.5px;
+  font-size: var(--sl-panel-title-size);
   font-weight: 700;
   color: var(--sl-ink);
   overflow: hidden;
@@ -845,11 +865,14 @@ input[type="number"] { width: 78px; }
 }
 
 .sl-panel-type {
-  /* V2.2.22：与标题排版统一。原来这里是 11px + Consolas 等宽（标题是 12.5px 粗体无衬线），
-     两个标签并排时像两种格式（用户截图里就是「时域波形」与「频域谱」看着不是一套）。
-     现在只保留「小一号 + 灰 + 描边」这一层从属关系，字体族与标题一致。
-     另外 views.js 已在「类型名 == 标题」时干脆不画它 —— 默认面板正是这种情况。 */
-  font-size: 11.5px;
+  /* V2.2.33：与面板标题**同字号**（两者都用 --sl-panel-title-size），只保留「灰 + 描边」这层从属。
+     演进史（用户反复反馈「角标字号跟其他模块不一致」）：
+       V2.2.22 之前 = 11px + Consolas 等宽（标题 12.5px 无衬线）→ 并排像两种格式 ✗
+       V2.2.22     = 11.5px + inherit（字体族统一了，但**仍比标题小一号**）→ 还是看得出来一大一小 ✗
+       V2.2.33     = 与标题同源字号 ✓
+     另外 views.js 在「类型名 == 标题」时干脆不画它（默认面板正是这种情况）——
+     于是**同一个应用里有的面板有这个角标、有的没有**，字号只要不一致就显得杂乱。 */
+  font-size: var(--sl-panel-title-size);
   color: var(--sl-ink-3);
   font-family: inherit;
   flex-shrink: 0;
@@ -870,7 +893,7 @@ input[type="number"] { width: 78px; }
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   color: var(--sl-ink-2);
   cursor: pointer;
   user-select: none;
@@ -878,7 +901,7 @@ input[type="number"] { width: 78px; }
 }
 .sl-panel-quick .sl-qk input { margin: 0; accent-color: var(--sl-acc, #3b82f6); }
 .sl-panel-quick .sl-qk-enc {
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   padding: 1px 2px;
   border: 1px solid var(--sl-border);
   border-radius: 4px;
@@ -887,7 +910,7 @@ input[type="number"] { width: 78px; }
   max-width: 64px;   /* V2.2.11：面板头空间紧张，快捷条控件全部收窄 */
 }
 .sl-panel-quick .sl-qk-num {
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   width: 42px;
   padding: 1px 2px;
   border: 1px solid var(--sl-border);
@@ -898,7 +921,7 @@ input[type="number"] { width: 78px; }
 
 /* 实时统计面板（statsboard）：每通道一行，等宽数字右对齐 */
 .sl-stats {
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
   overflow: auto;
   height: 100%;
   box-sizing: border-box;
@@ -914,15 +937,15 @@ input[type="number"] { width: 78px; }
 }
 .sl-stats-row.is-head {
   color: var(--sl-ink-3);
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   position: sticky;
   top: 0;
   background: var(--sl-card, #fff);
   z-index: 1;
 }
 .sl-stats-row > span {
-  font-family: Consolas, monospace;
-  font-size: 11.5px;
+  font-family: var(--sl-ff-mono);
+  font-size: var(--sl-fs-sub);
   text-align: right;
   white-space: nowrap;
 }
@@ -935,7 +958,7 @@ input[type="number"] { width: 78px; }
   margin-right: 6px;
   vertical-align: middle;
 }
-.sl-stats-unit { font-style: normal; color: var(--sl-ink-3); font-size: 10.5px; margin-left: 4px; }
+.sl-stats-unit { font-style: normal; color: var(--sl-ink-3); font-size: var(--sl-fs-micro); margin-left: 4px; }
 
 /* 设置中心弹窗（右下角 ⋯） */
 .sl-settings { padding: 4px 2px; min-width: 420px; }
@@ -948,10 +971,10 @@ input[type="number"] { width: 78px; }
   border-bottom: 1px solid var(--sl-border);
 }
 .sl-set-row:last-of-type { border-bottom: none; }
-.sl-set-row > label { font-size: 12.5px; color: var(--sl-ink); font-weight: 600; }
+.sl-set-row > label { font-size: var(--sl-fs-title); color: var(--sl-ink); font-weight: 600; }
 .sl-set-row > select,
 .sl-set-row > input[type="text"] {
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   padding: 4px 6px;
   border: 1px solid var(--sl-border);
   border-radius: 4px;
@@ -960,7 +983,7 @@ input[type="number"] { width: 78px; }
   max-width: 300px;
 }
 .sl-set-row > i,
-.sl-set-row > p { font-style: normal; font-size: 11px; color: var(--sl-ink-3); grid-column: 2; }
+.sl-set-row > p { font-style: normal; font-size: var(--sl-fs-weak); color: var(--sl-ink-3); grid-column: 2; }
 .sl-settings .sl-hint { margin-top: 10px; }
 
 /* 帮助文章：搜索框 + 目录 chips + 章节 */
@@ -968,7 +991,7 @@ input[type="number"] { width: 78px; }
 .sl-article-search {
   width: 100%;
   box-sizing: border-box;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   padding: 6px 9px;
   border: 1px solid var(--sl-border);
   border-radius: 6px;
@@ -978,7 +1001,7 @@ input[type="number"] { width: 78px; }
 }
 .sl-article-toc { display: flex; flex-wrap: wrap; gap: 5px; }
 .sl-toc-chip {
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   padding: 3px 9px;
   border: 1px solid var(--sl-border);
   border-radius: 999px;
@@ -1016,8 +1039,8 @@ input[type="number"] { width: 78px; }
   text-align: left;
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
-.sl-case b { font-size: 12.5px; color: var(--sl-ink); font-weight: 600; white-space: nowrap; }
-.sl-case i { font-style: normal; font-size: 11px; color: var(--sl-ink-3); }
+.sl-case b { font-size: var(--sl-fs-title); color: var(--sl-ink); font-weight: 600; white-space: nowrap; }
+.sl-case i { font-style: normal; font-size: var(--sl-fs-weak); color: var(--sl-ink-3); }
 .sl-case:hover {
   border-color: var(--sl-brand);
   box-shadow: 0 1px 4px rgba(37, 99, 235, .15);
@@ -1033,7 +1056,7 @@ input[type="number"] { width: 78px; }
   gap: 2px;
   padding: 7px 9px;
 }
-.sl-case-grid.is-quiet .sl-case b { font-size: 11.5px; }
+.sl-case-grid.is-quiet .sl-case b { font-size: var(--sl-fs-sub); }
 
 .sl-panel-body {
   flex: 1 1 auto;
@@ -1051,7 +1074,7 @@ input[type="number"] { width: 78px; }
   height: 100%;
   padding: 16px;
   text-align: center;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink-3);
 }
 
@@ -1084,7 +1107,7 @@ input[type="number"] { width: 78px; }
   height: 100%;
   overflow-y: auto;
   padding: 7px 10px;
-  font-family: Consolas, "Courier New", monospace;
+  font-family: var(--sl-ff-mono);
   font-size: var(--sl-mon-size);
   line-height: 1.65;
   background: var(--sl-canvas-bg);
@@ -1153,19 +1176,19 @@ input[type="number"] { width: 78px; }
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 4px 10px;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   margin: 8px 0;
 }
 
 .sl-kv dt { color: var(--sl-ink-3); }
-.sl-kv dd { margin: 0; color: var(--sl-ink); font-family: Consolas, monospace; }
+.sl-kv dd { margin: 0; color: var(--sl-ink); font-family: var(--sl-ff-mono); }
 
 .sl-table-wrap { overflow-x: auto; margin: 8px 0; }
 
 table.sl-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
 }
 
 table.sl-table th, table.sl-table td {
@@ -1181,7 +1204,7 @@ table.sl-table th {
   font-weight: 700;
 }
 
-table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
+table.sl-table td { color: var(--sl-ink); font-family: var(--sl-ff-mono); }
 
 /* ---------------- 通道卡片（V2.2.16） ----------------
    旧版是 7 列表格 + `white-space: nowrap`，在 ~260px 的左栏里必然横向滚动，
@@ -1213,8 +1236,8 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: Consolas, monospace;
-  font-size: 12px;
+  font-family: var(--sl-ff-mono);
+  font-size: var(--sl-fs-sub);
   font-weight: 700;
   color: var(--sl-ink);
 }
@@ -1230,7 +1253,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   cursor: pointer;
 }
 
-.sl-chan-vis { flex: 0 0 auto; font-size: 11.5px; }
+.sl-chan-vis { flex: 0 0 auto; font-size: var(--sl-fs-sub); }
 
 .sl-chan-r2 {
   display: flex;
@@ -1242,13 +1265,13 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 
 .sl-chan-fld { display: inline-flex; align-items: center; gap: 4px; }
 
-.sl-chan-fl { font-size: 11px; color: var(--sl-ink-3); }
+.sl-chan-fl { font-size: var(--sl-fs-weak); color: var(--sl-ink-3); }
 
 .sl-chan-table input[type="text"],
 .sl-chan-table input[type="number"] {
   height: 22px;
   padding: 0 5px;
-  font-size: 11.5px;
+  font-size: var(--sl-fs-sub);
   border: 1px solid var(--sl-border);
   border-radius: 4px;
   background: var(--sl-bg-soft);
@@ -1276,7 +1299,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 
 .sl-group > h3 {
   margin: 0 0 6px;
-  font-size: 11.5px;
+  font-size: var(--sl-fs-sub);
   font-weight: 800;
   letter-spacing: .05em;
   color: var(--sl-ink-2);
@@ -1294,7 +1317,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 }
 
 .sl-hint {
-  font-size: 11.5px;
+  font-size: var(--sl-fs-sub);
   color: var(--sl-ink-3);
   line-height: 1.7;
   margin: 5px 0 0;
@@ -1330,7 +1353,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   align-items: center;
   gap: var(--sl-gap);
   padding: 7px 10px;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink-2);
   cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, .04);
@@ -1414,7 +1437,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   background: rgba(59, 130, 246, .10);
   padding: 8px 11px;
   border-radius: 0 var(--sl-radius-sm) var(--sl-radius-sm) 0;
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
   color: var(--sl-ink-2);
   line-height: 1.75;
   margin: 8px 0;
@@ -1442,9 +1465,9 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   border: 1px solid var(--sl-border);
   background: var(--sl-bg-soft);
   color: var(--sl-ink-2);
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
   font-weight: 700;
-  font-family: Consolas, "Courier New", monospace;
+  font-family: var(--sl-ff-mono);
   white-space: nowrap;
   transition: background .15s var(--sl-ease), border-color .15s var(--sl-ease), color .15s var(--sl-ease);
 }
@@ -1496,7 +1519,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   border-radius: 0 var(--sl-radius-sm) var(--sl-radius-sm) 0;
   padding: 7px 10px;
   margin: 7px 0 2px;
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
   color: var(--sl-ink-2);
   line-height: 1.6;
 }
@@ -1571,7 +1594,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
      浅色模式下气泡背景被覆盖成白色，白底白字几乎不可读（用户截图实证）。
      V2.2.8 再加深一档：小字号气泡用专属最深色令牌 */
   color: var(--sl-tip-ink, var(--sl-ink));
-  font-size: 12px;
+  font-size: var(--sl-fs-sub);
   line-height: 1.6;
   pointer-events: none;
   opacity: 0;
@@ -1596,7 +1619,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   background: var(--sl-surface-2);
   color: var(--sl-ink);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   font-weight: 700;
   cursor: pointer;
   text-align: left;
@@ -1610,7 +1633,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 }
 
 .sl-preset .sl-preset-brand {
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   font-weight: 400;
   color: var(--sl-ink-3);
 }
@@ -1623,7 +1646,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   padding: 9px 12px;
   background: rgba(245, 158, 11, .14);
   border-bottom: 1px solid rgba(245, 158, 11, .4);
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink);
   line-height: 1.75;
   flex-shrink: 0;
@@ -1695,7 +1718,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   border-left: 3px solid var(--sl-brand);
   border-radius: var(--sl-radius-sm);
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink);
   box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
   pointer-events: auto;
@@ -1738,7 +1761,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   padding: 11px 14px;
   border-bottom: 1px solid var(--sl-border);
   font-weight: 800;
-  font-size: 13.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink);
 }
 
@@ -1748,7 +1771,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   padding: 14px;
   overflow-y: auto;
   min-height: 0;
-  font-size: 12.5px;
+  font-size: var(--sl-fs-title);
   color: var(--sl-ink);
 }
 
@@ -1764,8 +1787,8 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 .sl-prompt {
   width: 100%;
   min-height: 260px;
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 11.5px;
+  font-family: var(--sl-ff-mono);
+  font-size: var(--sl-fs-sub);
   line-height: 1.7;
   white-space: pre;
   overflow: auto;
@@ -1813,7 +1836,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   border-radius: 999px;
   background: transparent;
   color: var(--sl-ink);
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   font-family: inherit;
   cursor: pointer;
 }
@@ -1827,7 +1850,7 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   border-radius: 6px;
   background: transparent;
   color: var(--sl-ink-3);
-  font-size: 11px;
+  font-size: var(--sl-fs-weak);
   font-family: inherit;
   cursor: pointer;
 }

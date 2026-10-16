@@ -139,7 +139,7 @@
     if (!(span > 0)) { span = 1; }
     var step = niceStep(span, 4);
     var first = Math.ceil(yMin / step) * step;
-    ctx.font = "10px Consolas, monospace";
+    ctx.font = "11px Consolas, monospace";
     ctx.fillStyle = t.ink3;
     ctx.textBaseline = "middle";
     for (var yv = first; yv <= yMax + 1e-9; yv += step) {
@@ -1107,7 +1107,7 @@
         var rangeTxt = U.fmt(yr.min, 3) + " ~ " + U.fmt(yr.max, 3);
         ctx.save();
         ctx.fillStyle = t.ink3;
-        ctx.font = "10px Consolas, monospace";
+        ctx.font = "11px Consolas, monospace";
         ctx.textBaseline = "top";
         ctx.textAlign = "right";
         var rrw = ctx.measureText(rangeTxt).width;
@@ -1121,7 +1121,7 @@
         if (viewOffset > 0) {
           ctx.save();
           var tipText = "⏸ 回看历史 " + viewOffset + " 点 · 点此回实时";
-          ctx.font = "bold 10px Consolas, monospace";
+          ctx.font = "bold 11px Consolas, monospace";
           var tw = ctx.measureText(tipText).width;
           var bx = view.w - PAD.r - tw - 10, by = 3, bh = 16;
           ctx.fillStyle = "rgba(245, 158, 11, .18)";
@@ -1157,7 +1157,7 @@
         var t = theme();
         ctx.save();
         ctx.fillStyle = t.ink3;
-        ctx.font = "10px Consolas, monospace";
+        ctx.font = "11px Consolas, monospace";
         ctx.textBaseline = "top";
         /* 右侧那段（末点时刻 + 窗口信息）先量宽度，再决定左侧端点放不放得下。
            撞在一起时两个数字会连读成看着像乱码的东西（窗口比数据长时左端点本来就是
@@ -1210,7 +1210,7 @@ var spanMs = (t1 > t0) ? (t1 - t0) : 0;
   var t = theme();
   legendHits = [];
   ctx.save();
-  ctx.font = "10px Consolas, monospace";
+  ctx.font = "11px Consolas, monospace";
   ctx.textBaseline = "middle";
   var cx = PAD.l + 4, cy = 9;
   for (var m = 0; m < allSeries.length; m++) {
@@ -1462,7 +1462,7 @@ var spanMs = (t1 > t0) ? (t1 - t0) : 0;
           cand.sort(function (a, b) { return b.m - a.m; });
           var maxPk = (panel.opts && panel.opts.peakCount) || 3;
           if (cand.length > maxPk) { cand.length = maxPk; }
-          ctx.font = "bold 10px Consolas, monospace";
+          ctx.font = "bold 11px Consolas, monospace";
           ctx.textBaseline = "bottom";
           for (var pi = 0; pi < cand.length; pi++) {
             var pk = cand[pi];
@@ -1485,7 +1485,7 @@ var spanMs = (t1 > t0) ? (t1 - t0) : 0;
 
         ctx.save();
         ctx.fillStyle = t.ink3;
-        ctx.font = "10px Consolas, monospace";
+        ctx.font = "11px Consolas, monospace";
         ctx.textBaseline = "top";
         /* V2.2.30：频谱侧的悬停示数（与波形侧同一套「测量层」）。
              坐标映射是频谱自己的：x = pad.l + (f / fMax) * map.plotW，读数给「频率 Hz + 各通道在该频率处的幅值」。
@@ -1611,7 +1611,7 @@ var spanMs = (t1 > t0) ? (t1 - t0) : 0;
           ctx.fillRect(cx - bw / 2, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0)));
           ctx.globalAlpha = 1;
           ctx.fillStyle = t.ink2;
-          ctx.font = "10px Consolas, monospace";
+          ctx.font = "11px Consolas, monospace";
           ctx.textAlign = "center";
           ctx.textBaseline = "top";
           ctx.fillText(item.ch.label || item.ch.key, cx, view.h - pad.b + 4);
@@ -1730,7 +1730,7 @@ var spanMs = (t1 > t0) ? (t1 - t0) : 0;
         ctx.textBaseline = "middle";
         var prec = (ch.precision === undefined) ? 2 : ch.precision;
         ctx.fillText(U.fmt(st.last, prec) + (ch.unit ? " " + ch.unit : ""), cx, cy - radius * 0.34);
-        ctx.font = "10px Consolas, monospace";
+        ctx.font = "11px Consolas, monospace";
         ctx.fillStyle = t.ink3;
         ctx.fillText(String(ch.label || ch.key) + "  ·  min " + U.fmt(st.min, prec)
           + " / max " + U.fmt(st.max, prec), cx, cy - radius * 0.08);
@@ -2073,7 +2073,7 @@ var spanMs = (t1 > t0) ? (t1 - t0) : 0;
 
         ctx.save();
         ctx.fillStyle = t.ink3;
-        ctx.font = "10px Consolas, monospace";
+        ctx.font = "11px Consolas, monospace";
         ctx.textBaseline = "top";
         ctx.fillText("X: " + (cx.label || cx.key) + "   Y: " + (cy.label || cy.key), 4, view.h - pad.b + 4);
         ctx.restore();
