@@ -767,6 +767,10 @@ def main():
 
             # --- 3) 演示故障注入 → 乱码监测提示条 ---
             page.click("#slTabs .sl-tab[data-pane='test']")  # 故障注入控件已挪进「测试」页签
+            # V2.2.17：故障注入控件所在的「手动调参」组默认折叠。
+            # 用 aria-expanded 判断后再点（点是**切换**语义，盲点会把已展开的又折回去）。
+            if page.evaluate("document.querySelector('#slFoldManual').getAttribute('aria-expanded') === 'false'"):
+                page.click("#slFoldManual")
             page.fill("#slFaultCorrupt", "100")
             page.dispatch_event("#slFaultCorrupt", "change")
             page.click("#slTabs .sl-tab[data-pane='test']")  # V2.2.4:演示入口挪进「测试」页签
@@ -806,6 +810,8 @@ def main():
             # --- 收尾:故障清零 + 退出演示(配置会持久化,不能污染下一位) ---
             # 故障控件在「测试」页签(此刻页面停在设备页签),先切过去再清零
             page.click("#slTabs .sl-tab[data-pane='test']")
+            if page.evaluate("document.querySelector('#slFoldManual').getAttribute('aria-expanded') === 'false'"):
+                page.click("#slFoldManual")
             page.fill("#slFaultCorrupt", "0")
             page.dispatch_event("#slFaultCorrupt", "change")
             page.click("#slBtnDemo")
@@ -1024,6 +1030,105 @@ def main():
             assert not errs, "V2.2.16 JS 异常: " + "; ".join(errs[:3])
         check("serial_v2216 通道卡片无横向溢出/说明收进?/底行标签不重叠/零状态引导/6页签/单面板满宽",
               t_serial_v2216)
+
+        # ---------- 7.6 V2.2.17 折叠 + 命令面板 + 快捷键 + 发送历史 ----------
+        def t_serial_v2217():
+            """V2.2.17：低频组默认折叠、命令面板（Ctrl+K）、空格暂停、发送历史。
+
+            这几项都是「让人少找一会儿」的功能，所以断言也按「能不能少找」来写：
+            折叠必须真的让控件不可交互、展开后才可填；命令面板必须打开即聚焦、
+            拼音首字母能搜到、回车真的执行（而不只是关掉面板）。
+            """
+            errs = make_page_errors_tracker(page)
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+
+            # ---- ① 低频组默认折叠，且能展开 ----
+            st = page.evaluate("""[...document.querySelectorAll('.sl-group[data-fold="1"]')].map(g => ({
+                k: g.getAttribute('data-fold-key'),
+                folded: g.className.indexOf('is-folded') >= 0,
+                aria: g.querySelector('.sl-fold') ? g.querySelector('.sl-fold').getAttribute('aria-expanded') : null
+            }))""")
+            assert len(st) == 3, "默认折叠的组数不是 3：%d" % len(st)
+            for g in st:
+                assert g["folded"] and g["aria"] == "false", "组 %r 没有默认折叠：%r" % (g["k"], g)
+            assert page.evaluate("""(() => { const hs = [...document.querySelectorAll('.sl-group h3')];
+                const g = hs.find(h => h.textContent.indexOf('常用案例') >= 0);
+                return g ? g.parentNode.className.indexOf('is-folded') < 0 : null; })()"""), \
+                "「常用案例」被折叠了 —— 那是演示的主入口，不该收起来"
+            page.click("#slTabs .sl-tab[data-pane='test']")
+            page.wait_for_timeout(300)
+            assert not page.evaluate("!!document.querySelector('#slFaultCorrupt').offsetParent"), \
+                "折叠状态下故障注入控件竟然是可见的"
+            page.click("#slFoldManual")
+            page.wait_for_timeout(300)
+            assert page.evaluate("!!document.querySelector('#slFaultCorrupt').offsetParent"), \
+                "展开后故障注入控件仍不可见"
+            assert page.evaluate(
+                "document.querySelector('#slFoldManual').getAttribute('aria-expanded') === 'true'"), \
+                "展开后 aria-expanded 没同步"
+
+            # ---- ② 命令面板：Ctrl+K 唤起 / 拼音首字母可搜 / 回车真的执行 ----
+            page.keyboard.press("Control+k")
+            page.wait_for_selector(".sl-pal-input", timeout=5000)
+            # 焦点是 UI.palette 里延后一拍（30ms）交过去的（要等弹窗真正可见才聚焦），
+            # 所以这里必须「等到」而不是「立刻断言」——否则必然偶发失败。
+            page.wait_for_function(
+                "document.activeElement && document.activeElement.className.indexOf('sl-pal-input') >= 0",
+                timeout=5000)
+            assert page.evaluate("document.activeElement.className.indexOf('sl-pal-input') >= 0"), \
+                "命令面板打开后焦点没落在输入框（面板的意义就是「打开即打字」）"
+            n_all = page.locator(".sl-pal-row").count()
+            assert n_all >= 30, "命令面板条目太少：%d" % n_all
+            page.fill(".sl-pal-input", "dc")
+            page.wait_for_timeout(300)
+            assert page.locator(".sl-pal-row").count() > 0, "拼音首字母 dc 搜不到任何命令（子序列匹配失效）"
+            page.fill(".sl-pal-input", "页签：解析")
+            page.wait_for_timeout(300)
+            page.keyboard.press("Enter")
+            page.wait_for_timeout(400)
+            assert not page.evaluate("!!document.querySelector('.sl-pal')"), "回车后面板没关闭"
+            on = page.evaluate(
+                "[...document.querySelectorAll('.sl-panes > .sl-pane.is-on')].map(s => s.getAttribute('data-pane'))")
+            assert "parse" in on and "channels" in on, "命令面板的页签命令没真的切过去：%r" % on
+
+            # ---- ③ 空格暂停 ----
+            page.evaluate("document.body.focus()")
+            before = page.evaluate("document.querySelector('#slRunLabel').textContent")
+            page.keyboard.press("Space")
+            page.wait_for_timeout(300)
+            after = page.evaluate("document.querySelector('#slRunLabel').textContent")
+            assert before != after, "空格没切换暂停状态（%r → %r）" % (before, after)
+            page.keyboard.press("Space")
+            page.wait_for_timeout(200)
+
+            # ---- ④ 发送历史：↑ 往回翻、↓ 往回走 ----
+            page.click("#slTabs .sl-tab[data-pane='test']")
+            page.click("#slBtnDemo")
+            page.wait_for_function(
+                "window.SerialLab && SerialLab.core.state.demo === true", timeout=10000)
+            page.evaluate("""(() => {
+                const i = document.querySelector('#slSendInput');
+                ['hist-A', 'hist-B', 'hist-C'].forEach(t => {
+                    i.value = t;
+                    document.querySelector('#slBtnSend').click();
+                });
+                i.value = '';
+            })()""")
+            page.wait_for_timeout(400)
+            page.click("#slSendInput")
+            page.keyboard.press("ArrowUp")
+            h1 = page.evaluate("document.querySelector('#slSendInput').value")
+            page.keyboard.press("ArrowUp")
+            h2 = page.evaluate("document.querySelector('#slSendInput').value")
+            page.keyboard.press("ArrowDown")
+            h3 = page.evaluate("document.querySelector('#slSendInput').value")
+            assert (h1, h2, h3) == ("hist-C", "hist-B", "hist-C"), \
+                "发送历史 ↑↓ 结果不对：%r" % ((h1, h2, h3),)
+            page.evaluate("document.querySelector('#slSendInput').value = ''")
+            page.click("#slBtnDemo")
+            assert not errs, "V2.2.17 JS 异常: " + "; ".join(errs[:3])
+        check("serial_v2217 低频组折叠/命令面板(Ctrl+K)/空格暂停/发送历史", t_serial_v2217)
 
         # ---------- 8. 404 页 ----------
         def t_404():

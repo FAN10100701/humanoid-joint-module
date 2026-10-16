@@ -1214,6 +1214,46 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   margin: 5px 0 0;
 }
 
+/* ---------------- 命令面板（V2.2.17，AUDIT A-91） ----------------
+   放在「更多设置」弹窗里，所以要能在 640px 宽的面板内自己滚动。 */
+.sl-pal { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+
+.sl-pal-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  border: 1px solid var(--sl-border);
+  border-radius: 6px;
+  background: var(--sl-bg-soft);
+  color: var(--sl-ink);
+}
+
+.sl-pal-input:focus { outline: none; border-color: var(--sl-brand); }
+
+.sl-pal-list {
+  max-height: 46vh;
+  overflow-y: auto;
+  border: 1px solid var(--sl-border);
+  border-radius: 6px;
+  background: var(--sl-bg-soft);
+}
+
+.sl-pal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  color: var(--sl-ink-2);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, .04);
+}
+
+.sl-pal-row:last-child { border-bottom: none; }
+.sl-pal-row.is-on { background: rgba(59, 130, 246, .16); color: var(--sl-ink); }
+.sl-pal-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* 组标题旁的「?」：静态说明收起来之后的入口（V2.2.16）。
    悬停看全文（走全局 data-tip），点击用只读弹窗看全——内容长的说明用弹窗更合适。 */
 .sl-help {
@@ -1231,6 +1271,47 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 }
 
 .sl-help:hover { color: var(--sl-ink); border-color: var(--sl-brand); }
+
+/* ---------------- 低频组默认折叠（V2.2.17，AUDIT A-91） ----------------
+   「手动信号 / 故障注入案例 / 手动调参（一般不用碰）」这些组日常调试用不到，
+   却和常用控件平铺在一起，每次都要滚过它们才找得到要用的东西。
+   折叠**不动 DOM 结构**：只给 .sl-group 加一个类，CSS 隐藏除 h3 以外的子节点——
+   这样 foldStaticHints 依赖的「说明的父节点就是 .sl-group」那条判据依然成立。
+   组标题上的小三角用 CSS 边框画（不用 ▾/▸ 字形：Consolas 之类等宽字体的符号覆盖
+   不可靠，用字形在某些平台会画成豆腐块——画 ✓ 时已经踩过一次）。 */
+.sl-group.is-folded > *:not(h3) { display: none; }
+
+.sl-fold {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-left: 2px;
+  border: 1px solid var(--sl-border);
+  border-radius: 4px;
+  background: var(--sl-bg-soft);
+  color: var(--sl-ink-3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl-fold:hover { color: var(--sl-ink); border-color: var(--sl-brand); }
+
+.sl-fold-mark {
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;    /* 收起时 ▶ */
+  transition: transform .15s;
+}
+
+.sl-group:not(.is-folded) .sl-fold-mark { transform: rotate(90deg); }   /* 展开时 ▼ */
+
+/* 折叠状态下给标题一点提示色，让人知道这里有东西被收起来了 */
+.sl-group.is-folded > h3 { color: var(--sl-ink-3); }
 
 /* V2.2.16：页签从 9 个并到 6 个之后，一个页签可能同时显示两段面板
    （解析+通道 / 显示+图表 / 录制+数据）。同一容器里第 2 段及以后可见的面板

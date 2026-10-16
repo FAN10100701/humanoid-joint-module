@@ -46,6 +46,8 @@
 
     <span class="sl-bar-sep"></span>
 
+    <button class="sl-link" id="slBtnPalette" type="button"
+            data-tip="命令面板：打字搜索全部动作（含 6 个页签），不必记它们在哪一组的第几个。快捷键 Ctrl+K（Mac 上是 ⌘K）">命令面板</button>
     <button class="sl-link" id="slBtnHelp" type="button">帮助</button>
     <button class="sl-link" id="slBtnPrompt" type="button">AI</button>
     <button class="sl-link" id="slBtnTheme" type="button">主题</button>
@@ -177,7 +179,7 @@
             <p class="sl-hint">改参数自动关端口重开。乱码按顺序试：<b>识别编码</b> → <b>扫描波特率</b> → 二进制协议先在「解析」页签把模式切到 <b>HEX</b> 并配好帧结构，扫描才会按帧成功率判分（否则只按「像不像文本」判，HEX 帧永远扫不出来）。</p>
           </div>
 
-          <div class="sl-group">
+          <div class="sl-group" data-fold="1" data-fold-key="signal">
             <h3>🔀 手动信号</h3>
             <div class="sl-row">
               <button class="sl-btn is-sm" id="slBtnDtr" type="button" data-tip="翻转 DTR（数据终端就绪）。很多开发板拉低 DTR 会复位">DTR 翻转</button>
@@ -574,7 +576,7 @@
             </div>
           </div>
 
-          <div class="sl-group">
+          <div class="sl-group" data-fold="1" data-fold-key="fault">
             <h3>🧯 故障注入案例</h3>
             <div class="sl-case-grid is-quiet">
               <button class="sl-case" data-case="corrupt" type="button"
@@ -593,7 +595,7 @@
             <p class="sl-hint">特殊功能，日常调试用不到：注入对应故障后，练习在监视器与波形里识别「失败行标红 / 乱码排查条 / 时域断线」。</p>
           </div>
 
-          <div class="sl-group">
+          <div class="sl-group" data-fold="1" data-fold-key="manual">
             <h3>🎛 手动调参（一般不用碰）</h3>
             <div class="sl-row">
               <label class="sl-chk" data-tip="演示信号从理想正弦换成拟真电机信号：目标阶跃 + 超调振铃 + 稳态纹波 + 测量噪声。更能暴露量程、滤波与极值统计的潜在问题"><input type="checkbox" id="slDemoRealistic">拟真电机信号（阶跃 / 超调 / 纹波 / 噪声）</label>

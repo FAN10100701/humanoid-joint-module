@@ -1156,6 +1156,55 @@ const GBK = (X.codec || SL.codec);
   check("A-90: 默认分割比例仍是 0.62（AUDIT A-75 有意的「监视器为绝对主视觉」，E2E 也钉着它）",
     /monRatio: 0\.62/.test(fs.readFileSync(path.join(JS, "core.js"), "utf8"))
       && /RATIO_DEF = 0\.62/.test(fs.readFileSync(path.join(JS, "views.js"), "utf8")), "");
+
+  /* ---- A-91：低频组折叠 + 命令面板 + 全局快捷键 + 发送历史 ---- */
+  check("A-91: 三个低频组标了 data-fold 且带稳定 key，「常用案例」不许折（那是演示主入口）",
+    (html16.match(/data-fold="1"/g) || []).length === 3
+      && html16.indexOf('data-fold="1" data-fold-key="signal"') > 0
+      && html16.indexOf('data-fold="1" data-fold-key="fault"') > 0
+      && html16.indexOf('data-fold="1" data-fold-key="manual"') > 0
+      && html16.indexOf('data-fold-key="case"') < 0, "");
+  check("A-91: 折叠靠「加类 + CSS 隐藏非 h3 子节点」，不动 DOM 结构（否则 foldStaticHints 的判据会失效）",
+    /\.sl-group\.is-folded > \*:not\(h3\) \{ display: none; \}/.test(css16), "");
+  check("A-91: 折叠开关是真按钮 + aria-expanded（键盘可达），三角用 CSS 边框画而非 ▾ 字形",
+    ui16.indexOf('btn.setAttribute("aria-expanded"') > 0
+      && ui16.indexOf('"sl-fold-mark"') > 0
+      && /\.sl-fold-mark \{[\s\S]{0,220}?border-left: 5px solid currentColor;/.test(css16)
+      && /\.sl-group:not\(\.is-folded\) \.sl-fold-mark \{ transform: rotate\(90deg\); \}/.test(css16), "");
+  check("A-91: 折叠在 foldStaticHints 之前挂（组标题里三角要排在「?」前面）",
+    /wireFoldGroups\(\);[\s\S]{0,400}?foldStaticHints\(\);/.test(ui16), "");
+  check("A-91: 命令面板两个入口（顶栏按钮 + Ctrl+K）都指向同一个 UI.palette",
+    html16.indexOf('id="slBtnPalette"') > 0
+      && ui16.indexOf('palBtn.addEventListener("click", function () { UI.palette(); })') > 0
+      && ui16.indexOf('if (key === "k" && !e.shiftKey && !e.altKey)') > 0, "");
+  check("A-91: 命令面板支持子序列匹配（placeholder 承诺了「拼音首字母如 dc = 导出」，只做子串匹配就是假承诺）",
+    ui16.indexOf("function subseqScore") > 0
+      && ui16.indexOf("return subseqScore(t + \" \" + k, q);") > 0
+      && ui16.indexOf("输入动作名，或拼音首字母") > 0, "");
+  check("A-91: 命令面板按分数排序（最相关的在最上面，同分保持原序）",
+    ui16.indexOf("hits.sort(function (a, b) { return (b.sc - a.sc) || (a.ord - b.ord); });") > 0, "");
+  check("A-91: 命令只触发既有按钮、不复制业务逻辑；元素不存在就不列出",
+    ui16.indexOf("target.click();") > 0
+      && ui16.indexOf("if (document.querySelector(PALETTE_CMDS[i].sel)) { out.push(PALETTE_CMDS[i]); }") > 0
+      && ui16.indexOf("if (target.disabled)") > 0, "");
+  /* 这条是纯文件级的功能锁：命令表里的选择器只要拼错、或哪个 id 被改名，立刻报出来。
+     比「打开浏览器点一遍」便宜得多，而且能覆盖「当前页签不可见因此点不到」的漏网项。 */
+  (function () {
+    const sels = (ui16.match(/sel:\s*"(#[A-Za-z0-9]+)"/g) || [])
+      .map(function (s) { return s.replace(/[\s\S]*"(#[A-Za-z0-9]+)"/, "$1"); });
+    const missing = sels.filter(function (s) { return html16.indexOf('id="' + s.slice(1) + '"') < 0; });
+    check("A-91: 命令面板里每个选择器都能在 index.html 找到对应 id（防拼错 / 防改 id 后静默失效）",
+      sels.length >= 20 && missing.length === 0,
+      "共 " + sels.length + " 条，缺失: " + missing.join(","));
+  })();
+  check("A-91: 发送历史有上限、去重、并且「光标守卫」只在未进历史时生效",
+    /if \(sendHistory\.length > 50\) \{ sendHistory\.length = 50; \}/.test(ui16)
+      && ui16.indexOf("if (sendHistory[i] === text) { sendHistory.splice(i, 1); break; }") > 0
+      && ui16.indexOf("if (histIdx < 0) {") > 0, "");
+  check("A-91: 空格 = 暂停，且焦点在按钮/链接上时不抢（那是「用空格激活它」的默认行为）",
+    ui16.indexOf('if (key === " " && tag !== "BUTTON" && tag !== "A")') > 0, "");
+  check("A-91: 带修饰键的快捷键与既有「无修饰键预设单键」分成两个处理器，注册顺序明确",
+    /onAppShortcut\(e\);[\s\S]{0,80}?onGlobalKey\(e\);/.test(ui16), "");
 })();
 
 /* ========== V2.2.15：桥的省流开关功能性回归（AUDIT A-85①④）==========

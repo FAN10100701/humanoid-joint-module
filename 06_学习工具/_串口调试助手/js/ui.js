@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.17";
+  UI.VERSION = "2.2.18";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -2609,6 +2609,27 @@
       if (e.key === "Enter") {
         e.preventDefault();
         sendFromInput();
+        return;
+      }
+      /* ↑↓ 翻发送过的内容（V2.2.17）。光标位置的守卫只在「还没进历史」时生效：
+         一旦值是从历史取回来的（histIdx >= 0），光标必然在末尾，
+         这时若还要求「必须在开头」，第二次按 ↑ 就翻不动了（实测踩到过）。 */
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        if (!sendHistory.length) { return; }
+        var atStart = (this.selectionStart === 0 && this.selectionEnd === 0);
+        var atEnd = (this.selectionStart === this.value.length && this.selectionEnd === this.value.length);
+        if (histIdx < 0) {
+          if (e.key === "ArrowUp" && !atStart) { return; }
+          if (e.key === "ArrowDown" && !atEnd) { return; }
+        }
+        e.preventDefault();
+        if (e.key === "ArrowUp") {
+          if (histIdx + 1 < sendHistory.length) { histIdx++; }
+        } else {
+          histIdx--;
+        }
+        this.value = (histIdx >= 0) ? sendHistory[histIdx] : "";
+        try { this.setSelectionRange(this.value.length, this.value.length); } catch (e2) {}
       }
     });
     $("slBtnSendAgain").addEventListener("click", function () {
@@ -2630,6 +2651,7 @@
     });
     if (sent) {
       lastSent = text;
+      pushSendHistory(text);      /* V2.2.17：记进发送历史，供 ↑↓ 翻回 */
       input.value = "";
     }
   }
@@ -2651,6 +2673,211 @@
         SL.app.sendPreset(p.id);
         return;
       }
+    }
+    /* V2.2.17：空格 = 暂停 / 继续。放在预设之后——用户给某个预设绑了空格就听用户的。
+       焦点在按钮/链接上时不抢：那种情况下空格是「激活它」的默认行为。 */
+    if (key === " " && tag !== "BUTTON" && tag !== "A") {
+      e.preventDefault();
+      runCommand({ t: "暂停 / 继续", sel: "#slBtnFreeze" });
+    }
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.17（AUDIT A-91）：命令面板 + 全局快捷键 + 发送历史
+     为什么值得做:左侧栏 260px 宽、界面 170+ 个 id、6 个页签——想找「导出 AI 调试包」
+     这种低频但关键的动作,得先想起它落在哪个页签的第几组。命令面板把这层「位置记忆」
+     换成「打字搜索」;快捷键把重复最多的三个动作(暂停/清空/导出)变成一次按键。
+     **命令一律触发既有按钮**(click 既有元素),不复制任何业务逻辑——否则同一个动作
+     会有两份实现,迟早漂移(硬规则 12 的同一条道理)。表里元素不存在的命令直接不列出。
+     ------------------------------------------------------------ */
+  var sendHistory = [];      /* 发送过的内容,最近在前 */
+  var histIdx = -1;          /* ↑↓ 浏览位置:-1 = 正在看/编辑新草稿 */
+
+  function pushSendHistory(text) {
+    if (!text) { return; }
+    for (var i = 0; i < sendHistory.length; i++) {
+      if (sendHistory[i] === text) { sendHistory.splice(i, 1); break; }
+    }
+    sendHistory.unshift(text);
+    if (sendHistory.length > 50) { sendHistory.length = 50; }   /* 有上限,不无限攒 */
+    histIdx = -1;
+  }
+
+  var PALETTE_CMDS = [
+    { t: "连接设备", k: "lianjie connect open port", sel: "#slBtnConnect" },
+    { t: "断开连接", k: "duankai disconnect close", sel: "#slBtnDisconnect" },
+    { t: "AUTO 自适应（扫描波特率 + 识别编码）", k: "auto zishiying zidong", sel: "#slBtnAuto" },
+    { t: "扫描波特率", k: "saomiao botelv baud scan", sel: "#slBtnScanBaud" },
+    { t: "识别编码", k: "shibie bianma encoding", sel: "#slBtnDetectEnc" },
+    { t: "暂停 / 继续刷新（空格）", k: "zanting pause freeze kongge", sel: "#slBtnFreeze" },
+    { t: "开启 / 关闭演示数据（Ctrl+Shift+D）", k: "yanshi demo ceshi", sel: "#slBtnDemo" },
+    { t: "清空数据（通道缓存 + 原始记录）", k: "qingkong shuju clear data", sel: "#slBtnClearChannels" },
+    { t: "清空面板（工作区图表框，可撤销）", k: "qingkong mianban clear panels", sel: "#slBtnClearPanels" },
+    { t: "复制 AI 提示词", k: "fuzhi ai tishi ci prompt copy", sel: "#slBtnAiPrompt" },
+    { t: "导出 AI 调试包（Ctrl+E）", k: "daochu ai tiaoshi bao debug bundle", sel: "#slBtnDebugBundle" },
+    { t: "按当前规则重放缓存", k: "chongfang replay huanchun", sel: "#slBtnReplay" },
+    { t: "全部图表导出 PNG", k: "daochu png tu tubiao", sel: "#slBtnPngAll" },
+    { t: "导出解析 CSV", k: "daochu csv jiexi", sel: "#slBtnExpCsv" },
+    { t: "开始 / 停止录制", k: "luzhi record kaishi", sel: "#slBtnRecord" },
+    { t: "绑定数据文件夹（存给 AI / Excel）", k: "wenjianjia folder bind shuju", sel: "#slBtnBindFolder" },
+    { t: "全屏主区", k: "quanping fullscreen zhuyu", sel: "#slBtnMainFull" },
+    { t: "收起 / 展开主区", k: "shouqi collapse zhuyu", sel: "#slBtnMainCollapse" },
+    { t: "重置分割比例", k: "chongzhi fenge split bill", sel: "#slBtnSplitReset" },
+    { t: "显示 / 收起发送条", k: "fasongtiao sendbar", sel: "#slBtnSendBar" },
+    { t: "收起 / 展开左栏", k: "zuolan sidebar shoulan", sel: "#slBtnSide" },
+    { t: "切换浅色 / 深色主题", k: "zhuti theme qianse shense", sel: "#slBtnTheme" },
+    { t: "设置（字号 / 时间戳 / 方向标记）", k: "shezhi settings zihao", sel: "#slBtnSettings" },
+    { t: "打开使用帮助", k: "bangzhu help shiyong", sel: "#slBtnHelp" },
+    { t: "恢复默认设置", k: "huifu moren restore defaults", sel: "#slBtnRestoreDefaults" }
+  ];
+
+  /* 面板条目 = 静态表(元素存在才列) + 页签栏实时生成(避免两处清单) */
+  function paletteItems() {
+    var out = [];
+    var i;
+    for (i = 0; i < PALETTE_CMDS.length; i++) {
+      if (document.querySelector(PALETTE_CMDS[i].sel)) { out.push(PALETTE_CMDS[i]); }
+    }
+    var tabs = document.querySelectorAll("#slTabs .sl-tab");
+    for (i = 0; i < tabs.length; i++) {
+      (function (tab) {
+        out.push({
+          t: "页签：" + (tab.textContent || "").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, ""),
+          k: "yequan tab " + (tab.getAttribute("data-pane") || ""),
+          el: tab
+        });
+      })(tabs[i]);
+    }
+    return out;
+  }
+
+  function runCommand(c) {
+    var target = c.el || (c.sel ? document.querySelector(c.sel) : null);
+    if (!target) { UI.toast("warn", "「" + c.t + "」这个入口当前不可用"); return false; }
+    if (target.disabled) { UI.toast("warn", "「" + c.t + "」当前不可用（按钮是禁用状态）"); return false; }
+    target.click();
+    return true;
+  }
+
+  /* 子序列匹配：q 的字符按顺序出现在 s 里就算命中——"dc" 能匹配 "daochu"。
+     只做子串匹配的话「拼音首字母」这个承诺就是假的（placeholder 里写着 dc = 导出，
+     而 "dc" 不是 "daochu" 的子串）。越靠前、越紧凑分越高。 */
+  function subseqScore(s, q) {
+    var i = 0, j = 0, first = -1, last = -1, gaps = 0;
+    while (i < s.length && j < q.length) {
+      if (s.charAt(i) === q.charAt(j)) {
+        if (first < 0) { first = i; }
+        if (last >= 0) { gaps += (i - last - 1); }
+        last = i;
+        j++;
+      }
+      i++;
+    }
+    if (j < q.length) { return 0; }              /* 没走完 = 不匹配 */
+    return 100 - Math.min(80, first * 4 + gaps * 2);
+  }
+
+  /* 打分：标题前缀 > 标题包含 > 关键词（含拼音）包含 > 子序列(首字母) > 不匹配 */
+  function palScore(item, q) {
+    if (!q) { return 1; }
+    var t = String(item.t).toLowerCase();
+    var k = String(item.k || "").toLowerCase();
+    if (t.indexOf(q) === 0) { return 400; }
+    if (t.indexOf(q) > 0) { return 300; }
+    if (k.indexOf(q) >= 0) { return 200; }
+    return subseqScore(t + " " + k, q);
+  }
+
+  UI.palette = function () {
+    var items = paletteItems();
+    var wrap = el("div", "sl-pal");
+    var inp = el("input", "sl-pal-input");
+    inp.type = "text";
+    inp.placeholder = "输入动作名，或拼音首字母（如 dc = 导出）…";
+    inp.setAttribute("aria-label", "搜索命令");
+    var list = el("div", "sl-pal-list");
+    wrap.appendChild(inp);
+    wrap.appendChild(list);
+    var shown = [], sel = 0;
+
+    function render() {
+      var q = inp.value.replace(/^\s+|\s+$/g, "").toLowerCase();
+      /* 按分数排序（最相关的在最上面），同分保持表内原序——否则「搜到了但要翻很久」。 */
+      var hits = [];
+      for (var i = 0; i < items.length; i++) {
+        var sc = palScore(items[i], q);
+        if (sc > 0) { hits.push({ it: items[i], sc: sc, ord: i }); }
+      }
+      hits.sort(function (a, b) { return (b.sc - a.sc) || (a.ord - b.ord); });
+      shown = [];
+      for (var h = 0; h < hits.length; h++) { shown.push(hits[h].it); }
+      if (sel >= shown.length) { sel = shown.length ? shown.length - 1 : 0; }
+      if (sel < 0) { sel = 0; }
+      list.textContent = "";
+      if (!shown.length) {
+        list.appendChild(el("p", "sl-hint", "没有匹配的动作。试试「导出」「连接」「页签」这类词。"));
+        return;
+      }
+      for (var j = 0; j < shown.length; j++) {
+        (function (item, idx) {
+          var row = el("div", "sl-pal-row" + (idx === sel ? " is-on" : ""));
+          row.appendChild(el("span", "sl-pal-t", item.t));
+          row.addEventListener("click", function () {
+            UI.closeModal();
+            runCommand(item);
+          });
+          row.addEventListener("mousemove", function () {
+            if (sel === idx) { return; }
+            sel = idx;
+            render();
+          });
+          list.appendChild(row);
+        })(shown[j], j);
+      }
+    }
+
+    inp.addEventListener("input", function () { sel = 0; render(); });
+    inp.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown") { e.preventDefault(); sel = Math.min(sel + 1, shown.length - 1); render(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(sel - 1, 0); render(); }
+      else if (e.key === "Enter") {
+        e.preventDefault();
+        var pick = shown[sel];
+        if (pick) { UI.closeModal(); runCommand(pick); }
+      }
+    });
+
+    render();
+    UI.modal({ title: "命令面板", body: wrap, buttons: [{ label: "关闭" }] });
+    /* 打开就把焦点给输入框（面板的意义就是「打开即打字」） */
+    global.setTimeout(function () { try { inp.focus(); } catch (e2) {} }, 30);
+  };
+
+  /* 带修饰键的那批快捷键。与既有 onGlobalKey（主打「无修饰键的预设单键」）职责分开，
+     互不干扰：这里只认 Ctrl/Cmd 组合。 */
+  function onAppShortcut(e) {
+    if (!e.ctrlKey && !e.metaKey) { return; }
+    var key = (e.key || "").toLowerCase();
+    var t = e.target;
+    var tag = t && t.tagName ? t.tagName.toUpperCase() : "";
+    var typing = (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable));
+    /* Ctrl+K 命令面板：正在输入时也要能唤起（这是它该有的样子） */
+    if (key === "k" && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      if (UI.isModalOpen()) { UI.closeModal(); }
+      UI.palette();
+      return;
+    }
+    if (typing || e.altKey) { return; }   /* 其余快捷键不在输入框里抢键 */
+    if (key === "l" && !e.shiftKey) {
+      e.preventDefault();
+      runCommand({ t: "清空数据", sel: "#slBtnClearChannels" });
+    } else if (key === "e" && !e.shiftKey) {
+      e.preventDefault();
+      runCommand({ t: "导出 AI 调试包", sel: "#slBtnDebugBundle" });
+    } else if (key === "d" && e.shiftKey) {
+      e.preventDefault();
+      runCommand({ t: "演示数据", sel: "#slBtnDemo" });
     }
   }
 
@@ -2867,6 +3094,45 @@
   }
 
   /* 主区工具条：C1 主位形态控制 + C2 快速加图表 */
+  /* ------------------------------------------------------------
+     V2.2.17（AUDIT A-91）：低频组默认折叠
+     「手动信号 / 故障注入案例 / 手动调参（一般不用碰）」日常调试用不到，却和常用控件
+     平铺在一起，每次都要滚过它们才找得到要用的东西。
+     折叠**只加一个类**（CSS 隐藏除 h3 以外的子节点），不动 DOM 结构——这样
+     foldStaticHints 依赖的「说明的父节点就是 .sl-group」那条判据依然成立。
+     开关用真正的 <button>（可聚焦、带 aria-expanded），不用可点的 h3：
+     键盘用户也要能用，而且 h3 里还要塞「?」按钮，再让它可点会互相抢事件。
+     ------------------------------------------------------------ */
+  function wireFoldGroups() {
+    var gs = document.querySelectorAll('.sl-panes .sl-group[data-fold="1"]');
+    for (var i = 0; i < gs.length; i++) {
+      (function (g) {
+        var h3 = g.querySelector ? g.querySelector("h3") : null;
+        if (!h3 || h3.getAttribute("data-fold-wired") === "1") { return; }
+        h3.setAttribute("data-fold-wired", "1");
+        var btn = el("button", "sl-fold");
+        btn.type = "button";
+        btn.title = "展开 / 收起这一组";
+        /* 稳定 id（来自 data-fold-key）：测试要能点到具体的折叠开关，
+           而不是靠「第几个 .sl-fold」这种位置选择器（加一个折叠组就会错位）。 */
+        var fkey = g.getAttribute("data-fold-key");
+        if (fkey) { btn.id = "slFold" + fkey.charAt(0).toUpperCase() + fkey.slice(1); }
+        btn.appendChild(el("span", "sl-fold-mark"));
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var nowFolded = g.className.indexOf("is-folded") >= 0;
+          g.className = nowFolded
+            ? g.className.replace(/\s*is-folded/g, "")
+            : g.className + " is-folded";
+          btn.setAttribute("aria-expanded", nowFolded ? "true" : "false");
+        });
+        h3.appendChild(btn);
+        if (g.className.indexOf("is-folded") < 0) { g.className += " is-folded"; }
+        btn.setAttribute("aria-expanded", "false");
+      })(gs[i]);
+    }
+  }
+
   /* ------------------------------------------------------------
      V2.2.16：零状态引导
      首屏最有价值的那块地方（主区）原本是一片空白，而唯一能让人「马上看到东西」的
@@ -3474,6 +3740,10 @@
     wireDeviceAndShow();
     wireV223();
     initPanelQuick();
+    /* V2.2.17：低频组折叠要在 foldStaticHints **之前**做——这样组标题上的
+       顺序是「折叠三角 → ?」，而不是反过来（三角是组的总开关，该排在前面）。
+       两者互不干扰：折叠只加类，说明折叠只挪节点。 */
+    wireFoldGroups();
     /* V2.2.16：必须在动态列表渲染之前调用——那时组里只有静态说明，
        「父节点是 .sl-group」这条判据才能干净地把动态空态提示排除掉。
        tooltip 走的是 closest("[data-tip]") 事件委托，所以与 initTooltips 的先后无关。 */
@@ -3496,9 +3766,16 @@
     $("slModal").addEventListener("click", function (e) {
       if (e.target === this) { UI.closeModal(); }
     });
+    /* V2.2.17：命令面板的两个入口（顶栏按钮 + Ctrl+K）指向同一个 UI.palette，
+       不各写一份逻辑。 */
+    var palBtn = $("slBtnPalette");
+    if (palBtn) {
+      palBtn.addEventListener("click", function () { UI.palette(); });
+    }
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && UI.isModalOpen()) { UI.closeModal(); return; }
-      onGlobalKey(e);
+      onAppShortcut(e);   /* 带 Ctrl/Cmd 的那批 */
+      onGlobalKey(e);     /* 无修饰键的预设单键 + 空格暂停 */
     });
 
     /* 系统主题变化：仅在「跟随系统」时需要重画 */
