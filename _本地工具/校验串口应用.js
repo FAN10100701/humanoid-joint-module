@@ -2000,3 +2000,65 @@ scanRegression().then(function () {
     /\.sl-qk-more \{ display: none;/.test(sCss)
       && /\.sl-qk-more\.is-open \{ display: inline-flex; \}/.test(sCss), "");
 })();
+/* ============================================================
+   ⑰ 频谱「真断言」（V2.2.32）
+   用户原话：「测试不完善看不太清楚频谱图」「修改测试代码 依旧使用同一时域波形
+   不能容易修改需要的曲线」。此前频谱没有任何数值断言，只看「有图」✗。
+   这里用**可参数化造数**（频率/幅值数组）合成已知信号，断言**峰值频率**落在正确位置。
+   ============================================================ */
+(function () {
+  const FF = require(path.join(JS, "fft.js"));
+  const SR = 1000, N = 2048;
+  /* 可参数化造数：freqs=[3,7] amps=[1,1] → 3Hz 与 7Hz 两个等幅正弦之和 */
+  function tone(freqs, amps, n) {
+    n = n || N;
+    const s = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      let v = 0;
+      for (let k = 0; k < freqs.length; k++) { v += amps[k] * Math.sin(2 * Math.PI * freqs[k] * i / SR); }
+      s[i] = v;
+    }
+    return s;
+  }
+  function peaks(sp, n) {
+    const out = [];
+    for (let i = 1; i < sp.magsDb.length - 1; i++) {
+      if (sp.magsDb[i] >= sp.magsDb[i - 1] && sp.magsDb[i] >= sp.magsDb[i + 1]) {
+        out.push({ f: sp.freqs[i], db: sp.magsDb[i] });
+      }
+    }
+    out.sort(function (a, b) { return b.db - a.db; });
+    return out.slice(0, n);
+  }
+  function spec(freqs, amps, win) { return FF.spectrum(tone(freqs, amps), SR, { maxN: N, window: win || "hann" }); }
+
+  const dual = peaks(spec([3, 7], [1, 1]), 4).slice(0, 2).map(function (p) { return p.f; }).sort(function (a, b) { return a - b; });
+  check("A-115: 频谱能准确定位已知双音（3Hz + 7Hz）—— 断言的是峰值频率，不是「有图」",
+    dual.length === 2 && Math.abs(dual[0] - 3) < 1 && Math.abs(dual[1] - 7) < 1,
+    "检出的两个峰: " + dual.join(" / ") + " Hz（期望 3 / 7）");
+
+  const d2 = peaks(spec([3, 7], [1, 1]), 2);
+  check("A-115: 等幅双音的峰值幅度应彼此接近（差 <3dB）—— 顺带验证相干增益补偿没让幅度失真",
+    d2.length === 2 && Math.abs(d2[0].db - d2[1].db) < 3,
+    "两峰 " + d2.map(function (p) { return p.db.toFixed(2); }).join(" / ") + " dB");
+
+  const one = peaks(spec([5], [1]), 2);
+  check("A-115: 单音时次强「峰」应远低于主峰（>20dB）—— 即加窗后泄漏底足够低，看得清一个峰",
+    one.length >= 1 && (one.length < 2 || (one[0].db - one[1].db) > 20),
+    one.length >= 2 ? ("主峰 " + one[0].db.toFixed(1) + " / 次 " + one[1].db.toFixed(1)) : "只找到一个峰");
+
+  const unequal = peaks(spec([3, 7], [1, 0.1]), 2);
+  check("A-115: 强弱双音（幅值 10:1）弱峰仍能被找到，且幅度差 ≈20dB",
+    unequal.length === 2 && Math.abs(unequal[0].f - 3) < 1 && Math.abs(unequal[1].f - 7) < 1
+      && Math.abs((unequal[0].db - unequal[1].db) - 20) < 4,
+    unequal.map(function (p) { return p.f.toFixed(2) + "Hz@" + p.db.toFixed(1) + "dB"; }).join(" / "));
+
+  /* ⚠ 第一版这里断言「矩形窗的次强局部极大明显高于 Hann」—— 实测两种窗都只有一个局部极大 ✗，
+     因为 5Hz 落在非整 bin 上时谱形是单峰缓降、旁瓣还没冒出局部极大。断言设计错了就该改，
+     不能放宽到没意义 ✗。改用**从实测数据推出的稳健判据**：非整 bin 单音下，
+     Hann 的峰值读数比矩形窗更接近真值（本仓库的实测值 ≈ -0.35dB vs -0.90dB）。 */
+  const rect = peaks(spec([5], [1], "rect"), 1);
+  check("A-115: 非整 bin 单音下，Hann 的峰值读数比矩形窗更接近真值（这正是加窗的收益）",
+    one.length >= 1 && rect.length >= 1 && (one[0].db - rect[0].db) > 0.2,
+    "hann " + (one.length ? one[0].db.toFixed(2) : "?") + "dB vs rect " + (rect.length ? rect[0].db.toFixed(2) : "?") + "dB");
+})();
