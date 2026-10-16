@@ -1632,6 +1632,101 @@ def main():
             assert not errs, "合并同类项 JS 异常: " + "; ".join(errs[:3])
         check("serial_merge 合并同类项（同类型同标题收拢 + 设置不同则不静默丢）", t_serial_merge)
 
+        def t_serial_layout():
+            """V2.2.34：面板头排版不再被裁 + 手动量程边打字边生效 + 类型角标无框。
+
+            三条都来自用户的现场描述：
+              ① 「好多按钮和字被遮挡」—— 实测面板窄到 228px 时面板头内容 382px，
+                 而 `.sl-panel { overflow: hidden }` 把放不下的按钮**整块裁掉**
+                 （触发/复制测量/暂停/收起/✕ 全被切）。修法是允许面板头换行。
+                 断言方式：把网格压窄，然后逐个量「有没有元素的右边界超出面板」。
+              ② 「收纳的 y+ 和 - 那些点击后一点效果也没有」—— 原来只在 change（失焦/回车）
+                 才写配置。断言：只派发 input（不派发 change）就必须已经生效。
+              ③ 「小的时候还有框」—— 类型角标原来有 1px 描边 + 内边距，看着像个「介绍框」。
+                 断言：border 与 padding 都是 0。
+            """
+            errs = make_page_errors_tracker(page)
+            sl_open_clean()
+            page.click("#slTabs .sl-tab[data-pane='test']")
+            page.click("#slBtnDemo")
+            page.wait_for_timeout(1500)
+
+            pid = page.evaluate(
+                "() => SerialLab.views.list().filter(function(p){return p.type==='timeplot';})[0].id")
+            assert pid, "没有时域波形面板"
+
+            # ---------- ③ 类型角标无框 ----------
+            tb = page.evaluate("""() => {
+                var e = document.querySelector('.sl-panel .sl-panel-type');
+                if (!e) { return 'NONE'; }
+                var cs = getComputedStyle(e);
+                return { border: cs.borderTopWidth, pad: cs.paddingLeft, fs: cs.fontSize };
+            }""")
+            if tb != "NONE":
+                assert tb["border"] == "0px", "类型角标还有边框（用户说的那个「框」）: %r" % tb
+                assert tb["pad"] == "0px", "类型角标还有内边距（看着仍像个框）: %r" % tb
+
+            # ---------- ① 窄面板下不得有元素被裁 ----------
+            page.evaluate("""() => {
+                var g = document.getElementById('slGrid');
+                g.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+                g.style.width = '240px';
+            }""")
+            page.wait_for_timeout(700)
+            over = page.evaluate("""(pid) => {
+                var p = document.querySelector('.sl-panel[data-panel-id="' + pid + '"]');
+                if (!p) { return 'NO_PANEL'; }
+                var h = p.querySelector('.sl-panel-head');
+                var pr = p.getBoundingClientRect();
+                var bad = [];
+                Array.prototype.slice.call(h.querySelectorAll('button, span, select, input')).forEach(function (e) {
+                  var r = e.getBoundingClientRect();
+                  if (r.width > 0 && r.right - pr.right > 0.5) {
+                    bad.push((e.textContent || e.tagName).replace(/\\s+/g,' ').trim().slice(0, 10));
+                  }
+                });
+                return { panelW: Math.round(pr.width), headH: Math.round(h.getBoundingClientRect().height), bad: bad };
+            }""", pid)
+            assert over != "NO_PANEL", "面板不见了"
+            assert over["panelW"] < 320, "没能把面板压窄（测试前提不成立）: %r" % over
+            assert not over["bad"], "窄面板下这些元素被裁出面板外（用户说的「被遮挡」）: %r" % over
+            page.evaluate("""() => {
+                var g = document.getElementById('slGrid');
+                g.style.gridTemplateColumns = ''; g.style.width = '';
+            }""")
+            page.wait_for_timeout(400)
+
+            # ---------- ② 手动量程边打字边生效 ----------
+            page.evaluate("(pid) => { var b = document.querySelector('[data-quick-plot=\"' + pid + '\"] .sl-qk-more-btn');"
+                          " if (b) { b.click(); } }", pid)
+            page.wait_for_timeout(200)
+            assert page.locator('[data-quick-plot="%s"] .sl-qk-more-label' % pid).count() == 1, \
+                "手动量程缺组标题（用户不知道那两个空框是干什么的）"
+            assert page.locator('[data-quick-plot="%s"] .sl-qk-auto' % pid).count() == 1, \
+                "手动量程缺一键「自动」按钮"
+            # 只发 input，**不发 change** —— 模拟「打了字但没回车」
+            r = page.evaluate("""(pid) => {
+                var box = document.querySelector('[data-quick-plot="' + pid + '"]');
+                var i = box.querySelector('input[data-qk="ymin"]');
+                i.value = '-500';
+                i.dispatchEvent(new Event('input', { bubbles: true }));
+                var p = SerialLab.views.getPanel(pid);
+                return { yMin: p.axis && p.axis.yMin, stage: SerialLab._ymStage };
+            }""", pid)
+            assert r["yMin"] == -500, "只发 input（没回车）没有生效 —— 这就是「点击后一点效果也没有」: %r" % r
+            assert r["stage"] == 6, "没走实时路径（应为分级计数器 6，实际 %r）" % r["stage"]
+            lab = " ".join(sl_plot_labels(pid, wait_ms=1200))
+            assert "-500" in lab, "手动量程没反映到画布刻度: %r" % lab[:200]
+
+            # 一键「自动」回自动量程
+            page.evaluate("(pid) => { document.querySelector('[data-quick-plot=\"' + pid + '\"] .sl-qk-auto').click(); }", pid)
+            page.wait_for_timeout(400)
+            axis = page.evaluate("(pid) => JSON.parse(JSON.stringify(SerialLab.views.getPanel(pid).axis))", pid)
+            assert axis["yMin"] is None and axis["yMax"] is None, "「自动」没有清空手动量程: %r" % axis
+
+            assert not errs, "排版/交互 JS 异常: " + "; ".join(errs[:3])
+        check("serial_layout 面板头不被裁 + 手动量程边打字边生效 + 角标无框", t_serial_layout)
+
         # ---------- 8. 404 页 ----------
         def t_404():
             errs = make_page_errors_tracker(page)

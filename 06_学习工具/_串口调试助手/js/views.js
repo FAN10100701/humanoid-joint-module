@@ -46,6 +46,7 @@
   var lastDraw = 0;
   var drawInterval = 40;        /* ms，约 25 fps */
   var dragId = null;
+  var mergeTargetEl = null;   /* V2.2.34：拖拽过程中命中的「同类可合并」目标面板 id */
   /* V2.2.23 拖拽手感：跟手基准点 / rAF 合并 / 一帧内复用的兄弟矩形缓存 */
   var dragOrigin = null;
   var rafDrag = 0;
@@ -230,12 +231,13 @@
     head.appendChild(title);
 
     /* V2.2.22：标题与类型同名时**不重复显示**。
-       用户看到的是「时域波形 时域波形」「频域谱 频域谱」并排，而且两者字号/字体/颜色都不同
-       （标题 12.5px 粗体墨色无衬线 vs 类型 11px 细体灰等宽）——看起来就是两种格式。
-       同名时它没有信息量，直接不画；不同名时保留，并把排版统一（见 app.css 的 .sl-panel-type）。 */
+       V2.2.34：加一层**归一化**再比 —— 直接字符串比较在标题带空格/全半角差异时会误判成
+       「不同名」，于是画出一个多余的「时域波形」标签（用户看到的就是那个框，占掉半条，
+       还把后面的按钮挤出面板）。normalize: 去首尾与内部空白 + 转小写。 */
     var r = Plugins.get(panel.type);
     var typeLabel = r ? r.label : panel.type;
-    if (typeLabel !== panel.title) {
+    function normTag(s) { return String(s == null ? "" : s).replace(/\s+/g, "").toLowerCase(); }
+    if (normTag(typeLabel) !== normTag(panel.title)) {
       var type = document.createElement("span");
       type.className = "sl-panel-type";
       type.textContent = typeLabel;
@@ -432,11 +434,32 @@
       if (rafDrag) { global.cancelAnimationFrame(rafDrag); rafDrag = 0; }
       pendingMove = null;
       rectCache = null;
-      if (dragId && els[dragId]) {
-        els[dragId].classList.remove("is-dragging");
-        els[dragId].style.transform = "";   /* 松手后与真实布局位置对齐 */
+      var dragged = dragId;
+      if (dragged && els[dragged]) {
+        els[dragged].classList.remove("is-dragging");
+        els[dragged].style.transform = "";   /* 松手后与真实布局位置对齐 */
       }
+      var targetId = mergeTargetEl;
+      setMergeTarget(null);
       dragId = null;
+      /* V2.2.34：松手时若停在同类面板的头部 → 合并（拖拽合并），否则按老路子提交排序 */
+      if (targetId && dragged && targetId !== dragged) {
+        var kept = V.getPanel(targetId);
+        var victim = V.getPanel(dragged);
+        if (kept && victim && canMergePanels(kept, victim)) {
+          /* 同类的都并进来：目标 + 被拖的 + 其他与目标完全同类的块 */
+          var group = [];
+          for (var gi = 0; gi < panels.length; gi++) {
+            if (panels[gi].id !== targetId && canMergePanels(kept, panels[gi])) { group.push(panels[gi]); }
+          }
+          dropPanels(group);
+          V.redraw();
+          core.emit("panels:changed", { reason: "merge-drag" });
+          /* 跨模块只说结果，弹提示归 ui.js（业务模块不碰 DOM） */
+          core.emit("panel:merged", { keep: targetId, merged: group.length });
+          return;
+        }
+      }
       commitOrder();
     };
     document.addEventListener("pointermove", move);
@@ -477,6 +500,35 @@
     return out;
   }
 
+  /* V2.2.34：拖到「同类面板的头部」= 合并到它（用户要求「可不可以拖动到一块就合并」）。
+     为什么限定"头部"而不是整块面板：
+       ① 拖拽本身已经承担重排（整块都当合并区的话，重排就没法用了）；
+       ② 头部是每块面板最显眼的"身份条"，把 A 拖到 B 的标题上，语义就是"并进这块"。
+     实测初版把整块都当合并区，于是任何拖动都会合并、再也排不了序 ✗ —— 所以必须有明确的分区。 */
+  function findMergeTarget(host, el, e) {
+    var p = V.getPanel(dragId);
+    if (!p) { return null; }
+    for (var i = 0; i < host.children.length; i++) {
+      var n = host.children[i];
+      if (n === el || !n.className || n.className.indexOf("sl-panel") < 0) { continue; }
+      var r = n.getBoundingClientRect();
+      var headHit = e.clientY >= r.top - 4 && e.clientY <= r.top + 44;
+      var inX = e.clientX >= r.left - 12 && e.clientX <= r.right + 12;
+      if (!headHit || !inX) { continue; }
+      var q = V.getPanel(n.getAttribute("data-panel-id"));
+      if (canMergePanels(p, q)) { return n; }
+    }
+    return null;
+  }
+
+  function setMergeTarget(node) {
+    if (mergeTargetEl && mergeTargetEl !== node && els[mergeTargetEl]) {
+      els[mergeTargetEl].classList.remove("is-merge-target");
+    }
+    mergeTargetEl = node ? node.getAttribute("data-panel-id") : null;
+    if (node) { node.classList.add("is-merge-target"); }
+  }
+
   function onDragMove(e) {
     if (!dragId) { return; }
     var el = els[dragId];
@@ -484,6 +536,11 @@
     if (!el || !p) { return; }
     var host = hostOf(p);
     if (!host) { return; }
+
+    /* 先判「合并到同类面板」——命中就不再参与重排（否则画面会一边高亮合并、一边插来插去） */
+    var mtarget = findMergeTarget(host, el, e);
+    setMergeTarget(mtarget);
+    if (mtarget) { return; }
 
     var kids = kidRects(host, el);
     if (!kids.length) { return; }
@@ -863,6 +920,12 @@
       opts: p.opts || null, colors: p.colors || null, span: p.span || 1
     });
   }
+  /* 「这两块能不能合并」的唯一判据 —— 拖拽合并与一键「并同类」共用同一份，
+     否则两条路径会慢慢漂成两套口径（本项目反复踩过的坑）。 */
+  function canMergePanels(a, b) {
+    if (!a || !b || a === b || a.id === b.id) { return false; }
+    return panelIdentity(a) === panelIdentity(b) && panelDisplayKey(a) === panelDisplayKey(b);
+  }
 
   V.mergeDuplicates = function () {
     var keep = {}, drop = [], skipped = [];
@@ -873,19 +936,24 @@
       if (panelDisplayKey(keep[idn]) === panelDisplayKey(p)) { drop.push(p); }
       else { skipped.push(p); }
     }
-    for (var j = 0; j < drop.length; j++) {
-      /* 顺手清掉该面板的临时状态表项，避免表越用越大 */
-      delete viewClear[drop[j].id];
-      delete viewChanOverride[drop[j].id];
-      delete viewTrigger[drop[j].id];
-      V.removePanel(drop[j].id);      /* removePanel 内部会 save + redraw */
-    }
+    dropPanels(drop);
     if (drop.length) {
       V.redraw();
       core.emit("panels:changed", { reason: "merge" });
     }
     return { merged: drop.length, skipped: skipped.length, left: panels.length };
   };
+
+  /* 移除若干面板（含临时状态表清理）——一键「并同类」与拖拽合并共用 */
+  function dropPanels(list) {
+    for (var j = 0; j < list.length; j++) {
+      /* 顺手清掉该面板的临时状态表项，避免表越用越大 */
+      delete viewClear[list[j].id];
+      delete viewChanOverride[list[j].id];
+      delete viewTrigger[list[j].id];
+      V.removePanel(list[j].id);      /* removePanel 内部会 save + redraw */
+    }
+  }
 
   /* 撤销清空：按快照原样重建（id/窗口/量程/配色都保留），返回恢复的面板数 */
   V.undoClearPanels = function () {

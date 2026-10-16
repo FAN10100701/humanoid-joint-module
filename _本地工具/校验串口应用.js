@@ -1745,16 +1745,34 @@ scanRegression().then(function () {
       && !/markZeroStateServed\(\);\s*\n\s*\}\s*\n\s*z\.hidden/.test(sUi), "");
 
   check("A-104: 面板头「标题 vs 类型标签」同名时不重复画、字体族与标题统一",
-    /var r = Plugins\.get\(panel\.type\);[\s\S]{0,80}?var typeLabel = r \? r\.label : panel\.type;[\s\S]{0,80}?if \(typeLabel !== panel\.title\) \{/.test(sViews)
+    /var r = Plugins\.get\(panel\.type\);[\s\S]{0,120}?var typeLabel = r \? r\.label : panel\.type;/.test(sViews)
+      && /function normTag\(s\)/.test(sViews)
+      && /if \(normTag\(typeLabel\) !== normTag\(panel\.title\)\) \{/.test(sViews)
       && /\.sl-panel-type \{[\s\S]{0,700}?font-family: inherit;/.test(sCss), "");
+
+  /* V2.2.34：那个「框」必须消失。
+     用户原话：「时域波形左上角那个文字介绍框内容就是时域波形四个字 占半边…小的时候还有框」
+     「频域谱小框的时候左上角就是正常的格式」—— 他就是把带框的类型角标当成了「介绍框」✗。
+     两处一起改：① CSS 去掉 border/padding（不再像个框）；② 比较前先**归一化**
+     （去空白 + 转小写），避免「时域波形」与「时域波形 」被判成不同名而多画一个标签。 */
+  check("A-120: 类型角标不再有边框（那个「介绍框」去掉），只留淡灰小字",
+    /\.sl-panel-type \{[\s\S]{0,900}?border: 0;/.test(sCss)
+      && /\.sl-panel-type \{[\s\S]{0,900}?padding: 0;/.test(sCss), "");
+
+  check("A-120: 类型角标比标题小一档（同号反而分不出主次，V2.2.33 试过同号）",
+    /\.sl-panel-type \{[\s\S]{0,900}?font-size: var\(--sl-fs-sub\);/.test(sCss)
+      && /\.sl-panel-title \{[\s\S]{0,120}?font-size: var\(--sl-panel-title-size\);/.test(sCss), "");
 
   /* V2.2.33：标题与类型角标必须**同源字号**。
      用户反复反馈「角标字号跟其他模块不一致，展开后又一致了」—— 根因是两者各写一个数
      （V2.2.22 只统一了字体族、字号仍是 12.5 vs 11.5）。这条直接盯「同一个变量」。 */
-  check("A-120: 面板标题与类型角标共用同一个字号变量（不再各写一个数）",
+  /* V2.2.34：**取消** V2.2.33 的「标题与角标同号」。
+     实测同号反而分不出主次，而且那个带框的同号标签在窄面板里很占地方；
+     现在角标只是标题旁边一行淡灰小字（无框、小一档）。这条盯「两者仍然分档」。 */
+  check("A-120: 标题档与角标档各自单源（标题 --sl-panel-title-size / 角标 --sl-fs-sub）",
     /--sl-panel-title-size:\s*12\.5px;/.test(sCss)
       && /\.sl-panel-title \{[\s\S]{0,120}?font-size: var\(--sl-panel-title-size\);/.test(sCss)
-      && /\.sl-panel-type \{[\s\S]{0,700}?font-size: var\(--sl-panel-title-size\);/.test(sCss), "");
+      && /\.sl-panel-type \{[\s\S]{0,900}?font-size: var\(--sl-fs-sub\);/.test(sCss), "");
 
   /* ------------------------------------------------------------------
      V2.2.33：字号梯度总闸门 —— 这是本轮真正值钱的一条。
@@ -1848,7 +1866,9 @@ scanRegression().then(function () {
       && /if \(rectCache\) \{ return rectCache; \}/.test(sViews), "");
   check("A-106: 被拖面板用 transform 跟手（不碰 left/top，避免整页重排），松手清零",
     /el\.style\.transform = "translate\(" \+ dx \+ "px," \+ dy \+ "px\)";/.test(sViews)
-      && /els\[dragId\]\.style\.transform = "";/.test(sViews)
+      /* V2.2.34：松手分支里先把 id 存进 dragged 再复位 transform（拖拽合并要判落点），
+         所以这里盯「变量持有的那个元素」而不是写死的 els[dragId] —— 两处都要能匹配。 */
+      && (/(els\[dragId\]|els\[dragged\])\.style\.transform = "";/.test(sViews))
       && /\.sl-panel\.is-dragging \{[\s\S]{0,220}?will-change: transform;/.test(sCss), "");
   check("A-106: 重排后重置基准与位移（transform 相对当前位置，不重置会「跳一下又飘回去」）",
     /if \(moved\) \{[\s\S]{0,300}?el\.style\.transform = "";[\s\S]{0,140}?dragOrigin = \{ x: e\.clientX, y: e\.clientY \};/.test(sViews), "");
@@ -2048,8 +2068,28 @@ scanRegression().then(function () {
       && sUi.indexOf('data-qk="ymin"') > 0, "");
   check("A-114: 「⋯」开关委托到 host（host 不被 innerHTML 重建，只绑一次）+ 守卫防重复绑定",
     sUi.indexOf("host.__qkMoreBound") > 0
-      && sUi.indexOf('e.target.closest(".sl-qk-more-btn")') > 0
+      && sUi.indexOf('tg.closest(".sl-qk-more-btn")') > 0
       && sUi.indexOf('box.classList.toggle("is-open")') > 0, "");
+
+  /* V2.2.34：用户说手动量程「点击后一点效果也没有」。
+     实测两条原因：① 原来只在 change（失焦/回车）才写配置，填了数字没回车就毫无反应；
+     ② 两个空框没有组标题，用户不知道要输入什么。
+     修法：补 input 实时路径（**不走 updatePanel**，否则重建面板会打断正在输入的光标）+
+     组标题「手动量程」+ 一键「自动」回自动量程。 */
+  check("A-114: 手动量程有 input 实时路径（边打字边生效，不必回车）",
+    sUi.indexOf('host.addEventListener("input"') > 0
+      && /if \(k !== "ymin" && k !== "ymax"\) \{ return; \}/.test(sUi)
+      && sUi.indexOf("SL._ymStage = 6;") > 0, "");
+
+  check("A-114: input 实时路径走 renderPanelOnce，**不得**走 updatePanel（会重建正在输入的 input）",
+    /host\.addEventListener\("input"[\s\S]{0,900}?SL\.views\.renderPanelOnce\(pn\.id\);/.test(sUi)
+      && !/host\.addEventListener\("input"[\s\S]{0,900}?updatePanel/.test(sUi), "");
+
+  check("A-114: 手动量程有组标题与一键「自动」回自动量程（不再只靠 placeholder 自述）",
+    sUi.indexOf('class="sl-qk-more-label">手动量程<') > 0
+      && sUi.indexOf('data-qk="yauto"') > 0
+      && sUi.indexOf('classList.toggle("is-open")') > 0
+      && sUi.indexOf('tb.setAttribute("aria-expanded"') > 0, "");
   check("A-114: 收起态用 CSS 控制（不删元素——删了会连带毁掉已绑定的接线）",
     /\.sl-qk-more \{ display: none;/.test(sCss)
       && /\.sl-qk-more\.is-open \{ display: inline-flex; \}/.test(sCss), "");
@@ -2154,6 +2194,10 @@ scanRegression().then(function () {
   const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
   const sHtml = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").replace(/\r\n/g, "\n");
   const codeViews = sViews.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  /* ⚠ 这个 IIFE 里原本没有读 CSS —— A-121 要用到 .is-merge-target，得自己加载一次。
+     不加载就直接用 sCss 会抛 ReferenceError，而 check() 只捕获用例内部的异常，
+     整个脚本会**在跑完一半断言后崩掉**（exit≠0 但 FAIL=0，最难发现的一种红）。 */
+  const sCss = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8").replace(/\r\n/g, "\n");
 
   check("A-119: 工具条有「并同类」按钮，且命令面板能点到它（否则功能在、用户够不着）",
     sHtml.indexOf('id="slBtnMergePanels"') > 0
@@ -2166,8 +2210,33 @@ scanRegression().then(function () {
       && codeViews.indexOf('String(p.type || "") + "\\u0000" + String(p.title || "")') > 0, "");
 
   check("A-119: 合并是「移除重复项」而不是搬 DOM（搬 canvas 会把它重置成 0×0，A-75 的坑）",
-    /V\.mergeDuplicates = function[\s\S]{0,2000}?V\.removePanel\(drop\[j\]\.id\)/.test(codeViews)
-      && !/appendChild/.test(codeViews.slice(codeViews.indexOf("V.mergeDuplicates"), codeViews.indexOf("V.mergeDuplicates") + 2200)), "");
+    /V\.mergeDuplicates = function[\s\S]{0,2000}?dropPanels\(drop\)/.test(codeViews)
+      && /function dropPanels\(list\)[\s\S]{0,600}?V\.removePanel\(list\[j\]\.id\)/.test(codeViews)
+      && !/appendChild/.test(codeViews.slice(codeViews.indexOf("V.mergeDuplicates"), codeViews.indexOf("V.mergeDuplicates") + 2400)), "");
+
+  /* V2.2.34：拖拽合并（用户要求「可不可以拖动到一块就合并」）。
+     两条关键约束必须钉住，否则会退化：
+       ① 合并区**只限同类面板的头部** —— 整块都当合并区的话，任何拖动都会合并、重排彻底失效；
+       ② 判据与一键「并同类」**共用同一个函数**（canMergePanels），不能各写一套口径。 */
+  check("A-121: 拖到同类面板头部才算合并落点（整块当合并区会毁掉重排）",
+    /function findMergeTarget\(host, el, e\)/.test(codeViews)
+      && /var headHit = e\.clientY >= r\.top - 4 && e\.clientY <= r\.top \+ 44;/.test(codeViews)
+      && /if \(canMergePanels\(p, q\)\) \{ return n; \}/.test(codeViews), "");
+
+  check("A-121: 拖拽合并与一键「并同类」共用同一个同类判据（不各写一套口径）",
+    /function canMergePanels\(a, b\)/.test(codeViews)
+      && /panelIdentity\(a\) === panelIdentity\(b\) && panelDisplayKey\(a\) === panelDisplayKey\(b\)/.test(codeViews)
+      && /if \(kept && victim && canMergePanels\(kept, victim\)\)/.test(codeViews), "");
+
+  check("A-121: 命中合并落点时有可见反馈（高亮 + 「松开即合并到这块」），且松手才执行",
+    /function setMergeTarget\(node\)/.test(codeViews)
+      && /core\.emit\("panel:merged", \{ keep: targetId, merged: group\.length \}\);/.test(codeViews)
+      && /\.sl-panel\.is-merge-target \{[\s\S]{0,200}?outline: 2px solid var\(--sl-brand\);/.test(sCss)
+      && sCss.indexOf("松开即合并到这块") > 0, "");
+
+  check("A-121: 落点提示由 ui.js 负责（业务模块不碰 DOM），且不与重排同时进行",
+    sUi.indexOf('core.on("panel:merged"') > 0
+      && /var mtarget = findMergeTarget\(host, el, e\);[\s\S]{0,120}?if \(mtarget\) \{ return; \}/.test(codeViews), "");
 
   check("A-119: 显示设置不一致的宁可跳过并报告，不静默丢配置（window/axis/expr/opts 都比）",
     codeViews.indexOf("function panelDisplayKey(p)") > 0

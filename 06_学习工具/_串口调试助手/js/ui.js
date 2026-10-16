@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.33";
+  UI.VERSION = "2.2.34";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1047,21 +1047,69 @@
       }
       host.innerHTML = '<select class="sl-qk-enc" data-qk="win" title="横轴窗口：显示最近多少个采样点——太小抖动、太密看不清">' +
         optHtml + "</select>" +
-        '<button type="button" class="sl-iconbtn sl-qk-more-btn" title="更多：手动量程（Y↓ 下限 / Y↑ 上限）——留空即自动量程">⋯</button>' +
+        '<button type="button" class="sl-iconbtn sl-qk-more-btn" aria-expanded="false"' +
+        ' title="手动量程：自己定纵轴上下限（留空 = 自动量程）。边打字边生效">⋯</button>' +
         '<span class="sl-qk-more">' +
-        '<input class="sl-qk-num" data-qk="ymin" type="number" step="any" placeholder="Y↓" title="纵轴下限（留空 = 自动量程）" value="' +
+        /* V2.2.34：给「⋯」里的这组控件一个**组标题**。原来两个输入框只靠 placeholder「Y↓ / Y↑」
+           自述，用户点开看到两个空框不知道要干什么（「点击后一点效果也没有」的一部分其实就是
+           「不知道要输入什么」）。末尾那个「自动」按钮负责一键回自动量程。 */
+        '<span class="sl-qk-more-label">手动量程</span>' +
+        '<input class="sl-qk-num" data-qk="ymin" type="number" step="any" placeholder="Y↓"' +
+        ' aria-label="纵轴下限" title="纵轴下限：自己定，波形不再自动缩放（留空 = 自动量程）。边打字边生效" value="' +
           (typeof axis.yMin === "number" ? axis.yMin : "") + '">' +
-        '<input class="sl-qk-num" data-qk="ymax" type="number" step="any" placeholder="Y↑" title="纵轴上限（留空 = 自动量程）" value="' +
-          (typeof axis.yMax === "number" ? axis.yMax : "") + '">';
+        '<input class="sl-qk-num" data-qk="ymax" type="number" step="any" placeholder="Y↑"' +
+        ' aria-label="纵轴上限" title="纵轴上限：自己定，波形不再自动缩放（留空 = 自动量程）。边打字边生效" value="' +
+          (typeof axis.yMax === "number" ? axis.yMax : "") + '">' +
+        '<button type="button" class="sl-btn is-sm sl-qk-auto" data-qk="yauto"' +
+        ' title="清空上下限，回到自动量程">自动</button>' +
+        '</span>';
       /* V2.2.31：快捷条收窄 —— 低频控件（手动量程 Y↓/Y↑）收进「⋯」，高频的（窗口下拉）留明面。
          开关委托到 host：host 不会被 innerHTML 重建，只绑一次；__qkMoreBound 守卫防重复绑定。 */
       if (!host.__qkMoreBound) {
         host.__qkMoreBound = true;
         host.addEventListener("click", function (e) {
-          var tb = (e.target && e.target.closest) ? e.target.closest(".sl-qk-more-btn") : null;
+          var tg = e.target;
+          if (!tg || !tg.closest) { return; }
+          var auto = tg.closest(".sl-qk-auto");
+          if (auto) {
+            /* V2.2.34：「自动」= 清空上下限回自动量程（原先只能靠把两个输入框分别删空） */
+            var apid = host.getAttribute("data-quick-plot");
+            var apn = apid ? SL.views.getPanel(apid) : null;
+            if (apn) {
+              SL._ymStage = 7;
+              SL.views.updatePanel(apid, { axis: { yMin: null, yMax: null, yAuto: true } });
+              core.emit("toast", { level: "info", msg: "纵轴已回到自动量程" });
+            }
+            return;
+          }
+          var tb = tg.closest(".sl-qk-more-btn");
           if (!tb) { return; }
           var box = host.querySelector(".sl-qk-more");
-          if (box) { box.classList.toggle("is-open"); }
+          if (box) {
+            var open = box.classList.toggle("is-open");
+            tb.setAttribute("aria-expanded", open ? "true" : "false");
+          }
+        });
+        /* V2.2.34：手动量程**边打边生效**（input 事件）。
+           为什么必须补：原来只在 change（失焦/回车）时写配置，用户点开「⋯」填了数字却没按
+           回车，画面纹丝不动 —— 主观感受就是「点击后一点效果也没有」✗。
+           这里刻意**不走 updatePanel**（它会重建面板 = 连带重建正在输入的这个 input，
+           光标会丢、打字会断），而是原地改渲染器持有的那个面板对象（与 fftw/clearAt 同一套做法），
+           再 redraw 一帧。change 分支仍走 updatePanel，负责落盘与描述符校验。 */
+        host.addEventListener("input", function (e) {
+          var t = e.target;
+          if (!t || !t.getAttribute) { return; }
+          var k = t.getAttribute("data-qk");
+          if (k !== "ymin" && k !== "ymax") { return; }
+          var pid = host.getAttribute("data-quick-plot");
+          var pn = pid ? SL.views.getPanel(pid) : null;
+          if (!pn) { return; }
+          var v = parseFloat(t.value);
+          var akey = QK_AXIS_KEY[k];
+          pn.axis = pn.axis || {};
+          if (isFinite(v)) { pn.axis[akey] = v; } else { pn.axis[akey] = null; }
+          SL._ymStage = 6;                       /* 分级计数器：实时路径已跑（1→5 是 change 路径） */
+          SL.views.renderPanelOnce(pn.id);
         });
       }
       return;
@@ -3818,6 +3866,12 @@
       } else {
         UI.toast("info", "没有发现同类的图表框（同类 = 同类型且同标题）");
       }
+    });
+
+    /* V2.2.34：拖拽合并完成 → 由 views 发事件、这里只负责提示（业务模块不碰 DOM） */
+    core.on("panel:merged", function (p) {
+      renderPanelList();
+      UI.toast("ok", "已把 " + ((p && p.merged) || 0) + " 块同类图表框合并到这块（拖拽合并）");
     });
 
     $("slBtnClearPanels").addEventListener("click", function () {

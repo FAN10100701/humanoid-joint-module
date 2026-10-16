@@ -851,6 +851,12 @@ input[type="number"] { width: 78px; }
   flex-shrink: 0;
   cursor: move;                 /* 拖拽排序 */
   background: transparent;
+  /* V2.2.34：**必须允许换行**。实测把网格压窄后，面板头内容 382px 塞进 228px 的面板，
+     而 `.sl-panel { overflow: hidden }` 会把放不下的按钮**整块裁掉**（触发/复制测量/暂停/
+     收起/✕ 全部被切）—— 用户原话「好多按钮和字被遮挡」就是这么来的 ✗。
+     nowrap 时 flex 只会压缩可压缩项、不会让固定宽的按钮换行，所以这里必须 wrap。 */
+  flex-wrap: wrap;
+  row-gap: 3px;
 }
 
 .sl-panel-title {
@@ -865,20 +871,18 @@ input[type="number"] { width: 78px; }
 }
 
 .sl-panel-type {
-  /* V2.2.33：与面板标题**同字号**（两者都用 --sl-panel-title-size），只保留「灰 + 描边」这层从属。
-     演进史（用户反复反馈「角标字号跟其他模块不一致」）：
-       V2.2.22 之前 = 11px + Consolas 等宽（标题 12.5px 无衬线）→ 并排像两种格式 ✗
-       V2.2.22     = 11.5px + inherit（字体族统一了，但**仍比标题小一号**）→ 还是看得出来一大一小 ✗
-       V2.2.33     = 与标题同源字号 ✓
-     另外 views.js 在「类型名 == 标题」时干脆不画它（默认面板正是这种情况）——
-     于是**同一个应用里有的面板有这个角标、有的没有**，字号只要不一致就显得杂乱。 */
-  font-size: var(--sl-panel-title-size);
+  /* V2.2.34：**去掉描边**，只留「灰 + 略小」这层从属关系。
+     用户原话：「时域波形左上角那个文字介绍框内容就是时域波形四个字 占半边…小的时候还有框」
+     「频域谱小框的时候左上角就是正常的格式」—— 那个**框**就是这里的 border，它把
+     一个本来只是"类型说明"的标签做成了看起来很重的胶囊，还额外吃掉横向空间（窄面板下
+     正是它把后面的按钮挤出去）。现在没有框了，标题旁边只是一行淡灰小字。
+     字号也回到「比标题小一档」（V2.2.33 曾与标题同号，实测同号反而分不出主次）。 */
+  font-size: var(--sl-fs-sub);
   color: var(--sl-ink-3);
   font-family: inherit;
   flex-shrink: 0;
-  padding: 0 4px;
-  border: 1px solid var(--sl-border);
-  border-radius: 4px;
+  padding: 0;
+  border: 0;
 }
 
 /* 文本监视器面板头快捷工具条（时间戳 / HEX / 编码）——紧凑内联控件 */
@@ -887,6 +891,7 @@ input[type="number"] { width: 78px; }
   align-items: center;
   gap: 6px;
   margin-left: 4px;
+  flex-wrap: wrap;      /* V2.2.34：与面板头一起换行，窄面板下不把后面的按钮挤出面板 */
   flex-shrink: 0;
 }
 .sl-panel-quick .sl-qk {
@@ -1868,8 +1873,12 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 .sl-panel-head { touch-action: none; }
 /* ---------------- V2.2.31：快捷条的「⋯」 ---------------- */
 /* 低频控件（手动量程 Y↓/Y↑）默认收起，点开才占位置 —— 缓解窄面板下控件挤成一团 */
-.sl-qk-more { display: none; align-items: center; gap: var(--sl-gap-sm); }
+.sl-qk-more { display: none; align-items: center; gap: var(--sl-gap-sm); flex-wrap: wrap; }
 .sl-qk-more.is-open { display: inline-flex; }
+/* V2.2.34：给「⋯」里那组手动量程一个组标题 + 一键「自动」。
+   原来两个空框只靠 placeholder 自述，用户不知道要输入什么（「点击后一点效果也没有」的成因之一）。 */
+.sl-qk-more-label { font-size: var(--sl-fs-weak); color: var(--sl-ink-3); white-space: nowrap; }
+.sl-qk-more .sl-qk-auto { padding: 1px 6px; }
 .sl-qk-more-btn { font-weight: 600; letter-spacing: 1px; }
 /* ---------------- V2.2.32：面板头的「⋯」 ---------------- */
 /* 与快捷条同一个思路、同一个视觉：低频的三个图标钮（⇱ 移到主位 / ⇔ 加宽 / ⤓ 导出 PNG）
@@ -1892,3 +1901,19 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   box-shadow: 0 6px 18px rgba(15, 23, 42, .18);
 }
 .sl-pn-more.is-open { display: inline-flex; }
+/* V2.2.34：拖拽合并的落点反馈。拖到「同类面板的头部」时高亮那一块的标题条 ——
+   没有反馈的话用户根本不知道该往哪放（这正是「拖动很奇怪、体验不好」的一部分）。 */
+.sl-panel.is-merge-target {
+  outline: 2px solid var(--sl-brand);
+  outline-offset: -2px;
+}
+.sl-panel.is-merge-target .sl-panel-head {
+  background: color-mix(in srgb, var(--sl-brand) 16%, transparent);
+}
+.sl-panel.is-merge-target .sl-panel-head::after {
+  content: "松开即合并到这块";
+  margin-left: auto;
+  font-size: var(--sl-fs-weak);
+  color: var(--sl-brand);
+  white-space: nowrap;
+}
