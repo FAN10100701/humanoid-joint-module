@@ -1299,8 +1299,8 @@ const GBK = (X.codec || SL.codec);
       && html16.indexOf("连接设备") > 0 && html16.indexOf("没硬件也能看") > 0
       && html16.indexOf("数据一到就自动成形") > 0, "");
   check("A-90: 零状态判据用「收到过字节」而不是「有没有通道」（通道表持久化，否则永不出现）",
-    /function refreshZeroState\(\)[\s\S]{0,420}?T\.stats\.rx > 0/.test(ui16)
-      && /refreshZeroState\(\)[\s\S]{0,200}?core\.state\.demo/.test(ui16), "");
+    /function refreshZeroState\(\)[\s\S]{0,1600}?T\.stats\.rx > 0/.test(ui16)
+      && /refreshZeroState\(\)[\s\S]{0,1600}?core\.state\.demo/.test(ui16), "");
   check("A-90: 零状态按钮复用既有入口（不复制一份演示逻辑）且已挂进 boot",
     ui16.indexOf('var b = $("slBtnDemo");') > 0
       && ui16.indexOf("wireZeroState();") > 0
@@ -1716,3 +1716,57 @@ scanRegression().then(function () {
   console.log("FAIL  扫描回归自身抛异常: " + ((e && e.stack) || e));
   process.exit(1);
 });
+
+/* ============================================================
+   ⑯-d 就近操作：首屏引导只出现一次 / 面板头标签一致 / 每面板独立勾选（V2.2.22）
+   用户原话：「教学例程弹框每次进去都得看，好麻烦」「时域波形的勾选我无法在时域波形
+   那个界面取消勾选，不够便利」「通道里的勾选算汇总冗余，拆开了容易怎么融合呢，
+   有没有手动的按钮，自动拆不准确」。
+   ⚠ 这些变量必须在本 IIFE 内自己读：上面那个 IIFE 里的同名 const 是函数作用域的，
+     引用它们会让整个脚本 ReferenceError 崩掉（不是报某条断言失败，我第一次就踩了）。
+   ============================================================ */
+(function () {
+  const appHtml = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const sCss = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
+
+  check("A-103: 首屏引导有「不再提示」，点了就落盘（之后永远不再出现）",
+    appHtml.indexOf('id="slZeroNever"') > 0
+      && sUi.indexOf("function markZeroStateServed()") > 0
+      && /uicfg\.zeroDismissed = true;[\s\S]{0,80}?core\.saveConfig\(\);/.test(sUi)
+      && /if \(uicfg\.zeroDismissed\) \{ z\.hidden = true; return; \}/.test(sUi)
+      && /never\.addEventListener\("click"[\s\S]{0,160}?markZeroStateServed\(\);/.test(sUi), "");
+  /* 「隐藏」与「永久关闭」必须是两件事：隐藏保持 V2.2.16 原逻辑（收过字节/演示/连上设备），
+     永久关闭只由显式按钮触发。曾经想做「用过就自动关闭」，两版都与「新用户必须看到引导」冲突。 */
+  check("A-103: 视图隐藏逻辑保持原样（收过字节 / 演示 / 连上设备），不掺入持久判据",
+    /z\.hidden = !!\(hasData \|\| core\.state\.demo \|\| core\.state\.conn === "open"\);/.test(sUi)
+      && !/markZeroStateServed\(\);\s*\n\s*\}\s*\n\s*z\.hidden/.test(sUi), "");
+
+  check("A-104: 面板头「标题 vs 类型标签」同名时不重复画、字体族与标题统一",
+    /var r = Plugins\.get\(panel\.type\);[\s\S]{0,80}?var typeLabel = r \? r\.label : panel\.type;[\s\S]{0,80}?if \(typeLabel !== panel\.title\) \{/.test(sViews)
+      && /\.sl-panel-type \{[\s\S]{0,420}?font-family: inherit;/.test(sCss), "");
+
+  check("A-104: 每面板勾选走「覆盖表」而不是「快照」—— 新出现的通道默认仍然会出现",
+    /var on = \(panel\.opts && panel\.opts\.chanOn\) \|\| null;/.test(sPlug)
+      && /if \(on && Object\.prototype\.hasOwnProperty\.call\(on, c\.key\)\) \{ return !!on\[c\.key\]; \}/.test(sPlug)
+      && /return c\.visible !== false;/.test(sPlug), "");
+
+  check("A-104: 波形面板内就地可点图例 + 两个**手动**入口（应用给其他图表 / 恢复统一）",
+    sViews.indexOf('legend.className = "sl-legend";') > 0
+      && sViews.indexOf('legend.setAttribute("data-legend", panel.id);') > 0
+      && sUi.indexOf("function fillLegend(host)") > 0
+      && sUi.indexOf("SL.views.setPanelChan(id, c.key, !on);") > 0
+      && sUi.indexOf("SL.views.applyPanelChanToAll(id)") > 0
+      && sUi.indexOf("SL.views.clearPanelChan(id)") > 0, "");
+
+  /* 图例必须挂在 head 与 body 之间：body 一旦不是 el.lastElementChild，
+     Plugins.instantiate(panel, el.lastElementChild) 就会把渲染器挂到别的节点上 —— 整块面板空白。 */
+  check("A-104: 图例挂在 head 与 body 之间（body 必须保持 lastElementChild，否则渲染器挂载点会错）",
+    /el\.appendChild\(legend\);[\s\S]{0,140}?var body = document\.createElement\("div"\);/.test(sViews), "");
+
+  check("A-104: 覆盖表在面板重建时重新注入（不写进描述符 —— 那会被 Plugins.validate 丢掉）",
+    /if \(viewChanOverride\[panel\.id\]\) \{[\s\S]{0,200}?panel\.opts\.chanOn = viewChanOverride\[panel\.id\];/.test(sViews)
+      && sViews.indexOf("var viewChanOverride = {};") > 0, "");
+})();

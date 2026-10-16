@@ -180,22 +180,35 @@
     var want = panel.channels || [];
     var out = [];
     var i;
+    /* V2.2.22：**每面板独立勾选**。panel.opts.chanOn 是按通道的覆盖表（由 views.js 注入）：
+         true  = 这块屏显示（即使全局把它勾掉了）
+         false = 这块屏不显示（即使全局勾着）
+         缺省  = 跟随全局的 visible
+       刻意做成「覆盖」而不是「快照」：这样**新出现的通道**默认仍然会出现。
+       若做成快照，用户把某块屏拆开独立之后，以后新加的通道会莫名其妙不显示 ——
+       那正是用户担心的「拆开了容易怎么融合」。
+       这是所有渲染器挑通道的唯一入口，所以只改这一处就全覆盖了。 */
+    var on = (panel.opts && panel.opts.chanOn) || null;
+    function show(c) {
+      if (on && Object.prototype.hasOwnProperty.call(on, c.key)) { return !!on[c.key]; }
+      return c.visible !== false;
+    }
     if (want.length === 1 && want[0] === "auto") {
       var cap = renderer.autoCount || 4;
       for (i = 0; i < all.length && out.length < cap; i++) {
-        if (all[i].visible !== false) { out.push(all[i]); }
+        if (show(all[i])) { out.push(all[i]); }
       }
       return out;
     }
     for (i = 0; i < want.length; i++) {
       var c = findChannel(all, want[i]);
-      if (c) { out.push(c); }
+      if (c && show(c)) { out.push(c); }
     }
     /* 全部指定通道都还没数据时，退回自动模式，避免面板长时间空白 */
     if (!out.length) {
       var cap2 = renderer.autoCount || 4;
       for (i = 0; i < all.length && out.length < cap2; i++) {
-        if (all[i].visible !== false) { out.push(all[i]); }
+        if (show(all[i])) { out.push(all[i]); }
       }
     }
     return out;

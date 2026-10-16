@@ -161,6 +161,11 @@
       panel.opts = panel.opts || {};
       panel.opts.clearAt = viewClear[panel.id];
     }
+    /* 同理：重建时把「每面板通道勾选」重新注入（见 viewChanOverride 的说明） */
+    if (viewChanOverride[panel.id]) {
+      panel.opts = panel.opts || {};
+      panel.opts.chanOn = viewChanOverride[panel.id];
+    }
     var el = document.createElement("div");
     el.className = "sl-panel";
     el.setAttribute("data-panel-id", panel.id);
@@ -174,11 +179,18 @@
     title.textContent = panel.title;
     head.appendChild(title);
 
-    var type = document.createElement("span");
-    type.className = "sl-panel-type";
+    /* V2.2.22：标题与类型同名时**不重复显示**。
+       用户看到的是「时域波形 时域波形」「频域谱 频域谱」并排，而且两者字号/字体/颜色都不同
+       （标题 12.5px 粗体墨色无衬线 vs 类型 11px 细体灰等宽）——看起来就是两种格式。
+       同名时它没有信息量，直接不画；不同名时保留，并把排版统一（见 app.css 的 .sl-panel-type）。 */
     var r = Plugins.get(panel.type);
-    type.textContent = r ? r.label : panel.type;
-    head.appendChild(type);
+    var typeLabel = r ? r.label : panel.type;
+    if (typeLabel !== panel.title) {
+      var type = document.createElement("span");
+      type.className = "sl-panel-type";
+      type.textContent = typeLabel;
+      head.appendChild(type);
+    }
 
     /* V2.2.21：收起态摘要。原先收起后只剩一个标题条，用户点开「什么都没有」——
        现在把最后一行数据留在标题旁，收起也能瞄一眼最新值（内容由 ui.js 填：业务模块不碰 DOM）。 */
@@ -278,6 +290,19 @@
     });
 
     el.appendChild(head);
+
+    /* V2.2.22：通道图例（可点，就地显隐）。挂在 head 与 body **之间**：
+       ① body 必须保持 el.lastElementChild —— 这是 Plugins.instantiate(panel, el.lastElementChild)
+          的既有约定（右下角缩放手柄因此也挂在 body 内部，见下面的注释）；
+       ② 图例本身用绝对定位浮在画布左上角（见 app.css 的 .sl-legend），不占布局高度，
+          所以放在 head 前后不影响视觉。
+       内容与点击事件全部由 ui.js 负责填 —— business 模块不碰 DOM（硬规则 5），views 只建壳。 */
+    if (panel.type !== "textmon") {
+      var legend = document.createElement("div");
+      legend.className = "sl-legend";
+      legend.setAttribute("data-legend", panel.id);
+      el.appendChild(legend);
+    }
 
     var body = document.createElement("div");
     body.className = "sl-panel-body";
@@ -593,6 +618,63 @@
     V.redraw();               /* 不等下一帧：清屏要「点下去就空」 */
     core.emit("toast", { level: "info", msg: "已清屏：只清了这块面板的显示，数据与其他图表都还在" });
     return true;
+  };
+
+  /* ------------------------------------------------------------------
+     V2.2.22：每面板的通道勾选（覆盖表）
+     用户的原话是「通道里的勾选算汇总冗余，拆开了容易怎么融合呢」——所以：
+       · 通道列表里的勾选仍然是**全局**默认值；
+       · 每块图表面板可以**独立覆盖**某几个通道（这里存 panelId → {key: bool}）；
+       · **手动**入口两个：「应用给其他图表」「恢复统一」——不自动替用户决定
+         （用户明确说过自动拆/合不准确）。
+     为什么存这张表而不写进面板描述符：描述符走 updatePanel/validate 会丢掉自定义
+     opts 字段（clearAt 那次实测踩过），所以与 viewClear 同一套路 ——
+     存这里 + buildPanelEl 重建时重新注入。
+     ------------------------------------------------------------------ */
+  var viewChanOverride = {};
+
+  V.panelChanOverride = function (id) { return viewChanOverride[id] || null; };
+
+  /* 就地改渲染器持有的那个面板对象（getPanel 返回同一引用），当即生效、不必重建面板 */
+  V.setPanelChan = function (id, key, on) {
+    var p = V.getPanel(id);
+    if (!p || !key) { return false; }
+    var map = viewChanOverride[id] || (viewChanOverride[id] = {});
+    map[key] = !!on;
+    p.opts = p.opts || {};
+    p.opts.chanOn = map;
+    V.redraw();
+    return true;
+  };
+
+  /* 恢复统一：清掉这块屏的全部覆盖，重新跟随全局勾选 */
+  V.clearPanelChan = function (id) {
+    var p = V.getPanel(id);
+    if (!p) { return false; }
+    delete viewChanOverride[id];
+    if (p.opts) { delete p.opts.chanOn; }
+    V.redraw();
+    return true;
+  };
+
+  /* 手动「应用给其他图表」：把这块屏的覆盖并给所有图表面板（监视器不参与，它显示的是行不是通道） */
+  V.applyPanelChanToAll = function (id) {
+    var src = viewChanOverride[id];
+    if (!src) { return 0; }
+    var n = 0;
+    for (var i = 0; i < panels.length; i++) {
+      var t = panels[i];
+      if (t.id === id || t.type === "textmon") { continue; }
+      var map = viewChanOverride[t.id] || (viewChanOverride[t.id] = {});
+      for (var k in src) {
+        if (Object.prototype.hasOwnProperty.call(src, k)) { map[k] = src[k]; }
+      }
+      t.opts = t.opts || {};
+      t.opts.chanOn = map;
+      n++;
+    }
+    V.redraw();
+    return n;
   };
 
   /* V2.2.12：清空面板支持撤销——清空前快照全部面板描述符，恢复时逐个重建 */

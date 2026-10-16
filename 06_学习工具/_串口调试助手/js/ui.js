@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.21";
+  UI.VERSION = "2.2.22";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1233,12 +1233,12 @@
       }
     }, true);
     /* 面板动态增删 / 主位互换 / 更新重建后补齐快捷条内容 */
-    core.on("panels:changed", function () { refreshAllQuick(); refreshPanelBriefs(); });
+    core.on("panels:changed", function () { refreshAllQuick(); refreshPanelBriefs(); refreshLegends(); });
     /* 面板头「复制」按钮（views.js 发事件，剪贴板归 ui.js —— 子应用硬规则 18） */
     core.on("panel:copyText", function (e) {
       if (e && e.id) { copyMonitorText(e.id); }
     });
-    core.on("data:clear", function () { refreshPanelBriefs(); });
+    core.on("data:clear", function () { refreshPanelBriefs(); refreshLegends(); });
     refreshAllQuick();
   }
 
@@ -1567,6 +1567,89 @@
     });
     $("slProtoHex").value = protoRecentHex();      /* 打开就填好，省得用户去别处复制 */
     runProtocol();
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.22：波形上就地勾选通道（**每面板独立**）
+     用户两句话合起来就是需求：
+       「时域波形的勾选我无法在时域波形那个界面取消勾选，不够便利」
+       「通道里的勾选算汇总冗余，拆开了容易怎么融合呢，有没有手动的按钮」
+     所以图例浮在面板左上角，点一下切换**这块屏**的显示；一旦本屏与全局不一致，
+     就出现两个**手动**按钮（应用给其他图表 / 恢复统一）—— 不做自动同步，
+     因为用户明确说过自动拆合不准确。全局勾选仍在「通道」列表里，两者互不覆盖。
+     ------------------------------------------------------------ */
+  function fillLegend(host) {
+    var id = host.getAttribute("data-legend");
+    var panel = id ? SL.views.getPanel(id) : null;
+    if (!panel) { return; }
+    var chans = SL.datastore.listChannels();
+    var override = SL.views.panelChanOverride(id);
+    var list = [];
+    for (var i = 0; i < chans.length; i++) {
+      if (SL.datastore.count(chans[i].key) > 0) { list.push(chans[i]); }
+    }
+    host.textContent = "";
+    if (!list.length) { host.hidden = true; return; }
+    host.hidden = false;
+
+    var diverged = false;
+    for (var j = 0; j < list.length; j++) {
+      (function (c) {
+        var overridden = !!(override && Object.prototype.hasOwnProperty.call(override, c.key));
+        var on = overridden ? !!override[c.key] : (c.visible !== false);
+        if (overridden) { diverged = true; }
+        var chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "sl-legend-chip" + (on ? "" : " is-off");
+        chip.title = c.key + (on ? "：本屏显示中 —— 点一下在本屏隐藏" : "：本屏已隐藏 —— 点一下在本屏显示");
+        var dot = document.createElement("i");
+        dot.className = "sl-legend-dot";
+        dot.style.background = c.color || "#888";
+        chip.appendChild(dot);
+        var nm = document.createElement("span");
+        nm.textContent = c.label || c.key;
+        chip.appendChild(nm);
+        chip.addEventListener("click", function () {
+          SL.views.setPanelChan(id, c.key, !on);
+          refreshLegends();
+        });
+        host.appendChild(chip);
+      })(list[j]);
+    }
+
+    if (diverged) {
+      var acts = document.createElement("span");
+      acts.className = "sl-legend-acts";
+      var mk = function (act, label, title, fn) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "sl-legend-act";
+        b.textContent = label;
+        b.title = title;
+        b.addEventListener("click", fn);
+        acts.appendChild(b);
+      };
+      mk("apply", "应用给其他图表",
+        "把本屏的勾选结果推给工作区里其他图表面板（监视器显示的是行、不参与）",
+        function () {
+          var n = SL.views.applyPanelChanToAll(id);
+          refreshLegends();
+          core.emit("toast", { level: "ok", msg: "已把本屏的通道勾选应用到其他 " + n + " 个图表面板" });
+        });
+      mk("reset", "恢复统一",
+        "清掉本屏的独立勾选，重新跟随「通道」列表里的全局勾选",
+        function () {
+          SL.views.clearPanelChan(id);
+          refreshLegends();
+          core.emit("toast", { level: "info", msg: "本屏已恢复跟随全局勾选" });
+        });
+      host.appendChild(acts);
+    }
+  }
+
+  function refreshLegends() {
+    var hosts = document.querySelectorAll("[data-legend]");
+    for (var i = 0; i < hosts.length; i++) { fillLegend(hosts[i]); }
   }
 
   function openSettings() {
@@ -3425,8 +3508,30 @@
   function refreshZeroState() {
     var z = $("slZero");
     if (!z) { return; }
+    var uicfg = core.config.ui || {};
+    /* V2.2.22：用户反馈「每次进去都得看演示，好麻烦」——这张引导卡只该出现一次。
+       它有两条退出路径：① 用户点「不再提示」；② 用户已经成功用过一次（连上设备或开过演示）。
+       第 ② 条是必须的：判据本身是「还没收到过字节」，而每次重新打开数据都是空的 ——
+       不记一笔的话它会永远反复出现，那正是用户抱怨的行为。
+       这个「记一笔」的副作用刻意放在这里：这是**唯一**判断「引导已送达」的地方，
+       分散到各个监听里就会变成多处各自决定（硬规则 12 的同一条道理）。 */
+    if (uicfg.zeroDismissed) { z.hidden = true; return; }
     var hasData = !!(T.stats && T.stats.rx > 0);
-    z.hidden = hasData || core.state.demo || core.state.conn === "open";
+    /* V2.2.22：把「隐藏」与「永久关闭」彻底分开——
+       · 隐藏（视图）：收到过字节 / 开了演示 / 连上设备 → 卡片让位、不占主区（与 V2.2.16 原逻辑一致）；
+       · 永久关闭（持久）：**只由用户显式点「不再提示」触发**。
+       曾经还想「用过一次就自动关闭」，但试了两版都与「新用户必须看得到引导」这条正当验收冲突
+       （演示模式也会把 conn 置成 open，是虚拟连接）——**一个自动判据去猜用户的意图，猜错就是静默改变行为**。
+       显式按钮没有这个风险：用户点一次，之后永远不再出现，这正是他要的「不要反复出现」。 */
+    z.hidden = !!(hasData || core.state.demo || core.state.conn === "open");
+  }
+
+  /* 把「首屏引导已经送达」记进配置（幂等；只写一次）。 */
+  function markZeroStateServed() {
+    var uicfg = core.config.ui || (core.config.ui = {});
+    if (uicfg.zeroDismissed) { return; }
+    uicfg.zeroDismissed = true;
+    core.saveConfig();
   }
 
   function wireZeroState() {
@@ -3446,6 +3551,14 @@
       help.addEventListener("click", function () {
         var h = $("slBtnHelp");
         if (h) { h.click(); }
+      });
+    }
+    var never = $("slZeroNever");
+    if (never) {
+      never.addEventListener("click", function () {
+        markZeroStateServed();
+        refreshZeroState();
+        core.emit("toast", { level: "info", msg: "首屏引导已关闭，不再自动出现（顶栏「帮助」随时可看）" });
       });
     }
     refreshZeroState();
@@ -3962,13 +4075,14 @@
     setInterval(function () {
       /* 收起态摘要与连接状态无关：演示模式下也可能收起面板，所以放在提前 return 之前 */
       refreshPanelBriefs();
+      refreshLegends();
       if (core.state.conn !== "open") { return; }
       $("slTxCount").textContent = T.stats.tx;
       $("slRxCount").textContent = T.stats.rx;
       garbleScan();
     }, 1000);
 
-    core.on("channels", function () { renderChannels(); });
+    core.on("channels", function () { renderChannels(); refreshLegends(); });
     core.on("data:clear", function () { renderChannels(); });
 
     core.on("panels:changed", function () { renderPanelList(); });
