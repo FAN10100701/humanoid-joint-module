@@ -835,8 +835,9 @@ const GBK = (X.codec || SL.codec);
   check("V2.2.5: 流控信号已移出顶栏(设备页签内)",
     fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('id="slModem"') >
       fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('data-pane="test"'), "");
-  check("RX/TX: 顶栏计数已改为 ←下位机/→下位机",
-    html.indexOf("←下位机") > 0 && html.indexOf("→下位机") > 0, "");
+  check("RX/TX: 顶栏计数改用直白的 ↓接收/↑发送（旧版两个都叫「下位机」，只靠箭头才分得开）",
+    html.indexOf("↓接收") > 0 && html.indexOf("↑发送") > 0
+      && html.indexOf('下位机 <b id="slRxCount"') < 0, "");
 })();
 
 /* ========== ⑲ V2.2.6：示波器时域 / 统计面板 / 数据文件夹 / 帮助中心 ========== */
@@ -1088,6 +1089,41 @@ const GBK = (X.codec || SL.codec);
     ]) === null, "");
   check("A-87: 单通道不会触发（没有「和谁比」的问题）",
     Plugins.scaleGroups([mkSeries("only", 0, 4000)]) === null, "");
+})();
+
+/* ========== V2.2.16：简约化与可读性（AUDIT A-88）==========
+   这里的结构断言只负责「实现没被改回去」；行为本身由 E2E 的
+   serial_v2216 用真实几何锁（横向溢出 = 0、底行标签两两不相交）。 */
+(function () {
+  const ui16 = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  const plug16 = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const css16 = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
+  const html16 = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8");
+
+  check("A-88: 通道列表改卡片式，且用 white-space:normal 覆盖 nowrap（横向滚动条的根因）",
+    ui16.indexOf('el("table", "sl-table sl-chan-table")') > 0
+      && css16.indexOf("table.sl-chan-table") > 0
+      && /table\.sl-chan-table td \{[\s\S]{0,160}?white-space: normal;/.test(css16), "");
+  check("A-88: 通道卡片仍保留每通道一个 <tr>（三条既有断言在数 #slChannels tr，不为重构动它们）",
+    /var tr = el\("tr"\);[\s\S]{0,4000}?table\.appendChild\(tr\);/.test(ui16), "");
+  check("A-88: 通道卡片含取色器与「显示」勾选框，且取色前有 #rrggbb 兜底",
+    ui16.indexOf("sl-chan-color") > 0 && ui16.indexOf("sl-chan-vis") > 0
+      && ui16.indexOf("function colorHexOf") > 0
+      && ui16.indexOf("/^#[0-9a-fA-F]{6}$/") > 0, "");
+  check("A-88: 静态说明收成「?」，判据同时要求「无 id」与「父节点就是 .sl-group」",
+    ui16.indexOf("function foldStaticHints") > 0
+      && ui16.indexOf('if (p.id || p.getAttribute("data-folded") === "1") { continue; }') > 0
+      && /String\(host\.className\)\.indexOf\("sl-group"\) < 0\) \{ continue; \}/.test(ui16), "");
+  check("A-88: foldStaticHints 在 UI.boot 中、且在动态列表渲染之前被调用",
+    /initPanelQuick\(\);[\s\S]{0,420}?foldStaticHints\(\);/.test(ui16), "");
+  check("A-88: 「?」的说明同时挂在 data-tip 与点击弹窗上（信息只挪位置、不丢）",
+    ui16.indexOf('btn.setAttribute("data-tip", text)') > 0
+      && ui16.indexOf("UI.modal({ title: title, body: wrap,") > 0, "");
+  check("A-88: 波形底行三标签按几何避让（量程用起点标签的实际右边界，不是 PAD.l）",
+    plug16.indexOf("return { startRight: startRight, reservedLeft: reservedLeft };") > 0
+      && plug16.indexOf("if (ax.startRight + 8 < rx - rrw) {") > 0, "");
+  check("A-88: 顶栏不再把收发两个计数都叫「下位机」",
+    html16.indexOf("↓接收") > 0 && html16.indexOf("↑发送") > 0, "");
 })();
 
 /* ========== V2.2.15：桥的省流开关功能性回归（AUDIT A-85①④）==========

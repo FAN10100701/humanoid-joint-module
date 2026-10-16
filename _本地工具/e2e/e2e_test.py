@@ -895,6 +895,92 @@ def main():
             assert not errs, "V2.2.4 JS 异常: " + "; ".join(errs[:3])
         check("serial_v224 测试页签/案例卡片/自动补波形/快捷工具条联动", t_serial_v224)
 
+        # ---------- 7.5 V2.2.16 简约化与可读性 ----------
+        def t_serial_v2216():
+            """V2.2.16：把「简约」和「不再有乱码感」都变成可执行的断言。
+
+            ① 通道列表不能有横向溢出 —— 这正是用户「看不到隐藏通道勾选框」的根因
+               （旧版 7 列表格在 260px 左栏里必然横向滚动，勾选框与删除键被推出视野）。
+               同时每通道仍是一个 <tr>：既有三条断言数 `#slChannels tr`，不能为重构而动它们。
+            ② 静态说明收成组标题旁的「?」：左栏可见文字明显变少，但点「?」仍看得到全文
+               （信息只挪位置、不丢）。
+            ③ 波形底行三个标签（X 起点 / 当前量程 / X 终点+窗口）**几何上互不重叠**。
+               旧版量程标签画在 x=4，与 X 起点标签（x=PAD.l）叠在一起，读出来像乱码。
+               这条**只能**用真实几何锁：拦截 fillText，用 textAlign 反推每个字符串的
+               [x0, x1] 区间，再断言底行任意两段不相交。结构断言完全看不出来。
+            """
+            errs = make_page_errors_tracker(page)
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            page.click("#slTabs .sl-tab[data-pane='test']")
+            page.click("#slBtnDemo")
+            page.wait_for_function(
+                "document.querySelector('#slState').textContent.indexOf('演示') >= 0", timeout=10000)
+
+            # ---- ① 通道卡片：无横向溢出，且每通道仍是 tr ----
+            page.click("#slTabs .sl-tab[data-pane='channels']")
+            page.wait_for_function(
+                "document.querySelectorAll('#slChannels tr').length >= 2", timeout=10000)
+            n_tr = page.locator("#slChannels tr").count()
+            assert n_tr >= 2, "通道列表不再是每通道一个 tr(tr=%d)" % n_tr
+            ovf = page.evaluate(
+                "(() => { const w = document.querySelector('#slChannels');"
+                " return w ? w.scrollWidth - w.clientWidth : -1; })()")
+            assert ovf == 0, "通道列表出现横向溢出 %dpx（勾选框/删除键又会被推出视野）" % ovf
+            assert page.locator("#slChannels .sl-chan-color").count() >= 2, "通道卡片缺取色器"
+            assert page.locator("#slChannels .sl-chan-vis input").count() >= 2, "通道卡片缺「显示」勾选框"
+
+            # ---- ② 静态说明已收进「?」，但内容仍在 ----
+            assert page.locator(".sl-panes .sl-help").count() >= 6, "「?」入口太少，说明可能没收起来"
+            visible_hints = page.evaluate(
+                "(() => { const a = document.querySelectorAll('.sl-panes .sl-hint');"
+                " let n = 0; for (const h of a) { if (!h.hidden && h.offsetParent !== null) n++; } return n; })()")
+            assert visible_hints <= 12, "左栏还留着 %d 段内嵌说明，减法没生效" % visible_hints
+            first_help = page.locator(".sl-panes .sl-help").first
+            assert first_help.get_attribute("data-tip"), "「?」没有带上说明全文"
+
+            # ---- ③ 波形底行标签几何不相交 ----
+            # 两个坑都踩过了，写在这里免得下次再犯：
+            #   1) 量宽度必须用 this.measureText(...)（就地调用）。先存
+            #      CanvasRenderingContext2D.prototype.measureText 再 .call，会让 this 丢，抛 Illegal invocation。
+            #   2) 必须按「帧」隔离。clearRect 就是 plugins.js 里 view.clear() 的落地，
+            #      在每个绘制帧开头清空缓冲；否则同一个标签每帧各记一次，两两比较必然假重叠
+            #      （上一次就是这么误报的：'0.1s' 和自己重叠）。
+            #   3) 再按画布宽度隔离，多面板时只比最后一个画的那块。
+            page.evaluate("""(() => {
+                window.__ft = [];
+                window.__cw = -1;
+                const of = CanvasRenderingContext2D.prototype.fillText;
+                const ocr = CanvasRenderingContext2D.prototype.clearRect;
+                CanvasRenderingContext2D.prototype.clearRect = function () {
+                  try { window.__ft = []; window.__cw = this.canvas.width; } catch (e) {}
+                  return ocr.apply(this, arguments);
+                };
+                CanvasRenderingContext2D.prototype.fillText = function (t, x, y) {
+                  try {
+                    if (this.canvas.width !== window.__cw) { return of.apply(this, arguments); }
+                    const w = this.measureText(String(t)).width;
+                    const al = this.textAlign;
+                    const x0 = al === 'right' ? x - w : (al === 'center' ? x - w / 2 : x);
+                    window.__ft.push({ t: String(t), x0: x0, x1: x0 + w,
+                                       y: Math.round(y), h: this.canvas.height });
+                  } catch (e) {}
+                  return of.apply(this, arguments);
+                };
+            })()""")
+            page.wait_for_timeout(1200)          # 让波形至少重绘一帧
+            spans = page.evaluate("window.__ft")
+            bottom = [s for s in spans if s["y"] > s["h"] - 30 and s["x1"] > s["x0"]]
+            assert len(bottom) >= 2, "没抓到波形底行标签（抓到 %d 条）" % len(bottom)
+            # 同一次绘制的才互斥：按 y 分桶后两两比较即可（底行只有一个 y）
+            bottom.sort(key=lambda s: s["x0"])
+            for a, b in zip(bottom, bottom[1:]):
+                assert a["x1"] <= b["x0"] + 1, (
+                    "波形底行标签重叠：%r 结束于 %.1f，%r 起于 %.1f"
+                    % (a["t"], a["x1"], b["t"], b["x0"]))
+            assert not errs, "V2.2.16 JS 异常: " + "; ".join(errs[:3])
+        check("serial_v2216 通道卡片无横向溢出/说明收进?/波形底行标签不重叠", t_serial_v2216)
+
         # ---------- 8. 404 页 ----------
         def t_404():
             errs = make_page_errors_tracker(page)

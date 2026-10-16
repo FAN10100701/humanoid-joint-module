@@ -1035,6 +1035,82 @@ table.sl-table th {
 
 table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
 
+/* ---------------- 通道卡片（V2.2.16） ----------------
+   旧版是 7 列表格 + `white-space: nowrap`，在 ~260px 的左栏里必然横向滚动，
+   「显示」勾选框与「删」被挤到视野之外（用户因此以为没有隐藏通道的功能）。
+   现在每通道一行、行内单格竖排卡片，永不横向滚动。 */
+table.sl-chan-table { width: 100%; }
+
+table.sl-chan-table td {
+  white-space: normal;                    /* 覆盖 .sl-table 的 nowrap：卡片要能换行 */
+  padding: 0;
+  border: none;
+  border-top: 1px solid var(--sl-border);
+}
+
+table.sl-chan-table tr:first-child td { border-top: none; }
+
+.sl-chan-card { padding: 7px 2px 8px; }
+
+.sl-chan-r1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;                        /* 安全网：任何情况下都不横向溢出 */
+}
+
+.sl-chan-key {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sl-ink);
+}
+
+.sl-chan-color {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--sl-border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.sl-chan-vis { flex: 0 0 auto; font-size: 11.5px; }
+
+.sl-chan-r2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.sl-chan-fld { display: inline-flex; align-items: center; gap: 4px; }
+
+.sl-chan-fl { font-size: 11px; color: var(--sl-ink-3); }
+
+.sl-chan-table input[type="text"],
+.sl-chan-table input[type="number"] {
+  height: 22px;
+  padding: 0 5px;
+  font-size: 11.5px;
+  border: 1px solid var(--sl-border);
+  border-radius: 4px;
+  background: var(--sl-bg-soft);
+  color: var(--sl-ink);
+}
+
+.sl-chan-label { width: 74px; }
+.sl-chan-unit { width: 44px; }
+.sl-chan-prec { width: 40px; }
+
 /* ---------------- 分组与说明 ----------------
    V2.2.3 通透化：原来是「卡片堆」（底色 + 边框 + 圆角，视觉厚重、密度低），
    改为「分隔线 + 弱化分组标题」——内容直接躺在栏上，标题小一号做路标，
@@ -1075,6 +1151,24 @@ table.sl-table td { color: var(--sl-ink); font-family: Consolas, monospace; }
   line-height: 1.7;
   margin: 5px 0 0;
 }
+
+/* 组标题旁的「?」：静态说明收起来之后的入口（V2.2.16）。
+   悬停看全文（走全局 data-tip），点击用只读弹窗看全——内容长的说明用弹窗更合适。 */
+.sl-help {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-left: 2px;
+  border: 1px solid var(--sl-border);
+  border-radius: 50%;
+  background: var(--sl-bg-soft);
+  color: var(--sl-ink-3);
+  font: 700 11px/1 inherit;
+  cursor: help;
+}
+
+.sl-help:hover { color: var(--sl-ink); border-color: var(--sl-brand); }
 
 .sl-note {
   border-left: 3px solid var(--sl-brand);

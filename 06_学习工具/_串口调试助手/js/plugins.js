@@ -807,14 +807,26 @@
         }
 
         drawLegend(ctx, view, allSeries, hid, pad, legendHits);
-        drawTimeAxis(ctx, view, series);
+        var ax = drawTimeAxis(ctx, view, series);
 
-        /* 左上角标出当前量程 */
+        /* 当前量程标签。注释一直写着「左上角标出当前量程」，但代码画在底行 x=4——
+           而底行左边正是 X 起点标签（x = PAD.l = 42），两者宽度一叠加必然重叠，
+           读出来是 `-327.927 ~32.4s7.968` 这种像乱码的东西
+           （用户截图反馈过「X 轴数字像乱码」）。改成右对齐排在 X 终点那段之前：
+           底行从左到右依次是「X 起点 / 量程 / X 终点+窗口」，各占一段互不重叠。
+           避让判据用 startRight（起点标签的**实际**右边界），不是 PAD.l ——
+           否则只剩几像素余量，换个字号或值长度就又撞上。窄面板放不下时宁可不画量程。 */
+        var rangeTxt = U.fmt(yr.min, 3) + " ~ " + U.fmt(yr.max, 3);
         ctx.save();
         ctx.fillStyle = t.ink3;
         ctx.font = "10px Consolas, monospace";
         ctx.textBaseline = "top";
-        ctx.fillText(U.fmt(yr.min, 3) + " ~ " + U.fmt(yr.max, 3), 4, view.h - pad.b + 3);
+        ctx.textAlign = "right";
+        var rrw = ctx.measureText(rangeTxt).width;
+        var rx = ax.reservedLeft - 12;
+        if (ax.startRight + 8 < rx - rrw) {
+          ctx.fillText(rangeTxt, rx, view.h - pad.b + 3);
+        }
         ctx.restore();
 
         /* 回看历史时右上角提示条（可点击直接回实时） */
@@ -843,23 +855,41 @@
       }
 
       /* 底部时间刻度：起点 / 终点时刻（epoch 显示时分秒，相对数据显示秒） */
+      /* 画 X 轴两端时刻。返回底行两个「已占用区间」的边界，供量程标签避让：
+           startRight  —— 起点标签的右边界（没画起点时就是 PAD.l）
+           reservedLeft—— 右侧那段（终点+窗口）的左边界
+         调用方要保证量程标签落在 (startRight, reservedLeft) 之间。 */
       function drawTimeAxis(ctx, view, series) {
         var s0 = null;
         for (var i = 0; i < series.length; i++) {
           if (series[i].t && series[i].t.length > 1) { s0 = series[i]; break; }
         }
-        if (!s0) { return; }
+        if (!s0) { return { startRight: 0, reservedLeft: 0 }; }
         var t0 = s0.t[0], t1 = s0.t[s0.t.length - 1];
         var t = theme();
         ctx.save();
         ctx.fillStyle = t.ink3;
         ctx.font = "10px Consolas, monospace";
         ctx.textBaseline = "top";
-        ctx.textAlign = "left";
-        ctx.fillText(tLabel(t0), PAD.l, view.h - PAD.b + 3);
+        /* 右侧那段（末点时刻 + 窗口信息）先量宽度，再决定左侧端点放不放得下。
+           撞在一起时两个数字会连读成看着像乱码的东西（窗口比数据长时左端点本来就是
+           负数，更容易误读）——放不下就只留右侧，右侧带的「窗口 N 点 / 拖动 / 滚轮」
+           才是用户真正需要的信息。 */
+        var right = tLabel(t1) + " · 窗口 " + (panel.window || 500) + " 点 · 拖动看历史 / 滚轮缩放";
         ctx.textAlign = "right";
-        ctx.fillText(tLabel(t1) + " · 窗口 " + (panel.window || 500) + " 点 · 拖动看历史 / 滚轮缩放", view.w - PAD.r, view.h - PAD.b + 3);
+        var rw = ctx.measureText(right).width;
+        ctx.fillText(right, view.w - PAD.r, view.h - PAD.b + 3);
+        var reservedLeft = view.w - PAD.r - rw;
+        var left = tLabel(t0);
+        ctx.textAlign = "left";
+        var lw = ctx.measureText(left).width;
+        var startRight = PAD.l;
+        if (PAD.l + lw + 16 < reservedLeft) {
+          ctx.fillText(left, PAD.l, view.h - PAD.b + 3);
+          startRight = PAD.l + lw;
+        }
         ctx.restore();
+        return { startRight: startRight, reservedLeft: reservedLeft };
       }
 
       /* 图例（左上角）：可点击。隐藏的通道灰显；记录命中区给 click 用 */

@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.15";
+  UI.VERSION = "2.2.16";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1685,6 +1685,64 @@
   /* ------------------------------------------------------------
      6) 通道面板
      ------------------------------------------------------------ */
+  /* ------------------------------------------------------------
+     V2.2.16：把左栏里的「静态说明文字」统一收成组标题旁的「?」
+     左栏曾直接印出 30 段、4119 字符的说明——等于把一页半文档钉在工具栏里，
+     老用户每次都要先跳过文字才找得到控件。
+     只收「静态」的那些，判据有两条，缺一不可：
+       ① 没有 id —— 带 id 的是脚本会改写的状态行（生效上限 / AI 通道状态 /
+          收件箱提示…），必须留在原地；
+       ② 它的父节点就是 .sl-group —— 静态说明都是组的直接子节点；
+          脚本动态追加的空态提示（「还没有通道」等）挂在组内的 host div 上，
+          父节点不是 .sl-group，因此不会被误收。
+     文字不删不丢：同时挂到「?」的 data-tip（悬停看）与点击弹出的只读弹窗（看全）。
+     不满足判据的一律保持原样 —— 宁可不收，也不丢信息。
+     ------------------------------------------------------------ */
+  function foldStaticHints() {
+    var all = document.querySelectorAll(".sl-panes .sl-hint");
+    for (var i = 0; i < all.length; i++) {
+      var p = all[i];
+      if (p.id || p.getAttribute("data-folded") === "1") { continue; }
+      var host = p.parentNode;
+      if (!host || !host.className || String(host.className).indexOf("sl-group") < 0) { continue; }
+      var h3 = host.querySelector ? host.querySelector("h3") : null;
+      if (!h3) { continue; }
+      var body = (p.textContent || "").replace(/^\s+|\s+$/g, "");
+      if (body.length < 12) { continue; }              /* 太短的不值得收 */
+      var groupName = (h3.textContent || "说明").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+
+      (function (para, box, title, text) {
+        var btn = el("button", "sl-help", "?");
+        btn.type = "button";
+        btn.setAttribute("data-tip", text);
+        btn.setAttribute("aria-label", "本组说明");
+        btn.addEventListener("click", function () {
+          var wrap = el("div");
+          wrap.appendChild(el("p", "sl-note", text));
+          UI.modal({ title: title, body: wrap, buttons: [{ label: "知道了" }] });
+        });
+        box.appendChild(btn);
+        para.hidden = true;
+        para.setAttribute("data-folded", "1");
+      })(p, h3, groupName, body);
+    }
+  }
+
+  /* `<input type=color>` 只接受 `#rrggbb`，拿到别的值会静默重置成黑色——
+     所以写进去之前必须兜一层，否则用户会看到「颜色莫名其妙变黑」。 */
+  function colorHexOf(c) {
+    var s = String(c === undefined || c === null ? "" : c);
+    return /^#[0-9a-fA-F]{6}$/.test(s) ? s : "#3b82f6";
+  }
+
+  /* 通道卡片第二行的小字段：`标签 [输入框]` */
+  function labelledField(text, input) {
+    var w = el("span", "sl-chan-fld");
+    w.appendChild(el("span", "sl-chan-fl", text));
+    w.appendChild(input);
+    return w;
+  }
+
   function renderChannels() {
     var host = $("slChannels");
     if (!host) { return; }
@@ -1694,78 +1752,102 @@
       host.appendChild(el("p", "sl-hint", "还没有通道。收到第一帧被解析出数值后会自动建立通道。"));
       return;
     }
-    var table = el("table", "sl-table");
-    var head = el("tr");
-    var titles = ["", "键名", "标签", "单位", "精度", "显示", ""];
-    for (var h = 0; h < titles.length; h++) { head.appendChild(el("th", null, titles[h])); }
-    table.appendChild(head);
+    /* V2.2.16：通道列表改「每通道一张竖排卡片」。
+       左栏只有 ~260px 宽，而旧版是 7 列表格 + 表头 + `white-space:nowrap`
+       → 必然出现横向滚动条，「显示」勾选框与「删」按钮被挤到视野外。
+       用户反馈过「不能加个打勾关闭功能吗」——其实这两个功能早就在，只是看不见。
+       卡片式永不横向滚动，且顺手把「取色」也放进来（旧版说明文字声称这里能改颜色，
+       但表格里只有个只读色块，颜色实际只能去面板编辑器改——文档承诺了没有的功能）。
+       仍然保留 <table>/<tr>（每通道一个 tr、内含单个 td）：
+       E2E 的 `#slChannels tr` 数量与 `#slChannels` 文本断言依赖它，
+       换容器只会制造无谓的测试改动。 */
+    var table = el("table", "sl-table sl-chan-table");
 
     for (var i = 0; i < list.length; i++) {
       (function (ch) {
         var tr = el("tr");
+        var td = el("td");
+        var card = el("div", "sl-chan-card");
 
-        var tdC = el("td");
+        /* ---- 第一行：色块 · 键名 · 取色 · 显示开关 · 删除 ---- */
+        var r1 = el("div", "sl-chan-r1");
         var sw = el("span", "sl-swatch");
         sw.style.background = ch.color;
-        tdC.appendChild(sw);
-        tr.appendChild(tdC);
+        r1.appendChild(sw);
+        var nm = el("span", "sl-chan-key", ch.key);
+        nm.title = ch.key;                       /* 长键名截断后仍可悬停看全 */
+        r1.appendChild(nm);
 
-        tr.appendChild(el("td", null, ch.key));
-
-        var tdLabel = el("td");
-        var labelIn = el("input");
-        labelIn.type = "text"; labelIn.value = ch.label || ch.key; labelIn.size = 7;
-        labelIn.addEventListener("change", function () {
-          SL.datastore.upsertChannel({ key: ch.key, label: labelIn.value });
+        var ci = el("input", "sl-chan-color");
+        ci.type = "color";
+        ci.title = "这个通道的默认曲线颜色";
+        ci.value = colorHexOf(ch.color);
+        ci.addEventListener("change", function () {
+          SL.datastore.upsertChannel({ key: ch.key, color: ci.value });
           persistChannels();
+          renderChannels();
+          if (SL.views) { SL.views.redraw(); }
         });
-        tdLabel.appendChild(labelIn);
-        tr.appendChild(tdLabel);
+        r1.appendChild(ci);
 
-        var tdUnit = el("td");
-        var unitIn = el("input");
-        unitIn.type = "text"; unitIn.value = ch.unit || ""; unitIn.size = 4;
-        unitIn.addEventListener("change", function () {
-          SL.datastore.upsertChannel({ key: ch.key, unit: unitIn.value });
-          persistChannels();
-        });
-        tdUnit.appendChild(unitIn);
-        tr.appendChild(tdUnit);
-
-        var tdPre = el("td");
-        var preIn = el("input");
-        preIn.type = "number"; preIn.min = "0"; preIn.max = "8";
-        preIn.value = String(ch.precision === undefined ? 3 : ch.precision);
-        preIn.style.width = "52px";
-        preIn.addEventListener("change", function () {
-          var v = parseInt(preIn.value, 10);
-          SL.datastore.upsertChannel({ key: ch.key, precision: isNaN(v) ? 3 : v });
-          persistChannels();
-        });
-        tdPre.appendChild(preIn);
-        tr.appendChild(tdPre);
-
-        var tdVis = el("td");
+        var visLab = el("label", "sl-chk sl-chan-vis");
         var vis = el("input");
         vis.type = "checkbox"; vis.checked = ch.visible !== false;
+        vis.title = "取消勾选＝这个通道不进图表（数据照收，勾回来即可）";
         vis.addEventListener("change", function () {
           SL.datastore.upsertChannel({ key: ch.key, visible: vis.checked });
           persistChannels();
         });
-        tdVis.appendChild(vis);
-        tr.appendChild(tdVis);
+        visLab.appendChild(vis);
+        visLab.appendChild(document.createTextNode("显示"));
+        r1.appendChild(visLab);
 
-        var tdDel = el("td");
         var del = el("button", "sl-btn is-sm is-danger", "删");
         del.type = "button";
+        del.title = "删除这个通道（连同它的缓存数据）";
         del.addEventListener("click", function () {
           SL.datastore.removeChannel(ch.key);
           persistChannels();
           renderChannels();
         });
-        tdDel.appendChild(del);
-        tr.appendChild(tdDel);
+        r1.appendChild(del);
+        card.appendChild(r1);
 
+        /* ---- 第二行：标签 / 单位 / 精度 ---- */
+        var r2 = el("div", "sl-chan-r2");
+
+        var labelIn = el("input", "sl-chan-label");
+        labelIn.type = "text"; labelIn.value = ch.label || ch.key;
+        labelIn.title = "图上显示的名字";
+        labelIn.addEventListener("change", function () {
+          SL.datastore.upsertChannel({ key: ch.key, label: labelIn.value });
+          persistChannels();
+        });
+        r2.appendChild(labelledField("标签", labelIn));
+
+        var unitIn = el("input", "sl-chan-unit");
+        unitIn.type = "text"; unitIn.value = ch.unit || "";
+        unitIn.title = "单位（只用于显示）";
+        unitIn.addEventListener("change", function () {
+          SL.datastore.upsertChannel({ key: ch.key, unit: unitIn.value });
+          persistChannels();
+        });
+        r2.appendChild(labelledField("单位", unitIn));
+
+        var preIn = el("input", "sl-chan-prec");
+        preIn.type = "number"; preIn.min = "0"; preIn.max = "8";
+        preIn.value = String(ch.precision === undefined ? 3 : ch.precision);
+        preIn.title = "小数位数 0~8";
+        preIn.addEventListener("change", function () {
+          var v = parseInt(preIn.value, 10);
+          SL.datastore.upsertChannel({ key: ch.key, precision: isNaN(v) ? 3 : v });
+          persistChannels();
+        });
+        r2.appendChild(labelledField("精度", preIn));
+        card.appendChild(r2);
+
+        td.appendChild(card);
+        tr.appendChild(td);
         table.appendChild(tr);
       })(list[i]);
     }
@@ -3346,6 +3428,10 @@
     wireDeviceAndShow();
     wireV223();
     initPanelQuick();
+    /* V2.2.16：必须在动态列表渲染之前调用——那时组里只有静态说明，
+       「父节点是 .sl-group」这条判据才能干净地把动态空态提示排除掉。
+       tooltip 走的是 closest("[data-tip]") 事件委托，所以与 initTooltips 的先后无关。 */
+    foldStaticHints();
     wireTestPane();
     wireV226();
     initTooltips();
