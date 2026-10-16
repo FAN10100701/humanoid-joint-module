@@ -527,6 +527,62 @@ input[type="number"] { width: 78px; }
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  position: relative;          /* V2.2.16：零状态引导要绝对定位盖在主区上 */
+}
+
+/* 零状态引导（V2.2.16）：首屏最有价值的那块地方原本是一片空白，
+   而唯一能让人「马上看到东西」的演示入口藏在第 9 个页签里。 */
+.sl-zero {
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--sl-surface-2);
+  /* 关键：遮罩本身不吃鼠标事件。底部发送条（V2.2.8 起就在主区里）与主区工具条
+     都在这块区域下面，如果遮罩拦截点击，用户在没数据时就点不到「全屏 / 收起 /
+     发送条」这些本来可用的控件；E2E 的 serial_stage 与 serial_wiring 正是因此超时。
+     只有卡片本身恢复可点，引导按钮照常工作。 */
+  pointer-events: none;
+}
+
+.sl-zero-card { pointer-events: auto; }
+
+/* `hidden` 属性会被上面的 display:flex 覆盖，必须显式关掉 */
+.sl-zero[hidden] { display: none; }
+
+.sl-zero-card {
+  max-width: 540px;
+  border: 1px solid var(--sl-border);
+  border-radius: 10px;
+  background: var(--sl-surface);
+  padding: 16px 20px;
+}
+
+.sl-zero-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sl-ink);
+  margin-bottom: 8px;
+}
+
+.sl-zero-steps {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--sl-ink-2);
+}
+
+.sl-zero-steps b { color: var(--sl-ink); }
+
+.sl-zero-act {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .sl-stage-bar {
@@ -640,6 +696,12 @@ input[type="number"] { width: 78px; }
   align-content: start;
   align-items: start;
 }
+
+/* V2.2.16：工作区只有一个图表框时让它占满整宽。
+   auto-fill 会先按容器宽度铺好若干列（1600px 宽下约 3 列），
+   而单个面板只落在第 1 列 —— 右侧三分之二白白空着（用户截图里就是这样：
+   波形只占主区左三分之一）。多面板时仍然正常分栏。 */
+.sl-grid > :only-child { grid-column: 1 / -1; }
 
 /* 主区全屏 / 收起 */
 .sl-stage.is-main-full .sl-stage-grid,
@@ -1169,6 +1231,16 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 }
 
 .sl-help:hover { color: var(--sl-ink); border-color: var(--sl-brand); }
+
+/* V2.2.16：页签从 9 个并到 6 个之后，一个页签可能同时显示两段面板
+   （解析+通道 / 显示+图表 / 录制+数据）。同一容器里第 2 段及以后可见的面板
+   要有一条分隔线，否则两段内容会连在一起看不出分界。
+   `~` 只会命中「前面还有同屏面板」的那些，所以单独一个页签时不会有这条线。 */
+.sl-panes > .sl-pane.is-on ~ .sl-pane.is-on {
+  border-top: 1px solid var(--sl-border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
 
 .sl-note {
   border-left: 3px solid var(--sl-brand);

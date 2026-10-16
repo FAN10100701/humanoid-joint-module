@@ -266,7 +266,9 @@ def main():
             assert re.match(r"^v\d+\.\d+", ver), "版本号未渲染: %r" % ver
             missing = page.evaluate("(ns)=>{var s=window.SerialLab||{};return ns.filter(function(k){return !s[k];});}", SL_MODULES)
             assert not missing, "SerialLab 模块未挂载: " + ", ".join(missing)
-            assert page.locator("#slTabs .sl-tab").count() == 9, "左栏页签数不对: %d" % page.locator("#slTabs .sl-tab").count()  # V2.2.4 新增「测试」页签
+            # V2.2.16：9 个页签并到 6 个（解析带通道 / 显示带图表 / 录制带数据），
+            # 合并用 data-also 声明，被合并面板的 data-pane 值保持不变。
+            assert page.locator("#slTabs .sl-tab").count() == 6, "左栏页签数不对: %d" % page.locator("#slTabs .sl-tab").count()
             # 无 Web Serial 时必须走「降级横幅 + 连接按钮禁用」而不是报错
             if not page.evaluate("!!(navigator.serial)"):
                 cls = page.locator("#slBanner").get_attribute("class") or ""
@@ -295,7 +297,7 @@ def main():
             page.select_option("#slQuickAdd", "textmon")
             page.click("#slBtnAddPanel2")
             page.wait_for_function("document.querySelectorAll('#slGrid .sl-panel').length === 2", timeout=10000)
-            page.click("#slTabs .sl-tab[data-pane='plugins']")  # 左栏页签(非活动页签内元素不可见)
+            page.click("#slTabs .sl-tab[data-pane='display']")  # 左栏页签(非活动页签内元素不可见)
             page.select_option("#slPluginType", "timeplot")
             page.click("#slBtnAddPanel")  # 时域折线(声明式插件入口)
             page.wait_for_function("document.querySelectorAll('#slGrid .sl-panel').length === 3", timeout=10000)
@@ -312,7 +314,7 @@ def main():
             # 监视器应实时把行打印出来(主视觉的核心内容),不是空壳
             page.wait_for_function(
                 "document.querySelectorAll('#slMainHost .sl-mon-line').length > 0", timeout=10000)
-            page.click("#slTabs .sl-tab[data-pane='channels']")
+            page.click("#slTabs .sl-tab[data-pane='parse']")
             n_ch = page.locator("#slChannels tr").count()
             assert n_ch >= 2, "解析出的通道未渲染到通道表(tr=%d)" % n_ch
             assert not errs, "数据管线 JS 异常: " + "; ".join(errs[:3])
@@ -327,7 +329,7 @@ def main():
             page.wait_for_function(
                 "!!localStorage.getItem('humanoid-serial-config-v1')", timeout=8000)
             page.wait_for_timeout(1200)
-            page.click("#slTabs .sl-tab[data-pane='data']")
+            page.click("#slTabs .sl-tab[data-pane='timeline']")
             with page.expect_download(timeout=15000) as dl:
                 page.click("#slBtnExpRaw")  # 原始记录 CSV
             d = dl.value
@@ -395,7 +397,7 @@ def main():
             page.click("#slBtnDemo")   # 演示数据须按用户帧结构合成,否则一条通道都建不出来
             page.wait_for_function(
                 "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
-            page.click("#slTabs .sl-tab[data-pane='channels']")
+            page.click("#slTabs .sl-tab[data-pane='parse']")
             page.wait_for_function("document.querySelectorAll('#slChannels tr').length >= 2", timeout=10000)
             txt = page.locator("#slChannels").inner_text()
             assert "a" in txt and "b" in txt, "自定义帧未解析出字段(通道表: %r)" % txt
@@ -607,7 +609,7 @@ def main():
             page.click("#slBtnDemo")
             page.wait_for_function(
                 "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
-            page.click("#slTabs .sl-tab[data-pane='channels']")
+            page.click("#slTabs .sl-tab[data-pane='parse']")
             page.wait_for_function("document.querySelectorAll('#slChannels tr').length >= 2", timeout=10000)
             txt = page.locator("#slChannels").inner_text()
             assert ("x" in txt or "func" in txt), "匿名 V1.0 预设未解析出字段: %r" % txt
@@ -918,7 +920,7 @@ def main():
                 "document.querySelector('#slState').textContent.indexOf('演示') >= 0", timeout=10000)
 
             # ---- ① 通道卡片：无横向溢出，且每通道仍是 tr ----
-            page.click("#slTabs .sl-tab[data-pane='channels']")
+            page.click("#slTabs .sl-tab[data-pane='parse']")
             page.wait_for_function(
                 "document.querySelectorAll('#slChannels tr').length >= 2", timeout=10000)
             n_tr = page.locator("#slChannels tr").count()
@@ -978,8 +980,50 @@ def main():
                 assert a["x1"] <= b["x0"] + 1, (
                     "波形底行标签重叠：%r 结束于 %.1f，%r 起于 %.1f"
                     % (a["t"], a["x1"], b["t"], b["x0"]))
+            # ---- ④ 零状态引导：未连接时必须可见，点它就能开演示，开了就隐藏 ----
+            # 旧版这里是一片空白，唯一能「马上看到东西」的演示入口藏在第 9 个页签里。
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            assert page.evaluate(
+                "(() => { const z = document.querySelector('#slZero'); return !!z && !z.hidden; })()"), \
+                "未连接时零状态引导没出现（首屏又变成一片空白）"
+            assert page.locator("#slTabs .sl-tab").count() == 6, \
+                "页签数不是 6，而是 %d" % page.locator("#slTabs .sl-tab").count()
+            page.click("#slZeroDemo")
+            page.wait_for_function(
+                "window.SerialLab && SerialLab.core.state.demo === true", timeout=10000)
+            assert page.evaluate("document.querySelector('#slZero').hidden"), \
+                "开演示后零状态引导还盖着主区"
+
+            # ---- ⑤ 单个图表框必须占满工作区整宽 ----
+            # `.sl-grid` 是 auto-fill + minmax(320px,1fr)：1600px 宽下会先铺 3 列，
+            # 单个面板只落第 1 列，右侧 2/3 白空（用户截图里就是这样）。
+            page.wait_for_timeout(900)
+            m = page.evaluate("""(() => {
+                const g = document.querySelector('#slGrid');
+                const kids = g ? [...g.children].filter(k => k.classList.contains('sl-panel')) : [];
+                return { gw: g ? g.clientWidth : -1, n: kids.length,
+                         w: kids[0] ? kids[0].offsetWidth : -1 };
+            })()""")
+            assert m["n"] >= 1, "工作区里没有图表框"
+            assert abs(m["w"] - m["gw"]) <= 2, (
+                "单个图表框没占满整宽（%d / %d）—— auto-fill 又把右侧留空了" % (m["w"], m["gw"]))
+
+            # ---- ⑥ 合并页签：点一个页签要同时显示它合并进来的面板 ----
+            page.click("#slTabs .sl-tab[data-pane='parse']")
+            page.wait_for_timeout(400)
+            on1 = page.evaluate(
+                "[...document.querySelectorAll('.sl-panes > .sl-pane.is-on')].map(s => s.getAttribute('data-pane'))")
+            assert "parse" in on1 and "channels" in on1, "「解析」没同时显示通道面板: %r" % on1
+            page.click("#slTabs .sl-tab[data-pane='timeline']")
+            page.wait_for_timeout(400)
+            on2 = page.evaluate(
+                "[...document.querySelectorAll('.sl-panes > .sl-pane.is-on')].map(s => s.getAttribute('data-pane'))")
+            assert "timeline" in on2 and "data" in on2, "「录制」没同时显示数据面板: %r" % on2
+
             assert not errs, "V2.2.16 JS 异常: " + "; ".join(errs[:3])
-        check("serial_v2216 通道卡片无横向溢出/说明收进?/波形底行标签不重叠", t_serial_v2216)
+        check("serial_v2216 通道卡片无横向溢出/说明收进?/底行标签不重叠/零状态引导/6页签/单面板满宽",
+              t_serial_v2216)
 
         # ---------- 8. 404 页 ----------
         def t_404():

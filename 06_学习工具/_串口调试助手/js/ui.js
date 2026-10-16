@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.16";
+  UI.VERSION = "2.2.17";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -2846,6 +2846,12 @@
       if (!t || t.tagName !== "BUTTON") { return; }
       var pane = t.getAttribute("data-pane");
       if (!pane) { return; }
+      /* V2.2.16：页签从 9 个并到 6 个——`data-also` 声明「这个页签同时显示哪些面板」。
+         合并只影响左侧栏的分组，不动各面板自身（接线全靠元素 id，与所在面板无关）；
+         拆成「data-pane + data-also」而不是把两个 section 合成一个，是为了
+         ①HTML 零搬动（少犯错）②E2E 里按 `data-pane` 点页签的写法保留原值。
+         「解析」带「通道」、「显示」带「图表」、「录制」带「数据」。 */
+      var want = " " + pane + " " + (t.getAttribute("data-also") || "") + " ";
       var tabs = $("slTabs").getElementsByTagName("button");
       for (var i = 0; i < tabs.length; i++) {
         var on = (tabs[i] === t);
@@ -2853,13 +2859,51 @@
       }
       var panes = document.querySelectorAll(".sl-panes > .sl-pane");
       for (var j = 0; j < panes.length; j++) {
-        var isOn = panes[j].getAttribute("data-pane") === pane;
+        var key = panes[j].getAttribute("data-pane");
+        var isOn = key && want.indexOf(" " + key + " ") >= 0;
         panes[j].className = isOn ? "sl-pane is-on" : "sl-pane";
       }
     });
   }
 
   /* 主区工具条：C1 主位形态控制 + C2 快速加图表 */
+  /* ------------------------------------------------------------
+     V2.2.16：零状态引导
+     首屏最有价值的那块地方（主区）原本是一片空白，而唯一能让人「马上看到东西」的
+     演示入口藏在第 9 个页签里；面板里那行「暂无数据（连接设备，或到「测试」页签开演示）」
+     是画在 canvas 上的，点不了。这里给三步主线 + 两个能直接点的按钮。
+     判据用「有没有收到过字节」而不是「有没有通道」—— 通道表是持久化的，
+     用过一次的人即使没连设备也至少有一堆通道，那样引导就永远不会出现。
+     ------------------------------------------------------------ */
+  function refreshZeroState() {
+    var z = $("slZero");
+    if (!z) { return; }
+    var hasData = !!(T.stats && T.stats.rx > 0);
+    z.hidden = hasData || core.state.demo || core.state.conn === "open";
+  }
+
+  function wireZeroState() {
+    var demo = $("slZeroDemo");
+    if (demo) {
+      demo.addEventListener("click", function () {
+        /* 直接触发「测试」页签里那个演示按钮：它带自己的开关语义（再点一次即停），
+           这里不复制一份逻辑，避免两处口径漂移（硬规则 12 的同一条道理）。
+           元素即使当前不可见，.click() 依然会派发 —— 页签隐藏不影响。 */
+        var b = $("slBtnDemo");
+        if (b) { b.click(); }
+        else { UI.toast("warn", "演示入口不可用（版本异常）"); }
+      });
+    }
+    var help = $("slZeroHelp");
+    if (help) {
+      help.addEventListener("click", function () {
+        var h = $("slBtnHelp");
+        if (h) { h.click(); }
+      });
+    }
+    refreshZeroState();
+  }
+
   function wireStage() {
     /* C1 主位：全屏（独占主区）/ 收起（只留标题条）/ 比例复位 */
     $("slBtnMainFull").addEventListener("click", function () {
@@ -3342,6 +3386,7 @@
       /* 暂停态存在 core.state.paused 里,任何入口(绿圆标 / 页签内开关)改了它都会走到这里;
          一并刷新「录制」页签的按钮文案,保证两处口径永远一致 */
       renderRecordState();
+      refreshZeroState();
     });
 
     core.on("serial:state", function () {
@@ -3424,6 +3469,7 @@
 
     wireTop();
     wireStage();
+    wireZeroState();
     wireConnectionBar();
     wireDeviceAndShow();
     wireV223();

@@ -72,13 +72,10 @@
     <aside class="sl-side" id="slSide">
       <div class="sl-tabs" id="slTabs">
         <button class="sl-tab is-on" type="button" data-pane="device">设备</button>
-        <button class="sl-tab" type="button" data-pane="parse">解析</button>
-        <button class="sl-tab" type="button" data-pane="display">显示</button>
-        <button class="sl-tab" type="button" data-pane="channels">通道</button>
+        <button class="sl-tab" type="button" data-pane="parse" data-also="channels" data-tip="解析与通道：帧结构 / 预设 / 通道管理（标签、单位、颜色、精度）">解析</button>
+        <button class="sl-tab" type="button" data-pane="display" data-also="plugins" data-tip="显示与图表：显示设置 / 面板列表与新建图表">显示</button>
         <button class="sl-tab" type="button" data-pane="send">发送</button>
-        <button class="sl-tab" type="button" data-pane="plugins">图表</button>
-        <button class="sl-tab" type="button" data-pane="timeline">录制</button>
-        <button class="sl-tab" type="button" data-pane="data">数据</button>
+        <button class="sl-tab" type="button" data-pane="timeline" data-also="data" data-tip="录制与数据：内存录制回放 / 导出 / 数据文件夹 / 离线单文件">录制</button>
         <button class="sl-tab" type="button" data-pane="test">测试</button>
       </div>
 
@@ -628,6 +625,25 @@
     <!-- ---------- C 主区 ---------- -->
     <section class="sl-stage" id="slStage">
 
+      <!-- 零状态引导（V2.2.16）：没连接、没演示、也还没收到任何字节时显示。
+           旧版这里是一片空白，只在面板里写一行「暂无数据（连接设备，或到「测试」页签开演示）」——
+           告诉用户去哪，却不给路（而且演示入口藏在第 9 个页签里）。
+           现在给三步主线 + 一个能直接点的按钮；一旦连上 / 开演示 / 收到字节就自动隐藏。 -->
+      <div class="sl-zero" id="slZero" hidden>
+        <div class="sl-zero-card">
+          <div class="sl-zero-title">还没有数据</div>
+          <ol class="sl-zero-steps">
+            <li><b>连接设备</b>：点左上角「连接设备」选串口（需 Chrome / Edge；手机浏览器没有 Web Serial）</li>
+            <li><b>没硬件也能看</b>：点下面的按钮开演示数据——50Hz 合成波形，监视器与曲线立刻有内容</li>
+            <li><b>数据一到就自动成形</b>：按「解析」页签的规则建出通道并画成曲线，不用手工配置</li>
+          </ol>
+          <div class="sl-zero-act">
+            <button class="sl-btn is-primary" id="slZeroDemo" type="button">▶ 先看演示（无需硬件）</button>
+            <button class="sl-btn" id="slZeroHelp" type="button">怎么接硬件？</button>
+          </div>
+        </div>
+      </div>
+
       <div class="sl-stage-bar">
         <span class="sl-stage-title">主区</span>
         <span class="sl-stage-hint">监视器在上 · 波形在下 · 分割线可拖拽</span>
@@ -643,9 +659,11 @@
         </span>
         <button class="sl-btn is-sm" id="slBtnAddPanel2" type="button" title="把选中的图表类型添加到波形工作区">＋</button>
         <button class="sl-btn is-sm" id="slBtnClearPanels" type="button" title="移除工作区全部图表框（可撤销）">清面板</button>
-        <button class="sl-btn is-sm" id="slBtnClearData" type="button" title="清空通道已缓数据与原始记录（通道设置与图表框保留）">清缓存</button>
         <button class="sl-btn is-sm" id="slBtnUndoClear" type="button" hidden
                 title="恢复刚被清空的面板布局">↩ 撤销</button>
+        <span class="sl-bar-sep"></span>
+        <button class="sl-btn is-sm is-danger" id="slBtnClearData" type="button"
+                title="清空所有通道的已缓数据与原始记录（通道设置与图表框保留）。不可撤销——「清面板」还能撤销，这个丢掉的是数据本身，所以单独分隔并标红">清缓存</button>
       </div>
 
       <!-- C1：主位（默认 = 串口监视器），主视觉 -->

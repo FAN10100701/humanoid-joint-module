@@ -1124,6 +1124,38 @@ const GBK = (X.codec || SL.codec);
       && plug16.indexOf("if (ax.startRight + 8 < rx - rrw) {") > 0, "");
   check("A-88: 顶栏不再把收发两个计数都叫「下位机」",
     html16.indexOf("↓接收") > 0 && html16.indexOf("↑发送") > 0, "");
+
+  /* ---- A-90：页签合并 / 零状态引导 / 单面板满宽 / 危险操作分区 ---- */
+  check("A-90: 页签从 9 个并到 6 个，合并用 data-also 声明（HTML 零搬动 + E2E 选择器保留原值）",
+    (html16.match(/class="sl-tab[^"]*"[^>]*data-pane=/g) || []).length === 6
+      && html16.indexOf('data-pane="parse" data-also="channels"') > 0
+      && html16.indexOf('data-pane="display" data-also="plugins"') > 0
+      && html16.indexOf('data-pane="timeline" data-also="data"') > 0, "");
+  check("A-90: 页签切换按「集合包含」判定同屏面板（不是字符串相等）",
+    ui16.indexOf('var want = " " + pane + " " + (t.getAttribute("data-also") || "") + " ";') > 0
+      && ui16.indexOf('want.indexOf(" " + key + " ") >= 0') > 0, "");
+  check("A-90: 同屏第 2 段及以后的面板有分隔线（否则两段内容连在一起）",
+    /\.sl-panes > \.sl-pane\.is-on ~ \.sl-pane\.is-on \{[\s\S]{0,160}?border-top: 1px solid/.test(css16), "");
+  check("A-90: 零状态引导的三步与两个可点按钮都在（旧版只在 canvas 上写了一行点不了的提示）",
+    html16.indexOf('id="slZero"') > 0 && html16.indexOf('id="slZeroDemo"') > 0
+      && html16.indexOf('id="slZeroHelp"') > 0
+      && html16.indexOf("连接设备") > 0 && html16.indexOf("没硬件也能看") > 0
+      && html16.indexOf("数据一到就自动成形") > 0, "");
+  check("A-90: 零状态判据用「收到过字节」而不是「有没有通道」（通道表持久化，否则永不出现）",
+    /function refreshZeroState\(\)[\s\S]{0,420}?T\.stats\.rx > 0/.test(ui16)
+      && /refreshZeroState\(\)[\s\S]{0,200}?core\.state\.demo/.test(ui16), "");
+  check("A-90: 零状态按钮复用既有入口（不复制一份演示逻辑）且已挂进 boot",
+    ui16.indexOf('var b = $("slBtnDemo");') > 0
+      && ui16.indexOf("wireZeroState();") > 0
+      && /core\.on\("state"[\s\S]{0,240}?refreshZeroState\(\);/.test(ui16), "");
+  check("A-90: 单个图表框占满工作区整宽（auto-fill 会把右侧留空）",
+    /\.sl-grid > :only-child \{ grid-column: 1 \/ -1; \}/.test(css16), "");
+  check("A-90: 「清缓存」（丢数据、不可撤销）与「清面板」（可撤销）分开并标危险色",
+    /slBtnClearData"[^>]*\n?[^>]*is-danger/.test(html16)
+      || /class="sl-btn is-sm is-danger" id="slBtnClearData"/.test(html16), "");
+  check("A-90: 默认分割比例仍是 0.62（AUDIT A-75 有意的「监视器为绝对主视觉」，E2E 也钉着它）",
+    /monRatio: 0\.62/.test(fs.readFileSync(path.join(JS, "core.js"), "utf8"))
+      && /RATIO_DEF = 0\.62/.test(fs.readFileSync(path.join(JS, "views.js"), "utf8")), "");
 })();
 
 /* ========== V2.2.15：桥的省流开关功能性回归（AUDIT A-85①④）==========
