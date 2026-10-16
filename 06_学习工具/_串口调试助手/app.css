@@ -1917,3 +1917,18 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   color: var(--sl-brand);
   white-space: nowrap;
 }
+/* V2.2.35（A-123）：拆分弹窗里的通道勾选列表 */
+.sl-split-list { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.sl-split-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border: 1px solid var(--sl-border);
+  border-radius: 6px;
+  font-size: var(--sl-fs-sub);
+  cursor: pointer;
+}
+.sl-split-item:hover { border-color: var(--sl-border-hi); }
+.sl-split-item .sl-swatch { width: 9px; height: 9px; border-radius: 2px; flex: 0 0 auto; }
+.sl-split-span { font-style: normal; color: var(--sl-ink-3); font-size: var(--sl-fs-weak); }

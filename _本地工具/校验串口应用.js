@@ -2238,6 +2238,43 @@ scanRegression().then(function () {
     sUi.indexOf('core.on("panel:merged"') > 0
       && /var mtarget = findMergeTarget\(host, el, e\);[\s\S]{0,120}?if \(mtarget\) \{ return; \}/.test(codeViews), "");
 
+  /* ============================================================
+     V2.2.35（A-123）：**随时可用**的拆分入口。
+     用户原话：「拆分也有专门的便捷的拆分方法」。查证：拆分逻辑本身一直是好的，
+     但它只挂在一次性的 `panel:scaleHint` 上（`scaleHintDone` 每面板只弹一次）——
+     提示过去之后用户**再也找不到入口**，这就是「功能存在但用不了」的典型 ✗。
+     顺手记一个我自己踩的真 bug：弹窗里的通道列表最初用全局 `$("slSplitList")` 查找，
+     而 `paint()` 必须在 `UI.modal()` **之前**先跑一次（否则弹窗刚开是空的），
+     那一刻节点还没挂进 document → 查到 null → 标题写着「（4 个通道）」却一个勾选框都没有。
+     ============================================================ */
+  check("A-123: 图表页签有随时可用的拆分入口（按钮 + 面板下拉），并已接线",
+    sHtml.indexOf('id="slBtnSplitPanel"') > 0
+      && sHtml.indexOf('id="slSplitPanelSel"') > 0
+      && sUi.indexOf('$("slBtnSplitPanel").addEventListener("click"') > 0
+      && sUi.indexOf("renderSplitSel();") > 0, "");
+
+  /* ⚠ 负向检查必须在**剥掉注释**的代码上做：这段的说明注释里原样写了 `$("slSplitList")`
+     作为反例，不剥注释的话注释自己会把断言判红 —— 同一类错今天第三次了（A-116 的
+     `ax[k] = v`、A-117 的 `g("--sl-ink3")`、A-123 的 `$("slSplitList")`）。
+     一律用 codeUi。 */
+  const codeUi = sUi.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  check("A-123: 拆分弹窗用**局部引用**填列表，不用全局 $()（挂载前查不到节点）",
+    /function paint\(\) \{[\s\S]{0,1600}?var host = listHost;/.test(codeUi)
+      && !/function paint\(\) \{[\s\S]{0,900}?\$\(\"slSplitList\"\)/.test(codeUi), "");
+
+  check("A-123: 拆分只挪勾中的通道（原面板收敛成剩下的通道，不再是 auto）",
+    /SL\.views\.updatePanel\(p\.id, \{ channels: stayKeys \}\);/.test(sUi)
+      && /if \(!moveKeys\.length\) \{/.test(sUi)
+      && /if \(!stayKeys\.length\) \{/.test(sUi), "");
+
+  check("A-123: 文本监视器不可拆，且下拉里明确标注并禁用",
+    /if \(p\.type === "textmon"\) \{ UI\.toast\("warn", "文本监视器没有通道可拆"\); return; \}/.test(sUi)
+      && /o\.disabled = \(list\[i\]\.type === "textmon"\);/.test(sUi), "");
+
+  check("A-123: 通道旁标出「跨度」（拆分的动机就是量级差，让用户一眼看到该挪走谁）",
+    sUi.indexOf('"跨度 " + U.fmt(st.max - st.min, 3)') > 0
+      && /\.sl-split-item \{/.test(sCss) && /\.sl-split-span \{/.test(sCss), "");
+
   check("A-119: 显示设置不一致的宁可跳过并报告，不静默丢配置（window/axis/expr/opts 都比）",
     codeViews.indexOf("function panelDisplayKey(p)") > 0
       && /window: p\.window/.test(codeViews) && /axis: p\.axis/.test(codeViews)

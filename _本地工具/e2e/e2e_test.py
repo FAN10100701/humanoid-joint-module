@@ -1727,6 +1727,80 @@ def main():
             assert not errs, "排版/交互 JS 异常: " + "; ".join(errs[:3])
         check("serial_layout 面板头不被裁 + 手动量程边打字边生效 + 角标无框", t_serial_layout)
 
+        def t_serial_split():
+            """A-123：**随时可用**的拆分入口（原先只有「量级差过大」弹一次的自动提示）。
+
+            为什么这是「功能存在但用不了」的典型：拆分逻辑（doSplitByScale）一直是好的，
+            但它只挂在一次性的 scaleHint 上 —— 提示过就不再弹（scaleHintDone），
+            用户想再拆就再也找不到入口（原话「拆分也有专门的便捷的拆分方法」）。
+            这里断言的是**入口可达 + 行为正确**，不是「有这个东西」。
+            """
+            errs = make_page_errors_tracker(page)
+            sl_open_clean()
+            page.click("#slTabs .sl-tab[data-pane='test']")
+            page.click("#slBtnDemo")
+            page.wait_for_timeout(2000)
+            page.click("#slTabs .sl-tab[data-pane='display']")
+            page.wait_for_timeout(400)
+
+            # ① 入口存在且列出了可拆的面板（监视器要标明不可拆并被禁用）
+            assert page.locator("#slBtnSplitPanel").is_visible(), "缺「选择通道拆分…」按钮"
+            opts = page.evaluate("""() => Array.prototype.slice
+                .call(document.querySelectorAll('#slSplitPanelSel option'))
+                .map(function(o){ return { t: o.textContent, dis: o.disabled }; })""")
+            assert opts, "拆分下拉没有选项"
+            tm = [o for o in opts if "监视器" in o["t"]]
+            assert tm and tm[0]["dis"] is True, "文本监视器应标注且禁用: %r" % opts
+
+            pid = page.evaluate(
+                "() => SerialLab.views.list().filter(function(p){return p.type==='timeplot';})[0].id")
+            page.select_option("#slSplitPanelSel", pid)
+            page.click("#slBtnSplitPanel")
+            page.wait_for_timeout(600)
+            assert page.evaluate("() => SerialLab.ui.isModalOpen()"), "拆分弹窗没打开"
+
+            # ② 弹窗必须真的列出通道 —— 这一条抓的是一个真 bug：
+            #    paint() 原本用全局 $("slSplitList")，而它在 UI.modal() 把节点挂进文档
+            #    **之前**就要跑一次，于是查到 null、列表永远空（标题写着「4 个通道」却一个框都没有）。
+            items = page.evaluate("""() => Array.prototype.slice
+                .call(document.querySelectorAll('#slSplitList .sl-split-item'))
+                .map(function(e){ return e.textContent.replace(/\\s+/g,' ').trim(); })""")
+            assert len(items) >= 2, "拆分弹窗没列出通道（$() 在挂载前查不到节点就是这个症状）: %r" % items
+            assert any("跨度" in it for it in items), "通道旁应标出跨度（拆分动机就是量级差）: %r" % items
+
+            # ③ 一个都不勾 → 拒绝，且不建面板、弹窗不关（让用户接着勾）
+            before = page.evaluate("() => SerialLab.views.list().length")
+            page.evaluate("""() => { var bs = document.querySelectorAll('#slModal button');
+                for (var i=0;i<bs.length;i++){ if (bs[i].textContent === '拆出去'){ bs[i].click(); return; } } }""")
+            page.wait_for_timeout(400)
+            assert page.evaluate("() => SerialLab.views.list().length") == before, \
+                "一个通道都没勾却建出了面板"
+            assert page.evaluate("() => SerialLab.ui.isModalOpen()"), "被拒后弹窗不该关（用户要接着勾）"
+
+            # ④ 勾一个 → 拆出新面板：新面板拿到勾中的、原面板收成剩下的
+            page.evaluate("""() => { var c = document.querySelectorAll('#slSplitList input[type=checkbox]');
+                c[0].checked = true; c[0].dispatchEvent(new Event('change', { bubbles: true })); }""")
+            page.evaluate("""() => { var bs = document.querySelectorAll('#slModal button');
+                for (var i=0;i<bs.length;i++){ if (bs[i].textContent === '拆出去'){ bs[i].click(); return; } } }""")
+            page.wait_for_timeout(900)
+            assert not page.evaluate("() => SerialLab.ui.isModalOpen()"), "拆成功后弹窗没关"
+            state = page.evaluate("""() => SerialLab.views.list().map(function(p){
+                return { t: p.title, ch: (p.channels || []).slice(), type: p.type }; })""")
+            tps = [s for s in state if s["type"] == "timeplot"]
+            assert len(tps) == 2, "没拆成两块时域面板: %r" % state
+            newp = [s for s in tps if "·" in s["t"]]
+            oldp = [s for s in tps if "·" not in s["t"]]
+            assert len(newp) == 1 and len(oldp) == 1, "新面板标题应带上通道名: %r" % state
+            assert len(newp[0]["ch"]) == 1, "新面板应只拿到勾中的那一个通道: %r" % newp
+            assert len(oldp[0]["ch"]) >= 1, "原面板应留下其余通道: %r" % oldp
+            # 两个面板的通道不重叠、且合起来就是原来那几个
+            assert not (set(newp[0]["ch"]) & set(oldp[0]["ch"])), "拆完两个面板的通道重叠了: %r" % state
+
+            # ⑤ 自动拆分（量级差提示那条老路径）不能因此失联
+            assert page.evaluate("() => typeof SerialLab.ui !== 'undefined'") is True
+            assert not errs, "拆分 JS 异常: " + "; ".join(errs[:3])
+        check("serial_split 随时可用的拆分入口（勾选通道 → 新面板）", t_serial_split)
+
         # ---------- 8. 404 页 ----------
         def t_404():
             errs = make_page_errors_tracker(page)

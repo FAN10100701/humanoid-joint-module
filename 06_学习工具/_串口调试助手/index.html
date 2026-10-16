@@ -462,6 +462,16 @@
             <p class="sl-hint">「图表」是声明式配置：选一个内置渲染器，再绑定通道、公式、坐标轴与颜色，零代码执行。把面板拖到主位即可与串口监视器互换位置。</p>
           </div>
           <div class="sl-group">
+            <h3>✂ 拆分图表框</h3>
+            <div class="sl-row">
+              <span class="sl-field">要拆的图表框
+                <select id="slSplitPanelSel"></select>
+              </span>
+              <button class="sl-btn is-sm" id="slBtnSplitPanel" type="button">选择通道拆分…</button>
+            </div>
+            <p class="sl-hint">一块图表框里挤了太多通道时，共用一个 Y 轴会让跨度小的那条被压成贴底直线。这里自己勾选「哪些通道挪到新面板」——只挪走你勾的，其余留在原面板、量程不动。另有自动提示：量级差过大时会弹一次「按量级拆分」。</p>
+          </div>
+          <div class="sl-group">
             <h3>🗂 工作区面板</h3>
             <div id="slPanelList"></div>
           </div>

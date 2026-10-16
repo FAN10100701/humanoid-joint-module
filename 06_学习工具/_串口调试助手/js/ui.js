@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.34";
+  UI.VERSION = "2.2.35";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -2670,6 +2670,7 @@
 
   function renderPanelList() {
     var host = $("slPanelList");
+    renderSplitSel();
     if (!host) { return; }
     host.textContent = "";
     var list = SL.views.list();
@@ -2702,6 +2703,169 @@
         host.appendChild(row);
       })(list[i]);
     }
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.35（A-123）：**随时可用**的拆分入口。
+     为什么必须补：原先拆分只挂在「量级差过大」的自动提示上（panel:scaleHint → doSplitByScale），
+     提示每个面板**只弹一次**（scaleHintDone），用户想再拆就再也找不到入口了 ——
+     这正是「拆分也要有专门的便捷方法」的原话。⚠️ 提示是**机会性**的，不能当入口用。
+     与自动拆分的分工：
+       · 自动（量级差）→ 按渲染层算出的分组，一次拆成 N 块，用户只能同意/拒绝；
+       · 手动（这里）  → 用户**自己勾**哪些通道挪到新面板，只挪勾走的、其余留在原面板。
+     ------------------------------------------------------------ */
+  function renderSplitSel() {
+    var sel = $("slSplitPanelSel");
+    if (!sel) { return; }
+    var list = SL.views.list();
+    var keep = sel.value;
+    sel.textContent = "";
+    for (var i = 0; i < list.length; i++) {
+      var o = document.createElement("option");
+      o.value = list[i].id;
+      o.textContent = list[i].title + (list[i].type === "textmon" ? "（监视器，不可拆）" : "");
+      o.disabled = (list[i].type === "textmon");
+      sel.appendChild(o);
+    }
+    if (!list.length) {
+      var o2 = document.createElement("option");
+      o2.value = "";
+      o2.textContent = "（工作区还没有图表框）";
+      sel.appendChild(o2);
+    } else if (keep && sel.querySelector('option[value="' + keep + '"]')) {
+      sel.value = keep;
+    }
+  }
+
+  /* 某块面板**当前实际显示**的通道（auto → 取渲染器上限内的前几个，与渲染器口径一致） */
+  function panelShownChannels(p) {
+    var all = SL.datastore.listChannels();
+    var want = (p && p.channels) || [];
+    var out = [];
+    var i, c;
+    function find(k) { for (var j = 0; j < all.length; j++) { if (all[j].key === k) { return all[j]; } } return null; }
+    if (want.length === 1 && want[0] === "auto") {
+      var r = SL.plugins.get(p.type);
+      var cap = (r && r.autoCount) || 4;
+      for (i = 0; i < all.length && out.length < cap; i++) {
+        if (all[i].visible !== false) { out.push(all[i]); }
+      }
+      return out;
+    }
+    for (i = 0; i < want.length; i++) {
+      c = find(want[i]);
+      if (c && c.visible !== false) { out.push(c); }
+    }
+    return out;
+  }
+
+  var SPLIT_SEL = {};      /* key -> 是否勾选（弹窗重绘时保留勾选） */
+
+  function openSplitDialog(pid) {
+    var p = SL.views.getPanel(pid);
+    if (!p) { UI.toast("warn", "那块图表框已经不在了"); return; }
+    if (p.type === "textmon") { UI.toast("warn", "文本监视器没有通道可拆"); return; }
+    var chans = panelShownChannels(p);
+    if (chans.length < 2) {
+      UI.toast("warn", "这块图表框当前只显示了 " + chans.length + " 个通道，没法再拆");
+      return;
+    }
+    SPLIT_SEL = {};
+    for (var z = 0; z < chans.length; z++) { SPLIT_SEL[chans[z].key] = false; }
+
+    var box = document.createElement("div");
+    box.className = "sl-proto";
+    /* ⚠ 面板标题是**用户可编辑**的，一律走 textContent；innerHTML 只用来搭我们自己的骨架
+       （子应用硬规则 4：用户可见文本禁止 innerHTML 拼接）。 */
+    var row1 = el("div", "sl-set-row");
+    row1.appendChild(el("label", null, "原图表框"));
+    row1.appendChild(el("span", null, p.title + "（" + chans.length + " 个通道）"));
+    box.appendChild(row1);
+
+    var row2 = el("div", "sl-set-row");
+    row2.appendChild(el("label", null, "挪到新面板"));
+    var listHost = el("div", "sl-split-list");
+    listHost.id = "slSplitList";
+    row2.appendChild(listHost);
+    box.appendChild(row2);
+
+    box.appendChild(el("p", "sl-hint",
+      "勾中的通道会挪到一块新图表框（标题自动带上通道名）；没勾的留在原面板，量程与窗口都不变。"
+      + "新面板进工作区，不抢主位。"));
+
+    function paint() {
+      /* ⚠ 必须用上面那个**局部引用** listHost，不能用 $("slSplitList")：
+         paint() 在 UI.modal() 之前就要跑一次（不然弹窗刚打开是空的），而那一刻
+         这个节点还没挂进 document —— 全局 $() 查不到 → 列表永远空 ✗
+         （实测症状：标题写着「（4 个通道）」，却一个勾选框都没有）。 */
+      var host = listHost;
+      if (!host) { return; }
+      host.textContent = "";
+      for (var i = 0; i < chans.length; i++) {
+        (function (c) {
+          var lab = document.createElement("label");
+          lab.className = "sl-split-item";
+          var cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = !!SPLIT_SEL[c.key];
+          cb.addEventListener("change", function () { SPLIT_SEL[c.key] = cb.checked; });
+          lab.appendChild(cb);
+          var sw = document.createElement("span");
+          sw.className = "sl-swatch";
+          sw.style.background = c.color || "#3b82f6";
+          lab.appendChild(sw);
+          lab.appendChild(document.createTextNode(c.label || c.key));
+          /* 跨度直接标在通道旁边 —— 拆分的动机就是「量级差太大」，让用户一眼看到该拆谁 */
+          var st = SL.datastore.stat(c.key);
+          if (st && isFinite(st.min) && isFinite(st.max)) {
+            var sp = el("i", "sl-split-span", "跨度 " + U.fmt(st.max - st.min, 3));
+            lab.appendChild(sp);
+          }
+          host.appendChild(lab);
+        })(chans[i]);
+      }
+    }
+    paint();
+
+    UI.modal({
+      title: "拆分图表框 · " + p.title,
+      body: box,
+      buttons: [
+        { label: "拆出去", primary: true, onClick: function () { return applySplit(pid); } },
+        { label: "全选", onClick: function () {
+            for (var k in SPLIT_SEL) { if (Object.prototype.hasOwnProperty.call(SPLIT_SEL, k)) { SPLIT_SEL[k] = true; } }
+            paint(); return false;
+          } },
+        { label: "取消" }
+      ]
+    });
+  }
+
+  function applySplit(pid) {
+    var p = SL.views.getPanel(pid);
+    if (!p) { return; }
+    var chans = panelShownChannels(p);
+    var moveKeys = [], moveLabels = [], stayKeys = [];
+    for (var i = 0; i < chans.length; i++) {
+      var k = chans[i].key;
+      if (SPLIT_SEL[k]) { moveKeys.push(k); moveLabels.push(chans[i].label || k); }
+      else { stayKeys.push(k); }
+    }
+    if (!moveKeys.length) { UI.toast("warn", "一个通道都没勾，没东西可拆"); return false; }
+    if (!stayKeys.length) { UI.toast("warn", "全勾上了 —— 那等于把整块面板挪走。至少留一个在原面板"); return false; }
+    /* 原面板收敛成具体通道列表（不再是 auto），否则新面板建出来还是同一批通道 */
+    SL.views.updatePanel(p.id, { channels: stayKeys });
+    var newId = SL.views.addPanel({
+      type: p.type,
+      title: (p.title || "图表") + " · " + moveLabels.join(" "),
+      channels: moveKeys,
+      expr: p.expr || "",
+      window: p.window || 500,
+      h: p.h || 300
+    }, true);
+    renderPanelList();
+    UI.toast("ok", "已拆出 " + moveKeys.length + " 个通道（" + moveLabels.join("+") + "）到新面板，其余留在原面板");
+    return newId ? true : false;
   }
 
   /* 面板编辑器：DIY 的核心入口（标题 / 通道 / 公式 / 窗口 / 量程 / 颜色） */
@@ -3872,6 +4036,14 @@
     core.on("panel:merged", function (p) {
       renderPanelList();
       UI.toast("ok", "已把 " + ((p && p.merged) || 0) + " 块同类图表框合并到这块（拖拽合并）");
+    });
+
+    /* V2.2.35（A-123）：随时可用的拆分入口（原先只有「量级差过大」弹一次的自动提示） */
+    $("slBtnSplitPanel").addEventListener("click", function () {
+      var sel = $("slSplitPanelSel");
+      var pid = sel ? sel.value : "";
+      if (!pid) { UI.toast("warn", "工作区还没有可拆的图表框"); return; }
+      openSplitDialog(pid);
     });
 
     $("slBtnClearPanels").addEventListener("click", function () {
