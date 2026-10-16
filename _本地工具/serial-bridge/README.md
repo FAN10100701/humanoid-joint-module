@@ -66,6 +66,9 @@ node bridge.mjs list --human
 ```bash
 node bridge.mjs read --ms 3000 --port COM4 --baud 115200 --preset justfloat --out capture.json
 node bridge.mjs read --ms 2000 --preset firewater --human
+
+# 激励-响应：打开端口 → 发一行 → 继续收到 ms 满（发命令并看回包，写在这里而不是分两步）
+node bridge.mjs read --send "get" --send-delay 400 --ms 1500 --port COM16 --preset firewater
 ```
 
 | 参数 | 默认 | 说明 |
@@ -79,6 +82,17 @@ node bridge.mjs read --ms 2000 --preset firewater --human
 | `--out` | — | 把结构化结果写成 JSON 文件（后续 `assert --in` 用） |
 | `--bundle=false` | 带 | 关掉则**不**附带 `debugBundle`，输出更小 |
 | `--profile` | `full` | `digest` = 只回「通道统计 + 帧结构 + 失败样本 + 提示」，丢掉 `brief` / `samples` / `recent` / 完整调试包 |
+| `--send` | — | 打开端口后**先发这一行**（默认补 `\n`），再继续采集 |
+| `--send-delay` | 300 | 发 `--send` 前等多少 ms（给设备上电/复位留时间） |
+| `--newline=false` | — | `--send` 不自动补换行（发裸字节序列时用） |
+
+> ⚠ **做激励-响应必须用 `read --send`，不要分两次调用 `read` 和 `write`。**
+> 串口是独占的：`read` 占着端口时另起的 `write` 进程**打不开端口并静默失败**
+> （把它的输出吞掉就完全看不出来），采集里收到的字节数恒定不变，
+> 现象和「设备根本没收到命令」一模一样——这个坑实测踩过，白查了半天。
+> `--send` 把「发」和「收」放进同一次端口占用，采集窗口从发送之后开始计时，
+> 所以给你的仍然是完整的 `--ms`。
+> 采集结果里会带 `sent: { text, hex, delayMs }`，事后能看出这包数据是在回应什么。
 | `--max-bytes` | `12000` | **stdout 字节预算**；超了自动降级为 digest 并在结果里标 `trimmed: true` + `trimmedNote`。`0` = 不限 |
 | `--human` | — | 输出人读摘要而非 JSON |
 
@@ -109,7 +123,6 @@ node bridge.mjs read --ms 2000 --preset firewater --human
 ```
 
 ### 3）`write` —— 向串口发数据
-
 ```bash
 node bridge.mjs write --hex "AA 55 01"
 node bridge.mjs write --text "AT+MODE=1"

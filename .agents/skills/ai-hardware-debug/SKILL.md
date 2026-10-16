@@ -81,6 +81,56 @@ node bridge.mjs trial append --in trial-n.json --expect "..."
 
 **判据必须先定义再迭代。** 没有客观判据，AI 只会瞎调 —— 先把指标写进 `expect`（超调 / 上升时间 / 稳态误差 / 纹波 / 温升），不达标即 fail。
 
+### 3.1 一条命令跑完一整轮（`_本地工具/迭代一轮.ps1`，推荐）
+
+上面 [1]~[4] 手工串起来是半分钟一轮。现在有脚本把它压成一条命令：
+**编译 → 烧录 → 采样 → 判据 → 记台账**，实测 **14 秒**走完（含烧录），退出码即结论。
+
+```powershell
+# 首次：把本机设置（Keil / CubeProgrammer / 工程路径）存进 gitignore 的 _data 目录
+powershell -ExecutionPolicy Bypass -File <tools>\<script> -Project <工程>.uvprojx -Save
+# 之后：一条命令，不带参数
+powershell -ExecutionPolicy Bypass -File <tools>\<script>
+```
+
+| 退出码 | 含义 | 脚本动作 |
+|---|---|---|
+| `0` | 全部判据 PASS | — |
+| `2` | 编译失败 | **自动回退**上一版固件 |
+| `3` | 烧录失败 | **自动回退** |
+| `4` | 有判据 FAIL | **不回退**——那正是迭代要的信息，已记进台账 |
+| `5` | 轮数预算用尽 | 停下汇报（桥返回 3） |
+
+判据集在同目录 `serial-judge.json`：顶层 `ms` 声明**判据假设的采样窗口**，
+`groups[]` 每组 `{name, expect, desc}`。**窗口必须 ≥ 判据所需**（例如「位置走完阶跃行程」
+要 ≥ 一个阶跃周期），否则健康固件会被误判 FAIL——脚本会取「配置与判据中的较大者」。
+
+### 3.2 激励-响应：发一条命令、看它的回包
+
+```bash
+# ✅ 正确：一次端口占用里先发后收
+node bridge.mjs read --send "get" --send-delay 400 --ms 1500 --preset firewater
+# ❌ 错误：分两次调用 —— read 占着端口时 write 会**静默失败**，
+#    采集里字节数恒定不变，现象和「设备没收到」一模一样（实测白查了半天）
+```
+
+**优先让固件支持在线调参**（串口收 `set name=value` / `get`）。收益极大：
+改一个参数从「重编译 + 烧录 + 人工点 Keil」（半分钟、且必须有人参与）
+变成「发一行 + 立刻看数据」（一秒）。**这是唯一能让 AI 自己扫参的前提**——
+否则每一轮迭代都要人肉烧录，闭环就断了。
+
+固件侧三个必须注意的点（都在本仓库 `usart_test01` 里踩过）：
+1. **RX 必须走中断**：主循环 100ms 才转一圈，而 115200 下一个字节只要 87µs，轮询必然丢字节
+   → 收不全命令，看起来像「调参没反应」。
+2. **CubeMX 不勾 NVIC 就不会生成中断使能**：`.ioc` 里没有 `NVIC.USART1_IRQn=true` 时，
+   既没有 `HAL_NVIC_EnableIRQ`，`stm32h7xx_it.c` 里也没有 `USART1_IRQHandler`
+   → `HAL_UART_Receive_IT` 永远等不到回调。此时 bridge 的 `write` 会报 `ok=true`
+   而设备毫无反应，**必须在固件里手工补齐**（并注意别与生成代码重复定义）。
+3. **回包的值全用数字**：形如 `cmd_get=1,period=100,...`。一旦出现 `name=period`
+   这种非数值对，上位机会建出一个永远没有数值的通道（甚至算进解析失败），把判据一起带脏。
+   再加一个 `rx=<累计收到字节数>` 随数据行上报——它一直是 0 就说明 RX 方向没通，
+   不用再靠猜（接线只有 TX/GND、或对端根本没发）。
+
 ## 4. MCP 工具面（配好后 AI 原生可调）
 
 桥内置 MCP stdio 服务（`bridge.mjs mcp`），暴露 6 个工具：

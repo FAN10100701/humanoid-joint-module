@@ -1288,6 +1288,32 @@ const GBK = (X.codec || SL.codec);
   check("C: 桥的 assert 支持 .count（窗口内有效样本数）—— 边界两侧都要对",
     okCount === 0 && badCount === 2, ">=7 exit=" + okCount + " / >=8 exit=" + badCount);
   try { fs.unlinkSync(fake); } catch (e2) { /* 清理失败不影响断言 */ }
+
+  /* ---- read --send：激励-响应原语（发一条命令、看它的回包）----
+     为什么必须做进 read：串口独占，read 占着端口时另起的 write 会**静默失败**，
+     采集里字节数恒定不变，现象和「设备没收到」一模一样（实测白查了半天）。 */
+  const bridgeSrc = fs.readFileSync(BRIDGE, "utf8");
+  check("C: read 支持 --send / --send-delay，并在快照里留下「这包是在回应什么」",
+    bridgeSrc.indexOf("const sendText = (flags.send === undefined || flags.send === null) ? null : String(flags.send);") > 0
+      && bridgeSrc.indexOf("flags['send-delay']") > 0
+      && bridgeSrc.indexOf("sent: sendText === null ? undefined : { text: sendText, hex: sentHex, delayMs: sendDelay }") > 0, "");
+  check("C: MCP 的 serial_read 暴露 send / sendDelay 且 callTool 有映射（对外契约同步，硬规则 16）",
+    bridgeSrc.indexOf("send: { type: 'string', description: '打开端口后先发这一行") > 0
+      && bridgeSrc.indexOf("sendDelay: { type: 'number'") > 0
+      && bridgeSrc.indexOf("if (a.send !== undefined && a.send !== null) flags.send = String(a.send);") > 0, "");
+  /* 不需要硬件的功能性检查：拿一个不存在的端口跑，能走到「端口解析」这一步
+     就说明 --send/--send-delay 被正常吃下去了（否则会先报未知参数）。 */
+  const bogus = (function () {
+    try {
+      execFileSync(process.execPath,
+        [BRIDGE, "read", "--send", "x", "--send-delay", "10", "--port", "COM_DOES_NOT_EXIST", "--ms", "100"],
+        { encoding: "utf8", maxBuffer: 1024 * 1024, timeout: 20000 });
+      return "";
+    } catch (e) { return String(e.stdout || "") + String(e.stderr || ""); }
+  })();
+  check("C: read --send 的参数能被解析（用不存在的端口跑，报错指向端口而非未知参数）",
+    /COM_DOES_NOT_EXIST|没有找到|not found|Error/i.test(bogus) && !/未知参数|unknown option/i.test(bogus),
+    bogus.replace(/\s+/g, " ").slice(0, 120));
 })();
 
 /* ========== V2.2.15：桥的省流开关功能性回归（AUDIT A-85①④）==========

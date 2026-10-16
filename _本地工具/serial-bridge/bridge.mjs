@@ -464,6 +464,30 @@ async function cmdRead(flags) {
     chunks.push(buf);
     sink.feed(buf);
   });
+
+  /* ---- --send：在同一次端口占用里「先发一条、再继续收」 ----
+     为什么必须做进 read：串口是独占的，另起一个 write 进程会被 read 占着的端口挡住
+     —— 实测那个 write 会静默失败（把它的输出吞掉就完全看不出来），采集里 rx 恒定不变，
+     现象和「设备没收到命令」一模一样，能白查半天。
+     而「发一条命令、看它的回包」是硬件调试最基本的动作（激励-响应），
+     必须在一次打开里完成。采集窗口从发送之后开始计时，所以给你的仍然是完整的 ms。 */
+  const sendText = (flags.send === undefined || flags.send === null) ? null : String(flags.send);
+  const sendDelay = num(flags, 'send-delay', 300, 0, 60000);
+  let sentHex = null;
+  if (sendText !== null) {
+    await sleep(sendDelay);
+    const payload = flags.newline === false ? sendText : (sendText + '\n');
+    const out = Buffer.from(payload, 'utf8');
+    sentHex = hexSpaced(out);
+    await new Promise((res, rej) => {
+      port.write(out, (e) => {
+        if (e) { rej(e); return; }
+        port.drain((e2) => (e2 ? rej(e2) : res()));
+      });
+    });
+    log('已发送 ' + JSON.stringify(sendText) + '（' + out.length + ' 字节，等待 ' + sendDelay + ' ms 后发）');
+  }
+
   log('采集 ' + ms + ' ms …');
   await sleep(ms);
   await new Promise((res) => port.close(() => res()));
@@ -476,6 +500,8 @@ async function cmdRead(flags) {
     durationMs: ms,
     ruleMode: rule.active,
     capturedHex: rawHex.length > 4096 ? hexSpaced(rawHex.subarray(0, 4096)) + ' …(截断)' : hexSpaced(rawHex),
+    /* 把「这一包是在回应什么」写进快照：否则事后没人知道这段数据是发过命令之后采的 */
+    sent: sendText === null ? undefined : { text: sendText, hex: sentHex, delayMs: sendDelay },
   };
   const snap = snapshot(sink, extra);
   if (flags.bundle !== false) snap.debugBundle = debugBundle(rule, num(flags, 'samples', 200, 20, 5000));
@@ -879,7 +905,7 @@ async function cmdMcp() {
     },
     {
       name: 'serial_read',
-      description: '打开串口采集一段时间并按规则解析，返回结构化通道数据 + 与网页端同源的调试包。串口调试助手网页端无法被自动化（需用户手势选端口），所以让 AI 读串口要走这个工具。',
+      description: '打开串口采集一段时间并按规则解析，返回结构化通道数据 + 与网页端同源的调试包。串口调试助手网页端无法被自动化（需用户手势选端口），所以让 AI 读串口要走这个工具。传 send 可在同一次端口占用里「先发一条命令再收」，用于激励-响应（发 set/get、看回包）——串口独占，分开调用 write 会被占着的端口挡住。',
       inputSchema: {
         type: 'object',
         properties: {
@@ -892,6 +918,9 @@ async function cmdMcp() {
           bundle: { type: 'boolean', description: '是否附带完整 debugBundle（默认 true）。传 false 可大幅缩小输出、省 token' },
           profile: { type: 'string', enum: ['full', 'digest'], description: '输出档位：digest 只回「通道统计+帧结构+失败样本+提示」，省 token（默认 full）' },
           maxBytes: { type: 'number', description: 'stdout 字节预算，默认 12000；超出会自动降级为 digest 并在结果里标 trimmed' },
+          send: { type: 'string', description: '打开端口后先发这一行（默认补 \\n），再继续采集——做激励-响应时用它，不要分两次调用 read/write（串口独占，write 会因端口被占而静默失败）' },
+          sendDelay: { type: 'number', description: 'send 前等多少毫秒，默认 300（给设备上电/复位留时间）' },
+          newline: { type: 'boolean', description: 'send 时是否自动补 \\n，默认 true；发裸字节序列时传 false' },
         },
       },
     },
@@ -973,6 +1002,9 @@ async function cmdMcp() {
     if (a.hex) flags.hex = String(a.hex);
     if (a.text) flags.text = String(a.text);
     if (a.newline === false) flags.newline = false;
+    /* read 的激励-响应参数（同一次端口占用内先发后收，见 cmdRead 的注释） */
+    if (a.send !== undefined && a.send !== null) flags.send = String(a.send);
+    if (a.sendDelay !== undefined) flags['send-delay'] = String(a.sendDelay);
     if (a.input) flags.in = String(a.input);
     if (a.expect) flags.expect = String(a.expect);
     if (a.note) flags.note = String(a.note);

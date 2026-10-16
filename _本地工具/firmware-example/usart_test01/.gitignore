@@ -1,0 +1,27 @@
+# 构建产物不入库（本目录只是源码快照；真要在这里编译，产物别提交）
+MDK-ARM/*/
+!MDK-ARM/usart_test01.uvprojx
+!MDK-ARM/startup_stm32h743xx.s
+MDK-ARM/DebugConfig/
+MDK-ARM/RTE/
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.bak
+MDK-ARM/*.dep
+MDK-ARM/*.scvd
+
+# Keil / ARM 编译中间件
+*.o
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.crf
+*.d
+*.htm
+*.build_log.htm
+
+# CubeMX 生成物（由 .ioc 重新生成）
+Drivers/
+Middlewares/
