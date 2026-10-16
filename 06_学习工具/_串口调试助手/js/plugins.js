@@ -1012,7 +1012,17 @@
            撞在一起时两个数字会连读成看着像乱码的东西（窗口比数据长时左端点本来就是
            负数，更容易误读）——放不下就只留右侧，右侧带的「窗口 N 点 / 拖动 / 滚轮」
            才是用户真正需要的信息。 */
-        var right = tLabel(t1) + " · 窗口 " + (panel.window || 500) + " 点 · 拖动看历史 / 滚轮缩放";
+var spanMs = (t1 > t0) ? (t1 - t0) : 0;
+          var spanTxt = "";
+          if (spanMs > 0) {
+            spanTxt = spanMs >= 1000 ? (U.fmt(spanMs / 1000, 2) + "s") : (U.fmt(spanMs, 1) + "ms");
+          }
+          /* V2.2.26：X 轴补上**工程单位**。
+             原来只写「窗口 500 点」——而工程师脑子里是秒：500 点在 200Hz 下是 2.5s、
+             在 2kHz 下是 0.25s，两种情况画面上都只写「500 点」，看不出区别。
+             用数据自带的时间戳算真实时长（t 的单位是 ms）——点数是实现细节，秒才是量纲。 */
+          var right = tLabel(t1) + " · 窗口 " + (panel.window || 500) + " 点"
+            + (spanTxt ? (" / " + spanTxt) : "") + " · 拖动看历史 / 滚轮缩放";
         ctx.textAlign = "right";
         var rw = ctx.measureText(right).width;
         ctx.fillText(right, view.w - PAD.r, view.h - PAD.b + 3);

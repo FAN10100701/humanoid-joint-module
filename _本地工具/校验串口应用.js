@@ -1888,3 +1888,16 @@ scanRegression().then(function () {
       && sUi.indexOf('data-qk="fftw"') > 0
       && sUi.indexOf("qp.opts.fftWindow = t.value;") > 0, "");
 })();
+/* ============================================================
+   ⑯-h 显示模块优化·第三批(其一)：X 轴工程单位（V2.2.26）
+   ============================================================ */
+(function () {
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  check("A-109: 波形窗口标签给出工程单位（秒/毫秒），不再只有「N 点」",
+    sPlug.indexOf("var spanMs = (t1 > t0) ? (t1 - t0) : 0;") > 0
+      && /spanTxt = spanMs >= 1000 \? \(U\.fmt\(spanMs \/ 1000, 2\) \+ "s"\) : \(U\.fmt\(spanMs, 1\) \+ "ms"\)/.test(sPlug)
+      && sPlug.indexOf('+ (spanTxt ? (" / " + spanTxt) : "")') > 0, "");
+  check("A-109: 秒数由数据自带时间戳算出（不是用配置里的采样率猜）—— t 的单位是 ms",
+    /var spanMs = \(t1 > t0\)/.test(sPlug)
+      && /var t0 = s0\.t\[0\], t1 = s0\.t\[s0\.t\.length - 1\];/.test(sPlug), "");
+})();
