@@ -46,6 +46,11 @@
   var lastDraw = 0;
   var drawInterval = 40;        /* ms，约 25 fps */
   var dragId = null;
+  /* V2.2.23 拖拽手感：跟手基准点 / rAF 合并 / 一帧内复用的兄弟矩形缓存 */
+  var dragOrigin = null;
+  var rafDrag = 0;
+  var pendingMove = null;
+  var rectCache = null;
   var rzId = null, rzStartY = 0, rzStartH = 0;
 
   /* 高度约束：太小画不出东西，太大没有意义 */
@@ -339,19 +344,70 @@
   function startDrag(id, e) {
     if (!els[id]) { return; }
     dragId = id;
-    els[id].classList.add("is-dragging");
+    var el = els[id];
+    el.classList.add("is-dragging");
+    el.style.transform = "";
+    dragOrigin = { x: e.clientX, y: e.clientY };
+    rectCache = null;
+    pendingMove = null;
     if (e.preventDefault) { e.preventDefault(); }
 
-    var move = function (ev) { onDragMove(ev); };
+    var move = function (ev) {
+      /* V2.2.23：只记住最新一次事件，真正的计算交给下一帧 —— 指针事件在 120Hz 下
+         每秒能来上百次，而每次计算都要读一圈兄弟面板的矩形（强制同步布局）。
+         合并到一帧一次，是「丝滑」最直接的一步。 */
+      pendingMove = ev;
+      if (!rafDrag) { rafDrag = global.requestAnimationFrame(flushDrag); }
+    };
     var up = function () {
       document.removeEventListener("pointermove", move);
       document.removeEventListener("pointerup", up);
-      if (dragId && els[dragId]) { els[dragId].classList.remove("is-dragging"); }
+      if (rafDrag) { global.cancelAnimationFrame(rafDrag); rafDrag = 0; }
+      pendingMove = null;
+      rectCache = null;
+      if (dragId && els[dragId]) {
+        els[dragId].classList.remove("is-dragging");
+        els[dragId].style.transform = "";   /* 松手后与真实布局位置对齐 */
+      }
       dragId = null;
       commitOrder();
     };
     document.addEventListener("pointermove", move);
     document.addEventListener("pointerup", up);
+  }
+
+  function flushDrag() {
+    rafDrag = 0;
+    var ev = pendingMove;
+    pendingMove = null;
+    if (!ev || !dragId) { return; }
+    followPointer(ev);
+    onDragMove(ev);
+  }
+
+  /* 跟手平移：只改 transform，不碰任何会引起重排的属性。
+     这是「拖起来跟手」的关键 —— 改 left/top/margin 会引发整页重排，改 transform 只走合成层。 */
+  function followPointer(e) {
+    var el = els[dragId];
+    if (!el || !dragOrigin) { return; }
+    var dx = Math.round(e.clientX - dragOrigin.x);
+    var dy = Math.round(e.clientY - dragOrigin.y);
+    el.style.transform = "translate(" + dx + "px," + dy + "px)";
+  }
+
+  /* 一帧内复用兄弟面板的矩形：同一帧里不再重复读布局。
+     只有真正发生重排（insertBefore）时才置空，下一帧重新取。 */
+  function kidRects(host, el) {
+    if (rectCache) { return rectCache; }
+    var out = [];
+    for (var i = 0; i < host.children.length; i++) {
+      var n = host.children[i];
+      if (n !== el && n.className && n.className.indexOf("sl-panel") >= 0) {
+        out.push({ node: n, rect: n.getBoundingClientRect() });
+      }
+    }
+    rectCache = out;
+    return out;
   }
 
   function onDragMove(e) {
@@ -362,24 +418,20 @@
     var host = hostOf(p);
     if (!host) { return; }
 
-    var kids = [];
-    for (var i = 0; i < host.children.length; i++) {
-      var n = host.children[i];
-      if (n !== el && n.className && n.className.indexOf("sl-panel") >= 0) { kids.push(n); }
-    }
+    var kids = kidRects(host, el);
     if (!kids.length) { return; }
 
-    var best = null, bestDist = Infinity;
+    var best = null, bestRect = null, bestDist = Infinity;
     for (var j = 0; j < kids.length; j++) {
-      var r = kids[j].getBoundingClientRect();
+      var r = kids[j].rect;
       var cx = r.left + r.width / 2;
       var cy = r.top + r.height / 2;
       var d = Math.abs(e.clientX - cx) + Math.abs(e.clientY - cy);
-      if (d < bestDist) { bestDist = d; best = kids[j]; }
+      if (d < bestDist) { bestDist = d; best = kids[j].node; bestRect = r; }
     }
     if (!best) { return; }
 
-    var br = best.getBoundingClientRect();
+    var br = bestRect;
     var relY = e.clientY - (br.top + br.height / 2);
     var relX = e.clientX - (br.left + br.width / 2);
     /* 主位是单块区域，只看上下半区；
@@ -389,10 +441,18 @@
       ? (relY < 0)
       : (Math.abs(relY) > br.height * 0.3 ? (relY < 0) : (relX < 0));
 
+    var moved = false;
     if (insertBefore) {
-      if (best.previousSibling !== el) { host.insertBefore(el, best); }
+      if (best.previousSibling !== el) { host.insertBefore(el, best); moved = true; }
     } else {
-      if (best.nextSibling !== el) { host.insertBefore(el, best.nextSibling); }
+      if (best.nextSibling !== el) { host.insertBefore(el, best.nextSibling); moved = true; }
+    }
+    if (moved) {
+      /* 重排后元素换了位置，而 transform 是相对**当前位置**的 —— 必须重置基准与位移，
+         否则会看到「跳一下又飘回去」。重置后表现为「吸附进目标槽位」，这正是拖拽该有的反馈。 */
+      rectCache = null;
+      el.style.transform = "";
+      dragOrigin = { x: e.clientX, y: e.clientY };
     }
   }
 

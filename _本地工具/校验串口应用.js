@@ -1283,9 +1283,9 @@ const GBK = (X.codec || SL.codec);
     html16.indexOf("↓接收") > 0 && html16.indexOf("↑发送") > 0, "");
 
   /* ---- A-90：页签合并 / 零状态引导 / 单面板满宽 / 危险操作分区 ---- */
-  check("A-90: 页签从 9 个并到 6 个，合并用 data-also 声明（HTML 零搬动 + E2E 选择器保留原值）",
-    (html16.match(/class="sl-tab[^"]*"[^>]*data-pane=/g) || []).length === 6
-      && html16.indexOf('data-pane="parse" data-also="channels"') > 0
+  check("A-90/A-105: 页签 9→6→5（V2.2.23「解析」并入「设备」），合并一律用 data-also 声明（HTML 零搬动、面板 data-pane 值不变）",
+    (html16.match(/class="sl-tab[^"]*"[^>]*data-pane=/g) || []).length === 5
+      && html16.indexOf('data-pane="device" data-also="parse channels"') > 0
       && html16.indexOf('data-pane="display" data-also="plugins"') > 0
       && html16.indexOf('data-pane="timeline" data-also="data"') > 0, "");
   check("A-90: 页签切换按「集合包含」判定同屏面板（不是字符串相等）",
@@ -1769,4 +1769,35 @@ scanRegression().then(function () {
   check("A-104: 覆盖表在面板重建时重新注入（不写进描述符 —— 那会被 Plugins.validate 丢掉）",
     /if \(viewChanOverride\[panel\.id\]\) \{[\s\S]{0,200}?panel\.opts\.chanOn = viewChanOverride\[panel\.id\];/.test(sViews)
       && sViews.indexOf("var viewChanOverride = {};") > 0, "");
+})();
+/* ============================================================
+   ⑯-e 页签归并（A-105）与拖拽手感（A-106）（V2.2.23）
+   用户原话：「解析的协议能不能放设备里」「通道提前」「就近安排相关功能懂吗」
+   「面板的拓展拖动排列不够丝滑」。
+   ============================================================ */
+(function () {
+  const appHtml = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
+  const sCss = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
+
+  check("A-105: 设备页签按「连接 → 协议 → 通道」同屏，且**首屏**也要应用同屏规则",
+    appHtml.indexOf('data-pane="device" data-also="parse channels"') > 0
+      && /var tabOn = document\.querySelector\("#slTabs \.sl-tab\.is-on"\);[\s\S]{0,90}?tabOn\.click\(\)/.test(sUi), "");
+  check("A-105: 首屏同屏不另写一份规则（派发一次当前页签的 click，复用同一段逻辑）",
+    /wireZeroState\(\);[\s\S]{0,600}?var tabOn = document\.querySelector/.test(sUi)
+      && sUi.indexOf('var want = " " + pane + " " + (t.getAttribute("data-also") || "") + " ";') > 0, "");
+
+  check("A-106: 拖拽用 rAF 合并 pointermove，且一帧内复用兄弟面板矩形（否则每秒上百次强制同步布局）",
+    /pendingMove = ev;[\s\S]{0,140}?rafDrag = global\.requestAnimationFrame\(flushDrag\);/.test(sViews)
+      && sViews.indexOf("function flushDrag()") > 0
+      && /if \(rectCache\) \{ return rectCache; \}/.test(sViews), "");
+  check("A-106: 被拖面板用 transform 跟手（不碰 left/top，避免整页重排），松手清零",
+    /el\.style\.transform = "translate\(" \+ dx \+ "px," \+ dy \+ "px\)";/.test(sViews)
+      && /els\[dragId\]\.style\.transform = "";/.test(sViews)
+      && /\.sl-panel\.is-dragging \{[\s\S]{0,220}?will-change: transform;/.test(sCss), "");
+  check("A-106: 重排后重置基准与位移（transform 相对当前位置，不重置会「跳一下又飘回去」）",
+    /if \(moved\) \{[\s\S]{0,300}?el\.style\.transform = "";[\s\S]{0,140}?dragOrigin = \{ x: e\.clientX, y: e\.clientY \};/.test(sViews), "");
+  check("A-106: 触摸拖拽不滚页面（touch-action: none 挂在面板头）",
+    /\.sl-panel-head \{ touch-action: none; \}/.test(sCss), "");
 })();

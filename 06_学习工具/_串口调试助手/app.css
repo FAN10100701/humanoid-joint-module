@@ -1832,3 +1832,14 @@ table.sl-chan-table tr:first-child td { border-top: none; }
   cursor: pointer;
 }
 .sl-legend-act:hover { color: var(--sl-ink); border-style: solid; }
+/* ---------------- V2.2.23：拖拽手感 ---------------- */
+/* 被拖的面板「浮起来」；位移走 transform（合成层），不触发布局与重绘的连锁 */
+.sl-panel.is-dragging {
+  z-index: 60;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .3);
+  opacity: .94;
+  will-change: transform;
+  cursor: grabbing;
+}
+/* 触摸拖拽时不要让页面跟着滚（否则手指一动页面就滑走了，「不丝滑」的常见来源） */
+.sl-panel-head { touch-action: none; }

@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.22";
+  UI.VERSION = "2.2.23";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -4133,6 +4133,12 @@
     wireTop();
     wireStage();
     wireZeroState();
+    /* V2.2.23：首屏也要按「当前页签」应用同屏规则。
+       初始状态是 HTML 里的 class="sl-pane is-on" 定的，而 data-also 只在「点页签」时才生效 ——
+       于是首屏「设备」只显示连接，看不到并进来的协议与通道，用户会以为没合并（实测就是这样）。
+       这里直接派发一次当前页签的 click，复用同一段逻辑，绝不在两处各写一份同屏规则。 */
+    var tabOn = document.querySelector("#slTabs .sl-tab.is-on");
+    if (tabOn && tabOn.click) { tabOn.click(); }
     wireConnectionBar();
     wireDeviceAndShow();
     wireV223();

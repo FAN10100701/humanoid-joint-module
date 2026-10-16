@@ -266,9 +266,9 @@ def main():
             assert re.match(r"^v\d+\.\d+", ver), "版本号未渲染: %r" % ver
             missing = page.evaluate("(ns)=>{var s=window.SerialLab||{};return ns.filter(function(k){return !s[k];});}", SL_MODULES)
             assert not missing, "SerialLab 模块未挂载: " + ", ".join(missing)
-            # V2.2.16：9 个页签并到 6 个（解析带通道 / 显示带图表 / 录制带数据），
+            # V2.2.16：9 个页签并到 6 个；V2.2.23 又按「就近安排」把「解析」并进「设备」→ 5 个（设备带协议+通道 / 显示带图表 / 录制带数据），
             # 合并用 data-also 声明，被合并面板的 data-pane 值保持不变。
-            assert page.locator("#slTabs .sl-tab").count() == 6, "左栏页签数不对: %d" % page.locator("#slTabs .sl-tab").count()
+            assert page.locator("#slTabs .sl-tab").count() == 5, "左栏页签数不对: %d" % page.locator("#slTabs .sl-tab").count()
             # 无 Web Serial 时必须走「降级横幅 + 连接按钮禁用」而不是报错
             if not page.evaluate("!!(navigator.serial)"):
                 cls = page.locator("#slBanner").get_attribute("class") or ""
@@ -314,7 +314,7 @@ def main():
             # 监视器应实时把行打印出来(主视觉的核心内容),不是空壳
             page.wait_for_function(
                 "document.querySelectorAll('#slMainHost .sl-mon-line').length > 0", timeout=10000)
-            page.click("#slTabs .sl-tab[data-pane='parse']")
+            page.click("#slTabs .sl-tab[data-pane='device']")
             n_ch = page.locator("#slChannels tr").count()
             assert n_ch >= 2, "解析出的通道未渲染到通道表(tr=%d)" % n_ch
             assert not errs, "数据管线 JS 异常: " + "; ".join(errs[:3])
@@ -397,7 +397,7 @@ def main():
             page.click("#slBtnDemo")   # 演示数据须按用户帧结构合成,否则一条通道都建不出来
             page.wait_for_function(
                 "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
-            page.click("#slTabs .sl-tab[data-pane='parse']")
+            page.click("#slTabs .sl-tab[data-pane='device']")
             page.wait_for_function("document.querySelectorAll('#slChannels tr').length >= 2", timeout=10000)
             txt = page.locator("#slChannels").inner_text()
             assert "a" in txt and "b" in txt, "自定义帧未解析出字段(通道表: %r)" % txt
@@ -587,7 +587,7 @@ def main():
             errs = make_page_errors_tracker(page)
             page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
             page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
-            page.click("#slTabs .sl-tab[data-pane='parse']")
+            page.click("#slTabs .sl-tab[data-pane='device']")
             btns = page.locator("#slPresetRow .sl-preset")
             assert btns.count() == 4, "开源协议预设数不对: %d" % btns.count()
             ids = page.evaluate(
@@ -609,7 +609,7 @@ def main():
             page.click("#slBtnDemo")
             page.wait_for_function(
                 "document.querySelector('#slRxCount').textContent !== '0'", timeout=10000)
-            page.click("#slTabs .sl-tab[data-pane='parse']")
+            page.click("#slTabs .sl-tab[data-pane='device']")
             page.wait_for_function("document.querySelectorAll('#slChannels tr').length >= 2", timeout=10000)
             txt = page.locator("#slChannels").inner_text()
             assert ("x" in txt or "func" in txt), "匿名 V1.0 预设未解析出字段: %r" % txt
@@ -926,7 +926,7 @@ def main():
                 "document.querySelector('#slState').textContent.indexOf('演示') >= 0", timeout=10000)
 
             # ---- ① 通道卡片：无横向溢出，且每通道仍是 tr ----
-            page.click("#slTabs .sl-tab[data-pane='parse']")
+            page.click("#slTabs .sl-tab[data-pane='device']")
             page.wait_for_function(
                 "document.querySelectorAll('#slChannels tr').length >= 2", timeout=10000)
             n_tr = page.locator("#slChannels tr").count()
@@ -993,8 +993,8 @@ def main():
             assert page.evaluate(
                 "(() => { const z = document.querySelector('#slZero'); return !!z && !z.hidden; })()"), \
                 "未连接时零状态引导没出现（首屏又变成一片空白）"
-            assert page.locator("#slTabs .sl-tab").count() == 6, \
-                "页签数不是 6，而是 %d" % page.locator("#slTabs .sl-tab").count()
+            assert page.locator("#slTabs .sl-tab").count() == 5, \
+                "页签数不是 5，而是 %d" % page.locator("#slTabs .sl-tab").count()
             page.click("#slZeroDemo")
             page.wait_for_function(
                 "window.SerialLab && SerialLab.core.state.demo === true", timeout=10000)
@@ -1016,11 +1016,11 @@ def main():
                 "单个图表框没占满整宽（%d / %d）—— auto-fill 又把右侧留空了" % (m["w"], m["gw"]))
 
             # ---- ⑥ 合并页签：点一个页签要同时显示它合并进来的面板 ----
-            page.click("#slTabs .sl-tab[data-pane='parse']")
+            page.click("#slTabs .sl-tab[data-pane='device']")
             page.wait_for_timeout(400)
             on1 = page.evaluate(
                 "[...document.querySelectorAll('.sl-panes > .sl-pane.is-on')].map(s => s.getAttribute('data-pane'))")
-            assert "parse" in on1 and "channels" in on1, "「解析」没同时显示通道面板: %r" % on1
+            assert "device" in on1 and "parse" in on1 and "channels" in on1, "「设备」没同时显示协议与通道面板: %r" % on1
             page.click("#slTabs .sl-tab[data-pane='timeline']")
             page.wait_for_timeout(400)
             on2 = page.evaluate(
@@ -1028,7 +1028,7 @@ def main():
             assert "timeline" in on2 and "data" in on2, "「录制」没同时显示数据面板: %r" % on2
 
             assert not errs, "V2.2.16 JS 异常: " + "; ".join(errs[:3])
-        check("serial_v2216 通道卡片无横向溢出/说明收进?/底行标签不重叠/零状态引导/6页签/单面板满宽",
+        check("serial_v2216 通道卡片无横向溢出/说明收进?/底行标签不重叠/零状态引导/5页签/单面板满宽",
               t_serial_v2216)
 
         # ---------- 7.6 V2.2.17 折叠 + 命令面板 + 快捷键 + 发送历史 ----------
@@ -1083,14 +1083,14 @@ def main():
             page.fill(".sl-pal-input", "dc")
             page.wait_for_timeout(300)
             assert page.locator(".sl-pal-row").count() > 0, "拼音首字母 dc 搜不到任何命令（子序列匹配失效）"
-            page.fill(".sl-pal-input", "页签：解析")
+            page.fill(".sl-pal-input", "页签：显示")
             page.wait_for_timeout(300)
             page.keyboard.press("Enter")
             page.wait_for_timeout(400)
             assert not page.evaluate("!!document.querySelector('.sl-pal')"), "回车后面板没关闭"
             on = page.evaluate(
                 "[...document.querySelectorAll('.sl-panes > .sl-pane.is-on')].map(s => s.getAttribute('data-pane'))")
-            assert "parse" in on and "channels" in on, "命令面板的页签命令没真的切过去：%r" % on
+            assert "display" in on and "plugins" in on, "命令面板的页签命令没真的切过去：%r" % on
 
             # ---- ③ 空格暂停 ----
             page.evaluate("document.body.focus()")
