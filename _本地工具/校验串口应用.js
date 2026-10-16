@@ -132,6 +132,162 @@ check("codec: sum8 / xor8 / sum16 已知向量",
   [C.sum8(new Uint8Array([1, 2, 3]), 0, -1), C.xor8(new Uint8Array([0x0F, 0x33]), 0, -1)].join("/"));
 check("codec: checksumSize 映射", C.checksumSize("sum8") === 1 && C.checksumSize("crc16modbus") === 2);
 
+/* V2.2.21：校验和族扩充 —— 每一种都必须对上**标准测试向量**（"123456789"）。
+   这是唯一可信的验证方式：CRC 的实现极易「看起来像对的」却差一个初值/反射方向，
+   而那种错在现场表现为「偶尔校验失败」，比全错还难查。 */
+check("codec: CRC-8/MAXIM 对 '123456789' = 0xA1", C.crc8(ascii, 0, -1) === 0xA1,
+  "0x" + C.crc8(ascii, 0, -1).toString(16).toUpperCase());
+check("codec: CRC-16/CCITT-FALSE 对 '123456789' = 0x29B1", C.crc16Ccitt(ascii, 0, -1) === 0x29B1,
+  "0x" + C.crc16Ccitt(ascii, 0, -1).toString(16).toUpperCase());
+check("codec: CRC-32/IEEE 对 '123456789' = 0xCBF43926", C.crc32(ascii, 0, -1) === 0xCBF43926,
+  "0x" + C.crc32(ascii, 0, -1).toString(16).toUpperCase());
+check("codec: LRC(Modbus-ASCII) 对 01 03 00 00 00 0A = 0xF2",
+  C.lrc(new Uint8Array([0x01, 0x03, 0x00, 0x00, 0x00, 0x0A]), 0, -1) === 0xF2,
+  "0x" + C.lrc(new Uint8Array([0x01, 0x03, 0x00, 0x00, 0x00, 0x0A]), 0, -1).toString(16).toUpperCase());
+check("codec: 新增校验和的字节宽度（crc8/lrc=1、crc32=4、crc16*=2）",
+  C.checksumSize("crc8") === 1 && C.checksumSize("lrc") === 1
+    && C.checksumSize("crc32") === 4 && C.checksumSize("crc16ccitt") === 2, "");
+check("codec: checksum() 派发覆盖全部已声明类型，且未知类型返回 null（不静默当 0）",
+  C.checksumTypes.every(function (t) {
+    if (t.type === "none") { return true; }
+    return typeof C.checksum(t.type, ascii, 0, -1) === "number";
+  }) && C.checksum("nope", ascii, 0, -1) === null
+    && C.checksumTypes.length === 9, "共 " + C.checksumTypes.length + " 种");
+
+/* ============================================================
+   ⑯-b 协议栈分析（V2.2.21，AUDIT A-98）
+   为什么必须功能性：Modbus 的「请求」与「响应」在同一个功能码下长度不同
+   （03 请求 8 字节 / 响应 5+2N 字节），只按一种解释去切必然切错；
+   而 CRC 字节序（RTU 是低前高后）反了以后，短帧上也可能「看起来能用」。
+   所以这里真造帧、真解码、真改坏一字节，逐项对结果。
+   ============================================================ */
+(function () {
+  const P = require(path.join(JS, "protocol.js"));
+
+  /* 用已对上标准向量的 crc16Modbus 造帧（低字节在前） */
+  function mb(addr, fc, data) {
+    const b = [addr, fc].concat(data);
+    const crc = C.crc16Modbus(Uint8Array.from(b), 0, -1);
+    return Uint8Array.from(b.concat([crc & 0xFF, (crc >> 8) & 0xFF]));
+  }
+  const vals = [100, 200, 300, 1, 2, 3, 4, 5, 6, 7];
+  const req = mb(0x01, 0x03, [0x00, 0x00, 0x00, 0x0A]);                       /* 读 10 个保持寄存器 */
+  const res = mb(0x01, 0x03, [20].concat(vals.map(function (v) { return [(v >> 8) & 0xFF, v & 0xFF]; })
+    .reduce(function (a, b) { return a.concat(b); }, [])));
+  const exc = mb(0x01, 0x83, [0x02]);                                          /* 异常：非法数据地址 */
+  const wr = mb(0x02, 0x06, [0x00, 0x10, 0x01, 0xF4]);                         /* 写单个寄存器 = 500 */
+
+  const r1 = P.modbus(req);
+  check("protocol: Modbus 读寄存器请求解对（地址/功能码/起始/数量）",
+    r1.frames.length === 1 && r1.frames[0].crcOk && r1.frames[0].kind === "请求"
+      && r1.frames[0].addr === 1 && r1.frames[0].start === 0 && r1.frames[0].count === 10,
+    r1.frames.length ? r1.frames[0].detail : "无帧");
+
+  const r2 = P.modbus(res);
+  check("protocol: Modbus 响应解出全部寄存器值（不是一半——循环里 r 与 2r 混写会少解一半）",
+    r2.frames.length === 1 && r2.frames[0].kind === "响应"
+      && JSON.stringify(r2.frames[0].regs) === JSON.stringify(vals),
+    r2.frames.length ? JSON.stringify(r2.frames[0].regs) : "无帧");
+
+  check("protocol: 异常响应被单独识别（设备拒绝 ≠ 通信故障，措辞要分开）",
+    P.modbus(exc).frames[0].isException === true
+      && P.modbus(exc).frames[0].detail.indexOf("非法数据地址") > 0, "");
+  check("protocol: 写单个寄存器解出寄存器号与值",
+    P.modbus(wr).frames[0].reg === 16 && P.modbus(wr).frames[0].value === 500, P.modbus(wr).frames[0].detail);
+
+  /* 连发三条：切帧 + 配对 */
+  const stream = Uint8Array.from([].slice.call(req).concat([].slice.call(res)).concat([].slice.call(exc)));
+  const ms = P.modbus(stream);
+  check("protocol: 连发的请求+响应+异常被切成 3 帧且零重同步（请求/响应长度不同，必须两种都试）",
+    ms.frames.length === 3 && ms.ok === 3 && ms.fail === 0 && ms.bad === 0,
+    ms.frames.length + " 帧 ok=" + ms.ok + " fail=" + ms.fail + " bad=" + ms.bad);
+  const pairs = P.modbusPairs(ms.frames);
+  check("protocol: 请求↔响应配对能认出第一对正常、并指出异常那条没有对应请求",
+    pairs.length >= 2 && pairs[0].req && pairs[0].res && pairs[0].note.indexOf("配对正常") >= 0
+      && pairs.some(function (p) { return !p.req; }), JSON.stringify(pairs.map(function (p) { return p.note; })));
+
+  /* CRC 改坏一字节 */
+  const bad = Uint8Array.from([].slice.call(res));
+  bad[5] ^= 0xFF;
+  const r3 = P.modbus(bad);
+  check("protocol: 改坏载荷一字节后 CRC 判为不通过，并给出「算出 vs 帧里」两个值（补零到 4 位）",
+    r3.frames[0].crcOk === false && /^0x[0-9A-F]{4}$/.test(r3.frames[0].crcWant)
+      && /^0x[0-9A-F]{4}$/.test(r3.frames[0].crcGot)
+      && r3.frames[0].crcWant !== r3.frames[0].crcGot,
+    r3.frames[0].detail);
+
+  /* 协议识别：三种典型输入各归其位，且都给理由 */
+  const gModbus = P.guess(res), gText = P.guess(C.encodeText("tick=1,pos=2\r\n", "utf-8")), gZero = P.guess(new Uint8Array(16));
+  check("protocol: 识别 Modbus RTU 并说明「切出 N 帧且 CRC 全部通过」",
+    gModbus.ranked[0].id === "modbus-rtu" && gModbus.ranked[0].why.indexOf("CRC") > 0, gModbus.ranked[0].why);
+  check("protocol: 识别文本键值协议（可打印占比 + 分隔符两个证据）",
+    gText.ranked[0].id === "text-kv" && gText.ranked[0].why.indexOf("可打印") >= 0, gText.ranked[0].why);
+  check("protocol: 全 0 / 全 FF 判为「没有真实数据」而不是某种协议（指向接线/波特率）",
+    gZero.ranked[0].id === "idle" && gZero.ranked[0].why.indexOf("接线") > 0, gZero.ranked[0].why);
+  check("protocol: summarize 给一行可直接引用的结论（面板/调试包/AI 三处共用同一句）",
+    P.summarize(res).indexOf("最可能是") === 0, P.summarize(res));
+
+  /* 帧级 diff */
+  const d = P.diff(res, bad);
+  check("protocol: 帧 diff 给出共同前缀与逐字节差异（现场排障就是「拿好的和坏的比」）",
+    d.sameLength === true && d.commonPrefix === 5 && d.diffs.length === 1
+      && d.diffs[0].at === 5 && d.diffs[0].a === 0 && d.diffs[0].b === 255,
+    "前缀 " + d.commonPrefix + " 差异 " + JSON.stringify(d.diffs));
+  check("protocol: 长度不同的两帧也能比（多出的字节报成 null，不是静默截断）",
+    (function () {
+      const dd = P.diff(res, req);
+      return dd.sameLength === false && dd.diffs.some(function (x) { return x.b === null; });
+    })(), "");
+
+  /* 模块约定：不碰 DOM + 保留 UMD 尾（子应用硬规则 5/7 —— 桥要 require 同一份真源） */
+  const pSrc = fs.readFileSync(path.join(JS, "protocol.js"), "utf8");
+  check("protocol: 纯模块（不碰 DOM）且保留 UMD 尾，供本地桥 require 同一份真源",
+    pSrc.indexOf("document.") < 0 && pSrc.indexOf("module.exports = P;") > 0, "");
+})();
+
+/* ============================================================
+   ⑯-c Markdown 导出（V2.2.21）
+   为什么必须功能性：Markdown 表格有两个「一行毁全表」的坑 ——
+   单元格里的 | 会切断表格、反引号会提前结束行内代码。
+   而这类错误在纯文本编辑器里看不出来，只有渲染时才炸。
+   所以这里真造一个「标签里带竖线」的通道，检查它有没有被转义。
+   ============================================================ */
+(function () {
+  check("exporters: buildMarkdown 产出三段结构（元信息 / 通道统计 / 最近记录）",
+    typeof X.buildMarkdown === "function" && (function () {
+      const md = X.buildMarkdown(3);
+      return md.indexOf("# SerialLab 数据导出") === 0
+        && md.indexOf("## 通道统计") > 0 && md.indexOf("## 最近 ") > 0;
+    })(), "");
+
+  Store.upsertChannel({ key: "k-pipe-check", label: "a|b", unit: "V", color: "#3b82f6" });
+  const md2 = X.buildMarkdown(2);
+  check("exporters: Markdown 单元格转义（内容里的 | 转成 \\|，反引号去掉）",
+    md2.indexOf("a\\|b") > 0 && md2.indexOf("a|b") < 0, "");
+  check("exporters: Markdown 表格列数一致（表头与每一行数据的分隔符个数相同，否则渲染出来是错表）",
+    (function () {
+      const lines = md2.split("\n");
+      /* ⚠ 转义后的 \| 依然是「|」这个字符，朴素 split("|") 会把它当分隔符 ——
+         先把转义序列换成一个不可能出现的字符再数，否则这条断言自己就会误报。 */
+      const cols = function (L) { return L.replace(/\\\|/g, "\u0001").split("|").length; };
+      let head = null, rows = 0, okCols = true;
+      for (let i = 0; i < lines.length; i++) {
+        const L = lines[i];
+        if (L.indexOf("| 通道 |") === 0) { head = cols(L); continue; }
+        if (head !== null && L.indexOf("| ") === 0) {
+          if (L.indexOf("---") >= 0) { continue; }
+          rows++;
+          if (cols(L) !== head) { okCols = false; }
+        }
+      }
+      return head !== null && rows > 0 && okCols;
+    })(), "");
+  check("exporters: 导出入口 + UI 按钮 + 命令面板条目都在（按钮不存在时命令面板会自动不列出）",
+    typeof X.exportMarkdown === "function"
+      && fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('id="slBtnExpMd"') > 0, "");
+  Store.removeChannel("k-pipe-check");   /* 别把测试通道留给后面的断言 */
+})();
+
 /* ============================================================
    ③ expr
    ============================================================ */
@@ -1097,6 +1253,7 @@ const GBK = (X.codec || SL.codec);
 (function () {
   const ui16 = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
   const plug16 = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const views16 = fs.readFileSync(path.join(JS, "views.js"), "utf8");
   const css16 = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
   const html16 = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8");
 
@@ -1225,6 +1382,50 @@ const GBK = (X.codec || SL.codec);
     !/\.sl-chan-r1 \{[\s\S]{0,120}?gap: 6px;/.test(css16)
       && !/\.sl-chan-r2 \{[\s\S]{0,120}?gap: 8px;/.test(css16)
       && !/\.sl-pal-row \{[\s\S]{0,120}?gap: 8px;/.test(css16), "");
+
+  /* ---- A-96：监视器「清屏 / 复制文本」+ 时间精度就地可调 + 收起态摘要 ---- */
+  check("A-96: 监视器面板头有「清屏」与「复制」两个按钮（VOFA+ 的垃圾桶就在这个位置）",
+    /panel\.type === "textmon"\) \{[\s\S]{0,900}?iconBtn\("清屏"[\s\S]{0,500}?iconBtn\("复制"/.test(views16), "");
+  check("A-96: 清屏是「视图起点」语义而非清数据——只影响这块屏，其他图表与已收数据不动",
+    /V\.clearPanelView = function \(id\) \{[\s\S]{0,900}?viewClear\[id\] = at;/.test(views16)
+      && /if \(opts\.clearAt\) \{[\s\S]{0,400}?recs\[ri\]\.tWall > opts\.clearAt/.test(plug16), "");
+  check("A-96: 清屏用墙钟过滤且缺 tWall 的记录一律保留（宁可多显示，不能把数据清没了）",
+    /if \(!recs\[ri\]\.tWall \|\| recs\[ri\]\.tWall > opts\.clearAt\)/.test(plug16), "");
+  check("A-96: 复制取 .sl-mon-body 正文，时间戳 / 方向标记可选（默认只要正文 = 去时间戳去方向）",
+    /var withTs = !!uicfg\.copyTs;[\s\S]{0,260}?var withDir = !!uicfg\.copyDir;/.test(ui16)
+      && ui16.indexOf('querySelector(".sl-mon-body")') > 0
+      && /if \(dedupe && lines\.length && lines\[lines\.length - 1\] === line\) \{ continue; \}/.test(ui16), "");
+  check("A-96: 复制走事件总线 + ui.copyText（业务模块不碰 DOM、剪贴板归 ui —— 子应用硬规则 5/18）",
+    views16.indexOf('core.emit("panel:copyText", { id: panel.id });') > 0
+      && ui16.indexOf('core.on("panel:copyText", function (e) {') > 0
+      && ui16.indexOf('copyText(lines.join("\\n"));') > 0, "");
+  check("A-96: 时间戳精度可在监视器快捷条就地调（原先只藏在 ⋯ 设置中心，用户找不到）",
+    ui16.indexOf('data-qk="prec"') > 0
+      && ui16.indexOf('else if (k === "prec") {') > 0
+      && ui16.indexOf("core.config.transport.timePrec = t.value;") > 0
+      && ui16.indexOf('var prec = t.timePrec || "ms";') > 0, "");
+  check("A-96: 收起/展开改文字按钮（▾ 会被读成下拉菜单，实测用户点开以为「没反应」）",
+    !/iconBtn\("▾", "收起 \/ 展开"/.test(views16)
+      && /iconBtn\("收起", "收起 \/ 展开该面板/.test(views16), "");
+  check("A-96: 收起态有摘要行（原先只剩标题条，用户点开「什么都没有」）",
+    views16.indexOf('brief.className = "sl-panel-brief";') > 0
+      && ui16.indexOf("function refreshPanelBriefs()") > 0
+      && /\.sl-panel-brief \{[\s\S]{0,320}?text-overflow: ellipsis;/.test(css16), "");
+  check("A-96: 文字型面板按钮共用 width:auto（22px 方钮装不下「清屏」二字）",
+    /\.sl-iconbtn\.sl-auto-btn,\n\.sl-iconbtn\.sl-text-btn \{[\s\S]{0,160}?width: auto;/.test(css16)
+      && /"sl-text-btn sl-clear-view"/.test(views16), "");
+  /* 清屏起点为什么不走 updatePanel：它会把描述符交给 Plugins.validate 重新校验，
+     自定义 opts 字段会被丢掉 —— 实测「点了清屏 opts 一点没变、行数照常增长」的静默失效。 */
+  check("A-96: 清屏起点绕开 updatePanel/validate，改为原地改 + viewClear 重建重注入",
+    /V\.clearPanelView = function \(id\) \{[\s\S]{0,800}?viewClear\[id\] = at;[\s\S]{0,260}?p\.opts\.clearAt = at;[\s\S]{0,200}?V\.redraw\(\);/.test(views16)
+      && /if \(viewClear\[panel\.id\]\) \{[\s\S]{0,220}?panel\.opts\.clearAt = viewClear\[panel\.id\];/.test(views16), "");
+  /* ⚠ 这条是「点了没反应」的通用防线：iconBtn 的回调签名是 onclick(b)，
+     写 this.textContent 在严格模式下是 undefined 赋值（抛错）、非严格下赋给了 window（静默失败）——
+     两者都表现为「按钮上的图标/文字永远不变」。面板暂停的 ⏸ 就这么错了很久。 */
+  check("A-96: views.js 不得再用 this.textContent / this.title 改按钮（iconBtn 回调要把按钮当参数接）",
+    views16.indexOf("this.textContent =") < 0 && views16.indexOf("this.title =") < 0
+      && views16.indexOf('btn.textContent = paused ? "▶" : "⏸";') > 0
+      && views16.indexOf('btn.textContent = V.isCollapsed(panel.id) ? "展开" : "收起";') > 0, "");
 })();
 
 /* ========== 自动迭代闭环（AUDIT A-92）==========
@@ -1314,6 +1515,49 @@ const GBK = (X.codec || SL.codec);
   check("C: read --send 的参数能被解析（用不存在的端口跑，报错指向端口而非未知参数）",
     /COM_DOES_NOT_EXIST|没有找到|not found|Error/i.test(bogus) && !/未知参数|unknown option/i.test(bogus),
     bogus.replace(/\s+/g, " ").slice(0, 120));
+
+  /* ---- bridge analyze：协议分析必须真能从桥这一侧调到（AI 够得着才算数）----
+     为什么要有：protocol.js 早就写好、桥也早就 require 子应用真源，但 MAIN_FILE 里
+     一直没加它 —— 结果是「网页里能用、AI 侧够不着」，而文档里又差点写上「用桥做协议分析」。
+     这条断言锁的就是「桥真的加载了并真的能跑」。 */
+  const ana = (function () {
+    try {
+      return execFileSync(process.execPath,
+        [BRIDGE, "analyze", "--hex", "01 03 00 00 00 0A C5 CD", "--profile", "digest", "--max-bytes", "0"],
+        { encoding: "utf8", maxBuffer: 8 * 1024 * 1024, timeout: 30000 });
+    } catch (e) { return "ERR:" + String(e.stdout || "") + String(e.stderr || ""); }
+  })();
+  check("C: 桥暴露 analyze（MAIN_FILE 已加载 protocol.js；AI 侧够得着才算数）",
+    ana.indexOf("Modbus RTU") > 0 && ana.indexOf("读保持寄存器") > 0 && ana.indexOf("总结") < 0,
+    ana.replace(/\s+/g, " ").slice(0, 110));
+  check("C: analyze 解出请求的起始与数量（不只看协议名）",
+    ana.indexOf('"start": 0') > 0 && ana.indexOf('"count": 10') > 0, "");
+  const anaDiff = (function () {
+    try {
+      return execFileSync(process.execPath,
+        [BRIDGE, "analyze", "--hex", "01 03 00 00 00 0A C5 CD", "--diff", "01 03 00 00 00 0A C5 CE", "--human"],
+        { encoding: "utf8", maxBuffer: 8 * 1024 * 1024, timeout: 30000 });
+    } catch (e) { return "ERR:" + String(e.stdout || "") + String(e.stderr || ""); }
+  })();
+  check("C: analyze --diff --human 给出一行结论（差异处数 + 共同前缀）",
+    /差异 1 处/.test(anaDiff) && /共同前缀 7 字节/.test(anaDiff), anaDiff.replace(/\s+/g, " ").slice(0, 110));
+  check("C: 桥的 MAIN_FILE 明确包含 protocol（防止有人「优化」掉它）",
+    fs.readFileSync(BRIDGE, "utf8").indexOf("'protocol'") > 0, "");
+  /* MCP 工具面：光有 CLI 不算「AI 够得着」——宿主是通过 MCP 调的 */
+  check("C: MCP 暴露 serial_analyze（schema + callTool 分支 + diff 参数映射 + 必填 hex）",
+    (function () {
+      const src = fs.readFileSync(BRIDGE, "utf8");
+      return src.indexOf("name: 'serial_analyze'") > 0
+        && src.indexOf("else if (name === 'serial_analyze') code = cmdAnalyze(flags);") > 0
+        && src.indexOf("if (a.diff !== undefined && a.diff !== null) flags.diff = String(a.diff);") > 0
+        && src.indexOf("required: ['hex']") > 0;
+    })(), "");
+  check("C: 文档里不出现「serial_analyze 尚未实现」这类残留（说做了就要真做了）",
+    (function () {
+      const sk = path.join(__dirname, "..", ".agents", "skills", "ai-hardware-debug", "SKILL.md");
+      const t = fs.readFileSync(sk, "utf8");
+      return t.indexOf("serial_analyze") > 0 && t.indexOf("尚未实现") < 0 && t.indexOf("还没加") < 0;
+    })(), "");
 })();
 
 /* ========== V2.2.15：桥的省流开关功能性回归（AUDIT A-85①④）==========

@@ -189,7 +189,13 @@ static void rx_isr_push(uint8_t b)
      生成这两个处理函数 —— 结果 HAL_UART_Receive_IT 永远等不到回调，
      表现是「主机发出去了（桥上 ok=true），但设备像没收到一样」。
      这里手工补齐。若以后在 CubeMX 里勾上「USART1 global interrupt」，
-     请把本段与 main 里的 HAL_NVIC_EnableIRQ 一起删掉，否则重复定义。
+     ⚠ 必须保持**强定义、不加 __weak**：启动文件 startup_stm32h743xx.s 里的同名函数
+     本身就是 weak 桩，一旦这里也写 __weak，链接器会在两个 weak 之间选启动文件那个
+     （通常是死循环），RX 一收字节就挂 —— 实测踩过，编译日志会报 L6439W。
+     ⚠ 另：**不要在 CubeMX 里勾 USART 全局中断**。本工程的中断使能与处理函数都写在
+     USER CODE 里（CubeMX 不会动 USER CODE），不勾它 CubeMX 就不会生成同名函数，
+     也就永远不会重复定义。若你确实想让 CubeMX 生成，请先删掉这一段与下面
+     HAL_NVIC_EnableIRQ 两句，再勾选重新生成。
    ------------------------------------------------------------------ */
 void USART1_IRQHandler(void)
 {

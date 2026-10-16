@@ -135,6 +135,93 @@
     return parts.join("\r\n") + "\r\n";
   };
 
+  /* ------------------------------------------------------------------
+     V2.2.21：Markdown 导出
+     为什么要有：CSV / JSON / BIN / TXT 都是「机器格式」——想贴进文档、贴进
+     issue、或者贴给 AI 看，都得先自己转成表。Markdown 表格是唯一「粘上去就能读」
+     的格式，用户反复说的痛点正是「老是要复制粘贴」，这一步也一并省掉。
+     ⚠ 两处 Markdown 表格的经典坑，这里都处理了：
+       ① 单元格内容里的 `|` 会把表格切断 —— 必须转义成 \|；
+       ② 内容里的反引号会提前结束行内代码 —— 去掉，别让一行数据毁掉整张表。
+     ------------------------------------------------------------------ */
+  function fmtNum(v, digits) {
+    if (v === null || v === undefined || !isFinite(v)) { return "—"; }
+    var d = (typeof digits === "number" && digits >= 0) ? digits : 3;
+    var s = v.toFixed(d);
+    if (d > 0) { s = s.replace(/0+$/, "").replace(/\.$/, ""); }
+    return s;
+  }
+
+  function mdCell(s) {
+    return String(s === null || s === undefined ? "" : s)
+      .replace(/\|/g, "\\|")
+      .replace(/`/g, "")
+      .replace(/[\r\n]+/g, " ")
+      .replace(/^\s+|\s+$/g, "");
+  }
+
+  E.buildMarkdown = function (maxRecs) {
+    var n = Math.max(1, Math.min(2000, maxRecs || 60));
+    var t = core.config.transport || {};
+    var rule = core.config.rule || {};
+    var stop = t.stopBits === 2 ? "2" : "1";
+    var par = t.parity === "even" ? "E" : t.parity === "odd" ? "O" : "N";
+    var L = [];
+
+    L.push("# SerialLab 数据导出");
+    L.push("");
+    L.push("- 生成时间：" + new Date().toLocaleString("zh-CN"));
+    L.push("- 连接：" + (t.portName || t.path || "（未连接）") + " · " + (t.baudRate || 115200) + " "
+      + (t.dataBits || 8) + par + stop);
+    L.push("- 编码：" + (t.encoding || "utf-8") + "　时间口径：" + (t.timeMode === "rel" ? "相对秒" : "绝对时刻")
+      + "（精度 " + (t.timePrec || "ms") + "）");
+    L.push("- 解析：" + (rule.mode === "hex" ? "HEX 自定义帧" : "文本 / 键值自适应")
+      + (t.alias ? ("　设备别名：" + mdCell(t.alias)) : ""));
+    L.push("- 累计：原始记录 " + SL.datastore.totalFrames() + " 条 · " + SL.datastore.totalBytes() + " 字节");
+    L.push("");
+
+    var chs = channelStats();
+    L.push("## 通道统计（" + chs.length + " 路）");
+    L.push("");
+    if (!chs.length) {
+      L.push("_还没有解析出任何通道。_");
+    } else {
+      L.push("| 通道 | 单位 | 样本数 | 最新 | 最小 | 最大 | 均值 | 峰峰 |");
+      L.push("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |");
+      for (var i = 0; i < chs.length; i++) {
+        var c = chs[i];
+        L.push("| " + mdCell(c.label || c.key) + " | " + mdCell(c.unit) + " | " + c.count
+          + " | " + fmtNum(c.last, c.precision) + " | " + fmtNum(c.min, c.precision)
+          + " | " + fmtNum(c.max, c.precision) + " | " + fmtNum(c.avg, c.precision)
+          + " | " + fmtNum(c.span, c.precision) + " |");
+      }
+    }
+    L.push("");
+
+    var recs = SL.datastore.recentRaw(n);
+    L.push("## 最近 " + recs.length + " 条原始记录");
+    L.push("");
+    if (!recs.length) {
+      L.push("_还没有收到数据。_");
+    } else {
+      L.push("| # | 时刻 | 方向 | 内容 |");
+      L.push("| ---: | --- | --- | --- |");
+      for (var k = 0; k < recs.length; k++) {
+        var r = recs[k];
+        var body = r.text || r.hex || "";
+        L.push("| " + (k + 1) + " | " + mdCell(r.tLabelAbs || r.tLabel || "") + " | "
+          + (r.dir === "tx" ? "TX" : "RX") + " | `" + mdCell(body) + "` |");
+      }
+    }
+    L.push("");
+    L.push("> 由 SerialLab 导出。表格可直接粘进文档、issue 或对话，无需再手工转表。");
+    return L.join("\n") + "\n";
+  };
+
+  E.exportMarkdown = function () {
+    return E.downloadText(E.buildMarkdown(), "seriallab_" + stamp() + ".md", "text/markdown");
+  };
+
   /* 完整 JSON 快照（配置 + 通道 + 数据） */
   E.buildJson = function () {
     var snap = {
@@ -413,12 +500,12 @@
       L.push("数据字段: (未定义；当前不会解出任何数值通道)");
     }
     var ck = r.checksum || {};
+    /* V2.2.21：名称查 codec 的同一份清单，不再手写 if 链——
+       否则新增一种校验就会出现「界面能选、AI 调试包却说不出名字」的分叉。 */
     function ckName(t) {
-      if (t === "sum8") { return "8 位累加和"; }
-      if (t === "xor8") { return "8 位异或"; }
-      if (t === "sum16") { return "16 位累加和"; }
-      if (t === "crc16modbus") { return "CRC16/MODBUS"; }
-      return "无";
+      var list = (SL.codec && SL.codec.checksumTypes) || [];
+      for (var i = 0; i < list.length; i++) { if (list[i].type === t) { return list[i].label; } }
+      return t === "none" || !t ? "无" : t;
     }
     if (ck.type && ck.type !== "none") {
       L.push("校验: " + ckName(ck.type) + "（从第 " + (ck.from || 0) + " 字节抽到 "

@@ -48,6 +48,8 @@
 
     <button class="sl-link" id="slBtnPalette" type="button"
             data-tip="命令面板：打字搜索全部动作（含 6 个页签），不必记它们在哪一组的第几个。快捷键 Ctrl+K（Mac 上是 ⌘K）">命令面板</button>
+    <button class="sl-link" id="slBtnProto" type="button"
+            data-tip="协议分析：这一串字节是不是 Modbus RTU 帧？我发的和它回的是不是一对？这两帧差在哪一个字节？——不用再人肉数字节">协议分析</button>
     <button class="sl-link" id="slBtnHelp" type="button">帮助</button>
     <button class="sl-link" id="slBtnPrompt" type="button">AI</button>
     <button class="sl-link" id="slBtnTheme" type="button">主题</button>
@@ -283,12 +285,16 @@
                   <option value="xor8">异或(8)</option>
                   <option value="sum16">累加和(16)</option>
                   <option value="crc16modbus">CRC16-Modbus</option>
+                  <option value="crc8">CRC8-Maxim</option>
+                  <option value="crc16ccitt">CRC16-CCITT</option>
+                  <option value="crc32">CRC32</option>
+                  <option value="lrc">LRC(Modbus-ASCII)</option>
                 </select>
               </span>
               <span class="sl-field">起始 <input type="number" id="slCkFrom" min="0" value="0"></span>
               <span class="sl-field">结束 <input type="number" id="slCkTo" value="-1"></span>
             </div>
-            <p class="sl-hint">结束填 -1 表示到载荷末尾。四种具名校验之外还可以选「无」。</p>
+            <p class="sl-hint">结束填 -1 表示到载荷末尾。校验算法按具体变体区分：CRC8 为 Maxim(DS18B20) 族，CRC16-CCITT 为初值 0xFFFF 的 CCITT-FALSE，CRC32 为 IEEE(zip/png)，LRC 供 Modbus-ASCII。</p>
           </div>
 
           <div class="sl-group">
@@ -522,8 +528,10 @@
               <button class="sl-btn is-sm" id="slBtnExpJson" type="button">JSON</button>
               <button class="sl-btn is-sm" id="slBtnExpBin" type="button">BIN</button>
               <button class="sl-btn is-sm" id="slBtnExpTxt" type="button">TXT</button>
+              <button class="sl-btn is-sm" id="slBtnExpMd" type="button"
+                      data-tip="导出 Markdown 表格：通道统计 + 最近记录。想贴进文档、issue 或直接发给 AI 时用它——CSV/JSON 是机器格式，粘上去还得自己转表">Markdown</button>
             </div>
-            <p class="sl-hint">CSV 带 UTF-8 BOM，Excel 打开中文不乱码。</p>
+            <p class="sl-hint">CSV 带 UTF-8 BOM，Excel 打开中文不乱码。<b>Markdown</b> 是唯一「粘上去就能读」的格式：通道统计与最近记录都是表格，可直接贴进文档或对话。</p>
           </div>
           <div class="sl-group">
             <h3>🧾 配置</h3>
@@ -727,6 +735,7 @@
 <script src="js/util.js"></script>
 <script src="js/core.js"></script>
 <script src="js/codec.js"></script>
+<script src="js/protocol.js"></script>
 <script src="js/expr.js"></script>
 <script src="js/parser.js"></script>
 <script src="js/fft.js"></script>

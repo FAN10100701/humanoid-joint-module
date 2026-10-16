@@ -203,7 +203,7 @@ if (-not $NoBuild) {
     if ($lines.Count) { $tail = ($lines[-1]).Trim() }
   }
   Say ("BUILD: exit=" + $rc + "  " + [math]::Round($sw.Elapsed.TotalSeconds, 1) + "s  " + $tail)
-  if ($rc -ne 0) {
+  if ($rc -ge 2) {   # Keil UV4 exit code: 0=clean, 1=warnings (keep going), 2+=real failure
     Invoke-Rollback ("build exit " + $rc)
     Fail 2 ("build failed (exit " + $rc + ")")
   }

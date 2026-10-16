@@ -1517,6 +1517,17 @@
         var maxLines = opts.maxLines || 300;
         if (recs.length > maxLines) { recs = recs.slice(recs.length - maxLines); }
 
+        /* V2.2.21：面板级「清屏」——只显示比 clearAt 更新的行（由 views.clearPanelView 写入）。
+           用墙钟比对：记录本来就带 tWall（时间戳列用的就是它），不必再给数据仓加全局序号。
+           没有 tWall 的记录一律保留：宁可多显示，也不能因为缺字段把用户的数据「清没了」。 */
+        if (opts.clearAt) {
+          var kept = [];
+          for (var ri = 0; ri < recs.length; ri++) {
+            if (!recs[ri].tWall || recs[ri].tWall > opts.clearAt) { kept.push(recs[ri]); }
+          }
+          recs = kept;
+        }
+
         var showTs = opts.showTimestamp !== false;
         var showHex = !!opts.showHex;
         var showDir = opts.showDir !== false;

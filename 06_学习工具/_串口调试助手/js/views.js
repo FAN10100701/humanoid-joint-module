@@ -147,7 +147,20 @@
     return b;
   }
 
+  /* V2.2.21：面板级「清屏起点」。为什么不用 panel.opts 走 updatePanel 存：
+     updatePanel 会把描述符交给 Plugins.validate 重新校验，校验只认它认识的 opts 字段，
+     自定义的 clearAt 会被丢掉 —— 实测点了清屏 opts 一点没变、行数照常增长（静默失效）。
+     改成：① 存在这张表里；② 原地改渲染器持有的那个面板对象（getPanel 返回的就是同一个引用），
+     所以清屏当场生效、不用重建面板；③ 面板若因别的原因被重建，buildPanelEl 会把起点重新注入，
+     不会出现「清过的屏自己又满了」。 */
+  var viewClear = {};
+
   function buildPanelEl(panel) {
+    /* 重建面板时把「清屏起点」重新注入，避免清过的屏自己又满了（见 viewClear 的说明） */
+    if (viewClear[panel.id]) {
+      panel.opts = panel.opts || {};
+      panel.opts.clearAt = viewClear[panel.id];
+    }
     var el = document.createElement("div");
     el.className = "sl-panel";
     el.setAttribute("data-panel-id", panel.id);
@@ -167,6 +180,12 @@
     type.textContent = r ? r.label : panel.type;
     head.appendChild(type);
 
+    /* V2.2.21：收起态摘要。原先收起后只剩一个标题条，用户点开「什么都没有」——
+       现在把最后一行数据留在标题旁，收起也能瞄一眼最新值（内容由 ui.js 填：业务模块不碰 DOM）。 */
+    var brief = document.createElement("span");
+    brief.className = "sl-panel-brief";
+    head.appendChild(brief);
+
     /* 文本监视器：预留快捷工具条容器（时间戳 / HEX / 编码），控件由 ui.js 统一填充。
        时域波形：预留窗口调节容器（横轴采样点数）。都在标题之后、图标按钮之前。 */
     if (panel.type === "textmon" || panel.type === "timeplot") {
@@ -175,6 +194,21 @@
       quick.setAttribute("data-quick", "");
       if (panel.type === "timeplot") { quick.setAttribute("data-quick-plot", panel.id); }
       head.appendChild(quick);
+    }
+
+    /* 文本监视器专属：清屏 + 复制纯文本。
+       为什么必须有：VOFA+ 的垃圾桶就长在监视器头上，没有就会被问「为什么没有」；
+       而现有的「清缓存」在主区工具条上、清的是**数据**（不可撤销），语义完全不同，替代不了。
+       清屏用「视图起点」实现（panel.opts.clearAt = 当前墙钟），所以只影响这块屏，
+       其他图表与已收数据都不动 —— 这才是垃圾桶该有的行为。 */
+    if (panel.type === "textmon") {
+      head.appendChild(iconBtn("清屏", "只清这块屏已显示的内容（其他图表与已收数据不受影响）；要连数据一起清，用主区工具条的「清缓存」", "sl-text-btn sl-clear-view", function () {
+        V.clearPanelView(panel.id);
+      }));
+      head.appendChild(iconBtn("复制", "把监视器里的文本复制到剪贴板（可勾选：去时间戳 / 去方向标记 / 只复制可见部分 / 相邻去重）——不用截图，也不用拖着鼠标选", "sl-text-btn sl-copy-view", function () {
+        /* 跨模块走事件总线，不直接引用 ui.js（子应用硬规则 6） */
+        core.emit("panel:copyText", { id: panel.id });
+      }));
     }
 
     if (isMain(panel)) {
@@ -213,14 +247,23 @@
     }
 
     /* 面板级暂停：只冻结这张卡片的重绘（数据照收），与顶栏全局暂停互不影响 */
-    head.appendChild(iconBtn("⏸", "暂停 / 恢复此面板刷新（数据仍在后台缓冲）", "is-pause", function () {
+    head.appendChild(iconBtn("⏸", "暂停 / 恢复此面板刷新（数据仍在后台缓冲）", "is-pause", function (btn) {
       var paused = V.togglePanelPause(panel.id);
-      this.textContent = paused ? "▶" : "⏸";
-      this.title = paused ? "恢复此面板刷新" : "暂停 / 恢复此面板刷新（数据仍在后台缓冲）";
+      /* ⚠ 这里曾经写的是 this.textContent —— iconBtn 的回调是 onclick(b) 形式，
+         this 既不是按钮（严格模式下是 undefined，非严格下是 window），
+         于是赋值**静默失败**：点下去其实暂停了，但「⏸」永远不变成「▶」，
+         用户看到的就是「点了没反应」。回调的第一个参数才是按钮本身。 */
+      btn.textContent = paused ? "▶" : "⏸";
+      btn.title = paused ? "恢复此面板刷新" : "暂停 / 恢复此面板刷新（数据仍在后台缓冲）";
     }));
 
-    head.appendChild(iconBtn("▾", "收起 / 展开", "", function () {
+    /* V2.2.21：收起/展开按钮改用文字。
+       原先是一个「▾」——三角在所有人的直觉里都等于「下拉菜单」，点下去却是收起面板，
+       于是用户报「箭头为什么点不开」。文字按钮没有歧义，也顺带给出当前状态。 */
+    head.appendChild(iconBtn("收起", "收起 / 展开该面板（收起后标题旁仍显示最后一行数据）", "sl-text-btn sl-collapse-btn", function (btn) {
       V.toggleCollapse(panel.id);
+      /* 同样用回调参数而不是 this：iconBtn 的回调签名是 onclick(b)（见上面暂停按钮的说明） */
+      btn.textContent = V.isCollapsed(panel.id) ? "展开" : "收起";
     }));
 
     head.appendChild(iconBtn("✕", "移除该面板", "is-del", function () {
@@ -533,6 +576,23 @@
   V.isCollapsed = function (id) {
     var el = els[id];
     return !!(el && el.className.indexOf("is-collapsed") >= 0);
+  };
+
+  /* V2.2.21：只清这块屏 —— 给面板记一个「视图起点」（墙钟毫秒），渲染器只显示比它新的行。
+     为什么不用「清数据」来实现：那会连其他图表和原始记录一起清掉、而且不可撤销，
+     而垃圾桶的语义只是「这块屏看烦了，清一下」。
+     为什么用时间戳而不是记录序号：原始记录本来就带 tWall（时间戳列用的就是它），
+     不必为了清屏再给数据仓加一个全局序号——少一个真源就少一处漂移。 */
+  V.clearPanelView = function (id) {
+    var p = V.getPanel(id);
+    if (!p) { return false; }
+    var at = Date.now();
+    viewClear[id] = at;
+    p.opts = p.opts || {};
+    p.opts.clearAt = at;      /* 渲染器持有同一个对象引用，原地改即可立刻生效 */
+    V.redraw();               /* 不等下一帧：清屏要「点下去就空」 */
+    core.emit("toast", { level: "info", msg: "已清屏：只清了这块面板的显示，数据与其他图表都还在" });
+    return true;
   };
 
   /* V2.2.12：清空面板支持撤销——清空前快照全部面板描述符，恢复时逐个重建 */

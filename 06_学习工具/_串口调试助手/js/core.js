@@ -129,7 +129,7 @@
           head: "",              /* 帧头十六进制串，如 "AA55"；留空=不按帧头收帧 */
           len: { offset: 0, size: 0, mode: "none" },   /* none|payload|total */
           fields: [],            /* [{key,type,offset,size,scale,big}] */
-          checksum: { type: "none", from: 0, to: -1 }, /* none|sum8|xor8|sum16|crc16modbus */
+          checksum: { type: "none", from: 0, to: -1 }, /* none|sum8|xor8|sum16|crc8|crc16modbus|crc16ccitt|crc32|lrc */
           tail: ""               /* 帧尾十六进制串；留空=按长度字段收帧（宽匹配） */
         }
       },

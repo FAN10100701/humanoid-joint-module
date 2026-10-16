@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.20";
+  UI.VERSION = "2.2.21";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1047,11 +1047,12 @@
       return;
     }
 
-    /* 文本监视器的快捷条：时间戳 / HEX / 编码 */
+    /* 文本监视器的快捷条：时间戳 / 精度 / HEX / 编码 */
     var t = core.config.transport || {};
     var ts = t.showTimestamp !== false;
     var hex = !!t.hexRecv;
     var enc = t.encoding || "utf-8";
+    var prec = t.timePrec || "ms";
     var encOptHtml = "";
     var encOpts = encOptions();          /* 单源：与左栏「编码」同一份选项与文案 */
     for (var e = 0; e < encOpts.length; e++) {
@@ -1061,6 +1062,13 @@
     host.innerHTML =
       '<label class="sl-qk" title="显示 / 隐藏行首时间戳（同左栏「显示」页签）">' +
         '<input type="checkbox" data-qk="ts"' + (ts ? " checked" : "") + '>时间戳</label>' +
+      /* V2.2.21：精度原先只藏在 ⋯ 设置中心里，用户找不到「时间精度在哪调」。
+         就地放一个下拉，与设置中心同源（transport.timePrec），改完对新收的行生效。 */
+      '<select class="sl-qk-enc" data-qk="prec" title="时间戳精度（同 ⋯ 设置中心；墙钟上限是毫秒，微秒只对相对口径生效；改后对新收的行生效）">' +
+        '<option value="s"' + (prec === "s" ? " selected" : "") + '>秒</option>' +
+        '<option value="ms"' + (prec === "ms" ? " selected" : "") + '>毫秒</option>' +
+        '<option value="us"' + (prec === "us" ? " selected" : "") + '>微秒</option>' +
+      '</select>' +
       '<label class="sl-qk" title="以 HEX 十六进制显示收到的字节（同左栏「HEX 显示」）">' +
         '<input type="checkbox" data-qk="hex"' + (hex ? " checked" : "") + '>HEX</label>' +
       '<select class="sl-qk-enc" data-qk="enc" title="收码字符编码（同左栏「编码」，含 GBK）">' +
@@ -1070,6 +1078,107 @@
   function refreshAllQuick() {
     var hosts = document.querySelectorAll("[data-quick]");
     for (var i = 0; i < hosts.length; i++) { fillQuick(hosts[i]); }
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.21：把监视器里的文本「复制出去」（而不是导出 PNG）
+     为什么要有：原先想把监视器内容给别人 / 给 AI，只有两条路——导出 PNG（机器读不了），
+     或者拖鼠标选中再 Ctrl+C（几千行既慢又容易漏，选中的还混着时间戳与方向标记，粘出去要手工删）。
+     行结构来自 plugins.js 的 textmon：
+       .sl-mon-t(时间戳) / .sl-mon-dir(方向) / .sl-mon-body(正文)
+     所以「只复制正文」= 只取 .sl-mon-body —— 这正是用户要的「除去时间和下位机提示」。
+     选项存 core.config.ui，先配置一次、之后一键复制。
+     ------------------------------------------------------------ */
+  function collectMonitorText(id) {
+    var el = document.querySelector('[data-panel-id="' + id + '"]');
+    if (!el) { return null; }
+    var box = el.querySelector(".sl-mon");
+    if (!box) { return null; }
+    var uicfg = core.config.ui || {};
+    var withTs = !!uicfg.copyTs;
+    var withDir = !!uicfg.copyDir;
+    var dedupe = uicfg.copyDedupe !== false;
+    var visibleOnly = !!uicfg.copyVisible;
+    var rows = box.querySelectorAll(".sl-mon-line");
+    var from = 0;
+    if (visibleOnly && rows.length) {
+      /* 「可见」= 最后那一屏。监视器总是自动滚到最新，所以屏幕上就是最后 N 行。
+         不按 offsetTop/scrollTop 判断：滚动容器在不同布局、不同主题下未必是 .sl-mon，
+         算错了会静默漏行——宁可口径简单也不要漏数据。 */
+      var rowH = rows[rows.length - 1].offsetHeight || 0;
+      if (rowH > 0) {
+        var fit = Math.floor(box.clientHeight / rowH);
+        if (fit > 0) { from = Math.max(0, rows.length - fit); }
+      }
+    }
+    var lines = [];
+    for (var i = from; i < rows.length; i++) {
+      var r = rows[i];
+      var parts = [];
+      if (withTs) {
+        var tn = r.querySelector(".sl-mon-t");
+        if (tn && tn.textContent) { parts.push(tn.textContent.replace(/\s+$/, "")); }
+      }
+      if (withDir) {
+        var dn = r.querySelector(".sl-mon-dir");
+        if (dn && dn.textContent.trim()) { parts.push(dn.textContent.trim()); }
+      }
+      var bn = r.querySelector(".sl-mon-body");
+      parts.push(((bn ? bn.textContent : r.textContent) || "").replace(/\s+$/, ""));
+      var line = parts.join(" ").replace(/\s+$/, "");
+      if (dedupe && lines.length && lines[lines.length - 1] === line) { continue; }
+      lines.push(line);
+    }
+    return lines;
+  }
+
+  function copyMonitorText(id) {
+    var lines = collectMonitorText(id);
+    if (lines === null) {
+      core.emit("toast", { level: "warn", msg: "这块面板不是文本监视器，没有可复制的文本" });
+      return;
+    }
+    if (!lines.length) {
+      core.emit("toast", { level: "warn", msg: "监视器里还没有可复制的内容" });
+      return;
+    }
+    var uicfg = core.config.ui || {};
+    copyText(lines.join("\n"));
+    var how = [];
+    how.push(uicfg.copyTs ? "带时间戳" : "去时间戳");
+    how.push(uicfg.copyDir ? "带方向标记" : "去方向标记");
+    if (uicfg.copyDedupe !== false) { how.push("相邻去重"); }
+    if (uicfg.copyVisible) { how.push("仅可见部分"); }
+    core.emit("toast", { level: "ok", msg: "已复制 " + lines.length + " 行（" + how.join("、") + "）；复制口径可在 ⋯ 设置里改" });
+  }
+
+  /* 收起态摘要：面板收起后只剩标题条，用户点开「什么都没有」。
+     这里把最新一行留在标题旁（监视器），图表则显示运行 / 暂停状态。 */
+  function refreshPanelBriefs() {
+    var heads = document.querySelectorAll(".sl-panel-head");
+    for (var i = 0; i < heads.length; i++) {
+      var head = heads[i];
+      var brief = head.querySelector(".sl-panel-brief");
+      if (!brief) { continue; }
+      var el = head.parentNode;
+      if (!el || el.className.indexOf("is-collapsed") < 0) {
+        if (brief.textContent) { brief.textContent = ""; }
+        continue;
+      }
+      var txt = "";
+      var box = el.querySelector(".sl-mon");
+      if (box) {
+        var rows = box.querySelectorAll(".sl-mon-line");
+        if (rows.length) {
+          var b = rows[rows.length - 1].querySelector(".sl-mon-body");
+          txt = (b ? b.textContent : rows[rows.length - 1].textContent) || "";
+        }
+      } else {
+        txt = core.state.paused ? "已暂停（数据仍在收）" : "";
+      }
+      txt = txt.replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "").slice(0, 80);
+      if (txt !== brief.textContent) { brief.textContent = txt; }
+    }
   }
 
   function initPanelQuick() {
@@ -1088,6 +1197,15 @@
         if (k === "ts") { setAndFire("slShowTs", t.checked ? "on" : "off"); }
         else if (k === "hex") { setAndFire("slHexRecv", t.checked ? "on" : "off"); }
         else if (k === "enc") { setAndFire("slEncoding", t.value); }
+        else if (k === "prec") {
+          /* V2.2.21：时间戳精度与 ⋯ 设置中心同源（transport.timePrec）。
+             ⚠ 设置中心那个 #slSetPrec 是弹窗里动态生成的，setAndFire 找不到它，
+             所以这里直写配置 + saveConfig + 广播，写法与设置中心保持一致。 */
+          if (!core.config.transport) { core.config.transport = {}; }
+          core.config.transport.timePrec = t.value;
+          core.saveConfig();
+          core.emit("config:changed", { scope: "display" });
+        }
         else if (k === "win") {
           /* 时域波形快捷条：横轴窗口（面板级配置，不走 transport） */
           var pid = node.getAttribute("data-quick-plot");
@@ -1115,7 +1233,12 @@
       }
     }, true);
     /* 面板动态增删 / 主位互换 / 更新重建后补齐快捷条内容 */
-    core.on("panels:changed", function () { refreshAllQuick(); });
+    core.on("panels:changed", function () { refreshAllQuick(); refreshPanelBriefs(); });
+    /* 面板头「复制」按钮（views.js 发事件，剪贴板归 ui.js —— 子应用硬规则 18） */
+    core.on("panel:copyText", function (e) {
+      if (e && e.id) { copyMonitorText(e.id); }
+    });
+    core.on("data:clear", function () { refreshPanelBriefs(); });
     refreshAllQuick();
   }
 
@@ -1330,6 +1453,122 @@
      字号/口径/数字标红与「显示」页签同源（setAndFire 走 addBind）；
      时间戳精度/方向标记模式/设备别名是新增 transport 项，直写配置。
      ------------------------------------------------------------ */
+  /* ------------------------------------------------------------
+     V2.2.21：协议分析弹窗（Modbus RTU / 协议识别 / 帧级 diff）
+     为什么要有：现场手里常常是一串看不懂的字节，而最常问的三个问题是
+     「这是不是 Modbus 帧」「我发的和它回的是不是一对」「这两帧差在哪一个字节」——
+     原先只能人肉数字节。结论全部来自 protocol.js 的纯函数（与本地桥共用同一份实现）。
+     ------------------------------------------------------------ */
+  function pad2hex(v) {
+    var s = (v & 0xFF).toString(16).toUpperCase();
+    return s.length < 2 ? ("0" + s) : s;
+  }
+
+  function protoLine(host, text, level) {
+    var d = document.createElement("div");
+    d.className = "sl-proto-line" + (level ? (" is-" + level) : "");
+    d.textContent = text;                     /* 一律 textContent：内容可能来自串口 */
+    host.appendChild(d);
+  }
+
+  function protoRecentHex() {
+    var recs = SL.datastore.recentRaw(10);
+    var parts = [];
+    for (var i = 0; i < recs.length; i++) {
+      if (recs[i].hex) { parts.push(recs[i].hex); }
+      else if (recs[i].text) { parts.push(U.bytesToHex(SL.codec.encodeText(recs[i].text, "utf-8"))); }
+    }
+    return parts.join(" ");
+  }
+
+  function runProtocol() {
+    var out = $("slProtoOut");
+    if (!out) { return; }
+    out.textContent = "";
+    var h1 = String($("slProtoHex").value || "").replace(/[^0-9a-fA-F]/g, "");
+    var h2 = String($("slProtoHex2").value || "").replace(/[^0-9a-fA-F]/g, "");
+    if (h1.length % 2 === 1) { h1 = h1.slice(0, -1); }
+    if (h2.length % 2 === 1) { h2 = h2.slice(0, -1); }
+    if (!h1) { protoLine(out, "没有可分析的字节：填 HEX，或点「用最近收到的数据」。", "warn"); return; }
+    var u8 = U.hexToBytes(h1);
+    if (!u8 || !u8.length) { protoLine(out, "HEX 解析失败：请确认是成对的十六进制字符。", "warn"); return; }
+
+    /* ① 协议识别（给出理由，用户才能判断该不该信） */
+    var g = SL.protocol.guess(u8);
+    protoLine(out, "识别：" + SL.protocol.summarize(u8), "head");
+    for (var i = 1; i < g.ranked.length && i < 4; i++) {
+      protoLine(out, "  其他可能：" + g.ranked[i].label + "（" + g.ranked[i].score + "%）—— " + g.ranked[i].why);
+    }
+
+    /* ② Modbus RTU 逐帧 + 请求响应配对 */
+    var m = SL.protocol.modbus(u8);
+    if (m.frames.length) {
+      protoLine(out, "Modbus 切帧：" + m.frames.length + " 帧（CRC 通过 " + m.ok + "，不通过 " + m.fail + "）"
+        + (m.bad ? ("；重同步丢弃 " + m.bad + " 字节") : ""), "head");
+      for (var k = 0; k < m.frames.length; k++) {
+        var f = m.frames[k];
+        protoLine(out, "  #" + f.index + " [" + f.kind + "] " + f.fcName + " —— " + f.detail, f.crcOk ? "ok" : "bad");
+        protoLine(out, "      " + f.hex);
+      }
+      var pairs = SL.protocol.modbusPairs(m.frames);
+      if (pairs.length) {
+        protoLine(out, "请求 ↔ 响应配对：", "head");
+        for (var p = 0; p < pairs.length; p++) {
+          protoLine(out, "  " + (pairs[p].req ? ("请求#" + pairs[p].req.index) : "—")
+            + " ↔ " + (pairs[p].res ? ("响应#" + pairs[p].res.index) : "—")
+            + "  " + pairs[p].note, pairs[p].res ? "ok" : "warn");
+        }
+      }
+    } else {
+      protoLine(out, "未按 Modbus RTU 切出帧。若确信是 Modbus：先确认整帧收全，再看 CRC 是否低字节在前（RTU 是低前高后）。");
+    }
+
+    /* ③ 帧级 diff（现场排障最有效的一招：拿一帧好的和一帧坏的比） */
+    if (h2) {
+      var u8b = U.hexToBytes(h2);
+      if (u8b && u8b.length) {
+        var d = SL.protocol.diff(u8, u8b);
+        protoLine(out, "帧对比：" + (d.sameLength ? "长度相同" : ("长度不同 " + d.lenA + " vs " + d.lenB))
+          + "，共同前缀 " + d.commonPrefix + " 字节，差异 " + d.diffs.length + " 处", "head");
+        for (var q = 0; q < d.diffs.length && q < 24; q++) {
+          protoLine(out, "  第 " + d.diffs[q].at + " 字节："
+            + (d.diffs[q].a === null ? "(无)" : ("0x" + pad2hex(d.diffs[q].a)))
+            + " → " + (d.diffs[q].b === null ? "(无)" : ("0x" + pad2hex(d.diffs[q].b))), "warn");
+        }
+        if (d.diffs.length > 24) { protoLine(out, "  …… 其余 " + (d.diffs.length - 24) + " 处省略"); }
+      }
+    }
+  }
+
+  function openProtocol() {
+    var box = document.createElement("div");
+    box.className = "sl-proto";
+    box.innerHTML =
+      '<div class="sl-set-row"><label>待分析字节</label>' +
+        '<textarea id="slProtoHex" rows="4" spellcheck="false" ' +
+        'placeholder="粘贴 HEX（如 01 03 00 00 00 0A C5 CD）；留空则点「用最近收到的数据」"></textarea></div>' +
+      '<div class="sl-set-row"><label>对比帧（可选）</label>' +
+        '<textarea id="slProtoHex2" rows="2" spellcheck="false" ' +
+        'placeholder="填第二帧做字节级对比：谁改了哪个字节，一眼看出"></textarea></div>' +
+      '<div class="sl-proto-out" id="slProtoOut"></div>';
+    UI.modal({
+      title: "协议分析 · Modbus RTU / 协议识别 / 帧对比",
+      body: box,
+      buttons: [
+        { label: "分析", primary: true, onClick: function () { runProtocol(); return false; } },
+        { label: "用最近收到的数据", onClick: function () {
+            $("slProtoHex").value = protoRecentHex();
+            runProtocol();
+            return false;
+          } },
+        { label: "关闭" }
+      ],
+      focus: "#slProtoHex"
+    });
+    $("slProtoHex").value = protoRecentHex();      /* 打开就填好，省得用户去别处复制 */
+    runProtocol();
+  }
+
   function openSettings() {
     var t = core.config.transport;
     var uicfg = core.config.ui || {};
@@ -1352,6 +1591,20 @@
         '<select id="slSetDirMode"><option value="brief">短标记（推荐：收「←」发「→ 上位机」）</option>' +
         '<option value="tx">仅发送行</option><option value="all">每行全称</option><option value="off">不显示</option></select>' +
         '<i>收到的行印「←」，发送行为琥珀色「→ 上位机」</i></div>' +
+      /* V2.2.21：监视器头上「复制」按钮的口径。放在这里而不是每次弹窗问——
+         常见情况是「复制一段给人看」，每次都问一遍太烦；先配一次，之后一键复制。
+         选中「只正文」= 去时间戳去方向，也就是「只复制有用信息」。 */
+      '<div class="sl-set-row"><label>复制监视器文本</label>' +
+        '<select id="slSetCopyMode">' +
+          '<option value="plain">只正文（去时间戳、去方向标记）</option>' +
+          '<option value="ts">正文 + 时间戳</option>' +
+          '<option value="dir">正文 + 方向标记</option>' +
+          '<option value="both">正文 + 时间戳 + 方向标记</option></select>' +
+        '<i>点监视器头上的「复制」按此口径进剪贴板；下面是两个范围开关</i></div>' +
+      '<div class="sl-set-row"><label>复制范围</label>' +
+        '<label class="sl-set-chk"><input type="checkbox" id="slSetCopyVisible">只复制可见部分（最后一屏）</label>' +
+        '<label class="sl-set-chk"><input type="checkbox" id="slSetCopyDedupe">相邻重复行去重</label>' +
+        '<i>设备卡住时会把同一行刷满屏，去重后更容易看出真正变化</i></div>' +
       '<div class="sl-set-row"><label>数字高亮</label>' +
         '<select id="slSetNumStyle"><option value="channel">通道色（跟波形对应）</option>' +
         '<option value="red">全部标红加粗</option><option value="off">不标</option></select>' +
@@ -1370,6 +1623,11 @@
     $("slSetTimeMode").value = t.timeMode === "rel" ? "rel" : "abs";
     $("slSetPrec").value = t.timePrec || "ms";
     $("slSetDirMode").value = t.dirMode || "tx";
+    /* 复制口径：copyTs / copyDir 两个布尔合成一个下拉（默认都关 = 只正文） */
+    $("slSetCopyMode").value = (uicfg.copyTs && uicfg.copyDir) ? "both"
+      : uicfg.copyTs ? "ts" : uicfg.copyDir ? "dir" : "plain";
+    $("slSetCopyVisible").checked = !!uicfg.copyVisible;
+    $("slSetCopyDedupe").checked = uicfg.copyDedupe !== false;
     $("slSetAlias").value = t.alias || "";
     $("slSetNumStyle").value = (uicfg.numStyle === "red" || uicfg.numStyle === "off") ? uicfg.numStyle : "channel";
     $("slSetFontSize").addEventListener("change", function () { setAndFire("slFontSize", this.value); });
@@ -1383,6 +1641,22 @@
     });
     $("slSetDirMode").addEventListener("change", function () {
       core.config.transport.dirMode = this.value;
+      core.saveConfig();
+    });
+    $("slSetCopyMode").addEventListener("change", function () {
+      var u = core.config.ui || (core.config.ui = {});
+      u.copyTs = (this.value === "ts" || this.value === "both");
+      u.copyDir = (this.value === "dir" || this.value === "both");
+      core.saveConfig();
+    });
+    $("slSetCopyVisible").addEventListener("change", function () {
+      var u = core.config.ui || (core.config.ui = {});
+      u.copyVisible = !!this.checked;
+      core.saveConfig();
+    });
+    $("slSetCopyDedupe").addEventListener("change", function () {
+      var u = core.config.ui || (core.config.ui = {});
+      u.copyDedupe = !!this.checked;
       core.saveConfig();
     });
     $("slSetAlias").addEventListener("change", function () {
@@ -2423,6 +2697,11 @@
     $("slBtnExpJson").addEventListener("click", function () { SL.exporters.exportJson(); });
     $("slBtnExpBin").addEventListener("click", function () { SL.exporters.exportBin(); });
     $("slBtnExpTxt").addEventListener("click", function () { SL.exporters.exportTxt(); });
+    /* V2.2.21：Markdown 导出（贴进文档/issue/对话不用再手工转表） */
+    $("slBtnExpMd").addEventListener("click", function () {
+      SL.exporters.exportMarkdown();
+      core.emit("toast", { level: "ok", msg: "已导出 Markdown（通道统计 + 最近记录），可直接贴进文档或发给 AI" });
+    });
 
     /* --- V2.2.6 数据文件夹：绑定 / 规范命名落盘 / 清理 / CSV 直达 --- */
     var AI = SL.aichan;
@@ -2704,6 +2983,8 @@
   }
 
   var PALETTE_CMDS = [
+    { t: "协议分析（Modbus / 识别 / 帧对比）", k: "xieyi fenxi protocol modbus crc duibi", sel: "#slBtnProto" },
+    { t: "导出 Markdown 表格（贴文档 / 发 AI）", k: "daochu markdown biaoge md", sel: "#slBtnExpMd" },
     { t: "连接设备", k: "lianjie connect open port", sel: "#slBtnConnect" },
     { t: "断开连接", k: "duankai disconnect close", sel: "#slBtnDisconnect" },
     { t: "AUTO 自适应（扫描波特率 + 识别编码）", k: "auto zishiying zidong", sel: "#slBtnAuto" },
@@ -3677,8 +3958,10 @@
       T.connect(core.config.transport)["catch"](function () { /* connect 内部已提示 */ });
     });
 
-    /* 计数刷新（1 秒一次；不用每帧刷新 DOM）+ 乱码体检 */
+    /* 计数刷新（1 秒一次；不用每帧刷新 DOM）+ 乱码体检 + 收起态摘要 */
     setInterval(function () {
+      /* 收起态摘要与连接状态无关：演示模式下也可能收起面板，所以放在提前 return 之前 */
+      refreshPanelBriefs();
       if (core.state.conn !== "open") { return; }
       $("slTxCount").textContent = T.stats.tx;
       $("slRxCount").textContent = T.stats.rx;
@@ -3771,6 +4054,11 @@
     var palBtn = $("slBtnPalette");
     if (palBtn) {
       palBtn.addEventListener("click", function () { UI.palette(); });
+    }
+    /* V2.2.21：协议分析入口（顶栏按钮 + 命令面板里的同一条命令都点到这个按钮上） */
+    var protoBtn = $("slBtnProto");
+    if (protoBtn) {
+      protoBtn.addEventListener("click", function () { openProtocol(); });
     }
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && UI.isModalOpen()) { UI.closeModal(); return; }

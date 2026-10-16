@@ -37,7 +37,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
 const KERNEL_DIR = path.join(REPO, '06_学习工具', '_串口调试助手', 'js');
 /* 按依赖顺序加载（顺序即依赖顺序，与 index.html 的脚本顺序一致） */
-const MAIN_FILE = ['util', 'core', 'codec', 'expr', 'parser', 'fft', 'datastore', 'timeline', 'exporters'];
+const MAIN_FILE = ['util', 'core', 'codec', 'protocol', 'expr', 'parser', 'fft', 'datastore', 'timeline', 'exporters'];
 
 const require = createRequire(import.meta.url);
 
@@ -622,6 +622,41 @@ function evalCheck(expr, snap) {
   return { expr, pass, actual, expect: op + ' ' + rhs, key, field };
 }
 
+/* ------------------------------------------------------------------
+   命令：analyze —— 协议栈分析（Modbus RTU 逐帧 / 协议识别 / 两帧 diff）
+   复用子应用 js/protocol.js 的同一份实现 —— 桥里绝不另写一份解析（子应用硬规则 17）。
+   为什么 AI 需要它：现场拿到的常常是一串看不懂的字节，而「这是不是 Modbus 帧」
+   「我发的和它回的是不是一对」「这两帧差在哪一个字节」是排障的头三个问题。
+   不需要硬件：纯离线分析一段 HEX。
+   ------------------------------------------------------------------ */
+function cmdAnalyze(flags) {
+  const P = globalThis.SerialLab.protocol;
+  const Uk = globalThis.SerialLab.util;
+  if (!P || !Uk) { throw new Error('protocol/util 模块未加载（检查 MAIN_FILE）'); }
+  const clean = (s) => String(s === undefined || s === null ? '' : s).replace(/[^0-9a-fA-F]/g, '');
+  const a = Uk.hexToBytes(clean(flags.hex));
+  if (!a || !a.length) {
+    throw new Error('要给 --hex "<HEX 字节>"，空格随便加，例如 --hex "01 03 00 00 00 0A C5 CD"');
+  }
+  const out = { bytes: a.length, summary: P.summarize(a), guess: P.guess(a).ranked };
+  const m = P.modbus(a);
+  if (m.frames.length) {
+    out.modbus = { frames: m.frames, ok: m.ok, fail: m.fail, bad: m.bad };
+    out.pairs = P.modbusPairs(m.frames);
+  } else {
+    out.modbus = { frames: [], note: '未按 Modbus RTU 切出帧：先确认整帧收全，再确认 CRC 是低字节在前（RTU 口径）' };
+  }
+  if (flags.diff) {
+    const b = Uk.hexToBytes(clean(flags.diff));
+    if (b && b.length) { out.diff = P.diff(a, b); }
+  }
+  const human = out.summary
+    + (out.modbus.frames.length ? ('；Modbus 切出 ' + out.modbus.frames.length + ' 帧（CRC 通过 ' + m.ok + '）') : '')
+    + (out.diff ? ('；两帧差异 ' + out.diff.diffs.length + ' 处，共同前缀 ' + out.diff.commonPrefix + ' 字节') : '');
+  emit(out, flags, human);
+  return 0;
+}
+
 function cmdAssert(flags) {
   const snap = readSnapshotForAssert(flags);
   const exprs = [];
@@ -904,6 +939,20 @@ async function cmdMcp() {
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     },
     {
+      name: 'serial_analyze',
+      description: '协议栈分析（不需要硬件）：把一段 HEX 按 Modbus RTU 切帧解码（功能码/寄存器/CRC/请求-响应配对）、识别最可能的协议（**带理由**）、并可拿第二帧做字节级 diff。与网页端顶栏「协议分析」共用 js/protocol.js 同一份实现。现场拿到一串看不懂的字节时先用它。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          hex: { type: 'string', description: '待分析字节的 HEX 文本，空格随便加，如 "01 03 00 00 00 0A C5 CD"' },
+          diff: { type: 'string', description: '可选：第二帧的 HEX，做字节级对比（「拿一帧好的和一帧坏的比」是排障最有效的一招）' },
+          profile: { type: 'string', enum: ['full', 'digest'], description: '输出档位，digest 只回结论省 token（默认 full）' },
+          maxBytes: { type: 'number', description: 'stdout 字节预算，默认 12000' },
+        },
+        required: ['hex'],
+      },
+    },
+    {
       name: 'serial_read',
       description: '打开串口采集一段时间并按规则解析，返回结构化通道数据 + 与网页端同源的调试包。串口调试助手网页端无法被自动化（需用户手势选端口），所以让 AI 读串口要走这个工具。传 send 可在同一次端口占用里「先发一条命令再收」，用于激励-响应（发 set/get、看回包）——串口独占，分开调用 write 会被占着的端口挡住。',
       inputSchema: {
@@ -1005,6 +1054,8 @@ async function cmdMcp() {
     /* read 的激励-响应参数（同一次端口占用内先发后收，见 cmdRead 的注释） */
     if (a.send !== undefined && a.send !== null) flags.send = String(a.send);
     if (a.sendDelay !== undefined) flags['send-delay'] = String(a.sendDelay);
+    /* analyze 的对比帧（a.hex 的映射上面已经有了） */
+    if (a.diff !== undefined && a.diff !== null) flags.diff = String(a.diff);
     if (a.input) flags.in = String(a.input);
     if (a.expect) flags.expect = String(a.expect);
     if (a.note) flags.note = String(a.note);
@@ -1020,6 +1071,7 @@ async function cmdMcp() {
     let code = 0;
     try {
       if (name === 'serial_list') await cmdList(flags);
+      else if (name === 'serial_analyze') code = cmdAnalyze(flags);
       else if (name === 'serial_read') await cmdRead(flags);
       else if (name === 'serial_write') await cmdWrite(flags);
       else if (name === 'serial_parse') await cmdParse(flags);
@@ -1122,6 +1174,7 @@ async function main() {
     case 'write': return cmdWrite(flags).then(() => 0);
     case 'parse': return cmdParse(flags).then(() => 0);
     case 'assert': return cmdAssert(flags);
+    case 'analyze': return cmdAnalyze(flags);
     case 'trial': return cmdTrial(flags, rest);
     case 'selftest': return cmdSelftest();
     case 'mcp': return cmdMcp().then(() => 0);

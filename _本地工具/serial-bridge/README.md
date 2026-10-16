@@ -154,6 +154,7 @@ node bridge.mjs parse --text-file log.txt --preset firewater --out parsed.json
 
 ```bash
 node bridge.mjs assert --in capture.json --expect "rpm>1750; cur.max<3.2"
+node bridge.mjs analyze --hex "01 03 00 00 00 0A C5 CD" --human
 node bridge.mjs assert --in capture.json --expect "temp<40; volt.span<=0.5" --out trial.json
 ```
 
@@ -299,7 +300,8 @@ node bridge.mjs mcp
 | 工具名 | 对应命令 | 说明 |
 |---|---|---|
 | `serial_list` | `list` | 枚举本机串口 |
-| `serial_read` | `read` | 采一段并返回解析结果 + 调试包（含 `profile` / `maxBytes` / `bundle` 省流参数） |
+| `serial_analyze` | `analyze` | 协议栈分析：Modbus RTU 逐帧 / 协议识别（带理由）/ 请求-响应配对 / 两帧 diff。**不需要硬件** |
+| `serial_read` | `read` | 采一段并返回解析结果 + 调试包（含 `profile` / `maxBytes` / `bundle` 省流参数；**`send`/`sendDelay` 可在同一次端口占用里先发后收 = 激励-响应**） |
 | `serial_write` | `write` | 写串口（`hex` 或 `text`） |
 | `serial_parse` | `parse` | 离线解析给定字节 |
 | `serial_assert` | `assert` | 按阈值判定，返回 pass/fail 与全部指标 |

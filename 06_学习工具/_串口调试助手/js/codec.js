@@ -489,8 +489,102 @@
 
   /* 校验和占用的字节数 */
   C.checksumSize = function (type) {
-    return type === "sum8" || type === "xor8" ? 1 : 2;
+    if (type === "sum8" || type === "xor8" || type === "crc8" || type === "lrc") { return 1; }
+    if (type === "crc32") { return 4; }
+    return 2;
   };
+
+  /* ------------------------------------------------------------------
+     V2.2.21：校验和族扩充（原来只有 sum8 / xor8 / sum16 / crc16modbus 四种）
+     为什么要补：嵌入式现场最常见的几类校验原来一个都选不出来 —— 传感器常用
+     CRC-8/MAXIM（DS18B20 那一族），无线/Modbus-ASCII 用 CRC-16/CCITT 与 LRC，
+     文件/固件校验用 CRC-32。选不到的后果是：用户只能拿「none」硬跑，
+     帧尾那两个字节变成「解析错位」，而这恰恰是最难查的一类现场问题。
+     每个函数都注明**具体变体**（初值 / 是否反射 / 多项式），
+     因为「CRC16」这个名字本身至少对应十几种互不兼容的实现。
+     ------------------------------------------------------------------ */
+
+  /* CRC-8/MAXIM（Dallas）：多项式 0x31（反射写法 0x8C），初值 0x00，不异或输出。
+     已知向量："123456789" → 0xA1 */
+  C.crc8 = function (u8, from, to) {
+    var r = sliceRange(u8, from, to);
+    var crc = 0x00;
+    for (var i = r.a; i <= r.b; i++) {
+      crc ^= u8[i] & 0xFF;
+      for (var bit = 0; bit < 8; bit++) {
+        if (crc & 1) { crc = (crc >> 1) ^ 0x8C; }
+        else { crc = crc >> 1; }
+      }
+    }
+    return crc & 0xFF;
+  };
+
+  /* CRC-16/CCITT-FALSE：多项式 0x1021，初值 0xFFFF，不反射，不异或输出。
+     已知向量："123456789" → 0x29B1 */
+  C.crc16Ccitt = function (u8, from, to) {
+    var r = sliceRange(u8, from, to);
+    var crc = 0xFFFF;
+    for (var i = r.a; i <= r.b; i++) {
+      crc ^= (u8[i] & 0xFF) << 8;
+      for (var bit = 0; bit < 8; bit++) {
+        if (crc & 0x8000) { crc = ((crc << 1) ^ 0x1021) & 0xFFFF; }
+        else { crc = (crc << 1) & 0xFFFF; }
+      }
+    }
+    return crc & 0xFFFF;
+  };
+
+  /* CRC-32（IEEE 802.3，zip/png 用的那个）：反射，初值 0xFFFFFFFF，输出异或 0xFFFFFFFF。
+     已知向量："123456789" → 0xCBF43926。查表会让代码长一倍，
+     这里用朴素的按位实现 —— 帧长几百字节时够快，而可读性对一个要被抄走的基座更重要。 */
+  C.crc32 = function (u8, from, to) {
+    var r = sliceRange(u8, from, to);
+    var crc = 0xFFFFFFFF;
+    for (var i = r.a; i <= r.b; i++) {
+      crc ^= u8[i] & 0xFF;
+      for (var bit = 0; bit < 8; bit++) {
+        if (crc & 1) { crc = (crc >>> 1) ^ 0xEDB88320; }
+        else { crc = crc >>> 1; }
+      }
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  };
+
+  /* LRC（Modbus ASCII 用）：所有字节求和取反加一，即 (-sum) & 0xFF。
+     已知向量：[0x01,0x03,0x00,0x00,0x00,0x0A] → 0xF2 */
+  C.lrc = function (u8, from, to) {
+    var r = sliceRange(u8, from, to), s = 0;
+    for (var i = r.a; i <= r.b; i++) { s = (s + u8[i]) & 0xFF; }
+    return (-s) & 0xFF;
+  };
+
+  /* 按类型名统一调用，返回 null 表示类型未知 */
+  C.checksum = function (type, u8, from, to) {
+    switch (type) {
+      case "sum8": return C.sum8(u8, from, to);
+      case "xor8": return C.xor8(u8, from, to);
+      case "sum16": return C.sum16(u8, from, to);
+      case "crc16modbus": return C.crc16Modbus(u8, from, to);
+      case "crc8": return C.crc8(u8, from, to);
+      case "crc16ccitt": return C.crc16Ccitt(u8, from, to);
+      case "crc32": return C.crc32(u8, from, to);
+      case "lrc": return C.lrc(u8, from, to);
+      default: return null;
+    }
+  };
+
+  /* 校验和类型清单（UI 下拉与文档共用，避免两处各写一份） */
+  C.checksumTypes = [
+    { type: "none", label: "无校验" },
+    { type: "sum8", label: "累加和 8 位 (SUM8)" },
+    { type: "xor8", label: "异或 8 位 (XOR8 / BCC)" },
+    { type: "sum16", label: "累加和 16 位 (SUM16)" },
+    { type: "crc8", label: "CRC-8/MAXIM (DS18B20 族)" },
+    { type: "crc16modbus", label: "CRC-16/MODBUS" },
+    { type: "crc16ccitt", label: "CRC-16/CCITT-FALSE" },
+    { type: "crc32", label: "CRC-32 (IEEE)" },
+    { type: "lrc", label: "LRC (Modbus ASCII)" }
+  ];
 
   SL.codec = C;
 
