@@ -1,12 +1,13 @@
 {
-  "_说明": "SerialLab 本地串口桥的 MCP 配置示例。把它合并进 <用户主目录>\\.workbuddy\\mcp.json 的 mcpServers 段即可。args[0] 请换成你本机该文件的绝对路径（Windows 下建议用正斜杠 /，JSON 中若用反斜杠须写成 \\\\）。写完后需在连接器管理页右上角『自定义连接器』入口对新 server 点一次『信任』才会生效。",
+  "_说明": "SerialLab 本地串口桥的 MCP 配置示例（WorkBuddy）。把它合并进 <用户主目录>\\.workbuddy\\mcp.json 的 mcpServers 段即可。args[0] 与 cwd 请换成你本机该目录的绝对路径（Windows 下建议用正斜杠 /，JSON 中若用反斜杠须写成 \\\\）。cwd 指向 _data/ 是因为桥的 --out 相对路径按 cwd 解析，不经指定会落到不确定的位置甚至仓库里；该目录已在 .gitignore 中忽略。写完后需在连接器管理页右上角『自定义连接器』入口对新 server 点一次『信任』才会生效。DSH 的配法（cordis.patch.yml 里的 @deepseek-ai/dsh-mcp-client）见 README.md 第五节。",
   "mcpServers": {
     "seriallab": {
       "command": "node",
       "args": [
         "<本项目根目录的绝对路径>/_本地工具/serial-bridge/bridge.mjs",
         "mcp"
-      ]
+      ],
+      "cwd": "<本项目根目录的绝对路径>/_本地工具/serial-bridge/_data"
     }
   }
 }

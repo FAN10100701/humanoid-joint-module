@@ -77,10 +77,23 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith('--')) {
-      const k = a.slice(2);
-      const next = argv[i + 1];
-      if (next === undefined || next.startsWith('--')) flags[k] = true;
-      else { flags[k] = next; i++; }
+      const eq = a.indexOf('=');
+      let k, v;
+      if (eq > 2) {
+        /* --key=value 形式（README 就是这么写的，必须支持） */
+        k = a.slice(2, eq);
+        v = a.slice(eq + 1);
+      } else {
+        k = a.slice(2);
+        const next = argv[i + 1];
+        if (next === undefined || next.startsWith('--')) v = true;
+        else { v = next; i++; }
+      }
+      /* 字符串 'true'/'false' 一律转真布尔：否则 `flags.bundle !== false` 永远为真，
+         `--bundle=false` 会被静默忽略（历史缺陷，见 README 第三/四节） */
+      if (v === 'true') v = true;
+      else if (v === 'false') v = false;
+      flags[k] = v;
     } else {
       rest.push(a);
     }
@@ -111,9 +124,62 @@ function hexSpaced(u8) {
   return parts.join(' ');
 }
 
+/* ------------------------------------------------------------------
+   输出档位与 token 预算（省 token 的核心）
+   full   : 现状 —— 含 brief / samples / recent / 完整 debugBundle，人读或落盘用
+   digest : 只留「AI 判断问题所必需」的部分 —— 通道统计 + 帧结构 + 失败样本 + 提示
+   预算：--max-bytes（默认 12000）约束 stdout；超了自动降级为 digest 并标 trimmed。
+        而 --out 落盘永远是 full —— 「数据不丢」与「上下文不爆」同时成立。
+
+   为什么必须默认带预算：AI 自己不会主动克制。200 帧时 full 输出是 74KB（≈2 万 token），
+   跑 20 轮迭代就是 40 万 token —— 这正是「不能一下子读很多数据」要防的事。
+   ------------------------------------------------------------------ */
+const DIGEST_DROP = { debugBundle: 1, recent: 1, capturedHex: 1, availablePresets: 1 };
+
+function toDigest(snap) {
+  const out = {};
+  for (const k of Object.keys(snap)) {
+    if (DIGEST_DROP[k]) continue;
+    out[k] = snap[k];
+  }
+  /* failures 只留前 5 条：再多通常也是同一种错在重复 */
+  if (Array.isArray(out.failures) && out.failures.length > 5) {
+    out.failures = out.failures.slice(0, 5);
+    out.failuresTruncated = true;
+  }
+  /* debugBundle 压成「AI 定位问题」必需的四段；brief（人读散文）与 samples（原始点）全丢 */
+  const b = snap.debugBundle;
+  if (b) {
+    out.bundle = {
+      kind: b.kind,
+      version: b.version,
+      stats: b.stats,
+      frameLayout: b.frameLayout,
+      settings: b.settings,
+      hints: b.hints,
+    };
+  }
+  return out;
+}
+
 function emit(obj, flags, human) {
-  if (flags.human && human) process.stdout.write(human + '\n');
-  else process.stdout.write(JSON.stringify(obj, null, 2) + '\n');
+  if (flags.human && human) { process.stdout.write(human + '\n'); return; }
+
+  const profile = String(flags.profile || 'full').toLowerCase();
+  let text = JSON.stringify((profile === 'digest') ? toDigest(obj) : obj, null, 2);
+
+  const maxBytes = num(flags, 'max-bytes', 12000, 0, 100000000);
+  if (maxBytes > 0 && profile !== 'digest' && Buffer.byteLength(text, 'utf8') > maxBytes) {
+    const dg = toDigest(obj);
+    dg.trimmed = true;
+    dg.trimmedNote = 'stdout 超过 --max-bytes ' + maxBytes + '，已自动降级为 digest；'
+      + '完整数据请用 --out 落盘，或显式给 --profile=full --max-bytes=0（会显著增加 token）';
+    const dtext = JSON.stringify(dg, null, 2);
+    /* 只在 digest 确实更小时才替换：assert 这类「指标明细本身就大」的输出压不下去，
+       此时保留原样，避免报了一个 trimmed 却什么都没裁掉 */
+    if (dtext.length < text.length) { text = dtext; }
+  }
+  process.stdout.write(text + '\n');
 }
 
 /* ------------------------------------------------------------------
@@ -153,7 +219,15 @@ function makeSink(rule, opts = {}) {
   const enc = (opts.encoding) || core.config.transport.encoding || 'utf-8';
   const mode = (rule.active === 'hex') ? 'hex' : 'text';
   core.config.rule = rule;
-  SL.datastore.setRawCap(opts.cap || 200000);
+  /* 桥是 Node 侧的一次性采集：它保留的原始记录上限与浏览器配置无关，固定给足（默认 20 万）。
+     ⚠ 必须【同时】写入 core.config.ui.recordCap —— 调试包里的 recordCapRequested 取自那里，
+     而 debug-bundle.schema.json 明确约定「requested 与 effective 不一致即配置未生效」。
+     只设 datastore 不设 config 的话，桥路径下这两个字段永远对不上（20000 vs 200000），
+     AI 每次都会读到「配置未生效」这个假警报、去追一个根本不存在的问题
+     （与 A-81 同一类口径缺陷：字段没错，但两个字段放在一起会导出错误结论）。 */
+  const rawCap = opts.cap || 200000;
+  core.config.ui.recordCap = rawCap;
+  SL.datastore.setRawCap(rawCap);
   /* 通道集也要清掉：keepChannels=true 会把上一次的通道留在表里，
      于是「换个规则再解」会看到一批值为 null 的旧通道（selftest 当场抓到过这个坑）。 */
   SL.datastore.clear(false, false);
@@ -547,6 +621,148 @@ function cmdAssert(flags) {
 }
 
 /* ------------------------------------------------------------------
+   命令：trial —— 迭代台账（append-only JSONL）
+   为什么要有它：自动迭代真正的痛点是「第 N 轮不知道前 N-1 轮做过什么」。若每轮都把原始
+   数据重新读进上下文，token 会随轮数线性爆炸。台账把每一轮压成【一行结论】：
+       轮次 · 时刻 · 判据 · 结论 · 判据点名的指标 · 与上一轮的差 · 备注
+   于是「寻找规律 / 总结优化方向」只需要读最后几行；原始数据留在 --out 的 JSON 里。
+   ------------------------------------------------------------------ */
+function ledgerPath(flags) {
+  /* 默认落在桥自己的 _data/ 下，而不是 cwd：AI 通过 MCP 调用时 cwd 由宿主决定
+     （DSH / WorkBuddy / 别的客户端各不相同），相对默认值会落到不确定的位置，甚至
+     掉进仓库里被提交。_data/ 已在 .gitignore 中忽略，数据不丢也不入库。 */
+  if (flags.ledger) return resolvePath(String(flags.ledger));
+  return path.join(HERE, '_data', 'seriallab-trials.jsonl');
+}
+
+function readLedger(p) {
+  if (!fs.existsSync(p)) return [];
+  const rows = [];
+  for (const line of fs.readFileSync(p, 'utf8').split('\n')) {
+    const s = line.trim();
+    if (!s) continue;
+    try { rows.push(JSON.parse(s)); } catch (e) { /* 坏行跳过：一行垃圾不该废掉整本账 */ }
+  }
+  return rows;
+}
+
+/* 只保留判据点名的指标：台账不会随通道数膨胀（这是 token 可控的关键） */
+function pickMetrics(checks) {
+  const m = {};
+  for (const c of checks) {
+    if (!c || !c.key) continue;
+    m[c.key + '.' + (c.field || 'value')] = (typeof c.actual === 'number') ? c.actual : null;
+  }
+  return m;
+}
+
+function deltaOf(cur, prev) {
+  if (!prev || !prev.metrics) return null;
+  const d = {};
+  for (const k of Object.keys(cur)) {
+    const a = cur[k], b = prev.metrics[k];
+    if (typeof a === 'number' && typeof b === 'number') {
+      const v = Math.round((a - b) * 1e6) / 1e6;
+      if (v !== 0) d[k] = v;
+    }
+  }
+  return Object.keys(d).length ? d : null;
+}
+
+function cmdTrial(flags, rest) {
+  const sub = (rest && rest[0]) || 'list';
+  const p = ledgerPath(flags);
+
+  if (sub === 'append') {
+    const maxRounds = num(flags, 'max-rounds', 20, 1, 100000);
+    const rows = readLedger(p);
+    /* 会话预算闸 —— 这是「不能无限循环」的机制保证，不依赖 AI 自觉。
+       轮数达到上限后拒绝追加，并给一个与 PASS(0)/FAIL(2) 都不同的退出码 3，
+       让循环控制方一眼区分「没达标、该继续调」与「预算用完了、该停下来汇报」。
+       没有这道闸，「循环改进」在 AI 手里就是没有终止条件的 while。 */
+    if (rows.length >= maxRounds) {
+      const stop = {
+        ok: false,
+        budgetExhausted: true,
+        roundsUsed: rows.length,
+        maxRounds,
+        ledger: p,
+        verdict: 'STOP：已达轮数上限 ' + maxRounds + '，不再追加新轮次 —— '
+          + '请停止迭代，汇报阶段性结论、最优轮次与下一步建议（要提高上限请显式给 --max-rounds）。',
+      };
+      emit(stop, flags, stop.verdict);
+      return 3;
+    }
+    const snap = readSnapshotForAssert(flags);
+    const exprs = String(flags.expect || flags.expects || '')
+      .split(';').map((s) => s.trim()).filter(Boolean);
+    const checks = exprs.map((e) => evalCheck(e, snap));
+    const failed = checks.filter((c) => !c.pass);
+    const metrics = pickMetrics(checks);
+    const rec = {
+      n: rows.length + 1,
+      at: new Date().toISOString(),
+      verdict: failed.length === 0 ? 'PASS' : 'FAIL',
+      failedCount: failed.length,
+      expect: exprs.join('; '),
+      metrics,
+    };
+    const d = deltaOf(metrics, rows[rows.length - 1]);
+    if (d) rec.delta = d;
+    if (flags.note) rec.note = String(flags.note);
+    if (flags.tag) rec.tag = String(flags.tag);
+    rec.source = flags.in ? String(flags.in) : '(inline)';
+    /* 追加一行，永不重写整本账 —— 并发/中断都不会毁掉历史 */
+    fs.mkdirSync(path.dirname(p), { recursive: true });   /* 默认台账目录可能还没建 */
+    fs.appendFileSync(p, JSON.stringify(rec) + '\n', 'utf8');
+    emit(rec, flags, '第 ' + rec.n + ' 轮 ' + rec.verdict
+      + '（失败 ' + rec.failedCount + ' 项）'
+      + (d ? '  相比上轮：' + JSON.stringify(d) : '')
+      + '  →  ' + p);
+    return rec.verdict === 'PASS' ? 0 : 2;
+  }
+
+  if (sub === 'list') {
+    const rows = readLedger(p);
+    const last = num(flags, 'last', 10, 1, 1000);
+    const maxRounds = num(flags, 'max-rounds', 20, 1, 100000);
+    const shown = rows.slice(-last);
+    /* 趋势：每个指标从窗口首行到末行的变化方向 —— 「寻找规律」的最小可用形态。
+       注意只给方向与净变化，不给逐轮明细，这正是为了省 token。 */
+    const trend = [];
+    if (shown.length >= 2) {
+      const a = shown[0].metrics || {}, b = shown[shown.length - 1].metrics || {};
+      for (const k of Object.keys(b)) {
+        if (typeof a[k] !== 'number' || typeof b[k] !== 'number') continue;
+        const dv = Math.round((b[k] - a[k]) * 1e6) / 1e6;
+        trend.push({ metric: k, from: a[k], to: b[k], delta: dv,
+          dir: dv > 0 ? 'up' : (dv < 0 ? 'down' : 'flat') });
+      }
+    }
+    emit({
+      ok: true,
+      ledger: p,
+      total: rows.length,
+      showing: shown.length,
+      /* 会话预算闸的状态：循环控制方只看这两个字段就知道还能跑几轮 */
+      maxRounds,
+      remaining: Math.max(0, maxRounds - rows.length),
+      budgetExhausted: rows.length >= maxRounds,
+      passRate: shown.length
+        ? Math.round(shown.filter((r) => r.verdict === 'PASS').length / shown.length * 1000) / 1000
+        : null,
+      trend,
+      rows: shown,
+    }, flags, '台账共 ' + rows.length + ' 轮（上限 ' + maxRounds + '，剩余 '
+      + Math.max(0, maxRounds - rows.length) + '），显示最后 ' + shown.length + ' 轮');
+    return 0;
+  }
+
+  process.stderr.write('trial 子命令只支持：append | list\n');
+  return 1;
+}
+
+/* ------------------------------------------------------------------
    人读摘要
    ------------------------------------------------------------------ */
 function humanReadable(snap) {
@@ -669,6 +885,9 @@ async function cmdMcp() {
           preset: { type: 'string', enum: ['firewater', 'teleplot', 'justfloat', 'ano10'], description: '用内置开源协议预设解析' },
           ruleInline: { type: 'string', description: '直接给解析规则 JSON 字符串（优先级高于 preset）' },
           samples: { type: 'number', description: '调试包携带的样本条数，默认 200' },
+          bundle: { type: 'boolean', description: '是否附带完整 debugBundle（默认 true）。传 false 可大幅缩小输出、省 token' },
+          profile: { type: 'string', enum: ['full', 'digest'], description: '输出档位：digest 只回「通道统计+帧结构+失败样本+提示」，省 token（默认 full）' },
+          maxBytes: { type: 'number', description: 'stdout 字节预算，默认 12000；超出会自动降级为 digest 并在结果里标 trimmed' },
         },
       },
     },
@@ -696,6 +915,9 @@ async function cmdMcp() {
           preset: { type: 'string' },
           ruleInline: { type: 'string' },
           samples: { type: 'number', description: '调试包携带的样本条数，默认 200' },
+          bundle: { type: 'boolean', description: '是否附带完整 debugBundle（默认 true）。传 false 可大幅缩小输出、省 token' },
+          profile: { type: 'string', enum: ['full', 'digest'], description: '输出档位：digest 只回「通道统计+帧结构+失败样本+提示」，省 token（默认 full）' },
+          maxBytes: { type: 'number', description: 'stdout 字节预算，默认 12000；超出会自动降级为 digest 并在结果里标 trimmed' },
         },
         required: ['hex'],
       },
@@ -712,6 +934,24 @@ async function cmdMcp() {
         required: ['input'],
       },
     },
+    {
+      name: 'serial_trial',
+      description: '迭代台账：把一轮「采样 + 判定」压成一行结论追加到本地 JSONL，或读回最近几轮与指标趋势。这是自动迭代闭环的记忆载体 —— 让第 N 轮不必重读前 N-1 轮的原始数据（省 token 的关键）。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          sub: { type: 'string', enum: ['append', 'list'], description: 'append = 记一轮；list = 读台账（默认）' },
+          input: { type: 'string', description: 'append 用：read 命令产出的 JSON 文件路径' },
+          expect: { type: 'string', description: 'append 用：分号分隔的判据，如 "rpm>1750;cur.max<3.2"' },
+          note: { type: 'string', description: 'append 用：这一轮改了什么（如 "kp 由 8 调到 10"）' },
+          tag: { type: 'string', description: 'append 用：可选分组标记' },
+          ledger: { type: 'string', description: '台账文件路径，默认落在桥自己的 _data/seriallab-trials.jsonl（与 cwd 无关）' },
+          last: { type: 'number', description: 'list 用：读最后几轮，默认 10' },
+          maxRounds: { type: 'number', description: '轮数预算，默认 20。达到后 append 会拒绝并以退出码 3 返回 budgetExhausted —— 这是「不能无限循环」的机制保证' },
+        },
+        required: ['sub'],
+      },
+    },
   ];
 
   async function callTool(name, args) {
@@ -723,11 +963,19 @@ async function cmdMcp() {
     if (a.preset) flags.preset = String(a.preset);
     if (a.ruleInline) flags['rule-inline'] = String(a.ruleInline);
     if (a.samples !== undefined) flags.samples = String(a.samples);
+    if (a.bundle === false) flags.bundle = false;
+    if (a.profile) flags.profile = String(a.profile);
+    if (a.maxBytes !== undefined) flags['max-bytes'] = String(a.maxBytes);
     if (a.hex) flags.hex = String(a.hex);
     if (a.text) flags.text = String(a.text);
     if (a.newline === false) flags.newline = false;
     if (a.input) flags.in = String(a.input);
     if (a.expect) flags.expect = String(a.expect);
+    if (a.note) flags.note = String(a.note);
+    if (a.tag) flags.tag = String(a.tag);
+    if (a.ledger) flags.ledger = String(a.ledger);
+    if (a.last !== undefined) flags.last = String(a.last);
+    if (a.maxRounds !== undefined) flags['max-rounds'] = String(a.maxRounds);
 
     const captured = [];
     const orig = process.stdout.write.bind(process.stdout);
@@ -740,6 +988,7 @@ async function cmdMcp() {
       else if (name === 'serial_write') await cmdWrite(flags);
       else if (name === 'serial_parse') await cmdParse(flags);
       else if (name === 'serial_assert') code = cmdAssert(flags);
+      else if (name === 'serial_trial') code = cmdTrial(flags, [String(a.sub || 'list')]);
       else throw new Error('未知工具：' + name);
     } finally {
       process.stdout.write = orig;
@@ -750,7 +999,7 @@ async function cmdMcp() {
 
   const send = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
 
-  rl.on('line', async (line) => {
+  async function handleLine(line) {
     const s = line.trim();
     if (!s) return;
     let msg;
@@ -784,6 +1033,16 @@ async function cmdMcp() {
     } catch (e) {
       send({ jsonrpc: '2.0', id, error: { code: -32000, message: String((e && e.message) || e) } });
     }
+  }
+
+  /* 请求串行化（真实缺陷修复）：line 回调是异步的，而 callTool 会临时劫持
+     process.stdout 来收集命令输出。若不排队，并发到达的第二个请求会在第一个
+     仍劫持 stdout 时把应答写进捕获缓冲 —— 结果是「应答串台 + AI 收到拼接后的
+     非法 JSON + tools/list 静默丢应答」。MCP 客户端不等应答就发下一个请求
+     （例如 tools/call 紧接 tools/list）必然踩中。改为 promise 链逐个处理。 */
+  let chain = Promise.resolve();
+  rl.on('line', (line) => {
+    chain = chain.then(() => handleLine(line)).catch(() => {});
   });
 }
 
@@ -799,11 +1058,16 @@ function usage() {
     '  node bridge.mjs write  --hex "AA 55 01"   |   --text "hello"',
     '  node bridge.mjs parse  --hex "AA 55 01"   [--preset ano10 | --rule rule.json | --settings cfg.json]',
     '  node bridge.mjs assert --in capture.json  --expect "rpm>1750; cur.max<3.2" [--out trial.json]',
+    '  node bridge.mjs trial  list   [--last 10] [--max-rounds 20] [--ledger trials.jsonl]   (读台账 + 预算状态)',
+    '  node bridge.mjs trial  append --in capture.json --expect "rpm>1750" [--note "kp=8"] [--max-rounds 20] [--ledger trials.jsonl]',
     '  node bridge.mjs selftest',
     '  node bridge.mjs mcp                       (MCP stdio 服务，供 Agent 直接调用)',
     '',
     '规则来源（任选）：--preset firewater|teleplot|justfloat|ano10 / --settings <浏览器导出的配置.json> / --rule <rule.json> / --rule-inline <json>',
-    '退出码：0 成功 · 1 用法或运行错误 · 2 assert 不通过',
+    '省 token：--profile=digest 只回「通道统计 + 帧结构 + 失败样本 + 提示」（丢 brief/samples/recent/完整调试包）；',
+    '          --max-bytes <N> 限制 stdout 字节数，超了自动降级为 digest 并在结果里标 trimmed（默认 12000，0 = 不限）。',
+    '          --out 落盘永远是完整数据，不受 --max-bytes 影响 —— 数据不丢，只是不进上下文。',
+    '退出码：0 成功 · 1 用法或运行错误 · 2 assert / trial 判定不通过 · 3 trial 轮数预算耗尽（该停下来汇报了）',
   ].join('\n') + '\n');
 }
 
@@ -813,7 +1077,7 @@ function usage() {
 async function main() {
   const argv = process.argv.slice(2);
   const cmd = argv[0];
-  const { flags } = parseArgs(argv.slice(1));
+  const { flags, rest } = parseArgs(argv.slice(1));
   if (!cmd || cmd === 'help' || flags.help) { usage(); return 0; }
 
   switch (cmd) {
@@ -822,6 +1086,7 @@ async function main() {
     case 'write': return cmdWrite(flags).then(() => 0);
     case 'parse': return cmdParse(flags).then(() => 0);
     case 'assert': return cmdAssert(flags);
+    case 'trial': return cmdTrial(flags, rest);
     case 'selftest': return cmdSelftest();
     case 'mcp': return cmdMcp().then(() => 0);
     default:

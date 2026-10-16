@@ -169,11 +169,15 @@
 
             <div class="sl-row sl-param-tools">
               <button class="sl-btn is-sm" id="slBtnScanBaud" type="button"
-                      data-tip="自动探测波特率：逐档重开端口采样并按文本可疑度打分。⚠ Arduino/ESP 每开一次口会复位一次，扫描会让设备反复重启；需先连接过一次（免弹窗）">扫描波特率</button>
+                      data-tip="自动探测波特率：逐档重开端口采样并打分（文本可疑度 + 按当前 HEX 规则试解的帧成功率，两者取高）。⚠ Arduino/ESP 每开一次口会复位一次；需先连接过一次（免弹窗）">扫描波特率</button>
               <button class="sl-btn is-sm" id="slBtnDetectEnc" type="button"
                       data-tip="对最近收到的原始字节做编码判定（UTF-8 / GBK / 二进制嫌疑），一键切到最可能的编码">识别编码</button>
+              <span class="sl-field">每档采样
+                <input type="number" id="slScanMs" min="200" max="3000" step="100" value="700"
+                       data-tip="每一档波特率采多久。太短会漏掉「上电后才开始打印」的设备（H743 启动就可能 >100ms），默认 700ms；12 档 × 700ms ≈ 9 秒">ms
+              </span>
             </div>
-            <p class="sl-hint">改参数自动关端口重开。乱码按顺序试：<b>识别编码</b> → <b>扫描波特率</b> → 二进制协议去「解析」页签配帧结构。</p>
+            <p class="sl-hint">改参数自动关端口重开。乱码按顺序试：<b>识别编码</b> → <b>扫描波特率</b> → 二进制协议先在「解析」页签把模式切到 <b>HEX</b> 并配好帧结构，扫描才会按帧成功率判分（否则只按「像不像文本」判，HEX 帧永远扫不出来）。</p>
           </div>
 
           <div class="sl-group">
@@ -344,6 +348,12 @@
             </div>
             <div class="sl-row">
               <label class="sl-chk"><input type="checkbox" id="slMarkFailed" checked>解析 / 校验失败的行整行标红并标注原因</label>
+            </div>
+            <div class="sl-row">
+              <label class="sl-chk"><input type="checkbox" id="slSyncChanHidden" checked data-tip="图例上每条通道前的勾选框是否跨图表框联动：勾上 = 按通道名同步（时域关了 pos，频域那张也跟着关，一处管理）；取消 = 各图表框各管各的">图表图例的勾选跨面板同步（按通道名）</label>
+            </div>
+            <div class="sl-row">
+              <label class="sl-chk"><input type="checkbox" id="slScaleSplitHint" checked data-tip="同一个图表框里各通道跨度相差过大（例如 pos 0~4000 与 cur 0~2）时，跨度小的会被压成贴底直线、看起来像没画。勾上 = 检测到就提示一次「拆成独立面板」，拆不拆仍由你确认；取消 = 永不提示">量级差过大时提示拆分面板</label>
             </div>
           </div>
 

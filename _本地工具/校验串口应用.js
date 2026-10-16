@@ -760,12 +760,36 @@ const GBK = (X.codec || SL.codec);
   check("评分: 正常文本 ≥ 0.85", s1 >= 0.85, s1.toFixed(3));
   check("评分: 采样错位噪声 < 0.6", s2 < 0.6, s2.toFixed(3));
 
-  /* 配置 v3 → v4：老配置自动补 demo 段 */
+  /* 配置 v3 → 当前版本：老配置自动补全所有新增段落。
+     版本号动态对照 core.CFG_VERSION —— 不再写死数字，否则每加一次迁移就要改一次断言
+     （这里原来写死 === 4，V2.2.15 加 v4→v5 时必然误报）。 */
   const migrated = core.migrateConfig({ version: 3, transport: { baudRate: 9600 } });
-  check("配置: v3 迁移到 v4 后补齐 demo.faults 且保留原值",
-    migrated.version === 4 && migrated.demo && migrated.demo.faults
+  check("配置: v3 迁移到当前 CFG_VERSION 后补齐 demo.faults 且保留原值",
+    migrated.version === core.CFG_VERSION && migrated.demo && migrated.demo.faults
       && migrated.demo.faults.drop === 0 && migrated.transport.baudRate === 9600,
-    JSON.stringify(migrated.demo));
+    "v" + migrated.version + " " + JSON.stringify(migrated.demo));
+
+  /* v4 → v5：新增「图例勾选跨面板同步」开关（AUDIT A-83）。
+     两个方向都要锁：① 老配置没这个字段 → 补默认 true（升级后默认就是「同步」）；
+     ② 用户显式关过（false）→ 迁移必须保留，不能被默认值覆盖回 true。
+     ⚠ 版本号一律动态对照 core.CFG_VERSION —— 这里原来写死 === 5，加 v5→v6 迁移时就误报了
+     （与前面 v3 迁移、E2E 里那条写死 "2.2.14" 是同一个反模式，一并改掉）。 */
+  const m4 = core.migrateConfig({ version: 4, ui: { markFailed: false } });
+  check("配置: v4 迁移到当前 CFG_VERSION 补齐 ui.syncChanHidden（默认 true）",
+    m4.version === core.CFG_VERSION && m4.ui.syncChanHidden === true, "v" + m4.version);
+  check("配置: v4 迁移保留用户已有的 ui 值（markFailed=false 不被默认值覆盖）",
+    m4.ui.markFailed === false, JSON.stringify(m4.ui.markFailed));
+  const m4b = core.migrateConfig({ version: 4, ui: { syncChanHidden: false } });
+  check("配置: v4 迁移不覆盖用户显式关掉的 syncChanHidden=false",
+    m4b.ui.syncChanHidden === false, JSON.stringify(m4b.ui.syncChanHidden));
+
+  /* v5 → v6：新增「量级差过大时提示拆分面板」开关（AUDIT A-87），同样双向锁 */
+  const m5 = core.migrateConfig({ version: 5, ui: { markFailed: true } });
+  check("配置: v5 迁移到当前 CFG_VERSION 补齐 ui.scaleSplitHint（默认 true）",
+    m5.version === core.CFG_VERSION && m5.ui.scaleSplitHint === true, "v" + m5.version);
+  const m5b = core.migrateConfig({ version: 5, ui: { scaleSplitHint: false } });
+  check("配置: v5 迁移不覆盖用户显式关掉的 scaleSplitHint=false",
+    m5b.ui.scaleSplitHint === false, JSON.stringify(m5b.ui.scaleSplitHint));
 })();
 
 /* ========== ⑱ V2.2.4：AUTO 自适应 / 测试页签 / 演示自动补波形 ========== */
@@ -945,6 +969,280 @@ const GBK = (X.codec || SL.codec);
     rd("js/ui.js").indexOf('value="s"') > 0 || rd("js/ui.js").indexOf("秒（") > 0, "");
 })();
 
-console.log("");
-console.log(fails === 0 ? "SERIAL OK" : ("SERIAL FAIL: " + fails));
-process.exit(fails === 0 ? 0 : 1);
+/* ========== V2.2.15：命名统一 + 编码单源 + 图例勾选框（AUDIT A-83） ========== */
+(function () {
+  const APP = "06_学习工具/_串口调试助手";
+  const rd = function (rel) { return fs.readFileSync(path.join(__dirname, "..", APP, rel), "utf8"); };
+  const plugs = rd("js/plugins.js");
+  const ui = rd("js/ui.js");
+  const html = rd("index.html");
+  const cores = rd("js/core.js");
+
+  /* 命名统一：同一个渲染器在「图表」页签列表、默认面板标题、帮助文档里必须同名。
+     历史问题：label 叫「时域折线」而建出的面板标题叫「时域波形」，同一个东西两个
+     名字——用户看列表一个名、看卡片另一个名（AUDIT A-83）。 */
+  check("V2.2.15: timeplot 的 label 统一为「时域波形」（与默认面板标题同名）",
+    /id:\s*"timeplot",[\s\S]{0,40}?label:\s*"时域波形"/.test(plugs), "");
+  check("V2.2.15: 应用目录内不再出现旧名「时域折线」（js/文档/入口页全部统一）",
+    plugs.indexOf("时域折线") < 0 && ui.indexOf("时域折线") < 0
+      && rd("js/views.js").indexOf("时域折线") < 0
+      && rd("llms.txt").indexOf("时域折线") < 0
+      && rd("AGENTS.md").indexOf("时域折线") < 0
+      && rd("skills/html-webserial-app/SKILL.md").indexOf("时域折线") < 0, "");
+  check("V2.2.15: 默认/演示补建的时域面板标题与 label 同源（列表名 = 卡片名）",
+    rd("js/views.js").indexOf('title: "时域波形"') > 0
+      && ui.indexOf('title: "时域波形"') > 0, "");
+
+  /* 下拉文案统一：两处同源列表必须同格式——曾经「图表」页签拼 (id) 而工具条不拼，
+     同一个列表在两处长得不一样，属于「细节部分命名没有统一」。 */
+  check("V2.2.15: 「图表」页签下拉不再拼 (id) 后缀（与主区工具条同格式）",
+    ui.indexOf('list[i].label + "（"') < 0, "");
+
+  /* 编码选项单源：快捷条文案必须从 #slEncoding 的 option 派生，不许再硬编码第二份。
+     历史问题：左栏写「GBK / GB2312」而快捷条写「GBK」——同一个设置两处文案不同，
+     用户看到的就是「文本监视器的编码和设备里的编码重复而且不同步」。 */
+  check("V2.2.15: 监视器快捷条编码选项从 #slEncoding 派生（单源，杜绝文案二次漂移）",
+    ui.indexOf("function encOptions()") > 0
+      && ui.indexOf('$("slEncoding")') > 0
+      && ui.indexOf("encOpts = encOptions()") > 0, "");
+  check("V2.2.15: 已删除硬编码的第二份编码选项表（QK_ENC_OPTS 只剩 fallback）",
+    ui.indexOf("var QK_ENC_OPTS =") < 0
+      && ui.indexOf("QK_ENC_OPTS_FALLBACK") > 0, "");
+  check("V2.2.15: 左栏编码下拉含 GBK 且文案为「GBK / GB2312」（派生源的唯一真源）",
+    html.indexOf('value="gbk">GBK / GB2312<') > 0, "");
+
+  /* 图例勾选框：把「可点」变成「一眼看出能勾」。勾用线段绘制，不依赖字体字形，
+     因为 Consolas/等宽字体的 ✓ 覆盖不可靠，用字形会在某些平台画成豆腐块。 */
+  check("V2.2.15: 图例每条通道前有勾选框（strokeRect 画方框）",
+    plugs.indexOf("ctx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1)") > 0, "");
+  check("V2.2.15: 勾号用线段绘制而非字体字形（跨平台字形覆盖不可靠）",
+    plugs.indexOf("ctx.moveTo(bx + 2, by + 5)") > 0
+      && plugs.indexOf("ctx.lineTo(bx + 8, by + 2.2)") > 0, "");
+  check("V2.2.15: 图例命中区随勾选框加宽（点方框/色块/文字都能切换）",
+    plugs.indexOf("var wEnd = cx + 26 + labelW + 8;") > 0
+      && plugs.indexOf("legendHits.push({ key: it.key, x0: cx - 2, x1: wEnd, y: cy });") > 0, "");
+
+  /* 跨面板同步显隐（AUDIT A-83）：曾经 hiddenChans 按 panel.id 分键，而时域面板与频域
+     面板的 id 必然不同 → 两边状态永远不通；偏偏 V2.2.14 的更新日志声称「一处管理、
+     时域关了频域也跟着关」。这是一条「文档说了、代码没做」的缺陷。 */
+  check("V2.2.15: 图例勾选取表统一走 hiddenMap()（不再直接下标 panel.id）",
+    plugs.indexOf("function hiddenMap(panel)") > 0
+      && plugs.indexOf("hiddenChans[panel.id]") < 0, "");
+  check("V2.2.15: hiddenMap 的键在「同步」时用全局键、关闭时回落 panel.id",
+    plugs.indexOf('var k = sync ? "__all__" : String(panel.id);') > 0, "");
+  check("V2.2.15: 同步开关由 ui.syncChanHidden 控制且默认开启",
+    cores.indexOf("syncChanHidden: true") > 0, "");
+  check("V2.2.15: CFG_VERSION 是声明式常量，且 v5 / v6 迁移段都在（不写死版本号，避免每加一次迁移就误报）",
+    /var CFG_VERSION = \d+;/.test(cores)
+      && cores.indexOf("if (v < 5)") > 0
+      && cores.indexOf("if (v < 6)") > 0, "");
+  check("V2.2.15: 「显示」页签有同步显隐开关且已接线到 ui.syncChanHidden",
+    html.indexOf('id="slSyncChanHidden"') > 0
+      && ui.indexOf('el: "slSyncChanHidden", path: "ui.syncChanHidden"') > 0, "");
+
+  /* ---- A-87：量级差过大 → 提示拆分面板 ---- */
+  check("A-87: 渲染层只检测并抛事件、不碰 DOM（提示与拆分都归 ui 层）",
+    plugs.indexOf("P.scaleGroups = function (series)") > 0
+      && plugs.indexOf('core.emit("panel:scaleHint"') > 0
+      && ui.indexOf('core.on("panel:scaleHint", onScaleHint)') > 0, "");
+  check("A-87: 时域渲染确实调用了检测（否则整条功能不会被触发）",
+    plugs.indexOf("maybeScaleHint(panel, series);") > 0, "");
+  check("A-87: 演示模式不提示（演示通道是应用自己挑的，且弹窗会挡住教学路径的操作）",
+    /function maybeScaleHint\(panel, series\) \{[\s\S]{0,600}?if \(core\.state\.demo\) \{ return; \}/.test(plugs), "");
+  check("A-87: 拆分走 views 的公开入口，且新面板默认进工作区不抢主位",
+    ui.indexOf("SL.views.updatePanel(p.id, { channels: groups[0].keys })") > 0
+      && /SL\.views\.addPanel\(\{[\s\S]{0,400}?\}, true\);/.test(ui), "");
+  check("A-87: 提示开关 ui.scaleSplitHint 默认开启、可在「显示」页签关掉",
+    cores.indexOf("scaleSplitHint: true") > 0
+      && html.indexOf('id="slScaleSplitHint"') > 0
+      && ui.indexOf('el: "slScaleSplitHint", path: "ui.scaleSplitHint"') > 0, "");
+  check("A-87: 拆分属建设性操作，确认键不能是危险红（UI.confirm 支持 opts.danger=false）",
+    ui.indexOf("UI.confirm = function (title, msg, okText, opts)") > 0
+      && ui.indexOf("opts.danger === false") > 0
+      && ui.indexOf("{ danger: false }") > 0, "");
+
+  /* A-87 功能回归：直接喂合成 series 给纯函数 P.scaleGroups，验证分组数学本身。
+     为什么必须功能性：结构断言看不出「阈值算错 / 分组算错 / 除零」——A-84/A-85 的教训。 */
+  const mkSeries = function (key, lo, hi) {
+    const v = [];
+    for (let i = 0; i < 10; i++) { v.push(lo + (hi - lo) * i / 9); }
+    return { key: key, label: key, v: v };
+  };
+  const sg1 = Plugins.scaleGroups([mkSeries("pos", 0, 4000), mkSeries("cur", 0.08, 1.83)]);
+  check("A-87: 量级差 ~2000 倍的通道被检出，并要求分成 2 组",
+    !!sg1 && sg1.groups.length === 2 && sg1.groups[0].items.length === 1 && sg1.ratio > 1000,
+    JSON.stringify(sg1 && { ratio: Math.round(sg1.ratio), groups: sg1.groups.length }));
+  check("A-87: 量级相近的通道不提示（不打扰用户）",
+    Plugins.scaleGroups([mkSeries("a", 0, 100), mkSeries("b", 0, 90)]) === null, "");
+  check("A-87: 阈值边界——跨度相差 40 倍不提示、60 倍才提示",
+    Plugins.scaleGroups([mkSeries("a", 0, 4000), mkSeries("b", 0, 100)]) === null
+      && !!Plugins.scaleGroups([mkSeries("a", 0, 6000), mkSeries("b", 0, 100)]), "");
+  const sg3 = Plugins.scaleGroups([mkSeries("big", 0, 1000), mkSeries("mid", 0, 500), mkSeries("tiny", 0, 1)]);
+  check("A-87: 同组内跨度 10 倍以内合并（big+mid），超出的单开一组",
+    !!sg3 && sg3.groups.length === 2 && sg3.groups[0].items.length === 2,
+    JSON.stringify(sg3 && sg3.groups.map(function (g) { return g.items.length; })));
+  check("A-87: 恒定值（跨度 0）与样本不足 8 点的通道不参与判断，避免误报",
+    Plugins.scaleGroups([
+      { key: "flat", label: "flat", v: [5, 5, 5, 5, 5, 5, 5, 5, 5, 5] },
+      { key: "few", label: "few", v: [0, 4000, 100] }
+    ]) === null, "");
+  check("A-87: 单通道不会触发（没有「和谁比」的问题）",
+    Plugins.scaleGroups([mkSeries("only", 0, 4000)]) === null, "");
+})();
+
+/* ========== V2.2.15：桥的省流开关功能性回归（AUDIT A-85①④）==========
+   为什么必须功能性：README 白纸黑字承诺的 `--bundle=false` / `--samples=N` 曾经被
+   parseArgs 静默忽略（只认 `--key value`、不认 `--key=value`，且不做布尔转换），
+   实测一次 parse 输出 73985 字节（≈2 万 token）—— 而结构断言看不出「参数被解析成了
+   另一个键名」这种事。这里真起子进程跑一遍，直接断言输出里有没有 debugBundle。 */
+(function () {
+  const { execFileSync } = require("child_process");
+  const BRIDGE = path.join(__dirname, "serial-bridge", "bridge.mjs");
+  if (!fs.existsSync(BRIDGE)) {
+    check("桥: bridge.mjs 存在", false, BRIDGE);
+    return;
+  }
+  const big = "AAAA0106006400320000F1".repeat(200);
+  const run = function (extra) {
+    return execFileSync(process.execPath,
+      [BRIDGE, "parse", "--hex", big, "--preset", "ano10"].concat(extra),
+      { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  };
+
+  const full = run(["--profile=full", "--max-bytes=0"]);
+  const noBundle = run(["--bundle=false"]);
+  const dflt = run([]);
+
+  check("桥: --profile=full --max-bytes=0 保留完整输出（brief / samples 都在）",
+    full.indexOf('"brief"') > 0 && full.indexOf('"samples"') > 0, String(full.length) + " 字节");
+  check("桥: --bundle=false 真的生效（A-85① 反向验收：曾经被静默忽略）",
+    noBundle.indexOf('"debugBundle"') < 0, String(noBundle.length) + " 字节");
+  const dj = JSON.parse(dflt);
+  check("桥: 默认预算自动降级为 digest 并标 trimmed（A-85④）",
+    dj.trimmed === true && dflt.indexOf('"brief"') < 0, String(dflt.length) + " 字节");
+  /* 记录上限三口径必须同源（A-86）：桥曾把 datastore 上限硬编码成 200000 而没同步
+     core.config.ui.recordCap，于是调试包永远报 requested=20000 / effective=200000，
+     而 schema 明确写着「与 requested 不一致即配置未生效」——AI 每次都读到假警报。 */
+  const sd = (dj.bundle && dj.bundle.settings && dj.bundle.settings.display) || {};
+  check("桥: 记录上限三口径一致（requested = effective = timelineMaxFrames，防「配置未生效」假警报）",
+    typeof sd.recordCapEffective === "number" &&
+    sd.recordCapRequested === sd.recordCapEffective &&
+    sd.recordCapEffective === sd.timelineMaxFrames,
+    JSON.stringify({ req: sd.recordCapRequested, eff: sd.recordCapEffective, tl: sd.timelineMaxFrames }));
+  check("桥: digest 相比 full 至少省 80%（实测约 95%，这是「省 token」的量化门限）",
+    dflt.length < full.length * 0.2,
+    "省 " + Math.round((1 - dflt.length / full.length) * 100) + "%");
+
+  /* 轮数预算闸（「不能无限循环」的机制保证，不依赖 AI 自觉）：
+     达到 --max-rounds 后 append 必须以退出码 3 拒绝，且不再写入新行。
+     没有这道闸，AI 手里的「循环改进」就是没有终止条件的 while。 */
+  const os = require("os");
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "sl-trial-"));
+  const capf = path.join(tmpDir, "cap.json");
+  const ledf = path.join(tmpDir, "trials.jsonl");
+  const runA = function (args) {
+    try {
+      return { code: 0, out: execFileSync(process.execPath, [BRIDGE].concat(args),
+        { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }) };
+    } catch (e) {
+      return { code: e.status, out: String(e.stdout || "") };
+    }
+  };
+  runA(["parse", "--hex", big, "--preset", "ano10", "--out", capf]);
+  const trialArg = ["trial", "append", "--in", capf, "--expect", "func==1", "--max-rounds", "2", "--ledger", ledf];
+  const a1 = runA(trialArg);
+  const a2 = runA(trialArg);
+  const a3 = runA(trialArg);
+  check("桥: trial 轮数预算闸——前两轮正常写入",
+    (a1.code === 0 || a1.code === 2) && (a2.code === 0 || a2.code === 2),
+    "exit " + a1.code + "," + a2.code);
+  let a3j = null;
+  try { a3j = JSON.parse(a3.out); } catch (e) { /* 非 JSON 输出 */ }
+  check("桥: trial 达到 --max-rounds 后以退出码 3 拒绝并标 budgetExhausted",
+    a3.code === 3 && !!a3j && a3j.budgetExhausted === true && a3j.roundsUsed === 2,
+    "exit " + a3.code + " " + JSON.stringify(a3j && { be: a3j.budgetExhausted, used: a3j.roundsUsed }));
+  check("桥: 被拒绝的那一轮没有写进台账（仍是 2 行）",
+    fs.readFileSync(ledf, "utf8").split("\n").filter(function (s) { return s.trim(); }).length === 2, "");
+  try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* 清理失败无妨 */ }
+})();
+
+/* ========== V2.2.15：波特率扫描的功能性回归（假串口真跑一次，AUDIT A-84）==========
+   为什么必须功能性、不能只做结构断言：
+   扫描自 V2.2.4 上线以来【从未成功过一次】，而本脚本一直只做
+   `typeof Tpt.autoAdapt === "function"` 这类检查 —— 全程绿灯。两个缺陷都是
+   「语法合法、结构断言看不出」的运行时问题：
+     ① port.open() 按规范解析成 undefined，旧代码却用 `if (!opened)` 判成败
+        （成功与失败都是假值）→ 每一档立刻走「打不开」分支，一个字节都不采；
+        同一个文件里的正常连接路径就没依赖它的返回值，两处写法自相矛盾。
+     ② chunks / reader 声明在 `new Promise` 执行器函数内部，却在链式 .then 里被读取
+        → ReferenceError: chunks is not defined，而且被 step() 的失败回调吞成
+        「本档无数据」，从日志上完全看不出是崩溃。
+   两者叠加 → autoAdapt 恒返回 { ok:false, reason:"nosignal" } → UI 永远提示
+   「确认设备上电且正在发数据」。用户只能放弃自动扫描、自己手配波特率。
+   本用例用假 Web Serial 端口（持续喂 "temp=25\n"）真跑一遍扫描，直接锁住这两点。 */
+async function scanRegression() {
+  const payload = new Uint8Array([0x74, 0x65, 0x6D, 0x70, 0x3D, 0x32, 0x35, 0x0A]);
+  const fakePort = {
+    open: function () { return Promise.resolve(); },   /* 真实行为：解析成 undefined */
+    close: function () { return Promise.resolve(); },
+    setSignals: function () { return Promise.resolve(); },
+    get readable() {
+      return {
+        getReader: function () {
+          return {
+            read: function () {
+              /* 让出 macrotask：promise 紧循环会把取样的 setTimeout 饿死 */
+              return new Promise(function (r) {
+                setTimeout(function () { r({ value: payload, done: false }); }, 2);
+              });
+            },
+            cancel: function () { return Promise.resolve(); },
+            releaseLock: function () {}
+          };
+        }
+      };
+    }
+  };
+  Object.defineProperty(globalThis, "navigator", {
+    value: {
+      serial: {
+        requestPort: function () { return Promise.resolve(fakePort); },
+        getPorts: function () { return Promise.resolve([fakePort]); }
+      }
+    },
+    configurable: true, writable: true
+  });
+
+  const res = await Tpt.scanBaudrate({ candidates: [9600], sampleMs: 60, settleMs: 0 });
+  const r0 = (res.results || [])[0] || {};
+  check("扫描: 假串口能真采到字节（A-84① 反向验收：open() 解析成 undefined 也必须算打开成功）",
+    r0.bytes > 0 && !r0.error, JSON.stringify({ bytes: r0.bytes, error: r0.error }));
+  check("扫描: 采到数据后 best.baud 被赋值（旧代码恒为 0 → autoAdapt 永远报 nosignal）",
+    !!(res.best && res.best.baud === 9600 && res.best.score > 0),
+    JSON.stringify(res.best && { baud: res.best.baud, score: res.best.score }));
+  check("扫描: 档位结论不再出现 ReferenceError（A-84② chunks 作用域缺陷）",
+    (res.results || []).every(function (r) { return !/is not defined/.test(String(r.error || "")); }),
+    JSON.stringify((res.results || []).map(function (r) { return r.error || "ok"; })));
+
+  /* 帧结构打分：文本模式下必须让位，否则文本协议会被帧分干扰 */
+  core.config.rule.active = "text";
+  check("扫描: 文本模式下 frameScoreOf 让位（返回 null，不干扰文本判定）",
+    Tpt.frameScoreOf(payload) === null, String(Tpt.frameScoreOf(payload)));
+  /* HEX 模式但缺 app 规则派生（Node 里没加载 app.js）时必须优雅降级，不抛异常 */
+  core.config.rule.active = "hex";
+  const savedApp = SL.app;
+  SL.app = undefined;
+  check("扫描: HEX 模式下缺 app.frameRule 时 frameScoreOf 优雅降级为 null（不抛异常）",
+    Tpt.frameScoreOf(payload) === null, String(Tpt.frameScoreOf(payload)));
+  SL.app = savedApp;
+  core.config.rule.active = "text";
+}
+
+scanRegression().then(function () {
+  console.log("");
+  console.log(fails === 0 ? "SERIAL OK" : ("SERIAL FAIL: " + fails));
+  process.exit(fails === 0 ? 0 : 1);
+}, function (e) {
+  console.log("FAIL  扫描回归自身抛异常: " + ((e && e.stack) || e));
+  process.exit(1);
+});

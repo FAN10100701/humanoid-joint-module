@@ -3,7 +3,7 @@
    模块：plugins（声明式插件系统 + 内置渲染器）
    职责：
      1) 渲染器注册表与描述符校验（把用户配置归一成安全的 panel 描述符）
-     2) 内置 7 个渲染器：时域折线 / 频域谱 / 柱状 / 仪表盘 / 数据表格 / 文本监视器 / 二维轨迹
+     2) 内置 7 个渲染器：时域波形 / 频域谱 / 柱状图 / 仪表盘 / 数据表格 / 文本监视器 / 二维轨迹
      3) 面板包（DIY 配置）的导入导出与版本兼容
    依赖：core、util、expr、fft
    安全边界：插件是「声明式配置」，用户不能注入 JS。
@@ -519,6 +519,128 @@
      但 panel.id 不变——调节窗口等重建操作后勾选状态得以保留。 */
   var hiddenChans = {};
 
+  /* V2.2.15（AUDIT A-83）：图例勾选的取表入口。
+     「同步显隐」开（默认）→ 所有面板共用一张按【通道名】索引的表：时域关了 pos，
+     频域那张也跟着关，一处管理。V2.2.14 的更新日志声称过这个行为，但当时实现是
+     按 panel.id 分键——时域面板与频域面板的 id 必然不同，状态永远不通。
+     关掉 → 回到按 panel.id 分键的老行为，各面板独立。
+     用通道名做键可行：buildSeries 里 series[].key = 通道 key，跨面板同源。 */
+  function hiddenMap(panel) {
+    var sync = !(core.config.ui && core.config.ui.syncChanHidden === false);
+    var k = sync ? "__all__" : String(panel.id);
+    return hiddenChans[k] || (hiddenChans[k] = {});
+  }
+
+  /* ------------------------------------------------------------
+     V2.2.15（AUDIT A-87）：量级差过大的通道挤在同一个 Y 轴里，小的那条会被压成
+     贴底直线——用户实际反馈「时域波形只有两根线不是四个数据吗」，真相是
+     pos(0~4000) 把轴撑满，而 cur(0~1.8) 成了一条贴底平线，看起来就像没画。
+     这里只做【检测 + 发事件】，绝不在渲染层直接弹窗或改面板：
+     提示与拆分动作都归 ui 层（硬规则 5：业务模块不碰 DOM，跨模块走事件总线）。
+     ------------------------------------------------------------ */
+  var SCALE_HINT_RATIO = 50;   /* 最大跨度 / 最小跨度 超过这个倍数才值得提示 */
+  var SCALE_HINT_GROUP = 10;   /* 同组内跨度相差不超过这个倍数，可共用一个 Y 轴 */
+  var SCALE_HINT_MAX_KEYS = 200; /* 已提示表的上限（见下方清理逻辑） */
+  var scaleHintAt = {};        /* panelId -> 上次检测时刻（节流用） */
+  var scaleHinted = {};        /* panelId + 通道集 -> 已提示过，不再打扰 */
+  var scaleHintCount = 0;      /* scaleHinted 的条目数（O(1) 维护，避免每次数 key） */
+
+  /* 按跨度把通道聚成若干「可以共用一个 Y 轴」的组；入参必须已按跨度降序 */
+  function clusterBySpan(spans) {
+    var groups = [];
+    var cur = null;
+    for (var i = 0; i < spans.length; i++) {
+      var s = spans[i];
+      /* 已降序：cur.top 是本组最大跨度；span 恒 > 0 由调用方保证，不会除零 */
+      if (cur && (cur.top / s.span) <= SCALE_HINT_GROUP) {
+        cur.items.push(s);
+      } else {
+        cur = { top: s.span, items: [s] };
+        groups.push(cur);
+      }
+    }
+    return groups;
+  }
+
+  /* 纯函数：判断这组 series 的量级差是否值得提示，并给出分组。
+     返回 null = 不值得提示。抽成纯函数是为了能被校验脚本直接喂合成数据调用——
+     「结构断言看不出算错」这个教训（A-84/A-85）在这里同样适用。 */
+  P.scaleGroups = function (series) {
+    if (!series || series.length < 2) { return null; }
+    var spans = [];
+    var i, j;
+    var hasHigh = false;   /* 是否至少有一条「大跨度」通道，用于快速短路 */
+    for (i = 0; i < series.length; i++) {
+      var v = series[i].v;
+      if (!v || !v.length) { continue; }
+      var mn = Infinity, mx = -Infinity, n = 0;
+      for (j = 0; j < v.length; j++) {
+        var x = v[j];
+        if (!isFinite(x)) { continue; }
+        if (x < mn) { mn = x; }
+        if (x > mx) { mx = x; }
+        n++;
+      }
+      /* 样本太少、或恒定值（跨度 0）都不参与判断，避免误报 */
+      if (n >= 8 && mx > mn) {
+        spans.push({ key: series[i].key, label: series[i].label || series[i].key, span: mx - mn });
+        if ((mx - mn) >= SCALE_HINT_RATIO) { hasHigh = true; }
+      }
+    }
+    if (spans.length < 2) { return null; }
+
+    spans.sort(function (a, b) { return b.span - a.span; });
+    var ratio = spans[0].span / spans[spans.length - 1].span;
+    /* 比值够大、且最大跨度本身也不是微不足道的小数（防「0.001 与 0.00002」这类误报） */
+    if (!isFinite(ratio) || ratio < SCALE_HINT_RATIO || !hasHigh) { return null; }
+
+    var groups = clusterBySpan(spans);
+    if (groups.length < 2) { return null; }   /* 分不出组就不值得提示 */
+    return { ratio: ratio, spans: spans, groups: groups };
+  };
+
+  function maybeScaleHint(panel, series) {
+    /* 演示模式一律不提示 —— 两个理由，缺一不可：
+       ① 演示里的通道是【应用自己挑的】，应用不该再对「自己挑的组合」发警告；
+       ② 演示是「没硬件时的教学路径」，一个会挡住操作的弹窗直接破坏体验。
+       真实硬件下来的数据才提示（那才是用户/设备实际组合出来的通道）。
+       ⚠ 这条守卫同时是回归锁：E2E 的 serial_export 曾经因为演示下弹窗、遮罩挡住
+       页签点击而超时（30s），加上它之后该用例恢复通过。 */
+    if (core.state.demo) { return; }
+    var now = Date.now();
+    /* 节流到每面板 1 秒：这点统计不值得每帧做（省掉冗余遍历） */
+    if (scaleHintAt[panel.id] && (now - scaleHintAt[panel.id]) < 1000) { return; }
+    scaleHintAt[panel.id] = now;
+
+    var res = P.scaleGroups(series);
+    if (!res) { return; }
+
+    var sigKeys = [];
+    for (var i = 0; i < res.spans.length; i++) { sigKeys.push(res.spans[i].key); }
+    var sig = String(panel.id) + "|" + sigKeys.join(",");
+    if (scaleHinted[sig]) { return; }
+    /* 边界：这两个表按 panelId / 通道集累积，长期反复增删面板会缓慢变大。
+       超过上限就整体清掉——代价只是「可能再检测一次」（ui 层还有 per-panel 的
+       已提示表兜底，用户不会被重复打扰），远小于无界增长。 */
+    if (scaleHintCount >= SCALE_HINT_MAX_KEYS) {
+      scaleHinted = {};
+      scaleHintAt = {};
+      scaleHintCount = 0;
+    }
+    scaleHinted[sig] = true;
+    scaleHintCount++;
+
+    /* 延后一拍再发：检测发生在绘制回调里，直接弹窗会在渲染中途动 DOM */
+    setTimeout(function () {
+      core.emit("panel:scaleHint", {
+        panelId: panel.id,
+        title: panel.title || "",
+        ratio: Math.round(res.ratio),
+        groups: res.groups
+      });
+    }, 0);
+  }
+
   /* V2.2.6：时域面板的 reset 钩子表（Auto 按钮用）——渲染器 make 时登记 */
   var timeplotReset = {};
   P.resetTimeplot = function (id) {
@@ -535,10 +657,10 @@
     return (ms / 1000).toFixed(1) + "s";
   }
 
-  /* ---------- 1) 时域折线 ---------- */
+  /* ---------- 1) 时域波形 ---------- */
   P.register({
     id: "timeplot",
-    label: "时域折线",
+    label: "时域波形",
     category: "时域",
     autoCount: 4,
     defaults: { window: 500, h: 300, opts: { lineWidth: 1.4, showDot: true } },
@@ -608,7 +730,7 @@
         }
         for (var i = 0; i < legendHits.length; i++) {
           if (x >= legendHits[i].x0 && x <= legendHits[i].x1 && Math.abs(y - legendHits[i].y) <= 10) {
-            var h = hiddenChans[panel.id] || (hiddenChans[panel.id] = {});
+            var h = hiddenMap(panel);
             h[legendHits[i].key] = !h[legendHits[i].key];
             return;
           }
@@ -623,7 +745,7 @@
         var ctx = view.ctx;
         var chans = resolveChannels(panel, data, registry.timeplot);
         var allSeries = buildSeries(panel, data, chans, viewOffset);
-        var hid = hiddenChans[panel.id] || {};
+        var hid = hiddenMap(panel);
 
         /* 隐藏通道不参与画线与量程，但仍出现在图例里（灰显，可点回来） */
         var series = [];
@@ -631,6 +753,10 @@
         for (i = 0; i < allSeries.length; i++) {
           if (!hid[allSeries[i].key]) { series.push(allSeries[i]); }
         }
+
+        /* V2.2.15（AUDIT A-87）：只在「用户实际看得见的通道」之间判断量级差——
+           被隐藏的通道不参与量程，也就不该参与这个判断 */
+        maybeScaleHint(panel, series);
 
         if (!series.length) {
           ctx.fillStyle = t.ink3;
@@ -761,27 +887,37 @@
   var cx = PAD.l + 4, cy = 9;
   for (var m = 0; m < allSeries.length; m++) {
     var it = allSeries[m];
-    if (cx + 70 > view.w - PAD.r) { break; }
     var off = !!hid[it.key];
-    /* V2.2.14：chip 加浅底色——看起来像可点的开关（点击显隐通道） */
-    var chipW = 12 + ctx.measureText(it.label).width + 8;
+    var labelW = ctx.measureText(it.label).width;
+    /* 勾选框 10 + 间距 4 + 色块 8 + 间距 4 + 文字 + 右留白 8 */
+    var chipW = 34 + labelW + 8;
+    if (cx + chipW > view.w - PAD.r) { break; }
+    /* V2.2.14：chip 加浅底色——看起来像可点的开关（点击显隐通道）
+       V2.2.15：每条通道前加「勾选框」，把「可点」变成「一眼看出能勾」（AUDIT A-83） */
     ctx.fillStyle = off ? "rgba(128, 138, 155, .10)" : "rgba(128, 138, 155, .16)";
     ctx.fillRect(cx - 3, cy - 8, chipW, 16);
-    ctx.globalAlpha = off ? 0.3 : 1;
-    ctx.fillStyle = it.color;
-    ctx.fillRect(cx, cy - 4, 8, 8);
-    if (off) {
-      /* 隐藏通道的色块上画一道斜杠，明示「已关」 */
-      ctx.strokeStyle = t.ink2;
-      ctx.lineWidth = 1.2;
+    ctx.globalAlpha = off ? 0.35 : 1;
+    /* ① 勾选框：勾用两条线段画出来，不依赖字体里有没有 ✓ 字形——
+       Consolas / 各平台等宽字体的 ✓ 覆盖不可靠，画线才能保证哪里都长一样 */
+    var bx = cx, by = cy - 5, bs = 10;
+    ctx.strokeStyle = off ? t.ink3 : it.color;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
+    if (!off) {
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
-      ctx.moveTo(cx - 1, cy + 5);
-      ctx.lineTo(cx + 9, cy - 5);
+      ctx.moveTo(bx + 2, by + 5);
+      ctx.lineTo(bx + 4.2, by + 7.4);
+      ctx.lineTo(bx + 8, by + 2.2);
       ctx.stroke();
     }
+    /* ② 通道色块 */
+    ctx.fillStyle = it.color;
+    ctx.fillRect(cx + 14, cy - 4, 8, 8);
+    /* ③ 通道名 */
     ctx.fillStyle = off ? t.ink3 : t.ink2;
-    ctx.fillText(it.label, cx + 12, cy);
-    var wEnd = cx + 12 + ctx.measureText(it.label).width + 8;
+    ctx.fillText(it.label, cx + 26, cy);
+    var wEnd = cx + 26 + labelW + 8;
     legendHits.push({ key: it.key, x0: cx - 2, x1: wEnd, y: cy });
     cx = wEnd + 4;
     ctx.globalAlpha = 1;
@@ -879,14 +1015,17 @@
       var view = makeView(hostEl);
       var legendHits = [];    /* V2.2.14：图例命中区——频域谱也有点击显隐了 */
 
-      /* 点击图例 = 显隐对应通道（与时域折线同一套 hiddenChans 状态，互通） */
+      /* 点击图例 = 显隐对应通道。
+         ⚠ 口径更正（AUDIT A-83）：hiddenChans 按 panel.id 分键，所以时域与频域的
+         勾选状态【各自独立】——V2.2.14 更新日志声称的「一处管理、时域关了频域也跟
+         着关」当时并没有实现。跨面板联动见「同步显隐」（ui.syncChanHidden）。 */
       view.canvas.addEventListener("click", function (e) {
         var r = view.canvas.getBoundingClientRect();
         var x = e.clientX - r.left;
         var y = e.clientY - r.top;
         for (var i = 0; i < legendHits.length; i++) {
           if (x >= legendHits[i].x0 && x <= legendHits[i].x1 && Math.abs(y - legendHits[i].y) <= 10) {
-            var h = hiddenChans[panel.id] || (hiddenChans[panel.id] = {});
+            var h = hiddenMap(panel);
             h[legendHits[i].key] = !h[legendHits[i].key];
             return;
           }
@@ -900,7 +1039,7 @@
         var ctx = view.ctx;
         var chans = resolveChannels(panel, data, registry.fftplot);
         var allSeries = buildSeries(panel, data, chans);
-        var hid = hiddenChans[panel.id] || {};
+        var hid = hiddenMap(panel);
         /* 隐藏通道不参与谱线与量程，但留在图例里可点回 */
         var series = [];
         for (var si = 0; si < allSeries.length; si++) {

@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.14";
+  UI.VERSION = "2.2.15";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -248,7 +248,10 @@
     });
   };
 
-  UI.confirm = function (title, msg, okText) {
+  /* opts.danger === false 时确认键不画成危险红——「拆成独立面板」这类建设性操作
+     用红键会让人以为有破坏性；不传 opts 时行为与以前完全一致（向后兼容）。 */
+  UI.confirm = function (title, msg, okText, opts) {
+    var danger = !(opts && opts.danger === false);
     return new Promise(function (resolve) {
       var wrap = el("div");
       wrap.appendChild(el("p", "sl-note", msg));
@@ -257,7 +260,7 @@
         body: wrap,
         onClose: function () { resolve(false); },
         buttons: [
-          { label: okText || "确定", danger: true, onClick: function () { resolve(true); return true; } },
+          { label: okText || "确定", danger: danger, onClick: function () { resolve(true); return true; } },
           { label: "取消", onClick: function () { resolve(false); return true; } }
         ]
       });
@@ -700,32 +703,55 @@
   }
 
   /* 波特率扫描：确认 → 扫描（进度走 serial:scan 事件）→ 自动切到最高分档 */
+  /* V2.2.15（AUDIT A-84）：每档采样时长，用户可调（#slScanMs）。
+     这个值直接决定扫描能否采到「上电后才开始打印」的设备——350ms 的旧默认值对
+     H743 这类启动就要 100ms+ 的板子太短，经常全档 miss，看起来像「扫描没用」。
+     非法/越界一律回落 700ms，并夹在 [200, 3000]。 */
+  function scanSampleMs() {
+    var n = $("slScanMs");
+    var v = n ? parseInt(n.value, 10) : NaN;
+    if (!isFinite(v) || v < 200) { v = 700; }
+    if (v > 3000) { v = 3000; }
+    return v;
+  }
+
+  /* 扫描的口径说明（两处入口共用，避免文案分叉） */
+  function scanScopeText() {
+    var ms = scanSampleMs();
+    return "将对 12 个常用波特率逐档重开端口、各采样约 " + ms + "ms（另加预热与收尾），全程约 "
+      + Math.round(12 * (ms + 250) / 1000) + " 秒。\n\n打分口径：「像不像文本」与"
+      + "「按当前 HEX 规则试解出的帧成功率」取较高者。所以二进制协议要先把「解析」页签切到 "
+      + "HEX 并配好帧结构——否则只按文本判分，HEX 帧永远扫不出来。\n\n"
+      + "⚠ Arduino / ESP 等开发板每次打开串口都会自动复位，扫描期间设备会反复重启；"
+      + "本版会在打开后压住 DTR/RTS 并给每档留一个预热窗口，能减轻但不能保证消除。";
+  }
+
   function scanBaudUI() {
     if (T.isScanning()) { return; }
     if (core.state.conn === "open" || core.state.demo) {
       UI.toast("warn", "请先断开连接 / 退出演示模式再扫描");
       return;
     }
-    UI.confirm(
-      "扫描波特率",
-      "将对 12 个常用波特率逐档重开端口、各采样约 350ms 并按文本可疑度打分，全程约 5 秒。\n\n⚠ 注意：Arduino / ESP 等开发板每次打开串口都会自动复位，扫描期间设备会反复重启约 12 次；扫描完成后会自动切到最高分档。",
-      "开始扫描"
-    ).then(function (ok) {
-      if (!ok) { return; }
-      T.scanBaudrate().then(function (res) {
-        renderScanButtons(null);
-        if (res.best && res.best.baud) {
-          setAndFire("slBaud", String(res.best.baud));
-          UI.toast("ok", "扫描完成：最像文本的是 " + res.best.baud + "（得分 " + res.best.score.toFixed(2) + "），已切换");
-        } else {
-          UI.toast("warn", "各档位都没采到像文本的数据——确认设备正在发送，或它本来就不是文本协议");
-        }
-      }, function (err) {
-        renderScanButtons(null);
-        UI.toast("bad", "扫描失败：" + ((err && err.message) || err));
+    UI.confirm("扫描波特率", scanScopeText() + "\n\n扫描完成后会自动切到最高分档。", "开始扫描")
+      .then(function (ok) {
+        if (!ok) { return; }
+        T.scanBaudrate({ sampleMs: scanSampleMs() }).then(function (res) {
+          renderScanButtons(null);
+          if (res.best && res.best.baud) {
+            setAndFire("slBaud", String(res.best.baud));
+            var how = (res.best.by === "frame")
+              ? "（按帧结构判分" + (res.best.frame ? "，" + res.best.frame.ok + "/" + res.best.frame.frames + " 帧解出" : "") + "）"
+              : "（文本可疑度 " + res.best.score.toFixed(2) + "）";
+            UI.toast("ok", "扫描完成：最优 " + res.best.baud + how + "，已切换");
+          } else {
+            UI.toast("warn", "各档位都没采到可用数据——确认设备正在发送；若是二进制协议，先把「解析」页签切到 HEX 并配好帧结构再扫");
+          }
+        }, function (err) {
+          renderScanButtons(null);
+          UI.toast("bad", "扫描失败：" + ((err && err.message) || err));
+        });
+        renderScanButtons(0);
       });
-      renderScanButtons(0);
-    });
   }
 
   /* 扫描期间的按钮状态（两处按钮同源；AUTO 按钮跟随同一进度） */
@@ -755,18 +781,29 @@
     }
     UI.confirm(
       "AUTO 自适应",
-      "将对 12 个常用波特率逐档重开端口采样（全程约 5 秒），选出最像文本的波特率，并用该档采到的字节自动识别编码（UTF-8 / GBK / Latin-1），最后一键套用。\n\n⚠ 前提：设备已上电且正在发数据；Arduino / ESP 扫描期间会反复复位。\n没有硬件？到「测试」页签开一个案例即可体验。",
+      scanScopeText() + "\n\n然后按最优档采到的字节自动识别编码（UTF-8 / GBK / Latin-1）并一键套用。"
+        + "二进制协议（按帧结构判分）不做编码切换，只切波特率。\n"
+        + "没有硬件？到「测试」页签开一个案例即可体验。",
       "开始自适应"
     ).then(function (ok) {
       if (!ok) { return; }
       renderScanButtons(0);
-      T.autoAdapt().then(function (r) {
+      T.autoAdapt({ sampleMs: scanSampleMs() }).then(function (r) {
         renderScanButtons(null);
         if (!r.ok) {
-          UI.toast("warn", "AUTO 没采到足够数据：确认设备上电且正在发数据；没硬件可到「测试」页签开案例体验");
+          UI.toast("warn", "AUTO 没采到足够数据：确认设备上电且正在发数据；若是二进制协议，先在「解析」页签切到 HEX 并配好帧结构；没硬件可到「测试」页签开案例体验");
           return;
         }
         setAndFire("slBaud", String(r.baud));
+        /* 按帧结构判出来的最优档说明设备在说二进制协议——此时「识别编码」是伪问题
+           （对二进制字节谈 UTF-8/GBK 没有意义），只切波特率，别去动编码。 */
+        if (r.by === "frame") {
+          UI.toast("ok", "AUTO 完成：" + r.baud + " 波特率（按帧结构判分"
+            + (r.frame ? "，" + r.frame.ok + "/" + r.frame.frames + " 帧解出" : "")
+            + "）· 二进制协议不做编码切换 · 已套用");
+          hideGarble();
+          return;
+        }
         var encMap = { "ascii": "utf-8", "utf-8": "utf-8", "gbk": "gbk", "latin1": "latin1", "binary": "latin1" };
         var encName = { "ascii": "ASCII", "utf-8": "UTF-8", "gbk": "GBK", "latin1": "Latin-1", "binary": "Latin-1" };
         var target = encMap[r.encoding] || "utf-8";
@@ -966,13 +1003,28 @@
      同源控件（slShowTs / slHexRecv / slEncoding），让 addBind 继续
      当唯一写手——左栏与快捷条状态天然互相同步，行为口径一致。
      ------------------------------------------------------------ */
-  var QK_ENC_OPTS = [
-    ["utf-8", "UTF-8"], ["gbk", "GBK"], ["ascii", "ASCII"],
+  /* 编码选项【单源】：直接读左栏 #slEncoding 的 option，不再维护第二份文案。
+     这里曾经硬编码 ["gbk","GBK"]，而左栏写「GBK / GB2312」——同一个设置两处
+     文案不同，用户看到的就是「重复而且不同步」（AUDIT A-83）。fallback 只在
+     左栏控件缺失（页面结构被改坏）时兜底，正常路径永不使用。 */
+  var QK_ENC_OPTS_FALLBACK = [
+    ["utf-8", "UTF-8"], ["gbk", "GBK / GB2312"], ["ascii", "ASCII"],
     ["latin1", "Latin-1"], ["utf-16le", "UTF-16LE"]
   ];
+  function encOptions() {
+    var src = $("slEncoding");
+    if (src && src.options && src.options.length) {
+      var out = [];
+      for (var i = 0; i < src.options.length; i++) {
+        out.push([src.options[i].value, src.options[i].textContent]);
+      }
+      return out;
+    }
+    return QK_ENC_OPTS_FALLBACK;
+  }
 
   function fillQuick(host) {
-    /* 时域折线的快捷条：横轴窗口 + Y 轴手动范围（纵轴自由调节） */
+    /* 时域波形的快捷条：横轴窗口 + Y 轴手动范围（纵轴自由调节） */
     var plotId = host.getAttribute("data-quick-plot");
     if (plotId) {
       var cur = null, axis = {};
@@ -1001,9 +1053,10 @@
     var hex = !!t.hexRecv;
     var enc = t.encoding || "utf-8";
     var encOptHtml = "";
-    for (var e = 0; e < QK_ENC_OPTS.length; e++) {
-      encOptHtml += '<option value="' + QK_ENC_OPTS[e][0] + '"' +
-        (QK_ENC_OPTS[e][0] === enc ? " selected" : "") + ">" + QK_ENC_OPTS[e][1] + "</option>";
+    var encOpts = encOptions();          /* 单源：与左栏「编码」同一份选项与文案 */
+    for (var e = 0; e < encOpts.length; e++) {
+      encOptHtml += '<option value="' + encOpts[e][0] + '"' +
+        (encOpts[e][0] === enc ? " selected" : "") + ">" + encOpts[e][1] + "</option>";
     }
     host.innerHTML =
       '<label class="sl-qk" title="显示 / 隐藏行首时间戳（同左栏「显示」页签）">' +
@@ -1036,13 +1089,13 @@
         else if (k === "hex") { setAndFire("slHexRecv", t.checked ? "on" : "off"); }
         else if (k === "enc") { setAndFire("slEncoding", t.value); }
         else if (k === "win") {
-          /* 时域折线快捷条：横轴窗口（面板级配置，不走 transport） */
+          /* 时域波形快捷条：横轴窗口（面板级配置，不走 transport） */
           var pid = node.getAttribute("data-quick-plot");
           var n = parseInt(t.value, 10);
           if (pid && n > 0) { SL.views.updatePanel(pid, { window: n }); }
         }
         else if (k === "ymin" || k === "ymax") {
-          /* 时域折线快捷条：Y 轴手动范围（留空 = 自动量程） */
+          /* 时域波形快捷条：Y 轴手动范围（留空 = 自动量程） */
           var pid2 = node.getAttribute("data-quick-plot");
           if (pid2) {
             var pn = SL.views.getPanel(pid2);
@@ -1065,6 +1118,81 @@
     core.on("panels:changed", function () { refreshAllQuick(); });
     refreshAllQuick();
   }
+
+  /* ------------------------------------------------------------
+     V2.2.15（AUDIT A-87）：量级差过大的通道 → 提示拆成独立面板
+     渲染层只发事件（它不碰 DOM），提示与拆分都在这里做。
+     为什么需要：两条量级差几千倍的线共用一个 Y 轴时，跨度小的会被压成贴底直线，
+     用户会以为「根本没画出来」（实际反馈：「不是四个数据吗，怎么只有两根线」）。
+     ------------------------------------------------------------ */
+  var scaleHintDone = {};   /* panelId -> 已提示过（同一页面会话内不重复打扰） */
+
+  /* 把渲染层给的 groups 归一成 { keys, labels, span }；顺手挡掉空组 */
+  function scaleGroupsOf(info) {
+    var out = [];
+    if (!info || !info.groups) { return out; }
+    for (var g = 0; g < info.groups.length; g++) {
+      var items = (info.groups[g] && info.groups[g].items) || [];
+      var keys = [], labels = [], hi = -Infinity;
+      for (var i = 0; i < items.length; i++) {
+        if (!items[i] || !items[i].key) { continue; }
+        keys.push(items[i].key);
+        labels.push(items[i].label || items[i].key);
+        if (items[i].span > hi) { hi = items[i].span; }
+      }
+      if (keys.length) { out.push({ keys: keys, labels: labels, span: hi }); }
+    }
+    return out;
+  }
+
+  function doSplitByScale(info, groups) {
+    var p = (SL.views && SL.views.getPanel) ? SL.views.getPanel(info.panelId) : null;
+    if (!p) { return; }
+    /* 原面板留下跨度最大的那一组（原 Y 轴量程对它最有意义），其余每组新建一个面板。
+       新面板一律进工作区，不抢主位——用户的主视觉不该被这个提示改掉。 */
+    SL.views.updatePanel(p.id, { channels: groups[0].keys });
+    for (var g = 1; g < groups.length; g++) {
+      SL.views.addPanel({
+        type: p.type || "timeplot",
+        title: (p.title || "时域波形") + " · " + groups[g].labels.join(" "),
+        channels: groups[g].keys,
+        window: p.window || 500,
+        h: p.h || 300
+      }, true);
+    }
+    var parts = [];
+    for (var i = 0; i < groups.length; i++) { parts.push(groups[i].labels.join("+")); }
+    UI.toast("ok", "已按量级拆成 " + groups.length + " 个面板：" + parts.join(" / ")
+      + "（各面板独立量程，跨度小的那条也能看清了）");
+  }
+
+  function onScaleHint(info) {
+    if (!info || !info.panelId) { return; }
+    if (core.config.ui && core.config.ui.scaleSplitHint === false) { return; }
+    if (scaleHintDone[info.panelId]) { return; }
+    var groups = scaleGroupsOf(info);
+    if (groups.length < 2) { return; }
+    scaleHintDone[info.panelId] = true;
+
+    var lines = [];
+    for (var i = 0; i < groups.length; i++) { lines.push("· " + groups[i].labels.join(" + ")); }
+    UI.confirm(
+      "这些通道量级差太大",
+      "「" + (info.title || "时域波形") + "」里各通道的跨度相差约 " + info.ratio + " 倍：\n\n"
+        + lines.join("\n") + "\n\n"
+        + "跨度这么大的几条线共用一个 Y 轴时，跨度小的会被压成贴底直线，看起来像没画。\n"
+        + "要自动拆成 " + groups.length + " 个面板、各用各的量程吗？（原面板保留跨度最大的那组）\n\n"
+        + "不想再看到这个提示，可到「显示」页签取消「量级差过大时提示拆分面板」。",
+      "拆成 " + groups.length + " 个面板",
+      { danger: false }
+    ).then(function (ok) {
+      if (!ok) { return; }
+      doSplitByScale(info, groups);
+    });
+  }
+
+  /* 渲染层（plugins.js）只负责检测并发事件，是否拆分由这里决定——保持「业务模块不碰 DOM」 */
+  core.on("panel:scaleHint", onScaleHint);
 
   /* ------------------------------------------------------------
      V2.2.4：演示开始时保证有波形面板
@@ -1839,14 +1967,15 @@
       var keep = sel.value;
       sel.textContent = "";
       for (i = 0; i < list.length; i++) {
-        var o = el("option", null, list[i].label + "（" + list[i].id + "）");
+        var o = el("option", null, list[i].label);
         o.value = list[i].id;
         sel.appendChild(o);
       }
       if (keep) { sel.value = keep; }
     }
-    /* 舞台工具条里的「新图表」下拉与「图表」页签同源，但只显示中文名——
-       工具条上还挤着三个按钮与两个清空入口，带上 (id) 会把下拉撑得过宽。 */
+    /* 舞台工具条里的「新图表」下拉与「图表」页签【同源、同文案】：两处都只显示
+       中文名。这里曾经在「图表」页签额外拼上 (id)（形如「时域波形（timeplot）」），
+       同一个列表在两处格式不同，属于「细节部分命名没有统一」（AUDIT A-83）。 */
     if (quick) {
       var keepQ = quick.value;
       quick.textContent = "";
@@ -2449,7 +2578,7 @@
   function showHelp() {
     UI.showArticle("串口调试助手 · 使用帮助", [
       { h: "① 连接设备", p: "点「连接设备」在弹出的对话框里选择串口。Web Serial 要求 Chromium 内核浏览器（Chrome / Edge 89+）并运行在 HTTPS 或 localhost 下；Safari 与手机浏览器不提供该能力。没有硬件时点「进入演示模式」，全部解析、绘图、插件与导出功能都能体验。" },
-      { h: "①-1 乱码三分诊（监视器出现菱形问号时）", p: "乱码几乎只有三种原因，应用会监测解码失败率并在「设备」页签弹出排查条，按顺序试：一「识别编码」——对最近收到的原始字节做 UTF-8/GBK/二进制三分判定，一键切到最可能的编码（中文设备常见 GBK）；二「扫描波特率」——对 12 个常用波特率逐档重开端口采样打分并自动切换（⚠ Arduino/ESP 每开一次口会复位一次，扫描会让设备反复重启）；三还不行——多半是二进制协议被当文本看，切 HEX 显示或去「解析」页签配帧结构。注意：Web Serial 在操作系统层就按波特率完成了电平采样，波特率错配无法从字节流逆推，所以只能扫描比对，编码错配则可以在字节层直接识别。" },
+      { h: "①-1 乱码三分诊（监视器出现菱形问号时）", p: "乱码几乎只有三种原因，应用会监测解码失败率并在「设备」页签弹出排查条，按顺序试：一「识别编码」——对最近收到的原始字节做 UTF-8/GBK/二进制三分判定，一键切到最可能的编码（中文设备常见 GBK）；二「扫描波特率」——对 12 个常用波特率逐档重开端口采样打分并自动切换，每档采样时长可在按钮旁调（默认 700ms；太短会漏掉「上电后才开始打印」的设备）。打分取「像不像文本」与「按当前 HEX 规则试解出的帧成功率」两者较高者，所以二进制协议要先把模式切到 HEX 并配好帧结构，否则永远扫不出来。⚠ Arduino/ESP 每开一次口会复位一次，扫描会让设备反复重启（本版会尝试压住 DTR/RTS 并留预热窗口，能减轻但不能保证消除）；三还不行——多半是二进制协议被当文本看，切 HEX 显示或去「解析」页签配帧结构。注意：Web Serial 在操作系统层就按波特率完成了电平采样，波特率错配无法从字节流逆推，所以只能扫描比对，编码错配则可以在字节层直接识别。" },
       { h: "①-2 演示与故障注入（「设备」页签底部）", p: "「拟真电机信号」把演示数据从理想正弦换成目标阶跃 + 超调振铃 + 稳态纹波 + 测量噪声——量程、滤波、极值统计的潜在问题在理想正弦面前全部隐身，拟真形态才能把它们逼出来。四个故障注入概率（丢帧/错帧/粘包/乱码）让你无硬件时演练整条排错链路：失败行标红、失败原因分布、AI 调试包的失败样本、乱码监测提示，全部会被真实触发。" },
       { h: "② 解析数据", p: "文本模式直接识别 key=value 与 key:value（等号、冒号都支持，后缀数字如 temp1/temp2 会保留为独立通道）。HEX 模式按结构表解帧：设帧头/帧尾或长度字段定界，再逐个字段声明类型、偏移、字节序与缩放系数；校验支持累加和、异或、累加和(16) 与 CRC16-Modbus。点「套用示例」可以一键填入演示帧结构。" },
       { h: "②-1 文本格式速查", p: "每行写出键值对即可：等号与冒号都认，一行里多个数值对用逗号连写，后缀数字如 temp1/temp2 各自成为独立通道，数值支持整数、小数与科学计数法。键名支持中文（国产设备打印「温度=25.3」直接可解析，通道名与图例都显示中文）。", code: "temp=25.3, cur:1.02\npos:90 vel=12.5\n温度=36.8, 电流:1.02" },
@@ -2483,8 +2612,8 @@
         "屏幕暂停不影响落盘——暂停只是冻结画面，文件照常实时写入，AI 看到的时间轴是连续的。"
       ] },
       { h: "⑤-2 实时统计（有效值 / 峰峰值）", p: "「图表」页签新增「实时统计」渲染器：选通道后自动实时计算 有效值 RMS（去均值口径，标准正弦 = 峰值/√2）、峰峰值 Vpp、均值（直流分量）、最大、最小、样本数，只统计当前窗口（面板窗口可调），适合验证滤波前后的有效值变化。" },
-      { h: "⑤-3 时域折线的示波器操作", p: "数据按时间轴向左滚动、最新点始终贴右缘；鼠标拖动可回看历史（右上角有黄色「回看历史」提示），滚轮缩放窗口点数，双击或点面板头「Auto」回到实时并恢复自动量程；图例可点击勾选 / 隐藏通道（隐藏的灰显）；面板头的「⏸」只暂停这张卡片（数据照收），顶栏绿圆标是全局暂停；快捷条上「窗口」下拉与 Y 轴 min/max 输入可自由调节横纵范围。" },
-      { h: "⑤-4 频域谱（FFT）在哪里", p: "频谱分析视图已内置：「图表」页签选「频域谱」或顶栏「新图表」下拉添加——对通道做 radix-2 FFT + 汉宁窗，显示单边幅值谱，与「时域折线」并排放正好是「时域看波形、频域看分量」的组合。采样率默认按相邻点时间间隔反推，也可在面板编辑器里指定。" },
+      { h: "⑤-3 时域波形的示波器操作", p: "数据按时间轴向左滚动、最新点始终贴右缘；鼠标拖动可回看历史（右上角有黄色「回看历史」提示），滚轮缩放窗口点数，双击或点面板头「Auto」回到实时并恢复自动量程；图例上每条通道前有勾选框，点一下即隐藏 / 恢复该通道（隐藏的整条灰显，可随时点回来）；默认各图表框按通道名联动——时域关了 pos，频域那张也跟着关，不想联动就到「显示」页签取消「图表图例的勾选跨面板同步」；面板头的「⏸」只暂停这张卡片（数据照收），顶栏绿圆标是全局暂停；快捷条上「窗口」下拉与 Y 轴 min/max 输入可自由调节横纵范围。" },
+      { h: "⑤-4 频域谱（FFT）在哪里", p: "频谱分析视图已内置：「图表」页签选「频域谱」或顶栏「新图表」下拉添加——对通道做 radix-2 FFT + 汉宁窗，显示单边幅值谱，与「时域波形」并排放正好是「时域看波形、频域看分量」的组合。采样率默认按相邻点时间间隔反推，也可在面板编辑器里指定。" },
       { h: "已知限制（务必先看）", list: [
         "file:// 直接打开的单文件离线版无法使用真实串口 —— file:// 不是安全上下文，浏览器禁止 Web Serial。真机调试请用本地 HTTP 服务或在线版本。",
         "改波特率、数据位、停止位、校验或流控需要关闭端口重开，应用会自动完成（约四分之一秒）。",
@@ -2919,6 +3048,17 @@
     addBind({
       el: "slMarkFailed", path: "ui.markFailed", type: "chk", scope: "ui",
       apply: function () { if (SL.views) { SL.views.redraw(); } }
+    });
+    addBind({
+      el: "slSyncChanHidden", path: "ui.syncChanHidden", type: "chk", scope: "ui",
+      /* 切换同步口径会改变「哪些通道算隐藏」，必须立刻重绘所有图表框，
+         否则要等下一个数据节拍（drawInterval）才看得到差别 */
+      apply: function () { if (SL.views) { SL.views.redraw(); } }
+    });
+    addBind({
+      el: "slScaleSplitHint", path: "ui.scaleSplitHint", type: "chk", scope: "ui",
+      /* 只是「要不要提示」的开关，不需要重绘；关掉后已弹过的提示不受影响 */
+      apply: function () {}
     });
     addBind({
       el: "slAutoRecord", path: "ui.autoRecord", type: "chk", scope: "ui",

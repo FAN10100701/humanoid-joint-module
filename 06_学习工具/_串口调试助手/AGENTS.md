@@ -72,9 +72,9 @@
 | L2 | HTTP 上报到本地收件箱 | `js/aichan.js` + `_本地工具/serial-inbox.py`（Python 标准库，含 PNA 预检回包） |
 | L3/L4 | 本地串口桥（可自主迭代） | `_本地工具/serial-bridge/bridge.mjs`（Node + serialport，可作 MCP server） |
 
-桥的用法与 MCP 配置见 `_本地工具/serial-bridge/README.md`；闭环是
-`read` 采一段 → `assert --expect "rpm>1750; cur.max<3.2"`（退出码 0 通过 / 2 不通过）→ 改代码 → 重烧 → 再跑同一组判据。
-`list`/`parse`/`assert`/`selftest` **不需要硬件**，回归时先用它们。
+桥的用法与 MCP 配置见 `_本地工具/serial-bridge/README.md`；**完整闭环手册（token 预算纪律 / 迭代台账 trial / 现场乱码排查 / 真实 STM32 现场经验）见 `.agents/skills/ai-hardware-debug/SKILL.md`**；闭环是
+`read` 采一段 → `assert --expect "rpm>1750; cur.max<3.2"`（退出码 0 通过 / 2 不通过）→ `trial append` 记一轮 → 改代码 → 重烧 → 再跑同一组判据。
+`list`/`parse`/`assert`/`trial`/`selftest` **不需要硬件**，回归时先用它们。
 
 改动本目录 `js/` 下任何模块后，请额外跑一次 `node _本地工具/serial-bridge/bridge.mjs selftest`
 —— 桥复用同一份真源，它是「内核改动是否破坏 AI 侧解析」的最快反馈。
@@ -127,7 +127,7 @@ powershell -ExecutionPolicy Bypass -File "_本地工具/启动服务器.ps1"
 - [ ] 「显示 → 导出 AI 调试包」下载到 `seriallab-debug-*.json`，内含 `brief` / `frameLayout` / `settings` / `channels` / `samples` / `failures` / `hints`；剪贴板里有纯文本摘要
 - [ ] 「显示 → 按当前规则重放缓存」在改完规则后能立刻重解已收到的字节，不用重开硬件
 - [ ] 「显示 → 一键恢复默认设置」与顶栏「恢复默认」都能复位（含显示设置），二次确认后才执行
-- [ ] 演示模式（文本）下能自动建出 5 个通道，时域折线有波形
+- [ ] 演示模式（文本）下能自动建出 5 个通道，时域波形有波形
 - [ ] 演示模式（HEX，点「解析」页「套用示例」）下能按 AA55 帧收齐 11 字节帧，三个字段值与预期一致，校验和不报警
 - [ ] **改波特率 / 数据位 / 停止位 / 校验 / 流控**：配置立刻落盘，已连接时自动重开端口，刷新后下拉仍回填为改后的值
 - [ ] **「HEX 发送」两个开关**（顶栏「编码与显示」组与底部发送条）勾选状态同步；底部发送内容按十六进制解析

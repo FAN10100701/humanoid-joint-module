@@ -78,7 +78,13 @@ node bridge.mjs read --ms 2000 --preset firewater --human
 | `--samples` | 200 | 调试包里带多少帧样本（20~5000） |
 | `--out` | — | 把结构化结果写成 JSON 文件（后续 `assert --in` 用） |
 | `--bundle=false` | 带 | 关掉则**不**附带 `debugBundle`，输出更小 |
+| `--profile` | `full` | `digest` = 只回「通道统计 + 帧结构 + 失败样本 + 提示」，丢掉 `brief` / `samples` / `recent` / 完整调试包 |
+| `--max-bytes` | `12000` | **stdout 字节预算**；超了自动降级为 digest 并在结果里标 `trimmed: true` + `trimmedNote`。`0` = 不限 |
 | `--human` | — | 输出人读摘要而非 JSON |
+
+> **省 token 是默认行为**：`--max-bytes` 默认就带 12000 预算，AI 不需要自觉。200 帧的完整输出是 74KB（≈2 万 token），
+> 默认预算下自动降到约 3.7KB（**省 95%**）。而 **`--out` 落盘永远是完整数据**，不受预算影响 ——
+> 数据不丢，只是不进上下文。要恢复旧行为：`--profile=full --max-bytes=0`。
 
 **输出结构**（JSON 模式）：
 
@@ -157,6 +163,7 @@ node bridge.mjs assert --in capture.json --expect "temp<40; volt.span<=0.5" --ou
 | `0` | 全部判据通过 |
 | `2` | 有判据不通过（附全部指标明细） |
 | `1` | 用法错误 / 运行错误（如通道名不存在） |
+| `3` | **`trial` 专用**：轮数预算耗尽，拒绝再追加（见第七节的轮数预算闸） |
 
 失败时输出里会给出 `expr` / `actual` / `expect` / `key` / `field`，AI 能直接据此定位是哪个通道、哪项统计量偏了。
 
@@ -177,7 +184,40 @@ node bridge.mjs selftest
 
 全绿输出 `{"ok": true, ...}`。这是修改内核后回归的第一道闸。
 
-### 7）`mcp` —— 以 MCP stdio 服务运行
+### 7）`trial` —— 迭代台账（append-only JSONL）
+
+自动迭代真正的痛点是「第 N 轮不知道前 N-1 轮做过什么」。若每轮都把原始数据重新读进上下文，
+token 会随轮数线性爆炸。台账把每一轮压成**一行结论**：
+
+```bash
+# 记一轮（复用 assert 的判据语法；退出码 0 = PASS / 2 = FAIL，与 assert 一致）
+node bridge.mjs trial append --in capture.json --expect "rpm>1750; cur.max<3.2" --note "kp 由 8 调到 10"
+
+# 读最近几轮 + 每个指标的净变化方向（这就是「寻找规律」的最小可用形态）
+node bridge.mjs trial list --last 10
+```
+
+`trial list` 输出里有两块：`trend`（窗口首行→末行，每个判据指标的方向 `up/down/flat` 与净变化）
+与 `rows`（逐轮的一行结论）。**只给方向与净变化、不给逐轮明细**，正是为了省 token。
+另有 `maxRounds` / `remaining` / `budgetExhausted` 三个字段，循环控制方只看它们就知道还能跑几轮。
+
+`--ledger` 指定台账文件；默认落在**桥自己的 `_data/seriallab-trials.jsonl`**（与 cwd 无关，
+因为 AI 通过 MCP 调用时 cwd 由宿主决定；该目录已在 `.gitignore` 中忽略）。
+追加一行、永不重写整本 —— 并发或中断都不会毁掉历史。
+
+#### ⛔ 轮数预算闸（`--max-rounds`，默认 20）—— 「不能无限循环」的机制保证
+
+```bash
+# 达到上限后 append 会被拒绝，退出码 3（与 PASS 的 0 / FAIL 的 2 都不同）
+node bridge.mjs trial append --in capture.json --expect "..." --max-rounds 20
+node bridge.mjs trial list --max-rounds 20     # 看 remaining / budgetExhausted
+```
+
+这道闸**不依赖 AI 自觉**：没有它，AI 手里的「循环改进」就是没有终止条件的 `while`。
+被拒绝的那一轮**不会写进台账**，所以循环控制方拿到退出码 3 就知道该停下汇报
+（要接着跑必须显式调大 `--max-rounds`，是一个有意识的决定，而不是默默继续）。
+
+### 8）`mcp` —— 以 MCP stdio 服务运行
 
 ```bash
 node bridge.mjs mcp
@@ -200,19 +240,22 @@ node bridge.mjs mcp
 
 ## 五、MCP 接入（让 Agent 原生调用）
 
-桥内置 MCP（Model Context Protocol）stdio 服务，暴露 5 个工具：
+桥内置 MCP（Model Context Protocol）stdio 服务，暴露 6 个工具：
 
 | 工具名 | 对应命令 | 说明 |
 |---|---|---|
 | `serial_list` | `list` | 枚举本机串口 |
-| `serial_read` | `read` | 采一段并返回解析结果 + 调试包 |
+| `serial_read` | `read` | 采一段并返回解析结果 + 调试包（含 `profile` / `maxBytes` / `bundle` 省流参数） |
 | `serial_write` | `write` | 写串口（`hex` 或 `text`） |
 | `serial_parse` | `parse` | 离线解析给定字节 |
 | `serial_assert` | `assert` | 按阈值判定，返回 pass/fail 与全部指标 |
+| `serial_trial` | `trial` | 迭代台账：`sub:"append"` 记一轮 / `sub:"list"` 读最近几轮与趋势 |
 
 ### 配置片段
 
-在 WorkBuddy 的 MCP 配置文件 `C:\Users\<用户名>\.workbuddy\mcp.json` 里加入：
+**两个客户端都要点一次「信任」才会激活**（见本节末）。两边指的是同一个 `bridge.mjs`，可以同时配。
+
+#### A. WorkBuddy —— `C:\Users\<用户名>\.workbuddy\mcp.json`
 
 ```json
 {
@@ -222,15 +265,43 @@ node bridge.mjs mcp
       "args": [
         "<本项目根目录的绝对路径>/_本地工具/serial-bridge/bridge.mjs",
         "mcp"
-      ]
+      ],
+      "cwd": "<本项目根目录的绝对路径>/_本地工具/serial-bridge/_data"
     }
   }
 }
 ```
 
+可直接抄同目录的 `mcp.example.json`，把占位路径换成真实路径。
+
+#### B. DSH —— `~/.dsh/profiles/<profile>/cordis.patch.yml`
+
+每个 MCP server 一个插件实例（`@deepseek-ai/dsh-mcp-client` 随 DSH 分发，无需单独安装）：
+
+```yaml
+- id: mcp-seriallab
+  name: "@deepseek-ai/dsh-mcp-client"
+  config:
+    serverName: seriallab
+    transport: stdio
+    command: node
+    args:
+      - "<本项目根目录的绝对路径>/_本地工具/serial-bridge/bridge.mjs"
+      - "mcp"
+    cwd: "<本项目根目录的绝对路径>/_本地工具/serial-bridge/_data"
+    toolCallTimeoutMs: 300000
+```
+
+工具名会变成 `mcp__seriallab__serial_read` 这种形态。支持 HMR：改配置会触发断开重连，不必重启 Host。
+
+#### 两个字段为什么必须有
+
+| 字段 | 为什么 |
+|---|---|
+| `cwd` | 桥的 `--out` 走**相对路径**时按 cwd 解析。不指定的话，AI 生成的抓包 JSON 会落到某个不确定的位置（DSH 的 cwd 是宿主进程的、WorkBuddy 又是另一个），甚至掉进仓库被提交。指向 `_data/`（已在 `.gitignore` 忽略）就既不丢也不入库。**台账 `trial` 已改为默认落在桥自己的 `_data/`，与 cwd 无关**；只有 `--out` 仍跟随 cwd，所以建议显式给 `cwd` 或让 AI 写绝对路径 |
+| `toolCallTimeoutMs` | `read --ms` 最长 600000ms，默认 60s 超时会让长采集直接失败。给 300000 |
+
 > **路径要用绝对路径**。Windows 下斜杠 `/` 和反斜杠 `\\` 都能识别，但 JSON 里反斜杠必须写成 `\\`，所以推荐直接用 `/`。
->
-> 可直接抄 `_本地工具/serial-bridge/mcp.example.json`，把其中的占位路径换成你本机的真实路径。
 >
 > **`command` 用 `node` 即可**——已验证系统 Node v24 与受管 Node v22 都能加载 `serialport`。若你的环境 `node` 不在 PATH，把它换成 Node 可执行文件的绝对路径。
 
@@ -245,17 +316,22 @@ node bridge.mjs mcp
 ## 六、给 AI Agent 的推荐工作流（读 → 判 → 改 → 烧 → 再跑）
 
 ```
-1. serial_list                        → 确认目标串口在线
-2. serial_read  { ms, preset, out }   → 采一份现场数据，落 capture.json
-3. serial_assert { input, expect }    → 判定是否达标；退出码 0 / 2
-       ├─ 0 → 采集符合预期，进入下一步验证或收工
+1. serial_list                          → 确认目标串口在线
+2. serial_read  { ms, preset, out }     → 采一份现场数据：完整数据落 capture.json，
+                                           stdout 受 --max-bytes 约束自动 digest（省 token）
+3. serial_trial { sub:"append", input, expect, note }
+                                        → 把这一轮压成一行结论写进台账；退出码 0 / 2
+       ├─ 0 → 采集符合预期：可以收工，或继续下一项验证
        └─ 2 → 拿到 actual / expect，定位是哪条通道哪项统计量偏了
 4. 修改代码 / 参数
-5. 重新烧录（这一步通常仍需人或其他工具）
-6. 回到 2，用同一组 expect 复测 → 形成可回归的迭代闭环
+5. 重新烧录（这一步通常仍需人或其他工具 —— 不要交给 AI 自主执行）
+6. serial_trial { sub:"list", last: 10 } → 读最近几轮与指标趋势方向，决定下一步往哪调
+7. 回到 2，用同一组 expect 复测 → 形成可回归、可追溯的迭代闭环
 ```
 
-`parse` / `assert` 不依赖硬件，所以调协议规则时可以在**没有设备**的情况下反复重放同一份 `dump.bin`，直到分帧完全正确再上真机。
+**迭代必须有界**：先声明轮数上限（建议 10~20 轮）与判据，达标或超限即停。没有判据的循环只会瞎调。
+
+`parse` / `assert` / `trial` / `selftest` 不依赖硬件，所以调协议规则时可以在**没有设备**的情况下反复重放同一份 `dump.bin`，直到分帧完全正确再上真机。
 
 ## 七、与网页端的关系
 
@@ -282,4 +358,5 @@ node bridge.mjs mcp
 - 网页端子应用：`06_学习工具/_串口调试助手/`
 - 内核模块（被桥 require 的真源）：`06_学习工具/_串口调试助手/js/{util,core,codec,expr,parser,fft,datastore,timeline,exporters}.js`
 - HTTP 收件箱：`_本地工具/serial-inbox.py`
+- **AI 闭环手册（skill）**：`.agents/skills/ai-hardware-debug/SKILL.md` —— token 预算纪律、迭代台账、现场故障排查、以及从真实 STM32 现场踩出来的四条硬经验
 - 校验脚本：`_本地工具/校验串口应用.js`

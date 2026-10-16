@@ -147,7 +147,7 @@ llms.txt / AGENTS.md / skills/   给 AI 的文档（本三件）
 
 > `slot` / `h` / `span` 由 `P.validate()` 直接挂在 panel 上。**它们不是渲染器选项**，写进 `opts` 会被白名单丢掉、且不会报错（静默失效）。
 
-内置渲染器：`timeplot` 时域折线 · `fftplot` 频域谱 · `bar` 柱状图 · `gauge` 仪表盘 ·
+内置渲染器：`timeplot` 时域波形 · `fftplot` 频域谱 · `bar` 柱状图 · `gauge` 仪表盘 ·
 `table` 数据表格 · `textmon` 文本监视器 · `plotxy` 二维轨迹。
 渲染器接口：`make(hostEl, panel)` → `{ update(dataProvider), resize(), destroy() }`。
 

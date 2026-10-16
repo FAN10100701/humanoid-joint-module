@@ -168,7 +168,7 @@
     head.appendChild(type);
 
     /* 文本监视器：预留快捷工具条容器（时间戳 / HEX / 编码），控件由 ui.js 统一填充。
-       时域折线：预留窗口调节容器（横轴采样点数）。都在标题之后、图标按钮之前。 */
+       时域波形：预留窗口调节容器（横轴采样点数）。都在标题之后、图标按钮之前。 */
     if (panel.type === "textmon" || panel.type === "timeplot") {
       var quick = document.createElement("span");
       quick.className = "sl-panel-quick";
@@ -204,7 +204,7 @@
     }));
 
     if (panel.type === "timeplot") {
-      /* 时域折线专属：Auto = 回到实时跟随 + 恢复自动量程（渲染器内部状态 + axis 清除）。
+      /* 时域波形专属：Auto = 回到实时跟随 + 恢复自动量程（渲染器内部状态 + axis 清除）。
          V2.2.8：按钮带状态灯——回看历史或手动量程时高亮，一眼知道 Auto「有没有事做」。 */
       head.appendChild(iconBtn("Auto", "回到实时跟随，并恢复自动量程与默认窗口", "sl-auto-btn", function () {
         V.resetTimeplotView(panel.id);
@@ -866,7 +866,7 @@
     try { inst.update(data); } catch (e) { /* 渲染异常由 redraw 的隔离逻辑处理 */ }
   };
 
-  /* 时域折线 Auto：清手动 Y 轴 + 通知渲染器回实时跟随（渲染器内部状态自己清） */
+  /* 时域波形 Auto：清手动 Y 轴 + 通知渲染器回实时跟随（渲染器内部状态自己清） */
   var timeplotLiveState = {};   /* id -> true(实时跟随) / false(回看历史) */
 
   /* 同步 Auto 按钮状态灯：回看历史或手动量程 → 高亮（is-off 类，橙色） */

@@ -507,6 +507,12 @@
   }
   App.applyRecordCaps = applyRecordCaps;
 
+  /* V2.2.15：把「帧定界规则 / 字段表规则」的派生对外开放。
+     波特率扫描要用它按【当前解析规则】试解二进制协议（见 transport.frameScoreOf）。
+     绝不能在 transport 里另写一份派生——否则就有两套口径：规则改了、扫描还按老规则判分。 */
+  App.frameRule = frameRule;
+  App.fieldRule = fieldRule;
+
   function ensureAutoRecord() {
     if (!Timeline || !Timeline.isRecording) { return false; }
     if (core.config.ui && core.config.ui.autoRecord === false) { return false; }

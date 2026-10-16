@@ -280,11 +280,53 @@
      反复复位十一次，UI 侧必须先确认。扫描要求当前未连接（扫描期间端口被反复开关）。
      ------------------------------------------------------------ */
   var scanning = false;
+
+  /* V2.2.15（AUDIT A-84）：尽量抑制「开一次端口就复位一次」。
+     很多 USB-TTL（CH340/CP2102 转接）把 DTR 接到了 MCU 的 NRST，而 Web Serial 的
+     open() 会按平台默认置位 DTR → 每开一次口设备就重启一次，扫 12 档就是重启 12 次。
+     规范没有「打开前先设信号」的口子，只能在 open 之后立刻拉低、再给设备一点启动时间。
+     ⚠ 这不能保证消除复位（DTR 的下降沿本身也可能是复位沿），所以 UI 侧的警告要保留。 */
+  function calmSignals(port) {
+    if (!port || typeof port.setSignals !== "function") { return Promise.resolve(); }
+    return port.setSignals({ dataTerminalReady: false, requestToSend: false })
+      ["catch"](function () { /* 部分平台不支持 setSignals，忽略 */ });
+  }
+
+  /* V2.2.15（AUDIT A-84）：按【当前解析规则】给一段字节打分 = 帧成功率。
+     这是给「二进制协议」补的打分档：原来的 plainScore 只认「像不像文本」，HEX 帧
+     （帧头 + 长度字段 + 校验和）在它眼里全是噪声，无论波特率多准都拿不到高分 ——
+     于是 HEX 设备永远扫不出来。只认 HEX 模式；文本模式没有「帧」的概念，返回 null。
+     规则派生复用 app.frameRule/fieldRule（同一份口径），绝不在这里另写一份。 */
+  function frameScoreOf(u8) {
+    if (!SL.app || typeof SL.app.frameRule !== "function" ||
+        typeof SL.app.fieldRule !== "function") { return null; }
+    var rule = core.config.rule;
+    if (!rule || rule.active !== "hex") { return null; }
+    var fres;
+    try {
+      fres = SL.codec.extractFrames(u8, new Uint8Array(0), SL.app.frameRule());
+    } catch (e) { return null; }
+    var frames = (fres && fres.frames) || [];
+    if (frames.length < 3) { return null; }      /* 帧太少，成功率没有统计意义 */
+    var ok = 0, bad = 0, i;
+    for (i = 0; i < frames.length; i++) {
+      var r = null;
+      try { r = SL.parser.parseHexFrame(frames[i], SL.app.fieldRule()); } catch (e2) { r = null; }
+      if (r && r.ok) { ok++; } else { bad++; }
+    }
+    var tot = ok + bad;
+    return { score: tot ? (ok / tot) : null, ok: ok, failed: bad, frames: tot };
+  }
+
   T.scanBaudrate = function (opts) {
     opts = opts || {};
     var candidates = opts.candidates ||
       [1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 230400, 460800, 921600];
-    var sampleMs = opts.sampleMs || 350;
+    /* V2.2.15（AUDIT A-84）：采样窗口 350ms → 700ms 起步。350ms 对「上电后才开始打印」
+       的设备太短（H743 光 HAL_Init + 时钟切换就可能吃掉 100ms+），经常一档都采不到东西。
+       settleMs 是每档开端口后的「预热丢弃窗」：设备若因 DTR 复位，这段全是启动噪声。 */
+    var sampleMs = opts.sampleMs || 700;
+    var settleMs = (typeof opts.settleMs === "number") ? opts.settleMs : 150;
     if (!T.isSupported()) {
       return Promise.reject(new Error("当前浏览器不支持 Web Serial"));
     }
@@ -301,62 +343,91 @@
       var results = [];
       var best = { baud: 0, score: -1, bytes: 0 };
 
+      /* 把一档采到的所有分块拼起来并打分。
+         V2.2.15（AUDIT A-84）：除「像不像文本」外，再按【当前解析规则】试解一次，
+         取两者较高分 —— 这样二进制 HEX 协议也能被扫出来；纯文本协议下后者不参与。 */
+      function scoreSample(chunks, baud) {
+        var total = 0, i;
+        for (i = 0; i < chunks.length; i++) { total += chunks[i].length; }
+        var all = new Uint8Array(total);
+        var off = 0;
+        for (i = 0; i < chunks.length; i++) { all.set(chunks[i], off); off += chunks[i].length; }
+        var sample = (total >= 16) ? all : null;
+        var score = -1, by = "none", frame = null;
+        if (sample) {
+          score = SL.codec.plainScore(sample);
+          by = "text";
+          frame = frameScoreOf(sample);
+          if (frame && frame.score !== null && frame.score > score) {
+            score = frame.score;
+            by = "frame";
+          }
+        }
+        core.emit("serial:scan", { baud: baud, score: score, bytes: total, phase: "done" });
+        /* sample 一并带回：AUTO 自适应要在最高分档的字节上再跑编码识别 */
+        return { baud: baud, score: score, bytes: total, sample: sample, by: by, frame: frame };
+      }
+
+      /* V2.2.15（AUDIT A-84）：这个函数修掉两个让波特率扫描「自 V2.2.4 上线以来
+         从未成功过一次」的缺陷 ——
+         ① open() 按规范解析成 undefined，而旧代码用 `if (!opened)` 判成败：成功与失败
+            都是假值，于是每一档立刻走「打不开」分支，一个字节都不会采。同一文件里
+            正常连接路径（见 T.open 用的 `port.open(...).then(function () { return port; })`）
+            就没依赖 open() 的返回值——两处写法自相矛盾。这里改为显式布尔标记。
+         ② chunks / reader 原本声明在 `new Promise` 执行器函数内部，却在链式 .then 里被
+            读取 → ReferenceError: chunks is not defined（即使修好 ① 也会立刻撞上，
+            而且被 step() 的失败回调吞成「本档无数据」，从日志上看不出是崩溃）。
+         两者叠加的效果：autoAdapt 永远返回 { ok:false, reason:"nosignal" }，UI 永远提示
+         「确认设备上电且正在发数据」——用户只能放弃自动扫描、自己去配波特率。 */
       function sampleOnce(baud) {
-        /* 打开 → 采样 sampleMs → 收尾释放（顺序：cancel → releaseLock → close） */
+        var chunks = [];        /* 必须在 sampleOnce 作用域：后面的 .then 要读它 */
+        var reader = null;
+        var done = false;
+        var opened = false;
+
         return port.open({
           baudRate: baud, dataBits: 8, stopBits: 1, parity: "none", flowControl: "none", bufferSize: 8192
-        })["catch"](function () { return null; }).then(function (opened) {
-          if (!opened) { return { baud: baud, score: -1, bytes: 0, error: "打不开" }; }
-          return new Promise(function (resolve) {
-            var chunks = [];
-            var reader = null;
-            var done = false;
-            var timer = setTimeout(function () { done = true; }, sampleMs);
-            function finish() {
-              if (reader) {
-                try { reader.cancel(); } catch (e) { /* 已断 */ }
+        }).then(function () { opened = true; }, function () { opened = false; })
+          .then(function () {
+            if (!opened) { return false; }
+            /* 打开后先压住 DTR/RTS，再给设备一个预热窗口，然后才开始计时采样 */
+            return calmSignals(port).then(function () { return delay(settleMs); })
+              .then(function () { return true; });
+          })
+          .then(function (ok) {
+            if (!ok) { return { baud: baud, score: -1, bytes: 0, error: "打不开" }; }
+            return new Promise(function (resolve) {
+              var timer = setTimeout(function () { done = true; }, sampleMs);
+              function pump() {
+                if (!port.readable) { resolve(); return; }
+                try { reader = port.readable.getReader(); } catch (e0) { resolve(); return; }
+                (function loop() {
+                  reader.read().then(function (r) {
+                    if (done) { resolve(); return; }
+                    if (r.value && r.value.length) { chunks.push(r.value); }
+                    loop();
+                  }, function () { resolve(); });
+                })();
               }
-            }
-            function pump() {
-              if (!port.readable) { resolve(); return; }
-              try { reader = port.readable.getReader(); } catch (e0) { resolve(); return; }
-              (function loop() {
-                reader.read().then(function (r) {
-                  if (done) { resolve(); return; }
-                  if (r.value && r.value.length) { chunks.push(r.value); }
-                  loop();
-                }, function () { resolve(); });
-              })();
-            }
-            pump();
-            (function waitClose() {
-              if (done) {
-                clearTimeout(timer);
-                (function release() {
+              pump();
+              (function waitClose() {
+                if (done) {
+                  clearTimeout(timer);
                   try { reader.cancel(); } catch (e1) { /* 已断 */ }
                   setTimeout(function () {
                     try { reader.releaseLock(); } catch (e2) { /* 已释放 */ }
                     resolve();
                   }, 60);
-                })();
-              } else { setTimeout(waitClose, 20); }
-            })();
-          }).then(function () {
-            return delay(40);
-          }).then(function () {
-            return port.close()["catch"](function () { /* 忽略 */ });
-          }).then(function () {
-            var total = 0, i;
-            for (i = 0; i < chunks.length; i++) { total += chunks[i].length; }
-            var all = new Uint8Array(total);
-            var off = 0;
-            for (i = 0; i < chunks.length; i++) { all.set(chunks[i], off); off += chunks[i].length; }
-            var score = (total >= 16) ? SL.codec.plainScore(all) : -1;
-            core.emit("serial:scan", { baud: baud, score: score, bytes: total, phase: "done" });
-            /* sample 一并带回：AUTO 自适应要在最高分档的字节上再跑编码识别 */
-            return { baud: baud, score: score, bytes: total, sample: (total >= 16) ? all : null };
+                } else { setTimeout(waitClose, 20); }
+              })();
+            });
+          })
+          .then(function (pre) {
+            if (pre) { return pre; }        /* 打不开：端口没打开过，不必 close */
+            return delay(40)
+              .then(function () { return port.close()["catch"](function () { /* 忽略 */ }); })
+              .then(function () { return scoreSample(chunks, baud); });
           });
-        });
       }
 
       function step(i) {
@@ -386,6 +457,9 @@
     });
   };
   T.isScanning = function () { return scanning; };
+  /* V2.2.15：帧结构打分对外可见——校验脚本要对它做功能性回归（AUDIT A-84），
+     它也回答了「HEX 协议为什么以前扫不出来」这个问题，值得能被单独调用观察。 */
+  T.frameScoreOf = frameScoreOf;
 
   /* V2.2.4：AUTO 一键自适应 = 波特率扫描 + 最高分档字节上的编码识别。
      只负责「探测并给出结论」，不碰配置与控件——切换动作由 ui 层完成。
@@ -403,6 +477,10 @@
         baud: res.best.baud,
         score: res.best.score,
         bytes: res.best.bytes,
+        /* V2.2.15：by 说明这一档是靠什么判出来的——"text"（像文本）还是
+           "frame"（按当前 HEX 规则试解出的帧成功率）。UI 据此决定要不要谈编码。 */
+        by: res.best.by || "text",
+        frame: res.best.frame || null,
         encoding: an.guess,
         detail: an.detail || ""
       };

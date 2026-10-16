@@ -79,7 +79,7 @@
      3) 全局配置：默认值 / 版本迁移 / 持久化
      持久化键 humanoid-serial-config-v1 —— 前缀 humanoid- 是站点自检 C4 的白名单要求
      ------------------------------------------------------------ */
-  var CFG_VERSION = 4;
+  var CFG_VERSION = 6;
   var CFG_KEY = "humanoid-serial-config-v1";
 
   core.CFG_VERSION = CFG_VERSION;
@@ -157,9 +157,15 @@
         highlightNumbers: false, /* 数字标红：把监视器里的数字用醒目色标出 */
         markFailed: true,        /* 解析失败 / 校验失败的行整行标红 */
         autoRecord: true,        /* 连上设备或进入演示后自动开始录制（供导出/AI 读取） */
-        recordCap: 20000         /* 记录上限（帧）：同时管「时间线录制帧数」与「原始收发记录条数」。
+        recordCap: 20000,        /* 记录上限（帧）：同时管「时间线录制帧数」与「原始收发记录条数」。
                                     两者必须同源——旧版只驱动前者，后者写死 5000，于是 UI 与 AI
                                     调试包都声称「上限 2 万帧」而实际只给得出 5 千条（AUDIT A-81） */
+        syncChanHidden: true,    /* 图例勾选是否跨面板同步（按【通道名】索引）：开 = 时域关了 pos，
+                                    频域那张也跟着关，一处管理；关 = 各面板独立（AUDIT A-83） */
+        scaleSplitHint: true     /* 同一面板里各通道量级差过大时，是否提示「拆成独立面板」。
+                                    量级差 2000 倍的两条线塞一个 Y 轴，小的那条会被压成贴底直线
+                                    （用户实际反馈：以为「只有两根线」）。只在检测到时提示一次，
+                                    拆分动作仍需用户确认；关掉则永不提示。 */
       },
 
       /* ---- 面向 AI 的自动化通道（设计说明见 docs/维护/串口调试助手_评估与优化路线图.md 第三节） ----
@@ -234,6 +240,22 @@
       cfg.version = 4;
       cfg.demo = mergeDeep(d4.demo, cfg.demo || {});
       v = 4;
+    }
+
+    /* v4 -> v5：新增「图例勾选跨面板同步」开关（AUDIT A-83） */
+    if (v < 5) {
+      var d5 = core.defaultConfig();
+      cfg.version = 5;
+      cfg.ui = mergeDeep(d5.ui, cfg.ui || {});
+      v = 5;
+    }
+
+    /* v5 -> v6：新增「量级差过大时提示拆分面板」开关（AUDIT A-87） */
+    if (v < 6) {
+      var d6 = core.defaultConfig();
+      cfg.version = 6;
+      cfg.ui = mergeDeep(d6.ui, cfg.ui || {});
+      v = 6;
     }
 
     /* 未来版本（用户在本机改高过）按原样返回，由调用方决定是否拒绝 */

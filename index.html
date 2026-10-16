@@ -1200,10 +1200,14 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.14</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-14 · 串口调试助手频域谱补齐轮:FFT 加图例点击显隐(与时域状态互通) / 峰值标注跳过直流+每通道错行+通道色(修「0·1.49Hz」重叠) / 谱线加粗 / 图例 chip 底色提示可点</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.15</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-15 · 串口调试助手:命名统一(「时域折线」→「时域波形」,下拉去掉 (id)) / 编码选项单源化(消灭「重复且不同步」) / 图例加勾选框 +「同步显隐」补上那个文档说了却没做的联动 / 修「波特率扫描从未成功过」并新增帧成功率打分(二进制协议也能扫) / AI 闭环省 token 95% + trial 迭代台账 + ai-hardware-debug skill</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
+        <summary>🧹🚨💰 V2.2.15 · 2026-10-15 · 串口调试助手:命名统一 + 扫描从未工作过 + AI 闭环省 token －</summary>
+        <div class="faq-a">🧹 <b>命名统一</b>:同一个渲染器不再有两个名字(<code>timeplot</code> 的 label「时域折线」→<b>「时域波形」</b>,与面板标题/文档同名;取这个名字是为了<b>零迁移</b>——已保存的面板标题本来就是它);「图表」页签下拉去掉 <code>(id)</code> 后缀,与主区工具条同格式。🔤 <b>编码选项单源化</b>:监视器快捷条直接读左栏 <code>#slEncoding</code>,不再硬编码第二份文案(原先左栏写 <code>GBK / GB2312</code>、快捷条写 <code>GBK</code>——这就是「重复而且不同步」)。☑️ <b>图例加勾选框</b>(勾用两条线段画出来,不依赖字体里有没有 ✓ 字形),并<b>补齐 V2.2.14 日志声称过、当时并没实现</b>的联动:新增「同步显隐」开关(默认开),按通道名跨面板联动——时域关了 pos,频域那张也跟着关。新增「量级差过大时自动提示拆分面板」(检测到各通道跨度相差 ≥50 倍就提示一次,确认后按跨度自动分组、各用各的量程;演示模式不提示)。🚨 <b>修掉「波特率扫描从来没成功过」</b>:<code>port.open()</code> 按规范解析成 <code>undefined</code> 却被用来判成败(每一档立刻报「打不开」,一个字节都不采)+ <code>chunks</code> 声明作用域错误(<code>ReferenceError</code> 被失败回调吞成「本档无数据」)——两个叠加,<code>autoAdapt</code> 恒报「没采到数据」,用户只能放弃自动扫描自己配波特率;顺带每档采样 350→<b>700ms 且可调</b>、<b>新增「帧成功率」打分档</b>(旧打分只认「像不像文本」,HEX 协议无论波特率多准都扫不出来)、开端口后压住 DTR/RTS 减轻反复复位。💰 <b>AI 闭环省 token</b>:桥的 <code>--bundle=false</code> 曾被静默忽略(一次输出 73985 字节 ≈2 万 token),现修好并<b>新增默认生效的 12000 字节预算</b>——超了自动降级为 digest 并标 <code>trimmed</code>,而 <code>--out</code> 落盘永远是完整数据(<b>实测 200 帧省 95%</b>);新增 <code>trial</code> 迭代台账(每轮一行结论 + 趋势方向,第 N 轮不必重读前 N-1 轮原始数据)+ <b>轮数预算闸 <code>--max-rounds</code></b>(到上限以退出码 3 拒绝,「不能无限循环」由机制保证而非靠自觉);修掉 MCP 并发请求应答串台。📘 新增 <code>.agents/skills/ai-hardware-debug</code> 闭环手册(含从真实 STM32 现场踩出来的四条硬经验:中文工程名炸 ArmClang、MicroLIB 不能用 %f、HSI 直供的波特率风险、串口独占)。✅ 校验 <b>174 → 220 项</b>——新增两组<b>功能性</b>回归(此前只有 <code>typeof</code> 结构检查,这正是那两个 bug 溜过去的原因)。</div>
+      </details>
+    <details class="faq">
         <summary>📊🏷 V2.2.14 · 2026-10-14 · 串口调试助手:频域谱补齐轮——图例显隐/峰值标注修/谱线加粗 －</summary>
         <div class="faq-a">📊 <b>FFT 频域谱加图例点击显隐</b>(用户:「非得四个一起显示自由度太低」)——点图例显隐通道,频域与时域共用同一套显隐状态,一处管理。🏷 <b>峰值标注修</b>:跳过直流/近零频、每通道错开一行、文字用通道色加粗——「0·1.49Hz」重叠天书根除。🖍 <b>谱线加粗 1.6</b>;图例 chip 加浅底色提示可点(时域频域统一)。✅ E2E 25/25 · 校验 SERIAL OK。</div>
       </details>
@@ -1528,7 +1532,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.14(2026-10-14) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.15(2026-10-15) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 

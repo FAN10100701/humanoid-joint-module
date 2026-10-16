@@ -867,8 +867,17 @@ def main():
                 timeout=5000)
 
             # --- 4) V2.2.5:版本号对齐 / 顶栏单行 / 时域窗口调节 ---
-            assert page.evaluate("SerialLab.ui.VERSION") == "2.2.14", \
-                "应用内版本号未跟随站点版本链: %r" % page.evaluate("SerialLab.ui.VERSION")
+            # 版本链动态对照：应用内 UI.VERSION 必须等于站点 S.VERSION 的版本号段。
+            # 原先这里写死 "2.2.14" —— 那样「跟随站点版本链」根本没被验证（站点版本漂了它照样过），
+            # 而且每发一版必然误报一次。与 校验串口应用.js 里写死 === 4 是同一类问题，一并改掉。
+            _site_ver = ""
+            _m = re.search(r'S\.VERSION\s*=\s*"V([0-9.]+)\(',
+                           (ROOT / "_assets" / "site.js").read_text(encoding="utf-8"))
+            if _m:
+                _site_ver = _m.group(1)
+            _app_ver = page.evaluate("SerialLab.ui.VERSION")
+            assert _app_ver == _site_ver, \
+                "应用内版本号未跟随站点版本链: 应用 %r vs 站点 %r" % (_app_ver, _site_ver)
             assert page.locator("header #slModem").count() == 0, "流控信号应已移出顶栏(设备页签)"
             assert page.locator("#slModem").count() == 1, "设备页签缺流控信号读数"
             # 时域折线面板头有窗口下拉,切 100 点 → 面板 window 生效
