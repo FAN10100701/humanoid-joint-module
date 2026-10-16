@@ -209,11 +209,13 @@
 
     /* 文本监视器：预留快捷工具条容器（时间戳 / HEX / 编码），控件由 ui.js 统一填充。
        时域波形：预留窗口调节容器（横轴采样点数）。都在标题之后、图标按钮之前。 */
-    if (panel.type === "textmon" || panel.type === "timeplot") {
+    /* V2.2.25：频域谱也加进快捷条机制——窗函数要在面板上就能选（否则功能在、用户够不着） */
+    if (panel.type === "textmon" || panel.type === "timeplot" || panel.type === "fftplot") {
       var quick = document.createElement("span");
       quick.className = "sl-panel-quick";
       quick.setAttribute("data-quick", "");
       if (panel.type === "timeplot") { quick.setAttribute("data-quick-plot", panel.id); }
+      if (panel.type === "fftplot") { quick.setAttribute("data-quick-fft", panel.id); }
       head.appendChild(quick);
     }
 

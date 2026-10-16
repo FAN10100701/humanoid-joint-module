@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.24";
+  UI.VERSION = "2.2.25";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1047,6 +1047,23 @@
       return;
     }
 
+    /* 频域谱的快捷条：窗函数（V2.2.25）。
+       为什么要有这个入口：窗函数是频谱准不准的关键（不做加窗会有泄漏，小峰被旁瓣淹掉），
+       但只能通过面板描述符设置的话用户根本够不着 —— 「功能在、用户够不着」不算做完。 */
+    var fftId = host.getAttribute("data-quick-fft");
+    if (fftId) {
+      var curW = "hann";
+      var pf = SL.views.getPanel(fftId);
+      if (pf && pf.opts && pf.opts.fftWindow) { curW = pf.opts.fftWindow; }
+      var wlist = SL.fft.windowNames || [];
+      var wopt = "";
+      for (var wi = 0; wi < wlist.length; wi++) {
+        wopt += '<option value="' + wlist[wi].id + '"' + (wlist[wi].id === curW ? " selected" : "") + ">" + wlist[wi].label + "</option>";
+      }
+      host.innerHTML = '<select class="sl-qk-enc" data-qk="fftw" title="加窗方式：不做加窗会有频谱泄漏（峰被抹宽、小峰被旁瓣淹掉）；Hanning 是通用默认">' + wopt + "</select>";
+      return;
+    }
+
     /* 文本监视器的快捷条：时间戳 / 精度 / HEX / 编码 */
     var t = core.config.transport || {};
     var ts = t.showTimestamp !== false;
@@ -1197,6 +1214,18 @@
         if (k === "ts") { setAndFire("slShowTs", t.checked ? "on" : "off"); }
         else if (k === "hex") { setAndFire("slHexRecv", t.checked ? "on" : "off"); }
         else if (k === "enc") { setAndFire("slEncoding", t.value); }
+        else if (k === "fftw") {
+          /* 就地改渲染器持有的那个面板对象（getPanel 返回同一引用），当即生效；
+             不走 updatePanel —— 那条路会经过 Plugins.validate，自定义 opts 字段会被丢掉
+             （clearAt 那次实测踩过，这里沿用同一个结论）。 */
+          var qid = node.getAttribute("data-quick-fft");
+          var qp = qid ? SL.views.getPanel(qid) : null;
+          if (qp) {
+            qp.opts = qp.opts || {};
+            qp.opts.fftWindow = t.value;
+            SL.views.redraw();
+          }
+        }
         else if (k === "prec") {
           /* V2.2.21：时间戳精度与 ⋯ 设置中心同源（transport.timePrec）。
              ⚠ 设置中心那个 #slSetPrec 是弹窗里动态生成的，setAndFire 找不到它，

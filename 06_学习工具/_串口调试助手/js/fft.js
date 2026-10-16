@@ -25,7 +25,51 @@
     return p;
   };
 
-  /* 汉宁窗（减少频谱泄漏）。n < 2 时返回全 1 */
+  /* V2.2.25：多窗可选。默认仍是 Hanning —— 它是通用选择（主瓣窄、旁瓣 -31dB），
+     而「不做加窗有泄漏」这句对现状其实**不成立**：本文件一直默认加 Hann，
+     并且下面还补偿了相干增益（cohGain），所以幅值本来就是准的。
+     补可选窗的真实理由：Hamming 旁瓣更低（-43dB）适合找邻近的小峰；
+     Blackman 旁瓣最低（-58dB）适合强信号旁边找弱分量；矩形窗则用于
+     「就要看泄漏本身」或调试加窗是否生效。 */
+  F.hamming = function (n) {
+    var w = new Float64Array(n);
+    if (n < 2) { for (var k = 0; k < n; k++) { w[k] = 1; } return w; }
+    var denom = n - 1;
+    for (var i = 0; i < n; i++) { w[i] = 0.54 - 0.46 * Math.cos(PI2 * i / denom); }
+    return w;
+  };
+
+  F.blackman = function (n) {
+    var w = new Float64Array(n);
+    if (n < 2) { for (var k = 0; k < n; k++) { w[k] = 1; } return w; }
+    var denom = n - 1;
+    for (var i = 0; i < n; i++) {
+      var x = PI2 * i / denom;
+      w[i] = 0.42 - 0.5 * Math.cos(x) + 0.08 * Math.cos(2 * x);
+    }
+    return w;
+  };
+
+  /* 按名字取窗；返回 null 表示不加窗（矩形窗）。
+     name 可以是 true（= 默认 Hann，兼容旧调用）/ 字符串 / false（= 矩形，由调用方处理） */
+  F.windowFn = function (name, n) {
+    if (name === "hamming") { return F.hamming(n); }
+    if (name === "blackman") { return F.blackman(n); }
+    if (name === "rect" || name === false || name === null) {
+      var one = new Float64Array(n);
+      for (var k = 0; k < n; k++) { one[k] = 1; }
+      return one;   /* 全 1 = 不加窗：与原先的 if (win) 结构兼容，相干增益自然为 1 */
+    }
+    return F.hann(n);
+  };
+
+  /* 可选窗清单（UI 与文档共用同一份，避免两处各写一遍） */
+  F.windowNames = [
+    { id: "hann", label: "Hanning（默认·通用）" },
+    { id: "hamming", label: "Hamming（旁瓣 -43dB，找邻近小峰）" },
+    { id: "blackman", label: "Blackman（旁瓣 -58dB，强信号旁找弱分量）" },
+    { id: "rect", label: "矩形（不加窗，用来看泄漏本身）" }
+  ];  /* 汉宁窗（减少频谱泄漏）。n < 2 时返回全 1 */
   F.hann = function (n) {
     var w = new Float64Array(n);
     if (n < 2) {
@@ -129,7 +173,7 @@
     var win = null;
     var cohGain = 1;
     if (opts.window !== false) {
-      win = F.hann(n0);
+      win = F.windowFn(opts.window, n0);
       var wsum = 0;
       for (t = 0; t < n0; t++) { wsum += win[t]; }
       cohGain = wsum / n0;

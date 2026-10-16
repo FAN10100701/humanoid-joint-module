@@ -1225,7 +1225,7 @@
             if (dt > 0) { sr = 1000 / dt; }        /* t 的单位是 ms */
           }
           if (!(sr > 0)) { sr = 1; }
-          var sp = SL.fft.spectrum(s.v, sr, { maxN: (panel.opts && panel.opts.maxN) || 4096 });
+          var sp = SL.fft.spectrum(s.v, sr, { maxN: (panel.opts && panel.opts.maxN) || 4096, window: (panel.opts && panel.opts.fftWindow) || "hann" });
           if (sp) { spectrums.push({ key: s.key, label: s.label, color: s.color, sp: sp }); }
         }
 
@@ -1284,20 +1284,37 @@
 
           /* 峰值频率标注（V2.2.14：跳过直流/近零频分量；每通道错开一行，
              修掉「0·1.49Hz」这种两条标注重叠成天书的排布） */
-          if (sc.sp.peak && sc.sp.peak.mag > 0) {
-            var pf = sc.sp.peak.freq;
-            if (pf <= fMax && pf > fMax * 0.02) {
-              var px = pad.l + (pf / fMax) * map.plotW;
-              var pMag = useDb ? (20 * Math.log(sc.sp.peak.mag + 1e-12) / Math.LN10) : sc.sp.peak.mag;
-              ctx.fillStyle = sc.color;
-              ctx.beginPath();
-              ctx.arc(px, map.yOf(pMag), 2.6, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.fillStyle = sc.color;
-              ctx.font = "bold 10px Consolas, monospace";
-              ctx.textBaseline = "bottom";
-              ctx.fillText(U.fmt(pf, 2) + "Hz", Math.min(px + 4, view.w - 56), pad.t + 12 + i * 13);
+          /* 峰值标注：V2.2.14 起只标「一个峰 + 频率」，而调电机时真正想知道的是
+             「这几个振动分别在多少 Hz、多大」——所以 V2.2.25 改成**前 N 个峰**并带上幅值。
+             候选只取**局部极大**：否则一条倾斜的谱底会被整段标成"峰"，标注出来全是噪声，
+             反而更读不懂；同理跳过近直流（那是偏置不是振动）。多通道按行错开避免叠成天书。 */
+          var cand = [];
+          var floorF = fMax * 0.02;
+          for (var q = 1; q < sc.sp.magsDb.length - 1; q++) {
+            var qf = sc.sp.freqs[q], qm = sc.sp.magsDb[q];
+            if (qf > fMax) { break; }
+            if (qf <= floorF) { continue; }
+            if (qm >= sc.sp.magsDb[q - 1] && qm >= sc.sp.magsDb[q + 1]) {
+              cand.push({ f: qf, db: qm, m: Math.pow(10, qm / 20) });
             }
+          }
+          cand.sort(function (a, b) { return b.m - a.m; });
+          var maxPk = (panel.opts && panel.opts.peakCount) || 3;
+          if (cand.length > maxPk) { cand.length = maxPk; }
+          ctx.font = "bold 10px Consolas, monospace";
+          ctx.textBaseline = "bottom";
+          for (var pi = 0; pi < cand.length; pi++) {
+            var pk = cand[pi];
+            var pv = useDb ? pk.db : pk.m;
+            var px2 = pad.l + (fMax > 0 ? (pk.f / fMax) * map.plotW : 0);
+            var py2 = map.yOf(pv);
+            ctx.fillStyle = sc.color;
+            ctx.beginPath();
+            ctx.arc(px2, py2, 2.6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillText(U.fmt(pk.f, pk.f < 100 ? 2 : 1) + "Hz "
+              + (useDb ? (U.fmt(pk.db, 1) + "dB") : U.fmt(pk.m, 3)),
+              Math.min(px2 + 4, view.w - 96), pad.t + 10 + (i * 3 + pi) * 11);
           }
           ctx.restore();
         }

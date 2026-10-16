@@ -1835,3 +1835,56 @@ scanRegression().then(function () {
     /var edge = \$\("slTrigEdge"\)\.value === "fall" \? "fall" : "rise";[\s\S]{0,420}?UI\.closeModal\(\);/.test(sUi)
       && !/UI\.closeModal\(\);[\s\S]{0,240}?\$\("slTrigEdge"\)/.test(sUi), "");
 })();
+/* ============================================================
+   ⑯-g 显示模块优化·第二批：频谱窗函数 + 峰值标注（V2.2.25）
+   ⚠ 变量在本 IIFE 内自己读（外层同名 const 是函数作用域的，引用会 ReferenceError）。
+   ============================================================ */
+(function () {
+  const sFft = fs.readFileSync(path.join(JS, "fft.js"), "utf8");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  const FF = require(path.join(JS, "fft.js"));
+
+  check("A-108: 窗函数可选且清单单源（Hanning/Hamming/Blackman/矩形）",
+    sFft.indexOf("F.hamming = function") > 0 && sFft.indexOf("F.blackman = function") > 0
+      && sFft.indexOf("F.windowFn = function (name, n)") > 0
+      && sFft.indexOf("F.windowNames = [") > 0
+      && sFft.indexOf('{ id: "hann", label:') > 0, "");
+  check("A-108: 矩形窗实现为全 1（等价于不加窗），且不破坏相干增益补偿的结构",
+    /name === "rect"[\s\S]{0,260}?one\[k\] = 1;/.test(sFft)
+      && sFft.indexOf("win = F.windowFn(opts.window, n0);") > 0, "");
+  /* 功能性：加窗必须真的压低泄漏，且峰值幅值不能跑掉（相干增益补偿） */
+  (function () {
+    const N = 1024, sr = 1000;
+    const sig = new Float64Array(N);
+    for (let i = 0; i < N; i++) { sig[i] = Math.sin(2 * Math.PI * 10.5 * i / sr); }  /* 非整 bin */
+    function measure(w) {
+      const sp = FF.spectrum(sig, sr, { maxN: N, window: w });
+      let pk = 0, pi2 = 0;
+      for (let i = 1; i < sp.magsDb.length; i++) { if (sp.magsDb[i] > sp.magsDb[pi2]) { pi2 = i; } }
+      let leak = -Infinity;
+      for (let i = 0; i < sp.magsDb.length; i++) {
+        if (Math.abs(i - pi2) > 5 && sp.freqs[i] < 100) { leak = Math.max(leak, sp.magsDb[i]); }
+      }
+      return { peak: sp.magsDb[pi2], range: sp.magsDb[pi2] - leak };
+    }
+    const r = measure("rect"), h = measure("hann");
+    check("A-108: 加 Hann 后动态范围明显优于矩形窗（>5dB），且峰值幅值基本不变（<1dB）",
+      h.range > r.range + 5 && Math.abs(h.peak - r.peak) < 1,
+      "rect " + r.range.toFixed(1) + "dB / hann " + h.range.toFixed(1) + "dB，峰值差 " + Math.abs(h.peak - r.peak).toFixed(2) + "dB");
+  })();
+  check("A-108: fftplot 把面板上的窗名传给频谱计算（默认 hann）",
+    /SL\.fft\.spectrum\(s\.v, sr, \{ maxN:[\s\S]{0,140}?fftWindow\) \|\| "hann"/.test(sPlug), "");
+  check("A-108: 峰值标注取**前 N 个局部极大**并带上幅值（旧版只标一个峰、只有频率）",
+    sPlug.indexOf("var cand = [];") > 0
+      && /if \(qm >= sc\.sp\.magsDb\[q - 1\] && qm >= sc\.sp\.magsDb\[q \+ 1\]\)/.test(sPlug)
+      && /if \(cand\.length > maxPk\) \{ cand\.length = maxPk; \}/.test(sPlug)
+      && /U\.fmt\(pk\.db, 1\) \+ "dB"/.test(sPlug)
+      && sPlug.indexOf("sc.sp.peak") < 0, "");
+  check("A-108: 窗函数在频域谱面板头的快捷条上可选（否则「功能在、用户够不着」）",
+    /panel\.type === "textmon" \|\| panel\.type === "timeplot" \|\| panel\.type === "fftplot"/.test(sViews)
+      && sViews.indexOf('quick.setAttribute("data-quick-fft", panel.id);') > 0
+      && sUi.indexOf('data-qk="fftw"') > 0
+      && sUi.indexOf("qp.opts.fftWindow = t.value;") > 0, "");
+})();
