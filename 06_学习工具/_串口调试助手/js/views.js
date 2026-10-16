@@ -231,16 +231,24 @@
     head.appendChild(title);
 
     /* V2.2.22：标题与类型同名时**不重复显示**。
-       V2.2.34：加一层**归一化**再比 —— 直接字符串比较在标题带空格/全半角差异时会误判成
-       「不同名」，于是画出一个多余的「时域波形」标签（用户看到的就是那个框，占掉半条，
-       还把后面的按钮挤出面板）。normalize: 去首尾与内部空白 + 转小写。 */
+       V2.2.34：比较前先**归一化**（去空白 + 转小写），避免标题带空格被误判成不同名。
+       V2.2.36：判据从「相等」放宽到「标题里**已经含有**类型名」。
+       为什么必须放宽（用户两张截图就是这个）：
+         拆分功能会把标题改成「时域波形 · pos」，此时 title ≠ typeLabel，
+         于是旁边又画出一个 11.5px/weight400 的浅灰「时域波形」——
+         用户看到的是「粗体黑字『时域波形 · pos』 + 又小又细的灰字『时域波形』」，
+         同一行里同一个词两种格式 ✗。类型信息**已经在标题里**，就不该再画一遍。
+         仍然是「真类型」的场合照旧画：文字监视器面板标题叫「串口监视器」时，
+         标题里不含「文本监视器」→ 角标会画，这时它是有信息量的 ✓。 */
     var r = Plugins.get(panel.type);
     var typeLabel = r ? r.label : panel.type;
     function normTag(s) { return String(s == null ? "" : s).replace(/\s+/g, "").toLowerCase(); }
-    if (normTag(typeLabel) !== normTag(panel.title)) {
+    var nTitle = normTag(panel.title), nType = normTag(typeLabel);
+    if (!nType || nTitle.indexOf(nType) < 0) {
       var type = document.createElement("span");
       type.className = "sl-panel-type";
       type.textContent = typeLabel;
+      type.title = "图表类型：" + typeLabel;
       head.appendChild(type);
     }
 

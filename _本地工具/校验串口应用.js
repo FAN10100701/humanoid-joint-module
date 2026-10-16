@@ -1745,34 +1745,43 @@ scanRegression().then(function () {
       && !/markZeroStateServed\(\);\s*\n\s*\}\s*\n\s*z\.hidden/.test(sUi), "");
 
   check("A-104: 面板头「标题 vs 类型标签」同名时不重复画、字体族与标题统一",
-    /var r = Plugins\.get\(panel\.type\);[\s\S]{0,120}?var typeLabel = r \? r\.label : panel\.type;/.test(sViews)
+    /var r = Plugins\.get\(panel\.type\);[\s\S]{0,160}?var typeLabel = r \? r\.label : panel\.type;/.test(sViews)
       && /function normTag\(s\)/.test(sViews)
-      && /if \(normTag\(typeLabel\) !== normTag\(panel\.title\)\) \{/.test(sViews)
-      && /\.sl-panel-type \{[\s\S]{0,700}?font-family: inherit;/.test(sCss), "");
+      /* V2.2.36：判据从「相等」放宽到「标题里已含类型名」—— 拆分出来的
+         「时域波形 · pos」标题里已含「时域波形」，不该再拖一个灰尾巴 ✗ */
+      && /if \(!nType \|\| nTitle\.indexOf\(nType\) < 0\) \{/.test(sViews)
+      && /\.sl-panel-type \{[\s\S]{0,900}?font-family: inherit;/.test(sCss), "");
 
-  /* V2.2.34：那个「框」必须消失。
-     用户原话：「时域波形左上角那个文字介绍框内容就是时域波形四个字 占半边…小的时候还有框」
-     「频域谱小框的时候左上角就是正常的格式」—— 他就是把带框的类型角标当成了「介绍框」✗。
-     两处一起改：① CSS 去掉 border/padding（不再像个框）；② 比较前先**归一化**
-     （去空白 + 转小写），避免「时域波形」与「时域波形 」被判成不同名而多画一个标签。 */
-  check("A-120: 类型角标不再有边框（那个「介绍框」去掉），只留淡灰小字",
-    /\.sl-panel-type \{[\s\S]{0,900}?border: 0;/.test(sCss)
-      && /\.sl-panel-type \{[\s\S]{0,900}?padding: 0;/.test(sCss), "");
+  /* V2.2.34：那个「框」必须消失（去掉 border/padding）。
+     V2.2.36：**并且**与标题同字号同字重 —— 用户两张截图对比的就是这个：
+     「时域波形 · pos」是 12.5px/weight700 墨色，而旁边那个「时域波形」是
+     11.5px/weight400 浅灰 —— 同一行同一个词两种格式 ✗。 */
+  check("A-120: 类型角标无边框无内边距（那个「介绍框」去掉）",
+    /\.sl-panel-type \{[\s\S]{0,1400}?border: 0;/.test(sCss)
+      && /\.sl-panel-type \{[\s\S]{0,1400}?padding: 0;/.test(sCss), "");
 
-  check("A-120: 类型角标比标题小一档（同号反而分不出主次，V2.2.33 试过同号）",
-    /\.sl-panel-type \{[\s\S]{0,900}?font-size: var\(--sl-fs-sub\);/.test(sCss)
-      && /\.sl-panel-title \{[\s\S]{0,120}?font-size: var\(--sl-panel-title-size\);/.test(sCss), "");
-
-  /* V2.2.33：标题与类型角标必须**同源字号**。
-     用户反复反馈「角标字号跟其他模块不一致，展开后又一致了」—— 根因是两者各写一个数
-     （V2.2.22 只统一了字体族、字号仍是 12.5 vs 11.5）。这条直接盯「同一个变量」。 */
-  /* V2.2.34：**取消** V2.2.33 的「标题与角标同号」。
-     实测同号反而分不出主次，而且那个带框的同号标签在窄面板里很占地方；
-     现在角标只是标题旁边一行淡灰小字（无框、小一档）。这条盯「两者仍然分档」。 */
-  check("A-120: 标题档与角标档各自单源（标题 --sl-panel-title-size / 角标 --sl-fs-sub）",
+  check("A-120: 类型角标与标题**同字号同字重**，只用颜色区分主次（不许一大一小）",
     /--sl-panel-title-size:\s*12\.5px;/.test(sCss)
       && /\.sl-panel-title \{[\s\S]{0,120}?font-size: var\(--sl-panel-title-size\);/.test(sCss)
-      && /\.sl-panel-type \{[\s\S]{0,900}?font-size: var\(--sl-fs-sub\);/.test(sCss), "");
+      && /\.sl-panel-type \{[\s\S]{0,1400}?font-size: var\(--sl-panel-title-size\);/.test(sCss)
+      && /\.sl-panel-title \{[\s\S]{0,120}?font-weight: 700;/.test(sCss)
+      && /\.sl-panel-type \{[\s\S]{0,1400}?font-weight: 700;/.test(sCss), "");
+
+  check("A-120: 类型角标超长时省略号截断（不把面板头撑破、也不挤掉按钮）",
+    /\.sl-panel-type \{[\s\S]{0,1400}?max-width: 40%;/.test(sCss)
+      && /\.sl-panel-type \{[\s\S]{0,1400}?text-overflow: ellipsis;/.test(sCss), "");
+
+  /* V2.2.36：这条的结论**翻了两次**，记在这里免得再翻回去：
+     V2.2.33 → 两者同号（盯「同一个变量」）；
+     V2.2.34 → 改成角标小一档（以为同号分不出主次）；
+     V2.2.36 → **回到同号**，而且连字重也统一。
+     为什么又翻回来：用户拿两张截图对比，「时域波形 · pos」是 12.5/700 墨色而旁边的
+     「时域波形」是 11.5/400 浅灰 —— **同一行同一个词两种格式**，正是他一直在说的
+     「格式不一样」。真正该解决的是「该不该画这个角标」（见 A-104 的 containment 判据），
+     不是"把它改小一点" —— 改小只是让不一致变得更明显 ✗。
+     现在：只需颜色区分主次，字号字重完全一档（见上面那条断言）。 */
+  check("A-120: 角标不再走 --sl-fs-sub（避免再次出现「同一行两种字号」）",
+    !/\.sl-panel-type \{[\s\S]{0,1400}?font-size: var\(--sl-fs-sub\);/.test(sCss), "");
 
   /* ------------------------------------------------------------------
      V2.2.33：字号梯度总闸门 —— 这是本轮真正值钱的一条。

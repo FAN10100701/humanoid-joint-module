@@ -1724,8 +1724,55 @@ def main():
             axis = page.evaluate("(pid) => JSON.parse(JSON.stringify(SerialLab.views.getPanel(pid).axis))", pid)
             assert axis["yMin"] is None and axis["yMax"] is None, "「自动」没有清空手动量程: %r" % axis
 
+            # ---------- ④ 标题与类型角标：不该出现「同一行同一个词两种格式」（A-120/V2.2.36） ----------
+            # 用户拿两张截图对比：左边是 12.5px/weight700 墨色的「时域波形 · pos」，
+            # 右边却还有一个 11.5px/weight400 浅灰的「时域波形」—— 同一个词两种格式 ✗。
+            # 根因：拆分把标题改成「时域波形 · pos」，于是 title ≠ typeLabel，角标就画出来了。
+            def title_type(tid):
+                return page.evaluate("""(tid) => {
+                    var p = document.querySelector('.sl-panel[data-panel-id="' + tid + '"]');
+                    if (!p) { return null; }
+                    var h = p.querySelector('.sl-panel-head');
+                    function st(sel) {
+                      var e = h.querySelector(sel);
+                      if (!e) { return null; }
+                      var cs = getComputedStyle(e);
+                      return { t: e.textContent, size: cs.fontSize, w: cs.fontWeight };
+                    }
+                    return { title: st('.sl-panel-title'), type: st('.sl-panel-type') };
+                }""", tid)
+
+            # (a) 标题里已含类型名 → 角标不该画（拆分出来的面板正是这种）
+            npid = page.evaluate("""(pid) => {
+                var n = SerialLab.views.addPanel({ type: 'timeplot', title: '时域波形 · 测试',
+                    channels: ['auto'], window: 500, h: 300 }, true);
+                return n ? n.id : null;
+            }""", pid)
+            page.wait_for_timeout(400)
+            r = title_type(npid)
+            assert r and r["title"], "没建出测试面板"
+            assert r["type"] is None, \
+                "标题里已含类型名，却又画了一个角标（同一行同一个词两种格式）: %r" % r
+            # (b) 标题里不含类型名 → 该画，且必须与标题**同字号同字重**（只用颜色区分）
+            cpid = page.evaluate("""() => {
+                var n = SerialLab.views.addPanel({ type: 'timeplot', title: '电流环测试',
+                    channels: ['auto'], window: 500, h: 300 }, true);
+                return n ? n.id : null;
+            }""")
+            page.wait_for_timeout(400)
+            r2 = title_type(cpid)
+            assert r2 and r2["type"], "标题里不含类型名时应画角标（否则用户看不出这是什么图）: %r" % r2
+            assert r2["type"]["size"] == r2["title"]["size"], \
+                "角标与标题字号不一致（同一行两种字号）: %r" % r2
+            assert r2["type"]["w"] == r2["title"]["w"], \
+                "角标与标题字重不一致（一粗一细就是用户说的「格式不一样」）: %r" % r2
+            # 清理这两块临时面板，不给后面的断言留状态
+            page.evaluate("(ids) => { ids.forEach(function (i) { SerialLab.views.removePanel(i); }); }",
+                          [npid, cpid])
+            page.wait_for_timeout(300)
+
             assert not errs, "排版/交互 JS 异常: " + "; ".join(errs[:3])
-        check("serial_layout 面板头不被裁 + 手动量程边打字边生效 + 角标无框", t_serial_layout)
+        check("serial_layout 面板头不被裁 + 手动量程边打字边生效 + 角标无框/与标题同档", t_serial_layout)
 
         def t_serial_split():
             """A-123：**随时可用**的拆分入口（原先只有「量级差过大」弹一次的自动提示）。

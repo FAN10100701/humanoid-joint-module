@@ -1200,7 +1200,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
       <button id="verToggleBtn" onclick="toggleVersionHist()" title="收起/展开全部历史记录" style="flex-shrink:0;margin-left:10px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#9ecbff;border-radius:999px;padding:4px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.18s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#9ecbff'">▲ 收起历史</button>
     </div>
     <div class="progress-panel">
-      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.35</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-16 · 拆分终于有入口了(A-123)。查证:拆分逻辑本身一直是好的,但它**只挂在一次性的自动提示上**(渲染层检测到通道量级差过大 → 发 panel:scaleHint → 弹一次「要拆成 N 个面板吗」,而 scaleHintDone 让每个面板只弹一次),提示过去后用户**再也找不到入口** —— 这正是「不是没有功能,而是功能存在使用感不佳」的实例。现新增图表页签「✂ 拆分图表框」组:选面板 → 点「选择通道拆分…」→ 弹窗里逐个勾选哪些通道挪到新面板;每个通道旁标出「跨度 xxx」(拆分动机就是量级差);只挪勾中的,原面板收敛成剩下的通道、量程窗口不变,新面板标题带上通道名。三条防呆:一个都不勾→拒绝并保留弹窗;全勾上→拒绝(等于把整块挪走);文本监视器→标注并禁用。顺带修一个我自己引入的真 bug:弹窗通道列表原用全局 $("slSplitList") 查找,而 paint() 必须在UI.modal() **之前**先跑一次,那一刻节点还没挂进文档 → 查到 null → 标题写着「(4 个通道)」却一个勾选框都没有;改用局部引用。校验 390→395 项,E2E 32→33/33 / 上一批:面板头不被裁(flex 不会让固定宽按钮换行,实测窄面板下 5 个按钮被整块裁掉)、手动量程边打字边生效、角标去框、拖拽到同类面板头部即合并</span></div>
+      <div style="font-size:16px;font-weight:800;color:#fff">当前版本 <span style="color:#3b82f6">V2.2.36</span> <span style="color:#6b7280;font-weight:400;font-size:13px">· 2026-10-16 · 面板标题与类型角标不再「同一个词两种格式」。用户两张截图对比:「时域波形 · cur」是 12.5px/weight700 墨色,而旁边单独一个「时域波形」是 11.5px/weight400 浅灰 ——我这次没直接改字号,先把两个元素的实际 computed style 全量出来,结论是**它们根本不是同一个元素**:.sl-panel-title(标题 12.5/700/墨色) 与 .sl-panel-type(角标 11.5/400/浅灰,只在「标题≠渲染器名」时才画)。默认面板两者同名→不画角标;而拆分出来的面板标题变成「时域波形 · pos」→ 角标就被画出来 ——**是上一批我自己加的拆分功能制造了这种面板**。真正的修法是该不该画:判据从「标题等于类型名」放宽为「标题里已含有类型名」,于是「时域波形 · pos」不再拖灰尾巴,而「串口监视器+文本监视器」「电流环+时域波形」这种真类型照旧画;仍要画时排版与标题**完全一档**(同字号同字重700,只用颜色区分主次),并加 max-width:40%+省略号防超长撑破面板头。实测四处全对。校验 395→396 项,E2E 33/33 / 上一批:新增随时可用的拆分入口(原先只有量级差过大弹一次的自动提示,用户再也找不到入口)</span></div>
       <div style="font-size:12.5px;color:#6b7280;margin:8px 0 12px">完整历史见 <a href="CHANGELOG.md">CHANGELOG.md</a>;手机端与电脑端均在此查看</div>
 
 <details class="faq" open>
@@ -1554,7 +1554,7 @@ html:not([data-theme-early="dark"]) .nav-dd-btn {background:rgba(37,99,235,.08);
   </div>
 
   <footer class="site-footer">
-    人形机器人学习站 · V2.2.35(2026-10-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
+    人形机器人学习站 · V2.2.36(2026-10-16) · 免费开源教学网站 · 软件 + 硬件 + 前沿知识 · 按 Ctrl+K 全站搜索 · <a href="#version">版本历史</a>
   </footer>
 </div>
 
