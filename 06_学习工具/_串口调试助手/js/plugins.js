@@ -785,7 +785,26 @@
       function onUp() { dragging = false; }
       global.addEventListener("mousemove", onMove);
       global.addEventListener("mouseup", onUp);
-      view.canvas.addEventListener("wheel", function (e) {
+      /* V2.2.28：Shift+点击放游标。canvas 上已有「拖动看历史」和「点图例显隐通道」，
+           普通点击被图例占用，Shift+点击与两者都不冲突。
+           存绘图区宽度比例（不是索引）：窗口缩放/回看/数据增长都不会让游标漂移。 */
+        view.canvas.addEventListener("click", function (e) {
+          if (!e.shiftKey) { return; }
+          var pw0 = Math.max(1, view.w - PAD.l - PAD.r);
+          var fr = (e.offsetX - PAD.l) / pw0;
+          if (!(fr >= 0) || fr > 1) { return; }
+          if (typeof panel._curA !== "number" || typeof panel._curB === "number") {
+            panel._curA = fr;
+            delete panel._curB;
+          } else {
+            panel._curB = fr;
+          }
+          SL.views.redraw();
+          return false;
+        });
+
+        
+        view.canvas.addEventListener("wheel", function (e) {
         e.preventDefault();
         var factor = (e.deltaY > 0) ? 1.15 : (1 / 1.15);
         var nw = Math.round((panel.window || 500) * factor);
@@ -920,7 +939,50 @@
                     /* V2.2.24：触发的可视化 —— 触发点一条竖虚线 + 左下角状态角标。
                不做触发时这段完全不画（零开销、也不占视觉）。
                角标放**左下**：左上角是 DOM 图例的地盘，画在左上会叠在一起。 */
-            if (panel.opts && panel.opts.trigger && panel.opts.trigger.on) {
+            /* V2.2.28：游标测量（A-101）。
+             第一版只放了线、没有读数，而我**不知道那段到底有没有被执行** ——
+             所以这次第一句就是把执行次数记下来（_measRan）：先证明代码有没有跑，再谈功能。
+             上一批的降采样（_dsCols）能一次验成功，靠的就是同样的做法。 */
+          panel._measRan = (panel._measRan || 0) + 1;
+          if (typeof panel._curA === "number" && typeof panel._curB === "number" && series.length) {
+            var cn = series[0].v.length;
+            var fA = Math.min(panel._curA, panel._curB), fB = Math.max(panel._curA, panel._curB);
+            var iA = Math.max(0, Math.min(cn - 1, Math.round(fA * (cn - 1))));
+            var iB = Math.max(0, Math.min(cn - 1, Math.round(fB * (cn - 1))));
+            var s0 = series[0];
+            var tA = (s0.t && typeof s0.t[iA] === "number") ? s0.t[iA] : 0;
+            var tB = (s0.t && typeof s0.t[iB] === "number") ? s0.t[iB] : 0;
+            var dms = tB - tA;
+            var m = "Δt=" + (Math.abs(dms) >= 1000 ? (U.fmt(dms / 1000, 3) + "s") : (U.fmt(dms, 2) + "ms"));
+            for (var ci = 0; ci < series.length; ci++) {
+              var va = series[ci].v[iA], vb = series[ci].v[iB];
+              if (!isFinite(va) || !isFinite(vb)) { continue; }
+              m += "  " + series[ci].label + " " + U.fmt(va, 4) + "→" + U.fmt(vb, 4)
+                + " (Δ" + (vb - va >= 0 ? "+" : "") + U.fmt(vb - va, 4) + ")"
+                + " 斜率 " + (Math.abs(dms) > 0 ? U.fmt((vb - va) / (dms / 1000), 3) : "0") + "/s";
+            }
+            panel._measText = m;
+            var cAcc = g("--sl-accent", "#38bdf8");
+            var xA2 = map.xOf(iA, cn), xB2 = map.xOf(iB, cn);
+            ctx.save();
+            ctx.strokeStyle = cAcc;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(xA2, pad.t); ctx.lineTo(xA2, pad.t + plotH);
+            ctx.moveTo(xB2, pad.t); ctx.lineTo(xB2, pad.t + plotH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.font = "11px Consolas, monospace";
+            ctx.textBaseline = "bottom";
+            ctx.textAlign = "left";
+            ctx.fillStyle = cAcc;
+            ctx.fillText(m.length > 150 ? (m.slice(0, 149) + "…") : m, PAD.l + 4, pad.t + plotH - 20);
+            ctx.restore();
+          }
+
+          
+          if (panel.opts && panel.opts.trigger && panel.opts.trigger.on) {
               if (panel._trigAt >= 0 && series.length && series[0].v.length) {
                 var tx = map.xOf(panel._trigAt, series[0].v.length);
                 ctx.save();

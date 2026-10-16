@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.27";
+  UI.VERSION = "2.2.28";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1292,7 +1292,32 @@
       if (e && e.id) { copyMonitorText(e.id); }
     });
     /* V2.2.24：面板头「触发」按钮（views.js 发事件，弹窗与写入都在 ui.js） */
-    core.on("panel:trigger", function (e) {
+    /* V2.2.28：复制游标读数（A-101「结论可一键复制」）。
+     读数由渲染器算好后存在 panel._measText 上（见 plugins.js 的游标绘制块），
+     这里只负责把它送进剪贴板 —— 业务模块不碰 DOM、ui.js 不重算数学，各司其职。 */
+  core.on("panel:copyMeasure", function (e) {
+    var p = e && e.id ? SL.views.getPanel(e.id) : null;
+    var txt = (p && p._measText) ? String(p._measText) : "";
+    if (!txt) {
+      core.emit("toast", { level: "warn", msg: "还没有游标读数：在波形上按住 Shift 点两下放游标" });
+      return;
+    }
+    var fb = function () {
+      var ta = document.createElement("textarea");
+      ta.value = txt;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch (er) { }
+      document.body.removeChild(ta);
+    };
+    var done = function () { core.emit("toast", { level: "ok", msg: "游标读数已复制到剪贴板" }); };
+    if (global.navigator && global.navigator.clipboard && global.navigator.clipboard.writeText) {
+      global.navigator.clipboard.writeText(txt).then(done, function () { fb(); done(); });
+    } else { fb(); done(); }
+  });
+  core.on("panel:trigger", function (e) {
       if (e && e.id) { openTriggerDialog(e.id); }
     });
     core.on("data:clear", function () { refreshPanelBriefs(); refreshLegends(); });

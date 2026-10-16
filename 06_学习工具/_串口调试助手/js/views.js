@@ -274,6 +274,13 @@
       head.appendChild(iconBtn("触发", "触发对齐（示波器语义）：按指定方向跨过阈值的那一刻固定在屏幕上，波形就稳住了——调电机看相位/超调/振铃必须用它", "sl-text-btn sl-trigger-btn", function () {
         core.emit("panel:trigger", { id: panel.id });
       }));
+
+      /* V2.2.28：把游标读数一键复制出来（A-101 的「结论可复制」）。
+         与「触发」按钮同一套：按钮只发事件，剪贴板与提示都在 ui.js。 */
+      head.appendChild(iconBtn("复制测量", "复制游标读数（Δt / Δy / 斜率）：先在波形上按住 Shift 点两下放游标", "sl-text-btn sl-meas-copy", function () {
+        core.emit("panel:copyMeasure", { id: panel.id });
+      }));
+      
     }
 
     /* 面板级暂停：只冻结这张卡片的重绘（数据照收），与顶栏全局暂停互不影响 */

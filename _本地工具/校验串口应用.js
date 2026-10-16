@@ -1918,3 +1918,29 @@ scanRegression().then(function () {
   check("A-110: 不得用「焦点保护」式早退挡掉同步（左栏改 → 快捷条回显是 E2E serial_v224 的期望行为）",
     sUi.indexOf("焦点保护") < 0, "");
 })();
+/* ============================================================
+   ⑯-j 第三批(其三)：游标测量（A-101）（V2.2.28）
+   ============================================================ */
+(function () {
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  check("A-111: 游标位置存**绘图区宽度比例**而不是数据索引（窗口缩放/回看/数据增长都不会漂移）",
+    /var fr = \(e\.offsetX - PAD\.l\) \/ pw0;/.test(sPlug)
+      && sPlug.indexOf("panel._curA = fr;") > 0
+      && sPlug.indexOf("delete panel._curB;") > 0
+      && sPlug.indexOf("if (!e.shiftKey) { return; }") > 0, "");
+  check("A-111: 读数给出 Δt / Δy / 斜率，并存进 panel._measText 供一键复制",
+    sPlug.indexOf('var m = "Δt=" + (Math.abs(dms) >= 1000') > 0
+      && sPlug.indexOf('" 斜率 " + (Math.abs(dms) > 0') > 0
+      && sPlug.indexOf("panel._measText = m;") > 0, "");
+  check("A-111: 读数块必须带可观测计数器（_measRan）——上一轮正是没有它才连猜两轮",
+    sPlug.indexOf("panel._measRan = (panel._measRan || 0) + 1;") > 0, "");
+  check("A-111: 一键复制走事件总线（按钮在 views.js、剪贴板在 ui.js），且无读数时给引导",
+    sViews.indexOf('core.emit("panel:copyMeasure", { id: panel.id });') > 0
+      && sUi.indexOf('core.on("panel:copyMeasure"') > 0
+      && sUi.indexOf("还没有游标读数：在波形上按住 Shift 点两下放游标") > 0
+      && sUi.indexOf("navigator.clipboard") > 0, "");
+  check("A-111: 「复制测量」按钮必须在触发按钮**之外**（插进回调里按钮根本不会出现——踩过）",
+    /core\.emit\("panel:trigger", \{ id: panel\.id \}\);[\s\S]{0,40}?\}\)\);[\s\S]{0,300}?sl-meas-copy/.test(sViews), "");
+})();

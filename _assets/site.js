@@ -1115,7 +1115,7 @@
   };
 
   /* ---------- 版本号(全站页脚使用,与 CHANGELOG 同步) ---------- */
-  S.VERSION = "V2.2.27(2026-10-16)";
+  S.VERSION = "V2.2.28(2026-10-16)";
 
   /* ---------- 每页学习目标注入(数据来自 _assets/page-meta.js) ---------- */
   function ensurePageMeta(cb){
