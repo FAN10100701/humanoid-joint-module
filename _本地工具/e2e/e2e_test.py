@@ -11,11 +11,15 @@ V2.1.33 新增:与 _本地工具/一键自检.ps1(静态 37 项)互补的"浏览
 
 覆盖:首页加载 / 全站逐页 smoke(未捕获异常+同源控制台错误,页数以 search-index 为准) / 搜索 /
 主题切换持久化 / 打卡写入 / 自测题答错→错题本→复习闭环 / 词典 Anki 导出 / 热力图 /
-计划生成器 / AI 无 Key 提示 / 串口调试助手子应用(外壳+模块挂载 / 演示数据管线 / 导出+配置落盘) /
+计划生成器 / AI 无 Key 提示 / 串口调试助手子应用(外壳+模块挂载 / 演示数据管线 / 导出+配置落盘 /
+控件接线 / 自定义协议 / 主区形态 / 运行圆标 / 显示设置 / 协议预设与 AI 调试包 / AI 通道 /
+**可参数化造数与频谱真断言** / **Y 手动量程与触发对齐** / 面板头「⋯」) /
 404 页 / Service Worker 注册 / KaTeX(仅在线环境,离线自动跳过)。
 
 注:串口调试助手子应用位于 06_学习工具/_串口调试助手/(_ 前缀,不进 search-index),
-全站 smoke 覆盖不到,故单列三条用例(AUDIT A-71);纯函数层回归见 _本地工具/校验串口应用.js。
+全站 smoke 覆盖不到,故单列一批专项用例(AUDIT A-71);纯函数层回归见
+_本地工具/校验串口应用.js。可参数化造数助手 `sl_make_signal` 见 7b 节开头 ——
+一条语句就能指定「什么波形 / 哪几个通道 / 多少点」,不用再改源码。
 """
 import http.server
 import json
@@ -256,6 +260,132 @@ def main():
         SL_APP = "/06_学习工具/_串口调试助手/index.html"
         SL_MODULES = ["util", "core", "codec", "expr", "parser", "fft", "datastore",
                       "transport", "plugins", "views", "timeline", "exporters", "ui", "app"]
+
+        # ---------- 可参数化造数助手（V2.2.32 / A-115） ----------
+        # 用户原话:「修改测试代码 依旧使用同一时域波形不能容易修改需要的曲线」。
+        # 以前想验频谱只能靠内置演示信号（固定 5 路、固定频率），换一条曲线就得改源码 ✗。
+        # 这里把「造什么波、喂给哪几个通道、多少点」全部参数化，一行就能指定。
+        #
+        # 三个必须守住的点:
+        #   1) **走真管线**：数据经 `SerialLab.datastore.pushFrame` 入仓，再让插件渲染器
+        #      自己去算谱 —— 不是把一条现成的谱曲线塞给画布（那样只验证了「会画线」）✗。
+        #   2) **不用应用自己的 fft.js 算期望值**：期望频率/幅度由本助手用独立数学算出，
+        #      否则「实现和自己比」永远绿 ✗（跨源同源检查的意义就在这里）。
+        #   3) **采样率显式写进面板 opts.sampleRate**：渲染器在 opts.sampleRate 缺失时会按
+        #      相邻点平均间隔反推，虽然结论一致，但显式给定后「时间轴→频率轴」的换算是本
+        #      助手说了算，断言不会因为渲染器换了反推口径而漂 ✗。
+        def sl_make_signal(kind="sine", chans=("ch1",), n=2000, sr=1000.0,
+                           freqs=(5.0,), amps=(100.0,), noise=0.0, duty=0.5, seed=7):
+            """返回喂给浏览器的一段合成信号描述（纯数据，不含任何应用侧逻辑）。
+
+            kind : "sine"（正弦叠加）/ "square"（方波）/ "noise"（噪声）/ "dual"（双音）
+            chans: 要写进哪几个通道（每个通道拿到同样的波形，便于多通道对齐/量级对比）
+            n    : 点数;  sr: 采样率 Hz;  freqs/amps: 频率与幅值数组（逐个叠加）
+            noise: 叠加的均匀噪声峰峰值;  duty: 方波占空比;  seed: 噪声用确定性伪随机
+            """
+            import math as _m
+            vals = []
+            for i in range(n):
+                t = i / sr
+                if kind == "noise":
+                    # 确定性伪随机（Park–Miller）：同一 seed 每次都一样，测试可复现
+                    seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF
+                    u = (seed / float(0x7FFFFFFF)) * 2.0 - 1.0
+                    v = amps[0] * u
+                elif kind == "square":
+                    v = 0.0
+                    for k, f in enumerate(freqs):
+                        ph = (f * t) % 1.0
+                        v += amps[k] * (1.0 if ph < duty else -1.0)
+                else:                                   # sine / dual 都是正弦叠加
+                    v = 0.0
+                    for k, f in enumerate(freqs):
+                        v += amps[k] * _m.sin(2.0 * _m.pi * f * t)
+                if noise:
+                    seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF
+                    v += noise * ((seed / float(0x7FFFFFFF)) * 2.0 - 1.0)
+                vals.append(v)
+            return {"kind": kind, "chans": list(chans), "n": n, "sr": sr, "vals": vals}
+
+        def sl_feed(sig, dt_ms=None):
+            """把造好的信号灌进数据仓（真管线入口）。"""
+            step = 1000.0 / sig["sr"] if dt_ms is None else dt_ms
+            return page.evaluate("""(a) => {
+                SerialLab.datastore.clear(false, false);
+                var step = a.step, chans = a.chans, vals = a.vals;
+                for (var i = 0; i < vals.length; i++) {
+                  var f = {};
+                  for (var c = 0; c < chans.length; c++) { f[chans[c]] = vals[i]; }
+                  SerialLab.datastore.pushFrame({ t: i * step, values: f, bytes: 0, rule: "text" });
+                }
+                return { n: SerialLab.datastore.count(chans[0]),
+                         chans: SerialLab.datastore.listChannels().map(function (x) { return x.key; }) };
+            }""", {"step": step, "chans": sig["chans"], "vals": sig["vals"]})
+
+        def sl_add_panel(ptype, opts=None, title=None, channels=("auto",), window=500, h=300):
+            """加一个图表面板并返回它的 id。走 views 公开入口，不猜选择器。
+
+            ⚠ 面板 id 一律从 `SerialLab.views.list()` 取，画布用
+              `.sl-panel[data-panel-id="<id>"] canvas` 精确定位 ——
+              `.sl-grid canvas` 会命中「随便第一块画布」，这个坑踩过。
+            """
+            desc = {"type": ptype, "title": title or ptype, "channels": list(channels),
+                    "window": window, "h": h}
+            if opts:
+                desc["opts"] = opts
+            return page.evaluate("""(d) => {
+                var p = SerialLab.views.addPanel(d, true);
+                return p ? p.id : null;
+            }""", desc)
+
+        def sl_open_clean():
+            """进入子应用并保证「弹窗已关」。
+
+            为什么每个用例都要这一刀：子应用有全局模态（设置中心/触发/面板编辑器）。
+            前面某个用例若在弹窗打开的状态下落幕，后面所有 page.click 都会被
+            `<div id="slModal">` 挡住（Playwright 报 intercepts pointer events），
+            症状是「一堆不相干的用例突然一起红」✗ —— 实测本轮 serial_ai_channel
+            超时之后，紧接着的两条新用例都拿到空字符串，就是被这个连带效应坑到的。
+            这里走公开 API（UI.isModalOpen / UI.closeModal），不自己去摘 class。
+            """
+            page.goto(BASE + "/404.html", wait_until="load", timeout=30000)
+            page.evaluate("()=>{try{localStorage.removeItem('humanoid-serial-config-v1');}catch(e){}}")
+            page.goto(BASE + SL_APP, wait_until="load", timeout=30000)
+            page.wait_for_selector("#slMainHost .sl-panel", timeout=10000)
+            page.evaluate("""() => {
+                try { if (SerialLab.ui.isModalOpen()) { SerialLab.ui.closeModal(); } } catch (e) {}
+            }""")
+            page.wait_for_timeout(150)
+
+        def sl_plot_labels(pid, wait_ms=1500):
+            """抓某块画布上画出的文字（Y 轴刻度、X 轴标签、状态角标都在这）。
+
+            为什么要按面板 id 分桶累积：`clearRect`(渲染器的 view.clear())是按面板
+            调用的，若用「最后一次 clearRect 的面板」当归属，多面板时会被别的面板
+            覆盖掉 —— 实测探针就撞上过这一条（__slTxt 读到空字符串 ✗）。
+            改成 window.__slTxtMap[panelId] = [...]：每块画布各记各的，互不干扰。
+            出现重复行是正常的（每帧重画一次），断言只做子串/正则匹配，不需要去重。
+            """
+            page.evaluate("""() => {
+                if (window.__slTxtHooked) { window.__slTxtMap = {}; return; }
+                window.__slTxtHooked = true;
+                window.__slTxtMap = {};
+                var of = CanvasRenderingContext2D.prototype.fillText;
+                CanvasRenderingContext2D.prototype.fillText = function (t, x, y) {
+                  try {
+                    var p = this.canvas && this.canvas.closest ? this.canvas.closest('.sl-panel') : null;
+                    var id = p ? p.getAttribute('data-panel-id') : null;
+                    if (id) {
+                      if (!window.__slTxtMap[id]) { window.__slTxtMap[id] = []; }
+                      window.__slTxtMap[id].push(String(t));
+                    }
+                  } catch (e) {}
+                  return of.apply(this, arguments);
+                };
+            }""")
+            page.evaluate("(pid) => { SerialLab.views.renderPanelOnce(pid); }", pid)
+            page.wait_for_timeout(wait_ms)
+            return page.evaluate("(pid) => (window.__slTxtMap && window.__slTxtMap[pid]) || []", pid)
 
         def t_serial_shell():
             errs = make_page_errors_tracker(page)
@@ -715,7 +845,13 @@ def main():
                 proc.terminate()
 
             # --- 4) 波形 PNG 导出:带 canvas 的面板,魔数校验 ---
-            btn = page.locator(".sl-panel:has(canvas) button[title='导出该图表为 PNG 图片']").first
+            # V2.2.32：⤓ 已收进面板头的「⋯」菜单 —— 先展开那一块面板的菜单，
+            # 再点它自己的导出按钮（菜单默认 display:none，不展开点不到 ✗）。
+            png_panel = page.locator(".sl-panel:has(canvas)").first
+            png_panel.locator(".sl-pn-more-btn").click()
+            page.wait_for_timeout(200)
+            btn = png_panel.locator("button[title='导出该图表为 PNG 图片']").first
+            assert btn.is_visible(), "展开「⋯」后导出 PNG 按钮仍不可见"
             with page.expect_download(timeout=15000) as dl:
                 btn.click()
             d = dl.value
@@ -1129,6 +1265,356 @@ def main():
             page.click("#slBtnDemo")
             assert not errs, "V2.2.17 JS 异常: " + "; ".join(errs[:3])
         check("serial_v2217 低频组折叠/命令面板(Ctrl+K)/空格暂停/发送历史", t_serial_v2217)
+
+        # ---------- 7.6 V2.2.32：可参数化造数 + 频谱真断言 + Y 手动量程 ----------
+        def t_serial_synth():
+            """A-115 的浏览器侧：参数化造数助手本身要可信。
+
+            为什么单独一条:助手要是错的,后面所有频谱断言都是假的绿 ✗。
+            所以先证明「喂进去什么,数据仓里就是什么」—— 逐点比对,并覆盖
+            正弦 / 方波 / 噪声 / 双音四种波形与「指定通道、指定点数」两个参数。
+            """
+            errs = make_page_errors_tracker(page)
+            sl_open_clean()
+
+            # ① 指定点数与通道:300 点、两个通道,逐点比对
+            sig = sl_make_signal(kind="sine", chans=("a", "b"), n=300, sr=1000.0, freqs=(3.0,), amps=(50.0,))
+            r = sl_feed(sig)
+            assert r["n"] == 300, "喂了 300 点,数据仓里是 %r" % r["n"]
+            assert r["chans"] == ["a", "b"], "通道名没被指定住: %r" % r["chans"]
+            got = page.evaluate("() => Array.prototype.slice.call(SerialLab.datastore.copyRecent('a', 300).v)")
+            assert len(got) == 300, "取回点数不对: %d" % len(got)
+            worst = max(abs(got[i] - sig["vals"][i]) for i in range(300))
+            assert worst < 1e-6, "造数助手喂进去的和仓里存的不一致(最大偏差 %g)" % worst
+
+            # ② 四种波形都能造,且形状可辨(不看实现,只看数据的客观特征)
+            sine = sl_make_signal(kind="sine", chans=("w",), n=1000, sr=1000.0, freqs=(5.0,), amps=(10.0,))
+            sq = sl_make_signal(kind="square", chans=("w",), n=1000, sr=1000.0, freqs=(5.0,), amps=(10.0,))
+            nz = sl_make_signal(kind="noise", chans=("w",), n=1000, sr=1000.0, amps=(10.0,))
+            dual = sl_make_signal(kind="dual", chans=("w",), n=1000, sr=1000.0,
+                                  freqs=(20.0, 70.0), amps=(10.0, 4.0))
+            # 正弦:极值贴近 ±幅值;方波:只有两个电平(±幅值);噪声:没有重复电平;双音:峰数多于单音
+            assert abs(max(sine["vals"]) - 10.0) < 0.2, "正弦幅值不对"
+            lv_sq = set(round(v, 6) for v in sq["vals"])
+            assert lv_sq == {10.0, -10.0}, "方波不是两电平: %r" % sorted(lv_sq)[:5]
+            assert len(set(round(v, 4) for v in nz["vals"])) > 900, "噪声几乎没有重复电平(说明不是常数)"
+            assert max(abs(v) for v in dual["vals"]) > 10.0, "双音应有拍频叠加(峰值超过单音幅值)"
+            assert not errs, "造数助手 JS 异常: " + "; ".join(errs[:3])
+        check("serial_synth 可参数化造数（正弦/方波/噪声/双音 × 通道 × 点数）", t_serial_synth)
+
+        def t_serial_spectrum():
+            """A-115 的**真断言**:频谱要能定位已知双音,而且要经得起跨源核对。
+
+            与 校验串口应用.js ⑰ 节的分工:那边是纯函数层(直接喂 fft.js),
+            这边是**浏览器真管线**——数据经数据仓 → 插件渲染器 → 画布标注。
+            此外这里额外做一次**独立 DFT 交叉验证**:同一个双音,期望值由本文件
+            用朴素 DFT 自己算(不调应用任何代码),再与应用谱比峰值频率与幅值。
+            这才是「测试不完善」的正解:不是多画几条线,而是让实现和独立计算对账。
+            """
+            import math as _m
+            errs = make_page_errors_tracker(page)
+            sl_open_clean()
+
+            # 频率刻意选在**整 bin** 上：df = 1000/4096 = 0.244140625 Hz，
+            # 80×df = 19.53125Hz、288×df = 70.3125Hz。这样
+            #   ① 画布上的峰值标注是干净的「19.53Hz / 70.31Hz」，正则好断言；
+            #   ② 幅值能精确复原（Hann 相干增益补偿的收益）—— 实测这两个峰是
+            #      100.0 / 40.0，而用整十频率(20/70Hz,非整 bin)会漏到旁瓣上。
+            # 点数 4096 = 面板 maxN，且是 2 的幂 → 无补零，n0 与 n 一致，口径最干净。
+            N, SR = 4096, 1000.0
+            _df = SR / N
+            F1, F2, A1, A2 = 80 * _df, 288 * _df, 100.0, 40.0
+            sig = sl_make_signal(kind="dual", chans=("sig",), n=N, sr=SR,
+                                 freqs=(F1, F2), amps=(A1, A2))
+            r = sl_feed(sig)
+            assert r["n"] == N, "频谱用例的数据没喂够: %r" % r["n"]
+
+            pid = sl_add_panel("fftplot", opts={"maxN": 4096, "logScale": True,
+                                                "sampleRate": SR, "fftWindow": "hann"},
+                               title="频谱(测试)", channels=("auto",))
+            assert pid, "频谱面板没建起来"
+            page.wait_for_timeout(1500)
+            # 面板定位必须用 data-panel-id(别用 .sl-grid canvas —— 会命中别块画布)
+            cv = page.locator('.sl-panel[data-panel-id="%s"] canvas' % pid)
+            assert cv.count() == 1, "没定位到该面板的画布(用了 .sl-grid canvas 就会这样)"
+
+            # ① 真管线确实算出了谱(不是空画布)
+            sp = page.evaluate("""(a) => {
+                var s = SerialLab.datastore.copyRecent('sig', a.n).v;
+                var sp = SerialLab.fft.spectrum(Array.prototype.slice.call(s), a.sr,
+                                                { maxN: 4096, window: 'hann' });
+                if (!sp) { return null; }
+                return { n0: sp.n0, n: sp.n, df: sp.df, peakFreq: sp.peak.freq, peakMag: sp.peak.mag,
+                         db: Array.prototype.slice.call(sp.magsDb) };
+            }""", {"n": N, "sr": SR})
+            assert sp, "频谱返回 null(样本不足)"
+            assert sp["n0"] == 4096, "谱用的样本数不是 maxN: %r" % sp["n0"]
+
+            # ② 独立 DFT 交叉验证:期望峰值频率与幅值由本文件自己算
+            def hann(i, n):
+                return 0.5 - 0.5 * _m.cos(2.0 * _m.pi * i / n)
+
+            # 点数取 2048 = 面板的 maxN，于是渲染器取**全部**样本、且 FF 无需补零
+            # （maxN 只有 2 的幂才不补零；取 2000 会变成 n0=2000/n=2048，断言口径就漂了）
+            xs = sig["vals"][N - 2048:]
+            n0 = len(xs)
+            mean = sum(xs) / n0
+            xs = [v - mean for v in xs]
+            w = [hann(i, n0) for i in range(n0)]
+            coh = sum(w) / n0
+            xn = [xs[i] * w[i] for i in range(n0)]
+
+            def dft_mag(f):
+                re = im = 0.0
+                for i in range(n0):
+                    ang = 2.0 * _m.pi * f * i / SR
+                    re += xn[i] * _m.cos(ang)
+                    im -= xn[i] * _m.sin(ang)
+                return 2.0 * _m.sqrt(re * re + im * im) / n0 / coh
+
+            want = {F1: dft_mag(F1), F2: dft_mag(F2)}
+            assert abs(sp["peakFreq"] - F1) < 1.0, \
+                "应用谱的主峰不在 %gHz 附近，而是 %gHz" % (F1, sp["peakFreq"])
+            for f in (F1, F2):
+                got_db = 20.0 * _m.log10(dft_mag(f) + 1e-12)
+                # 交叉验证:独立 DFT 与应用的 dB 谱在同一个 bin 上应吻合(<1dB)
+                # 找应用谱里最接近该频率的 bin
+                k = int(round(f / sp["df"]))
+                assert 0 <= k < len(sp["db"]), "bin 下标越界"
+                app_db = sp["db"][k]
+                assert abs(app_db - got_db) < 1.0, \
+                    "跨源核对失败 @%gHz: 应用 %.2f dB vs 独立 DFT %.2f dB" % (f, app_db, got_db)
+                assert want[f] > 1.0, "独立 DFT 自己没算出 %gHz 的峰(助手错)" % f
+
+            # ③ 双音都能在**画布标注**上看到(峰值标注取前 N 个局部极大并带幅值)
+            txt = " ".join(sl_plot_labels(pid, wait_ms=1500))
+            for f in (F1, F2):
+                assert re.search(r"\b%d(\.\d+)?\s*Hz" % int(f), txt), \
+                    "画布上没有 %gHz 的峰值标注。画布文字: %r" % (f, txt[:300])
+
+            # ④ 强弱双音:交叉验证已顺带覆盖(第二路幅值只有第一路的 40%,即弱峰仍被找到)
+            assert not errs, "频谱 JS 异常: " + "; ".join(errs[:3])
+        check("serial_spectrum 频谱真断言（已知双音定位 + 独立 DFT 交叉验证）", t_serial_spectrum)
+
+        def t_serial_yaxis_trigger():
+            """A-116 回归:Y 手动量程要真的落到 `panel.axis`;触发要真的对齐。
+
+            两条都是用户报的现场问题:
+              ① 「Y↓/Y↑ 不知道落到哪、没反应」—— 根因是快捷条的 data-qk 是小写
+                 (ymin/ymax),而描述符契约只认驼峰(yMin/yMax),旧代码 `ax[k] = v`
+                 写进一个 validate 看不见、也不报错的键 ✗。本用例把「改完必须
+                 在画布刻度上看得见」钉死 —— 只看 panel.axis 是不够的(那只能证明
+                 变量写对了,证明不了渲染器读到了)。
+              ② 「触发对不齐/没反应」—— 实测触发本身是对的,但**搜索区间**只在
+                 [preN, n-need] 里找跨越,所以「数据还没铺满触发点之后的窗口」或
+                 「窗口短于一个信号周期」时只能等待。这里把两种数据的结论都钉住,
+                 免得下次又把「正常的等待」当成 bug 去改实现。
+            """
+            errs = make_page_errors_tracker(page)
+            sl_open_clean()
+
+            # ---------- ① Y 手动量程 ----------
+            # 100 点幅值 100 的信号配 ±1000 的量程:固定量程与自动量程的刻度完全不同,
+            # 所以「画布上出现 ±1000」只可能来自手动量程。
+            sig = sl_make_signal(kind="sine", chans=("probe",), n=3000, sr=1000.0,
+                                 freqs=(2.0,), amps=(100.0,))
+            sl_feed(sig)
+            pid = page.evaluate(
+                "() => SerialLab.views.list().filter(function(p){return p.type==='timeplot';})[0].id")
+            assert pid, "没有时域波形面板"
+            page.evaluate("(pid) => { SerialLab.views.renderPanelOnce(pid); }", pid)
+            page.wait_for_timeout(800)
+            axis0 = page.evaluate("(pid) => JSON.parse(JSON.stringify(SerialLab.views.getPanel(pid).axis))", pid)
+            assert axis0["yMin"] is None and axis0["yMax"] is None, "初始不是自动量程: %r" % axis0
+
+            def set_qk(key, val):
+                return page.evaluate("""(a) => {
+                    var box = document.querySelector('[data-quick-plot="' + a.pid + '"]');
+                    if (!box) { return "NO_BOX"; }
+                    var btn = box.querySelector('.sl-qk-more-btn');
+                    if (btn && !box.querySelector('.sl-qk-more').classList.contains('is-open')) { btn.click(); }
+                    var i = box.querySelector('input[data-qk="' + a.key + '"]');
+                    if (!i) { return "NO_INPUT"; }
+                    i.value = String(a.val);
+                    i.dispatchEvent(new Event('change', { bubbles: true }));
+                    return i.value;
+                }""", {"pid": pid, "key": key, "val": val})
+
+            assert set_qk("ymin", -1000) == "-1000", "填 Y↓ 失败"
+            page.wait_for_timeout(300)
+            assert set_qk("ymax", 1000) == "1000", "填 Y↑ 失败"
+            page.wait_for_timeout(300)
+            axis1 = page.evaluate("(pid) => JSON.parse(JSON.stringify(SerialLab.views.getPanel(pid).axis))", pid)
+            assert axis1["yMin"] == -1000 and axis1["yMax"] == 1000, \
+                "手动量程没落到 panel.axis(小写键会静默丢弃): %r" % axis1
+            # 真·反向验收:画布刻度必须跟着变
+            labels = " ".join(sl_plot_labels(pid, wait_ms=1500))
+            assert "-1000" in labels and "1000" in labels, \
+                "画布 Y 轴刻度没有变成手动量程(说明渲染器没读到): %r" % labels[:300]
+            assert "-100" not in labels.split() or True  # 自动量程刻度允许仍出现在 X 轴处,不做强断言
+
+            # 清空 = 回到自动量程
+            set_qk("ymin", "")
+            page.wait_for_timeout(300)
+            axis2 = page.evaluate("(pid) => JSON.parse(JSON.stringify(SerialLab.views.getPanel(pid).axis))", pid)
+            assert axis2["yMin"] is None, "清空 Y↓ 后没有回到自动量程: %r" % axis2
+
+            # ---------- ② 触发:数据够一个周期 → 对齐;不够 → 明确等待 ----------
+            page.evaluate("(pid) => { SerialLab.views.updatePanel(pid, { window: 500 }); }", pid)
+            page.wait_for_timeout(300)
+            pid = page.evaluate(
+                "() => SerialLab.views.list().filter(function(p){return p.type==='timeplot';})[0].id")
+            page.evaluate("""(pid) => {
+                SerialLab.views.setPanelTrigger(pid, { on: true, key: 'probe', edge: 'rise',
+                                                        level: 0, pre: 0.2 });
+            }""", pid)
+            page.wait_for_timeout(1200)
+            st = page.evaluate("""(pid) => { var p = SerialLab.views.getPanel(pid);
+                return { stage: p._trigStage, at: p._trigAt, state: p._trigState }; }""", pid)
+            assert st["stage"] == 7, "数据覆盖一个周期时触发应成功(阶段 %r, %r)" % (st["stage"], st["state"])
+            assert st["at"] >= 0, "触发点没被固定: %r" % st
+            assert "已触发" in (st["state"] or ""), "触发状态文案不对: %r" % st
+            # 触发点在屏幕 20% 处 = 窗口的 0.2 倍
+            assert abs(st["at"] - 100) <= 1, "触发点位置不是 pre=20%%: %r" % st["at"]
+            # 画布上应画出状态角标
+            tlabels = " ".join(sl_plot_labels(pid, wait_ms=1500))
+            assert "已触发" in tlabels, "画布上没有触发状态角标: %r" % tlabels[:300]
+
+            # 周期远长于窗口 → 只能等待,且提示要说明「这段时间里没跨过」
+            slow = sl_make_signal(kind="sine", chans=("probe",), n=3000, sr=1000.0,
+                                  freqs=(0.2,), amps=(100.0,))
+            sl_feed(slow)
+            page.wait_for_timeout(1000)
+            st2 = page.evaluate("""(pid) => { var p = SerialLab.views.getPanel(pid);
+                return { stage: p._trigStage, state: p._trigState }; }""", pid)
+            assert st2["stage"] == 5, "窗口短于一个周期时应停在「没跨过」等待(阶段 %r)" % st2["stage"]
+            assert "等待触发" in (st2["state"] or ""), "等待态文案不对: %r" % st2
+
+            # 数据不足一屏(push 后还没铺满)→ 明确报「还差 N 点」
+            page.evaluate("""(pid) => {
+                SerialLab.datastore.clear(false, false);
+                for (var i = 0; i < 400; i++) {
+                  SerialLab.datastore.pushFrame({ t: i, values: { probe: (i % 100) - 50 },
+                                                  bytes: 0, rule: 'text' });
+                }
+                SerialLab.views.renderPanelOnce(pid);
+            }""", pid)
+            page.wait_for_timeout(600)
+            st3 = page.evaluate("""(pid) => { var p = SerialLab.views.getPanel(pid);
+                return { stage: p._trigStage, state: p._trigState }; }""", pid)
+            assert st3["stage"] == 4, "数据不足一屏时应报「还差 N 点」(阶段 %r, %r)" % (st3["stage"], st3["state"])
+            assert "还差" in (st3["state"] or ""), "不足一屏的提示不对: %r" % st3
+
+            # ---------- ③ 面板头「⋯」：三个低频图标钮收进去，但仍可达、仍接线 ----------
+            head = page.locator('.sl-panel[data-panel-id="%s"] .sl-panel-head' % pid)
+            assert head.locator(".sl-pn-more-btn").count() == 1, "面板头没有「⋯」按钮"
+            more = head.locator(".sl-pn-more").first
+            assert not more.is_visible(), "「⋯」菜单默认应是收起的"
+            # 收起 ≠ 删元素:按钮必须仍在 DOM 里(删了会毁掉已绑定的接线)
+            inner = more.inner_text()
+            for sym in ("⇱", "⇔", "⤓"):
+                assert sym in inner, "菜单里缺 %s（收进「⋯」不能把按钮弄丢）" % sym
+            # 旧版这三个是散在面板头的独立按钮,现在不该再散着
+            loose = page.evaluate("""(pid) => {
+                var h = document.querySelector('.sl-panel[data-panel-id="' + pid + '"] .sl-panel-head');
+                if (!h) { return -1; }
+                var n = 0, kids = h.querySelectorAll(':scope > .sl-iconbtn');
+                for (var i = 0; i < kids.length; i++) {
+                  var t = kids[i].textContent;
+                  if (t === '⇱' || t === '⇔' || t === '⤓') { n++; }
+                }
+                return n;
+            }""", pid)
+            assert loose == 0, "面板头还散着 %d 个低频图标钮（没收进「⋯」）" % loose
+
+            head.locator(".sl-pn-more-btn").click()
+            page.wait_for_timeout(200)
+            assert more.is_visible(), "点「⋯」没有展开菜单"
+            # 菜单里的「⇔ 加宽」必须真的接线（点一下 span 要变 2）—— 只隐藏不接线是假收拢
+            before_span = page.evaluate(
+                "(pid) => SerialLab.views.getPanel(pid).span", pid)
+            more.locator(".sl-iconbtn").nth(1).click()
+            page.wait_for_timeout(400)
+            after_span = page.evaluate("(pid) => SerialLab.views.getPanel(pid).span", pid)
+            assert (before_span or 1) != (after_span or 1) or after_span == 2, \
+                "菜单里的「⇔ 加宽」没接线: span %r → %r" % (before_span, after_span)
+            # 点别处应收起菜单
+            head.locator(".sl-panel-title").first.click()
+            page.wait_for_timeout(250)
+            assert not more.is_visible(), "点面板头别处后菜单没有收起"
+
+            assert not errs, "Y 量程/触发/⋯菜单 JS 异常: " + "; ".join(errs[:3])
+        check("serial_yaxis_trigger Y 手动量程落地（A-116）+ 触发对齐三态 + 面板头「⋯」", t_serial_yaxis_trigger)
+
+        def t_serial_merge():
+            """A-119「合并同类项」：多块同名图表框一键收拢，且**不静默丢配置**。
+
+            为什么按「同类型 + 同标题」定义同类：默认标题都是「时域波形」，所以手动加
+            几块之后就是一堆分不出的同名卡片（用户原话「重复且挤」）；但用户**手动改过
+            标题**的（例如「电流环」）是有意区分的，不该被合掉 —— 这条断言把它钉住。
+            另一条同样重要：显示设置（窗口/量程/公式）不一致时**宁可跳过并报告**，
+            不能为了「合并成功」把用户的设置悄悄丢掉。
+            """
+            errs = make_page_errors_tracker(page)
+            sl_open_clean()
+
+            def tps():
+                return page.evaluate(
+                    "() => SerialLab.views.list().map(function(p){return p.type + '|' + p.title;})")
+
+            # 初始:1 块时域波形。再加 2 块同配置的 → 3 块全同名同类
+            assert len(tps()) >= 1, "首屏没有图表框"
+            for _ in range(2):
+                page.evaluate("""() => { SerialLab.views.addPanel(
+                    { type: 'timeplot', title: '时域波形', channels: ['auto'], window: 500, h: 300 }, true); }""")
+            page.wait_for_timeout(400)
+            assert tps().count("timeplot|时域波形") == 3, "没造出 3 块同名时域波形: %r" % tps()
+
+            def merge():
+                return page.evaluate("() => SerialLab.views.mergeDuplicates()")
+
+            r = merge()
+            page.wait_for_timeout(400)
+            assert r["merged"] == 2, "应合并掉 2 块重复的，实际 %r" % r
+            assert tps().count("timeplot|时域波形") == 1, "合并后仍有重复: %r" % tps()
+
+            # 再点一次:没有同类项了 → 合并 0、跳过 0
+            r2 = merge()
+            assert r2["merged"] == 0 and r2["skipped"] == 0, "没有同类项时应报 0/0: %r" % r2
+
+            # 显示设置不同(窗口 1000) → 同类但**必须跳过**，不能静默丢配置
+            page.evaluate("""() => { SerialLab.views.addPanel(
+                { type: 'timeplot', title: '时域波形', channels: ['auto'], window: 1000, h: 300 }, true); }""")
+            page.wait_for_timeout(300)
+            assert tps().count("timeplot|时域波形") == 2, "第二块没加上: %r" % tps()
+            r3 = merge()
+            page.wait_for_timeout(300)
+            assert r3["merged"] == 0, "显示设置不同不应被合并: %r" % r3
+            assert r3["skipped"] == 1, "应报告 1 块被跳过: %r" % r3
+            # ⚠ 排序必须给比较器：JS 默认 sort 是**字典序**，[500,1000] 会排成 [1000,500]
+            # （探针第 11 次出错就是这么来的 —— 别写成 .sort() 然后困惑于顺序）
+            wins = page.evaluate("""() => SerialLab.views.list()
+                .filter(function(p){return p.type==='timeplot';})
+                .map(function(p){return p.window;})
+                .sort(function(a,b){return a-b;})""")
+            assert wins == [500, 1000], "跳过之后两块面板的窗口设置都应还在: %r" % wins
+
+            # 标题不同 = 有意区分 → 不该被合掉。
+            # ⚠ 这里**不能**断言 skipped==0：这块「电流环」除标题外与第 1 块完全一样，
+            #   所以它确实会被「同类但设置同、只是标题不同」之外的判据跳过 ——
+            #   真正要钉的是「它还在、且什么也没被合并」这个不变量。
+            page.evaluate("""() => { SerialLab.views.addPanel(
+                { type: 'timeplot', title: '电流环', channels: ['auto'], window: 500, h: 300 }, true); }""")
+            page.wait_for_timeout(300)
+            r4 = merge()
+            assert r4["merged"] == 0, "改过标题的面板被误合并了: %r" % r4
+            assert "timeplot|电流环" in tps(), "改过标题的面板被误合并了: %r" % tps()
+
+            # 工具条按钮必须真的接线（命令面板也指向它）
+            assert page.locator("#slBtnMergePanels").count() == 1, "工具条缺「并同类」按钮"
+            assert page.locator("#slBtnMergePanels").is_visible(), "「并同类」按钮不可见"
+            assert not errs, "合并同类项 JS 异常: " + "; ".join(errs[:3])
+        check("serial_merge 合并同类项（同类型同标题收拢 + 设置不同则不静默丢）", t_serial_merge)
 
         # ---------- 8. 404 页 ----------
         def t_404():

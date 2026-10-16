@@ -23,7 +23,7 @@
 
   /* 应用内显示版本——必须与站点版本链一致（site.js S.VERSION / CHANGELOG），
      V2.2.4 及之前一直停在 1.0.0 没跟过发版，用户会误读成「没更新」 */
-  UI.VERSION = "2.2.31";
+  UI.VERSION = "2.2.32";
 
   /* ------------------------------------------------------------
      0) 小工具
@@ -1023,6 +1023,13 @@
     return QK_ENC_OPTS_FALLBACK;
   }
 
+  /* V2.2.32（A-116）：快捷条控件的 data-qk 名 → 面板描述符里的真实键名。
+     为什么单独列一张表：HTML 的 data-qk 用小写（ymin/ymax），而描述符契约
+     （Plugins.validate）只认驼峰 yMin/yMax。直接用 `ax[k] = v` 会写进一个
+     多余的 "ymin" 键 —— validate 看不见、也不报错，用户填了数值面板 .axis
+     却仍是 null（「填了没反应，也不知道落到哪」）。显式映射一次，顺带可断言。 */
+  var QK_AXIS_KEY = { ymin: "yMin", ymax: "yMax" };
+
   function fillQuick(host) {
     /* 时域波形的快捷条：横轴窗口 + Y 轴手动范围（纵轴自由调节） */
     var plotId = host.getAttribute("data-quick-plot");
@@ -1255,15 +1262,24 @@
           if (pid && n > 0) { SL.views.updatePanel(pid, { window: n }); }
         }
         else if (k === "ymin" || k === "ymax") {
-          /* 时域波形快捷条：Y 轴手动范围（留空 = 自动量程） */
+          /* 时域波形快捷条：Y 轴手动范围（留空 = 自动量程）
+             ⚠ 分级可观测计数器（子应用硬规则：粗的只说有没有跑，分级才说跑到哪）。
+             A-116 现场：填了数值但 panel.axis 仍是 null，靠这四级才定位到断点。 */
+          SL._ymStage = 1;
           var pid2 = node.getAttribute("data-quick-plot");
           if (pid2) {
+            SL._ymStage = 2;
             var pn = SL.views.getPanel(pid2);
             if (pn) {
+              SL._ymStage = 3;
               var ax = U.clone(pn.axis || {});
               var v = parseFloat(t.value);
-              if (isFinite(v)) { ax[k] = v; } else { delete ax[k]; }
-              SL.views.updatePanel(pid2, { axis: ax });
+              /* ⚠ A-116 真 bug：这里必须映射成驼峰，不能直接用 data-qk 的小写名 */
+              var akey = QK_AXIS_KEY[k];
+              if (isFinite(v)) { ax[akey] = v; } else { delete ax[akey]; }
+              SL._ymStage = 4;
+              SL._ymRet = SL.views.updatePanel(pid2, { axis: ax }) ? "ok" : "null";
+              SL._ymStage = 5;
             }
           }
         }
@@ -3254,6 +3270,7 @@
     { t: "开启 / 关闭演示数据（Ctrl+Shift+D）", k: "yanshi demo ceshi", sel: "#slBtnDemo" },
     { t: "清空数据（通道缓存 + 原始记录）", k: "qingkong shuju clear data", sel: "#slBtnClearChannels" },
     { t: "清空面板（工作区图表框，可撤销）", k: "qingkong mianban clear panels", sel: "#slBtnClearPanels" },
+    { t: "合并同类项（同类型同标题的图表框收成一块）", k: "hebing tongleixiang merge panels", sel: "#slBtnMergePanels" },
     { t: "复制 AI 提示词", k: "fuzhi ai tishi ci prompt copy", sel: "#slBtnAiPrompt" },
     { t: "导出 AI 调试包（Ctrl+E）", k: "daochu ai tiaoshi bao debug bundle", sel: "#slBtnDebugBundle" },
     { t: "按当前规则重放缓存", k: "chongfang replay huanchun", sel: "#slBtnReplay" },
@@ -3782,6 +3799,24 @@
       if (p) {
         renderPanelList();
         UI.toast("ok", "已添加「" + p.title + "」到工作区（可在面板标题栏点 ⇱ 移到主位）");
+      }
+    });
+
+    /* 合并同类项：多块图表框同名（默认标题都是「时域波形」）时一键收拢。
+       纯建设性动作（只是把重复的收起来），不需要二次确认；结果的三种情况都
+       如实报告 —— 合并数 / 跳过数 / 现在还剩几块，不做「默默成功」。 */
+    $("slBtnMergePanels").addEventListener("click", function () {
+      if (SL.views.count() < 2) { UI.toast("warn", "工作区里的图表框不足两块，没有可合并的同类项"); return; }
+      var r = SL.views.mergeDuplicates();
+      renderPanelList();
+      if (r.merged > 0) {
+        var msg = "已合并 " + r.merged + " 块重复图表框，现剩 " + r.left + " 块";
+        if (r.skipped > 0) { msg += "；另有 " + r.skipped + " 块虽同名但显示设置不同，已保留（不静默丢配置）"; }
+        UI.toast("ok", msg);
+      } else if (r.skipped > 0) {
+        UI.toast("info", "有 " + r.skipped + " 块同名图表框，但显示设置（窗口/量程/公式）不同，故未合并");
+      } else {
+        UI.toast("info", "没有发现同类的图表框（同类 = 同类型且同标题）");
       }
     });
 

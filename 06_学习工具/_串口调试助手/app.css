@@ -1848,3 +1848,24 @@ table.sl-chan-table tr:first-child td { border-top: none; }
 .sl-qk-more { display: none; align-items: center; gap: var(--sl-gap-sm); }
 .sl-qk-more.is-open { display: inline-flex; }
 .sl-qk-more-btn { font-weight: 600; letter-spacing: 1px; }
+/* ---------------- V2.2.32：面板头的「⋯」 ---------------- */
+/* 与快捷条同一个思路、同一个视觉：低频的三个图标钮（⇱ 移到主位 / ⇔ 加宽 / ⤓ 导出 PNG）
+   默认收进「⋯」，缓解面板头一行挤成一团。收起用 CSS 控制而**不是删元素** ——
+   删了会连带毁掉已经绑在按钮上的接线（A-114 同一条教训，别改回去）。 */
+.sl-panel-head { position: relative; }
+.sl-pn-more-btn { font-weight: 600; letter-spacing: 1px; }
+.sl-pn-more {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 6px;
+  z-index: 5;
+  align-items: center;
+  gap: var(--sl-gap-sm);
+  padding: 4px 6px;
+  border: 1px solid var(--sl-border);
+  border-radius: 6px;
+  background: var(--sl-bg, #fff);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .18);
+}
+.sl-pn-more.is-open { display: inline-flex; }

@@ -2001,6 +2001,131 @@ scanRegression().then(function () {
       && /\.sl-qk-more\.is-open \{ display: inline-flex; \}/.test(sCss), "");
 })();
 /* ============================================================
+   ⑯-n 时域波形「Y 轴手动量程」契约（V2.2.32 / A-116）
+   用户原话：「Y 轴手动量程（Y↓/Y↑）不知道落到哪、没反应」。
+   根因：快捷条控件的 data-qk 是小写 ymin/ymax，而描述符契约只认驼峰 yMin/yMax，
+   旧代码直接 `ax[k] = v` 写进一个多余的 "ymin" 键 → validate 看不见、也不报错，
+   `.axis` 仍是 null，量程纹丝不动 ✗。下面把「小写控件名 → 驼峰契约名」这条
+   映射钉死，并同时验证 HTML 侧与渲染侧，任一侧漂移都会红。
+   ============================================================ */
+(function () {
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
+  const Plugins = require(path.join(JS, "plugins.js"));
+  /* ⚠ 查「旧写法有没有回来」必须先去掉注释：A-116 的说明注释里**原样引用了**
+     `ax[k] = v` 这句旧代码，不剥注释的话注释自己会把断言判红（探针第 10 次出错，
+     前一次是 /ax\[k\] = v/ 连 `ax[akey] = v` 一起命中）。 */
+  const codeUi = sUi.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+  check("A-116: 存在「小写控件名 → 驼峰契约名」映射表，且契约名就是 yMin / yMax",
+    /var QK_AXIS_KEY = \{ ymin: "yMin", ymax: "yMax" \};/.test(sUi), "");
+
+  check("A-116: 快捷条写量程必须走映射表，禁止再写 `ax[k] = v`（旧 bug 的原样回归）",
+    codeUi.indexOf("var akey = QK_AXIS_KEY[k];") > 0
+      && codeUi.indexOf("if (isFinite(v)) { ax[akey] = v; } else { delete ax[akey]; }") > 0
+      && !/\bax\[k\]\s*=/.test(codeUi), "");
+
+  check("A-116: HTML 侧控件名仍是小写 ymin/ymax（映射表的输入侧真源）",
+    sUi.indexOf('data-qk="ymin"') > 0 && sUi.indexOf('data-qk="ymax"') > 0, "");
+
+  /* validate 是量程的**唯一落点**：小写键会被静默丢弃，驼峰键才能活下来。
+     这条断言同时锁住「丢弃小写」这个行为本身 —— 万一以后有人放开白名单，
+     映射表就不是唯一路径了，这里会立刻提醒。 */
+  const rLow = Plugins.validate({ type: "timeplot", axis: { ymin: -300, ymax: 300 } });
+  check("A-116: 小写键 ymin/ymax 会被 validate 丢弃（这正是旧 bug 静默的原因）",
+    rLow.panel.axis.yMin === null && rLow.panel.axis.yMax === null, "");
+
+  const rOk = Plugins.validate({ type: "timeplot", axis: { yMin: -300, yMax: 300 } });
+  check("A-116: 驼峰键 yMin/yMax 能穿过 validate 落到描述符（手动量程的落地前提）",
+    rOk.panel.axis.yMin === -300 && rOk.panel.axis.yMax === 300
+      && rOk.errors.length === 0, "");
+
+  check("A-116: 渲染侧从 axis.yMin / axis.yMax 取手动量程（小写键读不到，量程才「没反应」）",
+    /axis\.yMin === "number"/.test(sPlug) && /axis\.yMax === "number"/.test(sPlug)
+      && sPlug.indexOf("function yRange(panel, series)") > 0, "");
+})();
+/* ============================================================
+   ⑯-o 绘制回调里禁用 g()（V2.2.32 / A-117）
+   现场症状：「一开触发，整块时域波形连同画布一起消失」。
+   根因：g 是 theme() 里的**局部函数**，draw 时早已出作用域 —— 一调就
+   `g is not defined` 抛异常，views.redraw 的 catch 把面板换成
+   「该图框渲染出错，已停止刷新」，画布整个被移除 ✗。
+   踩过的两处：触发角标/准线（本来就在等待触发时不画，所以只在开触发后才暴露）
+   与 Shift 游标（让按住 Shift 点两下也一直是坏的）。
+   规矩改成：draw 里取色一律走主题对象 t.*，要新颜色就往 theme() 里加字段。
+   ============================================================ */
+(function () {
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
+  /* theme() 函数体是**唯一**允许出现 g("--…") 的地方（它就是取令牌的实现）。
+     用字符下标切出它的函数体，再从全文里挖掉，然后全网搜残留 —— 比数行号稳。 */
+  const start = sPlug.indexOf("function theme() {");
+  const end = sPlug.indexOf("\n  }", start);
+  const body = (start >= 0 && end > start) ? sPlug.slice(start, end) : "";
+  const outside = body ? (sPlug.slice(0, start) + sPlug.slice(end)) : sPlug;
+
+  check("A-117: theme() 里才有 g()（能切出函数体，说明结构没被改散）",
+    body.length > 100 && /grid: g\("--sl-grid"/.test(body), "");
+
+  /* 说明注释里**原样引用**了这个坏写法（"g(\"--sl-ink3\") 直接中断了整个重绘循环"），
+     不剥注释的话注释自己会把断言判红 —— A-116 那条也踩过同一个坑。 */
+  const codeOnly = outside.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const leftovers = codeOnly.match(/g\("--[^)]*\)/g) || [];
+  check("A-117: 绘制/交互代码里不得再出现 g(\"--…\")（A-112/A-113/A-117 同一个坑）",
+    leftovers.length === 0,
+    "残留: " + leftovers.join(" / "));
+
+  check("A-117: 主题令牌表含 ok / warn / accent（draw 里用到的颜色都得先有令牌）",
+    /ok: g\("--sl-ok"/.test(sPlug) && /warn: g\("--sl-warn"/.test(sPlug)
+      && /accent: g\("--sl-accent-ink"/.test(sPlug), "");
+
+  check("A-117: 触发角标/准线与 Shift 游标都改用主题对象取色（不再调 g）",
+    sPlug.indexOf("ctx.strokeStyle = t.warn;") > 0
+      && sPlug.indexOf("panel._trigAt >= 0 ? t.ok : t.warn") > 0
+      && sPlug.indexOf("var cAcc = t.accent;") > 0, "");
+
+  /* 兜底：--sl-accent 这个令牌名根本不存在（真名是 --sl-accent-ink），
+     别再写回去 —— 它会被 g 的兜底悄悄盖住，看着「能用」其实一直走 fallback。 */
+  check("A-117: 不再引用不存在的令牌名 --sl-accent（真名是 --sl-accent-ink）",
+    sPlug.indexOf('g("--sl-accent"') < 0, "");
+})();
+/* ============================================================
+   ⑯-p 合并同类项（V2.2.32）
+   用户原话：「同时开了好几个时域波形面板，重复且挤」。
+   查证结论：**没有重复添加的 bug**（`ensureDemoWave` 有「已有图表面板就不补」的守卫，
+   反复开关演示不增加面板）；多块面板是手动添加的结果，而它们**全叫「时域波形」** ——
+   真正的痛点是分不出哪块是哪块。这条把「一键收拢」的几条契约钉住。
+   ============================================================ */
+(function () {
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
+  const sHtml = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").replace(/\r\n/g, "\n");
+  const codeViews = sViews.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+  check("A-119: 工具条有「并同类」按钮，且命令面板能点到它（否则功能在、用户够不着）",
+    sHtml.indexOf('id="slBtnMergePanels"') > 0
+      && sUi.indexOf('$("slBtnMergePanels").addEventListener') > 0
+      && sUi.indexOf('sel: "#slBtnMergePanels"') > 0, "");
+
+  /* ⚠ 别用正则去啃 "\\u0000" 这种多层转义（写错过一次）：拆成两段 indexOf 更稳 */
+  check("A-119: 同类 = 同类型 + 同标题（改过标题的是有意区分，不该被合掉）",
+    codeViews.indexOf("function panelIdentity(p)") > 0
+      && codeViews.indexOf('String(p.type || "") + "\\u0000" + String(p.title || "")') > 0, "");
+
+  check("A-119: 合并是「移除重复项」而不是搬 DOM（搬 canvas 会把它重置成 0×0，A-75 的坑）",
+    /V\.mergeDuplicates = function[\s\S]{0,2000}?V\.removePanel\(drop\[j\]\.id\)/.test(codeViews)
+      && !/appendChild/.test(codeViews.slice(codeViews.indexOf("V.mergeDuplicates"), codeViews.indexOf("V.mergeDuplicates") + 2200)), "");
+
+  check("A-119: 显示设置不一致的宁可跳过并报告，不静默丢配置（window/axis/expr/opts 都比）",
+    codeViews.indexOf("function panelDisplayKey(p)") > 0
+      && /window: p\.window/.test(codeViews) && /axis: p\.axis/.test(codeViews)
+      && /expr: p\.expr/.test(codeViews) && /opts: p\.opts/.test(codeViews)
+      && /skipped\.push\(p\)/.test(codeViews), "");
+
+  check("A-119: 合并结果如实报告三种情况（合并数 / 跳过数 / 没有同类项），不做「默默成功」",
+    sUi.indexOf('"已合并 " + r.merged') > 0 && sUi.indexOf('r.skipped') > 0
+      && sUi.indexOf("没有发现同类的图表框") > 0, "");
+})();
+/* ============================================================
    ⑰ 频谱「真断言」（V2.2.32）
    用户原话：「测试不完善看不太清楚频谱图」「修改测试代码 依旧使用同一时域波形
    不能容易修改需要的曲线」。此前频谱没有任何数值断言，只看「有图」✗。

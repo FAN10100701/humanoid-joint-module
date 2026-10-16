@@ -39,7 +39,14 @@
     if (themeCache) { return themeCache; }
     var fb = {
       grid: "rgba(148,163,184,.16)", axis: "rgba(148,163,184,.45)",
-      ink: "#e6edf3", ink2: "#9aa4b2", ink3: "#8b949e", bg: "#0a0f16"
+      ink: "#e6edf3", ink2: "#9aa4b2", ink3: "#8b949e", bg: "#0a0f16",
+      /* V2.2.32（A-117）：ok / warn 也进主题表。
+         为什么必须补上：绘制回调里**不能调 g()** —— g 是 theme() 内部的局部函数，
+         draw 时早已出了作用域，一调就是 `g is not defined` 并抛出。
+         views.redraw 的 catch 会把这块面板换成「该图框渲染出错，已停止刷新」，
+         于是**整块波形连同画布一起消失**（用户看到的症状：一开触发波形就没了）。
+         触发角标/触发准线正是踩了这两句。以后取色一律走 t.*。 */
+      ok: "#22c55e", warn: "#f59e0b", accent: "#38bdf8"
     };
     if (typeof document === "undefined" || !global.getComputedStyle) {
       themeCache = fb; return fb;
@@ -57,7 +64,12 @@
         ink: g("--sl-ink", fb.ink),
         ink2: g("--sl-ink-2", fb.ink2),
         ink3: g("--sl-ink-3", fb.ink3),
-        bg: g("--sl-canvas-bg", fb.bg)
+        bg: g("--sl-canvas-bg", fb.bg),
+        ok: g("--sl-ok", fb.ok),
+        warn: g("--sl-warn", fb.warn),
+        /* ⚠ 令牌真名是 --sl-accent-ink；这里曾写 --sl-accent（不存在），
+           g 的兜底把错误悄悄盖住了 —— 而 g 本身在 draw 里又是未定义的（A-117）。 */
+        accent: g("--sl-accent-ink", fb.accent)
       };
     } catch (e) { themeCache = fb; }
     return themeCache;
@@ -294,16 +306,21 @@
     var tr = panel.opts && panel.opts.trigger;
     panel._trigState = "";
     panel._trigAt = -1;
+    /* 分级可观测计数器（A-116）：粗的只说「有没有跑」，分级才说「跑到哪」。 */
+    panel._trigStage = 0;
     if (!tr || !tr.on) { return; }
+    panel._trigStage = 1;
     var win = panel.window || 500;
     var s = null, i;
     for (i = 0; i < series.length; i++) {
       if (series[i].key === tr.key) { s = series[i]; break; }
     }
     if (!s) {
+      panel._trigStage = 2;
       panel._trigState = "等待触发…（通道 " + tr.key + " 不在本屏）";
       return;
     }
+    panel._trigStage = 3;
     var v = s.v, n = v.length;
     var pre = Math.max(0, Math.min(0.9, typeof tr.pre === "number" ? tr.pre : 0.2));
     var level = (typeof tr.level === "number" && isFinite(tr.level)) ? tr.level : 0;
@@ -318,7 +335,9 @@
     var preN = Math.round(win * pre);
     var need = win - preN;
     var limit = n - need;                /* 触发点索引的上限 */
+    panel._trigN = n; panel._trigLimit = limit; panel._trigPreN = preN;
     if (limit < preN) {
+      panel._trigStage = 4;
       panel._trigState = "等待触发…（还差 " + Math.max(0, preN + need - n) + " 点铺满一屏）";
       return;
     }
@@ -328,7 +347,9 @@
       if (!isFinite(a) || !isFinite(b)) { continue; }
       if (rise ? (a < level && b >= level) : (a > level && b <= level)) { k = i; break; }
     }
-    if (k < 0) { panel._trigState = "等待触发…（这段时间里没跨过 " + level + "）"; return; }
+    panel._trigK = k;
+    if (k < 0) { panel._trigStage = 5; panel._trigState = "等待触发…（这段时间里没跨过 " + level + "）"; return; }
+    panel._trigStage = 6;
     var end = k + need;
     var from = k - preN;
     for (i = 0; i < series.length; i++) {
@@ -340,6 +361,7 @@
       };
     }
     panel._trigAt = preN;
+    panel._trigStage = 7;
     panel._trigState = "已触发 " + tr.key + (rise ? " ↑ " : " ↓ ") + level
       + "（触发点在屏幕 " + Math.round(pre * 100) + "% 处）";
   }
@@ -980,7 +1002,7 @@
                 + " 斜率 " + (Math.abs(dms) > 0 ? U.fmt((vb - va) / (dms / 1000), 3) : "0") + "/s";
             }
             panel._measText = m;
-            var cAcc = g("--sl-accent", "#38bdf8");
+            var cAcc = t.accent;
             var xA2 = map.xOf(iA, cn), xB2 = map.xOf(iB, cn);
             ctx.save();
             ctx.strokeStyle = cAcc;
@@ -1053,7 +1075,7 @@
               if (panel._trigAt >= 0 && series.length && series[0].v.length) {
                 var tx = map.xOf(panel._trigAt, series[0].v.length);
                 ctx.save();
-                ctx.strokeStyle = g("--sl-warn", "#f59e0b");
+                ctx.strokeStyle = t.warn;
                 ctx.lineWidth = 1;
                 ctx.setLineDash([4, 3]);
                 ctx.beginPath();
@@ -1067,7 +1089,7 @@
                 ctx.font = "11px Consolas, monospace";
                 ctx.textBaseline = "bottom";
                 ctx.textAlign = "left";
-                ctx.fillStyle = panel._trigAt >= 0 ? g("--sl-ok", "#22c55e") : g("--sl-warn", "#f59e0b");
+                ctx.fillStyle = panel._trigAt >= 0 ? t.ok : t.warn;
                 ctx.fillText(panel._trigState, PAD.l + 4, pad.t + plotH - 3);
                 ctx.restore();
               }

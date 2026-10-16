@@ -152,6 +152,44 @@
     return b;
   }
 
+  /* V2.2.32：面板头的「⋯」——把低频的三个图标钮（⇱ 移到主位 / ⇔ 加宽 / ⤓ 导出 PNG）
+     收起来，缓解面板头一行挤成一团（用户反馈「观察图片排版拥挤」的第二半）。
+     与快捷条 V2.2.31 的「⋯」同一套路子：
+       · 收起**用 CSS 控制**（.sl-pn-more 默认 display:none），不删元素 ——
+         删了会连带毁掉已绑定的接线（A-114 踩过，别改回去）；
+       · 开合委托到**不会被重建**的宿主（面板头本身），只绑一次，__pnMoreBound 守卫；
+       · 面板头留 relative，菜单绝对定位悬浮，不推开标题，也不影响面板里的画布。
+     高频按钮（Auto / 触发 / 复制测量 / 暂停）**不进**这个菜单 —— 收进「⋯」等于让用户多点一次。 */
+  function panelHeadMore(head, buttons) {
+    var wrap = document.createElement("span");
+    wrap.className = "sl-pn-more-wrap";
+
+    var more = document.createElement("span");
+    more.className = "sl-pn-more";
+    for (var i = 0; i < buttons.length; i++) { more.appendChild(buttons[i]); }
+
+    wrap.appendChild(iconBtn("⋯", "更多：移到主位 / 加宽 / 导出 PNG", "sl-pn-more-btn", function () {
+      more.classList.toggle("is-open");
+    }));
+    wrap.appendChild(more);
+
+    if (head && !head.__pnMoreBound) {
+      head.__pnMoreBound = true;   /* 守卫：head 是宿主，只绑一次，防重复绑定 */
+      head.addEventListener("click", function (e) {
+        var t = e.target;
+        if (!t || !t.closest) { return; }
+        /* 点菜单按钮 → 由按钮自己的 onclick 负责开合（这里只管「点别处收起」） */
+        if (t.closest(".sl-pn-more-btn")) { return; }
+        var inside = t.closest(".sl-pn-more");
+        var all = head.querySelectorAll(".sl-pn-more.is-open");
+        for (var k = 0; k < all.length; k++) {
+          if (!inside || all[k] !== inside) { all[k].classList.remove("is-open"); }
+        }
+      });
+    }
+    return wrap;
+  }
+
   /* V2.2.21：面板级「清屏起点」。为什么不用 panel.opts 走 updatePanel 存：
      updatePanel 会把描述符交给 Plugins.validate 重新校验，校验只认它认识的 opts 字段，
      自定义的 clearAt 会被丢掉 —— 实测点了清屏 opts 一点没变、行数照常增长（静默失效）。
@@ -241,16 +279,21 @@
       head.appendChild(iconBtn("▭", "收起主区（波形区占满）", "", function () {
         V.setMainCollapsed(true);
       }));
-    } else {
-      head.appendChild(iconBtn("⇱", "移到主位（与串口监视器互换位置）", "", function () {
+    }
+
+    /* V2.2.32：低频三钮（⇱ 移到主位 / ⇔ 加宽 / ⤓ 导出 PNG）收进「⋯」。
+       注意：`⤓ 导出 PNG` 对**主位面板**同样可用（旧版也是无条件挂的），
+       所以它统一放进菜单，而「⇱ 移到主位」只在非主位时才给（已经是主位的没有意义）。 */
+    var moreBtns = [];
+    if (!isMain(panel)) {
+      moreBtns.push(iconBtn("⇱", "移到主位（与串口监视器互换位置）", "", function () {
         V.moveToSlot(panel.id, "main");
       }));
-      head.appendChild(iconBtn("⇔", "加宽 / 还原（跨两列）", "", function () {
+      moreBtns.push(iconBtn("⇔", "加宽 / 还原（跨两列）", "", function () {
         V.toggleSpan(panel.id);
       }));
     }
-
-    head.appendChild(iconBtn("⤓", "导出该图表为 PNG 图片", "", function () {
+    moreBtns.push(iconBtn("⤓", "导出该图表为 PNG 图片", "", function () {
       V.exportPanelPng(panel.id).then(function (r) {
         if (r && r.ok) {
           core.emit("toast", { level: "ok", msg: "已导出图表图片：" + r.name });
@@ -259,6 +302,7 @@
         }
       });
     }));
+    head.appendChild(panelHeadMore(head, moreBtns));
 
     if (panel.type === "timeplot") {
       /* 时域波形专属：Auto = 回到实时跟随 + 恢复自动量程（渲染器内部状态 + axis 清除）。
@@ -791,6 +835,54 @@
   };
 
   V.canUndoClear = function () { return !!clearSnapshot; };
+
+  /* ------------------------------------------------------------
+     V2.2.32：合并同类项（同类型且同标题的图表框合成一块）
+     为什么需要：多块图表框**全叫「时域波形」**，分不出哪块是哪块（用户原话
+     「同时开了好几个时域波形面板，重复且挤」）。默认标题相同，所以手动加了几块
+     之后就是一堆无法区分的同名卡片。这里提供一键收拢。
+     三条设计取舍：
+       ① **保留第一块**（它在配置数组里的位置即它的位置），其余移除 —— 不新建、
+          不搬家，所以不会踩「跨槽 appendChild 会把 canvas 重置成 0×0」那个坑
+          （A-75/moveToSlot 的教训：搬 DOM 一定毁画布）。
+       ② **同类型 + 同标题**才算「同类」。用户手动改过标题的（比如「电流环」）
+          是有意区分的，不该被合掉。
+       ③ **显示设置不同就跳过并如实报告**，不静默丢配置：被去掉的那块若 window /
+          axis / expr / opts 与保留的不一致，合掉就等于悄悄丢用户设置 ✗。
+          （面板级勾选与触发存在 views 的覆盖表里，不写进描述符，也不比较。）
+     ------------------------------------------------------------ */
+  function panelIdentity(p) {
+    return String(p.type || "") + "\u0000" + String(p.title || "");
+  }
+  function panelDisplayKey(p) {
+    return JSON.stringify({
+      window: p.window, axis: p.axis || null, expr: p.expr || "",
+      opts: p.opts || null, colors: p.colors || null, span: p.span || 1
+    });
+  }
+
+  V.mergeDuplicates = function () {
+    var keep = {}, drop = [], skipped = [];
+    for (var i = 0; i < panels.length; i++) {
+      var p = panels[i];
+      var idn = panelIdentity(p);
+      if (!Object.prototype.hasOwnProperty.call(keep, idn)) { keep[idn] = p; continue; }
+      if (panelDisplayKey(keep[idn]) === panelDisplayKey(p)) { drop.push(p); }
+      else { skipped.push(p); }
+    }
+    for (var j = 0; j < drop.length; j++) {
+      /* 顺手清掉该面板的临时状态表项，避免表越用越大 */
+      delete viewClear[drop[j].id];
+      delete viewChanOverride[drop[j].id];
+      delete viewTrigger[drop[j].id];
+      V.removePanel(drop[j].id);      /* removePanel 内部会 save + redraw */
+    }
+    if (drop.length) {
+      V.redraw();
+      core.emit("panels:changed", { reason: "merge" });
+    }
+    return { merged: drop.length, skipped: skipped.length, left: panels.length };
+  };
 
   /* 撤销清空：按快照原样重建（id/窗口/量程/配色都保留），返回恢复的面板数 */
   V.undoClearPanels = function () {
