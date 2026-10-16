@@ -240,7 +240,7 @@ check("codec: checksum() 派发覆盖全部已声明类型，且未知类型返�
     })(), "");
 
   /* 模块约定：不碰 DOM + 保留 UMD 尾（子应用硬规则 5/7 —— 桥要 require 同一份真源） */
-  const pSrc = fs.readFileSync(path.join(JS, "protocol.js"), "utf8");
+  const pSrc = fs.readFileSync(path.join(JS, "protocol.js"), "utf8").replace(/\r\n/g, "\n");
   check("protocol: 纯模块（不碰 DOM）且保留 UMD 尾，供本地桥 require 同一份真源",
     pSrc.indexOf("document.") < 0 && pSrc.indexOf("module.exports = P;") > 0, "");
 })();
@@ -284,7 +284,7 @@ check("codec: checksum() 派发覆盖全部已声明类型，且未知类型返�
     })(), "");
   check("exporters: 导出入口 + UI 按钮 + 命令面板条目都在（按钮不存在时命令面板会自动不列出）",
     typeof X.exportMarkdown === "function"
-      && fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('id="slBtnExpMd"') > 0, "");
+      && fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").replace(/\r\n/g, "\n").indexOf('id="slBtnExpMd"') > 0, "");
   Store.removeChannel("k-pipe-check");   /* 别把测试通道留给后面的断言 */
 })();
 
@@ -984,13 +984,13 @@ const GBK = (X.codec || SL.codec);
   check("AUTO: 设备页签有 slBtnAuto 按钮", html.indexOf('id="slBtnAuto"') > 0, "");
   check("测试页签: 有案例状态徽章 slTestBadge", html.indexOf('id="slTestBadge"') > 0, "");
   check("快捷工具条: 监视器面板头预留 data-quick 容器（views.js）",
-    fs.readFileSync(path.join(JS, "views.js"), "utf8").indexOf('data-quick') > 0, "");
+    fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n").indexOf('data-quick') > 0, "");
   check("RX/TX: 监视器方向标记已改为 箭头+下位机/上位机",
-    fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"← 下位机"') > 0
-      && fs.readFileSync(path.join(JS, "plugins.js"), "utf8").indexOf('"→ 上位机"') > 0, "");
+    fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n").indexOf('"← 下位机"') > 0
+      && fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n").indexOf('"→ 上位机"') > 0, "");
   check("V2.2.5: 流控信号已移出顶栏(设备页签内)",
-    fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('id="slModem"') >
-      fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").indexOf('data-pane="test"'), "");
+    fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").replace(/\r\n/g, "\n").indexOf('id="slModem"') >
+      fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").replace(/\r\n/g, "\n").indexOf('data-pane="test"'), "");
   check("RX/TX: 顶栏计数改用直白的 ↓接收/↑发送（旧版两个都叫「下位机」，只靠箭头才分得开）",
     html.indexOf("↓接收") > 0 && html.indexOf("↑发送") > 0
       && html.indexOf('下位机 <b id="slRxCount"') < 0, "");
@@ -1043,7 +1043,7 @@ const GBK = (X.codec || SL.codec);
    这组把「每个文字色 × 每类背景」的 WCAG 对比度全部算一遍，门限 4.5（AA 正文），
    以后任何人调色不达标直接 FAIL，不再靠截图抓。 */
 (function () {
-  const cssText = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
+  const cssText = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8").replace(/\r\n/g, "\n");
 
   function pc(v) {
     v = v.trim();
@@ -1251,11 +1251,11 @@ const GBK = (X.codec || SL.codec);
    这里的结构断言只负责「实现没被改回去」；行为本身由 E2E 的
    serial_v2216 用真实几何锁（横向溢出 = 0、底行标签两两不相交）。 */
 (function () {
-  const ui16 = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
-  const plug16 = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
-  const views16 = fs.readFileSync(path.join(JS, "views.js"), "utf8");
-  const css16 = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
-  const html16 = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8");
+  const ui16 = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
+  const plug16 = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
+  const views16 = fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n");
+  const css16 = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8").replace(/\r\n/g, "\n");
+  const html16 = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").replace(/\r\n/g, "\n");
 
   check("A-88: 通道列表改卡片式，且用 white-space:normal 覆盖 nowrap（横向滚动条的根因）",
     ui16.indexOf('el("table", "sl-table sl-chan-table")') > 0
@@ -1311,8 +1311,8 @@ const GBK = (X.codec || SL.codec);
     /slBtnClearData"[^>]*\n?[^>]*is-danger/.test(html16)
       || /class="sl-btn is-sm is-danger" id="slBtnClearData"/.test(html16), "");
   check("A-90: 默认分割比例仍是 0.62（AUDIT A-75 有意的「监视器为绝对主视觉」，E2E 也钉着它）",
-    /monRatio: 0\.62/.test(fs.readFileSync(path.join(JS, "core.js"), "utf8"))
-      && /RATIO_DEF = 0\.62/.test(fs.readFileSync(path.join(JS, "views.js"), "utf8")), "");
+    /monRatio: 0\.62/.test(fs.readFileSync(path.join(JS, "core.js"), "utf8").replace(/\r\n/g, "\n"))
+      && /RATIO_DEF = 0\.62/.test(fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n")), "");
 
   /* ---- A-91：低频组折叠 + 命令面板 + 全局快捷键 + 发送历史 ---- */
   check("A-91: 三个低频组标了 data-fold 且带稳定 key，「常用案例」不许折（那是演示主入口）",
@@ -1726,11 +1726,11 @@ scanRegression().then(function () {
      引用它们会让整个脚本 ReferenceError 崩掉（不是报某条断言失败，我第一次就踩了）。
    ============================================================ */
 (function () {
-  const appHtml = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8");
-  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
-  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
-  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
-  const sCss = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
+  const appHtml = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").replace(/\r\n/g, "\n");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
+  const sCss = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8").replace(/\r\n/g, "\n");
 
   check("A-103: 首屏引导有「不再提示」，点了就落盘（之后永远不再出现）",
     appHtml.indexOf('id="slZeroNever"') > 0
@@ -1776,10 +1776,10 @@ scanRegression().then(function () {
    「面板的拓展拖动排列不够丝滑」。
    ============================================================ */
 (function () {
-  const appHtml = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8");
-  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
-  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
-  const sCss = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8");
+  const appHtml = fs.readFileSync(path.join(JS, "..", "index.html"), "utf8").replace(/\r\n/g, "\n");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n");
+  const sCss = fs.readFileSync(path.join(JS, "..", "app.css"), "utf8").replace(/\r\n/g, "\n");
 
   check("A-105: 设备页签按「连接 → 协议 → 通道」同屏，且**首屏**也要应用同屏规则",
     appHtml.indexOf('data-pane="device" data-also="parse channels"') > 0
@@ -1807,9 +1807,9 @@ scanRegression().then(function () {
    ⚠ 这些变量必须在本 IIFE 内自己读（上面 IIFE 里的同名 const 是函数作用域的）。
    ============================================================ */
 (function () {
-  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
-  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
-  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
 
   check("A-107: 触发搜索区间受 [preN, n-need] 约束（否则永远等待：最新跨越后面总凑不出窗口）",
     sPlug.indexOf("var need = win - preN;") > 0
@@ -1840,10 +1840,10 @@ scanRegression().then(function () {
    ⚠ 变量在本 IIFE 内自己读（外层同名 const 是函数作用域的，引用会 ReferenceError）。
    ============================================================ */
 (function () {
-  const sFft = fs.readFileSync(path.join(JS, "fft.js"), "utf8");
-  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
-  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
-  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  const sFft = fs.readFileSync(path.join(JS, "fft.js"), "utf8").replace(/\r\n/g, "\n");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
   const FF = require(path.join(JS, "fft.js"));
 
   check("A-108: 窗函数可选且清单单源（Hanning/Hamming/Blackman/矩形）",
@@ -1892,7 +1892,7 @@ scanRegression().then(function () {
    ⑯-h 显示模块优化·第三批(其一)：X 轴工程单位（V2.2.26）
    ============================================================ */
 (function () {
-  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
   check("A-109: 波形窗口标签给出工程单位（秒/毫秒），不再只有「N 点」",
     sPlug.indexOf("var spanMs = (t1 > t0) ? (t1 - t0) : 0;") > 0
       && /spanTxt = spanMs >= 1000 \? \(U\.fmt\(spanMs \/ 1000, 2\) \+ "s"\) : \(U\.fmt\(spanMs, 1\) \+ "ms"\)/.test(sPlug)
@@ -1906,7 +1906,7 @@ scanRegression().then(function () {
    ⚠ 本 IIFE 内自己读文件（外层同名 const 是函数作用域的）。
    ============================================================ */
 (function () {
-  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
   check("A-110: 快捷条点数带工程时长（≈ 秒），采样间隔取自数据而非配置",
     sUi.indexOf("var pv = SL.datastore.recentRaw(2);") > 0
       && sUi.indexOf('var want = n2 + " 点 ≈ "') > 0
@@ -1922,9 +1922,9 @@ scanRegression().then(function () {
    ⑯-j 第三批(其三)：游标测量（A-101）（V2.2.28）
    ============================================================ */
 (function () {
-  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
-  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8");
-  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
+  const sViews = fs.readFileSync(path.join(JS, "views.js"), "utf8").replace(/\r\n/g, "\n");
+  const sUi = fs.readFileSync(path.join(JS, "ui.js"), "utf8").replace(/\r\n/g, "\n");
   check("A-111: 游标位置存**绘图区宽度比例**而不是数据索引（窗口缩放/回看/数据增长都不会漂移）",
     /var fr = \(e\.offsetX - PAD\.l\) \/ pw0;/.test(sPlug)
       && sPlug.indexOf("panel._curA = fr;") > 0
@@ -1948,7 +1948,7 @@ scanRegression().then(function () {
    ⑯-k 鼠标悬停示数（准线）（V2.2.29）
    ============================================================ */
 (function () {
-  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
   check("A-112: 悬停位置存**闭包变量**，不写 panel（draw 手里的 panel 与 views.list() 可能是同一 id 的两个对象）",
     sPlug.indexOf("var hoverFrac = null;") > 0
       && sPlug.indexOf("hoverFrac = frh;") > 0
@@ -1968,7 +1968,7 @@ scanRegression().then(function () {
    ⑯-l 频谱侧悬停示数（V2.2.30）
    ============================================================ */
 (function () {
-  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8");
+  const sPlug = fs.readFileSync(path.join(JS, "plugins.js"), "utf8").replace(/\r\n/g, "\n");
   check("A-113: 频谱侧悬停存在，坐标映射用频谱自己的 pad/fMax（与波形侧不是同一套）",
     sPlug.indexOf("var hfq = Math.max(0, Math.min(1, fftHoverState[panel.id])) * fMax;") > 0
       && sPlug.indexOf("var hxq = pad.l + (fMax > 0 ? (hfq / fMax) * map.plotW : 0);") > 0, "");
